@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,9 @@
  */
 
 package io.helidon.webclient.api;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 /**
  * A resource that can be released or closed.
@@ -34,4 +37,20 @@ public interface ReleasableResource {
      * as we do not want to have a checked exception thrown.
      */
     void closeResource();
+
+    /**
+     * Initiates resource closure and returns completion of any asynchronous cleanup.
+     *
+     * <p>Client transport metrics can finish cleanup after physical connections terminate. Applications owning a meter
+     * registry must keep it available until this completion stage finishes. Clients sharing observed connections can
+     * share cleanup ownership; close all such clients before awaiting their completion stages.
+     *
+     * <p>The default implementation calls {@link #closeResource()} and reports immediate completion.
+     *
+     * @return completion of resource cleanup
+     */
+    default CompletionStage<Void> closeResourceAsync() {
+        closeResource();
+        return CompletableFuture.completedStage(null);
+    }
 }

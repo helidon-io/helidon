@@ -28,6 +28,8 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
+import io.helidon.http.HttpTransportObserver.StreamObservation;
+import io.helidon.http.HttpTransportObserver.StreamOutcome;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
@@ -96,6 +98,9 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     // streamId and buffer can only be created when we are locked in the stream id sequence
     private int streamId;
     private StreamBuffer buffer;
+    private volatile StreamObservation transportObservation;
+    private boolean transportLocalEnd;
+    private boolean transportRemoteEnd;
 
     /**
      * Create a new HTTP/2 client stream.
@@ -183,6 +188,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                                      "Received RST_STREAM for stream "
                                              + streamId + " in IDLE state");
         }
+        remoteReset(rstStream.errorCode());
         updateState(Http2StreamState.checkAndGetState(this.state,
                                                       Http2FrameType.RST_STREAM,
                                                       false,
@@ -228,6 +234,9 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         try {
             updateState(Http2StreamState.checkAndGetState(this.state, header.type(), false, endOfStream, false));
             readState = readState.check(endOfStream ? ReadState.END : ReadState.DATA);
+            if (endOfStream) {
+                remoteEnd();
+            }
             incrementInboundWindowSizeLocked(header.length());
             buffer.dataProcessed(header.length());
         } finally {
@@ -349,14 +358,34 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
             sendListener.frameHeader(ctx, streamId, frameData.header());
             sendListener.frame(ctx, streamId, rstStream);
             connection.writer().write(frameData);
+            closeObservation(StreamOutcome.RESET);
         } catch (UncheckedIOException e) {
+            closeObservation(StreamOutcome.ERROR);
             // we consider this to be a marker that the connection is already close
             ctx.log(LOGGER, DEBUG, "Exception during stream cancel", e);
+        } catch (RuntimeException e) {
+            closeObservation(StreamOutcome.ERROR);
+            throw e;
         } finally {
             if (nextState == Http2StreamState.CLOSED) {
                 releaseReservation();
             }
         }
+    }
+
+    void resetAndClose(Http2ErrorCode errorCode) {
+        close(false);
+        try {
+            reset(errorCode);
+        } finally {
+            if (transportObservation != null && !connection.transportClosed()) {
+                closeObservation(StreamOutcome.CANCELLED);
+            }
+        }
+    }
+
+    void remoteReset(Http2ErrorCode errorCode) {
+        closeObservation(errorCode == Http2ErrorCode.REFUSED_STREAM ? StreamOutcome.REJECTED : StreamOutcome.RESET);
     }
 
     void incrementInboundWindowSize(int increment) {
@@ -382,22 +411,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
      * after local cancellation or connection shutdown.
      */
     public void close() {
-        inboundStateLock.lock();
-        try {
-            if (closed) {
-                return;
-            }
-            closed = true;
-            inboundStateChanged.signalAll();
-        } finally {
-            inboundStateLock.unlock();
-        }
-
-        if (streamId != 0) {
-            connection.removeStream(streamId);
-        }
-        // A slot is reserved before request HEADERS are written, so every close must release it.
-        releaseReservation();
+        close(true);
     }
 
     /**
@@ -410,6 +424,9 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
             ctx.log(LOGGER, DEBUG, "%d: received frame of type %s, pushing to buffer", streamId, frameData.header().type());
         }
 
+        if ((frameData.header().flags() & Http2Flag.END_OF_STREAM) != 0) {
+            remoteEnd();
+        }
         buffer.push(frameData);
     }
 
@@ -481,6 +498,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
             releaseReservation();
         }
         buffer.pushTrailers(headers, endOfStream);
+        remoteEnd();
     }
 
     BufferData read(int i) {
@@ -595,16 +613,22 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                     streamId,
                     WindowSize.DEFAULT_WIN_SIZE,
                     WindowSize.DEFAULT_MAX_FRAME_SIZE);
+            transportObservation = connection.observeStream();
             // this must be done after we create the flow control, as it may be used from another thread
             this.connection.addStream(streamId, this);
             this.connection.updateLastStreamId(streamId);
 
             sendListener.headers(ctx, streamId, http2Headers);
             // First call to the server-starting stream, needs to be increasing sequence of odd numbers
-            connection.writer().writeHeaders(http2Headers, streamId, flags, flowControl.outbound());
+            if (endOfStream && transportObservation != null) {
+                connection.writer().writeHeaders(http2Headers, streamId, flags, flowControl.outbound(), this::localEnd);
+            } else {
+                connection.writer().writeHeaders(http2Headers, streamId, flags, flowControl.outbound());
+            }
             success = true;
         } finally {
             if (!success) {
+                closeObservation(StreamOutcome.ERROR);
                 // Undo stream registration and the reserved concurrency slot if the open/write path fails.
                 close();
             }
@@ -842,7 +866,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         if (streamBuffer != null) {
             streamBuffer.fail(actualFailure);
         }
-        close();
+        close(false);
     }
 
     /**
@@ -898,6 +922,9 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         this.continue100Received = false;
         this.responseNoContent = headRequest || headers.status() == Status.NOT_MODIFIED_304;
         this.hasEntity = !endOfStream;
+        if (endOfStream) {
+            remoteEnd();
+        }
     }
 
     /**
@@ -957,6 +984,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         updateState(nextState);
         readState = readState.check(ReadState.END);
         hasEntity = false;
+        remoteEnd();
         trailers.complete(headers.httpHeaders());
     }
 
@@ -980,7 +1008,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         if (completeTrailers) {
             trailers.completeExceptionally(failure);
         }
-        close();
+        close(false);
     }
 
     private static int dataContentLength(Http2FrameData frameData) {
@@ -1015,8 +1043,11 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                                                       endOfStream,
                                                       false));
         try {
-            connection.writer().writeData(frameData,
-                                          flowControl().outbound());
+            if (endOfStream && transportObservation != null) {
+                connection.writer().writeData(frameData, flowControl().outbound(), this::localEnd);
+            } else {
+                connection.writer().writeData(frameData, flowControl().outbound());
+            }
         } catch (Http2Exception e) {
             if (e.code() == Http2ErrorCode.CANCEL) {
                 RuntimeException failure = connectionFailure;
@@ -1025,7 +1056,78 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                 }
             }
             throw e;
+        } catch (RuntimeException e) {
+            closeObservation(StreamOutcome.ERROR);
+            throw e;
         }
+    }
+
+    private void localEnd() {
+        if (transportObservation == null) {
+            return;
+        }
+        inboundStateLock.lock();
+        try {
+            transportLocalEnd = true;
+            if (transportRemoteEnd) {
+                transportObservation.close(StreamOutcome.COMPLETED);
+            }
+        } finally {
+            inboundStateLock.unlock();
+        }
+    }
+
+    private void remoteEnd() {
+        if (transportObservation == null) {
+            return;
+        }
+        inboundStateLock.lock();
+        try {
+            transportRemoteEnd = true;
+            if (transportLocalEnd) {
+                transportObservation.close(StreamOutcome.COMPLETED);
+            }
+        } finally {
+            inboundStateLock.unlock();
+        }
+    }
+
+    private void closeObservation(StreamOutcome outcome) {
+        if (transportObservation == null) {
+            return;
+        }
+        inboundStateLock.lock();
+        try {
+            transportObservation.close(outcome);
+        } finally {
+            inboundStateLock.unlock();
+        }
+    }
+
+    private void close(boolean completeObservation) {
+        inboundStateLock.lock();
+        try {
+            if (closed) {
+                return;
+            }
+            // Stream state advances before a local terminal write. If the response already ended, let the write's
+            // completion callback or failure settle the exchange even when the caller closes its response first.
+            if (completeObservation && transportObservation != null && !connection.transportClosed()
+                    && !(transportRemoteEnd && !locallyReset
+                            && (state == Http2StreamState.CLOSED || state == Http2StreamState.HALF_CLOSED_LOCAL))) {
+                closeObservation(StreamOutcome.CANCELLED);
+            }
+            closed = true;
+            inboundStateChanged.signalAll();
+        } finally {
+            inboundStateLock.unlock();
+        }
+
+        if (streamId != 0) {
+            connection.removeStream(streamId);
+        }
+        // A slot is reserved before request HEADERS are written, so every close must release it.
+        releaseReservation();
     }
 
     private void updateState(Http2StreamState newState) {

@@ -466,8 +466,7 @@ abstract class Http2CallChainBase implements WebClientService.TransportChain {
     }
 
     private static void resetAndClose(Http2ClientStream stream, Http2Exception e) {
-        stream.close();
-        stream.reset(e.code());
+        stream.resetAndClose(e.code());
     }
 
     private static ContentDecoder contentDecoder(ClientResponseHeaders responseHeaders, HttpClientConfig clientConfig) {

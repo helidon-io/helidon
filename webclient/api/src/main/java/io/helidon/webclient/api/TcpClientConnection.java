@@ -44,6 +44,12 @@ import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PlainSocket;
 import io.helidon.common.socket.TlsSocket;
 import io.helidon.common.tls.Tls;
+import io.helidon.http.HttpTransportObserver;
+import io.helidon.http.HttpTransportObserver.ConnectionObservation;
+import io.helidon.http.HttpTransportObserver.ConnectionOutcome;
+import io.helidon.http.HttpTransportObserver.Handshake;
+import io.helidon.http.HttpTransportObserver.HandshakeOutcome;
+import io.helidon.webclient.api.HttpTransportObserverSupport.ConnectionObservationContext;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.TRACE;
@@ -52,7 +58,7 @@ import static java.lang.System.Logger.Level.TRACE;
  * A TCP connection that can be used by any protocol that is based on TCP.
  * The connection supports proxying and is not attempting to cache anything.
  */
-public class TcpClientConnection implements ClientConnection {
+public class TcpClientConnection implements ClientConnection, ConnectionObservationContext {
     private static final System.Logger LOGGER = System.getLogger(TcpClientConnection.class.getName());
 
     private final WebClient webClient;
@@ -70,6 +76,7 @@ public class TcpClientConnection implements ClientConnection {
     private boolean closed;
     private boolean allowExpectContinue = true;
     private ResolvedClientTarget resolvedTarget;
+    private ClientTransportObservation transportObservation;
 
     private TcpClientConnection(WebClient webClient,
                                 ConnectionKey connectionKey,
@@ -191,78 +198,39 @@ public class TcpClientConnection implements ClientConnection {
             resolvedTarget = target;
         }
 
-        /*
-        Obtain target socket through proxy (if enabled), or connect to target socket
-         */
-        this.socket = connectionKey.proxy()
-                .tcpSocket(webClient,
-                           target,
-                           webClient.prototype().socketOptions());
-
-        this.channelId = createChannelId(socket);
-
-        if (LOGGER.isLoggable(DEBUG)) {
-            LOGGER.log(DEBUG, String.format("[client %s] client connected %s:%d %s",
-                                            channelId,
-                                            socket.getLocalAddress().getHostAddress(),
-                                            socket.getLocalPort(),
-                                            Thread.currentThread().getName()));
-        }
-
         try {
-            webClient.prototype().connectionListener()
-                .socketConnected(new ConnectedSocketInfoImpl(this.channelId, this.socket));
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to execute connection initializer", e);
-        }
-
-
-        if (tls.enabled()) {
-            List<SNIServerName> serverNamesOverride = connectionKey.serverNamesOverride();
-            SSLSocket sslSocket = serverNamesOverride == null
-                    ? tls.createSocket(tcpProtocolIds,
-                                       socket,
-                                       connectionKey.tlsPeerHost(),
-                                       connectionKey.tlsPeerPort())
-                    : tls.createSocket(tcpProtocolIds,
-                                       socket,
-                                       connectionKey.tlsPeerHost(),
-                                       connectionKey.tlsPeerPort(),
-                                       serverNamesOverride);
-            try {
-                sslSocket.startHandshake();
-            } catch (IOException e) {
+            return connect(tls, target);
+        } catch (RuntimeException failure) {
+            if (transportObservation != null) {
+                transportObservation.failed(failure);
                 try {
-                    sslSocket.close();
-                } catch (IOException ex) {
-                    e.addSuppressed(ex);
+                    closeResource();
+                } catch (RuntimeException closeFailure) {
+                    failure.addSuppressed(closeFailure);
                 }
-                throw new UncheckedIOException("Failed to execute SSL handshake", e);
-            }
-            if (LOGGER.isLoggable(TRACE)) {
-                debugTls(sslSocket, channelId);
-            }
-            this.helidonSocket = TlsSocket.client(sslSocket, channelId);
-        } else {
-            this.helidonSocket = PlainSocket.client(socket, channelId);
-        }
-
-        if (!target.logicalTarget().currentTlsGeneration()) {
-            IllegalStateException failure =
-                    new IllegalStateException("TLS configuration was reloaded during connection setup");
-            try {
-                closeResource();
-            } catch (RuntimeException | Error closeFailure) {
-                failure.addSuppressed(closeFailure);
             }
             throw failure;
         }
+    }
 
-        this.reader = DataReader.create(helidonSocket);
-        int writeBufferSize = webClient.prototype().writeBufferSize();
-        this.writer = new BufferedDataWriter(helidonSocket, writeBufferSize);
+    @Override
+    public void httpTransportObserver(HttpTransportObserver observer) {
+        if (socket != null || transportObservation != null) {
+            throw new IllegalStateException("Transport observation must be configured once before connecting");
+        }
+        transportObservation = new ClientTransportObservation(Objects.requireNonNull(observer, "observer"));
+    }
 
-        return this;
+    @Override
+    public ConnectionObservation httpTransportObservation() {
+        return transportObservation == null ? ConnectionObservation.noop() : transportObservation;
+    }
+
+    @Override
+    public void httpTransportOutcome(ConnectionOutcome outcome) {
+        if (transportObservation != null) {
+            transportObservation.outcome(outcome);
+        }
     }
 
     @Override
@@ -307,11 +275,20 @@ public class TcpClientConnection implements ClientConnection {
             return;
         }
         try {
-            this.socket.close();
+            if (this.socket != null) {
+                this.socket.close();
+            }
         } catch (IOException e) {
+            if (transportObservation != null) {
+                transportObservation.failed(e);
+            }
             LOGGER.log(TRACE, "Failed to close a client socket", e);
+        } finally {
+            this.closed = true;
+            if (transportObservation != null) {
+                transportObservation.closed();
+            }
         }
-        this.closed = true;
         closeConsumer.accept(this);
     }
 
@@ -439,6 +416,94 @@ public class TcpClientConnection implements ClientConnection {
         }
 
         return String.join(", ", certs);
+    }
+
+    private TcpClientConnection connect(Tls tls, ResolvedClientTarget target) {
+        /*
+        Obtain target socket through proxy (if enabled), or connect to target socket
+         */
+        this.socket = connectionKey.proxy()
+                .tcpSocket(webClient,
+                           target,
+                           webClient.prototype().socketOptions());
+
+        this.channelId = createChannelId(socket);
+
+        if (transportObservation != null) {
+            transportObservation.opened(HttpTransportObserver.TRANSPORT_TCP, tls.enabled() ? Handshake.TLS : Handshake.NONE);
+        }
+
+        if (LOGGER.isLoggable(DEBUG)) {
+            LOGGER.log(DEBUG, String.format("[client %s] client connected %s:%d %s",
+                                            channelId,
+                                            socket.getLocalAddress().getHostAddress(),
+                                            socket.getLocalPort(),
+                                            Thread.currentThread().getName()));
+        }
+
+        try {
+            webClient.prototype().connectionListener()
+                .socketConnected(new ConnectedSocketInfoImpl(this.channelId, this.socket));
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to execute connection initializer", e);
+        }
+
+
+        if (tls.enabled()) {
+            if (transportObservation != null) {
+                transportObservation.handshakeStarted();
+            }
+            List<SNIServerName> serverNamesOverride = connectionKey.serverNamesOverride();
+            SSLSocket sslSocket = serverNamesOverride == null
+                    ? tls.createSocket(tcpProtocolIds,
+                                       socket,
+                                       connectionKey.tlsPeerHost(),
+                                       connectionKey.tlsPeerPort())
+                    : tls.createSocket(tcpProtocolIds,
+                                       socket,
+                                       connectionKey.tlsPeerHost(),
+                                       connectionKey.tlsPeerPort(),
+                                       serverNamesOverride);
+            try {
+                sslSocket.startHandshake();
+            } catch (IOException e) {
+                try {
+                    sslSocket.close();
+                } catch (IOException ex) {
+                    e.addSuppressed(ex);
+                }
+                throw new UncheckedIOException("Failed to execute SSL handshake", e);
+            }
+            if (transportObservation != null) {
+                transportObservation.handshakeStarted().close(HandshakeOutcome.SUCCESS);
+            }
+            if (LOGGER.isLoggable(TRACE)) {
+                debugTls(sslSocket, channelId);
+            }
+            this.helidonSocket = TlsSocket.client(sslSocket, channelId);
+        } else {
+            this.helidonSocket = PlainSocket.client(socket, channelId);
+        }
+
+        if (!target.logicalTarget().currentTlsGeneration()) {
+            IllegalStateException failure =
+                    new IllegalStateException("TLS configuration was reloaded during connection setup");
+            if (transportObservation != null) {
+                transportObservation.failed(failure);
+            }
+            try {
+                closeResource();
+            } catch (RuntimeException | Error closeFailure) {
+                failure.addSuppressed(closeFailure);
+            }
+            throw failure;
+        }
+
+        this.reader = DataReader.create(helidonSocket);
+        int writeBufferSize = webClient.prototype().writeBufferSize();
+        this.writer = new BufferedDataWriter(helidonSocket, writeBufferSize);
+
+        return this;
     }
 
     static class BufferedDataWriter implements DataWriter {

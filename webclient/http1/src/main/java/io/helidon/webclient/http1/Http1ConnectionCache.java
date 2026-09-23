@@ -91,12 +91,12 @@ class Http1ConnectionCache extends ClientConnectionCache {
         if (keepAlive) {
             return keepAliveUnixDomainConnection(http1Client, connectionTarget);
         } else {
-            return UnixDomainSocketClientConnection.create(http1Client.webClient(),
+            return http1Client.observe(UnixDomainSocketClientConnection.create(http1Client.webClient(),
                                                            connectionTarget,
                                                            ALPN_ID,
                                                            it -> false,
                                                            it -> {
-                                                           })
+                                                           }))
                     .connect();
         }
     }
@@ -146,12 +146,12 @@ class Http1ConnectionCache extends ClientConnectionCache {
                                                            http1Client.clientConfig().connectionCacheSize());
             ClientConnection connection = connectedConnection(connectionPool);
             if (connection == null) {
-                connection = TcpClientConnection.create(http1Client.webClient(),
+                connection = http1Client.observe(TcpClientConnection.create(http1Client.webClient(),
                                                         connectionTarget,
                                                         ALPN_ID,
                                                         connectionPool::release,
                                                         conn -> {
-                                                        })
+                                                        }))
                         .connect();
             } else if (LOGGER.isLoggable(DEBUG)) {
                 LOGGER.log(DEBUG, String.format("[%s] client connection obtained %s",
@@ -268,12 +268,12 @@ class Http1ConnectionCache extends ClientConnectionCache {
         ClientConnection connection = connectedConnection(connectionPool);
 
         if (connection == null) {
-            connection = UnixDomainSocketClientConnection.create(http1Client.webClient(),
+            connection = http1Client.observe(UnixDomainSocketClientConnection.create(http1Client.webClient(),
                                                                  connectionTarget,
                                                                  ALPN_ID,
                                                                  connectionPool::release,
                                                                  conn -> {
-                                                                 })
+                                                                 }))
                     .connect();
         } else {
             if (LOGGER.isLoggable(DEBUG)) {
@@ -298,12 +298,12 @@ class Http1ConnectionCache extends ClientConnectionCache {
         ClientConnection connection = connectedConnection(connectionPool);
 
         if (connection == null) {
-            connection = TcpClientConnection.create(http1Client.webClient(),
+            connection = http1Client.observe(TcpClientConnection.create(http1Client.webClient(),
                                                     connectionTarget,
                                                     ALPN_ID,
                                                     connectionPool::release,
                                                     conn -> {
-                                                    })
+                                                    }))
                     .connect();
         } else {
             if (LOGGER.isLoggable(DEBUG)) {
@@ -320,12 +320,12 @@ class Http1ConnectionCache extends ClientConnectionCache {
 
         WebClient webClient = http1Client.webClient();
 
-        return TcpClientConnection.create(webClient,
+        return http1Client.observe(TcpClientConnection.create(webClient,
                                           connectionTarget,
                                           ALPN_ID,
                                           conn -> false, // always close connection
                                           conn -> {
-                                          })
+                                          }))
 
                 .connect();
     }

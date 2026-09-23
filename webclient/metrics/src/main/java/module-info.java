@@ -26,14 +26,24 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Path({"WebClient", "Metrics"})
 module io.helidon.webclient.metrics {
 
-    requires io.helidon.common.features.api;
-    requires io.helidon.metrics.api;
+    requires static io.helidon.common.features.api;
+    requires static io.helidon.config.metadata;
+
+    requires io.helidon.http.metrics;
     requires io.helidon.service.registry;
     requires io.helidon.webclient;
 
+    requires transitive io.helidon.builder.api;
+    requires transitive io.helidon.common;
     requires transitive io.helidon.config;
+    requires transitive io.helidon.http;
+    requires transitive io.helidon.metrics.api;
+    requires transitive io.helidon.webclient.api;
+
+    exports io.helidon.webclient.metrics;
 
     provides io.helidon.webclient.spi.WebClientServiceProvider
-            with io.helidon.webclient.metrics.WebClientMetricsProvider;
+            with io.helidon.webclient.metrics.WebClientMetricsProvider,
+                 io.helidon.webclient.metrics.WebClientTransportMetricsProvider;
 
 }

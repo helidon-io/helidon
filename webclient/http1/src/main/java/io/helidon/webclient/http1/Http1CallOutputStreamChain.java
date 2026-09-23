@@ -109,6 +109,9 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
         Status responseStatus = responseHead.status();
         ClientResponseHeaders responseHeaders = responseHead.headers();
         captureProtocolResponse(connection, responseStatus, responseHeaders);
+        if (transportObservation() != null) {
+            transportObservation().responseHeaders(cos.lastRequest.method(), responseStatus, responseHeaders);
+        }
 
         if (originalRequest().followRedirects()
                 && RedirectionProcessor.redirectionStatusCode(responseStatus)) {
@@ -127,12 +130,18 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             if (sendEntity && !cos.lastRequest.canReplayEntityTo(redirectUri)) {
                 // Replaying a method-preserving output-stream body to a new origin can leak credentials or form data.
                 if (cos.hasEntity()) {
+                    if (transportObservation() != null) {
+                        transportObservation().cancel();
+                    }
                     connection.closeResource();
                     throw new IllegalStateException("Cross-origin redirect with request entity is disabled.");
                 }
                 handler = OutputStream::close;
             }
             int numberOfRedirects = cos.numberOfRedirects() + 1;
+            if (transportObservation() != null) {
+                transportObservation().cancel();
+            }
             connection.closeResource();
             if (numberOfRedirects > cos.lastRequest.maxRedirects()) {
                 throw RedirectionProcessor.maxRedirectsReached(cos.lastRequest.maxRedirects());
@@ -148,22 +157,23 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             Http1ClientResponseImpl clientResponse = sendEntity
                     ? (Http1ClientResponseImpl) request.outputStream(handler)
                     : RedirectionProcessor.invokeWithFollowRedirects(request, numberOfRedirects, BufferData.EMPTY_BYTES);
+            transportObservation(clientResponse.transportObservation());
             return createServiceResponse(http1Client,
                                          serviceRequest,
                                          clientResponse.connection(),
-                                         clientResponse.connection().reader(),
                                          clientResponse.status(),
                                          clientResponse.headers(),
-                                         whenComplete());
+                                         whenComplete(),
+                                         transportObservation());
         }
 
         return createServiceResponse(http1Client,
                                      serviceRequest,
                                      connection,
-                                     reader,
                                      responseStatus,
                                      responseHeaders,
-                                     whenComplete());
+                                     whenComplete(),
+                                     transportObservation());
     }
 
     private static void checkRedirectHeaders(Headers headerValues) {
@@ -336,13 +346,14 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 return serviceResponse;
             }
 
+            callChain.transportObservation(response.transportObservation());
             return createServiceResponse(http1Client,
                                          request,
                                          response.connection(),
-                                         response.connection().reader(),
                                          response.status(),
                                          response.headers(),
-                                         whenComplete);
+                                         whenComplete,
+                                         callChain.transportObservation());
         }
 
         boolean closed() {
@@ -467,6 +478,9 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                         }
                     }
                 } catch (UncheckedIOException e) {
+                    if (callChain.transportObservation() != null) {
+                        callChain.transportObservation().fail(e);
+                    }
                     try {
                         connection.closeResource();
                     } catch (Exception ex) {
@@ -484,6 +498,9 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 if (responseStatus.code() != Status.CONTINUE_100.code()) {
                     ClientResponseHeaders responseHeaders = responseHead.headers();
                     callChain.captureProtocolResponse(connection, responseStatus, responseHeaders);
+                    if (callChain.transportObservation() != null) {
+                        callChain.transportObservation().responseHeaders(lastRequest.method(), responseStatus, responseHeaders);
+                    }
 
                     if (RedirectionProcessor.redirectionStatusCode(responseStatus) && originalRequest.followRedirects()) {
                         callChain.publishProtocolResponse();
@@ -498,10 +515,10 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                         this.serviceResponse = createServiceResponse(http1Client,
                                                                      request,
                                                                      connection,
-                                                                     reader,
                                                                      responseStatus,
                                                                      responseHeaders,
-                                                                     whenComplete);
+                                                                     whenComplete,
+                                                                     callChain.transportObservation());
                         //we are not sending anything by this OS, we need to interrupt it.
                         throw new OutputStreamInterruptedException();
                     }
@@ -520,6 +537,9 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             } else {
                 method = Method.GET;
                 sendEntity = false;
+            }
+            if (callChain.transportObservation() != null) {
+                callChain.transportObservation().cancel();
             }
             connection.closeResource();
             while (numberOfRedirects < originalRequest.maxRedirects()) {
@@ -560,6 +580,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 lastRequest = clientRequest;
 
                 connection = response.connection();
+                callChain.transportObservation(response.transportObservation());
                 ctx = connection.helidonSocket();
                 reader = connection.reader();
                 writer = connection.writer();

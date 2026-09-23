@@ -41,6 +41,12 @@ import io.helidon.common.socket.NioSocket;
 import io.helidon.common.socket.TlsNioSocket;
 import io.helidon.common.task.DeadlineGuard;
 import io.helidon.common.tls.Tls;
+import io.helidon.http.HttpTransportObserver;
+import io.helidon.http.HttpTransportObserver.ConnectionObservation;
+import io.helidon.http.HttpTransportObserver.ConnectionOutcome;
+import io.helidon.http.HttpTransportObserver.Handshake;
+import io.helidon.http.HttpTransportObserver.HandshakeOutcome;
+import io.helidon.webclient.api.HttpTransportObserverSupport.ConnectionObservationContext;
 
 import static io.helidon.webclient.api.TcpClientConnection.debugTls;
 import static java.lang.System.Logger.Level.DEBUG;
@@ -49,7 +55,7 @@ import static java.lang.System.Logger.Level.TRACE;
 /**
  * Client connection to a UNIX domain socket.
  */
-public class UnixDomainSocketClientConnection implements ClientConnection {
+public class UnixDomainSocketClientConnection implements ClientConnection, ConnectionObservationContext {
     private static final System.Logger LOGGER = System.getLogger(UnixDomainSocketClientConnection.class.getName());
 
     private final WebClient webClient;
@@ -70,6 +76,7 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
     private DataWriter writer;
     private boolean closed;
     private boolean allowExpectContinue = true;
+    private ClientTransportObservation transportObservation;
 
     private UnixDomainSocketClientConnection(WebClient webClient,
                                              Tls tls,
@@ -243,6 +250,26 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
     }
 
     @Override
+    public void httpTransportObserver(HttpTransportObserver observer) {
+        if (channel != null || transportObservation != null) {
+            throw new IllegalStateException("Transport observation must be configured once before connecting");
+        }
+        transportObservation = new ClientTransportObservation(Objects.requireNonNull(observer, "observer"));
+    }
+
+    @Override
+    public ConnectionObservation httpTransportObservation() {
+        return transportObservation == null ? ConnectionObservation.noop() : transportObservation;
+    }
+
+    @Override
+    public void httpTransportOutcome(ConnectionOutcome outcome) {
+        if (transportObservation != null) {
+            transportObservation.outcome(outcome);
+        }
+    }
+
+    @Override
     public DataWriter writer() {
         if (closed) {
             throw new IllegalStateException("Attempt to call writer() on a closed connection");
@@ -302,9 +329,16 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
                 this.channel.close();
             }
         } catch (IOException e) {
+            if (transportObservation != null) {
+                transportObservation.failed(e);
+            }
             LOGGER.log(TRACE, "Failed to close a client socket channel", e);
+        } finally {
+            this.closed = true;
+            if (transportObservation != null) {
+                transportObservation.closed();
+            }
         }
-        this.closed = true;
         closeConsumer.accept(this);
     }
 
@@ -331,6 +365,11 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
             this.channel.connect(this.address);
             this.channelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(this.channel));
 
+            if (transportObservation != null) {
+                transportObservation.opened(HttpTransportObserver.TRANSPORT_UNIX,
+                                            tls.enabled() ? Handshake.TLS : Handshake.NONE);
+            }
+
             if (LOGGER.isLoggable(DEBUG)) {
                 LOGGER.log(DEBUG, String.format("[client %s] UNIX socket client connected %s %s",
                                                 channelId,
@@ -346,6 +385,9 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
                     .socketChannelConnected(new ConnectedSocketChannelInfoImpl(this.channelId, this.channel));
 
             if (this.tls.enabled()) {
+                if (transportObservation != null) {
+                    transportObservation.handshakeStarted();
+                }
                 SSLEngine engine = tlsPeerHost == null
                         ? this.tls.sslContext().createSSLEngine()
                         : this.tls.sslContext().createSSLEngine(tlsPeerHost, tlsPeerPort);
@@ -354,6 +396,9 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
 
                 TlsNioSocket tlsSocket = TlsNioSocket.client(this.channel, engine, this.channelId);
                 startTlsHandshake(tlsSocket);
+                if (transportObservation != null) {
+                    transportObservation.handshakeStarted().close(HandshakeOutcome.SUCCESS);
+                }
                 if (LOGGER.isLoggable(TRACE)) {
                     debugTls(engine, channelId);
                 }
@@ -361,6 +406,10 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
             } else {
                 this.socket = NioSocket.client(this.channel, this.channelId);
             }
+            validateTlsGeneration();
+            this.reader = DataReader.create(this.socket);
+            int writeBufferSize = this.webClient.prototype().writeBufferSize();
+            this.writer = new TcpClientConnection.BufferedDataWriter(this.socket, writeBufferSize);
         } catch (IOException e) {
             closeChannelOnFailure(e);
             throw new UncheckedIOException(e);
@@ -368,11 +417,6 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
             closeChannelOnFailure(e);
             throw e;
         }
-
-        validateTlsGeneration();
-        this.reader = DataReader.create(this.socket);
-        int writeBufferSize = this.webClient.prototype().writeBufferSize();
-        this.writer = new TcpClientConnection.BufferedDataWriter(this.socket, writeBufferSize);
 
         return this;
     }
@@ -383,6 +427,9 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
         }
         IllegalStateException failure =
                 new IllegalStateException("TLS configuration was reloaded during connection setup");
+        if (transportObservation != null) {
+            transportObservation.failed(failure);
+        }
         try {
             closeResource();
         } catch (RuntimeException | Error closeFailure) {
@@ -453,14 +500,20 @@ public class UnixDomainSocketClientConnection implements ClientConnection {
     }
 
     private void closeChannelOnFailure(Throwable cause) {
-        this.closed = true;
-        if (this.channel == null) {
-            return;
+        if (transportObservation != null) {
+            transportObservation.failed(cause);
         }
+        this.closed = true;
         try {
-            this.channel.close();
+            if (this.channel != null) {
+                this.channel.close();
+            }
         } catch (IOException e) {
             cause.addSuppressed(e);
+        } finally {
+            if (transportObservation != null) {
+                transportObservation.closed();
+            }
         }
     }
 
