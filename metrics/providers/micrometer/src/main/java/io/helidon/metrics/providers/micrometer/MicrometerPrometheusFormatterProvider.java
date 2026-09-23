@@ -23,6 +23,7 @@ import java.util.Optional;
 import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.metrics.api.FormatterContext;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.metrics.api.MetricsConfig;
@@ -50,7 +51,7 @@ public class MicrometerPrometheusFormatterProvider implements MeterRegistryForma
      * @param ignoredScopeSelection ignored; must not be {@code null}
      * @param nameSelection meter names to format; empty means no name-based restriction
      * @return compatible formatter; empty if none
-     * @deprecated Use {@link #formatter(MediaType, MetricsConfig, MeterRegistry, Map, Iterable)}. Scope-specific arguments
+     * @deprecated Use {@link #formatter(FormatterContext, MeterRegistry)}. Scope-specific arguments
      * are ignored and this method will be removed.
      */
     @Override
@@ -66,23 +67,38 @@ public class MicrometerPrometheusFormatterProvider implements MeterRegistryForma
         return formatter(mediaType, metricsConfig, meterRegistry, Map.of(), nameSelection);
     }
 
+    /**
+     * Returns a formatter for the requested output format and meter selections.
+     *
+     * @deprecated Use {@link #formatter(FormatterContext, MeterRegistry)}.
+     */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     @Override
     public Optional<MeterRegistryFormatter> formatter(MediaType mediaType,
                                                       MetricsConfig metricsConfig,
                                                       MeterRegistry meterRegistry,
                                                       Map<String, Collection<String>> tagSelection,
                                                       Iterable<String> nameSelection) {
-        Objects.requireNonNull(mediaType);
-        Objects.requireNonNull(metricsConfig);
+        return formatter(FormatterContext.builder()
+                                 .mediaType(mediaType)
+                                 .metricsConfig(metricsConfig)
+                                 .tagSelections(tagSelection)
+                                 .nameSelection(nameSelection)
+                                 .build(),
+                         meterRegistry);
+    }
+
+    @Override
+    public Optional<MeterRegistryFormatter> formatter(FormatterContext context, MeterRegistry meterRegistry) {
+        Objects.requireNonNull(context);
         Objects.requireNonNull(meterRegistry);
-        Objects.requireNonNull(tagSelection);
-        Objects.requireNonNull(nameSelection);
+        MediaType mediaType = context.mediaType();
         return (matches(mediaType, MediaTypes.TEXT_PLAIN) || matches(mediaType, MediaTypes.APPLICATION_OPENMETRICS_TEXT))
                 && MicrometerPrometheusFormatter.prometheusMeterRegistry(meterRegistry).isPresent()
                 ? Optional.of(create(mediaType,
                                      meterRegistry,
-                                     tagSelection,
-                                     nameSelection))
+                                     context.tagSelections(),
+                                     context.nameSelection()))
                 : Optional.empty();
     }
 
