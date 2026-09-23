@@ -59,7 +59,7 @@ Parameters for the `@SetUpRoute` annotated methods.
 | `HttpRouting.Builder`      | `@ServerTest`, `@RoutingTest` |           |                                                   |
 | `HttpRules`                | `@ServerTest`, `@RoutingTest` |           | Same as `HttpRouting.Builder`, only routing setup |
 | `Router.RouterBuilder<?>`  | `@ServerTest`, `@RoutingTest` |           |                                                   |
-| `SocketListener.Builder`   | `@ServerTest`                 |           |                                                   |
+| `ListenerConfig.Builder`   | `@ServerTest`                 |           |                                                   |
 | `WebSocketRouting.Builder` | `@ServerTest`, `@RoutingTest` | websocket |                                                   |
 
 In addition:
@@ -89,6 +89,8 @@ Injectable types.
 | `URI`              | x       | `@ServerTest`  |           | URI pointing to a port of the webserver                                                    |
 | `SocketHttpClient` | x       | `@ServerTest`  |           | This client allows you to send anything in order to test for bad requests or other issues. |
 | `Http1Client`      | x       | `@ServerTest`  |           |                                                                                            |
+| `Http3Client`      | x       | `@ServerTest`  | http3     | HTTP/3 client for TLS-enabled listeners                                                    |
+| `Http3LowLevelClient` | x    | `@ServerTest`  | http3     | Low-level HTTP/3 protocol test client                                                      |
 | `DirectClient`     | x       | `@RoutingTest` |           | Implements `Http1Client` API                                                               |
 | `WsClient`         | x       | `@ServerTest`  | websocket |                                                                                            |
 | `DirectWsClient`   | x       | `@RoutingTest` | websocket | Implements `WsClient` API                                                                  |
@@ -267,6 +269,115 @@ You can also use `@Service.Named` qualifier on such parameters to only inject
 the named instance(s).
 
 ## Additional Information
+
+### HTTP/3 Testing
+
+Add the HTTP/3 testing extension to inject `Http3Client` or
+`Http3LowLevelClient` into test constructors or methods:
+
+```xml [pom.xml]
+<dependency>
+  <groupId>io.helidon.webserver.testing.junit5</groupId>
+  <artifactId>helidon-webserver-testing-junit5-http3</artifactId>
+  <scope>test</scope>
+</dependency>
+```
+
+Use `@ServerTest` and configure the selected listener with TLS and
+`Http3Config`. HTTP/3 clients require a running server and are not supported by
+`@RoutingTest`; use `DirectClient` for routing tests that do not exercise the
+HTTP/3 transport. `Http3Client` provides the usual request API, while
+`Http3LowLevelClient` supports low-level response and QPACK assertions.
+
+The following example uses two files that you provide in `src/test/resources`:
+
+- `server-keystore.p12`: a PKCS12 store containing the server private key and
+  certificate chain under the alias `server`, with passphrase `changeit`.
+- `client-truststore.p12`: a PKCS12 store containing the server certificate or
+  its issuing CA certificate, with passphrase `changeit`.
+
+The server certificate must include `localhost` as a DNS Subject Alternative
+Name. Injected clients connect to `https://localhost:<listener-port>/`.
+
+```java
+import io.helidon.common.configurable.Resource;
+import io.helidon.common.pki.Keys;
+import io.helidon.common.tls.Tls;
+import io.helidon.webclient.http3.Http3Client;
+import io.helidon.webclient.http3.Http3ClientResponse;
+import io.helidon.webserver.ListenerConfig;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http1.Http1Config;
+import io.helidon.webserver.http3.Http3Config;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
+import io.helidon.webserver.testing.junit5.http3.Http3ClientTls;
+import io.helidon.webserver.testing.junit5.http3.Http3LowLevelClient;
+
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+
+@ServerTest
+@Http3ClientTls(resource = "client-truststore.p12")
+class MyHttp3ServerTest {
+    @SetUpServer
+    static void server(WebServerConfig.Builder server) {
+        server.protocolsDiscoverServices(false);
+    }
+
+    @SetUpRoute
+    static void routing(HttpRules rules, ListenerConfig.Builder listener) {
+        Keys keys = Keys.builder()
+                .keystore(store -> store
+                        .passphrase("changeit")
+                        .keyAlias("server")
+                        .certChainAlias("server")
+                        .keystore(Resource.create("server-keystore.p12")))
+                .build();
+
+        listener.protocolsDiscoverServices(false)
+                .tls(Tls.builder()
+                        .privateKey(keys.privateKey().orElseThrow())
+                        .privateKeyCertChain(keys.certChain())
+                        .build())
+                .addProtocol(Http1Config.create())
+                .addProtocol(Http3Config.create());
+        rules.get("/greet", (req, res) -> res.send("hello"));
+    }
+
+    @Test
+    void testGreeting(Http3Client client, Http3LowLevelClient lowLevelClient) {
+        try (Http3ClientResponse response = client.get("/greet").request()) {
+            assertThat(response.status().code(), is(200));
+            assertThat(response.protocolId(), is(Http3Client.PROTOCOL_ID));
+            assertThat(response.as(String.class), is("hello"));
+        }
+        assertThat(lowLevelClient.get("/greet").status(), is(200));
+    }
+}
+```
+
+`@Http3ClientTls` loads trusted X.509 certificates from a classpath keystore or
+truststore named by its required `resource` attribute. Its `type` defaults to
+`PKCS12` and its `passphrase` defaults to `changeit`. Class annotations are
+inherited by subclasses. An annotation on an injected parameter overrides the
+class annotation for that client. Without either annotation, the extension
+trusts the selected listener's private-key certificate chain. If that chain is
+unavailable, client injection requires an explicit `@Http3ClientTls` annotation.
+
+Unqualified clients use the default listener. For a named listener, configure
+it with `@SetUpRoute("custom")` and qualify each client parameter with
+`@Socket("custom")`. The named listener also needs TLS and `Http3Config`.
+
+The framework closes injected clients when their test scope ends: clients
+created for a test method are closed after that test, and class-scoped clients,
+such as parameters of `@BeforeAll`, are closed after all tests. You do not need
+to close injected clients yourself. Close each `Http3ClientResponse`, as shown
+in the example.
 
 ### WebSocket Testing
 
