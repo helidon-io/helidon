@@ -118,7 +118,7 @@ Merged configuration for metrics
 </td>
 <td>
 </td>
-<td>Settings for individual meters, matched by exact name across all tags in this registry</td>
+<td>Ordered settings for meters, selected by name pattern across all tags in this registry</td>
 </tr>
 <tr>
 <td>

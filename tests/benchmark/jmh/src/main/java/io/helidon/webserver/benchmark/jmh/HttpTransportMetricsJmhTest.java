@@ -31,6 +31,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.BooleanSupplier;
+import java.util.regex.Pattern;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -185,7 +186,7 @@ public class HttpTransportMetricsJmhTest {
         Config config = Config.empty();
         if (!percentiles) {
             ObjectNode meter = ObjectNode.builder()
-                    .addValue("name", STREAM_DURATION)
+                    .addValue("name-pattern", Pattern.quote(STREAM_DURATION))
                     .addList("percentiles", ListNode.builder().build())
                     .build();
             config = Config.just(ConfigSources.create(ObjectNode.builder()

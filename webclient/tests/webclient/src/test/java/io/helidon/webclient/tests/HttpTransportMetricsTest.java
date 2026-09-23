@@ -27,6 +27,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.tls.Tls;
@@ -95,7 +96,7 @@ class HttpTransportMetricsTest {
     void disablingStreamDurationPreservesOtherStreamMeters(String protocol, boolean secure) throws Exception {
         var config = MetricsConfig.builder()
                 .warnOnMultipleRegistries(false)
-                .addMeter(MeterConfig.builder().name(STREAM_DURATION).enabled(false).build())
+                .addMeter(MeterConfig.builder().namePattern(Pattern.compile(Pattern.quote(STREAM_DURATION))).enabled(false).build())
                 .build();
         try (var fixture = new Fixture(protocol, secure, Mode.ENABLED, config)) {
             fixture.exchange(Mode.ENABLED);
@@ -118,7 +119,10 @@ class HttpTransportMetricsTest {
     void emptyPercentilesPreserveStreamDurationCountAndTotal(String protocol, boolean secure) throws Exception {
         var config = MetricsConfig.builder()
                 .warnOnMultipleRegistries(false)
-                .addMeter(MeterConfig.builder().name(STREAM_DURATION).percentiles(List.of()).build())
+                .addMeter(MeterConfig.builder()
+                                  .namePattern(Pattern.compile(Pattern.quote(STREAM_DURATION)))
+                                  .percentiles(List.of())
+                                  .build())
                 .build();
         try (var fixture = new Fixture(protocol, secure, Mode.ENABLED, config)) {
             fixture.exchange(Mode.ENABLED);
@@ -142,7 +146,7 @@ class HttpTransportMetricsTest {
     void explicitTransportDisableWinsOverRegistryMeterEnable(String protocol, String disabledRole) throws Exception {
         var config = MetricsConfig.builder()
                 .warnOnMultipleRegistries(false)
-                .addMeter(MeterConfig.builder().name(STREAM_DURATION).enabled(true).build())
+                .addMeter(MeterConfig.builder().namePattern(Pattern.compile(Pattern.quote(STREAM_DURATION))).enabled(true).build())
                 .build();
         Mode serverMode = disabledRole.equals("server") ? Mode.DISABLED : Mode.ENABLED;
         Mode clientMode = disabledRole.equals("client") ? Mode.DISABLED : Mode.ENABLED;

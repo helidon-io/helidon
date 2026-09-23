@@ -67,8 +67,9 @@ interface MetricsConfigBlueprint {
     boolean enabled();
 
     /**
-     * Settings for individual meters, matched by exact name across all tags in this registry.
-     * Names must be unique. Settings for names which are not registered have no effect.
+     * Ordered settings for meters, selected by name pattern across all tags in this registry.
+     * The first pattern matching the entire meter name supplies all settings; matching entries are not merged.
+     * Unmatched meters retain their existing settings.
      *
      * @return meter settings
      * @since 28.0.0
@@ -241,7 +242,26 @@ interface MetricsConfigBlueprint {
     }
 
     /**
+     * Finds the first configuration whose pattern matches the entire meter name, regardless of global enablement.
+     *
+     * @param name meter name before exporter-specific naming conversion
+     * @return matching meter configuration, or empty if no pattern matches
+     * @since 28.0.0
+     */
+    default Optional<MeterConfig> meterConfig(String name) {
+        Objects.requireNonNull(name);
+        for (MeterConfig meter : meters()) {
+            if (meter.namePattern().matcher(name).matches()) {
+                return Optional.of(meter);
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
      * Determines whether the meter with the specified name is enabled.
+     * Globally disabled metrics take precedence; otherwise, the first matching meter configuration applies.
+     * Meters without a matching configuration are enabled.
      *
      * @param name meter name
      * @return whether the meter is enabled
@@ -251,12 +271,7 @@ interface MetricsConfigBlueprint {
         if (!enabled()) {
             return false;
         }
-        for (MeterConfig meter : meters()) {
-            if (meter.name().equals(name)) {
-                return meter.enabled();
-            }
-        }
-        return true;
+        return meterConfig(name).map(MeterConfig::enabled).orElse(true);
     }
 
     /**
