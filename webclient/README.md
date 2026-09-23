@@ -68,10 +68,14 @@ are not supported. Plain HTTP origins cannot be upgraded to TLS-based HTTP/2 or 
 configured fallback protocol if that proxy route cannot carry the alternative. A no-proxy rule that selects a direct
 route remains eligible.
 
-The configured TLS policy is honored as-is for the alternative, including custom or permissive settings. Consequently,
-`trust-all`, disabled endpoint identification, or another unsafe TLS policy makes Alt-Svc steering equally unsafe. Each
-supporting protocol provider applies `ma`, `Age`, `Date`, and `persist` to its own discovery state and cache lifecycle;
-`persist` does not make that state durable across a process or beyond the cache lifecycle.
+WebClient honors the configured TLS policy when connecting to an alternative. HTTP/3 requires TLS 1.3 support and a TLS
+configuration that can be translated to QUIC; in particular, the trust configuration must expose an `X509TrustManager`.
+An opaque custom `SSLContext` can therefore make a generic WebClient skip HTTP/3 and use a configured TCP protocol.
+Disabled endpoint identification and `trust-all` remain permissive for Alt-Svc steering when the configuration is
+otherwise QUIC-compatible.
+
+Each supporting protocol provider applies `ma`, `Age`, `Date`, and `persist` to its own discovery state and cache
+lifecycle; `persist` does not make that state durable across a process or beyond the cache lifecycle.
 
 To provide HTTP version support extension, the implementation must provide `webclient.spi.HttpClientSpiProvider`.
 
