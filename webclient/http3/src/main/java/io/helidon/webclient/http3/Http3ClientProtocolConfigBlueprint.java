@@ -80,10 +80,11 @@ interface Http3ClientProtocolConfigBlueprint extends ProtocolConfig, HttpConfig 
     boolean priorKnowledge();
 
     /**
-     * Maximum field section size the client advertises to servers in HTTP/3 SETTINGS.
+     * Maximum field section size the client advertises to servers in HTTP/3 SETTINGS; {@code -1} omits the setting so no
+     * limit is advertised.
      * The hard local response-header limit is configured by {@link #maxHeadersSize()}.
-     * The value must be {@code -1}, which omits the setting, or a QUIC variable-length integer from {@code 0} through
-     * {@code 2^62 - 1}, inclusive. Default is {@code -1}.
+     * The value must be {@code -1} or a QUIC variable-length integer from {@code 0} through {@code 2^62 - 1}, inclusive.
+     * Default is {@code -1}.
      *
      * @return advertised field section size in octets
      */
@@ -92,9 +93,9 @@ interface Http3ClientProtocolConfigBlueprint extends ProtocolConfig, HttpConfig 
     long maxFieldSectionSize();
 
     /**
-     * Maximum QPACK dynamic table capacity announced by the client.
-     * The value must be {@code -1}, which uses the protocol default of {@code 0}, or a QUIC variable-length integer from
-     * {@code 0} through {@code 2^62 - 1}, inclusive. Default is {@code -1}.
+     * Maximum QPACK dynamic table capacity announced by the client; {@code -1} uses the protocol default of {@code 0}.
+     * The value must be {@code -1} or a QUIC variable-length integer from {@code 0} through {@code 2^62 - 1}, inclusive.
+     * Default is {@code -1}.
      *
      * @return capacity in octets
      */
@@ -103,9 +104,9 @@ interface Http3ClientProtocolConfigBlueprint extends ProtocolConfig, HttpConfig 
     long qpackMaxTableCapacity();
 
     /**
-     * Maximum number of QPACK blocked streams announced by the client.
-     * The value must be {@code -1}, which uses the protocol default of {@code 0}, or a QUIC variable-length integer from
-     * {@code 0} through {@code 2^62 - 1}, inclusive. Default is {@code -1}.
+     * Maximum number of QPACK blocked streams announced by the client; {@code -1} uses the protocol default of {@code 0}.
+     * The value must be {@code -1} or a QUIC variable-length integer from {@code 0} through {@code 2^62 - 1}, inclusive.
+     * Default is {@code -1}.
      *
      * @return number of blocked streams
      */
