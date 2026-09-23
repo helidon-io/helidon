@@ -29,6 +29,9 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class QuicTls13ConnectionSecretsTest {
     private static final HexFormat HEX = HexFormat.of();
@@ -151,6 +154,82 @@ class QuicTls13ConnectionSecretsTest {
         assertThat(localKeyShares.namedGroups(), equalTo(List.of(QuicTlsNamedGroup.X25519, QuicTlsNamedGroup.SECP256_R1)));
         assertThat(localKeyShares.keyShareEntries().stream().map(QuicTlsKeyShareEntry::namedGroup).toList(),
                    equalTo(List.of(QuicTlsNamedGroup.X25519, QuicTlsNamedGroup.SECP256_R1)));
+    }
+
+    @Test
+    void shouldClearLocallyDerivedSharedSecretAfterCreatingSecrets() {
+        byte[] sharedSecret = bytes(SIMPLE_SHARED_SECRET);
+        QuicTlsKeySharePossession local = mock(QuicTlsKeySharePossession.class);
+        QuicTlsKeyShareEntry peer = QuicTlsKeyShareEntry.create(QuicTlsNamedGroup.X25519, new byte[32]);
+        when(local.sharedSecret(peer)).thenReturn(sharedSecret);
+
+        QuicTls13ConnectionSecrets secrets = QuicTls13ConnectionSecrets.create(VERSION, CIPHER_SUITE, local, peer, true);
+
+        assertSecret(secrets.handshakeSecret(), SIMPLE_HANDSHAKE_SECRET);
+        assertThat(sharedSecret, equalTo(new byte[sharedSecret.length]));
+    }
+
+    @Test
+    void shouldClearLocallyDerivedSharedSecretWhenCreatingSecretsFails() {
+        byte[] sharedSecret = bytes(SIMPLE_SHARED_SECRET);
+        QuicTlsKeySharePossession local = mock(QuicTlsKeySharePossession.class);
+        QuicTlsKeyShareEntry peer = QuicTlsKeyShareEntry.create(QuicTlsNamedGroup.X25519, new byte[32]);
+        when(local.sharedSecret(peer)).thenReturn(sharedSecret);
+
+        assertThrows(NullPointerException.class,
+                     () -> QuicTls13ConnectionSecrets.create(VERSION, null, local, peer, true));
+
+        assertThat(sharedSecret, equalTo(new byte[sharedSecret.length]));
+    }
+
+    @Test
+    void shouldLeaveCallerOwnedSharedSecretIntact() {
+        byte[] sharedSecret = bytes(SIMPLE_SHARED_SECRET);
+
+        QuicTls13ConnectionSecrets secrets = QuicTls13ConnectionSecrets.create(VERSION, CIPHER_SUITE, sharedSecret, true);
+
+        assertSecret(secrets.handshakeSecret(), SIMPLE_HANDSHAKE_SECRET);
+        assertThat(sharedSecret, equalTo(bytes(SIMPLE_SHARED_SECRET)));
+    }
+
+    @Test
+    void shouldClearSharedSecretDerivedFromServerHello() {
+        byte[] sharedSecret = bytes(SIMPLE_SHARED_SECRET);
+        QuicTlsLocalKeyShares local = mock(QuicTlsLocalKeyShares.class);
+        QuicTlsKeyShareEntry peer = QuicTlsKeyShareEntry.create(QuicTlsNamedGroup.X25519, new byte[32]);
+        when(local.sharedSecret(peer)).thenReturn(sharedSecret);
+
+        QuicTls13ConnectionSecrets secrets =
+                QuicTls13ConnectionSecrets.forServerHello(VERSION, local, serverHello(peer), true);
+
+        assertSecret(secrets.handshakeSecret(), SIMPLE_HANDSHAKE_SECRET);
+        assertThat(sharedSecret, equalTo(new byte[sharedSecret.length]));
+    }
+
+    @Test
+    void shouldClearSharedSecretDerivedFromServerHelloWhenCreatingSecretsFails() {
+        byte[] sharedSecret = bytes(SIMPLE_SHARED_SECRET);
+        QuicTlsLocalKeyShares local = mock(QuicTlsLocalKeyShares.class);
+        QuicTlsKeyShareEntry peer = QuicTlsKeyShareEntry.create(QuicTlsNamedGroup.X25519, new byte[32]);
+        when(local.sharedSecret(peer)).thenReturn(sharedSecret);
+
+        assertThrows(NullPointerException.class,
+                     () -> QuicTls13ConnectionSecrets.forServerHello(null, local, serverHello(peer), true));
+
+        assertThat(sharedSecret, equalTo(new byte[sharedSecret.length]));
+    }
+
+    private static QuicTlsServerHelloMessage serverHello(QuicTlsKeyShareEntry peer) {
+        return QuicTlsServerHelloMessage.create(
+                0x0303,
+                new byte[QuicTlsCodecSupport.RANDOM_LENGTH],
+                new byte[0],
+                CIPHER_SUITE.codePoint(),
+                0,
+                List.of(QuicTlsExtension.create(QuicTlsExtensions.KEY_SHARE, QuicTlsKeyShares.encodeServerHello(peer)),
+                        QuicTlsExtension.create(QuicTlsExtensions.SUPPORTED_VERSIONS,
+                                                QuicTlsSupportedVersions.encodeServerHello(
+                                                        QuicTlsSupportedVersions.TLS_1_3))));
     }
 
     private static byte[] encryptHandshake(QuicLongHeaderTrafficKeys keys, long packetNumber, byte payloadByte) throws Exception {

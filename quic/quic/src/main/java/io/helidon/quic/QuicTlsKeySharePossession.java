@@ -21,21 +21,32 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicReference;
+
+import javax.security.auth.DestroyFailedException;
 
 final class QuicTlsKeySharePossession {
     private final QuicTlsNamedGroup namedGroup;
-    private final PrivateKey privateKey;
     private final PublicKey publicKey;
+    private final AtomicReference<PrivateKey> privateKey;
 
     private QuicTlsKeySharePossession(QuicTlsNamedGroup namedGroup, PrivateKey privateKey, PublicKey publicKey) {
         this.namedGroup = Objects.requireNonNull(namedGroup, "namedGroup");
-        this.privateKey = Objects.requireNonNull(privateKey, "privateKey");
         this.publicKey = Objects.requireNonNull(publicKey, "publicKey");
+        this.privateKey = new AtomicReference<>(Objects.requireNonNull(privateKey, "privateKey"));
     }
 
     static QuicTlsKeySharePossession create(QuicTlsNamedGroup namedGroup, SecureRandom secureRandom) {
         KeyPair keyPair = namedGroup.generateKeyPair(Objects.requireNonNull(secureRandom, "secureRandom"));
-        return new QuicTlsKeySharePossession(namedGroup, keyPair.getPrivate(), keyPair.getPublic());
+        PrivateKey privateKey = keyPair.getPrivate();
+        try {
+            return new QuicTlsKeySharePossession(namedGroup, privateKey, keyPair.getPublic());
+        } catch (RuntimeException | Error e) {
+            if (privateKey != null) {
+                destroy(privateKey);
+            }
+            throw e;
+        }
     }
 
     QuicTlsNamedGroup namedGroup() {
@@ -51,10 +62,33 @@ final class QuicTlsKeySharePossession {
     }
 
     byte[] sharedSecret(QuicTlsKeyShareEntry peerKeyShare) {
-        Objects.requireNonNull(peerKeyShare, "peerKeyShare");
-        if (peerKeyShare.namedGroup() != namedGroup) {
-            throw QuicTlsHandshakeMessages.illegalParameter("Peer key share group does not match possession");
+        PrivateKey localPrivateKey = privateKey.getAndSet(null);
+        if (localPrivateKey == null) {
+            throw new IllegalStateException("TLS key share private key has been discarded");
         }
-        return namedGroup.deriveSharedSecret(privateKey, peerKeyShare.keyExchange());
+        try {
+            Objects.requireNonNull(peerKeyShare, "peerKeyShare");
+            if (peerKeyShare.namedGroup() != namedGroup) {
+                throw QuicTlsHandshakeMessages.illegalParameter("Peer key share group does not match possession");
+            }
+            return namedGroup.deriveSharedSecret(localPrivateKey, peerKeyShare.keyExchange());
+        } finally {
+            destroy(localPrivateKey);
+        }
+    }
+
+    void discard() {
+        PrivateKey localPrivateKey = privateKey.getAndSet(null);
+        if (localPrivateKey != null) {
+            destroy(localPrivateKey);
+        }
+    }
+
+    private static void destroy(PrivateKey privateKey) {
+        try {
+            privateKey.destroy();
+        } catch (DestroyFailedException _) {
+            // Providers need not support destruction; dropping our reference still ends local ownership.
+        }
     }
 }

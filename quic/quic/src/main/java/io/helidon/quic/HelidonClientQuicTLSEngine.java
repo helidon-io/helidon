@@ -244,8 +244,14 @@ final class HelidonClientQuicTLSEngine implements QuicPacketTLSEngine {
     public void discardKeys(KeySpace keySpace) {
         switch (keySpace) {
         case INITIAL -> {
-            initialKeys = null;
-            initialKeysDiscarded = true;
+            lock.lock();
+            try {
+                initialKeys = null;
+                initialKeysDiscarded = true;
+                discardHelloHandshake();
+            } finally {
+                lock.unlock();
+            }
         }
         case HANDSHAKE -> {
             handshakeKeys = null;
@@ -432,6 +438,9 @@ final class HelidonClientQuicTLSEngine implements QuicPacketTLSEngine {
         lock.lock();
         try {
             handshakeMessages.consume(keySpace, payload, this::consumeHandshakeMessageLocked);
+        } catch (RuntimeException | Error e) {
+            discardHelloHandshake();
+            throw e;
         } finally {
             lock.unlock();
         }
@@ -577,6 +586,9 @@ final class HelidonClientQuicTLSEngine implements QuicPacketTLSEngine {
         }
         if (initialVersion == null) {
             throw new IllegalStateException("Initial QUIC keys not derived");
+        }
+        if (initialKeysDiscarded) {
+            throw new IllegalStateException("Initial QUIC keys already discarded");
         }
 
         QuicVersion currentVersion = currentQuicVersionLocked();
@@ -896,11 +908,11 @@ final class HelidonClientQuicTLSEngine implements QuicPacketTLSEngine {
     private ClientCredentials chooseClientCredentials(QuicTlsCertificateRequestMessage certificateRequest)
             throws QuicTransportException {
         Objects.requireNonNull(certificateRequest, "certificateRequest");
+        List<QuicTlsSignatureScheme> requestedSignatureSchemes = certificateRequest.signatureAlgorithms();
         if (keyManager == null) {
             return null;
         }
 
-        List<QuicTlsSignatureScheme> requestedSignatureSchemes = certificateRequest.signatureAlgorithms();
         List<QuicTlsSignatureScheme> requestedCertificateSignatureSchemes =
                 certificateRequest.effectiveCertificateSignatureAlgorithms();
         List<QuicTlsSignatureScheme> localCertificateVerifySchemes = localCertificateVerifySchemes();
@@ -1136,6 +1148,7 @@ final class HelidonClientQuicTLSEngine implements QuicPacketTLSEngine {
     }
 
     private void resetHandshakeStateLocked() {
+        discardHelloHandshake();
         handshakeMessages.reset();
         transcript.reset();
         outboundHandshakeMessages.clear();
@@ -1158,6 +1171,13 @@ final class HelidonClientQuicTLSEngine implements QuicPacketTLSEngine {
         outboundFlightCompletesHandshake = false;
         sendKeySpace = KeySpace.INITIAL;
         handshakeState = HandshakeState.NEED_SEND_CRYPTO;
+    }
+
+    private void discardHelloHandshake() {
+        QuicTls13ClientHandshake handshake = helloHandshake;
+        if (handshake != null) {
+            handshake.discard();
+        }
     }
 
     private QuicVersion currentQuicVersionLocked() {

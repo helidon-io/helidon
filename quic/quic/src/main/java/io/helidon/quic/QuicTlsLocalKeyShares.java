@@ -23,10 +23,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 final class QuicTlsLocalKeyShares {
     private final Map<QuicTlsNamedGroup, QuicTlsKeySharePossession> possessions;
     private final List<QuicTlsKeyShareEntry> keyShareEntries;
+    private final AtomicBoolean consumed = new AtomicBoolean();
 
     private QuicTlsLocalKeyShares(Map<QuicTlsNamedGroup, QuicTlsKeySharePossession> possessions) {
         this.possessions = Collections.unmodifiableMap(new LinkedHashMap<>(possessions));
@@ -45,13 +47,19 @@ final class QuicTlsLocalKeyShares {
         }
 
         Map<QuicTlsNamedGroup, QuicTlsKeySharePossession> possessions = new LinkedHashMap<>();
-        for (QuicTlsNamedGroup namedGroup : namedGroups) {
-            QuicTlsNamedGroup group = Objects.requireNonNull(namedGroup, "namedGroup");
-            if (possessions.putIfAbsent(group, QuicTlsKeySharePossession.create(group, secureRandom)) != null) {
-                throw new IllegalArgumentException("Duplicate TLS named group: " + group.tlsName());
+        try {
+            for (QuicTlsNamedGroup namedGroup : namedGroups) {
+                QuicTlsNamedGroup group = Objects.requireNonNull(namedGroup, "namedGroup");
+                if (possessions.containsKey(group)) {
+                    throw new IllegalArgumentException("Duplicate TLS named group: " + group.tlsName());
+                }
+                possessions.put(group, QuicTlsKeySharePossession.create(group, secureRandom));
             }
+            return new QuicTlsLocalKeyShares(possessions);
+        } catch (RuntimeException | Error e) {
+            possessions.values().forEach(QuicTlsKeySharePossession::discard);
+            throw e;
         }
-        return new QuicTlsLocalKeyShares(possessions);
     }
 
     List<QuicTlsNamedGroup> namedGroups() {
@@ -67,13 +75,25 @@ final class QuicTlsLocalKeyShares {
     }
 
     byte[] sharedSecret(QuicTlsKeyShareEntry peerKeyShare) {
-        QuicTlsKeyShareEntry normalized = Objects.requireNonNull(peerKeyShare, "peerKeyShare");
-        QuicTlsKeySharePossession possession = possessions.get(normalized.namedGroup());
-        if (possession == null) {
-            throw QuicTlsHandshakeMessages.illegalParameter(
-                    "Peer selected an unoffered TLS named group: " + normalized.namedGroup().tlsName());
+        if (!consumed.compareAndSet(false, true)) {
+            throw new IllegalStateException("TLS local key shares have been discarded");
         }
-        return possession.sharedSecret(normalized);
+        try {
+            QuicTlsKeyShareEntry normalized = Objects.requireNonNull(peerKeyShare, "peerKeyShare");
+            QuicTlsKeySharePossession possession = possessions.get(normalized.namedGroup());
+            if (possession == null) {
+                throw QuicTlsHandshakeMessages.illegalParameter(
+                        "Peer selected an unoffered TLS named group: " + normalized.namedGroup().tlsName());
+            }
+            return possession.sharedSecret(normalized);
+        } finally {
+            discard();
+        }
+    }
+
+    void discard() {
+        consumed.set(true);
+        possessions.values().forEach(QuicTlsKeySharePossession::discard);
     }
 
     private QuicTlsKeySharePossession possession(QuicTlsNamedGroup namedGroup) {

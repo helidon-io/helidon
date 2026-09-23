@@ -28,6 +28,7 @@ import javax.crypto.SecretKey;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -136,8 +137,7 @@ class QuicTls13ClientHandshakeTest {
                                                        () -> handshake.consumeServerHello(invalidServerHello.encode()));
 
         assertThat(failure.errorCode(), is(QuicTransportErrors.CRYPTO_ERROR.from() + 47));
-        assertCompletesHandshake(handshake, clientHello, serverHello, serverKeyShare,
-                                 QuicTlsCodecSupport.copy(clientHello.encode()));
+        assertThrows(IllegalStateException.class, () -> handshake.consumeServerHello(serverHello.encode()));
     }
 
     @Test
@@ -158,8 +158,7 @@ class QuicTls13ClientHandshakeTest {
                                                        () -> handshake.consumeServerHello(invalidServerHello.encode()));
 
         assertThat(failure.errorCode(), is(QuicTransportErrors.CRYPTO_ERROR.from() + 110));
-        assertCompletesHandshake(handshake, clientHello, serverHello, serverKeyShare,
-                                 QuicTlsCodecSupport.copy(clientHello.encode()));
+        assertThrows(IllegalStateException.class, () -> handshake.consumeServerHello(serverHello.encode()));
     }
 
     @Test
@@ -211,8 +210,7 @@ class QuicTls13ClientHandshakeTest {
                                                        () -> handshake.consumeServerHello(invalidServerHello.encode()));
 
         assertThat(failure.errorCode(), is(QuicTransportErrors.CRYPTO_ERROR.from() + 110));
-        assertCompletesHandshake(handshake, clientHello, serverHello, serverKeyShare,
-                                 QuicTlsCodecSupport.copy(clientHello.encode()));
+        assertThrows(IllegalStateException.class, () -> handshake.consumeServerHello(serverHello.encode()));
     }
 
     @Test
@@ -286,8 +284,9 @@ class QuicTls13ClientHandshakeTest {
         assertResumptionBinder(clientHello2, resumptionTicket, clientHello1, encodedHelloRetryRequest);
     }
 
-    @Test
-    void shouldDropPreSharedKeyAfterIncompatibleHelloRetryRequest() throws Exception {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void shouldDropPreSharedKeyAfterIncompatibleHelloRetryRequest(boolean serverSelectsDroppedPsk) throws Exception {
         SecureRandom secureRandom = new SecureRandom();
         QuicTls13ClientHandshake handshake = startHandshake(List.of(CIPHER_SUITE,
                                                                     QuicTls13CipherSuite.TLS_AES_256_GCM_SHA384),
@@ -312,14 +311,16 @@ class QuicTls13ClientHandshakeTest {
                                                             QuicTls13CipherSuite.TLS_AES_256_GCM_SHA384,
                                                             QuicTlsSupportedVersions.TLS_1_3,
                                                             serverKeyShare.keyShareEntry());
-        QuicTlsServerHelloMessage invalidServerHello = withServerHelloExtension(
-                serverHello,
-                QuicTlsExtension.create(QuicTlsExtensions.PRE_SHARED_KEY, QuicTlsPreSharedKeys.encodeServerHello(0)));
-
-        QuicTransportException failure = assertThrows(QuicTransportException.class,
-                                                       () -> handshake.consumeServerHello(invalidServerHello.encode()));
-
-        assertThat(failure.errorCode(), is(QuicTransportErrors.CRYPTO_ERROR.from() + 110));
+        if (serverSelectsDroppedPsk) {
+            QuicTlsServerHelloMessage invalidServerHello = withServerHelloExtension(
+                    serverHello,
+                    QuicTlsExtension.create(QuicTlsExtensions.PRE_SHARED_KEY, QuicTlsPreSharedKeys.encodeServerHello(0)));
+            QuicTransportException failure = assertThrows(QuicTransportException.class,
+                    () -> handshake.consumeServerHello(invalidServerHello.encode()));
+            assertThat(failure.errorCode(), is(QuicTransportErrors.CRYPTO_ERROR.from() + 110));
+            assertThrows(IllegalStateException.class, () -> handshake.consumeServerHello(serverHello.encode()));
+            return;
+        }
         assertCompletesHandshake(handshake, clientHello2, serverHello, serverKeyShare,
                                  syntheticMessageHash(QuicTls13CipherSuite.TLS_AES_256_GCM_SHA384.digest(
                                          QuicTlsCodecSupport.copy(clientHello1.encode()))),

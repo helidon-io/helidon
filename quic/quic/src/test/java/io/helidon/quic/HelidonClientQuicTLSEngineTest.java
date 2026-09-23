@@ -446,6 +446,33 @@ class HelidonClientQuicTLSEngineTest {
         assertThat(engine.handshakeState(), is(HANDSHAKE_CONFIRMED));
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void shouldRejectCertificateRequestWithoutSignatureAlgorithms(boolean withKeyManager) throws Exception {
+        RecordingTrustManager trustManager = new RecordingTrustManager();
+        HelidonClientQuicTLSEngine engine = withKeyManager
+                ? newEngine("example.com", trustManager,
+                            new StaticKeyManager(QuicTlsRfc8448Vectors.rsaCertificate(),
+                                                 QuicTlsRfc8448Vectors.rsaPrivateKey()))
+                : newEngine("example.com", trustManager);
+        ByteBuffer clientHelloBytes = required(packetEngine(engine).handshakeBytesBuffer(INITIAL));
+        QuicTlsClientHelloMessage clientHello = QuicTlsClientHelloMessage.decode(clientHelloBytes);
+        MutualTlsServerHandshakeFlight flight = mutualTlsServerHandshakeFlight(
+                copy(clientHelloBytes), clientHello, new byte[] {0x0A, 0x0B, 0x0C}, "h3",
+                List.of(QuicTlsSignatureScheme.RSA_PKCS1_SHA256));
+
+        engine.versionNegotiated(VERSION);
+        packetEngine(engine).consumeHandshakeBytesBuffer(INITIAL, ByteBuffer.wrap(flight.serverHello()));
+        packetEngine(engine).consumeHandshakeBytesBuffer(HANDSHAKE, ByteBuffer.wrap(flight.encryptedExtensions()));
+        ByteBuffer certificateRequest = QuicTlsCertificateRequestMessage.create(new byte[0], List.of()).encode();
+
+        QuicTransportException thrown = assertThrows(QuicTransportException.class,
+                () -> packetEngine(engine).consumeHandshakeBytesBuffer(HANDSHAKE, certificateRequest));
+
+        assertThat(thrown.errorCode(), is(QuicTransportErrors.CRYPTO_ERROR.from() + 109));
+        assertThat(thrown.reason(), containsString("signature_algorithms"));
+    }
+
     @Test
     void shouldRespondToCertificateRequestWithClientCertificate() throws Exception {
         StaticKeyManager keyManager = new StaticKeyManager(QuicTlsRfc8448Vectors.rsaCertificate(),
@@ -908,16 +935,15 @@ class HelidonClientQuicTLSEngineTest {
                                                             QuicTlsSupportedVersions.TLS_1_3,
                                                             serverKeyShare.keyShareEntry());
         byte[] serverHelloBytes = copy(serverHello.encode());
-        QuicTls13ConnectionSecrets clientSecrets = QuicTls13ConnectionSecrets.create(VERSION,
-                                                                                     cipherSuite,
-                                                                                     serverKeyShare,
-                                                                                     clientHello.keyShares().getFirst(),
-                                                                                     true);
-        QuicTls13ConnectionSecrets serverSecrets = QuicTls13ConnectionSecrets.create(VERSION,
-                                                                                     cipherSuite,
-                                                                                     serverKeyShare,
-                                                                                     clientHello.keyShares().getFirst(),
-                                                                                     false);
+        byte[] sharedSecret = serverKeyShare.sharedSecret(clientHello.keyShares().getFirst());
+        QuicTls13ConnectionSecrets clientSecrets;
+        QuicTls13ConnectionSecrets serverSecrets;
+        try {
+            clientSecrets = QuicTls13ConnectionSecrets.create(VERSION, cipherSuite, sharedSecret, true);
+            serverSecrets = QuicTls13ConnectionSecrets.create(VERSION, cipherSuite, sharedSecret, false);
+        } finally {
+            Arrays.fill(sharedSecret, (byte) 0);
+        }
 
         QuicTlsHandshakeTranscript transcript = new QuicTlsHandshakeTranscript();
         transcript.add(ByteBuffer.wrap(clientHelloBytes));
@@ -983,16 +1009,15 @@ class HelidonClientQuicTLSEngineTest {
                                                             QuicTlsSupportedVersions.TLS_1_3,
                                                             serverKeyShare.keyShareEntry());
         byte[] serverHelloBytes = copy(serverHello.encode());
-        QuicTls13ConnectionSecrets clientSecrets = QuicTls13ConnectionSecrets.create(VERSION,
-                                                                                     cipherSuite,
-                                                                                     serverKeyShare,
-                                                                                     clientHello.keyShares().getFirst(),
-                                                                                     true);
-        QuicTls13ConnectionSecrets serverSecrets = QuicTls13ConnectionSecrets.create(VERSION,
-                                                                                     cipherSuite,
-                                                                                     serverKeyShare,
-                                                                                     clientHello.keyShares().getFirst(),
-                                                                                     false);
+        byte[] sharedSecret = serverKeyShare.sharedSecret(clientHello.keyShares().getFirst());
+        QuicTls13ConnectionSecrets clientSecrets;
+        QuicTls13ConnectionSecrets serverSecrets;
+        try {
+            clientSecrets = QuicTls13ConnectionSecrets.create(VERSION, cipherSuite, sharedSecret, true);
+            serverSecrets = QuicTls13ConnectionSecrets.create(VERSION, cipherSuite, sharedSecret, false);
+        } finally {
+            Arrays.fill(sharedSecret, (byte) 0);
+        }
 
         QuicTlsHandshakeTranscript transcript = new QuicTlsHandshakeTranscript();
         transcript.add(ByteBuffer.wrap(clientHelloBytes));

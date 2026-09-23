@@ -1759,7 +1759,12 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
             @Override
             public boolean retransmit(PacketSpace packetSpaceManager, QuicPacket packet, int attempts)
                     throws QuicKeyUnavailableException, QuicTransportException {
-                return QuicConnectionImpl.this.retransmit(packetSpaceManager, packet, attempts);
+                try {
+                    return QuicConnectionImpl.this.retransmit(packetSpaceManager, packet, attempts);
+                } catch (QuicTransportException failure) {
+                    terminator.terminate(QuicCloseCommand.transport(failure));
+                    return false;
+                }
             }
 
             @Override
@@ -1767,7 +1772,12 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
                                       AckFrame frame,
                                       boolean sendPing)
                     throws QuicKeyUnavailableException, QuicTransportException {
-                return QuicConnectionImpl.this.emitAckPacket(packetSpaceManager, frame, sendPing);
+                try {
+                    return QuicConnectionImpl.this.emitAckPacket(packetSpaceManager, frame, sendPing);
+                } catch (QuicTransportException failure) {
+                    terminator.terminate(QuicCloseCommand.transport(failure));
+                    return -1L;
+                }
             }
 
             @Override

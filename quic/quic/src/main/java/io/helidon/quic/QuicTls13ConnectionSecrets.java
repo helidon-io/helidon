@@ -16,6 +16,7 @@
 
 package io.helidon.quic;
 
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -163,12 +164,17 @@ final class QuicTls13ConnectionSecrets {
                                              QuicAeadLimits.Confidentiality confidentialityLimits) {
         Objects.requireNonNull(psk, "psk");
         Objects.requireNonNull(localKeyShare, "localKeyShare");
-        return create(version,
-                      cipherSuite,
-                      psk,
-                      localKeyShare.sharedSecret(peerKeyShare),
-                      clientMode,
-                      confidentialityLimits);
+        byte[] sharedSecret = localKeyShare.sharedSecret(peerKeyShare);
+        try {
+            return create(version,
+                          cipherSuite,
+                          psk,
+                          sharedSecret,
+                          clientMode,
+                          confidentialityLimits);
+        } finally {
+            Arrays.fill(sharedSecret, (byte) 0);
+        }
     }
 
     static QuicTls13ConnectionSecrets forServerHello(QuicVersion version,
@@ -236,12 +242,17 @@ final class QuicTls13ConnectionSecrets {
             throw QuicTlsHandshakeMessages.decodeError(
                     String.format("Unsupported TLS 1.3 cipher suite: 0x%04x", hello.cipherSuite()));
         }
-        return create(version,
-                      cipherSuite,
-                      psk,
-                      localKeyShares.sharedSecret(peerKeyShare.get()),
-                      clientMode,
-                      confidentialityLimits);
+        byte[] sharedSecret = localKeyShares.sharedSecret(peerKeyShare.get());
+        try {
+            return create(version,
+                          cipherSuite,
+                          psk,
+                          sharedSecret,
+                          clientMode,
+                          confidentialityLimits);
+        } finally {
+            Arrays.fill(sharedSecret, (byte) 0);
+        }
     }
 
     QuicTls13CipherSuite cipherSuite() {
