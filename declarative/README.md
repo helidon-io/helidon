@@ -292,11 +292,28 @@ Annotations on endpoint methods:
 
 Supported server method signatures:
 
-- Unary: `Res method(Req)` or `void method(Req, StreamObserver<Res>)`
+- Unary: `Res method(Req)`, `Optional<Res> method(Req)`, or `void method(Req, StreamObserver<Res>)`
 - Server streaming: `Stream<Res> method(Req)` or `void method(Req, StreamObserver<Res>)`
 - Client streaming: `Res method(Stream<Req>)`
 - Bidirectional streaming: `Stream<Res> method(Stream<Req>)` or
   `StreamObserver<Req> method(StreamObserver<Res>)`
+
+Use `Optional<Res>` for unary lookups where an absent result means the requested resource was not found:
+
+```java
+@Grpc.Unary("GetBook")
+Optional<Book> getBook(GetBookRequest request) {
+    return books.findById(request.getId()).map(this::toProto);
+}
+```
+
+A present value produces one response. An empty optional fails the RPC with `NOT_FOUND` and no response message.
+The wrapped `Res` must match the proto method's output type. This signature is server-only; the proto definition and
+client signatures still use `Res`, and clients receive a status error for an absent result.
+If absence should be successful, return a protobuf response that represents it, such as a message with an optional field
+or `google.protobuf.Empty`. A present default protobuf instance is also a valid response.
+Returning `null` from either direct-return unary signature fails with `INTERNAL` and a diagnostic identifying the method.
+Use the observer signature when custom statuses or trailers are needed.
 
 Declarative streaming methods use resource-owning `Stream` instances with transport backpressure and cancellation.
 Endpoint implementations consume request streams, while the generated runtime owns and closes both request streams

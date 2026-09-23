@@ -201,9 +201,14 @@ class GrpcServerExtension implements RegistryCodegenExtension {
         if (methodType == MethodType.UNARY
                 && parameters.size() == 1
                 && !method.typeName().boxed().equals(TypeNames.BOXED_VOID)) {
-            invocation = GrpcMethod.Invocation.UNARY_RETURN;
             requestType = parameters.getFirst().typeName();
-            responseType = method.typeName();
+            if (isSingleGeneric(method.typeName(), TypeNames.OPTIONAL)) {
+                invocation = GrpcMethod.Invocation.UNARY_OPTIONAL;
+                responseType = method.typeName().typeArguments().getFirst();
+            } else {
+                invocation = GrpcMethod.Invocation.UNARY_RETURN;
+                responseType = method.typeName();
+            }
         } else if ((methodType == MethodType.UNARY || methodType == MethodType.SERVER_STREAMING)
                 && parameters.size() == 2
                 && method.typeName().boxed().equals(TypeNames.BOXED_VOID)
@@ -246,7 +251,7 @@ class GrpcServerExtension implements RegistryCodegenExtension {
         } else {
             throw new CodegenException("Unsupported declarative gRPC method signature for "
                                                + serverEndpoint.typeName().fqName() + "." + method.elementName()
-                                               + "(). Unary methods must be Res method(Req) or "
+                                               + "(). Unary methods must be Res method(Req), Optional<Res> method(Req), or "
                                                + "void method(Req, StreamObserver<Res>); server streaming "
                                                + "methods must be Stream<Res> method(Req) or "
                                                + "void method(Req, StreamObserver<Res>); client streaming methods "

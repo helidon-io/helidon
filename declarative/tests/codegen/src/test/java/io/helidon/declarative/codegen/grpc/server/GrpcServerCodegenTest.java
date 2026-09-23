@@ -414,7 +414,7 @@ class GrpcServerCodegenTest {
         assertThat(inheritedMethod.split("io.helidon.grpc.api.Grpc.GrpcMethod", -1).length - 1, is(2));
         assertThat(registration, containsString("METHOD_VALIDATED_HELLO));"));
         assertThat(registration, containsString("METHOD_INTERCEPTED_HELLO));"));
-        assertThat(registration, containsString("responseObserver.onNext(endpoint.sayHello(request));"));
+        assertThat(registration, containsString("var response = endpoint.sayHello(request);"));
 
         Path generatedDefaultAuditedRegistration = result.sourceOutput()
                 .resolve("com/example/DefaultAuditedGrpc__GrpcRegistration.java");
@@ -424,8 +424,8 @@ class GrpcServerCodegenTest {
         String defaultAuditedRegistration = Files.readString(generatedDefaultAuditedRegistration, StandardCharsets.UTF_8);
         assertThat(defaultAuditedRegistration,
                    containsString("GrpcSecurity.enforce().audit().auditEventType(\"request\")"));
-        assertThat(registration, containsString("responseObserver.onNext(endpoint.validatedHello(request));"));
-        assertThat(registration, containsString("responseObserver.onNext(endpoint.interceptedHello(request));"));
+        assertThat(registration, containsString("var response = endpoint.validatedHello(request);"));
+        assertThat(registration, containsString("var response = endpoint.interceptedHello(request);"));
         assertThat(registration, containsString("GrpcStreams.serverStreaming(() -> endpoint.streamHello(request), "
                                                         + "responseObserver);"));
         assertThat(registration, containsString("GrpcStreams.clientStreaming(requests -> endpoint.collectHello(requests), "
@@ -895,7 +895,7 @@ class GrpcServerCodegenTest {
         Path generatedRegistration = result.sourceOutput().resolve("com/example/GreetingGrpc__GrpcRegistration.java");
         String registration = Files.readString(generatedRegistration, StandardCharsets.UTF_8);
         assertThat(registration, containsString(".unary(\"SayHello\", this::sayHello"));
-        assertThat(registration, containsString("responseObserver.onNext(endpoint.sayHello(request));"));
+        assertThat(registration, containsString("var response = endpoint.sayHello(request);"));
     }
 
     @Test
@@ -1004,6 +1004,73 @@ class GrpcServerCodegenTest {
         assertCompilationFails(result,
                                "Unsupported declarative gRPC method signature for "
                                        + "com.example.GreetingGrpc.sayHello()");
+    }
+
+    @Test
+    void grpcUnaryMethodAcceptsOptionalResponse() throws IOException {
+        var result = compileGrpcService("grpc-server-optional-unary", """
+                @Grpc.Unary("SayHello")
+                Optional<GreetingReply> sayHello(GreetingRequest request) {
+                    return Optional.empty();
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        Path generatedRegistration = result.sourceOutput().resolve("com/example/GreetingGrpc__GrpcRegistration.java");
+        String registration = Files.readString(generatedRegistration, StandardCharsets.UTF_8);
+        assertThat(registration, containsString(".responseType(GreetingReply.class)"));
+        assertThat(registration, containsString("GreetingReply.getDescriptor()"));
+        assertThat(registration, containsString("StreamObserver<GreetingReply> responseObserver"));
+    }
+
+    @Test
+    void grpcUnaryMethodRejectsOptionalNonMessageResponse() {
+        var result = compileGrpcService("grpc-server-optional-non-message", """
+                @Grpc.Unary("SayHello")
+                Optional<String> sayHello(GreetingRequest request) {
+                    return Optional.empty();
+                }
+                """);
+
+        assertCompilationFails(result, "Declarative gRPC response type java.lang.String on com.example.GreetingGrpc");
+    }
+
+    @Test
+    void grpcUnaryMethodRejectsRawOptionalResponse() {
+        var result = compileGrpcService("grpc-server-optional-raw", """
+                @Grpc.Unary("SayHello")
+                Optional sayHello(GreetingRequest request) {
+                    return Optional.empty();
+                }
+                """);
+
+        assertCompilationFails(result, "Declarative gRPC response type java.util.Optional on com.example.GreetingGrpc");
+    }
+
+    @Test
+    void grpcUnaryMethodRejectsWildcardOptionalResponse() {
+        var result = compileGrpcService("grpc-server-optional-wildcard", """
+                @Grpc.Unary("SayHello")
+                Optional<? extends GreetingReply> sayHello(GreetingRequest request) {
+                    return Optional.empty();
+                }
+                """);
+
+        assertCompilationFails(result, "Declarative gRPC response type", "on com.example.GreetingGrpc");
+    }
+
+    @Test
+    void grpcUnaryMethodRejectsNestedOptionalResponse() {
+        var result = compileGrpcService("grpc-server-optional-nested", """
+                @Grpc.Unary("SayHello")
+                Optional<Optional<GreetingReply>> sayHello(GreetingRequest request) {
+                    return Optional.empty();
+                }
+                """);
+
+        assertCompilationFails(result, "Declarative gRPC response type java.util.Optional on com.example.GreetingGrpc");
     }
 
     @Test
@@ -1439,6 +1506,7 @@ class GrpcServerCodegenTest {
                         import com.google.protobuf.Descriptors;
 
                         import java.io.IOException;
+                        import java.util.Optional;
 
                         import io.grpc.MethodDescriptor;
                         import io.grpc.stub.StreamObserver;

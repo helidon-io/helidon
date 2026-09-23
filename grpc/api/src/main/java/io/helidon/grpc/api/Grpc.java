@@ -102,6 +102,18 @@ public interface Grpc {
 
     /**
      * An annotation to mark a method as representing a unary gRPC method.
+     * <p>
+     * Server endpoint methods support the following signatures:
+     * <ul>
+     *     <li>{@code Res method(Req)}</li>
+     *     <li>{@code Optional<Res> method(Req)}</li>
+     *     <li>{@code void method(Req, StreamObserver<Res>)}</li>
+     * </ul>
+     * A present {@link java.util.Optional} emits its value as the response. An empty optional fails the call with
+     * {@code NOT_FOUND} and does not emit a response. Returning {@code null} from either direct-return signature
+     * fails the call with {@code INTERNAL}. Use the observer signature for custom statuses or trailers.
+     * The optional signature is supported only on the server: the protobuf output type remains {@code Res}, and
+     * clients receive a response or a status error, not an optional value.
      */
     @Target({ElementType.METHOD})
     @Retention(RetentionPolicy.RUNTIME)

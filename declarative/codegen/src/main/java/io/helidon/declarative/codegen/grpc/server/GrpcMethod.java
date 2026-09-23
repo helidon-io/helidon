@@ -30,6 +30,7 @@ record GrpcMethod(TypedElementInfo method,
                   GrpcSecurityDefinition security) {
     enum Invocation {
         UNARY_RETURN,
+        UNARY_OPTIONAL,
         OBSERVER,
         SERVER_STREAMING_STREAM,
         CLIENT_STREAMING_STREAM,

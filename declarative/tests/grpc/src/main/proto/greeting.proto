@@ -23,6 +23,9 @@ option java_outer_classname = "DeclarativeGrpcProto";
 
 service GreetingService {
   rpc Greet (GreetingRequest) returns (GreetingReply) {}
+  rpc OptionalGreet (GreetingRequest) returns (GreetingReply) {}
+  rpc DirectGreet (GreetingRequest) returns (GreetingReply) {}
+  rpc ObserverGreet (GreetingRequest) returns (GreetingReply) {}
   rpc InterceptedGreet (GreetingRequest) returns (GreetingReply) {}
   rpc ValidatedGreet (GreetingRequest) returns (GreetingReply) {}
   rpc SecureGreet (GreetingRequest) returns (GreetingReply) {}
