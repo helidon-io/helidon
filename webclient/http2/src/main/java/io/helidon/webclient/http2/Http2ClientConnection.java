@@ -438,7 +438,11 @@ public class Http2ClientConnection {
                 pingPongSemaphore.drainPermits();
             }
             return pongReceived;
-        } catch (UncheckedIOException | InterruptedException e) {
+        } catch (UncheckedIOException e) {
+            transportFailed(e);
+            ctx.log(LOGGER, DEBUG, "Ping failed!", e);
+            return false;
+        } catch (InterruptedException e) {
             ctx.log(LOGGER, DEBUG, "Ping failed!", e);
             return false;
         } finally {
