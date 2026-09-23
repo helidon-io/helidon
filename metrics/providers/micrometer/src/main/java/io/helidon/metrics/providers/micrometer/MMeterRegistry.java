@@ -96,7 +96,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     private final Clock clock;
     private final MicrometerMetricsFactory metricsFactory;
     private final MetricsConfig metricsConfig;
-    private final Map<String, MeterConfig> meterConfigs;
     private final SystemTagsManager systemTagsManager;
     private volatile boolean registeredWithFactory;
 
@@ -123,9 +122,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         this.clock = clock;
         this.metricsFactory = metricsFactory;
         this.metricsConfig = metricsConfig;
-        Map<String, MeterConfig> configuredMeters = new HashMap<>();
-        metricsConfig.meters().forEach(meter -> configuredMeters.put(meter.name(), meter));
-        this.meterConfigs = Map.copyOf(configuredMeters);
         this.systemTagsManager = SystemTagsManager.create(metricsConfig, metricsFactory);
         delegate.config()
                 .onMeterAdded(this::onMeterAdded)
@@ -285,12 +281,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     @Override
     public boolean isMeterEnabled(String name) {
-        Objects.requireNonNull(name);
-        if (!metricsConfig.enabled()) {
-            return false;
-        }
-        MeterConfig meterConfig = meterConfigs.get(name);
-        return meterConfig == null || meterConfig.enabled();
+        return metricsConfig.isMeterEnabled(name);
     }
 
     @Override
@@ -545,7 +536,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     }
 
     private void configureMeter(io.helidon.metrics.api.Meter.Builder<?, ?> builder) {
-        MeterConfig meterConfig = meterConfigs.get(builder.name());
+        MeterConfig meterConfig = metricsConfig.meterConfig(builder.name()).orElse(null);
         if (meterConfig == null || (meterConfig.percentiles().isEmpty()
                 && meterConfig.buckets().isEmpty()
                 && meterConfig.minimumExpectedValue().isEmpty()

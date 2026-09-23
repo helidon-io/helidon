@@ -38,9 +38,9 @@ final class MeterConfigSupport {
     static final class BuilderDecorator implements Prototype.BuilderDecorator<MeterConfig.BuilderBase<?, ?>> {
         @Override
         public void decorate(MeterConfig.BuilderBase<?, ?> builder) {
-            builder.name().ifPresent(name -> {
-                if (name.isBlank()) {
-                    throw new IllegalArgumentException("Meter configuration name must not be blank");
+            builder.namePattern().ifPresent(pattern -> {
+                if (pattern.pattern().isBlank()) {
+                    throw new IllegalArgumentException("Meter configuration name-pattern must not be blank");
                 }
             });
             builder.percentiles().ifPresent(percentiles -> {

@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
 
 import io.helidon.config.Config;
@@ -40,6 +41,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -85,9 +88,9 @@ class TestMeterConfiguration {
     @Test
     void registrySettingsOverrideCustomizersAndExplicitBuilderPercentiles() {
         MetricsConfig config = configBuilder()
-                .addMeter(meter -> meter.name("configured").percentiles(List.of(0.5, 0.99)))
-                .addMeter(meter -> meter.name("aggregate").percentiles(List.of()))
-                .addMeter(meter -> meter.name("customized"))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("configured")).percentiles(List.of(0.5, 0.99)))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("aggregate")).percentiles(List.of()))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("customized")))
                 .build();
         MeterBuilderCustomizer customizer = builder -> {
             if (builder instanceof Timer.Builder timerBuilder) {
@@ -110,7 +113,7 @@ class TestMeterConfiguration {
 
     @Test
     void absentPercentilesPreserveExplicitBuilderSettings() {
-        MetricsConfig config = configBuilder().addMeter(meter -> meter.name("timer")).build();
+        MetricsConfig config = configBuilder().addMeter(meter -> meter.namePattern(Pattern.compile("timer"))).build();
         try (var fixture = new Fixture(config)) {
             Timer timer = fixture.registry.getOrCreate(fixture.factory.timerBuilder("timer").percentiles(0.25, 0.95));
             assertThat(percentiles(timer), contains(0.25, 0.95));
@@ -119,7 +122,9 @@ class TestMeterConfiguration {
 
     @Test
     void emptyPercentilesPreserveExplicitHistogramBuckets() {
-        MetricsConfig config = configBuilder().addMeter(meter -> meter.name("timer").percentiles(List.of())).build();
+        MetricsConfig config = configBuilder()
+                .addMeter(meter -> meter.namePattern(Pattern.compile("timer")).percentiles(List.of()))
+                .build();
         try (var fixture = new Fixture(config)) {
             Timer timer = fixture.registry.getOrCreate(fixture.factory.timerBuilder("timer").buckets(Duration.ofMillis(5)));
             timer.record(2, TimeUnit.MILLISECONDS);
@@ -133,7 +138,8 @@ class TestMeterConfiguration {
     @Test
     void configuredBucketsOverrideBuilderAndCustomizerWithoutChangingPercentiles() {
         MetricsConfig config = configBuilder()
-                .addMeter(meter -> meter.name("configured").buckets(List.of(Duration.ofMillis(5), Duration.ofMillis(10))))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("configured"))
+                        .buckets(List.of(Duration.ofMillis(5), Duration.ofMillis(10))))
                 .build();
         MeterBuilderCustomizer customizer = builder -> {
             if (builder instanceof Timer.Builder timerBuilder) {
@@ -159,9 +165,9 @@ class TestMeterConfiguration {
     @Test
     void absentBucketsPreserveBuilderAndEmptyBucketsClearOnlyExplicitBoundaries() {
         MetricsConfig config = configBuilder()
-                .addMeter(meter -> meter.name("preserved"))
-                .addMeter(meter -> meter.name("cleared").buckets(List.of()))
-                .addMeter(meter -> meter.name("automatic").buckets(List.of()))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("preserved")))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("cleared")).buckets(List.of()))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("automatic")).buckets(List.of()))
                 .build();
         try (var fixture = new Fixture(config)) {
             Timer preserved = fixture.registry.getOrCreate(fixture.factory.timerBuilder("preserved")
@@ -190,7 +196,7 @@ class TestMeterConfiguration {
     @Test
     void expectedRangeOverridesBuilderAndCustomizerWithoutDiscardingMeasurements() {
         MetricsConfig config = configBuilder()
-                .addMeter(meter -> meter.name("timer")
+                .addMeter(meter -> meter.namePattern(Pattern.compile("timer"))
                         .minimumExpectedValue(Duration.ofMillis(2))
                         .maximumExpectedValue(Duration.ofMillis(20)))
                 .build();
@@ -221,9 +227,11 @@ class TestMeterConfiguration {
     @Test
     void absentExpectedBoundsPreserveBuilderValues() {
         MetricsConfig config = configBuilder()
-                .addMeter(meter -> meter.name("both"))
-                .addMeter(meter -> meter.name("minimum").minimumExpectedValue(Duration.ofMillis(2)))
-                .addMeter(meter -> meter.name("maximum").maximumExpectedValue(Duration.ofMillis(20)))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("both")))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("minimum"))
+                        .minimumExpectedValue(Duration.ofMillis(2)))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("maximum"))
+                        .maximumExpectedValue(Duration.ofMillis(20)))
                 .build();
         try (var fixture = new Fixture(config)) {
             for (String name : List.of("both", "minimum", "maximum")) {
@@ -241,8 +249,10 @@ class TestMeterConfiguration {
     @Test
     void rejectsConfiguredBoundConflictingWithPreservedBuilderBound() {
         MetricsConfig config = configBuilder()
-                .addMeter(meter -> meter.name("minimum").minimumExpectedValue(Duration.ofMillis(20)))
-                .addMeter(meter -> meter.name("maximum").maximumExpectedValue(Duration.ofMillis(2)))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("minimum"))
+                        .minimumExpectedValue(Duration.ofMillis(20)))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("maximum"))
+                        .maximumExpectedValue(Duration.ofMillis(2)))
                 .build();
         try (var fixture = new Fixture(config)) {
             for (String name : List.of("minimum", "maximum")) {
@@ -261,9 +271,12 @@ class TestMeterConfiguration {
     @Test
     void histogramSettingsRejectNonTimersAndRespectDisablement() {
         List<MeterConfig> settings = List.of(
-                MeterConfig.builder().name("counter").buckets(List.of(Duration.ofMillis(5))).build(),
-                MeterConfig.builder().name("counter").minimumExpectedValue(Duration.ofMillis(2)).build(),
-                MeterConfig.builder().name("counter").maximumExpectedValue(Duration.ofMillis(20)).build());
+                MeterConfig.builder().namePattern(Pattern.compile("counter"))
+                        .buckets(List.of(Duration.ofMillis(5))).build(),
+                MeterConfig.builder().namePattern(Pattern.compile("counter"))
+                        .minimumExpectedValue(Duration.ofMillis(2)).build(),
+                MeterConfig.builder().namePattern(Pattern.compile("counter"))
+                        .maximumExpectedValue(Duration.ofMillis(20)).build());
         for (MeterConfig meter : settings) {
             try (var fixture = new Fixture(configBuilder().addMeter(meter).build())) {
                 var failure = assertThrows(IllegalArgumentException.class,
@@ -286,34 +299,118 @@ class TestMeterConfiguration {
     }
 
     @Test
-    void exactNameDisablementAppliesAcrossTagsWithoutAffectingSimilarNames() {
-        MetricsConfig config = configBuilder().addMeter(meter -> meter.name("disabled").enabled(false)).build();
+    void firstMatchingRuleDisablesFullNamesAcrossTagsWithoutAffectingSimilarNames() {
+        MetricsConfig config = configBuilder()
+                .addMeter(meter -> meter.namePattern(Pattern.compile("disabled|excluded")).enabled(false))
+                .addMeter(meter -> meter.namePattern(Pattern.compile(".*")).enabled(true))
+                .build();
+        try (var fixture = new Fixture(config)) {
+            for (String name : List.of("disabled", "excluded")) {
+                assertThat(name, fixture.registry.isMeterEnabled(name), is(false));
+                for (String role : List.of("client", "server")) {
+                    assertThat(name + ": " + role,
+                               fixture.registry.isMeterEnabled(name, Map.of("role", role)), is(false));
+                    Timer disabled = fixture.registry.getOrCreate(fixture.factory.timerBuilder(name)
+                            .tags(List.of(fixture.factory.tagCreate("role", role))));
+                    disabled.record(1, TimeUnit.MILLISECONDS);
+                    assertThat(name + ": " + role, disabled.count(), is(0L));
+                }
+                assertThat(name, fixture.nativeRegistry().find(name).meters(), empty());
+            }
+            for (String name : List.of("disabled.extra", "prefix.disabled")) {
+                Timer unrelated = fixture.registry.getOrCreate(fixture.factory.timerBuilder(name));
+                unrelated.record(1, TimeUnit.MILLISECONDS);
+                assertThat(name, unrelated.count(), is(1L));
+                assertThat(name, fixture.registry.isMeterEnabled(name), is(true));
+            }
+            assertThrows(NullPointerException.class, () -> fixture.registry.isMeterEnabled(null));
+        }
+    }
+
+    @Test
+    void patternAppliesTimerStatisticsAcrossNamesAndTags() {
+        MetricsConfig config = configBuilder()
+                .addMeter(meter -> meter.namePattern(Pattern.compile("(request|response)\\.duration"))
+                        .percentiles(List.of(0.5, 0.99))
+                        .buckets(List.of(Duration.ofMillis(5), Duration.ofMillis(10)))
+                        .minimumExpectedValue(Duration.ofMillis(2))
+                        .maximumExpectedValue(Duration.ofMillis(20)))
+                .build();
+        try (var fixture = new Fixture(config)) {
+            for (String name : List.of("request.duration", "response.duration")) {
+                for (String role : List.of("client", "server")) {
+                    Timer timer = fixture.registry.getOrCreate(fixture.factory.timerBuilder(name)
+                            .tags(List.of(fixture.factory.tagCreate("role", role)))
+                            .publishPercentileHistogram(true));
+                    timer.record(Duration.ofMillis(1));
+                    timer.record(Duration.ofMillis(8));
+                    timer.record(Duration.ofMillis(30));
+
+                    String reason = name + ": " + role;
+                    List<Bucket> histogram = buckets(timer);
+                    assertThat(reason, fixture.registry.isMeterEnabled(name, Map.of("role", role)), is(true));
+                    assertThat(reason, percentiles(timer), contains(0.5, 0.99));
+                    assertThat(reason,
+                               histogram.stream().map(bucket -> bucket.boundary(TimeUnit.MILLISECONDS)).toList(),
+                               hasItems(5D, 10D));
+                    assertThat(reason, histogram.getFirst().boundary(TimeUnit.MILLISECONDS), is(2D));
+                    assertThat(reason, histogram.getLast().boundary(TimeUnit.MILLISECONDS), is(20D));
+                    assertThat(reason, histogram.getFirst().count(), is(1L));
+                    assertThat(reason, histogram.getLast().count(), is(2L));
+                    assertThat(reason, timer.count(), is(3L));
+                    assertThat(reason, timer.totalTime(TimeUnit.MILLISECONDS), is(39D));
+                }
+            }
+        }
+    }
+
+    @Test
+    void firstMatchingRuleSuppliesCompleteConfigurationWithoutMergingLaterRules() {
+        MetricsConfig config = configBuilder()
+                .addMeter(meter -> meter.namePattern(Pattern.compile("service\\..+")).percentiles(List.of(0.5)))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("service\\.request"))
+                        .enabled(false)
+                        .percentiles(List.of(0.99))
+                        .buckets(List.of(Duration.ofMillis(7)))
+                        .minimumExpectedValue(Duration.ofMillis(2))
+                        .maximumExpectedValue(Duration.ofMillis(20)))
+                .build();
         try (var fixture = new Fixture(config)) {
             for (String role : List.of("client", "server")) {
-                assertThat(fixture.registry.isMeterEnabled("disabled", Map.of("role", role)), is(false));
-                Timer disabled = fixture.registry.getOrCreate(fixture.factory.timerBuilder("disabled")
-                                                                      .tags(List.of(fixture.factory.tagCreate("role", role))));
-                disabled.record(1, TimeUnit.MILLISECONDS);
-                assertThat(disabled.count(), is(0L));
+                assertThat(role, fixture.registry.isMeterEnabled("service.request", Map.of("role", role)), is(true));
+                Timer timer = fixture.registry.getOrCreate(fixture.factory.timerBuilder("service.request")
+                        .tags(List.of(fixture.factory.tagCreate("role", role)))
+                        .buckets(Duration.ofMillis(5))
+                        .publishPercentileHistogram(true)
+                        .minimumExpectedValue(Duration.ofMillis(1))
+                        .maximumExpectedValue(Duration.ofMillis(100)));
+                timer.record(Duration.ofMillis(2));
+
+                List<Bucket> histogram = buckets(timer);
+                List<Double> boundaries = histogram.stream()
+                        .map(bucket -> bucket.boundary(TimeUnit.MILLISECONDS))
+                        .toList();
+                assertThat(role, timer.count(), is(1L));
+                assertThat(role, percentiles(timer), contains(0.5));
+                assertThat(role, boundaries, hasItem(5D));
+                assertThat(role, boundaries, not(hasItem(7D)));
+                assertThat(role, histogram.getFirst().boundary(TimeUnit.MILLISECONDS), is(1D));
+                assertThat(role, histogram.getLast().boundary(TimeUnit.MILLISECONDS), is(100D));
+                assertThat(role,
+                           fixture.nativeRegistry().find("service.request").tags("role", role).timer(), not(nullValue()));
             }
-            Timer unrelated = fixture.registry.getOrCreate(fixture.factory.timerBuilder("disabled.extra"));
-            unrelated.record(1, TimeUnit.MILLISECONDS);
-            assertThat(unrelated.count(), is(1L));
-            assertThat(fixture.registry.isMeterEnabled("disabled"), is(false));
-            assertThat(fixture.registry.isMeterEnabled("disabled.extra"), is(true));
-            assertThat(fixture.nativeRegistry().find("disabled").meters(), empty());
-            assertThrows(NullPointerException.class, () -> fixture.registry.isMeterEnabled(null));
+            assertThat(fixture.registry.isMeterEnabled("service.request"), is(true));
         }
     }
 
     @Test
     void separateRegistriesApplyTheirOwnSettings() {
         MetricsConfig firstConfig = configBuilder()
-                .addMeter(meter -> meter.name("timer").percentiles(List.of()))
-                .addMeter(meter -> meter.name("disabled").enabled(false))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("timer")).percentiles(List.of()))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("disabled")).enabled(false))
                 .build();
         MetricsConfig secondConfig = configBuilder()
-                .addMeter(meter -> meter.name("timer").percentiles(List.of(0.9)))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("timer")).percentiles(List.of(0.9)))
                 .build();
         try (var fixture = new Fixture(firstConfig)) {
             MeterRegistry second = fixture.factory.createMeterRegistry(secondConfig);
@@ -331,18 +428,20 @@ class TestMeterConfiguration {
     void globalDisableWinsOverEnabledMeterAndPercentileTypeCheck() {
         MetricsConfig config = configBuilder()
                 .enabled(false)
-                .addMeter(meter -> meter.name("configured").enabled(true).percentiles(List.of(0.9)))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("configured\\..*"))
+                        .enabled(true).percentiles(List.of(0.9)))
                 .build();
         try (var fixture = new Fixture(config)) {
-            Counter counter = fixture.registry.getOrCreate(fixture.factory.counterBuilder("configured"));
+            Counter counter = fixture.registry.getOrCreate(fixture.factory.counterBuilder("configured.counter"));
             Timer timer = fixture.registry.getOrCreate(fixture.factory.timerBuilder("unrelated"));
             counter.increment();
             timer.record(1, TimeUnit.MILLISECONDS);
 
             assertThat(counter.count(), is(0L));
             assertThat(timer.count(), is(0L));
-            assertThat(fixture.registry.isMeterEnabled("configured"), is(false));
-            assertThat(fixture.registry.isMeterEnabled("configured", Map.of()), is(false));
+            assertThat(fixture.registry.isMeterEnabled("configured.counter"), is(false));
+            assertThat(fixture.registry.isMeterEnabled("configured.counter", Map.of()), is(false));
+            assertThat(fixture.registry.isMeterEnabled("unrelated"), is(false));
             assertThat(fixture.nativeRegistry().getMeters(), empty());
         }
     }
@@ -350,7 +449,8 @@ class TestMeterConfiguration {
     @Test
     void disabledMeterDoesNotApplyIncompatiblePercentileSettings() {
         MetricsConfig config = configBuilder()
-                .addMeter(meter -> meter.name("disabled").enabled(false).percentiles(List.of(0.9)))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("disabled"))
+                        .enabled(false).percentiles(List.of(0.9)))
                 .build();
         try (var fixture = new Fixture(config)) {
             Counter counter = fixture.registry.getOrCreate(fixture.factory.counterBuilder("disabled"));
@@ -364,7 +464,7 @@ class TestMeterConfiguration {
     @Test
     void rejectsPercentilesForEnabledNonTimerBeforeRegistration() {
         MetricsConfig config = configBuilder()
-                .addMeter(meter -> meter.name("counter").percentiles(List.of(0.9)))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("counter")).percentiles(List.of(0.9)))
                 .build();
         try (var fixture = new Fixture(config)) {
             var failure = assertThrows(IllegalArgumentException.class,
@@ -376,7 +476,9 @@ class TestMeterConfiguration {
 
     @Test
     void settingsApplyAfterAdaptingNeutralBuilder() {
-        MetricsConfig config = configBuilder().addMeter(meter -> meter.name("timer").percentiles(List.of())).build();
+        MetricsConfig config = configBuilder()
+                .addMeter(meter -> meter.namePattern(Pattern.compile("timer")).percentiles(List.of()))
+                .build();
         try (var fixture = new Fixture(config)) {
             Timer.Builder delegate = fixture.factory.timerBuilder("timer").percentiles(0.9);
             Timer.Builder neutralBuilder = (Timer.Builder) Proxy.newProxyInstance(Timer.Builder.class.getClassLoader(),

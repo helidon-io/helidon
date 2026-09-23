@@ -106,10 +106,17 @@ meters. Application code obtains the global registry by injecting
 
 ### Selecting Meters and Timer Percentiles
 
-Use `metrics.meters` to configure individual meters by their exact registry
-names. Each entry applies to every tag combination of that name in the
-configured registry. Names are case-sensitive; they are not patterns or
-exporter-transformed names. Unlisted meters retain their existing settings.
+Use `metrics.meters` to configure meters by name. Each entry requires
+`name-pattern`, a Java regular expression matched against the entire registry
+name, before any exporter transformation. Escape dots to match them literally,
+as in the examples below. A matching entry applies to every tag combination of
+the meter in the configured registry.
+
+Entries are evaluated in order. The first matching entry supplies all per-meter
+settings; settings from multiple entries are not merged. Put specific patterns
+before broader patterns when they need different settings. The `enabled`
+property defaults to `true`. Meters with no matching entry remain enabled and
+retain their existing settings, unless metrics is disabled globally.
 
 The `helidon.http.streams.duration` timer records count, total duration, mean,
 and windowed maximum without local percentiles by default. To enable local
@@ -118,7 +125,7 @@ percentiles for this timer:
 ```yaml [application.yaml]
 metrics:
   meters:
-    - name: helidon.http.streams.duration
+    - name-pattern: 'helidon\.http\.streams\.duration'
       percentiles: [0.5, 0.99]
 ```
 
@@ -136,7 +143,7 @@ histogram's range:
 ```yaml [application.yaml]
 metrics:
   meters:
-    - name: helidon.http.streams.duration
+    - name-pattern: 'helidon\.http\.streams\.duration'
       percentiles: []
       buckets: [PT0.1S, PT0.5S, PT1S]
       minimum-expected-value: PT0.001S
@@ -162,31 +169,32 @@ To disable the duration meter entirely, use:
 ```yaml [application.yaml]
 metrics:
   meters:
-    - name: helidon.http.streams.duration
+    - name-pattern: 'helidon\.http\.streams\.duration'
       enabled: false
 ```
 
 This leaves stream counters and active-stream gauges enabled. A disabled meter
 is not registered or exported; attempts to register it return a no-op meter.
 Global `metrics.enabled: false` takes precedence over individual entries.
-Duplicate names, blank names, and invalid percentile values are rejected.
+Malformed regular expressions and invalid percentile values are rejected.
 Percentile, bucket, and expected-value settings apply to timers; applying them
 to an enabled non-timer meter is an error when that meter is registered.
 
-The equivalent programmatic configuration is:
+The programmatic configuration for enabling local percentiles is:
 
 ```java
 MetricsConfig config = MetricsConfig.builder()
         .addMeter(MeterConfig.builder()
-                          .name("helidon.http.streams.duration")
+                          .namePattern(Pattern.compile("helidon\\.http\\.streams\\.duration"))
                           .percentiles(List.of(0.5, 0.99))
                           .build())
         .build();
 MeterRegistry registry = Services.get(MetricsFactory.class).createMeterRegistry(config);
 ```
 
-`MeterConfig` and `MetricsConfig` are in `io.helidon.metrics.api`. For complete
-disablement, replace `.percentiles(List.of(0.5, 0.99))` with `.enabled(false)`.
+`MeterConfig` and `MetricsConfig` are in `io.helidon.metrics.api`, and `Pattern`
+is in `java.util.regex`. For complete disablement, replace
+`.percentiles(List.of(0.5, 0.99))` with `.enabled(false)`.
 Explicit per-meter timer configuration takes precedence over meter builder
 settings and `MeterBuilderCustomizer` customizations at registration.
 Configure these settings before creating the registry; they are not live

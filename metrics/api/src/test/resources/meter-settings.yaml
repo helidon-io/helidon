@@ -15,14 +15,14 @@
 #
 metrics:
   meters:
-    - name: default.timer
-    - name: aggregate.timer
+    - name-pattern: 'default\.timer'
+    - name-pattern: 'aggregate\.timer'
       percentiles: []
       buckets: []
-    - name: custom.timer
+    - name-pattern: 'custom\.timer'
       percentiles: [0.5, 0.99]
       buckets: [PT0.005S, PT0.010S]
       minimum-expected-value: PT0.002S
       maximum-expected-value: PT0.020S
-    - name: disabled.timer
+    - name-pattern: 'disabled\.timer'
       enabled: false

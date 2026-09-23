@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
@@ -345,7 +346,8 @@ class TestMicrometerHttpTransportMetrics {
     @Test
     void streamDurationPercentilesCanBeEnabledProgrammatically() throws Exception {
         MetricsConfig config = MetricsConfig.builder()
-                .addMeter(meter -> meter.name("helidon.http.streams.duration").percentiles(List.of(0.5, 0.99)))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("helidon\\.http\\.streams\\.duration"))
+                        .percentiles(List.of(0.5, 0.99)))
                 .build();
         assertStreamDurationStatistics(config, List.of(0.5, 0.99));
     }
@@ -355,7 +357,7 @@ class TestMicrometerHttpTransportMetrics {
         String configText = """
                 metrics:
                   meters:
-                    - name: helidon.http.streams.duration
+                    - name-pattern: 'helidon\\.http\\.streams\\.duration'
                       percentiles: [0.5, 0.99]
                 """;
         MetricsConfig config = MetricsConfig.create(Config.just(configText, MediaTypes.APPLICATION_YAML).get("metrics"));

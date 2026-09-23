@@ -19,12 +19,13 @@ package io.helidon.metrics.api;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
 /**
- * Registry settings for a meter identified by its exact name, regardless of its tags.
+ * Registry settings for meters selected by a name pattern, regardless of their tags.
  *
  * @since 28.0.0
  */
@@ -33,13 +34,13 @@ import io.helidon.builder.api.Prototype;
 interface MeterConfigBlueprint {
 
     /**
-     * Meter name to match exactly, before any exporter-specific naming conversion.
-     * Wildcards and regular expressions are not interpreted.
+     * Regular expression matched against the entire meter name, before any exporter-specific naming conversion.
+     * The pattern must not be blank. Configuration strings are compiled when the configuration is created.
      *
-     * @return non-blank meter name
+     * @return meter name pattern
      */
     @Option.Configured
-    String name();
+    Pattern namePattern();
 
     /**
      * Whether the meter is enabled. This setting cannot override globally disabled metrics.

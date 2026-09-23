@@ -20,9 +20,11 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigMappingException;
 import io.helidon.config.ConfigSources;
 
 import org.junit.jupiter.api.Test;
@@ -47,7 +49,7 @@ class TestMeterConfig {
 
         assertThat(config.meters(), hasSize(4));
         MeterConfig defaults = config.meters().get(0);
-        assertThat(defaults.name(), is("default.timer"));
+        assertThat(defaults.namePattern().pattern(), is("default\\.timer"));
         assertThat(defaults.enabled(), is(true));
         assertThat(defaults.percentiles().isEmpty(), is(true));
         assertThat(config.meters().get(1).percentiles().orElseThrow(), empty());
@@ -59,13 +61,14 @@ class TestMeterConfig {
     @Test
     void programmaticSettingsAreImmutableAndPreserveBoundaryPercentiles() {
         var percentiles = new ArrayList<>(List.of(0.0, 0.5, 1.0));
-        MeterConfig meter = MeterConfig.builder().name("timer").percentiles(percentiles).build();
+        MeterConfig meter = MeterConfig.builder().namePattern(Pattern.compile("timer")).percentiles(percentiles).build();
         percentiles.clear();
 
         assertThat(meter.percentiles().orElseThrow(), contains(0.0, 0.5, 1.0));
         assertThrows(UnsupportedOperationException.class, () -> meter.percentiles().orElseThrow().clear());
-        assertThat(MeterConfig.builder().name("timer").percentiles(List.of()).build().percentiles().orElseThrow(), empty());
-        assertThat(MeterConfig.builder().name("timer").build().percentiles().isEmpty(), is(true));
+        assertThat(MeterConfig.builder().namePattern(Pattern.compile("timer")).percentiles(List.of()).build()
+                           .percentiles().orElseThrow(), empty());
+        assertThat(MeterConfig.builder().namePattern(Pattern.compile("timer")).build().percentiles().isEmpty(), is(true));
     }
 
     @Test
@@ -89,7 +92,7 @@ class TestMeterConfig {
     void bucketSettingsAreImmutableAndAllowBoundariesOutsideExpectedRange() {
         var buckets = new ArrayList<>(List.of(Duration.ofNanos(2), Duration.ofNanos(1)));
         MeterConfig meter = MeterConfig.builder()
-                .name("timer")
+                .namePattern(Pattern.compile("timer"))
                 .buckets(buckets)
                 .minimumExpectedValue(Duration.ofNanos(1))
                 .maximumExpectedValue(Duration.ofNanos(1))
@@ -107,11 +110,20 @@ class TestMeterConfig {
     void rejectsInvalidHistogramDurations(long seconds) {
         Duration duration = Duration.ofSeconds(seconds);
         var bucketFailure = assertThrows(IllegalArgumentException.class,
-                                         () -> MeterConfig.builder().name("timer").buckets(List.of(duration)).build());
+                                         () -> MeterConfig.builder()
+                                                 .namePattern(Pattern.compile("timer"))
+                                                 .buckets(List.of(duration))
+                                                 .build());
         var minFailure = assertThrows(IllegalArgumentException.class,
-                                      () -> MeterConfig.builder().name("timer").minimumExpectedValue(duration).build());
+                                      () -> MeterConfig.builder()
+                                              .namePattern(Pattern.compile("timer"))
+                                              .minimumExpectedValue(duration)
+                                              .build());
         var maxFailure = assertThrows(IllegalArgumentException.class,
-                                      () -> MeterConfig.builder().name("timer").maximumExpectedValue(duration).build());
+                                      () -> MeterConfig.builder()
+                                              .namePattern(Pattern.compile("timer"))
+                                              .maximumExpectedValue(duration)
+                                              .build());
 
         assertThat(bucketFailure.getMessage(), containsString("bucket"));
         assertThat(minFailure.getMessage(), containsString("minimum-expected-value"));
@@ -125,7 +137,7 @@ class TestMeterConfig {
     void rejectsInvertedExpectedRange() {
         var failure = assertThrows(IllegalArgumentException.class,
                                    () -> MeterConfig.builder()
-                                           .name("timer")
+                                           .namePattern(Pattern.compile("timer"))
                                            .minimumExpectedValue(Duration.ofMillis(20))
                                            .maximumExpectedValue(Duration.ofMillis(2))
                                            .build());
@@ -136,7 +148,7 @@ class TestMeterConfig {
     @Test
     void rejectsInvalidHistogramDurationsFromConfig() {
         for (String property : List.of("buckets.0", "minimum-expected-value", "maximum-expected-value")) {
-            Config config = Config.just(ConfigSources.create(Map.of("name", "timer", property, "PT0S")));
+            Config config = Config.just(ConfigSources.create(Map.of("name-pattern", "timer", property, "PT0S")));
             var failure = assertThrows(IllegalArgumentException.class, () -> MeterConfig.create(config));
             assertThat(failure.getMessage(), containsString(property.equals("buckets.0") ? "bucket" : property));
         }
@@ -146,8 +158,8 @@ class TestMeterConfig {
     void matchesExactNamesAndGlobalDisableWins() {
         MetricsConfig config = MetricsConfig.builder()
                 .config(Config.empty())
-                .addMeter(meter -> meter.name("literal.*").enabled(false))
-                .addMeter(meter -> meter.name("enabled").enabled(true))
+                .addMeter(meter -> meter.namePattern(Pattern.compile(Pattern.quote("literal.*"))).enabled(false))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("enabled")).enabled(true))
                 .build();
 
         assertThat(config.isMeterEnabled("literal.*"), is(false));
@@ -159,7 +171,7 @@ class TestMeterConfig {
     }
 
     @Test
-    void requiresName() {
+    void requiresNamePattern() {
         var failure = assertThrows(Errors.ErrorMessagesException.class, () -> MeterConfig.builder().build());
         assertThat(failure.getMessage(), containsString("name"));
     }
@@ -167,8 +179,8 @@ class TestMeterConfig {
     @ParameterizedTest
     @EmptySource
     @ValueSource(strings = {" ", "\t", "\n"})
-    void rejectsBlankName(String name) {
-        var failure = assertThrows(IllegalArgumentException.class, () -> MeterConfig.builder().name(name).build());
+    void rejectsBlankNamePattern(String name) {
+        var failure = assertThrows(IllegalArgumentException.class, () -> MeterConfig.builder().namePattern(Pattern.compile(name)).build());
         assertThat(failure.getMessage(), containsString("name"));
     }
 
@@ -176,32 +188,63 @@ class TestMeterConfig {
     @ValueSource(doubles = {-0.1, 1.1, Double.NaN, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY})
     void rejectsInvalidPercentile(double percentile) {
         var failure = assertThrows(IllegalArgumentException.class,
-                                   () -> MeterConfig.builder().name("timer").percentiles(List.of(percentile)).build());
+                                   () -> MeterConfig.builder()
+                                           .namePattern(Pattern.compile("timer"))
+                                           .percentiles(List.of(percentile))
+                                           .build());
         assertThat(failure.getMessage(), containsString("percentile"));
         assertThat(failure.getMessage(), containsString(Double.toString(percentile)));
     }
 
     @Test
-    void rejectsDuplicateNamesProgrammatically() {
-        var failure = assertThrows(IllegalArgumentException.class,
-                                   () -> MetricsConfig.builder()
-                                           .config(Config.empty())
-                                           .addMeter(meter -> meter.name("same"))
-                                           .addMeter(meter -> meter.name("same").enabled(false))
-                                           .build());
-        assertThat(failure.getMessage(), containsString("Duplicate meter configuration name: same"));
+    void firstMatchingPatternSelectsCompleteSettingsAcrossOverlappingRules() {
+        MetricsConfig config = MetricsConfig.builder()
+                .config(Config.empty())
+                .addMeter(meter -> meter.namePattern(Pattern.compile("http[.]special")).enabled(true))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("http[.].*")).enabled(false))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("http[.]special")).percentiles(List.of(0.99)))
+                .build();
+
+        assertThat(config.isMeterEnabled("http.special"), is(true));
+        assertThat(config.isMeterEnabled("http.other"), is(false));
+        assertThat(config.isMeterEnabled("prefix.http.other"), is(true));
+        assertThat(config.isMeterEnabled("unrelated"), is(true));
+        assertThat(config.meterConfig("http.special").orElseThrow().percentiles().isEmpty(), is(true));
+        assertThat(config.meterConfig("unrelated").isEmpty(), is(true));
+        assertThrows(NullPointerException.class, () -> config.meterConfig(null));
+        MetricsConfig disabled = MetricsConfig.builder().from(config).enabled(false).build();
+        assertThat(disabled.isMeterEnabled("http.special"), is(false));
+        assertThat(disabled.isMeterEnabled("unrelated"), is(false));
+        assertThat(disabled.meterConfig("http.special").orElseThrow().enabled(), is(true));
     }
 
     @Test
-    void rejectsDuplicateNamesFromConfig() {
-        Config config = Config.just(ConfigSources.create(Map.of("meters.0.name", "same", "meters.1.name", "same")));
-        var failure = assertThrows(IllegalArgumentException.class, () -> MetricsConfig.create(config));
-        assertThat(failure.getMessage(), containsString("Duplicate meter configuration name: same"));
+    void acceptsPatternFlagsFromBuilderAndConfig() {
+        MetricsConfig programmatic = MetricsConfig.builder()
+                .config(Config.empty())
+                .addMeter(meter -> meter.namePattern(Pattern.compile("http[.].*", Pattern.CASE_INSENSITIVE)).enabled(false))
+                .build();
+        Config source = Config.just(ConfigSources.create(Map.of("meters.0.name-pattern", "(?i)http[.].*",
+                                                                "meters.0.enabled", "false")));
+        MetricsConfig configured = MetricsConfig.create(source);
+
+        assertThat(programmatic.meters().getFirst().namePattern().flags(), is(Pattern.CASE_INSENSITIVE));
+        for (MetricsConfig config : List.of(programmatic, configured)) {
+            assertThat(config.isMeterEnabled("HTTP.requests"), is(false));
+            assertThat(config.isMeterEnabled("prefix.HTTP.requests"), is(true));
+        }
+    }
+
+    @Test
+    void rejectsMalformedPatternFromConfig() {
+        Config source = Config.just(ConfigSources.create(Map.of("name-pattern", "[")));
+        var failure = assertThrows(ConfigMappingException.class, () -> MeterConfig.create(source));
+        assertThat(failure.getMessage(), containsString("name-pattern"));
     }
 
     @Test
     void rejectsInvalidPercentileFromConfig() {
-        Config config = Config.just(ConfigSources.create(Map.of("name", "timer", "percentiles.0", "1.1")));
+        Config config = Config.just(ConfigSources.create(Map.of("name-pattern", "timer", "percentiles.0", "1.1")));
         var failure = assertThrows(IllegalArgumentException.class, () -> MeterConfig.create(config));
         assertThat(failure.getMessage(), containsString("percentile"));
     }

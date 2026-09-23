@@ -2,7 +2,7 @@
 
 ## Description
 
-Registry settings for a meter identified by its exact name, regardless of its tags
+Registry settings for meters selected by a name pattern, regardless of their tags
 
 ## Configuration options
 
@@ -30,6 +30,17 @@ Registry settings for a meter identified by its exact name, regardless of its ta
 </tr>
 <tr>
 <td>
+<code>name-<wbr>pattern</code>
+</td>
+<td>
+<code>Pattern</code>
+</td>
+<td>
+</td>
+<td>Regular expression matched against the entire meter name, before any exporter-specific naming conversion</td>
+</tr>
+<tr>
+<td>
 <code>percentiles</code>
 </td>
 <td>
@@ -49,17 +60,6 @@ Registry settings for a meter identified by its exact name, regardless of its ta
 <td>
 </td>
 <td>Explicit timer histogram bucket boundaries, preserving builder settings when absent and clearing explicit boundaries when empty</td>
-</tr>
-<tr>
-<td>
-<code>name</code>
-</td>
-<td>
-<code>String</code>
-</td>
-<td>
-</td>
-<td>Meter name to match exactly, before any exporter-specific naming conversion</td>
 </tr>
 <tr>
 <td>
