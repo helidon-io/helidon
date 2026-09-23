@@ -344,7 +344,15 @@ final class HttpTransportMetricsState {
         }
 
         private GaugeValue gauge(Epoch selectedEpoch, MetricId id) {
-            return selectedEpoch.gauges.getOrCreate(id, GaugeValue::new);
+            GaugeValue existing = selectedEpoch.gauges.get(id);
+            if (existing != null) {
+                return existing;
+            }
+            return selectedEpoch.gauges.getOrCreate(id, () -> {
+                BoundedCache<MetricId, GaugeValue> inherited = selectedEpoch.inheritedGauges;
+                GaugeValue value = inherited == null ? null : inherited.get(id);
+                return value == null ? new GaugeValue() : value;
+            });
         }
 
         private void bind(Epoch selectedEpoch, Recorder recorder, MetricId id, Meter meter) {
@@ -391,6 +399,7 @@ final class HttpTransportMetricsState {
 
             List<MeterBinding> failedBindings = retiredEpoch.cleanup(this);
             failedBindings.forEach(binding -> epoch.retain(binding, retiredEpoch.gauges.get(binding.id)));
+            epoch.inheritedGauges = null;
             retiredRecorders.forEach(Recorder::clear);
             List<CompletableFuture<Void>> completions = new ArrayList<>();
             retiredRecorders.forEach(recorder -> {
@@ -1119,9 +1128,13 @@ final class HttpTransportMetricsState {
         private final Map<IdentityReference, MeterBinding> bindings = new HashMap<>();
         private final BoundedCache<MetricId, GaugeValue> gauges = new BoundedCache<>();
         private final AtomicBoolean failureReported = new AtomicBoolean();
+        private volatile BoundedCache<MetricId, GaugeValue> inheritedGauges;
 
         private Epoch nextEpoch() {
-            return new Epoch();
+            var next = new Epoch();
+            // Reacquisition must use the backing values of native gauges until their removal has completed.
+            next.inheritedGauges = gauges;
+            return next;
         }
 
         private List<MeterBinding> cleanup(NativeRegistryState state) {
@@ -1179,6 +1192,7 @@ final class HttpTransportMetricsState {
         private void clear() {
             bindings.clear();
             gauges.clear();
+            inheritedGauges = null;
         }
     }
 
