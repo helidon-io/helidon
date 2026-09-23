@@ -18,6 +18,8 @@ package io.helidon.webserver;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;
@@ -28,6 +30,7 @@ import java.time.Duration;
 import java.util.HexFormat;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.locks.ReentrantLock;
@@ -55,10 +58,16 @@ import io.helidon.common.socket.TlsSocket;
 import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.HttpException;
+import io.helidon.http.HttpTransportObserver.ConnectionObservation;
+import io.helidon.http.HttpTransportObserver.ConnectionOutcome;
+import io.helidon.http.HttpTransportObserver.HandshakeObservation;
+import io.helidon.http.HttpTransportObserver.HandshakeOutcome;
 import io.helidon.http.RequestException;
+import io.helidon.webserver.HttpTransportObserverSupport.ConnectionObservationContext;
 import io.helidon.webserver.spi.ServerConnection;
 import io.helidon.webserver.spi.ServerConnectionSelector;
 
+import static io.helidon.webserver.HttpTransportObserverSupport.isTimeout;
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.TRACE;
@@ -68,12 +77,22 @@ import static java.lang.System.Logger.Level.WARNING;
  * Representation of a single channel between client and server.
  * Everything in this class runs in the channel reader virtual thread
  */
-class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
+class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext, ConnectionObservationContext {
     private static final System.Logger LOGGER = System.getLogger(ConnectionHandler.class.getName());
     private static final String HTTP_1_0 = "HTTP/1.0\r";
     private static final byte TLS_ALERT_CONTENT_TYPE = 21;
     private static final byte TLS_ALERT_LEVEL_FATAL = 2;
     private static final byte TLS_ALERT_UNRECOGNIZED_NAME = 112;
+    private static final VarHandle HANDSHAKE_COMPLETED;
+
+    static {
+        try {
+            HANDSHAKE_COMPLETED = MethodHandles.lookup()
+                    .findVarHandle(ConnectionHandler.class, "handshakeCompleted", boolean.class);
+        } catch (ReflectiveOperationException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
 
     private final ListenerContext listenerContext;
     private final Optional<TrustedProxyMatcher> trustedProxyMatcher;
@@ -90,6 +109,8 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     private final ListenerConfig listenerConfig;
     private final String channelId;
     private final Consumer<ConnectionHandler> connectionHandlerRemoveListener;
+    private final ConnectionObservation httpTransportObservation;
+    private final boolean httpTransportObserved;
     private final ReentrantLock closeLock = new ReentrantLock();
 
     private String socketIds;
@@ -100,6 +121,9 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     private SocketWriter writer;
     private ProxyProtocolData proxyProtocolData;
     private SniContext sniContext;
+    private ConnectionOutcome httpTransportOutcome;
+    private volatile boolean handshakeCompleted;
+    private volatile HandshakeObservation handshakeObservation = HandshakeObservation.noop();
 
     // Published before handling starts so lifecycle close/interrupt paths do not miss the delegate.
     private volatile ServerConnection connection;
@@ -116,6 +140,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                       Router router,
                       Tls tls,
                       ListenerTlsContext listenerTls,
+                      ConnectionObservation httpTransportObservation,
                       Consumer<ConnectionHandler> connectionHandlerRemoveListener) {
         this.listenerContext = listenerContext;
         this.trustedProxyMatcher = trustedProxyMatcher;
@@ -128,6 +153,8 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         this.router = router;
         this.tls = tls;
         this.listenerTls = listenerTls;
+        this.httpTransportObservation = Objects.requireNonNull(httpTransportObservation, "httpTransportObservation");
+        this.httpTransportObserved = httpTransportObservation != ConnectionObservation.noop();
         this.listenerConfig = listenerContext.config();
         this.connectionHandlerRemoveListener = connectionHandlerRemoveListener;
         this.channelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(socket));
@@ -144,18 +171,40 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
             try {
                 run(channelId);
             } catch (Throwable e) {
+                httpTransportOutcome(ConnectionOutcome.ERROR);
                 LOGGER.log(ERROR, "Unexpected throwable while handling connection", e);
             }
         } finally {
-            releaseConnectionLimit(handlingStarted);
-            if (writer != null) {
-                writer.close();
+            try {
+                releaseConnectionLimit(handlingStarted);
+                if (writer != null) {
+                    writer.close();
+                }
+                closeChannel();
+                if (helidonSocket != null) {
+                    helidonSocket.log(LOGGER, DEBUG, "socket closed");
+                }
+            } finally {
+                try {
+                    if (httpTransportObserved) {
+                        ConnectionOutcome outcome;
+                        closeLock.lock();
+                        try {
+                            if (httpTransportOutcome == null) {
+                                httpTransportOutcome = ConnectionOutcome.NORMAL;
+                            }
+                            outcome = httpTransportOutcome;
+                        } finally {
+                            closeLock.unlock();
+                        }
+                        httpTransportObservation.close(outcome);
+                    }
+                } catch (RuntimeException failure) {
+                    LOGGER.log(WARNING, "HTTP transport observer failed while closing connection", failure);
+                } finally {
+                    connectionHandlerRemoveListener.accept(this);
+                }
             }
-            closeChannel();
-            if (helidonSocket != null) {
-                helidonSocket.log(LOGGER, DEBUG, "socket closed");
-            }
-            connectionHandlerRemoveListener.accept(this);
         }
     }
 
@@ -224,28 +273,29 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         return helidonSocket;
     }
 
-    void close(boolean interrupt) {
-        ServerConnection localConnection;
-        boolean localCloseInterrupt;
-        boolean closeChannel;
+    @Override
+    public ConnectionObservation httpTransportObservation() {
+        return httpTransportObservation;
+    }
+
+    @Override
+    public void httpTransportOutcome(ConnectionOutcome outcome) {
+        Objects.requireNonNull(outcome, "outcome");
+        if (!httpTransportObserved) {
+            return;
+        }
         closeLock.lock();
         try {
-            if (interrupt) {
-                closeInterrupt = true;
+            if (httpTransportOutcome == null) {
+                httpTransportOutcome = outcome;
             }
-            closeRequested = true;
-            localConnection = connection;
-            localCloseInterrupt = closeInterrupt;
-            closeChannel = !handlingStarted;
         } finally {
             closeLock.unlock();
         }
-        if (closeChannel) {
-            closeChannel();
-        }
-        if (localConnection != null) {
-            localConnection.close(localCloseInterrupt);
-        }
+    }
+
+    void close(boolean interrupt) {
+        close(interrupt, ConnectionOutcome.LOCAL_CLOSE);
     }
 
     void closeIfIdle(Duration timeout) {
@@ -262,7 +312,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         if (localConnection != null && localConnection.idleTime().compareTo(timeout) > 0) {
             // this should be a graceful shutdown, in case a request is received in parallel, we want to handle
             // it, and yes, then it would be closed (and it must not accept another request)
-            close(false);
+            close(false, ConnectionOutcome.TIMEOUT);
         }
     }
 
@@ -275,6 +325,44 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         BufferData request = reader.getBuffer(reader.available());
         int lf = request.indexOf(Bytes.LF_BYTE);
         return lf != -1 && request.readString(lf).endsWith(HTTP_1_0);
+    }
+
+    private static boolean causedByInsufficientData(Throwable failure) {
+        Throwable current = failure;
+        while (current != null) {
+            if (current instanceof DataReader.InsufficientDataAvailableException) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
+    }
+
+    private void close(boolean interrupt, ConnectionOutcome outcome) {
+        ServerConnection localConnection;
+        boolean localCloseInterrupt;
+        boolean closeChannel;
+        closeLock.lock();
+        try {
+            if (httpTransportObserved && httpTransportOutcome == null) {
+                httpTransportOutcome = outcome;
+            }
+            if (interrupt) {
+                closeInterrupt = true;
+            }
+            closeRequested = true;
+            localConnection = connection;
+            localCloseInterrupt = closeInterrupt;
+            closeChannel = !handlingStarted;
+        } finally {
+            closeLock.unlock();
+        }
+        if (closeChannel) {
+            closeChannel();
+        }
+        if (localConnection != null) {
+            localConnection.close(localCloseInterrupt);
+        }
     }
 
     // extracted run method to make the run method clean (a single try/finally block)
@@ -303,6 +391,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
             try {
                 proxyProtocolData = handler.get();
             } catch (RuntimeException e) {
+                httpTransportOutcome(isTimeout(e) ? ConnectionOutcome.TIMEOUT : ConnectionOutcome.ERROR);
                 if (LOGGER.isLoggable(TRACE)) {
                     LOGGER.log(TRACE, "[" + channelId + "] Failed to retrieve Proxy Protocol data", e);
                 }
@@ -312,20 +401,27 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
 
         // handle SSL and init helidonSocket, reader and writer
         try {
+            if (httpTransportObserved && tls.enabled()) {
+                handshakeObservation = httpTransportObservation.handshakeStarted();
+            }
             helidonSocket = createSocket(tls, socket, channelId);
 
-            reader = DataReader.create(new MapExceptionDataSupplier(helidonSocket));
+            reader = DataReader.create(new MapExceptionDataSupplier());
             writer = SocketWriter.create(listenerContext.executor(),
                                          helidonSocket,
                                          listenerConfig.writeQueueLength(),
                                          listenerConfig.smartAsyncWrites());
         } catch (RuntimeException e) {
+            completeHandshakeFailure(e);
+            httpTransportOutcome(isTimeout(e) ? ConnectionOutcome.TIMEOUT : ConnectionOutcome.ERROR);
             // these exceptions are thrown to the executor service
             if (LOGGER.isLoggable(TRACE)) {
                 LOGGER.log(TRACE, "[" + channelId + "] Failed to establish connection", e);
             }
             return;
         } catch (Exception e) {
+            completeHandshakeFailure(e);
+            httpTransportOutcome(isTimeout(e) ? ConnectionOutcome.TIMEOUT : ConnectionOutcome.ERROR);
             if (LOGGER.isLoggable(TRACE)) {
                 LOGGER.log(TRACE, "[" + channelId + "] Failed to establish connection", e);
             }
@@ -357,8 +453,10 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
             if (selectedConnection == null) {
                 if (isHttp10Connection(reader)) {
                     // cannot easily return 505, so log better message instead
+                    httpTransportOutcome(ConnectionOutcome.ERROR);
                     throw new CloseConnectionException("HTTP 1.0 is not supported, consider using HTTP 1.1");
                 }
+                httpTransportOutcome(ConnectionOutcome.ERROR);
                 throw new CloseConnectionException("No suitable connection provider");
             }
             if (!startHandling(selectedConnection)) {
@@ -367,22 +465,31 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
             }
             selectedConnection.handle(requestLimit);
         } catch (RequestException e) {
+            httpTransportOutcome(ConnectionOutcome.ERROR);
             helidonSocket.log(LOGGER, WARNING, "escaped Request exception", e);
         } catch (HttpException e) {
+            httpTransportOutcome(ConnectionOutcome.ERROR);
             helidonSocket.log(LOGGER, WARNING, "escaped HTTP exception", e);
         } catch (ServerConnectionException e) {
+            httpTransportOutcome(isTimeout(e) ? ConnectionOutcome.TIMEOUT : ConnectionOutcome.ERROR);
             // socket exception - the socket failed, probably killed by OS, proxy or client
             helidonSocket.log(LOGGER, TRACE, "server I/O issue", e);
         } catch (CloseConnectionException e) {
+            if (causedByInsufficientData(e)) {
+                httpTransportOutcome(ConnectionOutcome.REMOTE_CLOSE);
+            }
             // end of request stream - safe to close the connection, as it was requested by our client
             helidonSocket.log(LOGGER, TRACE, "connection close requested", e);
         } catch (DataReader.InsufficientDataAvailableException | SocketWriterException e) {
+            httpTransportOutcome(isTimeout(e) ? ConnectionOutcome.TIMEOUT : ConnectionOutcome.ERROR);
             // the connection ended while reading or writing data
             helidonSocket.log(LOGGER, TRACE, "server I/O issue", e);
         } catch (InterruptedException e) {
+            httpTransportOutcome(isTimeout(e) ? ConnectionOutcome.TIMEOUT : ConnectionOutcome.ERROR);
             Thread.currentThread().interrupt();
             helidonSocket.log(LOGGER, TRACE, "connection interrupted", e);
         } catch (UncheckedIOException e) {
+            httpTransportOutcome(isTimeout(e) ? ConnectionOutcome.TIMEOUT : ConnectionOutcome.ERROR);
             if (e.getCause() instanceof SocketException) {
                 // socket exception - the socket failed, probably killed by OS, proxy or client
                 helidonSocket.log(LOGGER, TRACE, "server I/O issue", e);
@@ -390,6 +497,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                 helidonSocket.log(LOGGER, WARNING, "unexpected I/O exception", e);
             }
         } catch (Exception e) {
+            httpTransportOutcome(isTimeout(e) ? ConnectionOutcome.TIMEOUT : ConnectionOutcome.ERROR);
             helidonSocket.log(LOGGER, WARNING, "unexpected exception", e);
         }
     }
@@ -468,10 +576,17 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                 return null;
             });
 
-            if (replayBuffer == null) {
-                return TlsNioSocket.server(channel, engine, channelId, serverChannelId);
+            if (!httpTransportObserved) {
+                if (replayBuffer == null) {
+                    return TlsNioSocket.server(channel, engine, channelId, serverChannelId);
+                }
+                return TlsNioSocket.server(channel, engine, channelId, serverChannelId, replayBuffer);
             }
-            return TlsNioSocket.server(channel, engine, channelId, serverChannelId, replayBuffer);
+            Runnable handshakeCompleted = () -> completeHandshake(HandshakeOutcome.SUCCESS);
+            if (replayBuffer == null) {
+                return TlsNioSocket.server(channel, engine, channelId, serverChannelId, handshakeCompleted);
+            }
+            return TlsNioSocket.server(channel, engine, channelId, serverChannelId, replayBuffer, handshakeCompleted);
         }
         return NioSocket.server(channel, channelId, serverChannelId);
     }
@@ -518,6 +633,9 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                         return null;
                     });
             sslSocket.startHandshake();
+            if (httpTransportObserved) {
+                completeHandshake(HandshakeOutcome.SUCCESS);
+            }
             return TlsSocket.server(sslSocket, channelId, serverChannelId);
         }
         return PlainSocket.server(channel.socket(), channelId, serverChannelId);
@@ -616,19 +734,43 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         }
     }
 
-    private static class MapExceptionDataSupplier implements Supplier<byte[]> {
-        private final HelidonSocket helidonSocket;
-
-        private MapExceptionDataSupplier(HelidonSocket helidonSocket) {
-            this.helidonSocket = helidonSocket;
+    private void completeHandshake(HandshakeOutcome outcome) {
+        if (HANDSHAKE_COMPLETED.compareAndSet(this, false, true)) {
+            handshakeObservation.close(outcome);
         }
+    }
 
+    private void completeHandshakeFailure(Throwable failure) {
+        if (handshakeObservation == HandshakeObservation.noop() || handshakeCompleted) {
+            return;
+        }
+        HandshakeOutcome outcome;
+        closeLock.lock();
+        try {
+            if (httpTransportOutcome == ConnectionOutcome.LOCAL_CLOSE) {
+                outcome = HandshakeOutcome.CANCELLED;
+            } else if (httpTransportOutcome == ConnectionOutcome.TIMEOUT || isTimeout(failure)) {
+                outcome = HandshakeOutcome.TIMEOUT;
+            } else {
+                outcome = HandshakeOutcome.FAILURE;
+            }
+        } finally {
+            closeLock.unlock();
+        }
+        completeHandshake(outcome);
+    }
+
+    private final class MapExceptionDataSupplier implements Supplier<byte[]> {
         @Override
         public byte[] get() {
             try {
                 return helidonSocket.get();
             } catch (UncheckedIOException e) {
+                completeHandshakeFailure(e);
                 throw new ServerConnectionException("Failed to get data from socket", e);
+            } catch (RuntimeException e) {
+                completeHandshakeFailure(e);
+                throw e;
             }
         }
     }

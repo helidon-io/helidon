@@ -138,6 +138,7 @@ class LoomServer implements WebServer, Resumable {
                                                serverConfig.directHandlers().orElseGet(DirectHandlers::create),
                                                metricsFactory,
                                                meterRegistry,
+                                               featureContext.httpTransportObservers(name),
                                                this::fatalListenerFailure));
         });
 

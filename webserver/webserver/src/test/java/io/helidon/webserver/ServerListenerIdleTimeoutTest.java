@@ -363,6 +363,7 @@ class ServerListenerIdleTimeoutTest {
                                   MediaContext.create(),
                                   ContentEncodingContext.create(),
                                   DirectHandlers.create(),
+                                  List.of(),
                                   (failedListener, _) -> failedListener.stop());
     }
 

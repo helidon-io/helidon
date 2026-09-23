@@ -18,8 +18,13 @@ package io.helidon.http;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import io.helidon.http.HttpTransportObserver.ConnectionObservation;
 import io.helidon.http.HttpTransportObserver.ConnectionOutcome;
@@ -33,6 +38,7 @@ import io.helidon.http.HttpTransportObserver.StreamOutcome;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.helidon.http.HttpTransportObserver.Direction.BIDIRECTIONAL;
 import static io.helidon.http.HttpTransportObserver.Handshake.TLS;
@@ -47,9 +53,11 @@ import static io.helidon.http.HttpTransportObserver.StreamOutcome.COMPLETED;
 import static io.helidon.http.HttpTransportObserver.TRANSPORT_QUIC;
 import static io.helidon.http.HttpTransportObserver.TRANSPORT_TCP;
 import static io.helidon.http.HttpTransportObserver.TRANSPORT_UNIX;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -352,6 +360,264 @@ class HttpTransportObserverTest {
     }
 
     @Test
+    void connectionCloseCompletesStreamObservationsReturnedAfterClose() throws Exception {
+        var events = new ConcurrentLinkedQueue<String>();
+        var secondOpening = new CompletableFuture<Void>();
+        var completeSecondOpen = new CompletableFuture<Void>();
+        HttpTransportObserver first = recordingObserver("first", events,
+                                                        () -> outcome -> events.add("first-stream-" + outcome));
+        HttpTransportObserver second = recordingObserver("second", events, () -> {
+            secondOpening.complete(null);
+            completeSecondOpen.join();
+            return outcome -> events.add("second-stream-" + outcome);
+        });
+        ConnectionObservation connection = HttpTransportObserver.compose(List.of(first, second))
+                .connectionOpened(SERVER, TRANSPORT_TCP, TLS);
+        connection.handshakeStarted().close(SUCCESS);
+        connection.protocolSelected(PROTOCOL_HTTP_1_1);
+
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            var streamFuture = executor.submit(() -> connection.streamOpened(BIDIRECTIONAL, REMOTE));
+            try {
+                secondOpening.get(10, SECONDS);
+                var closeFuture = executor.submit(() -> connection.close(ConnectionOutcome.LOCAL_CLOSE));
+                closeFuture.get(10, SECONDS);
+                assertThat("Connection callback remains deferred until the stream-open callback returns",
+                           List.copyOf(events),
+                           is(List.of("first-stream-CANCELLED")));
+            } finally {
+                completeSecondOpen.complete(null);
+            }
+            StreamObservation stream = streamFuture.get(10, SECONDS);
+            stream.close(COMPLETED);
+            connection.close(ConnectionOutcome.NORMAL);
+        }
+
+        assertThat(List.copyOf(events), is(List.of("first-stream-CANCELLED",
+                                                 "second-stream-CANCELLED",
+                                                 "first-connection-LOCAL_CLOSE",
+                                                 "second-connection-LOCAL_CLOSE")));
+    }
+
+    @Test
+    void singleObserverClosesLateStreamBeforeConnectionCallback() throws Exception {
+        var events = new ConcurrentLinkedQueue<String>();
+        var opening = new CompletableFuture<Void>();
+        var completeOpen = new CompletableFuture<Void>();
+        HttpTransportObserver observer = recordingObserver("observer", events, () -> {
+            opening.complete(null);
+            completeOpen.join();
+            return outcome -> events.add("stream-" + outcome);
+        });
+        ConnectionObservation connection = HttpTransportObserver.compose(List.of(observer))
+                .connectionOpened(SERVER, TRANSPORT_TCP, TLS);
+        var executor = Executors.newFixedThreadPool(2);
+        try {
+            var streamFuture = executor.submit(() -> connection.streamOpened(BIDIRECTIONAL, REMOTE));
+            try {
+                opening.get(10, SECONDS);
+                var closeFuture = executor.submit(() -> connection.close(ConnectionOutcome.LOCAL_CLOSE));
+                closeFuture.get(10, SECONDS);
+                assertThat("The connection callback waits for the only stream-open callback",
+                           List.copyOf(events), is(List.of()));
+            } finally {
+                completeOpen.complete(null);
+            }
+            StreamObservation stream = streamFuture.get(10, SECONDS);
+            stream.close(COMPLETED);
+            connection.close(ConnectionOutcome.NORMAL);
+        } finally {
+            completeOpen.complete(null);
+            executor.shutdownNow();
+            assertThat("Stream lifecycle tasks terminated", executor.awaitTermination(10, SECONDS), is(true));
+        }
+
+        assertThat(List.copyOf(events), is(List.of("stream-CANCELLED", "observer-connection-LOCAL_CLOSE")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void singleObserverEmptyStreamClosePreservesOtherStreams(boolean failOpen) {
+        var events = new ConcurrentLinkedQueue<String>();
+        var opened = new AtomicInteger();
+        HttpTransportObserver observer = recordingObserver("observer", events, () -> {
+            if (opened.incrementAndGet() == 1) {
+                if (failOpen) {
+                    throw new IllegalStateException("stream open");
+                }
+                return StreamObservation.noop();
+            }
+            return outcome -> events.add("stream-" + outcome);
+        });
+        ConnectionObservation connection = HttpTransportObserver.compose(List.of(observer))
+                .connectionOpened(SERVER, TRANSPORT_TCP, TLS);
+        StreamObservation empty = connection.streamOpened(BIDIRECTIONAL, REMOTE);
+        StreamObservation pending = connection.streamOpened(BIDIRECTIONAL, REMOTE);
+
+        empty.close(COMPLETED);
+        empty.close(CANCELLED);
+        connection.close(ConnectionOutcome.LOCAL_CLOSE);
+        pending.close(COMPLETED);
+        empty.close(COMPLETED);
+        connection.close(ConnectionOutcome.NORMAL);
+
+        assertThat(connection.streamOpened(BIDIRECTIONAL, REMOTE), sameInstance(StreamObservation.noop()));
+        assertThat(opened.get(), is(2));
+        assertThat(List.copyOf(events), is(List.of("stream-CANCELLED", "observer-connection-LOCAL_CLOSE")));
+    }
+
+    @Test
+    void singleObserverIsolatesStreamCloseFailuresAndFinalizesConnection() {
+        var events = new ConcurrentLinkedQueue<String>();
+        HttpTransportObserver observer = recordingObserver("observer", events, () -> outcome -> {
+            events.add("stream-" + outcome);
+            throw new IllegalStateException("stream close");
+        });
+        ConnectionObservation connection = HttpTransportObserver.compose(List.of(observer))
+                .connectionOpened(SERVER, TRANSPORT_TCP, TLS);
+        StreamObservation completed = connection.streamOpened(BIDIRECTIONAL, REMOTE);
+        StreamObservation pending = connection.streamOpened(BIDIRECTIONAL, REMOTE);
+
+        completed.close(COMPLETED);
+        completed.close(CANCELLED);
+        connection.close(ConnectionOutcome.LOCAL_CLOSE);
+        pending.close(COMPLETED);
+        connection.close(ConnectionOutcome.NORMAL);
+
+        assertThat(List.copyOf(events), is(List.of("stream-COMPLETED",
+                                                 "stream-CANCELLED",
+                                                 "observer-connection-LOCAL_CLOSE")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void singleObserverStreamCloseErrorPropagatesAndFinalizesConnection(boolean connectionClose) {
+        var events = new ConcurrentLinkedQueue<String>();
+        var failure = new AssertionError("stream close");
+        HttpTransportObserver observer = recordingObserver("observer", events, () -> outcome -> {
+            events.add("stream-" + outcome);
+            throw failure;
+        });
+        ConnectionObservation connection = HttpTransportObserver.compose(List.of(observer))
+                .connectionOpened(SERVER, TRANSPORT_TCP, TLS);
+        StreamObservation stream = connection.streamOpened(BIDIRECTIONAL, REMOTE);
+
+        AssertionError thrown = assertThrows(AssertionError.class, () -> {
+            if (connectionClose) {
+                connection.close(ConnectionOutcome.LOCAL_CLOSE);
+            } else {
+                stream.close(COMPLETED);
+            }
+        });
+        connection.close(ConnectionOutcome.LOCAL_CLOSE);
+        stream.close(COMPLETED);
+        connection.close(ConnectionOutcome.NORMAL);
+
+        assertThat(thrown, sameInstance(failure));
+        assertThat(connection.streamOpened(BIDIRECTIONAL, REMOTE), sameInstance(StreamObservation.noop()));
+        assertThat(List.copyOf(events), is(List.of("stream-" + (connectionClose ? CANCELLED : COMPLETED),
+                                                 "observer-connection-LOCAL_CLOSE")));
+    }
+
+    @Test
+    void singleObserverReentrantCloseWaitsForStreamCallback() {
+        var events = new ConcurrentLinkedQueue<String>();
+        var connectionRef = new AtomicReference<ConnectionObservation>();
+        var streamRef = new AtomicReference<StreamObservation>();
+        HttpTransportObserver observer = recordingObserver("observer", events, () -> outcome -> {
+            events.add("stream-start-" + outcome);
+            connectionRef.get().close(ConnectionOutcome.LOCAL_CLOSE);
+            streamRef.get().close(CANCELLED);
+            events.add("stream-end-" + outcome);
+        });
+        ConnectionObservation connection = HttpTransportObserver.compose(List.of(observer))
+                .connectionOpened(SERVER, TRANSPORT_TCP, TLS);
+        connectionRef.set(connection);
+        StreamObservation stream = connection.streamOpened(BIDIRECTIONAL, REMOTE);
+        streamRef.set(stream);
+
+        stream.close(COMPLETED);
+        stream.close(CANCELLED);
+        connection.close(ConnectionOutcome.NORMAL);
+
+        assertThat(List.copyOf(events), is(List.of("stream-start-COMPLETED",
+                                                 "stream-end-COMPLETED",
+                                                 "observer-connection-LOCAL_CLOSE")));
+    }
+
+    @Test
+    void connectionCloseCompletesOnlyRemainingOverlappingStreams() {
+        var events = new ConcurrentLinkedQueue<String>();
+        var identifiers = new AtomicInteger();
+        HttpTransportObserver observer = recordingObserver("observer", events, () -> {
+            int identifier = identifiers.incrementAndGet();
+            return outcome -> events.add(identifier + "-stream-" + outcome);
+        });
+        ConnectionObservation connection = HttpTransportObserver.compose(List.of(observer))
+                .connectionOpened(SERVER, TRANSPORT_TCP, TLS);
+        List<StreamObservation> streams = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            streams.add(connection.streamOpened(BIDIRECTIONAL, REMOTE));
+        }
+
+        streams.get(2).close(COMPLETED);
+        streams.get(0).close(COMPLETED);
+        streams.get(4).close(COMPLETED);
+        streams.get(2).close(CANCELLED);
+        streams.add(connection.streamOpened(BIDIRECTIONAL, REMOTE));
+
+        assertThat(List.copyOf(events), is(List.of("3-stream-COMPLETED",
+                                                 "1-stream-COMPLETED",
+                                                 "5-stream-COMPLETED")));
+
+        connection.close(ConnectionOutcome.LOCAL_CLOSE);
+        streams.forEach(stream -> stream.close(COMPLETED));
+        connection.close(ConnectionOutcome.NORMAL);
+
+        List<String> completed = List.copyOf(events);
+        assertThat("Each stream and the connection close exactly once", completed.size(), is(7));
+        assertThat(completed.subList(3, 6), containsInAnyOrder("2-stream-CANCELLED",
+                                                            "4-stream-CANCELLED",
+                                                            "6-stream-CANCELLED"));
+        assertThat("The connection callback follows all stream callbacks",
+                   completed.getLast(), is("observer-connection-LOCAL_CLOSE"));
+    }
+
+    @Test
+    void streamClosePreservesDelegateOrderAndIsolatesFailuresAfterSkippedObservers() {
+        var events = new ConcurrentLinkedQueue<String>();
+        HttpTransportObserver noop = recordingObserver("noop", events, StreamObservation::noop);
+        HttpTransportObserver failingOpen = recordingObserver("failing-open", events, () -> {
+            throw new IllegalStateException("stream open");
+        });
+        HttpTransportObserver failingClose = recordingObserver("failing-close", events, () -> outcome -> {
+            events.add("failing-stream-" + outcome);
+            throw new IllegalStateException("stream close");
+        });
+        HttpTransportObserver recording = recordingObserver("recording", events,
+                                                            () -> outcome -> events.add("recording-stream-" + outcome));
+        ConnectionObservation connection = HttpTransportObserver
+                .compose(List.of(noop, failingOpen, failingClose, failingClose, recording))
+                .connectionOpened(SERVER, TRANSPORT_TCP, TLS);
+
+        StreamObservation completed = connection.streamOpened(BIDIRECTIONAL, REMOTE);
+        completed.close(COMPLETED);
+        completed.close(CANCELLED);
+        StreamObservation pending = connection.streamOpened(BIDIRECTIONAL, REMOTE);
+        connection.close(ConnectionOutcome.LOCAL_CLOSE);
+        pending.close(COMPLETED);
+
+        assertThat(List.copyOf(events), is(List.of("failing-stream-COMPLETED",
+                                                 "recording-stream-COMPLETED",
+                                                 "failing-stream-CANCELLED",
+                                                 "recording-stream-CANCELLED",
+                                                 "noop-connection-LOCAL_CLOSE",
+                                                 "failing-open-connection-LOCAL_CLOSE",
+                                                 "failing-close-connection-LOCAL_CLOSE",
+                                                 "recording-connection-LOCAL_CLOSE")));
+    }
+
+    @Test
     void protocolSelectionForwardsOnlySelectionsAndTransitions() {
         AtomicInteger selections = new AtomicInteger();
         HttpTransportObserver observer = (role, transport, handshake) -> new ConnectionObservation() {
@@ -384,6 +650,31 @@ class HttpTransportObserverTest {
         assertThat(selections.get(), is(2));
         assertThrows(IllegalArgumentException.class, () -> connection.protocolSelected(" "));
         assertThrows(NullPointerException.class, () -> connection.protocolSelected(null));
+    }
+
+    private static HttpTransportObserver recordingObserver(String name,
+                                                           Queue<String> events,
+                                                           Supplier<StreamObservation> streamSupplier) {
+        return (_, _, _) -> new ConnectionObservation() {
+            @Override
+            public HandshakeObservation handshakeStarted() {
+                return HandshakeObservation.noop();
+            }
+
+            @Override
+            public void protocolSelected(String protocol) {
+            }
+
+            @Override
+            public StreamObservation streamOpened(Direction direction, Initiator initiator) {
+                return streamSupplier.get();
+            }
+
+            @Override
+            public void close(ConnectionOutcome outcome) {
+                events.add(name + "-connection-" + outcome);
+            }
+        };
     }
 
 }
