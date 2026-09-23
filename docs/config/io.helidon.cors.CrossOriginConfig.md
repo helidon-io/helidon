@@ -63,7 +63,7 @@ Represents information about cross origin request sharing
 <td>
 <code>*</code>
 </td>
-<td>Sets the allowOrigins</td>
+<td>Sets the allowed origins. The wildcard * allows non-opaque origins; opaque origins require the literal null in the allow-list, even with *</td>
 </tr>
 <tr>
 <td>

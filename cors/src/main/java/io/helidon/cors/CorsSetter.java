@@ -37,7 +37,9 @@ public interface CorsSetter<T> {
     T enabled(boolean enabled);
 
     /**
-     * Sets the allowOrigins.
+     * Sets the allowed origins. The default wildcard {@code *} allows non-opaque origins.
+     * Requests with an opaque origin require the literal {@code null} in the allow-list,
+     * even when the list contains {@code *}.
      *
      * @param origins the origin value(s)
      * @return updated setter

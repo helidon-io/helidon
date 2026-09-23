@@ -332,7 +332,8 @@ public class CrossOriginConfig {
         @Override
         @ConfiguredOption(type = String.class,
                           kind = ConfiguredOption.Kind.LIST,
-                          description = "Sets the allowOrigins.",
+                          description = "Sets the allowed origins. The wildcard * allows non-opaque origins; "
+                                  + "opaque origins require the literal null in the allow-list, even with *.",
                           value = "*")
         public Builder allowOrigins(String... origins) {
             this.origins = copyOf(origins);
