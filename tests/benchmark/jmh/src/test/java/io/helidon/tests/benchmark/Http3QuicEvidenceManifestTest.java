@@ -434,13 +434,13 @@ class Http3QuicEvidenceManifestTest {
 
         try {
             process.getOutputStream().close();
-        } catch (IOException ignored) {
+        } catch (IOException _) {
             // Best-effort close after process completion.
         }
         if (outputThread.isAlive()) {
             try {
                 process.getInputStream().close();
-            } catch (IOException ignored) {
+            } catch (IOException _) {
                 // Best-effort close before bounded reader join.
             }
             outputThread.interrupt();
@@ -448,7 +448,7 @@ class Http3QuicEvidenceManifestTest {
             while (outputThread.isAlive() && System.nanoTime() < outputDeadline) {
                 try {
                     outputThread.join(PROCESS_POLL_MILLIS);
-                } catch (InterruptedException ignored) {
+                } catch (InterruptedException _) {
                     interrupted = true;
                 }
             }
@@ -516,7 +516,7 @@ class Http3QuicEvidenceManifestTest {
         try {
             try {
                 process.getOutputStream().close();
-            } catch (IOException ignored) {
+            } catch (IOException _) {
                 // The process may already have closed its input.
             }
             long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(PROCESS_CLEANUP_SECONDS);
@@ -570,7 +570,7 @@ class Http3QuicEvidenceManifestTest {
                 }
                 try {
                     Thread.sleep(10);
-                } catch (InterruptedException ignored) {
+                } catch (InterruptedException _) {
                     interrupted = true;
                 }
             }
