@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,12 +37,7 @@ import static io.helidon.grpc.core.GrpcHelper.extractMethodName;
  */
 @Priority(InterceptorPriorities.CONTEXT)
 class ContextSettingServerInterceptor
-        implements ServerInterceptor, ServiceDescriptor.Aware {
-
-    /**
-     * The {@link ServiceDescriptor} for the service being intercepted.
-     */
-    private ServiceDescriptor serviceDescriptor;
+        implements ServerInterceptor {
 
     private ContextSettingServerInterceptor() {
     }
@@ -57,11 +52,17 @@ class ContextSettingServerInterceptor
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call,
                                                                  Metadata headers,
                                                                  ServerCallHandler<ReqT, RespT> next) {
+        throw new IllegalStateException("Service descriptor is required");
+    }
 
+    @SuppressWarnings("unchecked")
+    <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServiceDescriptor serviceDescriptor,
+                                                           ServerCall<ReqT, RespT> call,
+                                                           Metadata headers,
+                                                           ServerCallHandler<ReqT, RespT> next) {
         Context context = Context.current();
         String fullMethodName = call.getMethodDescriptor().getFullMethodName();
         String methodName = extractMethodName(fullMethodName);
@@ -82,11 +83,6 @@ class ContextSettingServerInterceptor
         }
 
         return Contexts.interceptCall(context, call, headers, next);
-    }
-
-    @Override
-    public void setServiceDescriptor(ServiceDescriptor descriptor) {
-        this.serviceDescriptor = descriptor;
     }
 
     @Override
