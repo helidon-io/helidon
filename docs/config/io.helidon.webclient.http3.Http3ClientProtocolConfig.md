@@ -89,7 +89,7 @@ Configuration of the HTTP/3 client protocol
 <td>
 <code>-1</code>
 </td>
-<td>Maximum field section size the client advertises to servers in HTTP/3 SETTINGS</td>
+<td>Maximum field section size the client advertises to servers in HTTP/3 SETTINGS; <code>-1</code> omits the setting so no limit is advertised</td>
 </tr>
 <tr>
 <td>
@@ -151,7 +151,7 @@ Configuration of the HTTP/3 client protocol
 <td>
 <code>-1</code>
 </td>
-<td>Maximum QPACK dynamic table capacity announced by the client</td>
+<td>Maximum QPACK dynamic table capacity announced by the client; <code>-1</code> uses the protocol default of <code>0</code></td>
 </tr>
 <tr>
 <td>
@@ -187,7 +187,7 @@ Configuration of the HTTP/3 client protocol
 <td>
 <code>-1</code>
 </td>
-<td>Maximum number of QPACK blocked streams announced by the client</td>
+<td>Maximum number of QPACK blocked streams announced by the client; <code>-1</code> uses the protocol default of <code>0</code></td>
 </tr>
 <tr>
 <td>

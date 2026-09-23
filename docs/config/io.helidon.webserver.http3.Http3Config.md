@@ -51,7 +51,7 @@ HTTP/3 listener protocol configuration
 <td>
 <code>-1</code>
 </td>
-<td>Maximum QPACK dynamic table capacity announced by the server</td>
+<td>Maximum QPACK dynamic table capacity announced by the server; <code>-1</code> uses the protocol default of <code>0</code></td>
 </tr>
 <tr>
 <td>
@@ -101,7 +101,7 @@ HTTP/3 listener protocol configuration
 <td>
 <code>-1</code>
 </td>
-<td>Maximum number of QPACK blocked streams announced by the server</td>
+<td>Maximum number of QPACK blocked streams announced by the server; <code>-1</code> uses the protocol default of <code>0</code></td>
 </tr>
 <tr>
 <td>
