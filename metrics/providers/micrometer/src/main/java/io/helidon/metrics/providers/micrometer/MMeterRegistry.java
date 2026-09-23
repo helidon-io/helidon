@@ -32,6 +32,7 @@ import java.util.function.Predicate;
 
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.FunctionalCounter;
+import io.helidon.metrics.api.MeterConfig;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.SystemTagsManager;
@@ -94,6 +95,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     private final Clock clock;
     private final MicrometerMetricsFactory metricsFactory;
     private final MetricsConfig metricsConfig;
+    private final Map<String, MeterConfig> meterConfigs;
     private final SystemTagsManager systemTagsManager;
     private volatile boolean registeredWithFactory;
 
@@ -120,6 +122,9 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         this.clock = clock;
         this.metricsFactory = metricsFactory;
         this.metricsConfig = metricsConfig;
+        Map<String, MeterConfig> configuredMeters = new HashMap<>();
+        metricsConfig.meters().forEach(meter -> configuredMeters.put(meter.name(), meter));
+        this.meterConfigs = Map.copyOf(configuredMeters);
         this.systemTagsManager = SystemTagsManager.create(metricsConfig, metricsFactory);
         delegate.config()
                 .onMeterAdded(this::onMeterAdded)
@@ -278,13 +283,23 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     }
 
     @Override
+    public boolean isMeterEnabled(String name) {
+        Objects.requireNonNull(name);
+        if (!metricsConfig.enabled()) {
+            return false;
+        }
+        MeterConfig meterConfig = meterConfigs.get(name);
+        return meterConfig == null || meterConfig.enabled();
+    }
+
+    @Override
     public boolean isMeterEnabled(String name, Map<String, String> tags) {
         /*
         This method uses only config, not any mutable data structures, so no need to lock.
          */
         Objects.requireNonNull(name);
         Objects.requireNonNull(tags);
-        return metricsConfig.isMeterEnabled(name);
+        return isMeterEnabled(name);
     }
 
     @Override
@@ -413,6 +428,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         if (disabledMeter != null) {
             return disabledMeter;
         }
+        configureMeter(builder);
 
         io.helidon.metrics.api.Meter helidonMeter;
 
@@ -525,6 +541,17 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         // If this is not "one of ours" then we need to create a new builder, based on the one passed in but with the correct
         // Micrometer delegate builder assigned.
         return (HM) getOrCreateUntyped(convertNeutralBuilder(builder));
+    }
+
+    private void configureMeter(io.helidon.metrics.api.Meter.Builder<?, ?> builder) {
+        MeterConfig meterConfig = meterConfigs.get(builder.name());
+        if (meterConfig == null || meterConfig.percentiles().isEmpty()) {
+            return;
+        }
+        if (!(builder instanceof io.helidon.metrics.api.Timer.Builder timerBuilder)) {
+            throw new IllegalArgumentException("Percentiles are configured for a meter which is not a timer: " + builder.name());
+        }
+        timerBuilder.percentiles(meterConfig.percentiles().orElseThrow().stream().mapToDouble(Double::doubleValue).toArray());
     }
 
     private io.helidon.metrics.api.Meter noopMeterIfDisabled(io.helidon.metrics.api.Meter.Builder<?, ?> builder) {
