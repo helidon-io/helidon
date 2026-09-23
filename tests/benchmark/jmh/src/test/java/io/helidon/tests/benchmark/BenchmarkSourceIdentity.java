@@ -538,7 +538,7 @@ public final class BenchmarkSourceIdentity {
             if (!real.equals(normalized)) {
                 paths.add(real);
             }
-        } catch (IOException ignored) {
+        } catch (IOException _) {
             // The exact configured form remains safe to sanitize when the path does not exist.
         }
         String result = value;
