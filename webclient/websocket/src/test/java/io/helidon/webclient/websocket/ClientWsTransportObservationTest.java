@@ -96,6 +96,44 @@ class ClientWsTransportObservationTest {
     }
 
     @Test
+    void eofAfterCompleteFrameRemainsRemoteClose() {
+        var connection = new TestConnection(new byte[] {(byte) 0x82, 1, 1});
+        var messages = new ArrayList<BufferData>();
+
+        run(connection, new WsListener() {
+            @Override
+            public void onMessage(WsSession session, BufferData buffer, boolean last) {
+                messages.add(buffer);
+            }
+        });
+
+        assertThat(messages.size(), is(1));
+        assertThat(messages.getFirst().read(), is(1));
+        assertThat(connection.outcomes, contains(ConnectionOutcome.REMOTE_CLOSE));
+        assertThat(connection.closed, is(1));
+    }
+
+    @Test
+    void truncatedFrameHeaderIsReportedAsError() {
+        assertTruncatedFrame(new byte[] {(byte) 0x82});
+    }
+
+    @Test
+    void truncatedShortFrameLengthIsReportedAsError() {
+        assertTruncatedFrame(new byte[] {(byte) 0x82, 126, 0});
+    }
+
+    @Test
+    void truncatedLongFrameLengthIsReportedAsError() {
+        assertTruncatedFrame(new byte[] {(byte) 0x82, 127, 0, 0, 0, 0, 0, 0, 0});
+    }
+
+    @Test
+    void truncatedFramePayloadIsReportedAsError() {
+        assertTruncatedFrame(new byte[] {(byte) 0x82, 4, 1});
+    }
+
+    @Test
     void listenerFailureIsReportedBeforeSendingClose() {
         var connection = new TestConnection(new byte[0]);
         var failure = new IllegalStateException("listener failed");
@@ -179,6 +217,23 @@ class ClientWsTransportObservationTest {
         assertThat(connection.writes.size(), is(2));
         assertThat("WebSocket messages must not publish HTTP lifecycle events", connection.lifecycleEvents, empty());
         assertThat(connection.outcomes, contains(ConnectionOutcome.REMOTE_CLOSE));
+        assertThat(connection.closed, is(1));
+    }
+
+    private static void assertTruncatedFrame(byte[] bytes) {
+        var connection = new TestConnection(bytes);
+        var messages = new ArrayList<BufferData>();
+
+        run(connection, new WsListener() {
+            @Override
+            public void onMessage(WsSession session, BufferData buffer, boolean last) {
+                messages.add(buffer);
+            }
+        });
+
+        assertThat("A truncated frame must not deliver a message", messages, empty());
+        assertThat(connection.outcomes, contains(ConnectionOutcome.ERROR));
+        assertThat(connection.writes, empty());
         assertThat(connection.closed, is(1));
     }
 

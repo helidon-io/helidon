@@ -287,13 +287,20 @@ public class ClientWsConnection implements WsSession, Runnable {
     private void doRun() {
         listener.onOpen(this);
         while (!terminated) {
+            boolean frameStarted = false;
             try {
+                connection.reader().ensureAvailable();
+                frameStarted = true;
                 ServerWsFrame frame = readFrame();
                 if (!processFrame(frame)) {
                     return;
                 }
-            } catch (DataReader.InsufficientDataAvailableException _) {
-                closeInitiated(ConnectionOutcome.REMOTE_CLOSE);
+            } catch (DataReader.InsufficientDataAvailableException e) {
+                if (frameStarted) {
+                    HttpTransportObserverSupport.connectionFailed(connection, e);
+                } else {
+                    closeInitiated(ConnectionOutcome.REMOTE_CLOSE);
+                }
                 return;
             } catch (WsCloseException e) {
                 if (e.closeCode() != WsCloseCodes.NORMAL_CLOSE) {
