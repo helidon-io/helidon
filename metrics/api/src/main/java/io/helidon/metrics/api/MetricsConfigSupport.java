@@ -16,9 +16,11 @@
 package io.helidon.metrics.api;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -138,6 +140,12 @@ class MetricsConfigSupport {
             }
             if (builder.scoping().isEmpty()) {
                 builder.scoping(ScopingConfig.create());
+            }
+            Set<String> meterNames = new HashSet<>();
+            for (MeterConfig meter : builder.meters()) {
+                if (!meterNames.add(meter.name())) {
+                    throw new IllegalArgumentException("Duplicate meter configuration name: " + meter.name());
+                }
             }
         }
     }

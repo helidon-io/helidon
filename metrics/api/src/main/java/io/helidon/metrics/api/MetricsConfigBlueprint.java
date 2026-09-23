@@ -67,6 +67,17 @@ interface MetricsConfigBlueprint {
     boolean enabled();
 
     /**
+     * Settings for individual meters, matched by exact name across all tags in this registry.
+     * Names must be unique. Settings for names which are not registered have no effect.
+     *
+     * @return meter settings
+     * @since 28.0.0
+     */
+    @Option.Configured
+    @Option.Singular
+    List<MeterConfig> meters();
+
+    /**
      * Whether to allow anybody to access the metrics endpoint when this config is used by a metrics observer.
      * This setting has no effect in the top-level {@code metrics} config which controls the shared registry.
      *
@@ -237,7 +248,15 @@ interface MetricsConfigBlueprint {
      */
     default boolean isMeterEnabled(String name) {
         Objects.requireNonNull(name);
-        return enabled();
+        if (!enabled()) {
+            return false;
+        }
+        for (MeterConfig meter : meters()) {
+            if (meter.name().equals(name)) {
+                return meter.enabled();
+            }
+        }
+        return true;
     }
 
     /**
