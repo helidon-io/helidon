@@ -553,47 +553,47 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
         @Override
         public io.helidon.metrics.api.HistogramSnapshot snapshot() {
-            return null;
+            return HistogramSnapshot.empty(0L, 0D, 0D);
         }
 
         @Override
         public void record(long amount, TimeUnit unit) {
-
+            Objects.requireNonNull(unit);
         }
 
         @Override
         public void record(Duration duration) {
-
+            Objects.requireNonNull(duration);
         }
 
         @Override
         public <T> T record(Supplier<T> f) {
-            return null;
+            return Objects.requireNonNull(f).get();
         }
 
         @Override
         public <T> T record(Callable<T> f) throws Exception {
-            return f.call();
+            return Objects.requireNonNull(f).call();
         }
 
         @Override
         public void record(Runnable f) {
-            f.run();
+            Objects.requireNonNull(f).run();
         }
 
         @Override
         public Runnable wrap(Runnable f) {
-            return f;
+            return Objects.requireNonNull(f);
         }
 
         @Override
         public <T> Callable<T> wrap(Callable<T> f) {
-            return f;
+            return Objects.requireNonNull(f);
         }
 
         @Override
         public <T> Supplier<T> wrap(Supplier<T> f) {
-            return null;
+            return Objects.requireNonNull(f);
         }
 
         @Override
@@ -603,16 +603,19 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
         @Override
         public double totalTime(TimeUnit unit) {
+            Objects.requireNonNull(unit);
             return 0;
         }
 
         @Override
         public double mean(TimeUnit unit) {
+            Objects.requireNonNull(unit);
             return 0;
         }
 
         @Override
         public double max(TimeUnit unit) {
+            Objects.requireNonNull(unit);
             return 0;
         }
 
@@ -623,6 +626,7 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
             @Override
             public long stop(io.helidon.metrics.api.Timer timer) {
+                Objects.requireNonNull(timer);
                 return 0;
             }
         }
@@ -637,6 +641,8 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
             private Builder(String name) {
                 super(name, Type.TIMER);
+                this.percentiles = new double[0];
+                this.buckets = new Duration[0];
             }
 
             @Override
@@ -646,25 +652,28 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
             @Override
             public Builder percentiles(double... percentiles) {
-                this.percentiles = percentiles;
+                this.percentiles = Objects.requireNonNull(percentiles).clone();
                 return identity();
             }
 
             @Override
             public Builder buckets(Duration... buckets) {
-                this.buckets = buckets;
+                this.buckets = Objects.requireNonNull(buckets).clone();
+                for (Duration bucket : this.buckets) {
+                    Objects.requireNonNull(bucket);
+                }
                 return identity();
             }
 
             @Override
             public Builder minimumExpectedValue(Duration min) {
-                this.min = min;
+                this.min = Objects.requireNonNull(min);
                 return identity();
             }
 
             @Override
             public Builder maximumExpectedValue(Duration max) {
-                this.max = max;
+                this.max = Objects.requireNonNull(max);
                 return identity();
             }
 
