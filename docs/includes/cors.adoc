@@ -35,6 +35,15 @@ Helidon {flavor-uc} includes an implementation of CORS that you can use to add C
 to the services you develop. You can define your application's CORS behavior programmatically using the Helidon CORS API alone, or
 together with configuration.
 
+Requests without an `Origin` header do not require CORS processing.
+For requests with that header, Helidon recognizes the same origin only when the scheme, hostname,
+and port match the incoming request's scheme and `Host` header. An omitted port is equivalent
+to port 80 for HTTP or port 443 for HTTPS. Other origins are subject to the configured `allow-origins` list.
+
+The request scheme is the scheme seen by Helidon, not a scheme inferred from forwarding headers.
+If a TLS-terminating proxy forwards HTTPS requests to Helidon using HTTP, include the external HTTPS
+origin in `allow-origins` so those requests remain permitted as cross-origin requests.
+
 Helidon also provides three built-in services that add their
 own endpoints to your application -- health, metrics, and OpenAPI -- that have integrated CORS support.
 By adding very little code to your application, you control how all the resources in

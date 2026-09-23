@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -315,6 +315,17 @@ public abstract class CorsSupportBase<Q, R, T extends CorsSupportBase<Q, R, T, B
          * @return the method name
          */
         String method();
+
+        /**
+         * Returns the scheme of the incoming request for same-origin comparisons.
+         * The default is unknown, which disables the same-origin shortcut for requests
+         * carrying an {@code Origin} header and leaves them subject to CORS checks.
+         *
+         * @return the request scheme ({@code http} or {@code https}), or empty if unknown
+         */
+        default Optional<String> scheme() {
+            return Optional.empty();
+        }
 
         /**
          * Processes the next handler/filter/request processor in the chain.

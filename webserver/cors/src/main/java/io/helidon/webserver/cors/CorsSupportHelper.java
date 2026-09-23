@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 package io.helidon.webserver.cors;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -69,6 +71,7 @@ class CorsSupportHelper<Q, R> {
 
     static final Logger LOGGER = Logger.getLogger(CorsSupportHelper.class.getName());
 
+    private static final int MAX_PORT = 65535;
     private static final Supplier<Optional<CrossOriginConfig>> EMPTY_SECONDARY_SUPPLIER = Optional::empty;
 
     private final String name;
@@ -384,11 +387,14 @@ class CorsSupportHelper<Q, R> {
     }
 
     private boolean isRequestTypeNormal(RequestAdapter<Q> requestAdapter, boolean silent) {
-        // If no origin header or same as host, then just normal
+        // Requests without an Origin header or with the same scheme, host, and port are normal.
         Optional<String> originOpt = requestAdapter.firstHeader(ORIGIN);
         Optional<String> hostOpt = requestAdapter.firstHeader(HOST);
 
-        boolean result = originOpt.isEmpty() || (hostOpt.isPresent() && originOpt.get().contains("://" + hostOpt.get()));
+        boolean result = originOpt.isEmpty()
+                || (hostOpt.isPresent() && requestAdapter.scheme()
+                        .map(scheme -> isSameOrigin(originOpt.get(), hostOpt.get(), scheme))
+                        .orElse(false));
         LogHelper.logIsRequestTypeNormal(result, silent, requestAdapter, originOpt, hostOpt);
         return result;
     }
@@ -757,12 +763,76 @@ class CorsSupportHelper<Q, R> {
         return true;
     }
 
+    private static Optional<String> normalizedAuthority(URI uri, int defaultPort) {
+        // URI.getHost() rejects reg-name characters such as underscores, so use the raw authority.
+        String authority = uri.getRawAuthority();
+        if (authority == null
+                || authority.isEmpty()
+                || authority.indexOf('@') >= 0
+                || authority.indexOf('%') >= 0
+                || authority.chars().anyMatch(c -> c <= ' ' || c >= 127)
+                || !"".equals(uri.getRawPath())
+                || uri.getRawQuery() != null
+                || uri.getRawFragment() != null) {
+            return Optional.empty();
+        }
+
+        // URI parsing validates bracketed IPv6 literals; only a colon after ']' introduces a port.
+        int hostEnd = authority.charAt(0) == '[' ? authority.indexOf(']') + 1 : authority.indexOf(':');
+        if (hostEnd < 0) {
+            hostEnd = authority.length();
+        }
+        if (hostEnd == 0) {
+            return Optional.empty();
+        }
+        int port = defaultPort;
+        if (hostEnd < authority.length()) {
+            if (authority.charAt(hostEnd) != ':' || hostEnd + 1 == authority.length()) {
+                return Optional.empty();
+            }
+            port = 0;
+            for (int i = hostEnd + 1; i < authority.length(); i++) {
+                char digit = authority.charAt(i);
+                if (digit < '0' || digit > '9') {
+                    return Optional.empty();
+                }
+                port = port * 10 + digit - '0';
+                if (port > MAX_PORT) {
+                    return Optional.empty();
+                }
+            }
+        }
+        return Optional.of(authority.substring(0, hostEnd) + ":" + port);
+    }
+
     private static Supplier<IllegalArgumentException> noRequiredHeaderExcFactory(String header) {
         return () -> new IllegalArgumentException(noRequiredHeader(header));
     }
 
     private static String noRequiredHeader(String header) {
         return "CORS request does not have required header " + header;
+    }
+
+    private boolean isSameOrigin(String origin, String host, String scheme) {
+        if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
+            return false;
+        }
+        try {
+            URI originUri = new URI(origin);
+            if (!scheme.equalsIgnoreCase(originUri.getScheme())) {
+                return false;
+            }
+            URI requestUri = new URI(scheme + "://" + host);
+            int defaultPort = "https".equalsIgnoreCase(scheme) ? 443 : 80;
+            Optional<String> originAuthority = normalizedAuthority(originUri, defaultPort);
+            Optional<String> requestAuthority = normalizedAuthority(requestUri, defaultPort);
+            return originAuthority.isPresent()
+                    && requestAuthority.isPresent()
+                    && originAuthority.get().equalsIgnoreCase(requestAuthority.get());
+        } catch (URISyntaxException e) {
+            decisionLog(() -> "Cannot compare CORS origin with an invalid URI: " + e.getReason());
+            return false;
+        }
     }
 
     private R forbid(RequestAdapter<Q> requestAdapter, ResponseAdapter<R> responseAdapter,
