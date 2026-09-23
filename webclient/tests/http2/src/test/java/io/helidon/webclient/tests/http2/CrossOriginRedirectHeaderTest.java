@@ -127,10 +127,10 @@ class CrossOriginRedirectHeaderTest {
                         res.status(Status.INTERNAL_SERVER_ERROR_500)
                                 .send(e.getMessage());
                     }
-                }).route(Method.QUERY, "/capture-query", (req, res) -> {
+                }).any("/capture-query", (req, res) -> {
                     CROSS_ORIGIN_CAPTURE.set(capturedHeaders(req));
                     CROSS_ORIGIN_METHOD_CAPTURE.set(req.prologue().method());
-                    CROSS_ORIGIN_CONTENT_TYPE_CAPTURE.set(req.headers().get(HeaderNames.CONTENT_TYPE).get());
+                    CROSS_ORIGIN_CONTENT_TYPE_CAPTURE.set(req.headers().first(HeaderNames.CONTENT_TYPE).orElse(null));
                     try (InputStream inputStream = req.content().inputStream()) {
                         CROSS_ORIGIN_BODY_CAPTURE.set(new String(inputStream.readAllBytes(), StandardCharsets.UTF_8));
                         res.send("captured");
@@ -170,13 +170,13 @@ class CrossOriginRedirectHeaderTest {
                                     .send();
                         })
                         .put("/redirect/cross-origin-round-trip", (req, res) -> {
-                            res.status(Status.FOUND_302)
+                            res.status(Status.SEE_OTHER_303)
                                     .header(HeaderNames.LOCATION,
                                             "http://localhost:" + redirectTargetServer.port()
                                                     + "/redirect/back-to-trusted")
                                     .send();
                         })
-                        .put("/redirect/cross-origin-change-method", (req, res) -> {
+                        .post("/redirect/cross-origin-change-method", (req, res) -> {
                             res.status(Status.FOUND_302)
                                     .header(HeaderNames.LOCATION,
                                             "http://localhost:" + redirectTargetServer.port() + "/capture")
@@ -194,13 +194,13 @@ class CrossOriginRedirectHeaderTest {
                                             "http://localhost:" + redirectTargetServer.port() + "/capture-body")
                                     .send();
                         })
-                        .route(Method.QUERY, "/redirect/cross-origin-query-301", (req, res) -> {
+                        .any("/redirect/cross-origin-query-301", (req, res) -> {
                             res.status(Status.MOVED_PERMANENTLY_301)
                                     .header(HeaderNames.LOCATION,
                                             "http://localhost:" + redirectTargetServer.port() + "/capture-query")
                                     .send();
                         })
-                        .route(Method.QUERY, "/redirect/cross-origin-query-302", (req, res) -> {
+                        .any("/redirect/cross-origin-query-302", (req, res) -> {
                             res.status(Status.FOUND_302)
                                     .header(HeaderNames.LOCATION,
                                             "http://localhost:" + redirectTargetServer.port() + "/capture-query")
@@ -371,21 +371,25 @@ class CrossOriginRedirectHeaderTest {
     }
 
     @Test
-    void rejectsBufferedQueryOnCrossOriginRedirect() {
+    void rejectsBufferedNonPostEntityOnCrossOriginRedirect() {
         for (String redirectPath : List.of("/redirect/cross-origin-query-301", "/redirect/cross-origin-query-302")) {
-            resetCapturedHeaders();
-            Http2Client client = newClient(true, true);
-            try {
-                IllegalStateException exception = assertThrows(IllegalStateException.class,
-                                                               () -> client.method(Method.QUERY)
-                                                                       .uri(redirectPath)
-                                                                       .header(HeaderNames.CONTENT_TYPE, "application/sql")
-                                                                       .submit(requestBodyBytes()));
-                assertThat(exception.getMessage(), is(BLOCKED_REDIRECT_MESSAGE));
-                assertThat(CROSS_ORIGIN_CAPTURE.get(), is(nullValue()));
-                assertThat(CROSS_ORIGIN_BODY_CAPTURE.get(), is(nullValue()));
-            } finally {
-                client.closeResource();
+            for (String method : List.of("QUERY", "PUT", "PATCH", "DELETE", "post")) {
+                resetCapturedHeaders();
+                Http2Client client = newClient(true, true);
+                try {
+                    String context = method + " at " + redirectPath;
+                    IllegalStateException exception = assertThrows(IllegalStateException.class,
+                                                                   () -> client.method(Method.create(method))
+                                                                           .uri(redirectPath)
+                                                                           .header(HeaderNames.CONTENT_TYPE, "application/sql")
+                                                                           .submit(requestBodyBytes()),
+                                                                   context);
+                    assertThat(context, exception.getMessage(), is(BLOCKED_REDIRECT_MESSAGE));
+                    assertThat(context + " target request", CROSS_ORIGIN_CAPTURE.get(), is(nullValue()));
+                    assertThat(context + " target entity", CROSS_ORIGIN_BODY_CAPTURE.get(), is(nullValue()));
+                } finally {
+                    client.closeResource();
+                }
             }
         }
     }
@@ -777,7 +781,7 @@ class CrossOriginRedirectHeaderTest {
     void followsH2cFallbackOutputStream302RedirectWithMaxRedirectsOne() throws Exception {
         try (RedirectingHttp1Server firstHop = new RedirectingHttp1Server(302)) {
             Http2Client client = newClient(firstHop.port(), true, true, null, false);
-            try (Http2ClientResponse response = client.put("/token")
+            try (Http2ClientResponse response = client.post("/token")
                          .maxRedirects(1)
                          .outputStream(OutputStream::close)) {
                 assertThat(response.status(), is(Status.OK_200));
@@ -1002,7 +1006,7 @@ class CrossOriginRedirectHeaderTest {
     @Test
     void followsOutputStream302RedirectWithMaxRedirectsOne() {
         try (Http2ClientResponse response = newClient(true, true, null, true, false)
-                .put("/redirect/cross-origin-change-method")
+                .post("/redirect/cross-origin-change-method")
                 .maxRedirects(1)
                 .sendExpectContinue(false)
                 .outputStream(it -> {

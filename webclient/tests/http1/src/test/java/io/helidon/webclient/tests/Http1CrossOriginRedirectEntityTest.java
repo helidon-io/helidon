@@ -49,6 +49,7 @@ import io.helidon.webclient.spi.WebClientService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -97,9 +98,10 @@ class Http1CrossOriginRedirectEntityTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {301, 302})
+    @CsvSource({"301, QUERY", "302, QUERY", "301, PUT", "302, PUT", "301, PATCH", "302, PATCH",
+                "301, DELETE", "302, DELETE", "301, post", "302, post"})
     @Timeout(20)
-    void doesNotReplayBufferedQueryAcrossCrossOriginRedirect(int redirectStatus) throws Exception {
+    void doesNotReplayBufferedNonPostEntityAcrossCrossOriginRedirect(int redirectStatus, String method) throws Exception {
         try (SecondHopServer secondHop = new SecondHopServer(InetAddress.getByName(SECOND_HOP_HOST));
              FirstHopServer firstHop = new FirstHopServer(InetAddress.getByName(FIRST_HOP_HOST),
                                                           secondHop.port(),
@@ -108,7 +110,7 @@ class Http1CrossOriginRedirectEntityTest {
             Http1Client client = newClient(firstHop.port());
             try {
                 IllegalStateException exception = assertThrows(IllegalStateException.class,
-                                                               () -> client.method(Method.QUERY)
+                                                               () -> client.method(Method.create(method))
                                                                        .uri("/token")
                                                                        .readTimeout(REQUEST_TIMEOUT)
                                                                        .header(HeaderNames.CONTENT_TYPE,
@@ -117,7 +119,7 @@ class Http1CrossOriginRedirectEntityTest {
                 assertThat(exception.getMessage(), is(BLOCKED_REDIRECT_MESSAGE));
 
                 CapturedRequest originRequest = firstHop.awaitRequest();
-                assertThat(originRequest.method(), is(Method.QUERY.text()));
+                assertThat(originRequest.method(), is(method));
                 assertThat(originRequest.body(), is(REQUEST_BODY));
                 secondHop.assertNoRequest();
             } finally {

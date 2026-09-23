@@ -69,6 +69,7 @@ import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
@@ -94,6 +95,8 @@ class Http1ClientTest {
             HeaderNames.create("X-Req-Expect100"), "true");
     private static final HeaderName REQ_CONTENT_LENGTH_HEADER_NAME = HeaderNames.create("X-Req-ContentLength");
     private static final HeaderName REQUEST_METADATA_HEADER = HeaderNames.create("X-Request-Metadata");
+    private static final HeaderName REDIRECT_METHOD = HeaderNames.create("X-Redirect-Method");
+    private static final HeaderName REDIRECT_ENTITY = HeaderNames.create("X-Redirect-Entity");
     private static final String EXPECTED_GET_AFTER_REDIRECT_STRING = "GET after redirect endpoint reached";
     private static final String QUERY_ACCEPT = "application/json";
     private static final String QUERY_CONTENT_TYPE = "application/sql";
@@ -121,6 +124,15 @@ class Http1ClientTest {
         rules.put("/redirectChainSecond", Http1ClientTest::redirectChainSecond);
         rules.put("/redirectChainFinal", Http1ClientTest::redirectChainFinal);
         rules.put("/redirect", Http1ClientTest::redirect);
+        for (Status status : List.of(Status.MOVED_PERMANENTLY_301, Status.FOUND_302)) {
+            rules.any("/methodRedirect" + status.code(), (_, res) -> res.status(status)
+                    .header(HeaderNames.LOCATION, "/methodRedirectTarget")
+                    .send());
+        }
+        rules.any("/methodRedirectTarget", (req, res) -> res
+                .header(REDIRECT_METHOD, req.prologue().method().text())
+                .header(REDIRECT_ENTITY, req.content().hasEntity() ? req.content().as(String.class) : "")
+                .send());
         rules.route(Method.QUERY,
                     "/queryRedirect301",
                     (_, res) -> queryRedirect(res, Status.MOVED_PERMANENTLY_301, "/queryRedirectTarget"));
@@ -176,7 +188,7 @@ class Http1ClientTest {
             res.header(HeaderNames.SET_COOKIE, "final=blocked; Path=/")
                     .send("done");
         });
-        rules.put("/cookie/loop-start", (req, res) -> res.status(Status.FOUND_302)
+        rules.put("/cookie/loop-start", (req, res) -> res.status(Status.SEE_OTHER_303)
                 .header(HeaderNames.LOCATION, "/cookie/loop-intermediate")
                 .send());
         rules.get("/cookie/loop-intermediate", (req, res) -> res.status(Status.FOUND_302)
@@ -189,7 +201,7 @@ class Http1ClientTest {
                 .send());
         rules.put("/cookie/mixed-switch", (req, res) -> {
             req.content().as(String.class);
-            res.status(Status.FOUND_302)
+            res.status(Status.SEE_OTHER_303)
                     .header(HeaderNames.LOCATION, "/cookie/mixed-intermediate")
                     .header(HeaderNames.SET_COOKIE, "mixed-switch=kept; Path=/")
                     .send();
@@ -556,6 +568,57 @@ class Http1ClientTest {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.as(String.class), is("Test entity"));
             assertThat("HTTP/1 must continue the original producer across redirects", producerInvocations.get(), is(1));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"301, PUT", "302, PUT", "301, PATCH", "302, PATCH", "301, DELETE", "302, DELETE",
+                "301, post", "302, post"})
+    void nonPostRedirectPreservesMethodAndEntity(int redirectStatus, String method) {
+        Http1Client client = Http1Client.builder()
+                .baseUri(baseURI)
+                .servicesDiscoverServices(false)
+                .build();
+        try (HttpClientResponse response = client.method(Method.create(method))
+                .uri("/methodRedirect" + redirectStatus)
+                .submit("redirect entity")) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat("Redirected method", response.headers(), hasHeader(REDIRECT_METHOD, method));
+            assertThat("Redirected entity", response.headers(), hasHeader(REDIRECT_ENTITY, "redirect entity"));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {301, 302})
+    void headRedirectPreservesMethod(int redirectStatus) {
+        Http1Client client = Http1Client.builder()
+                .baseUri(baseURI)
+                .servicesDiscoverServices(false)
+                .build();
+        try (HttpClientResponse response = client.head("/methodRedirect" + redirectStatus).request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat("Redirected method", response.headers(), hasHeader(REDIRECT_METHOD, Method.HEAD.text()));
+            assertThat("Redirected entity", response.headers(), hasHeader(REDIRECT_ENTITY, ""));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {301, 302})
+    void postRedirectChangesToGetAndDropsEntity(int redirectStatus) {
+        Http1Client client = Http1Client.builder()
+                .baseUri(baseURI)
+                .servicesDiscoverServices(false)
+                .build();
+        try (HttpClientResponse response = client.post("/methodRedirect" + redirectStatus).submit("redirect entity")) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat("Redirected method", response.headers(), hasHeader(REDIRECT_METHOD, Method.GET.text()));
+            assertThat("Redirected entity", response.headers(), hasHeader(REDIRECT_ENTITY, ""));
         } finally {
             client.closeResource();
         }
