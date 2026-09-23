@@ -20,6 +20,7 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -84,6 +85,44 @@ class Http3RedirectTest {
     }
 
     @Test
+    void shouldPreserveNonPostMethodAndBodyAfter301() throws Exception {
+        for (Method method : List.of(Method.PUT, Method.PATCH, Method.DELETE, Method.create("post"))) {
+            assertMethodAndEntityPreserved(executeRedirect(method, 301, false), method);
+        }
+    }
+
+    @Test
+    void shouldPreserveNonPostMethodAndBodyAfter302() throws Exception {
+        for (Method method : List.of(Method.PUT, Method.PATCH, Method.DELETE, Method.create("post"))) {
+            assertMethodAndEntityPreserved(executeRedirect(method, 302, false), method);
+        }
+    }
+
+    @Test
+    void shouldPreserveHeadAfter301And302() throws Exception {
+        for (Status redirectStatus : List.of(Status.MOVED_PERMANENTLY_301, Status.FOUND_302)) {
+            AtomicReference<Method> targetMethod = new AtomicReference<>();
+            try (TestEnvironment environment = TestEnvironment.createSharedListener(routing -> routing
+                    .route(Method.HEAD, REDIRECT_PATH, (_, response) -> response.status(redirectStatus)
+                            .header(HeaderNames.LOCATION, TARGET_PATH)
+                            .send())
+                    .any(TARGET_PATH, (request, response) -> {
+                        targetMethod.set(request.prologue().method());
+                        response.send();
+                    }))) {
+                Http3Client client = newClient(environment);
+                try (Http3ClientResponse response = client.head(REDIRECT_PATH).request()) {
+                    assertThat(response.status(), is(Status.OK_200));
+                    assertThat(response.protocolId(), is(Http3Client.PROTOCOL_ID));
+                    assertThat("Redirect status " + redirectStatus.code(), targetMethod.get(), is(Method.HEAD));
+                } finally {
+                    client.closeResource();
+                }
+            }
+        }
+    }
+
+    @Test
     void shouldUseMediaWriterContentTypeForQuery() throws Exception {
         AtomicReference<String> contentType = new AtomicReference<>();
         try (TestEnvironment environment = TestEnvironment.createSharedListener(routing -> routing
@@ -132,6 +171,11 @@ class Http3RedirectTest {
             }
         }
         assertThat(targetCount.get(), is(0));
+    }
+
+    @Test
+    void shouldRewritePostToGetWithoutStaleEntityHeadersAfter301() throws Exception {
+        assertRewrittenToGet(executeRedirect(Method.POST, 301, false));
     }
 
     @Test
@@ -219,6 +263,12 @@ class Http3RedirectTest {
     }
 
     @Test
+    void shouldRejectOneShotPutBodyAfter301And302() throws Exception {
+        assertOneShotBodyRejected(Method.PUT, Status.MOVED_PERMANENTLY_301);
+        assertOneShotBodyRejected(Method.PUT, Status.FOUND_302);
+    }
+
+    @Test
     void shouldRejectCrossOriginMaterializedBodyAfterTemporaryRedirect() throws Exception {
         assertCrossOriginMaterializedBodyRejected(Method.POST, Status.TEMPORARY_REDIRECT_307, true);
     }
@@ -236,6 +286,12 @@ class Http3RedirectTest {
     @Test
     void shouldRejectCrossOriginQueryBodyAfterFound() throws Exception {
         assertCrossOriginMaterializedBodyRejected(Method.QUERY, Status.FOUND_302, true);
+    }
+
+    @Test
+    void shouldRejectCrossOriginPutBodyAfter301And302() throws Exception {
+        assertCrossOriginMaterializedBodyRejected(Method.PUT, Status.MOVED_PERMANENTLY_301, true);
+        assertCrossOriginMaterializedBodyRejected(Method.PUT, Status.FOUND_302, true);
     }
 
     @Test

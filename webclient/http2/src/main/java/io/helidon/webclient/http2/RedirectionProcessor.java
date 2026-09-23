@@ -39,7 +39,7 @@ class RedirectionProcessor {
         int statusCode = status.code();
         return statusCode == Status.TEMPORARY_REDIRECT_307.code()
                 || statusCode == Status.PERMANENT_REDIRECT_308.code()
-                || (Method.QUERY.equals(method)
+                || (!Method.POST.equals(method)
                         && (statusCode == Status.MOVED_PERMANENTLY_301.code()
                         || statusCode == Status.FOUND_302.code()));
     }
@@ -118,7 +118,7 @@ class RedirectionProcessor {
                 }
                 followedRedirects++;
                 ClientUri redirectUri = clientRequest.resolveRedirectUri(sourceUri, redirectedUri);
-                // Method and entity must be retained for 307 and 308, and for QUERY with 301 and 302.
+                // Method and entity must be retained for 307 and 308, and for non-POST methods with 301 and 302.
                 if (keepsMethodAndEntity(clientRequest.method(), redirectStatus)) {
                     if (!requestEntity.canStartAttempt()) {
                         throw new IllegalStateException(
