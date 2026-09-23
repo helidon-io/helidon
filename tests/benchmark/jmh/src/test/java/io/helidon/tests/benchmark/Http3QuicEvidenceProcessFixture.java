@@ -66,7 +66,7 @@ public final class Http3QuicEvidenceProcessFixture {
                                 Thread.sleep(10);
                             }
                             System.exit(130);
-                        } catch (InterruptedException ignored) {
+                        } catch (InterruptedException _) {
                             Thread.currentThread().interrupt();
                         }
                     });
