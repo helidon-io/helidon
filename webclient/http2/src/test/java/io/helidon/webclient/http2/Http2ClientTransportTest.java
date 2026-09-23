@@ -18,6 +18,7 @@ package io.helidon.webclient.http2;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -242,6 +243,30 @@ class Http2ClientTransportTest {
 
         assertThat(fixture.outcomes, is(List.of(StreamOutcome.ERROR)));
         assertThat(fixture.connectionOutcome.get(), is(ConnectionOutcome.ERROR));
+    }
+
+    @Test
+    void failedPingWriteClassifiesPhysicalClosure() {
+        var fixture = new Fixture();
+        doThrow(new UncheckedIOException(new IOException("PING write failed")))
+                .when(fixture.writer).writeNow(any(BufferData.class));
+
+        assertThat(fixture.connection.closed(Http2ClientProtocolConfig.builder().ping(true).build()), is(true));
+        fixture.connection.closeNow();
+
+        assertThat(fixture.events, is(List.of("protocol:http/2", "connection:ERROR")));
+    }
+
+    @Test
+    void timedOutPingWriteClassifiesPhysicalClosure() {
+        var fixture = new Fixture();
+        doThrow(new UncheckedIOException(new SocketTimeoutException("PING write timed out")))
+                .when(fixture.writer).writeNow(any(BufferData.class));
+
+        assertThat(fixture.connection.closed(Http2ClientProtocolConfig.builder().ping(true).build()), is(true));
+        fixture.connection.closeNow();
+
+        assertThat(fixture.events, is(List.of("protocol:http/2", "connection:TIMEOUT")));
     }
 
     @Test
