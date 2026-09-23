@@ -20,7 +20,7 @@ also changed.
 | Database | Driver dependency | Configured JDBC driver class | Runtime used by tests |
 | --- | --- | --- | --- |
 | H2 | `com.h2database:h2` | `org.h2.Driver` | In-memory H2 database |
-| MySQL | `com.mysql:mysql-connector-j` | `com.mysql.cj.jdbc.Driver` | Testcontainers MySQL using `container-registry.oracle.com/mysql/community-server:9.7.1` |
+| MySQL | `com.mysql:mysql-connector-j` | `com.mysql.cj.jdbc.Driver` | Testcontainers MySQL using `container-registry.oracle.com/mysql/community-server:9.7.3` |
 | PostgreSQL | `org.postgresql:postgresql` | `org.postgresql.Driver` | Testcontainers image built from `common/src/pgsql/docker` |
 | Oracle Database | `com.oracle.database.jdbc:ojdbc17-production` | `oracle.jdbc.OracleDriver` | Testcontainers Oracle Database Free using `container-registry.oracle.com/database/free:latest-lite` |
 
