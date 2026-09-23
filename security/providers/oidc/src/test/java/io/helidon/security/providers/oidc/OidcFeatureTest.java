@@ -30,7 +30,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
+import io.helidon.common.configurable.AllowList;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
@@ -64,7 +68,9 @@ import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.http1.Http1Config;
 import io.helidon.webserver.http1.Http1ConnectionSelector;
 
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 import org.mockito.Mockito;
 
 import static io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy.COOKIE;
@@ -78,6 +84,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNot.not;
+import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.mockito.Mockito.when;
 
 /**
@@ -85,6 +92,7 @@ import static org.mockito.Mockito.when;
  */
 class OidcFeatureTest {
     private static final String PARAM_NAME = "my-param-attempts";
+    private static final String TENANT_REALM = "tenant-realm";
     private static final URI DEFAULT_LOGOUT_ENDPOINT = URI.create("http://idp.example.test/logout");
     private static final String ID_TOKEN = SignedJwt.sign(
             Jwt.builder()
@@ -184,6 +192,155 @@ class OidcFeatureTest {
     }
 
     @Test
+    void testPostLogoutRedirectUriUsesRequestedUri() throws Exception {
+        String response = logoutResponse("ok", DEFAULT_LOGOUT_ENDPOINT, ID_TOKEN, true, "https://frontend.example");
+
+        assertThat(response, containsString("&post_logout_redirect_uri=https://frontend.example/logged-out"));
+        assertThat(response, not(containsString("attacker.example")));
+    }
+
+    @Test
+    void postLogoutRedirectUriNormalizesExpandedIpv6() throws Exception {
+        String response = logoutResponse("ok",
+                                         DEFAULT_LOGOUT_ENDPOINT,
+                                         ID_TOKEN,
+                                         true,
+                                         "https://[0:0:0:0:0:0:0:1]",
+                                         builder -> builder.frontendUriAllowList(AllowList.builder()
+                                                 .addAllowed("https://[::1]").build()));
+
+        assertThat(response, startsWith("HTTP/1.1 307"));
+        assertThat(response, containsString("&post_logout_redirect_uri=https://[::1]/logged-out"));
+    }
+
+    @Test
+    void postLogoutRedirectUriUsesConfiguredFrontendOrigin() throws Exception {
+        String response = logoutResponse("ok",
+                                         DEFAULT_LOGOUT_ENDPOINT,
+                                         ID_TOKEN,
+                                         true,
+                                         null,
+                                         builder -> builder.frontendUri("https://frontend.example/application"));
+
+        assertThat(response, startsWith("HTTP/1.1 307"));
+        assertThat(response, containsString("&post_logout_redirect_uri=https://frontend.example/logged-out"));
+        assertThat(response, not(containsString("https://frontend.example/application/logged-out")));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> postLogoutRedirectUriPreservesEncodedPaths() {
+        return Stream.of("/signed%20out", "signed%20out", "/%2Fother.example/path", "/signed%3Fout%23done%25")
+                .flatMap(path -> Stream.of(
+                        dynamicTest("configured frontend: " + path,
+                                    () -> assertEncodedPostLogoutPath(path, "https://frontend.example/application")),
+                        dynamicTest("discovered origin: " + path,
+                                    () -> assertEncodedPostLogoutPath(path, null))));
+    }
+
+    @Test
+    void testPostLogoutRedirectUriForceHttpsOmitsDefaultHttpPort() throws Exception {
+        String response = logoutResponse("ok",
+                                         DEFAULT_LOGOUT_ENDPOINT,
+                                         ID_TOKEN,
+                                         true,
+                                         "http://frontend.example",
+                                         builder -> builder.forceHttpsRedirects(true)
+                                                 .frontendUriAllowList(AllowList.builder()
+                                                         .addAllowed("https://frontend.example").build()));
+
+        assertThat(response, startsWith("HTTP/1.1 307"));
+        assertThat(response, containsString("&post_logout_redirect_uri=https://frontend.example/logged-out"));
+        assertThat(response, not(containsString("https://frontend.example:80")));
+    }
+
+    @Test
+    void testPostLogoutRedirectUriRejectsDisallowedRequestedUri() throws Exception {
+        String response = logoutResponse("ok",
+                                         DEFAULT_LOGOUT_ENDPOINT,
+                                         ID_TOKEN,
+                                         true,
+                                         "https://frontend.example",
+                                         builder -> builder.frontendUriAllowList(AllowList.builder()
+                                                 .addAllowed("https://allowed.example").build()));
+
+        assertThat(response, startsWith("HTTP/1.1 401"));
+        assertThat(response, containsString("\r\nWWW-Authenticate: Bearer realm=\"helidon\"\r\n"));
+        assertLocalOidcCookiesRemoved(response);
+        assertThat(response, not(containsString("\r\nLocation:")));
+    }
+
+    @Test
+    void testPostLogoutFrontendRejectionUsesTenantRealm() throws Exception {
+        String response = logoutResponse("ok",
+                                         DEFAULT_LOGOUT_ENDPOINT,
+                                         ID_TOKEN,
+                                         true,
+                                         "https://frontend.example",
+                                         "tenant-a",
+                                         builder -> builder
+                                                 .frontendUriAllowList(AllowList.builder()
+                                                         .addAllowed("https://allowed.example").build())
+                                                 .addTenantConfig(TenantConfig.tenantBuilder()
+                                                         .name("tenant-a")
+                                                         .realm(TENANT_REALM)
+                                                         .clientId("id")
+                                                         .clientSecret("secret")
+                                                         .identityUri(URI.create("http://idp.example.test/identity"))
+                                                         .logoutEndpointUri(DEFAULT_LOGOUT_ENDPOINT)
+                                                         .oidcMetadataWellKnown(false)
+                                                         .build()));
+
+        assertThat(response, startsWith("HTTP/1.1 401"));
+        assertThat(response, containsString("\r\nWWW-Authenticate: Bearer realm=\"" + TENANT_REALM + "\"\r\n"));
+        assertLocalOidcCookiesRemoved(response);
+        assertThat(response, not(containsString("\r\nLocation:")));
+    }
+
+    @Test
+    void testPostLogoutRedirectUriRejectsInvalidRequestedUri() throws Exception {
+        String response = logoutResponse("ok",
+                                         DEFAULT_LOGOUT_ENDPOINT,
+                                         ID_TOKEN,
+                                         true,
+                                         "ftp://frontend.example");
+
+        assertThat(response, startsWith("HTTP/1.1 401"));
+        assertThat(response, containsString("\r\nWWW-Authenticate: Bearer realm=\"helidon\"\r\n"));
+        assertLocalOidcCookiesRemoved(response);
+        assertThat(response, not(containsString("\r\nLocation:")));
+    }
+
+    @Test
+    void postLogoutRedirectUriRejectsZeroPortOrigin() throws Exception {
+        String response = logoutResponse("ok", DEFAULT_LOGOUT_ENDPOINT, ID_TOKEN, true, "https://frontend.example:0");
+
+        assertThat(response, startsWith("HTTP/1.1 401"));
+        assertThat(response, containsString("\r\nWWW-Authenticate: Bearer realm=\"helidon\"\r\n"));
+        assertLocalOidcCookiesRemoved(response);
+        assertThat(response, not(containsString("\r\nLocation:")));
+    }
+
+    @Test
+    void testMalformedForwardedHeaderIsRejectedBeforeOidc() throws Exception {
+        String response = logoutResponse("ok",
+                                         DEFAULT_LOGOUT_ENDPOINT,
+                                         ID_TOKEN,
+                                         true,
+                                         "https://[bad");
+
+        // Malformed HTTP metadata is rejected by the unchanged server before OIDC processes the request.
+        assertThat(response, startsWith("HTTP/1.1 400"));
+        assertThat(response, not(containsString("\r\nLocation:")));
+        String configuredResponse = logoutResponse("ok",
+                                                   DEFAULT_LOGOUT_ENDPOINT,
+                                                   ID_TOKEN,
+                                                   true,
+                                                   "https://[bad",
+                                                   builder -> builder.frontendUri("https://configured.example"));
+        assertThat(configuredResponse, startsWith("HTTP/1.1 400"));
+    }
+
+    @Test
     void testLogoutRejectsInvalidCompressedIdToken() throws Exception {
         String injectedHeader = "X-Reproducer: injected";
         String invalidIdToken = ID_TOKEN + "\r\n" + injectedHeader + "\r\n";
@@ -209,82 +366,28 @@ class OidcFeatureTest {
         assertThat(response, not(containsString("\r\nLocation:")));
     }
 
-    private static void assertLocalOidcCookiesRemoved(String response) {
-        for (String cookieName : List.of(OidcConfig.DEFAULT_COOKIE_NAME,
-                                         OidcConfig.DEFAULT_ID_COOKIE_NAME,
-                                         OidcConfig.DEFAULT_TENANT_COOKIE_NAME,
-                                         OidcConfig.DEFAULT_REFRESH_COOKIE_NAME)) {
-            assertThat(response,
-                       containsString("\r\nSet-Cookie: " + cookieName
-                                              + "=; Expires="));
-        }
+    @Test
+    void testCodeExchangeRedirectUriUsesRequestedUri() throws Exception {
+        String location = callbackLocation(false, "/test", DEFAULT_TENANT_ID, "https://frontend.example");
+
+        assertThat(location, is("/test?h_ra=1"));
     }
 
-    private static String logoutResponse(String state) throws Exception {
-        return logoutResponse(state, DEFAULT_LOGOUT_ENDPOINT);
+    @Test
+    void testCodeExchangeForceHttpsRedirectUriUsesAllowedOrigin() throws Exception {
+        String location = callbackLocation(false, "/test", DEFAULT_TENANT_ID, null, true);
+
+        assertThat(location, is("/test?h_ra=1"));
     }
 
-    private static String logoutResponse(String state, URI logoutEndpoint) throws Exception {
-        return logoutResponse(state, logoutEndpoint, ID_TOKEN, true);
+    @Test
+    void testCodeExchangeRejectsDisallowedRequestedUri() throws Exception {
+        callbackLocation(false, "/test", DEFAULT_TENANT_ID, "https://frontend.example", false, false);
     }
 
-    private static String logoutResponse(String state,
-                                         URI logoutEndpoint,
-                                         String idToken,
-                                         boolean validateResponseHeaders) throws Exception {
-        OidcConfig oidcConfig = OidcConfig.builder()
-                .clientId("id")
-                .clientSecret("secret")
-                .identityUri(URI.create("http://idp.example.test/identity"))
-                .tokenEndpointUri(URI.create("http://idp.example.test/token"))
-                .authorizationEndpointUri(URI.create("http://idp.example.test/authorize"))
-                .logoutEndpointUri(logoutEndpoint)
-                .signJwk(JwkKeys.builder().build())
-                .oidcMetadataWellKnown(false)
-                .logoutEnabled(true)
-                .logoutUri("/oidc/logout")
-                .postLogoutUri(URI.create("/logged-out"))
-                .cookieEncryptionEnabled(false)
-                .cookieEncryptionEnabledIdToken(false)
-                .cookieCompressionEnabledIdToken(true)
-                .cookieEncryptionEnabledTenantName(false)
-                .cookieEncryptionEnabledRefreshToken(false)
-                .cookieEncryptionEnabledState(false)
-                .build();
-        String idTokenCookie = oidcConfig.idTokenCookieHandler()
-                .createCookie(idToken)
-                .build()
-                .value();
-        assertThat("ID token test cookie should be compressed", idTokenCookie, startsWith("~"));
-
-        WebServer server = WebServer.builder()
-                .port(0)
-                .addConnectionSelector(Http1ConnectionSelector.builder()
-                                               .config(Http1Config.builder()
-                                                               .validateResponseHeaders(validateResponseHeaders)
-                                                               .build())
-                                               .build())
-                .addRouting(HttpRouting.builder()
-                                    .addFeature(OidcFeature.create(oidcConfig)))
-                .build()
-                .start();
-
-        try (Socket socket = new Socket("127.0.0.1", server.port())) {
-            socket.setSoTimeout(5000);
-            OutputStream output = socket.getOutputStream();
-            output.write(("GET /oidc/logout?state=" + state + " HTTP/1.1\r\n"
-                    + "Host: 127.0.0.1:" + server.port() + "\r\n"
-                    + "Cookie: " + oidcConfig.idTokenCookieHandler().cookieName() + "=" + idTokenCookie + "\r\n"
-                    + "Connection: close\r\n"
-                    + "\r\n").getBytes(StandardCharsets.US_ASCII));
-            output.flush();
-            socket.shutdownOutput();
-
-            InputStream input = socket.getInputStream();
-            return new String(input.readAllBytes(), StandardCharsets.ISO_8859_1);
-        } finally {
-            server.stop();
-        }
+    @Test
+    void testCodeExchangeFrontendRejectionUsesTenantRealm() throws Exception {
+        callbackLocation(false, "/test", "tenant-a", "https://frontend.example", false, false);
     }
 
     @Test
@@ -503,36 +606,193 @@ class OidcFeatureTest {
         assertThat(feature.toString(), notNullValue());
     }
 
-    private ServerRequest request(String... cookies) {
-        ServerRequest request = Mockito.mock(ServerRequest.class);
-        WritableHeaders<?> writableHeaders = WritableHeaders.create();
-        for (String cookie : cookies) {
-            writableHeaders.add(HeaderNames.COOKIE, cookie);
+    @Test
+    void frontendAllowListDoesNotRejectNonOidcRoutes() throws Exception {
+        WebServer server = WebServer.builder()
+                .routing(routing -> routing.addFeature(OidcFeature.create(oidcConfig))
+                        .get("/public", (request, response) -> response.send(request.path().path())))
+                .build().start();
+        try {
+            HttpResponse<String> response = HttpClient.newHttpClient().send(
+                    HttpRequest.newBuilder(URI.create("http://localhost:" + server.port() + "/public")).GET().build(),
+                    HttpResponse.BodyHandlers.ofString());
+            assertThat(response.statusCode(), is(200));
+            assertThat(response.body(), is("/public"));
+        } finally {
+            server.stop();
         }
-        when(request.headers()).thenReturn(ServerRequestHeaders.create(writableHeaders));
-        return request;
     }
 
-    private ServerRequest requestWithQuery(String query, String... cookies) {
-        ServerRequest request = request(cookies);
-        when(request.query()).thenReturn(UriQuery.create(query));
-        return request;
+    private static void assertLocalOidcCookiesRemoved(String response) {
+        for (String cookieName : List.of(OidcConfig.DEFAULT_COOKIE_NAME,
+                                         OidcConfig.DEFAULT_ID_COOKIE_NAME,
+                                         OidcConfig.DEFAULT_TENANT_COOKIE_NAME,
+                                         OidcConfig.DEFAULT_REFRESH_COOKIE_NAME)) {
+            assertThat(response,
+                       containsString("\r\nSet-Cookie: " + cookieName
+                                              + "=; Expires="));
+        }
     }
 
-    private static String stateCookie(OidcConfig oidcConfig, String originalUri, String state) {
-        JsonObject stateJson = JsonObject.builder()
-                .set("originalUri", originalUri)
-                .set("state", state)
-                .build();
-        String encoded = Base64.getEncoder()
-                .encodeToString(stateJson.toString().getBytes(StandardCharsets.UTF_8));
-        return oidcConfig.stateCookieHandler()
-                .createCookie(encoded)
+    private static String logoutResponse(String state) throws Exception {
+        return logoutResponse(state, DEFAULT_LOGOUT_ENDPOINT);
+    }
+
+    private static void assertEncodedPostLogoutPath(String path, String configuredFrontendUri) throws Exception {
+        String response = logoutResponse("ok",
+                                         DEFAULT_LOGOUT_ENDPOINT,
+                                         ID_TOKEN,
+                                         true,
+                                         "https://frontend.example",
+                                         builder -> {
+                                             builder.postLogoutUri(URI.create(path));
+                                             if (configuredFrontendUri != null) {
+                                                 builder.frontendUri(configuredFrontendUri);
+                                             }
+                                         });
+        String expectedPath = path.startsWith("/") ? path : "/" + path;
+
+        assertThat(response, startsWith("HTTP/1.1 307"));
+        assertThat(response,
+                   containsString("&post_logout_redirect_uri=https://frontend.example" + expectedPath + "&state=ok\r\n"));
+    }
+
+    private static String logoutResponse(String state, URI logoutEndpoint) throws Exception {
+        return logoutResponse(state, logoutEndpoint, ID_TOKEN, true);
+    }
+
+    private static String logoutResponse(String state,
+                                         URI logoutEndpoint,
+                                         String idToken,
+                                         boolean validateResponseHeaders) throws Exception {
+        return logoutResponse(state, logoutEndpoint, idToken, validateResponseHeaders, null);
+    }
+
+    private static String logoutResponse(String state,
+                                         URI logoutEndpoint,
+                                         String idToken,
+                                         boolean validateResponseHeaders,
+                                         String discoveredOrigin) throws Exception {
+        return logoutResponse(state, logoutEndpoint, idToken, validateResponseHeaders, discoveredOrigin, ignored -> { });
+    }
+
+    private static String logoutResponse(String state,
+                                         URI logoutEndpoint,
+                                         String idToken,
+                                         boolean validateResponseHeaders,
+                                         String discoveredOrigin,
+                                         Consumer<OidcConfig.Builder> customizer) throws Exception {
+        return logoutResponse(state, logoutEndpoint, idToken, validateResponseHeaders, discoveredOrigin,
+                              DEFAULT_TENANT_ID, customizer);
+    }
+
+    private static String logoutResponse(String state,
+                                         URI logoutEndpoint,
+                                         String idToken,
+                                         boolean validateResponseHeaders,
+                                         String discoveredOrigin,
+                                         String tenantName,
+                                         Consumer<OidcConfig.Builder> customizer) throws Exception {
+        OidcConfig.Builder oidcConfigBuilder = OidcConfig.builder()
+                .clientId("id")
+                .clientSecret("secret")
+                .identityUri(URI.create("http://idp.example.test/identity"))
+                .tokenEndpointUri(URI.create("http://idp.example.test/token"))
+                .authorizationEndpointUri(URI.create("http://idp.example.test/authorize"))
+                .logoutEndpointUri(logoutEndpoint)
+                .signJwk(JwkKeys.builder().build())
+                .oidcMetadataWellKnown(false)
+                .logoutEnabled(true)
+                .logoutUri("/oidc/logout")
+                .postLogoutUri(URI.create("/logged-out"))
+                .cookieEncryptionEnabled(false)
+                .cookieEncryptionEnabledIdToken(false)
+                .cookieCompressionEnabledIdToken(true)
+                .cookieEncryptionEnabledTenantName(false)
+                .cookieEncryptionEnabledRefreshToken(false)
+                .cookieEncryptionEnabledState(false);
+        if (discoveredOrigin == null) {
+            oidcConfigBuilder.frontendUriAllowList(AllowList.builder()
+                    .addAllowedPattern(Pattern.compile("http://127\\.0\\.0\\.1:[0-9]+")).build());
+        } else {
+            oidcConfigBuilder.frontendUriAllowList(AllowList.builder()
+                    .addAllowed(discoveredOrigin).build());
+        }
+        customizer.accept(oidcConfigBuilder);
+        OidcConfig oidcConfig = oidcConfigBuilder.build();
+        String idTokenCookie = oidcConfig.idTokenCookieHandler()
+                .createCookie(idToken)
                 .build()
-                .toString();
+                .value();
+        assertThat("ID token test cookie should be compressed", idTokenCookie, startsWith("~"));
+        String cookies = oidcConfig.idTokenCookieHandler().cookieName() + "=" + idTokenCookie;
+        if (!DEFAULT_TENANT_ID.equals(tenantName)) {
+            cookies += "; " + oidcConfig.tenantCookieHandler().cookieName() + "="
+                    + oidcConfig.tenantCookieHandler().createCookie(tenantName).build().value();
+        }
+
+        Http1Config.Builder http1Config = Http1Config.builder()
+                .validateResponseHeaders(validateResponseHeaders);
+        var serverBuilder = WebServer.builder()
+                .port(0)
+                .addConnectionSelector(Http1ConnectionSelector.builder()
+                                               .config(http1Config.build())
+                                               .build())
+                .addRouting(HttpRouting.builder()
+                                    .addFeature(OidcFeature.create(oidcConfig)));
+        if (discoveredOrigin != null) {
+            serverBuilder.requestedUriDiscoveryContext(context -> context
+                    .trustedProxies(AllowList.builder().allowAll(true).build()));
+        }
+        WebServer server = serverBuilder.build().start();
+
+        try (Socket socket = new Socket("127.0.0.1", server.port())) {
+            socket.setSoTimeout(5000);
+            OutputStream output = socket.getOutputStream();
+            String host = discoveredOrigin == null ? "127.0.0.1:" + server.port() : "attacker.example";
+            String forwarded = "";
+            if (discoveredOrigin != null) {
+                int schemeSeparator = discoveredOrigin.indexOf("://");
+                forwarded = "Forwarded: for=client.example;host=" + discoveredOrigin.substring(schemeSeparator + 3)
+                        + ";proto=" + discoveredOrigin.substring(0, schemeSeparator) + "\r\n";
+            }
+            output.write(("GET /oidc/logout?state=" + state + " HTTP/1.1\r\n"
+                    + "Host: " + host + "\r\n"
+                    + forwarded
+                    + "Cookie: " + cookies + "\r\n"
+                    + "Connection: close\r\n"
+                    + "\r\n").getBytes(StandardCharsets.US_ASCII));
+            output.flush();
+            socket.shutdownOutput();
+
+            InputStream input = socket.getInputStream();
+            return new String(input.readAllBytes(), StandardCharsets.ISO_8859_1);
+        } finally {
+            server.stop();
+        }
     }
 
-    private static String callbackLocation(boolean useParam, String originalUri, String tenantName) throws Exception {
+    private static String callbackLocation(boolean useParam,
+                                           String originalUri,
+                                           String tenantName,
+                                           String discoveredOrigin) throws Exception {
+        return callbackLocation(useParam, originalUri, tenantName, discoveredOrigin, false);
+    }
+
+    private static String callbackLocation(boolean useParam,
+                                           String originalUri,
+                                           String tenantName,
+                                           String discoveredOrigin,
+                                           boolean forceHttpsRedirects) throws Exception {
+        return callbackLocation(useParam, originalUri, tenantName, discoveredOrigin, forceHttpsRedirects, true);
+    }
+
+    private static String callbackLocation(boolean useParam,
+                                           String originalUri,
+                                           String tenantName,
+                                           String discoveredOrigin,
+                                           boolean forceHttpsRedirects,
+                                           boolean allowRequestedOrigin) throws Exception {
         AtomicInteger tokenRequestCount = new AtomicInteger();
         AtomicReference<Parameters> tokenRequestParameters = new AtomicReference<>();
         WebServer tokenServer = WebServer.builder()
@@ -559,11 +819,13 @@ class OidcFeatureTest {
                     .authorizationEndpointUri(authorizationEndpointUri)
                     .signJwk(JwkKeys.builder().build())
                     .oidcMetadataWellKnown(false)
+                    .forceHttpsRedirects(forceHttpsRedirects)
                     .useParam(useParam)
                     .useCookie(false);
             if (!DEFAULT_TENANT_ID.equals(tenantName)) {
                 builder.addTenantConfig(TenantConfig.tenantBuilder()
                                                 .name(tenantName)
+                                                .realm(TENANT_REALM)
                                                 .clientId("id")
                                                 .clientSecret("secret")
                                                 .identityUri(identityUri)
@@ -573,12 +835,23 @@ class OidcFeatureTest {
                                                 .oidcMetadataWellKnown(false)
                                                 .build());
             }
+            if (discoveredOrigin == null) {
+                builder.frontendUriAllowList(AllowList.builder()
+                        .addAllowedPattern(Pattern.compile((forceHttpsRedirects ? "https" : "http")
+                                                                   + "://localhost:[0-9]+")).build());
+            } else {
+                builder.frontendUriAllowList(AllowList.builder()
+                        .addAllowed(allowRequestedOrigin ? discoveredOrigin : "https://allowed.example").build());
+            }
             OidcConfig config = builder.build();
-            WebServer callbackServer = WebServer.builder()
+            var callbackServerBuilder = WebServer.builder()
                     .host("localhost")
-                    .routing(routing -> OidcFeature.create(config).setup(routing))
-                    .build()
-                    .start();
+                    .routing(routing -> OidcFeature.create(config).setup(routing));
+            if (discoveredOrigin != null) {
+                callbackServerBuilder.requestedUriDiscoveryContext(context -> context
+                        .trustedProxies(AllowList.builder().allowAll(true).build()));
+            }
+            WebServer callbackServer = callbackServerBuilder.build().start();
             try {
                 String state = "state-one";
                 String stateJson = JsonObject.builder()
@@ -600,18 +873,32 @@ class OidcFeatureTest {
                 if (!DEFAULT_TENANT_ID.equals(tenantName)) {
                     callbackUri += "&" + config.tenantParamName() + "=" + tenantName;
                 }
-                String expectedRedirectUri = "http://localhost:" + callbackServer.port() + config.redirectUri();
+                String expectedRedirectUri = (discoveredOrigin == null
+                        ? (forceHttpsRedirects ? "https" : "http") + "://localhost:" + callbackServer.port()
+                        : discoveredOrigin) + config.redirectUri();
                 if (!DEFAULT_TENANT_ID.equals(tenantName)) {
                     expectedRedirectUri += "?" + config.tenantParamName() + "=" + tenantName;
                 }
 
-                HttpRequest request = HttpRequest.newBuilder(URI.create(callbackUri))
-                        .header(HeaderNames.COOKIE.defaultCase(), stateCookie)
-                        .GET()
-                        .build();
+                HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(URI.create(callbackUri))
+                        .header(HeaderNames.COOKIE.defaultCase(), stateCookie);
+                if (discoveredOrigin != null) {
+                    requestBuilder.header(HeaderNames.FORWARDED.defaultCase(),
+                                          "for=client.example;host=frontend.example;proto=https");
+                }
+                HttpRequest request = requestBuilder.GET().build();
                 HttpResponse<Void> response = HttpClient.newHttpClient()
                         .send(request, HttpResponse.BodyHandlers.discarding());
 
+                if (!allowRequestedOrigin) {
+                    assertThat(response.statusCode(), is(Status.UNAUTHORIZED_401.code()));
+                    String expectedRealm = DEFAULT_TENANT_ID.equals(tenantName) ? "helidon" : TENANT_REALM;
+                    assertThat(response.headers().firstValue(HeaderNames.WWW_AUTHENTICATE.defaultCase()),
+                               is(Optional.of("Bearer realm=\"" + expectedRealm + "\"")));
+                    assertThat(tokenRequestCount.get(), is(0));
+                    assertThat(response.headers().firstValue(HeaderNames.LOCATION.defaultCase()), is(Optional.empty()));
+                    return "";
+                }
                 assertThat(response.statusCode(), is(Status.TEMPORARY_REDIRECT_307.code()));
                 Parameters tokenParams = tokenRequestParameters.get();
                 assertThat(tokenRequestCount.get(), is(1));
@@ -627,5 +914,38 @@ class OidcFeatureTest {
         } finally {
             tokenServer.stop();
         }
+    }
+
+    private static String stateCookie(OidcConfig oidcConfig, String originalUri, String state) {
+        JsonObject stateJson = JsonObject.builder()
+                .set("originalUri", originalUri)
+                .set("state", state)
+                .build();
+        String encoded = Base64.getEncoder()
+                .encodeToString(stateJson.toString().getBytes(StandardCharsets.UTF_8));
+        return oidcConfig.stateCookieHandler()
+                .createCookie(encoded)
+                .build()
+                .toString();
+    }
+
+    private static String callbackLocation(boolean useParam, String originalUri, String tenantName) throws Exception {
+        return callbackLocation(useParam, originalUri, tenantName, null);
+    }
+
+    private ServerRequest request(String... cookies) {
+        ServerRequest request = Mockito.mock(ServerRequest.class);
+        WritableHeaders<?> writableHeaders = WritableHeaders.create();
+        for (String cookie : cookies) {
+            writableHeaders.add(HeaderNames.COOKIE, cookie);
+        }
+        when(request.headers()).thenReturn(ServerRequestHeaders.create(writableHeaders));
+        return request;
+    }
+
+    private ServerRequest requestWithQuery(String query, String... cookies) {
+        ServerRequest request = request(cookies);
+        when(request.query()).thenReturn(UriQuery.create(query));
+        return request;
     }
 }

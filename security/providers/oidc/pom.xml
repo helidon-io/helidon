@@ -36,6 +36,10 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-crypto</artifactId>
         </dependency>
         <dependency>

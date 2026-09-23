@@ -61,6 +61,49 @@ security:
             header: "X-Internal-Auth"
 ```
 
+### Selecting the Frontend URI
+
+OIDC uses the frontend URI for authorization redirects, code exchange, and
+relative post-logout redirects. An explicit `frontend-uri` takes precedence
+and bypasses discovery and the allow-list. An absolute `post-logout-uri`
+remains an explicit destination.
+
+For dynamic frontends, configure `frontend-uri-allow-list` beside `frontend-uri`:
+
+```yaml [application.yaml]
+security:
+  providers:
+    - oidc:
+        frontend-uri-allow-list:
+          allow:
+            exact: "https://service.example.com"
+```
+
+The programmatic equivalent is `OidcConfig.Builder.frontendUriAllowList(AllowList)`.
+The list is empty by default. Invalid or disallowed dynamic origins return HTTP
+401 without a redirect or token exchange. This policy applies only to OIDC.
+
+Dynamic origins come from `ServerRequest.requestedUri()`, not raw `Host`
+parsing. SE uses the discovered security-environment URI; MP uses the existing
+`ServerRequest` in the request context. Requested URI discovery and trusted-proxy
+rules are unchanged. Configure the existing listener `trusted-proxies` when
+using forwarding headers.
+
+Origins are matched as `scheme://host[:port]`, with lowercase HTTP(S) scheme
+and host, default ports omitted, and no path, query or fragment. With
+`force-https-redirects`, the default HTTP port maps to the default HTTPS port;
+non-default ports remain. Discovery cannot distinguish omitted ports from
+explicit default ports.
+
+Prefer exact origins or narrowly anchored patterns. Register the resulting
+callback and logout URIs with the identity provider; allow-list patterns do
+not imply wildcard registration there.
+
+> [!WARNING]
+> `frontend-uri-allow-list.allow.all: true` permits every valid origin subject
+> to deny rules. It is disabled by default; use it only temporarily when the
+> deployment independently validates the public host.
+
 ### Example
 
 See the [example][example] on GitHub.

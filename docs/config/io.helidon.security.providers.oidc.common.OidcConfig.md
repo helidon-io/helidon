@@ -434,7 +434,22 @@ Open ID Connect configuration
 </td>
 <td>
 </td>
-<td>Full URI of this application that is visible from user browser</td>
+<td>Full URI of this application that is visible from the user browser; if not configured, OIDC redirect URI construction uses the dynamically discovered requested URI origin, which must be permitted by <code>frontend-<wbr>uri-<wbr>allow-<wbr>list</code> in this OIDC configuration</td>
+</tr>
+<tr>
+<td>
+<a id="frontend-uri-allow-list"></a>
+<a href="io.helidon.common.configurable.AllowList.md">
+<code>frontend-<wbr>uri-<wbr>allow-<wbr>list</code>
+</a>
+</td>
+<td>
+<code>Allow<wbr>List</code>
+</td>
+<td>
+<code>empty (<wbr>deny all)</code>
+</td>
+<td>Allowed dynamically discovered frontend origins when <code>frontend-<wbr>uri</code> is not configured. The default empty list denies all dynamic origins with HTTP 401</td>
 </tr>
 <tr>
 <td>

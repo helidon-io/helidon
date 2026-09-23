@@ -23,11 +23,13 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.Errors;
 import io.helidon.common.LazyValue;
+import io.helidon.common.configurable.AllowList;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.config.Config;
@@ -82,10 +84,6 @@ import io.helidon.webclient.tracing.WebClientTracing;
  *     <td>identity-uri</td>
  *     <td>URI of the identity server, base used to retrieve OIDC metadata</td>
  * </tr>
- * <tr>
- *     <td>frontend-uri</td>
- *     <td>Full URI of the frontend for redirects back from OIDC server (e.g. http://myserver/myApp)</td>
- * </tr>
  * </table>
  *
  * <table class="config">
@@ -94,6 +92,18 @@ import io.helidon.webclient.tracing.WebClientTracing;
  *     <th>key</th>
  *     <th>default value</th>
  *     <th>description</th>
+ * </tr>
+ * <tr>
+ *     <td>frontend-uri</td>
+ *     <td>none</td>
+ *     <td>Full URI of the frontend for redirects back from the OIDC server (e.g. http://myserver/myApp).
+ *         Takes precedence over dynamically discovered frontend origins.</td>
+ * </tr>
+ * <tr>
+ *     <td>frontend-uri-allow-list</td>
+ *     <td>empty (deny all)</td>
+ *     <td>Allowed frontend origins when frontend-uri is not configured. The OIDC provider validates the origin obtained
+ *         through requested URI discovery, and rejects invalid or disallowed origins with HTTP 401.</td>
  * </tr>
  * <tr>
  *     <td>proxy-protocol</td>
@@ -418,6 +428,7 @@ public final class OidcConfig extends TenantConfigImpl {
     private final String logoutUri;
     private final boolean logoutEnabled;
     private final String frontendUri;
+    private final AllowList frontendUriAllowList;
     private final boolean redirect;
     private final String redirectAttemptParam;
     private final RedirectAttemptCounterStrategy redirectAttemptCounterStrategy;
@@ -454,6 +465,7 @@ public final class OidcConfig extends TenantConfigImpl {
     private OidcConfig(Builder builder) {
         super(builder);
         this.frontendUri = builder.frontendUri;
+        this.frontendUriAllowList = builder.frontendUriAllowList;
         this.redirectUri = builder.redirectUri;
         this.logoutUri = builder.logoutUri;
         this.logoutEnabled = builder.logoutEnabled;
@@ -697,9 +709,32 @@ public final class OidcConfig extends TenantConfigImpl {
     }
 
     /**
-     * Redirect URI with host information.
+     * Full URI of this application that is visible from the user browser; if not configured, OIDC redirect URI construction
+     * uses the dynamically discovered requested URI origin, which must be permitted by
+     * {@code frontend-uri-allow-list} in this OIDC configuration.
+     *
+     * @return configured frontend URI, or empty if no frontend URI is explicitly configured
+     */
+    public Optional<String> frontendUri() {
+        return Optional.ofNullable(frontendUri);
+    }
+
+    /**
+     * Allowed dynamically discovered frontend origins. The default empty list denies every origin.
+     * Not used when {@link #frontendUri()} is configured.
+     *
+     * @return the OIDC frontend origin allow-list
+     */
+    public AllowList frontendUriAllowList() {
+        return frontendUriAllowList;
+    }
+
+    /**
+     * Redirect URI using the explicitly configured frontend URI.
+     * Use {@link #redirectUriWithHost(String)} when the frontend URI is derived from a request.
      *
      * @return redirect URI
+     * @throws SecurityException if the frontend URI is not configured
      * @see Builder#redirectUri(String)
      */
     public String redirectUriWithHost() {
@@ -1046,6 +1081,7 @@ public final class OidcConfig extends TenantConfigImpl {
         private boolean logoutEnabled = false;
         // optional properties
         private String frontendUri;
+        private AllowList frontendUriAllowList = AllowList.builder().build();
         private boolean redirect = DEFAULT_REDIRECT;
         private String redirectAttemptParam = DEFAULT_ATTEMPT_PARAM;
         private RedirectAttemptCounterStrategy redirectAttemptCounterStrategy = RedirectAttemptCounterStrategy.PARAM;
@@ -1205,8 +1241,11 @@ public final class OidcConfig extends TenantConfigImpl {
                                   + "This configuration sets the values to the OIDC WebClient default configuration.")
         public Builder config(Config config) {
             super.config(config);
-            // mandatory configuration
+            // application frontend
             config.get("frontend-uri").asString().ifPresent(this::frontendUri);
+            config.get("frontend-uri-allow-list")
+                    .as(AllowList::create)
+                    .ifPresent(this::frontendUriAllowList);
 
             // environment
             config.get("proxy-protocol")
@@ -1335,13 +1374,35 @@ public final class OidcConfig extends TenantConfigImpl {
         }
 
         /**
-         * Full URI of this application that is visible from user browser.
-         * @param uri the frontend URI, such as "http://my.server.com/myApp
+         * Full URI of this application that is visible from the user browser; if not configured, OIDC redirect URI construction
+         * uses the dynamically discovered requested URI origin, which must be permitted by
+         * {@code frontend-uri-allow-list} in this OIDC configuration.
+         *
+         * @param uri the frontend URI, such as {@code http://my.server.com/myApp}
          * @return updated builder instance
          */
         @ConfiguredOption
         public Builder frontendUri(String uri) {
             this.frontendUri = uri;
+            return this;
+        }
+
+        /**
+         * Allowed dynamically discovered frontend origins when {@code frontend-uri} is not configured.
+         * The default empty list denies all dynamic origins with HTTP 401. Values are matched as
+         * {@code scheme://host[:port]}, with lowercase HTTP(S) scheme and host and omitted default ports.
+         * Paths, queries and fragments are not part of an origin. IPv6 addresses are normalized to bracketed canonical form.
+         * When HTTPS is forced, matching uses HTTPS and maps the default HTTP port to the default HTTPS port;
+         * other ports are retained. Configure an explicit {@code frontend-uri} to override discovery and this list.
+         *
+         * @param allowList non-null frontend origin allow-list
+         * @return updated builder instance
+         */
+        @ConfiguredOption(value = "empty (deny all)",
+                          description = "Allowed dynamically discovered frontend origins when <code>frontend-uri</code>"
+                                  + " is not configured. The default empty list denies all dynamic origins with HTTP 401.")
+        public Builder frontendUriAllowList(AllowList allowList) {
+            this.frontendUriAllowList = Objects.requireNonNull(allowList, "Frontend URI allow-list must not be null");
             return this;
         }
 
@@ -1422,8 +1483,9 @@ public final class OidcConfig extends TenantConfigImpl {
          * Note that the URI should not contain any query parameters. You can obtain state using the
          * state query parameter that must be provided to {@link #logoutUri(String)}.
          *
-         * @param uri this will be used by the OIDC server to redirect user to once logout is done, can define just path,
-         *            in which case the scheme, host and port will be taken from request.
+         * @param uri this will be used by the OIDC server to redirect user to once logout is done; can define just a path,
+         *            in which case the scheme, host, and port will be taken from the configured frontend URI, or from the
+         *            allowed requested URI origin when the frontend URI is not configured
          * @return updated builder instance
          */
         public Builder postLogoutUri(URI uri) {
