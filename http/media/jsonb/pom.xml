@@ -54,7 +54,7 @@
             <artifactId>helidon-http-media</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.eclipse</groupId>
+            <groupId>org.eclipse.yasson</groupId>
             <artifactId>yasson</artifactId>
             <scope>runtime</scope>
         </dependency>
