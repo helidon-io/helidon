@@ -31,9 +31,10 @@ data:
           connection-factory-class-name: "oracle.jdbc.pool.OracleDataSource"
           connection-factory-properties:
             description: "Helidon UCP test connection factory"
-            implicitCachingEnabled: "true"
+            explicitCachingEnabled: "false"
+            implicitCachingEnabled: true
             maxStatements: "23"
           connection-properties:
             defaultRowPrefetch: "42"
             includeSynonyms: "true"
-            remarksReporting: "true"
+            remarksReporting: true

@@ -60,6 +60,7 @@ class TestUcp {
                    is(config.get("data.sources.sql.0.provider.ucp.url").as(String.class).get()));
         assertThat(ucpDataSourceConfig.connectionFactoryProperties().orElseThrow(),
                    is(Map.of("description", "Helidon UCP test connection factory",
+                             "explicitCachingEnabled", "false",
                              "implicitCachingEnabled", "true",
                              "maxStatements", "23")));
         assertThat(ucpDataSourceConfig.connectionProperties().orElseThrow(),
@@ -79,9 +80,10 @@ class TestUcp {
         DataSource dataSource = services.getFirst().get();
         assertThat(dataSource, instanceOf(PoolDataSource.class));
         PoolDataSource poolDataSource = (PoolDataSource) dataSource;
-        assertThat(poolDataSource.getConnectionFactoryProperties().size(), is(3));
+        assertThat(poolDataSource.getConnectionFactoryProperties().size(), is(4));
         assertThat(poolDataSource.getConnectionFactoryProperty("description"),
                    is("Helidon UCP test connection factory"));
+        assertThat(poolDataSource.getConnectionFactoryProperty("explicitCachingEnabled"), is("false"));
         assertThat(poolDataSource.getConnectionFactoryProperty("implicitCachingEnabled"), is("true"));
         assertThat(poolDataSource.getConnectionFactoryProperty("maxStatements"), is("23"));
         assertThat(poolDataSource.getConnectionProperties().size(), is(3));
