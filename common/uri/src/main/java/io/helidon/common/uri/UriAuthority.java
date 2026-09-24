@@ -42,15 +42,19 @@ public final class UriAuthority {
 
     /**
      * Create a normalized authority from a host and optional port.
+     * The host must be a DNS name or IP literal, not a generic URI registered name.
      *
      * @param host normalized host
      * @param port port, or {@value #UNDEFINED_PORT} when absent
      * @return normalized authority
      * @throws NullPointerException     in case the host is {@code null}
-     * @throws IllegalArgumentException in case the port is invalid
+     * @throws IllegalArgumentException in case the host is a generic registered name or the port is invalid
      */
     public static UriAuthority create(UriHost host, int port) {
         Objects.requireNonNull(host, "host");
+        if (host.kind() == UriHost.Kind.REGISTERED_NAME) {
+            throw new IllegalArgumentException("Authority host must be a DNS name or IP literal");
+        }
         validatePort(port);
         return new UriAuthority(host, port);
     }
@@ -58,7 +62,9 @@ public final class UriAuthority {
     /**
      * Parse and normalize authority text.
      * <p>
-     * DNS hosts are normalized to lower-case ASCII. IPv6 authorities must use brackets.
+     * Only DNS hosts and IP literals are accepted. DNS hosts are normalized to lower-case ASCII.
+     * IPv6 authorities must use brackets. An explicit port must not be empty.
+     * Use {@link #createForUri(String)} for generic URI registered names or an empty port.
      *
      * @param authority authority text containing a host and optional port
      * @return normalized authority
@@ -66,27 +72,43 @@ public final class UriAuthority {
      * @throws IllegalArgumentException in case the authority is invalid
      */
     public static UriAuthority create(String authority) {
-        Objects.requireNonNull(authority, "authority");
-        if (authority.isBlank()) {
-            throw new IllegalArgumentException("Authority cannot be blank");
-        }
-        if (authority.indexOf('@') >= 0) {
-            throw new IllegalArgumentException("Authority must not contain userinfo");
-        }
+        return parse(authority, false);
+    }
 
-        if (authority.charAt(0) == '[') {
-            return createBracketed(authority);
-        }
+    /**
+     * Parse and normalize URI authority text.
+     * <p>
+     * Unlike {@link #create(String)}, this method accepts generic registered names as defined by RFC 3986.
+     * Unreserved percent-encoded characters are decoded. DNS and IP normalization is used when applicable;
+     * other registered names are normalized to lower case, retaining other percent-encoded characters using upper-case
+     * hex digits. IPv6 authorities must use brackets. An empty port is treated as absent.
+     * Userinfo and empty hosts are not supported.
+     *
+     * @param authority authority text containing a host and optional port
+     * @return normalized URI authority
+     * @throws NullPointerException     in case the authority is {@code null}
+     * @throws IllegalArgumentException in case the authority is invalid
+     */
+    public static UriAuthority createForUri(String authority) {
+        return parse(authority, true);
+    }
 
-        int firstColon = authority.indexOf(':');
-        if (firstColon == -1) {
-            return new UriAuthority(UriHost.create(authority), UNDEFINED_PORT);
-        }
-        if (authority.indexOf(':', firstColon + 1) != -1) {
-            throw new IllegalArgumentException("IPv6 authority must use square brackets");
-        }
-        return new UriAuthority(UriHost.create(authority.substring(0, firstColon)),
-                                parsePort(authority, firstColon + 1));
+    /**
+     * Create a normalized URI authority from a host and optional port.
+     * <p>
+     * Unlike {@link #create(UriHost, int)}, this method accepts generic registered names as defined by RFC 3986.
+     * Host normalization is the same as for {@link #createForUri(String)}.
+     *
+     * @param host host text, without a port or IPv6 brackets
+     * @param port port, or {@value #UNDEFINED_PORT} when absent
+     * @return normalized URI authority
+     * @throws NullPointerException     in case the host is {@code null}
+     * @throws IllegalArgumentException in case the host or port is invalid
+     */
+    public static UriAuthority createForUri(String host, int port) {
+        Objects.requireNonNull(host, "host");
+        validatePort(port);
+        return new UriAuthority(UriHost.createForUri(host), port);
     }
 
     /**
@@ -150,7 +172,35 @@ public final class UriAuthority {
         return hostText() + ":" + port;
     }
 
-    private static UriAuthority createBracketed(String authority) {
+    private static UriAuthority parse(String authority, boolean allowRegisteredName) {
+        Objects.requireNonNull(authority, "authority");
+        if (authority.isBlank()) {
+            throw new IllegalArgumentException("Authority cannot be blank");
+        }
+        if (authority.indexOf('@') >= 0) {
+            throw new IllegalArgumentException("Authority must not contain userinfo");
+        }
+
+        if (authority.charAt(0) == '[') {
+            return createBracketed(authority, allowRegisteredName);
+        }
+
+        int firstColon = authority.indexOf(':');
+        if (firstColon == -1) {
+            return new UriAuthority(createHost(authority, allowRegisteredName), UNDEFINED_PORT);
+        }
+        if (authority.indexOf(':', firstColon + 1) != -1) {
+            throw new IllegalArgumentException("IPv6 authority must use square brackets");
+        }
+        return new UriAuthority(createHost(authority.substring(0, firstColon), allowRegisteredName),
+                                parsePort(authority, firstColon + 1, allowRegisteredName));
+    }
+
+    private static UriHost createHost(String host, boolean allowRegisteredName) {
+        return allowRegisteredName ? UriHost.createForUri(host) : UriHost.create(host);
+    }
+
+    private static UriAuthority createBracketed(String authority, boolean allowEmptyPort) {
         int closingBracket = authority.indexOf(']');
         if (closingBracket == -1) {
             throw new IllegalArgumentException("IPv6 authority is missing a closing bracket");
@@ -163,21 +213,24 @@ public final class UriAuthority {
         if (uriHost.kind() != UriHost.Kind.IPV6) {
             throw new IllegalArgumentException("Bracketed authority host must be an IPv6 literal");
         }
-        return new UriAuthority(uriHost, bracketedPort(authority, closingBracket));
+        return new UriAuthority(uriHost, bracketedPort(authority, closingBracket, allowEmptyPort));
     }
 
-    private static int bracketedPort(String authority, int closingBracket) {
+    private static int bracketedPort(String authority, int closingBracket, boolean allowEmptyPort) {
         if (closingBracket == authority.length() - 1) {
             return UNDEFINED_PORT;
         }
         if (authority.charAt(closingBracket + 1) != ':') {
             throw new IllegalArgumentException("Authority contains unexpected content after IPv6 host");
         }
-        return parsePort(authority, closingBracket + 2);
+        return parsePort(authority, closingBracket + 2, allowEmptyPort);
     }
 
-    private static int parsePort(String authority, int offset) {
+    private static int parsePort(String authority, int offset, boolean allowEmptyPort) {
         if (offset == authority.length()) {
+            if (allowEmptyPort) {
+                return UNDEFINED_PORT;
+            }
             throw new IllegalArgumentException("Authority port cannot be blank");
         }
         int result = 0;

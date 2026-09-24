@@ -23,10 +23,14 @@ import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQueryWriteable;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ClientUriTest {
     @Test
@@ -86,6 +90,68 @@ class ClientUriTest {
         assertThat(helper.path(), is(UriPath.create("/loom/quick")));
         assertThat(helper.port(), is(8080));
         assertThat(helper.scheme(), is("http"));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "http://a_1.example.com, a_1.example.com, 80",
+            "https://a_1.example.com, a_1.example.com, 443",
+            "http://a_1.example.com:8080, a_1.example.com, 8080",
+            "http://a_1.example.com:, a_1.example.com, 80",
+            "http://a_1.example.com:0, a_1.example.com, 0",
+            "http://a_1.example.com:65535, a_1.example.com, 65535",
+            "http://a%5F1.example.com:8080, a_1.example.com, 8080",
+            "http://a%401.example.com:8080, a%401.example.com, 8080",
+            "http://a~1.example.com:8080, a~1.example.com, 8080"
+    })
+    void testRegisteredNameAuthority(String baseUri, String host, int port) {
+        ClientUri uri = ClientUri.create(URI.create(baseUri + "/foo?key=value#fragment"));
+
+        assertThat(uri.host(), is(host));
+        assertThat(uri.port(), is(port));
+        assertThat(uri.authority(), is(host + ":" + port));
+        assertThat(uri.pathWithQueryAndFragment(), is("/foo?key=value#fragment"));
+        assertThat(uri.toUri().getRawAuthority(), is(host + ":" + port));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"example.com", "a_1.example.com"})
+    void testUserInfoIsNotPartOfHost(String host) {
+        ClientUri uri = ClientUri.create(URI.create("http://user:p%40ssword@" + host + ":8080/foo"));
+
+        assertThat(uri.host(), is(host));
+        assertThat(uri.authority(), is(host + ":8080"));
+        assertThat(uri.toString(), is("http://" + host + ":8080/foo"));
+    }
+
+    @Test
+    void testResolveRegisteredNameAuthority() {
+        ClientUri uri = ClientUri.create(URI.create("https://example.com:8443/"));
+
+        uri.resolve(URI.create("//a_1.example.com:9090/foo"));
+
+        assertThat(uri.scheme(), is("https"));
+        assertThat(uri.host(), is("a_1.example.com"));
+        assertThat(uri.port(), is(9090));
+        assertThat(uri.path().path(), is("/foo"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "http://a_1.example.com:abc/foo",
+            "http://a_1.example.com:-1/foo",
+            "http://a_1.example.com:+80/foo",
+            "http://a_1.example.com:65536/foo",
+            "http://a_1.example.com:999999999999999999999/foo",
+            "http://a_1.example.com:80:90/foo",
+            "http://user@other@a_1.example.com/foo",
+            "http://:8080/foo",
+            "http://user@/foo"
+    })
+    void testInvalidAuthorityRejected(String uriString) {
+        URI uri = URI.create(uriString);
+
+        assertThrows(IllegalArgumentException.class, () -> ClientUri.create(uri));
     }
 
     @Test
