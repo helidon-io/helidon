@@ -25,7 +25,6 @@ import java.util.Base64;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -42,6 +41,7 @@ import io.helidon.common.parameters.Parameters;
 import io.helidon.common.types.TypeName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.HttpException;
 import io.helidon.http.SetCookie;
 import io.helidon.http.Status;
 import io.helidon.json.JsonArray;
@@ -417,11 +417,20 @@ class TenantAuthenticationHandler {
             }
             String nonce = UUID.randomUUID().toString();
             String redirectUri;
-            if (DEFAULT_TENANT_ID.equals(tenantId)) {
-                redirectUri = encode(redirectUri(providerRequest.env()));
-            } else {
-                redirectUri = encode(redirectUri(providerRequest.env()) + "?"
-                                             + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantId));
+            try {
+                if (DEFAULT_TENANT_ID.equals(tenantId)) {
+                    redirectUri = encode(redirectUri(providerRequest.env()));
+                } else {
+                    redirectUri = encode(redirectUri(providerRequest.env()) + "?"
+                                                 + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantId));
+                }
+            } catch (HttpException e) {
+                return AuthenticationResponse.builder()
+                        .status(SecurityResponse.SecurityStatus.FAILURE_FINISH)
+                        .statusCode(e.status().code())
+                        .responseHeaders(e.headers().toMap())
+                        .description(e.getMessage())
+                        .build();
             }
 
             String queryString = querySeparator + "client_id=" + tenantConfig.clientId() + "&"
@@ -470,15 +479,8 @@ class TenantAuthenticationHandler {
     }
 
     private String redirectUri(SecurityEnvironment env) {
-        for (Map.Entry<String, List<String>> entry : env.headers().entrySet()) {
-            if (entry.getKey().equalsIgnoreCase("host") && !entry.getValue().isEmpty()) {
-                String firstHost = entry.getValue().getFirst();
-                String schema = oidcConfig.forceHttpsRedirects() ? "https" : env.transport();
-                return oidcConfig.redirectUriWithHost(schema + "://" + firstHost);
-            }
-        }
-
-        return oidcConfig.redirectUriWithHost();
+        String frontendUri = OidcUtil.frontendUri(oidcConfig, tenantConfig, () -> OidcUtil.requestedUri(env));
+        return oidcConfig.redirectUriWithHost(frontendUri);
     }
 
     private AuthenticationResponse failOrAbstain(String message) {

@@ -52,6 +52,11 @@ record here.
     <suppress files="security/jwt/src/main/java/io/helidon/security/jwt/Jwt\.java"
             checks="FileLength"/>
 
+    <!-- Rule 0.1 exception to Rule 0.4 (FileLength): retain the existing OidcConfig API, nested Builder, and
+         configuration table layout. This legacy class has the same file-specific exception on the 4.x line. -->
+    <suppress files="security/providers/oidc-common/src/main/java/io/helidon/security/providers/oidc/common/OidcConfig\.java"
+            checks="FileLength"/>
+
     <!-- This file is generating source file, and uses a lot of lines to append code -->
     <suppress files="service/codegen/src/main/java/io/helidon/service/codegen/ServiceDescriptorCodegen\.java"
             checks="FileLength"/>

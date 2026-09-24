@@ -745,6 +745,7 @@ class HostHeaderTenantDiscoveryTest {
                 Map.entry("client-id", "reproducer-client"),
                 Map.entry("client-secret", "reproducer-secret"),
                 Map.entry("identity-uri", identityUri.toString()),
+                Map.entry("frontend-uri", "http://frontend.example"),
                 Map.entry("redirect", "false"),
                 Map.entry("header-use", "false"),
                 Map.entry("query-param-use", "false"),
