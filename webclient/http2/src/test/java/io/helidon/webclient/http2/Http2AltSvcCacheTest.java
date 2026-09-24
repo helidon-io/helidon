@@ -65,6 +65,20 @@ class Http2AltSvcCacheTest {
     private static final DnsResolver DNS = (_, _) -> InetAddress.getLoopbackAddress();
 
     @Test
+    void registeredNameOriginDoesNotUseAltSvc() {
+        MutableClock clock = new MutableClock(START);
+        Http2AltSvcCache cache = Http2AltSvcCache.create(clock, _ -> { });
+        ClientConnectionTarget target = target(Tls.builder().trustAll(true).build(), "a_1.example.com");
+
+        assertThat(cache.select(target, false, _ -> false), nullValue());
+        cache.record(target, header(clock, "h2=\":8443\"; ma=60"), true, false, clock.nextObservation());
+        assertThat(cache.select(target, false, _ -> false), nullValue());
+        assertThat(cache.selectRoute(target.lookupKey(), false), nullValue());
+
+        cache.close();
+    }
+
+    @Test
     void selectsSameHostH2ByLookupAndExactTarget() {
         MutableClock clock = new MutableClock(START);
         List<Http2AltSvcCache.Generation> invalidations = new ArrayList<>();

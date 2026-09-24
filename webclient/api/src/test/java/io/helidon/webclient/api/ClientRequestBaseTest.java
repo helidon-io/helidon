@@ -197,6 +197,25 @@ class ClientRequestBaseTest {
     }
 
     @Test
+    void registeredNameInStringUri() {
+        ClientUri uri = new FakeClientRequest()
+                .uri("http://a_1.example.com:8080/foo")
+                .resolvedUri();
+
+        assertThat(uri.toString(), is("http://a_1.example.com:8080/foo"));
+    }
+
+    @Test
+    void registeredNameInUriTemplate() {
+        ClientUri uri = new FakeClientRequest()
+                .uri("https://a_1.example.com:8443/{path}")
+                .pathParam("path", "foo")
+                .resolvedUri();
+
+        assertThat(uri.toString(), is("https://a_1.example.com:8443/foo"));
+    }
+
+    @Test
     void requestQueryOverridesTemplateQuery() {
         ClientUri uri = new FakeClientRequest()
                 .uri("https://www.example.com/{path}?k=template")

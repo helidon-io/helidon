@@ -23,7 +23,6 @@ import java.util.Optional;
 
 import io.helidon.common.Api;
 import io.helidon.common.uri.UriAuthority;
-import io.helidon.common.uri.UriHost;
 import io.helidon.webclient.spi.DnsResolver;
 
 /**
@@ -71,7 +70,7 @@ public final class ResolvedClientTarget {
                                             networkGeneration);
         }
 
-        UriAuthority routeAuthority = UriAuthority.create(UriHost.create(routeHost), routePort);
+        UriAuthority routeAuthority = UriAuthority.createForUri(routeHost, routePort);
         InetSocketAddress selectedAddress = proxyRoute.proxyAddress()
                 .orElseGet(() -> InetSocketAddress.createUnresolved(routeAuthority.host().value(), routePort));
         InetSocketAddress noProxyAddress = proxyRoute.noProxyAddress().orElse(null);
@@ -139,7 +138,7 @@ public final class ResolvedClientTarget {
             return routeAuthority;
         }
         ConnectionKey connectionKey = logicalTarget.connectionKey();
-        return UriAuthority.create(UriHost.create(connectionKey.routingHost()), connectionKey.port());
+        return UriAuthority.createForUri(connectionKey.routingHost(), connectionKey.port());
     }
 
     /**

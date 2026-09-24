@@ -62,6 +62,8 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -171,6 +173,78 @@ class Http2AltSvcTest {
             assertAlternative(firstAlternative);
             assertAlternative(reusedAlternative);
             assertThat(reusedAlternative.socketId(), is(firstAlternative.socketId()));
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void registeredNameOriginStaysOnHttp1WithAltSvcEnabled(boolean explicitHost) {
+        String host = "origin_1.example";
+        String authority = host + ":" + originPort;
+        WebClient client = WebClient.builder()
+                .baseUri("https://" + authority)
+                .shareConnectionCache(false)
+                .servicesDiscoverServices(false)
+                .protocolPreference(List.of(Http2Client.PROTOCOL_ID, Http1Client.PROTOCOL_ID))
+                .altSvc(ClientAltSvcConfig.create())
+                .addProtocolConfig(Http2ClientProtocolConfig.create())
+                .dnsResolver((resolvedHost, _) -> {
+                    assertThat(resolvedHost, is(host));
+                    return InetAddress.getLoopbackAddress();
+                })
+                .proxy(Proxy.noProxy())
+                .tls(registeredNameClientTls())
+                .build();
+
+        try {
+            for (String path : List.of("/learn", "/reuse")) {
+                Observation observation = explicitHost ? requestWithHost(client, path, authority) : request(client, path);
+
+                assertThat(observation.status(), is(Status.OK_200));
+                assertThat(observation.responseProtocol(), is(Http1Client.PROTOCOL_ID));
+                assertThat(observation.serverProtocol(), is(Http1Client.PROTOCOL_ID));
+                assertThat(observation.authority(), is(authority));
+                assertThat(observation.altUsed(), is(ABSENT_HEADER));
+                assertThat(observation.sniHost(), is(ABSENT_HEADER));
+            }
+        } finally {
+            client.closeResource();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"Host", ":authority"})
+    void directHttp2PreservesRegisteredNameAuthority(String headerName) {
+        String host = "origin_1.example";
+        String authority = host + ":" + alternativePort;
+        Http2Client client = Http2Client.builder()
+                .baseUri("https://" + authority)
+                .shareConnectionCache(false)
+                .servicesDiscoverServices(false)
+                .altSvc(ClientAltSvcConfig.create())
+                .dnsResolver((resolvedHost, _) -> {
+                    assertThat(resolvedHost, is(host));
+                    return InetAddress.getLoopbackAddress();
+                })
+                .proxy(Proxy.noProxy())
+                .tls(registeredNameClientTls())
+                .build();
+
+        try {
+            try (HttpClientResponse response = client.get("/reuse")
+                    .header(HeaderNames.create(headerName), authority)
+                    .request()) {
+                Observation observation = observation(response);
+
+                assertThat(observation.status(), is(Status.OK_200));
+                assertThat(observation.responseProtocol(), is(Http2Client.PROTOCOL_ID));
+                assertThat(observation.serverProtocol(), is(Http2Client.PROTOCOL_ID));
+                assertThat(observation.authority(), is(authority));
+                assertThat(observation.altUsed(), is(ABSENT_HEADER));
+                assertThat(observation.sniHost(), is(ABSENT_HEADER));
+            }
         } finally {
             client.closeResource();
         }
@@ -749,13 +823,23 @@ class Http2AltSvcTest {
     }
 
     private static Tls clientTls() {
+        return clientTls(Tls.ENDPOINT_IDENTIFICATION_HTTPS);
+    }
+
+    private static Tls clientTls(String endpointIdentificationAlgorithm) {
         return Tls.builder()
+                .endpointIdentificationAlgorithm(endpointIdentificationAlgorithm)
                 .trust(trust -> trust
                         .keystore(store -> store
                                 .passphrase("password")
                                 .trustStore(true)
                                 .keystore(Resource.create("client.p12"))))
                 .build();
+    }
+
+    private static Tls registeredNameClientTls() {
+        // The local certificate identifies localhost, not the synthetic registered name.
+        return clientTls(Tls.ENDPOINT_IDENTIFICATION_NONE);
     }
 
     private static Tls serverTls() {

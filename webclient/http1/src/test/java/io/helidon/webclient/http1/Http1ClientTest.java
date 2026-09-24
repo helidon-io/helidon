@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -113,6 +114,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -1677,6 +1679,63 @@ class Http1ClientTest {
     }
 
     @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testUnderscoreHostPreservesRequestAuthority(boolean explicitHost) throws Exception {
+        InetAddress loopback = InetAddress.getByName("127.0.0.1");
+        String requestBody = "underscore-host-body";
+        try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+             ServerSocket server = new ServerSocket(0, 1, loopback)) {
+            server.setSoTimeout(5_000);
+            String authority = "a_1.example.com:" + server.getLocalPort();
+            CompletableFuture<String> receivedRequest = CompletableFuture.supplyAsync(() -> {
+                try (Socket socket = server.accept()) {
+                    socket.setSoTimeout(5_000);
+                    InputStream inputStream = socket.getInputStream();
+                    StringBuilder request = new StringBuilder();
+                    String line;
+                    do {
+                        line = readLine(inputStream);
+                        request.append(line).append("\r\n");
+                    } while (!line.isEmpty());
+                    request.append(new String(inputStream.readNBytes(requestBody.length()), StandardCharsets.UTF_8));
+                    socket.getOutputStream().write(("HTTP/1.1 200 OK\r\n"
+                            + "Connection: close\r\n"
+                            + "Content-Length: 0\r\n\r\n").getBytes(StandardCharsets.US_ASCII));
+                    socket.getOutputStream().flush();
+                    return request.toString();
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }, executor);
+            Http1Client testClient = Http1Client.builder()
+                    .dnsResolver((hostname, _) -> {
+                        assertThat(hostname, is("a_1.example.com"));
+                        return loopback;
+                    })
+                    .connectTimeout(Duration.ofSeconds(5))
+                    .readTimeout(Duration.ofSeconds(5))
+                    .sendExpectContinue(false)
+                    .proxy(Proxy.noProxy())
+                    .build();
+            try {
+                var clientRequest = testClient.post("http://" + authority + "/foo");
+                if (explicitHost) {
+                    clientRequest.headers().set(HeaderNames.HOST, authority);
+                }
+                try (Http1ClientResponse response = clientRequest.submit(requestBody)) {
+                    assertThat(response.status(), is(Status.OK_200));
+                }
+                String request = receivedRequest.get(5, TimeUnit.SECONDS);
+                assertThat(request, startsWith("POST /foo HTTP/1.1\r\n"));
+                assertThat(request.toLowerCase(Locale.ROOT), containsString("\r\nhost: " + authority + "\r\n"));
+                assertThat(request, endsWith("\r\n\r\n" + requestBody));
+            } finally {
+                testClient.closeResource();
+            }
+        }
+    }
+
+    @ParameterizedTest
     @MethodSource("relativeUris")
     void testRelativeUris(ProxyConfiguration proxyConfig,
                           RelativeUrisValue relativeUris,
@@ -1913,6 +1972,23 @@ class Http1ClientTest {
         assertThat(response.status(), is(Status.OK_200));
         String responseHeaderValue = response.headers().get(HeaderNames.create(headerName)).values();
         assertThat(responseHeaderValue, is(headerValue.trim()));
+    }
+
+    private static String readLine(InputStream inputStream) throws IOException {
+        StringBuilder line = new StringBuilder();
+        while (true) {
+            int next = inputStream.read();
+            if (next == -1) {
+                throw new IllegalStateException("HTTP/1 line was incomplete");
+            }
+            if (next == '\r') {
+                if (inputStream.read() != '\n') {
+                    throw new IllegalStateException("HTTP/1 line had an invalid delimiter");
+                }
+                return line.toString();
+            }
+            line.append((char) next);
+        }
     }
 
     private static Stream<Integer> nonPositiveHeaderSizes() {

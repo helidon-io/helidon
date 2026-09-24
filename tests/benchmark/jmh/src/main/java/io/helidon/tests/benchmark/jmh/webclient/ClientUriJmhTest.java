@@ -31,6 +31,7 @@ public class ClientUriJmhTest {
     private static final String HOST = "service.example";
     private static final URI LOWERCASE_URI = URI.create("https://service.example/path");
     private static final URI UPPERCASE_URI = URI.create("HTTPS://service.example/path");
+    private static final URI REGISTERED_NAME_URI = URI.create("https://service_1.example:8443/path");
 
     private ClientUri lowercaseClientUri;
 
@@ -47,6 +48,16 @@ public class ClientUriJmhTest {
     @Benchmark
     public ClientUri ingestUppercaseUri() {
         return ClientUri.create(UPPERCASE_URI);
+    }
+
+    @Benchmark
+    public ClientUri ingestLowercaseUri() {
+        return ClientUri.create(LOWERCASE_URI);
+    }
+
+    @Benchmark
+    public ClientUri ingestRegisteredNameUri() {
+        return ClientUri.create(REGISTERED_NAME_URI);
     }
 
     @Benchmark

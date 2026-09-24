@@ -27,6 +27,8 @@ import org.openjdk.jmh.annotations.State;
 public class UriAuthorityNormalizationJmhTest {
     private static final String DNS = "api.example.com";
     private static final String DNS_WITH_PORT = "api.example.com:443";
+    private static final String REGISTERED_NAME = "api_1.example.com";
+    private static final String REGISTERED_NAME_WITH_PORT = "api_1.example.com:443";
     private static final String MIXED_CASE_DNS = "Api.Example.COM.";
     private static final String IDN = "bücher.example";
     private static final String IPV4 = "192.0.2.10:8443";
@@ -45,6 +47,31 @@ public class UriAuthorityNormalizationJmhTest {
     @Benchmark
     public UriAuthority authorityDnsWithPort() {
         return UriAuthority.create(DNS_WITH_PORT);
+    }
+
+    @Benchmark
+    public UriAuthority uriAuthorityDnsWithPort() {
+        return UriAuthority.createForUri(DNS_WITH_PORT);
+    }
+
+    @Benchmark
+    public UriAuthority authorityDnsHostAndPort() {
+        return UriAuthority.create(UriHost.create(DNS), 443);
+    }
+
+    @Benchmark
+    public UriAuthority uriAuthorityDnsHostAndPort() {
+        return UriAuthority.createForUri(DNS, 443);
+    }
+
+    @Benchmark
+    public UriAuthority uriAuthorityRegisteredName() {
+        return UriAuthority.createForUri(REGISTERED_NAME_WITH_PORT);
+    }
+
+    @Benchmark
+    public UriAuthority uriAuthorityRegisteredHostAndPort() {
+        return UriAuthority.createForUri(REGISTERED_NAME, 443);
     }
 
     @Benchmark
