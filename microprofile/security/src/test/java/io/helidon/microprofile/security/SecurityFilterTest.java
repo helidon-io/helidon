@@ -374,6 +374,7 @@ class SecurityFilterTest {
         filter.doFilter(request, securityContext);
 
         SecurityEnvironment env = securityContext.env();
+        assertThat(env.targetUri(), is(requestUri));
         assertThat(env.requestedMethod(), is("POST"));
         assertThat(env.requestedPath().rawPath(), is("/raw%2Fresource"));
         assertThat(env.requestedQuery().isPresent(), is(true));
@@ -404,8 +405,9 @@ class SecurityFilterTest {
     @Test
     void testExistingBoundaryRequestTargetValuesArePreserved() {
         SecurityContext securityContext = security.createContext("testExistingBoundaryRequestTarget");
+        URI discoveredUri = URI.create("https://frontend.example:8443/raw%2Fresource?");
         securityContext.env(SecurityEnvironment.builder()
-                                    .targetUri(URI.create("http://example.org/raw%2Fresource?"))
+                                    .targetUri(discoveredUri)
                                     .method("POST")
                                     .path("/raw/resource")
                                     .requestedMethod("POST")
@@ -415,11 +417,11 @@ class SecurityFilterTest {
         SecurityFilterCommon filter = new TestSecurityFilter(security);
         ContainerRequest request = mock(ContainerRequest.class);
         ExtendedUriInfo uriInfo = mock(ExtendedUriInfo.class);
-        URI requestUri = URI.create("http://example.org/raw/resource");
+        URI requestUri = URI.create("http://attacker.example/rerouted?changed=true");
         MultivaluedHashMap<String, String> headers = new MultivaluedHashMap<>();
 
-        headers.put("Host", List.of("example.org"));
-        when(request.getMethod()).thenReturn("POST");
+        headers.put("Host", List.of("attacker.example"));
+        when(request.getMethod()).thenReturn("PUT");
         when(request.getUriInfo()).thenReturn(uriInfo);
         when(request.getHeaders()).thenReturn(headers);
         when(uriInfo.getRequestUri()).thenReturn(requestUri);
@@ -427,6 +429,10 @@ class SecurityFilterTest {
         filter.doFilter(request, securityContext);
 
         SecurityEnvironment env = securityContext.env();
+        assertThat(env.targetUri(), is(discoveredUri));
+        assertThat(env.method(), is("PUT"));
+        assertThat(env.path().orElseThrow(), is("/rerouted"));
+        assertThat(env.queryParams().rawValue(), is("changed=true"));
         assertThat(env.requestedMethod(), is("POST"));
         assertThat(env.requestedPath().rawPath(), is("/raw%2Fresource"));
         assertThat(env.requestedQuery().isPresent(), is(true));

@@ -27,7 +27,6 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import io.helidon.common.context.Contexts;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriValidator;
 import io.helidon.http.HeaderNames;
@@ -38,11 +37,8 @@ import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.providers.oidc.common.TenantConfig;
 import io.helidon.webclient.api.HttpClientRequest;
-import io.helidon.webserver.http.ServerRequest;
 
 class OidcUtil {
-    private static final boolean WEB_SERVER_AVAILABLE = webServerAvailable();
-
     private OidcUtil() {
     }
 
@@ -76,8 +72,7 @@ class OidcUtil {
     }
 
     static URI requestedUri(SecurityEnvironment environment) {
-        // Do not link ServerRequest-dependent lambdas when the optional WebServer dependency is absent.
-        return WEB_SERVER_AVAILABLE ? WebServerContext.requestedUri(environment) : environment.targetUri();
+        return environment.targetUri();
     }
 
     static String frontendUri(OidcConfig oidcConfig, TenantConfig tenantConfig, Supplier<URI> requestedUri) {
@@ -127,15 +122,6 @@ class OidcUtil {
         String realm = tenantConfig.realm().replace("\\", "\\\\").replace("\"", "\\\"");
         failure.header(HeaderValues.create(HeaderNames.WWW_AUTHENTICATE, "Bearer realm=\"" + realm + "\""));
         return failure;
-    }
-
-    private static boolean webServerAvailable() {
-        try {
-            Class.forName("io.helidon.webserver.http.ServerRequest", false, OidcUtil.class.getClassLoader());
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
     }
 
     private static String normalizedOrigin(URI uri, boolean forceHttps) {
@@ -278,19 +264,5 @@ class OidcUtil {
             }
         }
         return result.toString();
-    }
-
-    private static final class WebServerContext {
-        private WebServerContext() {
-        }
-
-        private static URI requestedUri(SecurityEnvironment environment) {
-            // Jersey exposes ServerRequest in its context; its JAX-RS URI can still contain the raw authority.
-            // SE security environments already obtain targetUri from ServerRequest.requestedUri().
-            return Contexts.context()
-                    .flatMap(context -> context.get(ServerRequest.class))
-                    .map(request -> request.requestedUri().toUri())
-                    .orElseGet(environment::targetUri);
-        }
     }
 }

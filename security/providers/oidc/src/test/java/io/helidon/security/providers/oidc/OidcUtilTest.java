@@ -142,18 +142,19 @@ class OidcUtilTest {
     }
 
     @Test
-    void serverRequestDiscoveryTakesPrecedenceOverJerseyUri() {
+    void securityEnvironmentTakesPrecedenceOverServerRequest() {
         ServerRequest request = mock(ServerRequest.class);
-        UriInfo discovered = UriInfo.builder().scheme("https").host("frontend.example").port(8443).build();
-        when(request.requestedUri()).thenReturn(discovered);
+        UriInfo contextualUri = UriInfo.builder().scheme("http").host("attacker.example").build();
+        when(request.requestedUri()).thenReturn(contextualUri);
+        URI discovered = URI.create("https://frontend.example:8443/path");
         SecurityEnvironment environment = SecurityEnvironment.builder()
-                .targetUri(URI.create("http://attacker.example/path"))
+                .targetUri(discovered)
                 .build();
         Context context = Context.builder().id("oidc-requested-uri").build();
         context.supply(ServerRequest.class, () -> request);
 
         Contexts.runInContext(context,
-                              () -> assertThat(OidcUtil.requestedUri(environment), is(discovered.toUri())));
+                              () -> assertThat(OidcUtil.requestedUri(environment), is(discovered)));
     }
 
     @Test
@@ -162,6 +163,22 @@ class OidcUtilTest {
         SecurityEnvironment environment = SecurityEnvironment.builder().targetUri(discovered).build();
 
         assertThat(OidcUtil.requestedUri(environment), is(discovered));
+    }
+
+    @Test
+    void missingEnvironmentUriDoesNotFallBackToServerRequest() {
+        OidcConfig config = builder().frontendUriAllowList(AllowList.builder().allowAll(true).build()).build();
+        ServerRequest request = mock(ServerRequest.class);
+        when(request.requestedUri()).thenReturn(UriInfo.builder().scheme("https").host("frontend.example").build());
+        SecurityEnvironment environment = SecurityEnvironment.create();
+        Context context = Context.builder().id("oidc-missing-environment-uri").build();
+        context.supply(ServerRequest.class, () -> request);
+
+        Contexts.runInContext(context,
+                              () -> assertThrows(UnauthorizedException.class,
+                                                 () -> OidcUtil.frontendUri(config,
+                                                                            config,
+                                                                            () -> OidcUtil.requestedUri(environment))));
     }
 
     @TestFactory

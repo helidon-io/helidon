@@ -25,7 +25,6 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Flavor({HelidonFlavor.SE})
 @Features.Path({"Security", "OIDC"})
 module io.helidon.security.providers.oidc {
-    requires io.helidon.common.context;
 
     requires io.helidon.common.crypto;
     requires io.helidon.common.uri;

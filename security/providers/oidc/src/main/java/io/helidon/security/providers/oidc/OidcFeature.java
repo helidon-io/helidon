@@ -45,6 +45,7 @@ import io.helidon.cors.CrossOriginConfig;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
+import io.helidon.http.RequestException;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
 import io.helidon.json.JsonObject;
@@ -67,6 +68,7 @@ import io.helidon.security.providers.oidc.common.spi.TenantConfigProvider;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.cors.CorsSupport;
 import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
@@ -395,9 +397,8 @@ public final class OidcFeature implements HttpFeature {
             res.status(Status.TEMPORARY_REDIRECT_307)
                     .header(HeaderNames.LOCATION, sb.toString())
                     .send();
-        } catch (HttpException e) {
-            e.headers().forEach(res.headers()::set);
-            res.status(e.status()).send();
+        } catch (HttpException | RequestException | CloseConnectionException e) {
+            throw e;
         } catch (Exception e) {
             sendError(res, e);
         }

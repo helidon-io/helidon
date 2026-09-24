@@ -100,11 +100,16 @@ The programmatic equivalent is `OidcConfig.Builder.frontendUriAllowList(AllowLis
 The list is empty by default. Invalid or disallowed dynamic origins return HTTP
 401 without a redirect or token exchange. This policy applies only to OIDC.
 
-Dynamic origins come from `ServerRequest.requestedUri()`, not raw `Host`
-parsing. SE uses the discovered security-environment URI; MP uses the existing
-`ServerRequest` in the request context. Requested URI discovery and trusted-proxy
-rules are unchanged. Configure the existing listener `trusted-proxies` when
-using forwarding headers.
+For authentication, both SE and MP derive the dynamic origin only from
+`SecurityEnvironment.targetUri()`. WebServer security populates this URI from
+`ServerRequest.requestedUri()`, and MP preserves an existing discovered URI
+when rebuilding the environment. The provider does not fall back to a
+`ServerRequest` in the request context when the environment URI is missing.
+
+For code exchange and relative post-logout redirects, the OIDC WebServer
+integration uses `ServerRequest.requestedUri()` directly, with the same origin
+validation. Requested URI discovery and trusted-proxy rules are unchanged.
+Configure the existing listener `trusted-proxies` when using forwarding headers.
 
 Origins are matched as `scheme://host[:port]`, with lowercase HTTP(S) scheme
 and host, default ports omitted, and no path, query or fragment. With
