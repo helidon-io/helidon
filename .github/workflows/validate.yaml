@@ -186,3 +186,10 @@ jobs:
         run: etc/scripts/test-packaging-jlink.sh
       - name: Native-Image packaging
         run: etc/scripts/test-packaging-native.sh
+  gate:
+    runs-on: ubuntu-22.04
+    needs: [ copyright, checkstyle, spotbugs, build, docs, tck, archetypes, packaging ]
+    steps:
+      - shell: bash
+        run: |
+          echo OK
