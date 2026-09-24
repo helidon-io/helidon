@@ -100,10 +100,11 @@ runs:
         echo ${PWD}/.tools/apache-maven-${MVN_VERSION}/bin >> "${GITHUB_PATH}"
     - name: Set up JDK
       if: ${{ inputs.setup-latest-java == 'false' }}
-      uses: actions/setup-java@v4.1.0
+      uses: actions/setup-java@v6
       with:
         distribution: ${{ env.JAVA_DISTRO }}
         java-version: ${{ env.JAVA_VERSION }}
+        cache-jdk: true
         overwrite-settings: false
     - name: Set up JDK ea-stable
       if: ${{ inputs.setup-latest-java == 'true' }}
