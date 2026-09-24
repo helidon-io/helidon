@@ -17,13 +17,18 @@
 package io.helidon.webclient.http1;
 
 import java.io.ByteArrayInputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
@@ -49,6 +54,7 @@ import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http1.Http1ConnectionListener;
 import io.helidon.http.media.MediaContext;
+import io.helidon.http.media.ReadableEntity;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientConfig;
@@ -56,10 +62,13 @@ import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class Http1ClientResponseImplTest {
@@ -224,6 +233,138 @@ class Http1ClientResponseImplTest {
         assertThat(connection.closeCount(), is(0));
     }
 
+    @ParameterizedTest
+    @CsvSource({"64, false", "512, false", "8192, false", "64, true", "512, true", "8192, true"})
+    void boundsResponseBufferAllocationsForFragmentedChunks(int fragmentSize, boolean bufferEntity) {
+        String payload = "0123456789abcdef".repeat(4096);
+        byte[] payloadBytes = payload.getBytes(StandardCharsets.US_ASCII);
+        byte[] chunkHeader = (Integer.toHexString(payloadBytes.length) + ";test=true\r\n")
+                .getBytes(StandardCharsets.US_ASCII);
+        byte[] chunkEnd = "\r\n0\r\n\r\n".getBytes(StandardCharsets.US_ASCII);
+        int payloadFragments = payloadBytes.length / fragmentSize;
+        AtomicInteger pulls = new AtomicInteger();
+        DataReader reader = DataReader.create(() -> {
+            int fragment = pulls.getAndIncrement();
+            if (fragment == 0) {
+                return chunkHeader;
+            }
+            if (fragment <= payloadFragments) {
+                int offset = (fragment - 1) * fragmentSize;
+                return Arrays.copyOfRange(payloadBytes, offset, offset + fragmentSize);
+            }
+            if (fragment == payloadFragments + 1) {
+                return chunkEnd;
+            }
+            throw new AssertionError("Read beyond the final chunk");
+        });
+        TestConnection connection = new TestConnection(reader);
+        InputStream chunked = new Http1CallChainBase.ChunkedInputStream(connection,
+                                                                        reader,
+                                                                        new CompletableFuture<>(),
+                                                                        new AtomicReference<>(),
+                                                                        false,
+                                                                        new Http1ConnectionListener() {
+                                                                        });
+        ReadBufferTrackingInputStream inputStream = new ReadBufferTrackingInputStream(chunked);
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+
+        try (Http1ClientResponseImpl response = response(ClientResponseHeaders.create(headers), inputStream, connection)) {
+            ReadableEntity entity = response.entity();
+            if (bufferEntity) {
+                entity.buffer();
+            }
+
+            assertThat(entity.as(String.class), is(payload));
+            assertThat(pulls.get(), is(payloadFragments + 2));
+            // Count payload-buffer capacity observed by the stream, not JVM-wide allocation or private state.
+            assertThat(inputStream.allocatedBytes(), lessThanOrEqualTo(payloadBytes.length));
+        }
+
+        assertThat(connection.releaseCount(), is(1));
+        assertThat(connection.closeCount(), is(0));
+    }
+
+    @Test
+    void returnsEntityWindowWithoutPullingRemainingChunk() throws IOException {
+        AtomicInteger pulls = new AtomicInteger();
+        DataReader reader = DataReader.create(() -> {
+            if (pulls.incrementAndGet() != 1) {
+                throw new AssertionError("An entity read must return the available payload without waiting for more data");
+            }
+            return "7fffffff\r\nABC".getBytes(StandardCharsets.US_ASCII);
+        });
+        TestConnection connection = new TestConnection(reader);
+        InputStream inputStream = new Http1CallChainBase.ChunkedInputStream(connection,
+                                                                           reader,
+                                                                           new CompletableFuture<>(),
+                                                                           new AtomicReference<>(),
+                                                                           false,
+                                                                           new Http1ConnectionListener() {
+                                                                           });
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+
+        try (Http1ClientResponseImpl response = response(ClientResponseHeaders.create(headers), inputStream, connection)) {
+            byte[] bytes = new byte[8192];
+            assertThat(response.entity().inputStream().read(bytes), is(3));
+            assertThat(new String(bytes, 0, 3, StandardCharsets.US_ASCII), is("ABC"));
+            assertThat(pulls.get(), is(1));
+        }
+
+        assertThat(connection.closeCount(), is(1));
+    }
+
+    @Test
+    void preservesChangingEntityReadSizes() throws IOException {
+        byte[] payload = "0123456789abcdef".repeat(1024).getBytes(StandardCharsets.US_ASCII);
+        ReadBufferTrackingInputStream inputStream = new ReadBufferTrackingInputStream(new ByteArrayInputStream(payload));
+        TestConnection connection = new TestConnection();
+
+        try (Http1ClientResponseImpl response = response(ClientResponseHeaders.create(WritableHeaders.create()),
+                                                         inputStream,
+                                                         connection)) {
+            InputStream entityStream = response.entity().inputStream();
+            int offset = 0;
+            for (int readSize : new int[] {64, 8192, 1, 512, 512}) {
+                byte[] bytes = new byte[readSize];
+                assertThat(entityStream.read(bytes), is(readSize));
+                assertThat(bytes, is(Arrays.copyOfRange(payload, offset, offset + readSize)));
+                assertThat(inputStream.requestedSize(), is(readSize));
+                offset += readSize;
+            }
+            assertThat(entityStream.readAllBytes(), is(Arrays.copyOfRange(payload, offset, payload.length)));
+        }
+
+        assertThat(connection.closeCount(), is(1));
+    }
+
+    @Test
+    void preservesUnreadBuffersWhenEntityCopiesAreReadAlternately() throws IOException {
+        String payload = "A".repeat(512) + "B".repeat(512) + "C".repeat(512) + "D".repeat(512);
+        TestConnection connection = new TestConnection();
+
+        try (Http1ClientResponseImpl response = response(ClientResponseHeaders.create(WritableHeaders.create()),
+                                                         inputStream(payload),
+                                                         connection)) {
+            ReadableEntity entity = response.entity();
+            InputStream first = entity.inputStream();
+            InputStream second = entity.copy(() -> { }).inputStream();
+
+            assertThat(first.read(), is((int) 'A'));
+            assertThat(second.read(), is((int) 'B'));
+            assertThat(new String(first.readNBytes(511), StandardCharsets.US_ASCII), is("A".repeat(511)));
+            assertThat(new String(second.readNBytes(511), StandardCharsets.US_ASCII), is("B".repeat(511)));
+            assertThat(first.read(), is((int) 'C'));
+            assertThat(second.read(), is((int) 'D'));
+            assertThat(new String(first.readNBytes(511), StandardCharsets.US_ASCII), is("C".repeat(511)));
+            assertThat(new String(second.readNBytes(511), StandardCharsets.US_ASCII), is("D".repeat(511)));
+            assertThat(first.read(), is(-1));
+        }
+
+        assertThat(connection.closeCount(), is(1));
+    }
+
     @Test
     void closesChunkedResponseDuringEntityCleanup() throws Exception {
         CountDownLatch closeStarted = new CountDownLatch(1);
@@ -351,6 +492,33 @@ class Http1ClientResponseImplTest {
         return ClientResponseHeaders.create(headers);
     }
 
+    private static final class ReadBufferTrackingInputStream extends FilterInputStream {
+        private final Set<byte[]> buffers = Collections.newSetFromMap(new IdentityHashMap<>());
+        private int requestedSize;
+
+        private ReadBufferTrackingInputStream(InputStream inputStream) {
+            super(inputStream);
+        }
+
+        @Override
+        public int read(byte[] bytes, int offset, int length) throws IOException {
+            requestedSize = length;
+            int read = in.read(bytes, offset, length);
+            if (read > 0) {
+                buffers.add(bytes);
+            }
+            return read;
+        }
+
+        private int allocatedBytes() {
+            return buffers.stream().mapToInt(bytes -> bytes.length).sum();
+        }
+
+        private int requestedSize() {
+            return requestedSize;
+        }
+    }
+
     private static final class TestServiceRequest implements WebClientServiceRequest {
         private final Method method;
         private final ClientRequestHeaders headers = ClientRequestHeaders.create(WritableHeaders.create());
@@ -415,7 +583,7 @@ class Http1ClientResponseImplTest {
         }
     }
 
-    private static final class TestConnection implements ClientConnection {
+    static final class TestConnection implements ClientConnection {
         private final AtomicInteger releaseCount = new AtomicInteger();
         private final AtomicInteger closeCount = new AtomicInteger();
         private final DataReader reader;
@@ -425,7 +593,7 @@ class Http1ClientResponseImplTest {
             this(DataReader.create(() -> null), null);
         }
 
-        private TestConnection(DataReader reader) {
+        TestConnection(DataReader reader) {
             this(reader, null);
         }
 
@@ -471,12 +639,12 @@ class Http1ClientResponseImplTest {
             }
         }
 
-        private int releaseCount() {
-            return releaseCount.get();
+        int closeCount() {
+            return closeCount.get();
         }
 
-        private int closeCount() {
-            return closeCount.get();
+        private int releaseCount() {
+            return releaseCount.get();
         }
     }
 
