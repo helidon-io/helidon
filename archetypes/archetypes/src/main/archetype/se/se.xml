@@ -39,7 +39,7 @@
                 </option>
                 <option value="custom"
                         name="Custom"
-                        description="Custom Helidon SE application">
+                        description="Custom Helidon application">
                     <exec src="custom/custom-se.xml"/>
                 </option>
             </enum>
