@@ -250,9 +250,8 @@ class OpenTelemetryMetricsConfigSupport {
         }
 
 
-        @Prototype.ConfigFactoryMethod
-        static ViewRegistration createViewRegistration(Config config) {
-            var viewRegistrationConfig = ViewRegistrationConfig.create(config);
+        @Prototype.RuntimeTypeFactoryMethod
+        static ViewRegistration createViewRegistration(ViewRegistrationConfig viewRegistrationConfig) {
             var viewBuilder = View.builder();
 
             viewRegistrationConfig.name().ifPresent(viewBuilder::setName);
@@ -263,8 +262,8 @@ class OpenTelemetryMetricsConfigSupport {
             return new ViewRegistration(viewRegistrationConfig.instrumentSelector(), viewBuilder.build());
         }
 
-        @Prototype.ConfigFactoryMethod("attributes")
-        static AttributesBuilder createAttributesBuilder(Config config) {
+        @Prototype.RuntimeTypeFactoryMethod("attributes")
+        static AttributesBuilder createAttributesBuilder(TypedAttributes config) {
             return OtelConfigSupport.createAttributesBuilder(config);
         }
     }

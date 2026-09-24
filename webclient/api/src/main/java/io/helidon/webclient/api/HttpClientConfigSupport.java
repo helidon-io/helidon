@@ -188,8 +188,7 @@ class HttpClientConfigSupport {
         }
 
         @Prototype.ConfigFactoryMethod("baseAddress")
-        static SocketAddress createBaseAddress(Config config) {
-            String address = config.asString().get();
+        static SocketAddress createBaseAddress(String address) {
             // unix:/path/to/socket
             if (address.startsWith(UNIX_DOMAIN_SOCKET_PREFIX)) {
                 String path = address.substring(UNIX_DOMAIN_SOCKET_PREFIX.length());

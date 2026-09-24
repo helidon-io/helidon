@@ -422,6 +422,13 @@ class TypeHandlerOptional extends TypeHandlerBasic {
                                     Optional<FactoryMethod> factoryMethod) {
         if (factoryMethod.isPresent()) {
             FactoryMethod fm = factoryMethod.get();
+            var parameterType = fm.parameterType().orElse(null);
+            if (parameterType != null
+                    && !(parameterType.equals(Types.CONFIG) || parameterType.equals(Types.COMMON_CONFIG))) {
+                content.addContent(".as(")
+                        .addContent(parameterType.boxed().genericTypeName())
+                        .addContent(".class)");
+            }
             content.addContent(".as(")
                     .addContent(fm.declaringType().genericTypeName())
                     .addContent("::");
@@ -481,10 +488,21 @@ class TypeHandlerOptional extends TypeHandlerBasic {
     private void generateMapListFromConfig(ContentBuilder<?> content, FactoryMethod factoryMethod) {
         var declaringType = factoryMethod.declaringType();
         var methodName = factoryMethod.methodName();
+        var parameterType = factoryMethod.parameterType().orElse(null);
 
-        content.addContent(declaringType.genericTypeName())
-                .addContent("::")
-                .addContent(methodName);
+        if (parameterType != null && !(parameterType.equals(Types.CONFIG) || parameterType.equals(Types.COMMON_CONFIG))) {
+            content.addContent("cfg -> cfg.as(")
+                    .addContent(parameterType.boxed().genericTypeName())
+                    .addContent(".class).as(")
+                    .addContent(declaringType.genericTypeName())
+                    .addContent("::")
+                    .addContent(methodName)
+                    .addContent(").get()");
+        } else {
+            content.addContent(declaringType.genericTypeName())
+                    .addContent("::")
+                    .addContent(methodName);
+        }
     }
 
     private boolean optionalContainer() {
