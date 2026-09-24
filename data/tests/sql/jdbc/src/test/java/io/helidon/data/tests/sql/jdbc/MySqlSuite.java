@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@ package io.helidon.data.tests.sql.jdbc;
 
 import io.helidon.config.ConfigSources;
 import io.helidon.data.sql.testing.SqlTestContainerConfig;
+import io.helidon.data.sql.testing.SqlTestContainerImages;
 import io.helidon.data.sql.testing.TestContainerHandler;
 import io.helidon.testing.junit5.suite.TestSuite;
 import io.helidon.testing.junit5.suite.spi.SuiteProvider;
 
 import org.testcontainers.containers.MySQLContainer;
-import org.testcontainers.utility.DockerImageName;
 
 /**
  * MySQL suite.
@@ -32,7 +32,7 @@ public class MySqlSuite implements SuiteProvider {
     private final TestContainerHandler containerHandler;
 
     public MySqlSuite() {
-        MySQLContainer<?> container = new MySQLContainer<>(DockerImageName.parse("mysql:8.0"));
+        MySQLContainer<?> container = new MySQLContainer<>(SqlTestContainerImages.getMySqlImageReference());
         this.containerHandler = SqlTestContainerConfig.configureContainer(container,
                                                                           ConfigSources.classpath("application.yaml"));
     }
