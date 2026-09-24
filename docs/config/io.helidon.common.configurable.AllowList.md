@@ -18,7 +18,7 @@
 <tr>
 <td>
 <a id="allow"></a>
-<a href="io.helidon.server.protocols.http11.requestedUriDiscovery.trustedProxies.AllowConfig.md">
+<a href="io.helidon.security.providers.idcsRoleMapper.oidcConfig.frontendUriAllowList.AllowConfig.md">
 <code>allow</code>
 </a>
 </td>
@@ -27,7 +27,7 @@
 <tr>
 <td>
 <a id="deny"></a>
-<a href="io.helidon.server.protocols.http11.requestedUriDiscovery.trustedProxies.DenyConfig.md">
+<a href="io.helidon.security.providers.idcsRoleMapper.oidcConfig.frontendUriAllowList.DenyConfig.md">
 <code>deny</code>
 </a>
 </td>
@@ -40,7 +40,9 @@
 
 ## Usages
 
+- <a href="io.helidon.security.providers.oidc.common.OidcConfig.md#frontend-uri-allow-list"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>frontend-<wbr>uri-<wbr>allow-<wbr>list</code></a>
 - <a href="io.helidon.security.providers.oidc.OidcProvider.md#frontend-uri-allow-list"><code>security.<wbr>providers.<wbr>oidc.<wbr>frontend-<wbr>uri-<wbr>allow-<wbr>list</code></a>
+- <a href="io.helidon.security.providers.oidc.common.OidcConfig.md#frontend-uri-allow-list"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>frontend-<wbr>uri-<wbr>allow-<wbr>list</code></a>
 - <a href="io.helidon.security.providers.oidc.OidcProvider.md#frontend-uri-allow-list"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>frontend-<wbr>uri-<wbr>allow-<wbr>list</code></a>
 - <a href="io.helidon.http.RequestedUriDiscoveryContext.md#trusted-proxies"><code>server.<wbr>protocols.<wbr>http_<wbr>1_1.<wbr>requested-<wbr>uri-<wbr>discovery.<wbr>trusted-<wbr>proxies</code></a>
 - <a href="io.helidon.http.RequestedUriDiscoveryContext.md#trusted-proxies"><code>server.<wbr>protocols.<wbr>http_<wbr>2.requested-<wbr>uri-<wbr>discovery.<wbr>trusted-<wbr>proxies</code></a>
