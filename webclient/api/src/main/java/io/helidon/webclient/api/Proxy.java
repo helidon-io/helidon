@@ -440,7 +440,7 @@ public class Proxy {
         if (systemProxySelector == null) {
             return ProxyRoute.direct(this, scheme, host, port, tls);
         }
-        UriAuthority authority = UriAuthority.create(UriHost.create(host), port);
+        UriAuthority authority = UriAuthority.createForUri(host, port);
         List<java.net.Proxy> selected = systemProxySelector.select(URI.create(scheme + "://" + authority));
         if (selected == null || selected.isEmpty()) {
             return ProxyRoute.direct(this, scheme, host, port, tls);

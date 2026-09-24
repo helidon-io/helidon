@@ -27,6 +27,8 @@ import io.helidon.common.Api;
  * <p>
  * The value never contains a port or IPv6 brackets. DNS names are normalized to lower-case ASCII, IPv4 literals to
  * decimal dotted-quad form, and IPv6 literals to canonical compressed lower-case text form.
+ * Generic registered names obtained from {@link UriAuthority#createForUri(String)} are normalized to lower case,
+ * with unreserved percent-encoded characters decoded and other percent-encoded characters retained using upper-case hex digits.
  */
 @Api.Stable
 public final class UriHost {
@@ -39,7 +41,8 @@ public final class UriHost {
     }
 
     /**
-     * Create a normalized host.
+     * Create a normalized DNS host or IP literal.
+     * This method does not accept generic URI registered names; use {@link UriAuthority#createForUri(String)} for those.
      *
      * @param host host text, without a port; IPv6 literals must not use authority brackets, use {@link UriAuthority}
      *             for authority text
@@ -63,6 +66,30 @@ public final class UriHost {
         }
 
         return dns(host);
+    }
+
+    static UriHost createForUri(String host) {
+        Objects.requireNonNull(host, "host");
+        boolean encoded = host.indexOf('%') >= 0;
+        if (encoded) {
+            UriValidator.validateNonIpLiteral(host);
+        }
+        String normalized = UriEncoding.decodeHost(host);
+        if (normalized.indexOf(':') >= 0 || !isAscii(normalized)) {
+            return create(normalized);
+        }
+        if (UriValidator.isIpv4Address(normalized)) {
+            return ipv4(normalized);
+        }
+        String lowerCase = normalized.toLowerCase(Locale.ROOT);
+        String dnsHost = stripTerminalDot(lowerCase);
+        if (dnsNameError(dnsHost) == null) {
+            return new UriHost(dnsHost, Kind.DNS);
+        }
+        if (!encoded) {
+            UriValidator.validateNonIpLiteral(host);
+        }
+        return new UriHost(UriEncoding.encodeHost(lowerCase), Kind.REGISTERED_NAME);
     }
 
     /**
@@ -179,34 +206,45 @@ public final class UriHost {
     }
 
     private static void validateDnsName(String host) {
+        String error = dnsNameError(host);
+        if (error != null) {
+            throw new IllegalArgumentException(error);
+        }
+    }
+
+    private static String dnsNameError(String host) {
         // RFC 1035, 2.3.4 limits a domain name to 255 octets on the wire; without the root label and label-length
         // octets, the textual host name is at most 253 characters.
         if (host.length() > 253) {
-            throw new IllegalArgumentException("Host DNS name is too long");
+            return "Host DNS name is too long";
         }
 
         int labelStart = 0;
         for (int i = 0; i <= host.length(); i++) {
             if (i == host.length() || host.charAt(i) == '.') {
-                validateDnsLabel(host, labelStart, i);
+                String error = dnsLabelError(host, labelStart, i);
+                if (error != null) {
+                    return error;
+                }
                 labelStart = i + 1;
             }
         }
+        return null;
     }
 
-    private static void validateDnsLabel(String host, int start, int end) {
+    private static String dnsLabelError(String host, int start, int end) {
         // RFC 1035, 2.3.1 defines labels as non-empty components.
         if (start == end) {
-            throw new IllegalArgumentException("Host DNS name contains an empty label");
+            return "Host DNS name contains an empty label";
         }
         // RFC 1035, 2.3.4 limits a DNS label to 63 octets.
         if (end - start > 63) {
-            throw new IllegalArgumentException("Host DNS label is too long");
+            return "Host DNS label is too long";
         }
         // RFC 1035, 2.3.1 defines the preferred name syntax; RFC 1123, 2.1 relaxes the first character to also
         // allow digits, but labels still do not start or end with a hyphen.
         if (host.charAt(start) == '-' || host.charAt(end - 1) == '-') {
-            throw new IllegalArgumentException("Host DNS label must not start or end with a hyphen");
+            return "Host DNS label must not start or end with a hyphen";
         }
         // RFC 1035, 2.3.1 plus RFC 1123, 2.1 allow letters, digits, and hyphen in DNS host labels.
         for (int i = start; i < end; i++) {
@@ -220,8 +258,18 @@ public final class UriHost {
             if (c == '-') {
                 continue;
             }
-            throw new IllegalArgumentException("Host is not a valid DNS name");
+            return "Host is not a valid DNS name";
         }
+        return null;
+    }
+
+    private static boolean isAscii(String host) {
+        for (int i = 0; i < host.length(); i++) {
+            if (host.charAt(i) > 0x7f) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static String stripTerminalDot(String host) {
@@ -246,6 +294,10 @@ public final class UriHost {
         /**
          * IPv6 literal.
          */
-        IPV6
+        IPV6,
+        /**
+         * URI registered name that is not a DNS name or IP literal.
+         */
+        REGISTERED_NAME
     }
 }

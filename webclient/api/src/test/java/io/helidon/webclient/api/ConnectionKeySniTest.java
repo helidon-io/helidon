@@ -33,6 +33,8 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.webclient.spi.DnsResolver;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -49,6 +51,17 @@ class ConnectionKeySniTest {
     private static final DnsResolver DNS_RESOLVER = DefaultDnsResolver.create();
     private static final DnsAddressLookup DNS_LOOKUP = DnsAddressLookup.defaultLookup();
     private static final Proxy NO_PROXY = Proxy.noProxy();
+
+    @ParameterizedTest
+    @EnumSource(value = SniMode.class, names = {"URI_HOST", "HOST_HEADER", "DISABLED"})
+    void configuredSniStillRequiresDnsOrIpPeerIdentity(SniMode mode) {
+        SniConfig sni = SniConfig.builder().mode(mode).build();
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                                                         () -> key("https://a_1.example.com:443", sni, TLS, emptyHeaders()));
+
+        assertThat(exception.getMessage(), containsString("DNS"));
+    }
 
     @Test
     void uriHostModeUsesNormalizedDnsHost() {

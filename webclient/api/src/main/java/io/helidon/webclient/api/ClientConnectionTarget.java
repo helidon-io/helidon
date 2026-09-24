@@ -551,12 +551,12 @@ public final class ClientConnectionTarget {
     }
 
     private static UriAuthority normalizedAuthority(String authority, String scheme) {
-        UriAuthority parsed = UriAuthority.create(authority);
+        UriAuthority parsed = UriAuthority.createForUri(authority);
         int port = parsed.port();
         if (port == UriAuthority.UNDEFINED_PORT) {
             port = "https".equals(scheme) ? 443 : 80;
         }
-        return UriAuthority.create(parsed.host(), port);
+        return port == parsed.port() ? parsed : UriAuthority.createForUri(parsed.host().value(), port);
     }
 
     private static UriAuthority originAuthority(ConnectionKey connectionKey,
@@ -585,7 +585,7 @@ public final class ClientConnectionTarget {
     }
 
     private static UriAuthority normalizedOriginAuthority(ConnectionKey connectionKey) {
-        return UriAuthority.create(UriHost.create(connectionKey.routingHost()), connectionKey.port());
+        return UriAuthority.createForUri(connectionKey.routingHost(), connectionKey.port());
     }
 
     private static ProxyRoute routeFor(ConnectionKey connectionKey, String scheme, ProxyRoute proxyRoute) {

@@ -48,6 +48,84 @@ class ClientConnectionTargetTest {
     private static final Tls NO_TLS = Tls.builder().enabled(false).build();
 
     @Test
+    void registeredNameOriginIsPreservedAcrossTargetRepresentations() {
+        ClientUri uri = ClientUri.create(URI.create("http://a_1.example.com:8080/path"));
+        DnsResolver resolver = (_, _) -> InetAddress.getLoopbackAddress();
+        ConnectionKey key = ConnectionKey.create(uri, NO_TLS, resolver, DnsAddressLookup.IPV4, Proxy.noProxy());
+        ClientRequestHeaders headers = ClientRequestHeaders.create(WritableHeaders.create());
+        headers.set(HeaderNames.HOST, "a%5F1.example.com:8080");
+
+        ClientConnectionTarget direct = ClientConnectionTarget.create(key, uri.scheme());
+        ClientConnectionTarget withHost = ClientConnectionTarget.create(key, uri, headers);
+        ClientConnectionTarget fromLookup = ClientConnectionTarget.create(ClientConnectionTarget.lookupKey(key, uri, headers));
+        ResolvedClientTarget resolved = direct.resolve();
+
+        assertThat(direct.originAuthority().toString(), is("a_1.example.com:8080"));
+        assertThat(withHost, is(direct));
+        assertThat(fromLookup, is(direct));
+        assertThat(withHost.lookupKey(), is(direct.lookupKey()));
+        assertThat(resolved.routeAuthority().toString(), is("a_1.example.com:8080"));
+        assertThat(resolved.destinationAddress().getHostString(), is("a_1.example.com"));
+        assertThat(resolved.destinationAddress().getPort(), is(8080));
+        assertThat(direct.toString(), containsString("a_1.example.com:8080"));
+        assertThat(direct.lookupKey().toString(), containsString("a_1.example.com:8080"));
+    }
+
+    @Test
+    void registeredNameHostOverrideKeepsOriginSeparateFromRoute() {
+        ClientUri uri = ClientUri.create(URI.create("http://route.example:8080/path"));
+        ConnectionKey key = ConnectionKey.create(uri,
+                                                  NO_TLS,
+                                                  (_, _) -> InetAddress.getLoopbackAddress(),
+                                                  DnsAddressLookup.IPV4,
+                                                  Proxy.noProxy());
+        ClientRequestHeaders headers = ClientRequestHeaders.create(WritableHeaders.create());
+        headers.set(HeaderNames.HOST, "origin_1.example:9090");
+
+        ClientConnectionTarget target = ClientConnectionTarget.create(key, uri, headers);
+
+        assertThat(target.originAuthority().toString(), is("origin_1.example:9090"));
+        assertThat(target.resolve().routeAuthority().toString(), is("route.example:8080"));
+        assertThat(target, not(ClientConnectionTarget.create(key, uri.scheme())));
+    }
+
+    @Test
+    void systemProxySelectorReceivesRegisteredNameDestination() {
+        ProxySelector previous = ProxySelector.getDefault();
+        AtomicInteger selections = new AtomicInteger();
+        ProxySelector.setDefault(new ProxySelector() {
+            @Override
+            public List<java.net.Proxy> select(URI uri) {
+                selections.incrementAndGet();
+                assertThat(uri.getRawAuthority(), is("a_1.example.com:8080"));
+                return List.of(new java.net.Proxy(java.net.Proxy.Type.HTTP,
+                                                  InetSocketAddress.createUnresolved("proxy.example", 8181)));
+            }
+
+            @Override
+            public void connectFailed(URI uri, SocketAddress address, IOException failure) {
+            }
+        });
+        try {
+            ClientUri uri = ClientUri.create(URI.create("http://a_1.example.com:8080/path"));
+            ConnectionKey key = ConnectionKey.create(uri,
+                                                      NO_TLS,
+                                                      (_, _) -> InetAddress.getLoopbackAddress(),
+                                                      DnsAddressLookup.IPV4,
+                                                      Proxy.create());
+
+            ClientConnectionTarget target = ClientConnectionTarget.create(key, uri.scheme());
+            ResolvedClientTarget resolved = target.resolve();
+
+            assertThat(resolved.routeAuthority().toString(), is("a_1.example.com:8080"));
+            assertThat(resolved.proxyRoute().kind(), is(ProxyRoute.Kind.HTTP_TUNNEL));
+            assertThat(selections.get(), is(1));
+        } finally {
+            ProxySelector.setDefault(previous);
+        }
+    }
+
+    @Test
     void keepsLogicalOriginAndTlsIdentitySeparateFromAlternativeDnsPeer() {
         AtomicInteger resolutions = new AtomicInteger();
         DnsResolver resolver = (host, lookup) -> {
