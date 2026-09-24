@@ -85,6 +85,13 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    <packageUrl regex="true">^pkg:maven/org\.graalvm\.sdk/graal\-sdk@.*$</packageUrl>
    <vulnerabilityName>CVE-2023-22006</vulnerabilityName>
 </suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: compiler-23.1.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.graalvm\.compiler/compiler@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-83368</vulnerabilityName>
+</suppress>
 
 <!-- This low priority CVE does not apply to our use of the graalvm compiler.
 -->
@@ -454,10 +461,46 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
 </suppress>
 <suppress>
    <notes><![CDATA[
-   file name: opentelemetry-proto-1.5.0-alpha.jar
+   file name: opentelemetry-proto-1.10.0-alpha.jar
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.proto/opentelemetry-proto@.*$</packageUrl>
    <cve>CVE-2026-39882</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   file name: opentelemetry-proto-1.10.0-alpha.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.proto/opentelemetry-proto@.*$</packageUrl>
+   <cve>CVE-2026-41178</cve>
+</suppress>
+
+<!--
+   This CVE is against OpenTelemetry C++, not Java
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: opentelemetry-proto-1.10.0-alpha.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.proto/opentelemetry-proto@.*$</packageUrl>
+   <cve>CVE-2026-44967</cve>
+</suppress>
+
+<!--
+   This CVE is against OpenTelemetry JS, not Java
+-->
+<suppress>
+   <notes><![CDATA[
+   file name: opentelemetry-api-1.62.0.jar
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.opentelemetry/opentelemetry-.*@.*$</packageUrl>
+   <cve>CVE-2026-54285</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: opentelemetry-proto-1.10.0-alpha.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.proto/opentelemetry-proto@.*$</packageUrl>
+    <cve>CVE-2026-54285</cve>
 </suppress>
 
 <!--
@@ -465,14 +508,14 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
 -->
 <suppress>
     <notes><![CDATA[
-    file name: opentelemetry-proto-1.5.0-alpha.jar
+    file name: opentelemetry-proto-1.10.0-alpha.jar
     ]]></notes>
     <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.proto/opentelemetry-proto@.*$</packageUrl>
     <cve>CVE-2026-41078</cve>
 </suppress>
 <suppress>
     <notes><![CDATA[
-    file name: opentelemetry-proto-1.5.0-alpha.jar
+    file name: opentelemetry-proto-1.10.0-alpha.jar
     ]]></notes>
     <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.proto/opentelemetry-proto@.*$</packageUrl>
     <cve>CVE-2026-40894</cve>
