@@ -31,6 +31,7 @@
     <description>Providers of the Helidon Metrics API</description>
 
     <modules>
+        <module>helidon</module>
         <module>micrometer</module>
     </modules>
 

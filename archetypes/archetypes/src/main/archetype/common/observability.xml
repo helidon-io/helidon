@@ -41,6 +41,11 @@
                                         <value key="artifactId">helidon-webserver-observe-metrics</value>
                                     </map>
                                     <map if="${flavor} == 'se'">
+                                        <value key="groupId">io.helidon.metrics.providers</value>
+                                        <value key="artifactId">helidon-metrics-providers-helidon</value>
+                                        <value key="scope">runtime</value>
+                                    </map>
+                                    <map if="${flavor} == 'se'">
                                         <value key="groupId">io.helidon.metrics</value>
                                         <value key="artifactId">helidon-metrics-system-meters</value>
                                         <value key="scope">runtime</value>
