@@ -19,8 +19,6 @@ set -o pipefail || true  # trace ERR through pipes
 set -o errtrace || true # trace ERR through commands and functions
 set -o errexit || true  # exit the script if any statement returns a non-true return value
 
-unset CDPATH
-
 on_error(){
   CODE="${?}" && \
   set +x && \
@@ -68,7 +66,7 @@ readonly SCRIPT_PATH
 
 # Path to the root of the workspace
 # shellcheck disable=SC2046
-WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
+WS_DIR=$(CDPATH='' cd -- $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 readonly WS_DIR
 
 # parse command line args

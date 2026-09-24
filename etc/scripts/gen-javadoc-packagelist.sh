@@ -31,8 +31,6 @@
 # faster and more sable. And helps us catch errors sooner.
 #
 
-unset CDPATH
-
 # Path to this script
 if [ -h "${0}" ] ; then
     SCRIPT_PATH="$(readlink "${0}")"
@@ -43,7 +41,7 @@ readonly SCRIPT_PATH
 
 # Path to the root of the workspace
 # shellcheck disable=SC2046
-WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
+WS_DIR=$(CDPATH='' cd -- $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 readonly WS_DIR
 
 TMP_OUTPUT_DIR=/tmp

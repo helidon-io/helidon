@@ -32,7 +32,7 @@ readonly SCRIPT_PATH
 
 # Path to the root of the workspace
 # shellcheck disable=SC2046
-WS_DIR=$(cd $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
+WS_DIR=$(CDPATH='' cd -- $(dirname -- "${SCRIPT_PATH}") ; cd ../.. ; pwd -P)
 
 on_error(){
     CODE="${?}" && \
