@@ -31,6 +31,8 @@
 # faster and more sable. And helps us catch errors sooner.
 #
 
+unset CDPATH
+
 # Path to this script
 if [ -h "${0}" ] ; then
     SCRIPT_PATH="$(readlink "${0}")"

@@ -19,6 +19,8 @@ set -o pipefail || true  # trace ERR through pipes
 set -o errtrace || true # trace ERR through commands and functions
 set -o errexit || true  # exit the script if any statement returns a non-true return value
 
+unset CDPATH
+
 on_error(){
   CODE="${?}" && \
   set +x && \
