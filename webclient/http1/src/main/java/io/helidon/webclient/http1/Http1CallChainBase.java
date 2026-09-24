@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -841,6 +842,8 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
 
         private BufferData currentBuffer;
         private RuntimeException failure;
+        private int remainingChunkLength;
+        private boolean chunkTerminatorPending;
         private boolean finished;
 
         ChunkedInputStream(ClientConnection connection,
@@ -876,6 +879,10 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
 
         @Override
         public int read(byte[] b, int off, int len) {
+            Objects.checkFromIndexSize(off, len, b.length);
+            if (len == 0) {
+                return 0;
+            }
             if (finished) {
                 return -1;
             }
@@ -891,9 +898,12 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
             if (!finished && failure == null) {
                 if (currentBuffer != null
                         && currentBuffer.consumed()
-                        && consumeExpectedFinalChunk()) {
-                    finish();
-                    return;
+                        && remainingChunkLength == 0) {
+                    consumeChunkTerminator();
+                    if (consumeExpectedFinalChunk()) {
+                        finish();
+                        return;
+                    }
                 }
                 finished = true;
                 currentBuffer = null;
@@ -940,26 +950,48 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
             if (failure != null) {
                 throw new IllegalStateException(failure.getMessage());
             }
-            // chunked encoding - I will just read each chunk fully into memory, as that is how the protocol is designed
-            int length;
-            try {
-                length = readChunkSize(reader);
-            } catch (IllegalStateException e) {
-                entityProcessedRunnable.run();
-                throw e;
-            }
-            if (length == 0) {
-                if (!hasTrailers && reader.startsWithNewLine()) {
-                    // No trailers, skip second CRLF
-                    reader.skip(2);
+            consumeChunkTerminator();
+            if (remainingChunkLength == 0) {
+                try {
+                    remainingChunkLength = readChunkSize(reader);
+                } catch (IllegalStateException e) {
+                    entityProcessedRunnable.run();
+                    throw e;
                 }
+                if (remainingChunkLength == 0) {
+                    if (!hasTrailers && reader.startsWithNewLine()) {
+                        // No trailers, skip second CRLF
+                        reader.skip(2);
+                    }
 
-                finish();
+                    finish();
+                    return;
+                }
+            }
+
+            reader.ensureAvailable();
+            // Retain the available window so small application reads do not create a buffer per read.
+            int toRead = Math.min(remainingChunkLength, reader.available());
+            BufferData chunk = reader.readBuffer(toRead);
+            remainingChunkLength -= toRead;
+
+            if (remainingChunkLength == 0) {
+                chunkTerminatorPending = true;
+                // Reject malformed framing already in memory, but do not pull it before returning available payload.
+                if (reader.available() >= 2) {
+                    consumeChunkTerminator();
+                }
+            }
+
+            recvListener.data(helidonSocket, chunk);
+
+            this.currentBuffer = chunk;
+        }
+
+        private void consumeChunkTerminator() {
+            if (!chunkTerminatorPending) {
                 return;
             }
-
-            BufferData chunk = reader.readBuffer(length);
-
             byte firstDelimiterByte;
             byte secondDelimiterByte;
             try {
@@ -971,10 +1003,7 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
             if (firstDelimiterByte != Bytes.CR_BYTE || secondDelimiterByte != Bytes.LF_BYTE) {
                 throw fail(new IllegalStateException("HTTP response chunk data is not followed by CRLF"));
             }
-
-            recvListener.data(helidonSocket, chunk);
-
-            this.currentBuffer = chunk;
+            chunkTerminatorPending = false;
         }
 
         private void finish() {

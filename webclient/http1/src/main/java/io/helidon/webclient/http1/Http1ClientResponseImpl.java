@@ -81,6 +81,8 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
 
     private final ClientConnection connection;
     private final LazyValue<Headers> trailers;
+    private byte[] entityReadBytes;
+    private BufferData entityReadBuffer;
     private boolean entityRequested;
     private long entityLength;
     private boolean entityFullyRead = false;
@@ -367,11 +369,19 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     }
 
     private BufferData readBytes(int estimate) {
-        BufferData bufferData = BufferData.create(estimate);
+        // An entity copy can still hold an unread buffer, so only recycle fully consumed buffers.
+        if (entityReadBuffer == null || !entityReadBuffer.consumed() || entityReadBytes.length < estimate) {
+            entityReadBytes = new byte[estimate];
+        }
+        // Each entity stream needs a separate read cursor, even when the backing array can be reused.
+        BufferData bufferData = BufferData.create(entityReadBytes, 0, estimate).reset();
         int bytesRead = bufferData.readFrom(inputStream);
         if (bytesRead == -1) {
+            entityReadBytes = null;
+            entityReadBuffer = null;
             return null;
         }
+        entityReadBuffer = bufferData;
         return bufferData;
     }
 
