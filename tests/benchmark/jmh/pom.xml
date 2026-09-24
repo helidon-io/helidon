@@ -165,6 +165,19 @@
             <artifactId>helidon-service-registry</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.transaction</groupId>
+            <artifactId>helidon-transaction-jta</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.transaction</groupId>
+            <artifactId>helidon-transaction-narayana</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.transaction</groupId>
+            <artifactId>jakarta.transaction-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.tracing</groupId>
             <artifactId>helidon-tracing</artifactId>
         </dependency>

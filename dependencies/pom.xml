@@ -76,6 +76,7 @@
         <version.lib.jaxb-runtime>4.0.5</version.lib.jaxb-runtime>
         <!-- Jetbrains annotations: dependency convergence requirement, we never use this directly -->
         <version.lib.jetbrains.annotations>17.0.0</version.lib.jetbrains.annotations>
+        <version.lib.jspecify>1.0.1</version.lib.jspecify>
         <version.lib.junit>5.12.2</version.lib.junit>
         <version.lib.log4j>2.25.5</version.lib.log4j>
         <version.lib.micrometer>1.17.1</version.lib.micrometer>
@@ -441,6 +442,12 @@
                 <groupId>jakarta.resource</groupId>
                 <artifactId>jakarta.resource-api</artifactId>
                 <version>${version.lib.jakarta.resource-api}</version>
+            </dependency>
+            <!-- Align Narayana and Micrometer annotations. -->
+            <dependency>
+                <groupId>org.jspecify</groupId>
+                <artifactId>jspecify</artifactId>
+                <version>${version.lib.jspecify}</version>
             </dependency>
             <!-- END OF Section 3: transitive dependencies we manage the version of for convergence/upgrade -->
 
