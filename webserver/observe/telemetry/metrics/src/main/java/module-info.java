@@ -34,7 +34,6 @@ module io.helidon.webserver.observe.telemetry.metrics {
     requires io.opentelemetry.api;
     requires io.opentelemetry.semconv;
     requires io.helidon.common.features.api;
-    requires micrometer.core;
     requires io.helidon.metrics.api;
     requires io.opentelemetry.sdk.metrics;
 

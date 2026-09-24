@@ -33,7 +33,7 @@ module io.helidon.declarative.tests.metrics {
     requires io.helidon.common.mapper;
     requires io.helidon.common;
     requires io.helidon.webserver.observe.metrics;
-    requires io.helidon.metrics.providers.micrometer;
+    requires io.helidon.metrics.providers.helidon;
     requires io.helidon.metrics.systemmeters;
 
     exports io.helidon.declarative.tests.metrics;

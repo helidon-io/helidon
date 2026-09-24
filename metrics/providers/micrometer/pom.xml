@@ -40,6 +40,11 @@
             <artifactId>helidon-metrics-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.metrics.providers</groupId>
+            <artifactId>helidon-metrics-providers-helidon</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
         </dependency>

@@ -39,7 +39,17 @@ For Metrics Observability features:
   <groupId>io.helidon.webserver.observe</groupId>
   <artifactId>helidon-webserver-observe-metrics</artifactId>
 </dependency>
+<dependency>
+  <groupId>io.helidon.metrics.providers</groupId>
+  <artifactId>helidon-metrics-providers-helidon</artifactId>
+  <scope>runtime</scope>
+</dependency>
 ```
+
+The metrics observer requires a metrics provider to record and report metrics.
+The example selects the Helidon provider; choose
+`helidon-metrics-providers-micrometer` instead to use Micrometer. See
+[Metrics](metrics/metrics.md#maven-coordinates) for details.
 
 For Info Observability features:
 
@@ -212,9 +222,9 @@ endpoints:
 
 #### Metrics Observability
 
-When you add the metrics dependency to your project, Helidon automatically
-provides a built-in REST endpoint `/observe/metrics` which responds with a
-report of the registered metrics and their values.
+When you add the metrics observer and a metrics provider to your project,
+Helidon automatically provides a built-in REST endpoint `/observe/metrics`
+which responds with a report of the registered metrics and their values.
 
 Clients can request a particular output format.
 
