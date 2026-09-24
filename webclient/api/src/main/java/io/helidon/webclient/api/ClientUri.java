@@ -25,6 +25,7 @@ import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.common.uri.UriQueryWriteable;
+import io.helidon.common.uri.UriValidator;
 
 /**
  * URI abstraction for WebClient.
@@ -182,6 +183,7 @@ public class ClientUri implements UriInfo {
      *
      * @param uri URI to use
      * @return updated instance
+     * @throws IllegalArgumentException if the authority cannot be parsed as a host and optional port
      */
     public ClientUri resolve(URI uri) {
         if (uri.isAbsolute()) {
@@ -195,6 +197,8 @@ public class ClientUri implements UriInfo {
         }
         if (uri.getHost() != null) {
             uriBuilder.host(uri.getHost());
+        } else if (uri.getRawAuthority() != null) {
+            resolveAuthority(uri.getRawAuthority());
         }
         if (uri.getPort() != -1) {
             uriBuilder.port(uri.getPort());
@@ -354,6 +358,36 @@ public class ClientUri implements UriInfo {
         }
 
         return path;
+    }
+
+    private void resolveAuthority(String rawAuthority) {
+        // java.net.URI does not split RFC 3986 registered names, such as names containing underscores.
+        int userInfoEnd = rawAuthority.indexOf('@');
+        if (userInfoEnd != rawAuthority.lastIndexOf('@')) {
+            throw new IllegalArgumentException("URI authority contains multiple user-info delimiters");
+        }
+        // Without user info, userInfoEnd is -1, so substring(0) preserves the entire authority.
+        String authority = rawAuthority.substring(userInfoEnd + 1);
+        int portDelimiter = authority.lastIndexOf(':');
+        String host = portDelimiter < 0 ? authority : authority.substring(0, portDelimiter);
+        UriValidator.validateNonIpLiteral(host);
+
+        int port = -1;
+        if (portDelimiter >= 0 && portDelimiter + 1 < authority.length()) {
+            port = 0;
+            for (int i = portDelimiter + 1; i < authority.length(); i++) {
+                char c = authority.charAt(i);
+                if (c < '0' || c > '9') {
+                    throw new IllegalArgumentException("URI authority port must contain only digits");
+                }
+                port = port * 10 + c - '0';
+                if (port > 65535) {
+                    throw new IllegalArgumentException("URI authority port must be between 0 and 65535");
+                }
+            }
+        }
+        // Use the shared authority parser to decode only unreserved host characters.
+        uriBuilder.authority(host).port(port);
     }
 
     private String extractQuery(String path) {
