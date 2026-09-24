@@ -16,6 +16,7 @@
 
 package io.helidon.security.providers.oidc;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
@@ -28,6 +29,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -39,8 +41,11 @@ import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.http.DirectHandler;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.HttpException;
+import io.helidon.http.RequestException;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
@@ -61,6 +66,8 @@ import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.providers.oidc.common.TenantConfig;
+import io.helidon.webserver.CloseConnectionException;
+import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
@@ -81,6 +88,7 @@ import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNot.not;
@@ -338,6 +346,59 @@ class OidcFeatureTest {
                                                    "https://[bad",
                                                    builder -> builder.frontendUri("https://configured.example"));
         assertThat(configuredResponse, startsWith("HTTP/1.1 400"));
+    }
+
+    @Test
+    void testLogoutPropagatesRequestException() throws Exception {
+        RequestException failure = RequestException.builder()
+                .type(DirectHandler.EventType.OTHER)
+                .status(Status.TOO_MANY_REQUESTS_429)
+                .header(HeaderValues.create(HeaderNames.RETRY_AFTER, "7"))
+                .build();
+
+        String response = logoutFailure(failure, null);
+
+        assertThat(response, startsWith("HTTP/1.1 429"));
+        assertThat(response, containsString("\r\nRetry-After: 7\r\n"));
+        assertLocalOidcCookiesRemoved(response);
+    }
+
+    @Test
+    void testLogoutPropagatesCloseConnectionException() throws Exception {
+        String response = logoutFailure(new CloseConnectionException("Close the logout connection"), null);
+
+        assertThat(response, is(""));
+    }
+
+    @Test
+    void testLogoutPropagatesServerConnectionException() throws Exception {
+        String response = logoutFailure(new ServerConnectionException("Logout connection failed",
+                                                                      new IOException("Socket failure")), null);
+
+        assertThat(response, is(""));
+    }
+
+    @Test
+    void testLogoutDelegatesHttpExceptionToRoutingHandler() throws Exception {
+        HttpException failure = new HttpException("Logout failed", Status.CONFLICT_409);
+        String response = logoutFailure(failure, routing -> routing.error(HttpException.class, (req, res, thrown) -> {
+            assertThat(req.path().path(), is("/oidc/logout"));
+            assertThat(thrown, sameInstance(failure));
+            res.status(Status.BAD_REQUEST_400).send("Handled by routing");
+        }));
+
+        assertThat(response, startsWith("HTTP/1.1 400"));
+        assertThat(response, endsWith("Handled by routing"));
+        assertLocalOidcCookiesRemoved(response);
+    }
+
+    @Test
+    void testLogoutKeepsUnexpectedFailurePrivate() throws Exception {
+        String response = logoutFailure(new IllegalStateException("Private logout failure"), null);
+
+        assertThat(response, startsWith("HTTP/1.1 500"));
+        assertThat(response.substring(response.indexOf("\r\n\r\n") + 4), is(""));
+        assertThat(response, not(containsString("Private logout failure")));
     }
 
     @Test
@@ -634,6 +695,33 @@ class OidcFeatureTest {
         }
     }
 
+    private static String logoutFailure(RuntimeException failure,
+                                        Consumer<HttpRouting.Builder> routingCustomizer) throws Exception {
+        return logoutResponse("ok",
+                              DEFAULT_LOGOUT_ENDPOINT,
+                              ID_TOKEN,
+                              true,
+                              null,
+                              DEFAULT_TENANT_ID,
+                              builder -> builder.frontendUri("https://frontend.example"),
+                              routing -> {
+                                  if (routingCustomizer != null) {
+                                      routingCustomizer.accept(routing);
+                                  }
+                                  routing.addFilter((chain, req, res) -> {
+                                      if (req.path().path().equals("/oidc/logout")) {
+                                          AtomicBoolean first = new AtomicBoolean(true);
+                                          res.beforeSend(() -> {
+                                              if (first.getAndSet(false)) {
+                                                  throw failure;
+                                              }
+                                          });
+                                      }
+                                      chain.proceed();
+                                  });
+                              });
+    }
+
     private static String logoutResponse(String state) throws Exception {
         return logoutResponse(state, DEFAULT_LOGOUT_ENDPOINT);
     }
@@ -693,6 +781,18 @@ class OidcFeatureTest {
                                          String discoveredOrigin,
                                          String tenantName,
                                          Consumer<OidcConfig.Builder> customizer) throws Exception {
+        return logoutResponse(state, logoutEndpoint, idToken, validateResponseHeaders, discoveredOrigin,
+                              tenantName, customizer, null);
+    }
+
+    private static String logoutResponse(String state,
+                                         URI logoutEndpoint,
+                                         String idToken,
+                                         boolean validateResponseHeaders,
+                                         String discoveredOrigin,
+                                         String tenantName,
+                                         Consumer<OidcConfig.Builder> customizer,
+                                         Consumer<HttpRouting.Builder> routingCustomizer) throws Exception {
         OidcConfig.Builder oidcConfigBuilder = OidcConfig.builder()
                 .clientId("id")
                 .clientSecret("secret")
@@ -733,13 +833,17 @@ class OidcFeatureTest {
 
         Http1Config.Builder http1Config = Http1Config.builder()
                 .validateResponseHeaders(validateResponseHeaders);
+        HttpRouting.Builder routing = HttpRouting.builder()
+                .addFeature(OidcFeature.create(oidcConfig));
+        if (routingCustomizer != null) {
+            routingCustomizer.accept(routing);
+        }
         var serverBuilder = WebServer.builder()
                 .port(0)
                 .addConnectionSelector(Http1ConnectionSelector.builder()
                                                .config(http1Config.build())
                                                .build())
-                .addRouting(HttpRouting.builder()
-                                    .addFeature(OidcFeature.create(oidcConfig)));
+                .addRouting(routing);
         if (discoveredOrigin != null) {
             serverBuilder.requestedUriDiscoveryContext(context -> context
                     .trustedProxies(AllowList.builder().allowAll(true).build()));
