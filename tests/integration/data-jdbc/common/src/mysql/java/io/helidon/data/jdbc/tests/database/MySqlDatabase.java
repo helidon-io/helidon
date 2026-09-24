@@ -30,7 +30,7 @@ public final class MySqlDatabase {
     private static final String GENERATED_KEY_COLUMN_PROPERTY = "helidon.data.jdbc.tests.generated-key-column";
 
     private static final DockerImageName IMAGE = DockerImageName.parse(
-                    "container-registry.oracle.com/mysql/community-server:9.7.1")
+                    "container-registry.oracle.com/mysql/community-server:9.7.3")
             .asCompatibleSubstituteFor("mysql");
 
     private MySqlDatabase() {
