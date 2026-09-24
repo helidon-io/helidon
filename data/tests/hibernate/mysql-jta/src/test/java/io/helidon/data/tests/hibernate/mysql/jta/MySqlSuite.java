@@ -41,7 +41,7 @@ public class MySqlSuite implements SuiteProvider {
     private final TestContainerHandler containerHandler;
 
     public MySqlSuite() {
-        MySQLContainer<?> container = new MySQLContainer<>(SqlTestContainerImages.getMySqlImageReference());
+        MySQLContainer<?> container = new MySQLContainer<>(SqlTestContainerImages.mySqlImageReference());
         this.containerHandler = SqlTestContainerConfig.configureContainer(container,
                                                                           ConfigSources.classpath("application.yaml"));
     }

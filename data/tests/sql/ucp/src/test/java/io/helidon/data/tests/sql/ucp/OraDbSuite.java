@@ -35,7 +35,7 @@ public class OraDbSuite implements SuiteProvider {
     private final TestContainerHandler containerHandler;
 
     public OraDbSuite() {
-        GenericContainer<?> container = new GenericContainer<>(SqlTestContainerImages.getOracleImageReference());
+        GenericContainer<?> container = new GenericContainer<>(SqlTestContainerImages.oracleImageReference());
         this.containerHandler = SqlTestContainerConfig.configureContainer(container,
                                                                           ConfigSources.classpath("application.yaml"));
 

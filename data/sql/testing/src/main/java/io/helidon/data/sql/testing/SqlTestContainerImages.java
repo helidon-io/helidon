@@ -38,7 +38,7 @@ public final class SqlTestContainerImages {
      *
      * @return MySQL Docker image
      */
-    public static DockerImageName getMySqlImageReference() {
+    public static DockerImageName mySqlImageReference() {
         return MYSQL;
     }
 
@@ -47,7 +47,7 @@ public final class SqlTestContainerImages {
      *
      * @return Oracle Database Docker image
      */
-    public static DockerImageName getOracleImageReference() {
+    public static DockerImageName oracleImageReference() {
         return ORACLE;
     }
 }
