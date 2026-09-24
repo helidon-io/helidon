@@ -256,20 +256,20 @@ webclient:
 - [Web Client Discovery Integration Javadoc][web-client-disco]
 - [Helidon Web Client](webclient.md)
 
-[io-helidon-disco]: https://helidon.io/docs/v27/apidocs/io.helidon.discovery/io/helidon/discovery/Discovery.html
-[uris-string-uri]: <https://helidon.io/docs/v27/apidocs/io.helidon.discovery/io/helidon/discovery/Discovery.html#uris(java.lang.String,java.net.URI)>
-[io-helidon-disco-2]: https://helidon.io/docs/v27/apidocs/io.helidon.discovery/io/helidon/discovery/DiscoveredUri.html
+[io-helidon-disco]: https://helidon.io/docs/core/v27/apidocs/io.helidon.discovery/io/helidon/discovery/Discovery.html
+[uris-string-uri]: <https://helidon.io/docs/core/v27/apidocs/io.helidon.discovery/io/helidon/discovery/Discovery.html#uris(java.lang.String,java.net.URI)>
+[io-helidon-disco-2]: https://helidon.io/docs/core/v27/apidocs/io.helidon.discovery/io/helidon/discovery/DiscoveredUri.html
 [uri]: https://docs.oracle.com/en/java/javase/27/docs/api/java.base/java/net/URI.html
 [helidon-inject]: injection/injection.md#injection-points
-[io-helidon-servi]: https://helidon.io/docs/v27/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Inject.html
+[io-helidon-servi]: https://helidon.io/docs/core/v27/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Inject.html
 [service-registry]: injection/injection.md#programmatic-lookup
-[io-helidon-servi-2]: https://helidon.io/docs/v27/apidocs/io.helidon.service.registry/io/helidon/service/registry/Services.html
-[io-helidon-servi-3]: <https://helidon.io/docs/v27/apidocs/io.helidon.service.registry/io/helidon/service/registry/Services.html#get(java.lang.Class)>
+[io-helidon-servi-2]: https://helidon.io/docs/core/v27/apidocs/io.helidon.service.registry/io/helidon/service/registry/Services.html
+[io-helidon-servi-3]: <https://helidon.io/docs/core/v27/apidocs/io.helidon.service.registry/io/helidon/service/registry/Services.html#get(java.lang.Class)>
 [sequencedset]: https://docs.oracle.com/en/java/javase/27/docs/api/java.base/java/util/SequencedSet.html
-[uri-method]: <https://helidon.io/docs/v27/apidocs/io.helidon.discovery/io/helidon/discovery/DiscoveredUri.html#uri()>
-[fully-specified]: <https://helidon.io/docs/v27/apidocs/io.helidon.webclient.discovery/io/helidon/webclient/discovery/WebClientDiscovery.html#handle(io.helidon.webclient.spi.WebClientService.Chain,io.helidon.webclient.api.WebClientServiceRequest)>
+[uri-method]: <https://helidon.io/docs/core/v27/apidocs/io.helidon.discovery/io/helidon/discovery/DiscoveredUri.html#uri()>
+[fully-specified]: <https://helidon.io/docs/core/v27/apidocs/io.helidon.webclient.discovery/io/helidon/webclient/discovery/WebClientDiscovery.html#handle(io.helidon.webclient.spi.WebClientService.Chain,io.helidon.webclient.api.WebClientServiceRequest)>
 [web-client-servi]: webclient.md#adding-service-to-webclient
-[discovery-javado]: https://helidon.io/docs/v27/apidocs/io.helidon.discovery/module-summary.html
-[web-client-disco]: https://helidon.io/docs/v27/apidocs/io.helidon.webclient.discovery/module-summary.html
+[discovery-javado]: https://helidon.io/docs/core/v27/apidocs/io.helidon.discovery/module-summary.html
+[web-client-disco]: https://helidon.io/docs/core/v27/apidocs/io.helidon.webclient.discovery/module-summary.html
 [example-prefix-uri]: https://example.com:443/
 [test-prefix-uri]: https://test.example.com:443/

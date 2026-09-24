@@ -162,4 +162,4 @@ security.web-server.paths.3.roles-allowed=user,monitor
 
 - [Helidon WebServer Security Integration][helidon-webserve]
 
-[helidon-webserve]: https://helidon.io/docs/v27/apidocs/io.helidon.webserver.security/module-summary.html
+[helidon-webserve]: https://helidon.io/docs/core/v27/apidocs/io.helidon.webserver.security/module-summary.html

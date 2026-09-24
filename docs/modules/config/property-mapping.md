@@ -754,11 +754,11 @@ locates the public annotated constructor and invokes it, passing as arguments
 the data it fetches from the configuration matching the annotation `key` names
 with the configuration keys.
 
-[config]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/Config.html
-[configmappers]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/ConfigMappers.html
+[config]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/Config.html
+[configmappers]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/ConfigMappers.html
 [application-prop]: config.md#built-in-support-for-config-formats
-[io-helidon-confi]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/package-summary.html#conversions
-[configmapperprov]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/spi/ConfigMapperProvider.html
+[io-helidon-confi]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/package-summary.html#conversions
+[configmapperprov]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/spi/ConfigMapperProvider.html
 [pojo-with-factor]: #target-class-with-annotated-factory-method-or-constructor
-[value]: https://helidon.io/docs/v27/apidocs/io.helidon.config.objectmapping/io/helidon/config/objectmapping/Value.html
-[transient]: https://helidon.io/docs/v27/apidocs/io.helidon.config.objectmapping/io/helidon/config/objectmapping/Transient.html
+[value]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config.objectmapping/io/helidon/config/objectmapping/Value.html
+[transient]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config.objectmapping/io/helidon/config/objectmapping/Transient.html

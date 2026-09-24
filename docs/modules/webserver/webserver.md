@@ -2116,11 +2116,11 @@ public static void main(String[] args) {
 
 [standard-http-fo]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Forwarded
 [non-standard-x-f]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For
-[webserverconfig]: https://helidon.io/docs/v27/apidocs/io.helidon.webserver/io/helidon/webserver/WebServerConfig.Builder.html
-[allowlist]: https://helidon.io/docs/v27/apidocs/io.helidon.common.configurable/io/helidon/common/configurable/AllowList.html
-[uriinfo]: https://helidon.io/docs/v27/apidocs/io.helidon.common.uri/io/helidon/common/uri/UriInfo.html
-[eventtype]: https://helidon.io/docs/v27/apidocs/io.helidon.http/io/helidon/http/DirectHandler.EventType.html
-[directhandlers]: <https://helidon.io/docs/v27/apidocs/io.helidon.webserver/io/helidon/webserver/ListenerConfig.BuilderBase.html#directHandlers(io.helidon.webserver.http.DirectHandlers)>
+[webserverconfig]: https://helidon.io/docs/core/v27/apidocs/io.helidon.webserver/io/helidon/webserver/WebServerConfig.Builder.html
+[allowlist]: https://helidon.io/docs/core/v27/apidocs/io.helidon.common.configurable/io/helidon/common/configurable/AllowList.html
+[uriinfo]: https://helidon.io/docs/core/v27/apidocs/io.helidon.common.uri/io/helidon/common/uri/UriInfo.html
+[eventtype]: https://helidon.io/docs/core/v27/apidocs/io.helidon.http/io/helidon/http/DirectHandler.EventType.html
+[directhandlers]: <https://helidon.io/docs/core/v27/apidocs/io.helidon.webserver/io/helidon/webserver/ListenerConfig.BuilderBase.html#directHandlers(io.helidon.webserver.http.DirectHandlers)>
 [context]: #context
 [stuck-thread-detection]: #stuck-thread-detection
 [access-log]: #access-log
@@ -2136,11 +2136,11 @@ public static void main(String[] args) {
 [jackson]: #jackson-support
 [jackson-2]: https://github.com/FasterXML/jackson#jackson-project-home-github
 [proxy-protocol]: https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt
-[helidon-webserve]: https://helidon.io/docs/v27/apidocs/io.helidon.webserver/module-summary.html
-[helidon-webserve-2]: https://helidon.io/docs/v27/apidocs/io.helidon.webserver.staticcontent/module-summary.html
-[helidon-json]: https://helidon.io/docs/v27/apidocs/io.helidon.http.media.json/module-summary.html
-[helidon-json-binding]: https://helidon.io/docs/v27/apidocs/io.helidon.http.media.json.binding/module-summary.html
-[helidon-jackson]: https://helidon.io/docs/v27/apidocs/io.helidon.http.media.jackson/module-summary.html
+[helidon-webserve]: https://helidon.io/docs/core/v27/apidocs/io.helidon.webserver/module-summary.html
+[helidon-webserve-2]: https://helidon.io/docs/core/v27/apidocs/io.helidon.webserver.staticcontent/module-summary.html
+[helidon-json]: https://helidon.io/docs/core/v27/apidocs/io.helidon.http.media.json/module-summary.html
+[helidon-json-binding]: https://helidon.io/docs/core/v27/apidocs/io.helidon.http.media.json.binding/module-summary.html
+[helidon-jackson]: https://helidon.io/docs/core/v27/apidocs/io.helidon.http.media.jackson/module-summary.html
 [io-helidon-webse]: ../../config/io.helidon.webserver.WebServer.md#configuration-options
 [io-helidon-commo]: ../../config/io.helidon.common.tls.Tls.md#configuration-options
 [io-helidon-webse-2]: ../../config/io.helidon.webserver.context.ContextFeature.md#configuration-options

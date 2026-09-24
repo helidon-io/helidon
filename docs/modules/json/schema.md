@@ -129,6 +129,6 @@ over the parameter.
 Schema.find(MyClass.class);
 ```
 
-[jsonschema]: https://helidon.io/docs/v27/apidocs/io.helidon.json.schema/io/helidon/json/schema/JsonSchema.html
-[schema]: https://helidon.io/docs/v27/apidocs/io.helidon.json.schema/io/helidon/json/schema/Schema.html
-[service-named]: https://helidon.io/docs/v27/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Named.html
+[jsonschema]: https://helidon.io/docs/core/v27/apidocs/io.helidon.json.schema/io/helidon/json/schema/JsonSchema.html
+[schema]: https://helidon.io/docs/core/v27/apidocs/io.helidon.json.schema/io/helidon/json/schema/Schema.html
+[service-named]: https://helidon.io/docs/core/v27/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Named.html

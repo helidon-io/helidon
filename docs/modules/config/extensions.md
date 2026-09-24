@@ -280,8 +280,8 @@ Config SPI Interfaces for filtering:
 </thead>
 <tbody>
 <tr>
-<td><p><a href="https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/spi/ConfigFilter.html"><code>ConfigFilter</code></a></p>
-<p>Accepts <a href="https://helidon.io/docs/v27/apidocs/io.helidon.common/io/helidon/common/Weight.html"><code>@Weight</code></a>. See <a href="#about-priority">About Priority</a>.</p></td>
+<td><p><a href="https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/spi/ConfigFilter.html"><code>ConfigFilter</code></a></p>
+<p>Accepts <a href="https://helidon.io/docs/core/v27/apidocs/io.helidon.common/io/helidon/common/Weight.html"><code>@Weight</code></a>. See <a href="#about-priority">About Priority</a>.</p></td>
 <td><p><code>String apply(Config.Key key, String stringValue);</code></p></td>
 <td><p>Accepts a key and the corresponding <code>String</code> value and returns the <code>String</code> which the config system should use for that key.</p></td>
 </tr>
@@ -490,19 +490,19 @@ had previously been successfully canceled.
 To support retry policies in config profiles, also implement the Java service
 loader SPI `RetryPolicyProvider`.
 
-[weight]: https://helidon.io/docs/v27/apidocs/io.helidon.common/io/helidon/common/Weight.html
-[configsources]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html
-[configsource]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/spi/ConfigSource.html
-[configparser]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/spi/ConfigParser.html
-[overridesource]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/spi/OverrideSource.html
-[overrides]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#overrides(java.util.function.Supplier)
-[overridesourcepr]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/spi/OverrideSourceProvider.html
-[configfilter]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/spi/ConfigFilter.html
-[addfilter-method]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html
-[disablefilterser]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#disableFilterServices--
-[configmappers]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/ConfigMappers.html
-[configmapperprov]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/spi/ConfigMapperProvider.html
-[pollingstrategy]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html
-[changewatcher]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/spi/ChangeWatcher.html
-[retrypolicy]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/spi/RetryPolicy.html
-[retrypolicies]: https://helidon.io/docs/v27/apidocs/io.helidon.config/io/helidon/config/RetryPolicies.html
+[weight]: https://helidon.io/docs/core/v27/apidocs/io.helidon.common/io/helidon/common/Weight.html
+[configsources]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html
+[configsource]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/spi/ConfigSource.html
+[configparser]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/spi/ConfigParser.html
+[overridesource]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/spi/OverrideSource.html
+[overrides]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#overrides(java.util.function.Supplier)
+[overridesourcepr]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/spi/OverrideSourceProvider.html
+[configfilter]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/spi/ConfigFilter.html
+[addfilter-method]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html
+[disablefilterser]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#disableFilterServices()
+[configmappers]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/ConfigMappers.html
+[configmapperprov]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/spi/ConfigMapperProvider.html
+[pollingstrategy]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html
+[changewatcher]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/spi/ChangeWatcher.html
+[retrypolicy]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/spi/RetryPolicy.html
+[retrypolicies]: https://helidon.io/docs/core/v27/apidocs/io.helidon.config/io/helidon/config/RetryPolicies.html

@@ -176,7 +176,7 @@ table.
 </thead>
 <tr>
 <td>
-<a href="https://helidon.io/docs/v27/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.helidon.tracing.Tracer)">
+<a href="https://helidon.io/docs/core/v27/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.helidon.tracing.Tracer)">
 <code>Tracer callback<wbr>Enabled<wbr>From(<wbr>helidon<wbr>Tracer)</code>
 </a>
 </td>
@@ -187,7 +187,7 @@ specified Helidon <code>Tracer</code>
 </tr>
 <tr>
 <td>
-<a href="https://helidon.io/docs/v27/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.opentelemetry.api.trace.Tracer)">
+<a href="https://helidon.io/docs/core/v27/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.opentelemetry.api.trace.Tracer)">
 <code>Tracer callback<wbr>Enabled<wbr>From(<wbr>otel<wbr>Tracer)</code>
 </a>
 </td>
@@ -198,7 +198,7 @@ OpenTelemetry <code>Tracer</code>
 </tr>
 <tr>
 <td>
-<a href="https://helidon.io/docs/v27/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.helidon.tracing.Span)">
+<a href="https://helidon.io/docs/core/v27/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.helidon.tracing.Span)">
 <code>Span callback<wbr>Enabled<wbr>From(<wbr>helidon<wbr>Span)</code>
 </a>
 </td>
@@ -209,7 +209,7 @@ Helidon <code>Span</code>
 </tr>
 <tr>
 <td>
-<a href="https://helidon.io/docs/v27/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.opentelemetry.api.trace.Span)">
+<a href="https://helidon.io/docs/core/v27/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.opentelemetry.api.trace.Span)">
 <code>Span callback<wbr>Enabled<wbr>From(<wbr>otel<wbr>Span)</code>
 </a>
 </td>
@@ -535,13 +535,13 @@ instead of `tracing`.
 - [OpenTelemetry API][opentelemetry]
 
 [opentelemetry]: https://opentelemetry.io/docs/instrumentation/js/api/tracing/
-[span]: https://helidon.io/docs/v27/apidocs/io.helidon.tracing/io/helidon/tracing/Span.html
-[writablebaggage]: https://helidon.io/docs/v27/apidocs/io.helidon.tracing/io/helidon/tracing/WritableBaggage.html
-[spancontext]: https://helidon.io/docs/v27/apidocs/io.helidon.tracing/io/helidon/tracing/SpanContext.html
-[baggage]: https://helidon.io/docs/v27/apidocs/io.helidon.tracing/io/helidon/tracing/Baggage.html
-[helidonopentelem]: https://helidon.io/docs/v27/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html
-[wrapper]: https://helidon.io/docs/v27/apidocs/io.helidon.common/io/helidon/common/Wrapper.html
-[opentelemetrycon]: https://helidon.io/docs/v27/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/OpenTelemetryTracerConfig.html
+[span]: https://helidon.io/docs/core/v27/apidocs/io.helidon.tracing/io/helidon/tracing/Span.html
+[writablebaggage]: https://helidon.io/docs/core/v27/apidocs/io.helidon.tracing/io/helidon/tracing/WritableBaggage.html
+[spancontext]: https://helidon.io/docs/core/v27/apidocs/io.helidon.tracing/io/helidon/tracing/SpanContext.html
+[baggage]: https://helidon.io/docs/core/v27/apidocs/io.helidon.tracing/io/helidon/tracing/Baggage.html
+[helidonopentelem]: https://helidon.io/docs/core/v27/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html
+[wrapper]: https://helidon.io/docs/core/v27/apidocs/io.helidon.common/io/helidon/common/Wrapper.html
+[opentelemetrycon]: https://helidon.io/docs/core/v27/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/OpenTelemetryTracerConfig.html
 [telemetry-doc-pa]: telemetry/opentelemetry.md
 [span-lifecycle-c]: ../includes/tracing/common-callbacks.md#span-lifecycle
 [io-helidon-traci]: ../config/io.helidon.tracing.Tracer.md#configuration-options

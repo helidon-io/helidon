@@ -167,4 +167,4 @@ context.throwOnFailure(); // <5>
 <!--@mdc :: -->
 
 [helidon-declarat]: injection/declarative.md#validation
-[io-helidon-valid]: https://helidon.io/docs/v27/apidocs/io.helidon.validation/io/helidon/validation/Validators.html
+[io-helidon-valid]: https://helidon.io/docs/core/v27/apidocs/io.helidon.validation/io/helidon/validation/Validators.html

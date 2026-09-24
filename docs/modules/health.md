@@ -361,14 +361,14 @@ statuses:
 <tr>
 <td>deadlock detection</td>
 <td><code>deadlock</code></td>
-<td><a href="https://helidon.io/docs/v27/apidocs/io.helidon.health.checks/io/helidon/health/checks/DeadlockHealthCheck.html"><code>DeadlockHealthCheck</code></a></td>
+<td><a href="https://helidon.io/docs/core/v27/apidocs/io.helidon.health.checks/io/helidon/health/checks/DeadlockHealthCheck.html"><code>DeadlockHealthCheck</code></a></td>
 <td>n/a</td>
 <td>n/a</td>
 </tr>
 <tr>
 <td rowspan="2">available disk space</td>
 <td rowspan="2"><code>diskSpace</code></td>
-<td rowspan="2"><a href="https://helidon.io/docs/v27/apidocs/io.helidon.health.checks/io/helidon/health/checks/DiskSpaceHealthCheck.html"><code>DiskSpaceHealthCheck</code></a></td>
+<td rowspan="2"><a href="https://helidon.io/docs/core/v27/apidocs/io.helidon.health.checks/io/helidon/health/checks/DiskSpaceHealthCheck.html"><code>DiskSpaceHealthCheck</code></a></td>
 <td><code>helidon.health.diskSpace.thresholdPercent</code></td>
 <td><code>99.999</code></td>
 </tr>
@@ -379,7 +379,7 @@ statuses:
 <tr>
 <td>available heap memory</td>
 <td><code>heapMemory</code></td>
-<td><a href="https://helidon.io/docs/v27/apidocs/io.helidon.health.checks/io/helidon/health/checks/HeapMemoryHealthCheck.html"><code>HeapMemoryHealthCheck</code></a></td>
+<td><a href="https://helidon.io/docs/core/v27/apidocs/io.helidon.health.checks/io/helidon/health/checks/HeapMemoryHealthCheck.html"><code>HeapMemoryHealthCheck</code></a></td>
 <td><code>helidon.health.heapMemory.thresholdPercent</code></td>
 <td><code>98</code></td>
 </tr>
@@ -702,4 +702,4 @@ spec:
 - [Health Checks API Javadocs][health-checks-se].
 
 [kubernetes-docum]: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes
-[health-checks-se]: https://helidon.io/docs/v27/apidocs/io.helidon.health.checks/module-summary.html
+[health-checks-se]: https://helidon.io/docs/core/v27/apidocs/io.helidon.health.checks/module-summary.html
