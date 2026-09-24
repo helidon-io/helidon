@@ -29,7 +29,7 @@
                   optional="true">
                 <option value="quickstart"
                         name="Quickstart"
-                        description="Sample Helidon SE project that includes multiple REST operations">
+                        description="Helidon SE application that includes multiple REST operations">
                     <exec src="quickstart/quickstart-se.xml"/>
                 </option>
                 <option value="database"
@@ -39,7 +39,7 @@
                 </option>
                 <option value="custom"
                         name="Custom"
-                        description="Custom Helidon SE project">
+                        description="Custom Helidon SE application">
                     <exec src="custom/custom-se.xml"/>
                 </option>
             </enum>
