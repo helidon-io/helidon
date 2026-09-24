@@ -265,6 +265,12 @@
                 <version>${helidon.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>io.helidon.metrics.publishers</groupId>
+                <artifactId>helidon-metrics-publishers-otlp</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+
             <!-- health checks -->
             <dependency>
                 <groupId>io.helidon.health</groupId>

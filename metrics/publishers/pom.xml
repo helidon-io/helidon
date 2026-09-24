@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright (c) 2018, 2026 Oracle and/or its affiliates.
+
+    Copyright (c) 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -13,33 +14,24 @@
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
-  -->
+
+-->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>io.helidon</groupId>
-        <artifactId>helidon-project</artifactId>
+        <groupId>io.helidon.metrics</groupId>
+        <artifactId>helidon-metrics-project</artifactId>
         <version>28.0.0-SNAPSHOT</version>
     </parent>
+    <groupId>io.helidon.metrics.publishers</groupId>
+    <artifactId>helidon-metrics-publishers-project</artifactId>
     <packaging>pom</packaging>
-    <groupId>io.helidon.metrics</groupId>
-    <artifactId>helidon-metrics-project</artifactId>
-    <name>Helidon Metrics Project</name>
-
-    <properties>
-        <javadoc.fail-on-warnings>true</javadoc.fail-on-warnings>
-    </properties>
+    <name>Helidon Metrics Publishers Project</name>
 
     <modules>
-        <module>metrics</module>
-        <module>providers</module>
-        <module>publishers</module>
-        <module>trace-exemplar</module>
-        <module>api</module>
-        <module>system-meters</module>
-        <module>provider-tests</module>
+        <module>otlp</module>
     </modules>
 </project>

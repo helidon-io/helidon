@@ -186,6 +186,10 @@
             <artifactId>helidon-metrics-trace-exemplar</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.metrics.publishers</groupId>
+            <artifactId>helidon-metrics-publishers-otlp</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.health</groupId>
             <artifactId>helidon-health</artifactId>
         </dependency>
