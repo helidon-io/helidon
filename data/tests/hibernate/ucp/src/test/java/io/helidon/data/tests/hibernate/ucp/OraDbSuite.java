@@ -19,6 +19,7 @@ import java.time.Duration;
 
 import io.helidon.config.ConfigSources;
 import io.helidon.data.sql.testing.SqlTestContainerConfig;
+import io.helidon.data.sql.testing.SqlTestContainerImages;
 import io.helidon.data.sql.testing.TestContainerHandler;
 import io.helidon.data.tests.common.InitialData;
 import io.helidon.data.tests.repository.PokemonRepository;
@@ -30,7 +31,6 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -39,13 +39,10 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  */
 public class OraDbSuite implements SuiteProvider {
     private static final System.Logger LOGGER = System.getLogger(OraDbSuite.class.getName());
-    private static final DockerImageName IMAGE = DockerImageName.parse(
-            "container-registry.oracle.com/database/free:latest-lite");
-
     private final TestContainerHandler containerHandler;
 
     public OraDbSuite() {
-        GenericContainer<?> container = new GenericContainer<>(IMAGE);
+        GenericContainer<?> container = new GenericContainer<>(SqlTestContainerImages.getOracleImageReference());
         this.containerHandler = SqlTestContainerConfig.configureContainer(container,
                                                                           ConfigSources.classpath("application.yaml"));
 
