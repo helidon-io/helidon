@@ -131,10 +131,10 @@ Helidon invokes each listener’s methods in the following order:
 
 Order in which Helidon Invokes Listener Methods
 
-[spanlistener]: https://helidon.io/docs/v27/apidocs/io.helidon.tracing/io/helidon/tracing/SpanListener.html
-[spanlistener-for]: https://helidon.io/docs/v27/apidocs/io.helidon.tracing/io/helidon/tracing/SpanListener.ForbiddenOperationException.html
-[span-builder]: https://helidon.io/docs/v27/apidocs/io.helidon.tracing/io/helidon/tracing/Span.Builder.html
-[span]: https://helidon.io/docs/v27/apidocs/io.helidon.tracing/io/helidon/tracing/Span.html
-[scope]: https://helidon.io/docs/v27/apidocs/io.helidon.tracing/io/helidon/tracing/Scope.html
-[io-helidon-traci]: https://helidon.io/docs/v27/apidocs/io.helidon.tracing/io/helidon/tracing/SpanContext.html
-[tracer]: https://helidon.io/docs/v27/apidocs/io.helidon.tracing/io/helidon/tracing/Tracer.html
+[spanlistener]: https://helidon.io/docs/core/v28/apidocs/io.helidon.tracing/io/helidon/tracing/SpanListener.html
+[spanlistener-for]: https://helidon.io/docs/core/v28/apidocs/io.helidon.tracing/io/helidon/tracing/SpanListener.ForbiddenOperationException.html
+[span-builder]: https://helidon.io/docs/core/v28/apidocs/io.helidon.tracing/io/helidon/tracing/Span.Builder.html
+[span]: https://helidon.io/docs/core/v28/apidocs/io.helidon.tracing/io/helidon/tracing/Span.html
+[scope]: https://helidon.io/docs/core/v28/apidocs/io.helidon.tracing/io/helidon/tracing/Scope.html
+[io-helidon-traci]: https://helidon.io/docs/core/v28/apidocs/io.helidon.tracing/io/helidon/tracing/SpanContext.html
+[tracer]: https://helidon.io/docs/core/v28/apidocs/io.helidon.tracing/io/helidon/tracing/Tracer.html

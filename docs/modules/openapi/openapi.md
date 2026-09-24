@@ -463,12 +463,12 @@ with it, then invoke the builder’s `build` method and pass the resulting
 
 [openapi-specific]: https://spec.openapis.org/oas/latest.html
 [microprofile-ope]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/microprofile-openapi-spec-3.1.1.html
-[openapifeature]: https://helidon.io/docs/v27/apidocs/io.helidon.openapi/io/helidon/openapi/OpenApiFeature.html
-[builder]: https://helidon.io/docs/v27/apidocs/io.helidon.openapi/io/helidon/openapi/OpenApiFeatureConfig.Builder.html
-[restserver-endpoint]: https://helidon.io/docs/v27/apidocs/io.helidon.webserver/io/helidon/webserver/http/RestServer.Endpoint.html
-[jsonschema-schema]: https://helidon.io/docs/v27/apidocs/io.helidon.json.schema/io/helidon/json/schema/JsonSchema.Schema.html
-[openapi-document-source]: https://helidon.io/docs/v27/apidocs/io.helidon.openapi/io/helidon/openapi/spi/OpenApiDocumentSource.html
-[openapi-annotations]: https://helidon.io/docs/v27/apidocs/io.helidon.openapi/io/helidon/openapi/OpenApi.html
+[openapifeature]: https://helidon.io/docs/core/v28/apidocs/io.helidon.openapi/io/helidon/openapi/OpenApiFeature.html
+[builder]: https://helidon.io/docs/core/v28/apidocs/io.helidon.openapi/io/helidon/openapi/OpenApiFeatureConfig.Builder.html
+[restserver-endpoint]: https://helidon.io/docs/core/v28/apidocs/io.helidon.webserver/io/helidon/webserver/http/RestServer.Endpoint.html
+[jsonschema-schema]: https://helidon.io/docs/core/v28/apidocs/io.helidon.json.schema/io/helidon/json/schema/JsonSchema.Schema.html
+[openapi-document-source]: https://helidon.io/docs/core/v28/apidocs/io.helidon.openapi/io/helidon/openapi/spi/OpenApiDocumentSource.html
+[openapi-annotations]: https://helidon.io/docs/core/v28/apidocs/io.helidon.openapi/io/helidon/openapi/OpenApi.html
 [example-below]: #register-openapifeature-explicitly
 [complete-openapi]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/openapi
 [io-helidon-opena]: ../../config/io.helidon.openapi.OpenApiFeature.md#configuration-options

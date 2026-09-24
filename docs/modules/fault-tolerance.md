@@ -386,5 +386,5 @@ See [API](#api) section for examples.
 For additional information, see the [Fault Tolerance API
 Javadocs][fault-tolerance].
 
-[fault-tolerance]: https://helidon.io/docs/v27/apidocs/io.helidon.faulttolerance/module-summary.html
+[fault-tolerance]: https://helidon.io/docs/core/v28/apidocs/io.helidon.faulttolerance/module-summary.html
 [enabling-metrics]: #enabling-metrics-programmatically

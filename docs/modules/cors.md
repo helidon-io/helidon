@@ -337,8 +337,8 @@ content-length: 461
 {"outcome":"UP",...}
 ```
 
-[corsfeature]: https://helidon.io/docs/v27/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/CorsFeature.html
-[corspathconfig]: https://helidon.io/docs/v27/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/CorsPathConfig.html
+[corsfeature]: https://helidon.io/docs/core/v28/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/CorsFeature.html
+[corspathconfig]: https://helidon.io/docs/core/v28/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/CorsPathConfig.html
 [helidon-se-quick]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/quickstarts/helidon-quickstart-se
 [routing]: webserver/webserver.md#routing
 [helidon-se-cors]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/cors

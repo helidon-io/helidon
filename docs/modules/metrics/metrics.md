@@ -1077,28 +1077,28 @@ server:
 - [OpenMetrics format][openmetrics-form]
 - [Prometheus exposition format][prometheus-expos]
 
-[counter]: https://helidon.io/docs/v27/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Counter.html
+[counter]: https://helidon.io/docs/core/v28/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Counter.html
 [counters]: https://docs.micrometer.io/micrometer/reference/concepts/counters.html
-[distributionsumm]: https://helidon.io/docs/v27/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/DistributionSummary.html
+[distributionsumm]: https://helidon.io/docs/core/v28/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/DistributionSummary.html
 [distribution-sum]: https://docs.micrometer.io/micrometer/reference/concepts/distribution-summaries.html
-[timer]: https://helidon.io/docs/v27/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Timer.html
+[timer]: https://helidon.io/docs/core/v28/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Timer.html
 [duration]: https://docs.oracle.com/en/java/javase/27/docs/api/java.base/java/time/Duration.html
 [timers]: https://docs.micrometer.io/micrometer/reference/concepts/timers.html
-[gauge-extends-nu]: https://helidon.io/docs/v27/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Gauge.html
+[gauge-extends-nu]: https://helidon.io/docs/core/v28/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Gauge.html
 [number]: https://docs.oracle.com/en/java/javase/27/docs/api/java.base/java/lang/Number.html
 [gauges]: https://docs.micrometer.io/micrometer/reference/concepts/gauges.html
-[preview-feature]: https://helidon.io/docs/v27/apidocs/io.helidon.common.features.api/io/helidon/common/features/api/Features.Preview.html
+[preview-feature]: https://helidon.io/docs/core/v28/apidocs/io.helidon.common.features.api/io/helidon/common/features/api/Features.Preview.html
 [this-later-secti]: #inferred-publisher
 [openmetrics-form]: https://github.com/prometheus/OpenMetrics/blob/main/specification/OpenMetrics.md
-[prometheus-expos]: https://github.com/prometheus/docs/blob/main/content/docs/instrumenting/exposition_formats.md
+[prometheus-expos]: https://github.com/prometheus/docs/blob/main/docs/instrumenting/exposition_formats.md
 [timeunit]: https://docs.oracle.com/en/java/javase/27/docs/api/java.base/java/util/concurrent/TimeUnit.html
-[meterregistry]: https://helidon.io/docs/v27/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/MeterRegistry.html
-[metricsfactory]: https://helidon.io/docs/v27/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/MetricsFactory.html
-[meter-builder-customizer]: https://helidon.io/docs/v27/apidocs/io.helidon.metrics.api/io/helidon/metrics/spi/MeterBuilderCustomizer.html
-[formatter-provider]: https://helidon.io/docs/v27/apidocs/io.helidon.metrics.api/io/helidon/metrics/spi/MeterRegistryFormatterProvider.html
-[meter-builder-ba]: <https://helidon.io/docs/v27/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Meter.Builder.html#baseUnit(java.lang.String)>
-[timer-builder-ba]: <https://helidon.io/docs/v27/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Timer.Builder.html#baseUnit(java.util.concurrent.TimeUnit)>
-[wrapper]: https://helidon.io/docs/v27/apidocs/io.helidon.common/io/helidon/common/Wrapper.html
+[meterregistry]: https://helidon.io/docs/core/v28/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/MeterRegistry.html
+[metricsfactory]: https://helidon.io/docs/core/v28/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/MetricsFactory.html
+[meter-builder-customizer]: https://helidon.io/docs/core/v28/apidocs/io.helidon.metrics.api/io/helidon/metrics/spi/MeterBuilderCustomizer.html
+[formatter-provider]: https://helidon.io/docs/core/v28/apidocs/io.helidon.metrics.api/io/helidon/metrics/spi/MeterRegistryFormatterProvider.html
+[meter-builder-ba]: <https://helidon.io/docs/core/v28/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Meter.Builder.html#baseUnit(java.lang.String)>
+[timer-builder-ba]: <https://helidon.io/docs/core/v28/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Timer.Builder.html#baseUnit(java.util.concurrent.TimeUnit)>
+[wrapper]: https://helidon.io/docs/core/v28/apidocs/io.helidon.common/io/helidon/common/Wrapper.html
 [autohttpmetricsc]: ../../config/io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig.md
 [helidon-opentele]: ../telemetry/opentelemetry.md#maven-coordinates
 [filtering-meters]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/metrics/filtering/se

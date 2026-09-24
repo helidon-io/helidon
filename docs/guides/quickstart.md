@@ -183,7 +183,7 @@ GraalVM Native Image is not supported.
 
 Learn more about Helidon:
 
-- [Introduction to Helidon](../modules/introduction.md)
+- [Introduction to Helidon](../introduction.md)
 - [WebServer](../modules/webserver/webserver.md)
 - [The Configuration Component](../modules/config/config.md)
 
