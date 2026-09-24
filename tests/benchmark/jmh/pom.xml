@@ -201,7 +201,7 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.eclipse</groupId>
+            <groupId>org.eclipse.yasson</groupId>
             <artifactId>yasson</artifactId>
             <scope>test</scope>
         </dependency>

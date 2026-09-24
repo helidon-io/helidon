@@ -40,6 +40,10 @@ import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaSupport;
 
 import jakarta.json.bind.JsonbException;
+import jakarta.json.bind.annotation.JsonbTypeSerializer;
+import jakarta.json.bind.serializer.JsonbSerializer;
+import jakarta.json.bind.serializer.SerializationContext;
+import jakarta.json.stream.JsonGenerator;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -141,6 +145,36 @@ class JsonbMediaTest {
                 .read(BOOK_LIST_TYPE, new ByteArrayInputStream(os.toByteArray()), headers);
 
         assertThat(sanity, hasItems(new Book("first"), new Book("second"), new Book("third")));
+    }
+
+    @Test
+    void testCustomSerializerForObjectProperty() {
+        var type = GenericType.create(ObjectValue.class);
+        var headers = WritableHeaders.create();
+        var writer = support.writer(type, headers).supplier().get();
+        var entity = new ObjectValue();
+        var output = new ByteArrayOutputStream();
+
+        writer.write(type, entity, output, headers);
+
+        assertThat(output.toString(StandardCharsets.UTF_8), is("{\"value\":\"custom\"}"));
+        assertThat(new String(writer.instanceWriter(type, entity, headers).instanceBytes(), StandardCharsets.UTF_8),
+                   is("{\"value\":\"custom\"}"));
+    }
+
+    @Test
+    void testCustomSerializerForContainerElements() {
+        var type = GenericType.create(ContainerValue.class);
+        var headers = WritableHeaders.create();
+        var writer = support.writer(type, headers).supplier().get();
+        var entity = new ContainerValue();
+        var output = new ByteArrayOutputStream();
+
+        writer.write(type, entity, output, headers);
+
+        assertThat(output.toString(StandardCharsets.UTF_8), is("{\"values\":[\"custom\"]}"));
+        assertThat(new String(writer.instanceWriter(type, entity, headers).instanceBytes(), StandardCharsets.UTF_8),
+                   is("{\"values\":[\"custom\"]}"));
     }
 
     @Test
@@ -286,6 +320,41 @@ class JsonbMediaTest {
         String result = new String(bytes, StandardCharsets.UTF_8);
         assertThat(result, containsString("\"title\""));
         assertThat(result, containsString("\"" + expectedTitle + "\""));
+    }
+
+    @JsonbTypeSerializer(NamedValueSerializer.class)
+    public interface NamedValue {
+        String getValue();
+    }
+
+    public static class ObjectValue {
+        public Object value = new CustomValue();
+    }
+
+    public static class ContainerValue {
+        public List<NamedValue> values = List.of(new InterfaceValue());
+    }
+
+    public static class InterfaceValue implements NamedValue {
+        @Override
+        public String getValue() {
+            return "custom";
+        }
+    }
+
+    @JsonbTypeSerializer(NamedValueSerializer.class)
+    public static class CustomValue implements NamedValue {
+        @Override
+        public String getValue() {
+            return "custom";
+        }
+    }
+
+    public static class NamedValueSerializer implements JsonbSerializer<NamedValue> {
+        @Override
+        public void serialize(NamedValue value, JsonGenerator generator, SerializationContext context) {
+            generator.write(value.getValue());
+        }
     }
 
     public static class Book {

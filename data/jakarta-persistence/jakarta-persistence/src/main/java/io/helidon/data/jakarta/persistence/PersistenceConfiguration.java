@@ -44,8 +44,7 @@ import jakarta.persistence.spi.PersistenceProvider;
 import jakarta.persistence.spi.PersistenceUnitInfo;
 
 /**
- * Temporary replacement of Jakarta Persistence 3.2 {@code PersistenceConfiguration} class
- * while Helidon depends on Jakarta Persistence 3.1.
+ * Adapts Helidon persistence unit configuration to the Jakarta Persistence provider SPI.
  */
 @SuppressWarnings({"deprecation", "rawtypes"})
 final class PersistenceConfiguration implements PersistenceUnitInfo {
@@ -138,6 +137,17 @@ final class PersistenceConfiguration implements PersistenceUnitInfo {
     @Override
     public String getPersistenceProviderClassName() {
         return provider;
+    }
+
+    @Override
+    public String getScopeAnnotationName() {
+        // The Jakarta Persistence SPI requires null when no CDI scope is specified.
+        return null;
+    }
+
+    @Override
+    public List<String> getQualifierAnnotationNames() {
+        return List.of();
     }
 
     @Override
