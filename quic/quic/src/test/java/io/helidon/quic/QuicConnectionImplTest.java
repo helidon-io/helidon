@@ -23,6 +23,7 @@ import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -98,6 +99,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -2058,6 +2060,91 @@ class QuicConnectionImplTest {
         }
     }
 
+    @ParameterizedTest
+    @CsvSource({"64, 1", "2048, 2"})
+    void sendsPendingInitialCryptoBeforeHandshake(int initialBytes, int initialPackets) throws Exception {
+        try (ConnectionHarness harness = ConnectionHarness.createServer(EnumSet.of(KeySpace.INITIAL, KeySpace.HANDSHAKE))) {
+            harness.connection.pathManager().addressValidated(harness.connection.peerAddress());
+            var scheduled = new ArrayDeque<Runnable>();
+            harness.instance.executor = scheduled::addLast;
+            byte[] initialFlight = new byte[initialBytes];
+            Arrays.fill(initialFlight, (byte) 0x41);
+            byte[] handshakeFlight = {1, 2, 3, 4};
+            harness.engine.queueHandshakeFlight(KeySpace.INITIAL, ByteBuffer.wrap(initialFlight));
+            harness.connection.continueHandshake();
+            Runnable initialTransmitter = scheduled.removeFirst();
+            harness.engine.queueHandshakeFlight(KeySpace.HANDSHAKE, ByteBuffer.wrap(handshakeFlight));
+            harness.connection.continueHandshake();
+            PacketSpaceManager handshakeSpace =
+                    (PacketSpaceManager) harness.connection.packetSpace(PacketNumberSpace.HANDSHAKE);
+
+            // Force the independently scheduled Handshake worker to overtake Initial.
+            handshakeSpace.runTransmitter();
+            scheduled.removeFirst().run();
+
+            assertThat("Handshake must wait for queued Initial CRYPTO", harness.engine.closeKeySpaces, is(empty()));
+            assertThat(handshakeSpace.nextPacketNumber().get(), is(0L));
+            assertThat(scheduled, is(empty()));
+
+            // Run each Handshake wakeup inline, including between fragmented Initial packets.
+            harness.instance.executor = Runnable::run;
+            initialTransmitter.run();
+
+            assertThat(harness.engine.closeKeySpaces.size(), is(initialPackets + 1));
+            assertThat(harness.engine.closeKeySpaces.subList(0, initialPackets), everyItem(is(KeySpace.INITIAL)));
+            assertThat(harness.engine.closeKeySpaces.getLast(), is(KeySpace.HANDSHAKE));
+            assertThat(harness.engine.encryptedCryptoFrames.size(), is(initialPackets + 1));
+            ByteBuffer emittedInitial = ByteBuffer.allocate(initialBytes);
+            for (CryptoFrame frame : harness.engine.encryptedCryptoFrames.subList(0, initialPackets)) {
+                assertThat(frame.offset(), is((long) emittedInitial.position()));
+                emittedInitial.put(frame.payload().duplicate());
+            }
+            assertThat(emittedInitial.array(), is(initialFlight));
+            CryptoFrame emittedHandshake = harness.engine.encryptedCryptoFrames.getLast();
+            assertThat(emittedHandshake.offset(), is(0L));
+            assertThat(emittedHandshake.payload(), is(ByteBuffer.wrap(handshakeFlight)));
+            assertThat(harness.connection.isOpen(), is(true));
+        }
+    }
+
+    @Test
+    void defersHandshakeUntilPendingInitialHasAntiAmplificationBudget() throws Exception {
+        try (ConnectionHarness harness = ConnectionHarness.createServer(EnumSet.of(KeySpace.INITIAL, KeySpace.HANDSHAKE))) {
+            ByteBuffer incoming = harness.connection.encodeIncomingInitial(0, List.of(PingFrame.create()));
+            harness.engine.closeKeySpaces.clear();
+            harness.engine.encryptedCryptoFrames.clear();
+            harness.connection.pathManager().receive(harness.connection.peerAddress(), 100);
+            byte[] initialFlight = {1, 2, 3, 4};
+            byte[] handshakeFlight = {5, 6, 7, 8};
+            harness.engine.queueHandshakeFlight(KeySpace.INITIAL, ByteBuffer.wrap(initialFlight));
+            harness.connection.continueHandshake();
+            harness.engine.queueHandshakeFlight(KeySpace.HANDSHAKE, ByteBuffer.wrap(handshakeFlight));
+            harness.connection.continueHandshake();
+            PacketSpaceManager initialSpace =
+                    (PacketSpaceManager) harness.connection.packetSpace(PacketNumberSpace.INITIAL);
+            PacketSpaceManager handshakeSpace =
+                    (PacketSpaceManager) harness.connection.packetSpace(PacketNumberSpace.HANDSHAKE);
+
+            // Handshake fits the available credit, but Initial still needs a full 1200-byte datagram.
+            handshakeSpace.runTransmitter();
+
+            assertThat("Handshake must not consume the pending Initial's credit", harness.engine.closeKeySpaces, is(empty()));
+            assertThat(initialSpace.nextPacketNumber().get(), is(0L));
+            assertThat(handshakeSpace.nextPacketNumber().get(), is(0L));
+
+            harness.connection.processIncoming(harness.connection.peerAddress(),
+                                                harness.connection.localConnectionId().orElseThrow().asReadOnlyBuffer(),
+                                                QuicPacket.HeadersType.LONG,
+                                                incoming);
+
+            assertThat(harness.engine.closeKeySpaces.stream().limit(2).toList(), contains(KeySpace.INITIAL, KeySpace.HANDSHAKE));
+            assertThat(harness.engine.encryptedCryptoFrames.size(), is(2));
+            assertThat(harness.engine.encryptedCryptoFrames.getFirst().payload(), is(ByteBuffer.wrap(initialFlight)));
+            assertThat(harness.engine.encryptedCryptoFrames.getLast().payload(), is(ByteBuffer.wrap(handshakeFlight)));
+            assertThat(harness.connection.isOpen(), is(true));
+        }
+    }
+
     @Test
     void sendsHandshakeWithinPartialAntiAmplificationBudget() throws Exception {
         try (ConnectionHarness harness = ConnectionHarness.createServer(EnumSet.of(KeySpace.HANDSHAKE))) {
@@ -3136,7 +3223,9 @@ class QuicConnectionImplTest {
                     closeFrames.add(connectionCloseFrame);
                     break;
                 } else if (frame instanceof CryptoFrame cryptoFrame) {
-                    encryptedCryptoFrames.add(cryptoFrame);
+                    ByteBuffer payload = ByteBuffer.allocate(cryptoFrame.payload().remaining());
+                    payload.put(cryptoFrame.payload().duplicate()).flip();
+                    encryptedCryptoFrames.add(CryptoFrame.create(cryptoFrame.offset(), payload.remaining(), payload));
                 }
             }
             output.put(packetPayload.slice());

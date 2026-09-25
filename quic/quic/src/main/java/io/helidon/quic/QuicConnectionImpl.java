@@ -4463,6 +4463,13 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
             // We need to lock to make sure that the method is not run concurrently.
             handshakeLock.lock();
             try {
+                // The peer needs Initial CRYPTO before Handshake CRYPTO, regardless of which packet-space worker runs first.
+                if (packetNumberSpace == PacketNumberSpace.HANDSHAKE
+                        && handshakeFlow.localHandshake.remaining() > 0
+                        && handshakeFlow.localInitial.remaining() > 0) {
+                    packetSpaces.initial.runTransmitter();
+                    return false;
+                }
                 return sendInitialOrHandshakeData(packetNumberSpace);
             } finally {
                 handshakeLock.unlock();
