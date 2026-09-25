@@ -27,6 +27,7 @@ import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.spi.CodegenExtension;
 import io.helidon.common.Api;
 import io.helidon.common.Weighted;
+import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -97,6 +98,7 @@ class JsonCodegen implements CodegenExtension {
             JsonBindingFactoryGenerator.generateBindingFactory(builder, typeInfo, ctx);
         }
 
+        builder.accessModifier(AccessModifier.PACKAGE_PRIVATE);
         builder.addAnnotation(Annotation.builder()
                                       .type(SuppressWarnings.class)
                                       .addParameter("value", Api.SUPPRESS_ALL)

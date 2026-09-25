@@ -256,8 +256,9 @@ server:
       enable-metrics: true
 ```
 
-The configuration above shall enable metrics on the Webserver’s default port
-`8080`. For more information see [Helidon Metrics](../metrics/metrics.md).
+The configuration above enables metrics on the Webserver’s default port
+`8080`. Include a metrics provider in your application as described in
+[Helidon Metrics](../metrics/metrics.md#maven-coordinates).
 
 ## Configuration
 

@@ -22,11 +22,12 @@ import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.service.registry.Services;
-import io.helidon.testing.junit5.Testing;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +35,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 
-@Testing.Test(perMethod = true)
 class TestDeletions {
 
     private static final String COMMON_COUNTER_NAME = "theCounter";
@@ -45,7 +45,12 @@ class TestDeletions {
     @BeforeEach
     void setup() {
         metricsFactory = Services.get(MetricsFactory.class);
-        reg = Services.get(MeterRegistry.class);
+        reg = metricsFactory.createMeterRegistry(MetricsConfig.create());
+    }
+
+    @AfterEach
+    void closeRegistry() {
+        reg.close();
     }
 
     @Test

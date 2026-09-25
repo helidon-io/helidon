@@ -22,13 +22,13 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.media.type.MediaType;
+import io.helidon.metrics.api.FormatterContext;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.metrics.api.MetricsConfig;
 
 /**
- * Behavior for providers of meter registry formatters, which (if then can) furnish a formatter given a
- * {@link io.helidon.common.media.type.MediaType}.
+ * Behavior for providers of meter registry formatters, which can furnish a formatter for an output format and selections.
  *
  * <p>
  *     We use a provider approach so code can obtain and run formatters that might depend heavily on particular implementations
@@ -48,7 +48,9 @@ public interface MeterRegistryFormatterProvider {
      * @param nameSelection meter names to format; empty means no name-based restriction
      * @return compatible formatter; empty if none
      * @since 27.0.0
+     * @deprecated Use {@link #formatter(FormatterContext, MeterRegistry)}.
      */
+    @Deprecated(forRemoval = true, since = "28.0.0")
     @SuppressWarnings("removal")
     default Optional<MeterRegistryFormatter> formatter(MediaType mediaType,
                                                        MetricsConfig metricsConfig,
@@ -72,6 +74,30 @@ public interface MeterRegistryFormatterProvider {
     }
 
     /**
+     * Returns, if possible, a formatter for the output format and meter selections in the context.
+     * Providers may ignore optional hints if their output format or implementation does not support them.
+     *
+     * <p>The default implementation delegates to
+     * {@link #formatter(MediaType, MetricsConfig, MeterRegistry, Map, Iterable)}, preserving compatibility with existing
+     * providers and ignoring optional hints.
+     *
+     * @param context output format, meter selections, and optional formatting hints
+     * @param meterRegistry {@link io.helidon.metrics.api.MeterRegistry} from which to gather data
+     * @return compatible formatter; empty if none
+     * @since 28.0.0
+     */
+    @SuppressWarnings("removal")
+    default Optional<MeterRegistryFormatter> formatter(FormatterContext context, MeterRegistry meterRegistry) {
+        Objects.requireNonNull(context, "context");
+        Objects.requireNonNull(meterRegistry, "meterRegistry");
+        return formatter(context.mediaType(),
+                         context.metricsConfig(),
+                         meterRegistry,
+                         context.tagSelections(),
+                         context.nameSelection());
+    }
+
+    /**
      * Returns a formatter, if possible, ignoring the scope-specific arguments.
      *
      * @param mediaType media type of the desired output
@@ -81,7 +107,7 @@ public interface MeterRegistryFormatterProvider {
      * @param scopeSelection ignored; must not be {@code null}
      * @param nameSelection meter names to format; empty means no name-based restriction
      * @return compatible formatter; empty if none
-     * @deprecated Use {@link #formatter(MediaType, MetricsConfig, MeterRegistry, Map, Iterable)}. Scope-specific arguments
+     * @deprecated Use {@link #formatter(FormatterContext, MeterRegistry)}. Scope-specific arguments
      * are ignored and this method will be removed.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")

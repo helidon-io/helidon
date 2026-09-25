@@ -43,7 +43,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.metrics.providers</groupId>
-            <artifactId>helidon-metrics-providers-micrometer</artifactId>
+            <artifactId>helidon-metrics-providers-helidon</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webserver.observe</groupId>

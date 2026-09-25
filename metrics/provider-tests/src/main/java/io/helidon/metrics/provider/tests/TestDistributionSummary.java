@@ -24,21 +24,22 @@ import io.helidon.metrics.api.DistributionStatisticsConfig;
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.HistogramSnapshot;
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.ValueAtPercentile;
 import io.helidon.service.registry.Services;
 
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
-import org.hamcrest.Matchers;
-import org.hamcrest.TypeSafeMatcher;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 
 class TestDistributionSummary {
 
@@ -48,7 +49,12 @@ class TestDistributionSummary {
     @BeforeAll
     static void prep() {
         metricsFactory = Services.get(MetricsFactory.class);
-        meterRegistry = Services.get(MeterRegistry.class);
+        meterRegistry = metricsFactory.createMeterRegistry(MetricsConfig.create());
+    }
+
+    @AfterAll
+    static void closeRegistry() {
+        meterRegistry.close();
     }
 
     @Test
@@ -73,22 +79,36 @@ class TestDistributionSummary {
 
     @Test
     void testPercentiles() {
-        DistributionSummary summary = commonPrep("d",
-                                                 metricsFactory.distributionStatisticsConfigBuilder()
-                                                         .percentiles(0.5, 0.9, 0.99, 0.999));
+        DistributionSummary summary = meterRegistry.getOrCreate(
+                metricsFactory.distributionSummaryBuilder("d",
+                                                          metricsFactory.distributionStatisticsConfigBuilder()
+                                                                  .percentiles(0.5, 0.9, 0.99, 0.999)));
+        for (int i = 0; i < 100; i++) {
+            for (int value = 1; value <= 100; value++) {
+                summary.record(value);
+            }
+        }
         HistogramSnapshot snapshot = summary.snapshot();
 
         List<ValueAtPercentile> vaps = list(snapshot.percentileValues());
 
-        // Micrometer allows developers to set the precision with which percentiles are maintained which can give rise to
-        // some variance in the values reported for the percentiles.
-        assertThat("Values at percentile",
-                   vaps,
-                   contains(
-                           ValueAtPercentileMatcher.matchesWithinTolerance(Vap.create(0.50D, 3.0D), 0.2d),
-                           ValueAtPercentileMatcher.matchesWithinTolerance(Vap.create(0.90D, 7.0D), 0.2d),
-                           ValueAtPercentileMatcher.matchesWithinTolerance(Vap.create(0.99D, 7.0), 0.2d),
-                           ValueAtPercentileMatcher.matchesWithinTolerance(Vap.create(0.999D, 7.0), 0.2d)));
+        assertThat("Percentile settings",
+                   vaps.stream().map(ValueAtPercentile::percentile).toList(),
+                   contains(0.5D, 0.9D, 0.99D, 0.999D));
+        double previous = Double.NEGATIVE_INFINITY;
+        for (ValueAtPercentile vap : vaps) {
+            assertThat("Value at percentile " + vap.percentile(),
+                       vap.value(),
+                       allOf(greaterThanOrEqualTo(0.8D), lessThanOrEqualTo(100.2D)));
+            assertThat("Percentile values are monotonic", vap.value(), greaterThanOrEqualTo(previous));
+            previous = vap.value();
+        }
+        assertThat("Median percentile value",
+                   vaps.get(0).value(),
+                   allOf(greaterThanOrEqualTo(30D), lessThanOrEqualTo(70D)));
+        assertThat("P90 percentile value", vaps.get(1).value(), greaterThanOrEqualTo(80D));
+        assertThat("P99 percentile value", vaps.get(2).value(), greaterThanOrEqualTo(90D));
+        assertThat("P999 percentile value", vaps.get(3).value(), greaterThanOrEqualTo(90D));
     }
 
     @Test
@@ -101,13 +121,27 @@ class TestDistributionSummary {
 
         List<Bucket> cabs = list(snapshot.histogramCounts());
 
-        assertThat("Counts at buckets",
-                   cabs,
-                   contains(
-                           equalTo(Cab.create(5.0D, 3)),
-                           equalTo(Cab.create(10.0D, 4)),
-                           equalTo(Cab.create(15.0D, 4))));
+        assertThat("Bucket boundaries", cabs.stream().map(Bucket::boundary).toList(), contains(5D, 10D, 15D));
+        assertThat("Counts at buckets", cabs.stream().map(Bucket::count).toList(), contains(3L, 4L, 4L));
+    }
 
+    @Test
+    void testPublishPercentileHistogramUsesExpectedValueBounds() {
+        DistributionSummary summary = meterRegistry.getOrCreate(
+                metricsFactory.distributionSummaryBuilder("histogram.flag.summary",
+                                                          metricsFactory.distributionStatisticsConfigBuilder()
+                                                                  .minimumExpectedValue(1D)
+                                                                  .maximumExpectedValue(10D))
+                        .publishPercentileHistogram(true));
+        summary.record(2D);
+        summary.record(11D);
+
+        List<Bucket> buckets = list(summary.snapshot().histogramCounts());
+
+        assertThat("Published histogram buckets", buckets.size(), greaterThanOrEqualTo(3));
+        assertThat("Published histogram bucket boundaries",
+                   buckets.stream().map(Bucket::boundary).toList(),
+                   hasItems(1D, 10D));
     }
 
     private static DistributionSummary commonPrep(String name, DistributionStatisticsConfig.Builder statsConfigBuilder) {
@@ -129,80 +163,5 @@ class TestDistributionSummary {
         List<T> result = new ArrayList<>();
         iterable.forEach(result::add);
         return result;
-    }
-
-    private record Vap(double percentile, double value) implements ValueAtPercentile {
-
-        @Override
-        public double value(TimeUnit unit) {
-            return unit.convert((long) value, TimeUnit.NANOSECONDS);
-        }
-
-        @Override
-        public <R> R unwrap(Class<? extends R> c) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String toString() {
-            return String.format("Vap[percentile=%f,value=%f]", percentile, value);
-        }
-
-        private static ValueAtPercentile create(double percentile, double value) {
-            return new Vap(percentile, value);
-        }
-    }
-
-    /**
-     * Hamcrest matcher for a ValueAtPercentile that checks the percentile setting and the value recorded for that percentile.
-     */
-    private static class ValueAtPercentileMatcher extends TypeSafeMatcher<ValueAtPercentile> {
-
-        static ValueAtPercentileMatcher matchesWithinTolerance(ValueAtPercentile expected, double variance) {
-            return new ValueAtPercentileMatcher(expected, variance);
-        }
-
-        private final ValueAtPercentile expected;
-        private final Matcher<Double> valueWithinToleranceMatcher;
-
-        private ValueAtPercentileMatcher(ValueAtPercentile expected, double variance) {
-            valueWithinToleranceMatcher = Matchers.closeTo(expected.value(), variance);
-            this.expected = expected;
-        }
-
-        @Override
-        protected boolean matchesSafely(ValueAtPercentile item) {
-            return item.percentile() == expected.percentile()
-                    && valueWithinToleranceMatcher.matches(item.value());
-        }
-
-        @Override
-        public void describeTo(Description description) {
-            description.appendText("percentile expected to be " + expected.percentile()
-                                           + " and ");
-            valueWithinToleranceMatcher.describeTo(description);
-        }
-    }
-
-    private record Cab(double boundary, long count) implements Bucket {
-
-        @Override
-        public double boundary(TimeUnit unit) {
-            return unit.convert((long) boundary, TimeUnit.NANOSECONDS);
-        }
-
-        @Override
-        public <R> R unwrap(Class<? extends R> c) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String toString() {
-            return String.format("Vap[boundary=%f,count=%d]", boundary, count);
-        }
-
-        private static Cab create(double bucket, long count) {
-            return new Cab(bucket, count);
-        }
     }
 }

@@ -26,5 +26,4 @@ module io.helidon.metrics.provider.tests {
     requires org.junit.jupiter.api;
     requires hamcrest.all;
     requires org.junit.jupiter.params;
-    requires micrometer.core;
 }

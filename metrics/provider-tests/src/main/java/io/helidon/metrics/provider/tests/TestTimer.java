@@ -16,14 +16,18 @@
 package io.helidon.metrics.provider.tests;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.metrics.api.Bucket;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
@@ -31,13 +35,19 @@ import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Timer;
 import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -49,7 +59,12 @@ class TestTimer {
     @BeforeAll
     static void prep() {
         metricsFactory = Services.get(MetricsFactory.class);
-        meterRegistry = Services.get(MeterRegistry.class);
+        meterRegistry = metricsFactory.createMeterRegistry(MetricsConfig.create());
+    }
+
+    @AfterAll
+    static void closeRegistry() {
+        meterRegistry.close();
     }
 
     @Test
@@ -92,11 +107,12 @@ class TestTimer {
         long initialValue = 0L;
         long update = 12L;
 
-        t.record((Callable<Object>) () -> {
+        String result = t.record((Callable<String>) () -> {
             TimeUnit.MILLISECONDS.sleep(update);
-            return null;
+            return "done";
         });
 
+        assertThat("Callable result", result, is("done"));
         assertThat("After update",
                    t.count(),
                    is(1L));
@@ -111,15 +127,16 @@ class TestTimer {
         long initialValue = 0L;
         long update = 8L;
 
-        t.record((Supplier<Object>) () -> {
+        String result = t.record((Supplier<String>) () -> {
             try {
                 TimeUnit.MILLISECONDS.sleep(update);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            return null;
+            return "done";
         });
 
+        assertThat("Supplier result", result, is("done"));
         assertThat("After update",
                    t.count(),
                    is(1L));
@@ -134,13 +151,13 @@ class TestTimer {
         long initialValue = 0L;
         long update = 18L;
 
-        Callable<?> c = t.wrap((Callable<?>) () -> {
+        Callable<String> c = t.wrap((Callable<String>) () -> {
             try {
                 TimeUnit.MILLISECONDS.sleep(update);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            return null;
+            return "done";
         });
 
         assertThat("Before running",
@@ -150,7 +167,7 @@ class TestTimer {
                    t.totalTime(TimeUnit.MILLISECONDS),
                    greaterThanOrEqualTo((double) initialValue));
 
-        c.call();
+        assertThat("Wrapped callable result", c.call(), is("done"));
 
         assertThat("After running",
                    t.count(),
@@ -227,6 +244,93 @@ class TestTimer {
                    t.totalTime(TimeUnit.MILLISECONDS),
                    greaterThanOrEqualTo((double) waitTime));
 
+    }
+
+    @Test
+    void testPublishPercentileHistogramUsesExpectedValueBounds() {
+        Timer timer = meterRegistry.getOrCreate(metricsFactory.timerBuilder("histogram.flag.timer")
+                                                       .minimumExpectedValue(Duration.ofMillis(1))
+                                                       .maximumExpectedValue(Duration.ofMillis(10))
+                                                       .publishPercentileHistogram(true));
+        timer.record(2, TimeUnit.MILLISECONDS);
+        timer.record(11, TimeUnit.MILLISECONDS);
+
+        List<Bucket> buckets = StreamSupport.stream(timer.snapshot().histogramCounts().spliterator(), false).toList();
+
+        assertThat("Published histogram bucket count", buckets.size(), greaterThanOrEqualTo(3));
+        assertThat("Published histogram bucket boundaries",
+                   buckets.stream().map(bucket -> bucket.boundary(TimeUnit.MILLISECONDS)).toList(),
+                   hasItems(1D, 10D));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testExecutionAndResultsWhenEnabledOrDisabled(boolean enabled) throws Exception {
+        MeterRegistry registry = metricsFactory.createMeterRegistry(MetricsConfig.builder().enabled(enabled).build());
+        try {
+            Timer timer = registry.getOrCreate(metricsFactory.timerBuilder("execution"));
+            AtomicInteger invocations = new AtomicInteger();
+            Supplier<String> supplier = () -> {
+                invocations.incrementAndGet();
+                return "done";
+            };
+            Callable<String> callable = supplier::get;
+
+            assertThat("Supplier result", timer.record(supplier), is("done"));
+            assertThat("Callable result", timer.record(callable), is("done"));
+            assertThat("Wrapped supplier result", timer.wrap(supplier).get(), is("done"));
+            assertThat("Wrapped callable result", timer.wrap(callable).call(), is("done"));
+            timer.record((Runnable) invocations::incrementAndGet);
+            timer.wrap((Runnable) invocations::incrementAndGet).run();
+
+            assertThat("All operations executed", invocations.get(), is(6));
+            assertThat("Recorded operations", timer.count(), is(enabled ? 6L : 0L));
+            assertThat("Snapshot operations", timer.snapshot().count(), is(enabled ? 6L : 0L));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testNullResultsWhenEnabledOrDisabled(boolean enabled) throws Exception {
+        MeterRegistry registry = metricsFactory.createMeterRegistry(MetricsConfig.builder().enabled(enabled).build());
+        try {
+            Timer timer = registry.getOrCreate(metricsFactory.timerBuilder("null.results"));
+            assertThat("Null supplier result", timer.record((Supplier<Object>) () -> null), nullValue());
+            assertThat("Null callable result", timer.record((Callable<Object>) () -> null), nullValue());
+            assertThat("Null wrapped supplier result", timer.wrap((Supplier<Object>) () -> null).get(), nullValue());
+            assertThat("Null wrapped callable result", timer.wrap((Callable<Object>) () -> null).call(), nullValue());
+            assertThat("Recorded operations", timer.count(), is(enabled ? 4L : 0L));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void testExceptionsWhenEnabledOrDisabled(boolean enabled) {
+        MeterRegistry registry = metricsFactory.createMeterRegistry(MetricsConfig.builder().enabled(enabled).build());
+        try {
+            Timer timer = registry.getOrCreate(metricsFactory.timerBuilder("exception.results"));
+            IllegalStateException failure = new IllegalStateException("operation failed");
+            Supplier<Object> supplier = () -> {
+                throw failure;
+            };
+            Callable<Object> callable = supplier::get;
+
+            assertThat("Supplier failure", assertThrows(IllegalStateException.class, () -> timer.record(supplier)),
+                       sameInstance(failure));
+            assertThat("Callable failure", assertThrows(IllegalStateException.class, () -> timer.record(callable)),
+                       sameInstance(failure));
+            assertThat("Wrapped supplier failure", assertThrows(IllegalStateException.class, () -> timer.wrap(supplier).get()),
+                       sameInstance(failure));
+            assertThat("Wrapped callable failure", assertThrows(IllegalStateException.class, () -> timer.wrap(callable).call()),
+                       sameInstance(failure));
+            assertThat("Recorded failed operations", timer.count(), is(enabled ? 4L : 0L));
+        } finally {
+            registry.close();
+        }
     }
 
     @Test

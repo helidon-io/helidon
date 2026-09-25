@@ -18,6 +18,8 @@ package io.helidon.metrics.providers.micrometer;
 import java.util.Collection;
 
 import io.helidon.common.Api;
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
@@ -32,6 +34,7 @@ import io.helidon.service.registry.ServiceRegistry;
 /**
  * Provides the Micrometer meter registry to use as a delegate for the implementation of the Helidon metrics API.
  */
+@Weight(Weighted.DEFAULT_WEIGHT + 10)
 public class MicrometerMetricsFactoryProvider implements MetricsFactoryProvider {
 
     /**

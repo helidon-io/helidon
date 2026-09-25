@@ -17,16 +17,20 @@ package io.helidon.metrics.providers.micrometer;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.stream.StreamSupport;
 
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.ValueAtPercentile;
 import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 
 class TestDistributionSummary {
@@ -38,6 +42,25 @@ class TestDistributionSummary {
     static void prep() {
         metricsFactory = Services.get(MetricsFactory.class);
         meterRegistry = Services.get(MeterRegistry.class);
+    }
+
+    @Test
+    void testMicrometerPercentilePrecision() {
+        DistributionSummary summary = meterRegistry.getOrCreate(
+                metricsFactory.distributionSummaryBuilder("percentile.precision",
+                                                          metricsFactory.distributionStatisticsConfigBuilder()
+                                                                  .percentiles(0.5, 0.9, 0.99, 0.999)));
+        List.of(1D, 3D, 5D, 7D).forEach(summary::record);
+
+        var percentiles = StreamSupport.stream(summary.snapshot().percentileValues().spliterator(), false)
+                .toList();
+
+        assertThat("Percentile settings",
+                   percentiles.stream().map(ValueAtPercentile::percentile).toList(),
+                   contains(0.5D, 0.9D, 0.99D, 0.999D));
+        assertThat("Micrometer percentile estimates",
+                   percentiles.stream().map(ValueAtPercentile::value).toList(),
+                   contains(closeTo(3D, 0.2D), closeTo(7D, 0.2D), closeTo(7D, 0.2D), closeTo(7D, 0.2D)));
     }
 
     @Test

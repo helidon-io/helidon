@@ -28,6 +28,7 @@ import io.helidon.metrics.spi.MetricsPublisherProvider;
 
 /**
  * Configuration settings for metrics.
+ * Defaults use empty configuration. Callers must supply configuration explicitly to apply application settings.
  */
 @Prototype.Configured(MetricsConfigBlueprint.METRICS_CONFIG_KEY)
 @Prototype.Blueprint(decorator = MetricsConfigSupport.BuilderDecorator.class)
@@ -204,10 +205,7 @@ interface MetricsConfigBlueprint {
     boolean warnOnMultipleRegistries();
 
     /**
-     * Metrics publishers which make the metrics data available to external systems. Helidon's Micrometer-based
-     * metrics provider includes publishers with the config keys {@code prometheus} (inferred by default) and {@code otlp}.
-     * See the config reference entries for {@code io.helidon.metrics.providers.micrometer.PrometheusPublisher} and
-     * {@code io.helidon.metrics.providers.micrometer.OtlpPublisher}.
+     * Metrics publishers which make the metrics data available to external systems.
      *
      * @return metrics publishers
      */
