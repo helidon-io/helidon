@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver.benchmark.jmh;
+package io.helidon.transaction.benchmark.jmh;
 
 import java.io.Serial;
 import java.io.Serializable;
