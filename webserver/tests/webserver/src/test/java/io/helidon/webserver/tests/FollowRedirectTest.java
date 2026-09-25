@@ -78,7 +78,7 @@ class FollowRedirectTest {
                     .header(redirectLocation(req, "/plain"))
                     .send();
         }).route(Method.PUT, "/redirectNoEntity", (req, res) -> {
-            res.status(Status.FOUND_302)
+            res.status(Status.SEE_OTHER_303)
                     .header(redirectLocation(req, "/plain"))
                     .send();
         }).route(Method.PUT, "/plain", (req, res) -> {
