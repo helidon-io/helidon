@@ -203,6 +203,84 @@ class Http1ServerResponseTest {
     }
 
     @Test
+    void resetEntityBeforeAccessingTrailers() {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create());
+
+        assertThat(response.resetEntity(), is(true));
+        response.send("hello".getBytes(StandardCharsets.UTF_8));
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer).write(responseBuffer.capture());
+        String responseText = new String(responseBuffer.getValue().readBytes(), StandardCharsets.ISO_8859_1);
+        assertThat(responseText, endsWith("\r\n\r\nhello"));
+    }
+
+    @Test
+    void trailersRetainIdentityButRequireNegotiationAfterReset() {
+        Http1ServerResponse response = createResponse(new IllegalStateException("not used"));
+        var trailerName = HeaderNames.create("x-test-trailer");
+
+        assertThrows(IllegalStateException.class, response::trailers);
+        response.header(HeaderNames.TRAILER, trailerName.defaultCase());
+        ServerResponseTrailers trailers = response.trailers();
+        trailers.set(trailerName, "stale");
+        assertThat(response.trailers(), sameInstance(trailers));
+
+        assertThat(response.resetEntity(), is(true));
+        assertThrows(IllegalStateException.class, response::trailers);
+        response.header(HeaderNames.TRAILER, trailerName.defaultCase());
+        assertAll(
+                () -> assertThat(response.trailers(), sameInstance(trailers)),
+                () -> assertThat(trailers.contains(trailerName), is(false))
+        );
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void trailersAddedAfterOpeningStreamAreSent(boolean requestNegotiatesTrailers) throws IOException {
+        DataWriter writer = mock(DataWriter.class);
+        StringBuilder responseText = new StringBuilder();
+        doAnswer(invocation -> {
+            BufferData data = invocation.getArgument(0);
+            responseText.append(new String(data.readBytes(), StandardCharsets.ISO_8859_1));
+            return null;
+        }).when(writer).write(any(BufferData.class));
+        var requestHeaders = WritableHeaders.create();
+        if (requestNegotiatesTrailers) {
+            requestHeaders.set(HeaderValues.TE_TRAILERS);
+        }
+        Http1ServerResponse response = createResponse(writer,
+                                                      Method.GET,
+                                                      ContentEncodingContext.create(),
+                                                      WebServer.builder().buildPrototype(),
+                                                      ServerRequestHeaders.create(requestHeaders));
+        var trailerName = HeaderNames.create("x-test-trailer");
+        var callbackTrailerName = HeaderNames.create("x-callback-trailer");
+        if (!requestNegotiatesTrailers) {
+            response.header(HeaderNames.TRAILER, trailerName.defaultCase() + ", " + callbackTrailerName.defaultCase());
+        }
+        response.header(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+        response.beforeTrailers(trailers -> {
+            assertThat(trailers.get(trailerName).get(), is("late"));
+            response.trailers().set(callbackTrailerName, "callback");
+        });
+
+        try (OutputStream stream = response.outputStream()) {
+            response.trailers().set(trailerName, "late");
+            stream.write("hello".getBytes(StandardCharsets.UTF_8));
+        }
+        response.commit();
+
+        assertAll(
+                () -> assertThat(responseText.toString(), containsString("\r\n5\r\nhello\r\n0\r\n")),
+                () -> assertThat(responseText.toString(), containsString("x-test-trailer: late\r\n")),
+                () -> assertThat(responseText.toString(), containsString("x-callback-trailer: callback\r\n")),
+                () -> assertThat(responseText.toString(), endsWith("\r\n\r\n"))
+        );
+    }
+
+    @Test
     void resetEntityPreservesPublicBeforeSendListeners() {
         Http1ServerResponse response = createResponse(new IllegalStateException("not used"));
         List<String> invokedListeners = new ArrayList<>();
@@ -1646,10 +1724,22 @@ class Http1ServerResponseTest {
                                                       Method method,
                                                       ContentEncodingContext contentEncodingContext,
                                                       ListenerConfig listenerConfig) {
+        return createResponse(dataWriter,
+                              method,
+                              contentEncodingContext,
+                              listenerConfig,
+                              ServerRequestHeaders.create(WritableHeaders.create()));
+    }
+
+    private static Http1ServerResponse createResponse(DataWriter dataWriter,
+                                                      Method method,
+                                                      ContentEncodingContext contentEncodingContext,
+                                                      ListenerConfig listenerConfig,
+                                                      ServerRequestHeaders requestHeaders) {
         Http1ServerRequest request = mock(Http1ServerRequest.class);
         HttpPrologue prologue = mock(HttpPrologue.class);
         when(prologue.method()).thenReturn(method);
-        when(request.headers()).thenReturn(ServerRequestHeaders.create(WritableHeaders.create()));
+        when(request.headers()).thenReturn(requestHeaders);
         when(request.prologue()).thenReturn(prologue);
 
         ListenerContext listenerContext = mock(ListenerContext.class);
