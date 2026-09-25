@@ -363,9 +363,7 @@ class ConnectionHandler implements InterruptableTask<Void>,
             try {
                 proxyProtocolData = handler.get();
             } catch (RuntimeException e) {
-                httpTransportOutcome(isTimeout(e)
-                                             ? ConnectionOutcome.TIMEOUT
-                                             : ConnectionOutcome.ERROR);
+                httpTransportOutcome(isTimeout(e) ? ConnectionOutcome.TIMEOUT : ConnectionOutcome.ERROR);
                 if (LOGGER.isLoggable(TRACE)) {
                     LOGGER.log(TRACE, "[" + channelId + "] Failed to retrieve Proxy Protocol data", e);
                 }
@@ -387,9 +385,7 @@ class ConnectionHandler implements InterruptableTask<Void>,
                                          listenerConfig.smartAsyncWrites());
         } catch (RuntimeException e) {
             completeHandshakeFailure(e);
-            httpTransportOutcome(isTimeout(e)
-                                         ? ConnectionOutcome.TIMEOUT
-                                         : ConnectionOutcome.ERROR);
+            httpTransportOutcome(isTimeout(e) ? ConnectionOutcome.TIMEOUT : ConnectionOutcome.ERROR);
             // these exceptions are thrown to the executor service
             if (LOGGER.isLoggable(TRACE)) {
                 LOGGER.log(TRACE, "[" + channelId + "] Failed to establish connection", e);
@@ -397,9 +393,7 @@ class ConnectionHandler implements InterruptableTask<Void>,
             return;
         } catch (Exception e) {
             completeHandshakeFailure(e);
-            httpTransportOutcome(isTimeout(e)
-                                         ? ConnectionOutcome.TIMEOUT
-                                         : ConnectionOutcome.ERROR);
+            httpTransportOutcome(isTimeout(e) ? ConnectionOutcome.TIMEOUT : ConnectionOutcome.ERROR);
             if (LOGGER.isLoggable(TRACE)) {
                 LOGGER.log(TRACE, "[" + channelId + "] Failed to establish connection", e);
             }
@@ -447,9 +441,7 @@ class ConnectionHandler implements InterruptableTask<Void>,
             httpTransportOutcome(ConnectionOutcome.ERROR);
             helidonSocket.log(LOGGER, WARNING, "escaped HTTP exception", e);
         } catch (ServerConnectionException e) {
-            httpTransportOutcome(isTimeout(e)
-                                         ? ConnectionOutcome.TIMEOUT
-                                         : ConnectionOutcome.ERROR);
+            httpTransportOutcome(isTimeout(e) ? ConnectionOutcome.TIMEOUT : ConnectionOutcome.ERROR);
             // socket exception - the socket failed, probably killed by OS, proxy or client
             helidonSocket.log(LOGGER, TRACE, "server I/O issue", e);
         } catch (LocalCloseConnectionException e) {
@@ -464,9 +456,7 @@ class ConnectionHandler implements InterruptableTask<Void>,
             // end of request stream - safe to close the connection, as it was requested by our client
             helidonSocket.log(LOGGER, TRACE, "connection close requested", e);
         } catch (DataReader.InsufficientDataAvailableException | SocketWriterException e) {
-            httpTransportOutcome(isTimeout(e)
-                                         ? ConnectionOutcome.TIMEOUT
-                                         : ConnectionOutcome.ERROR);
+            httpTransportOutcome(isTimeout(e) ? ConnectionOutcome.TIMEOUT : ConnectionOutcome.ERROR);
             // the connection ended while reading or writing data
             helidonSocket.log(LOGGER, TRACE, "server I/O issue", e);
         } catch (InterruptedException e) {
@@ -474,9 +464,7 @@ class ConnectionHandler implements InterruptableTask<Void>,
             Thread.currentThread().interrupt();
             helidonSocket.log(LOGGER, TRACE, "connection interrupted", e);
         } catch (UncheckedIOException e) {
-            httpTransportOutcome(isTimeout(e)
-                                         ? ConnectionOutcome.TIMEOUT
-                                         : ConnectionOutcome.ERROR);
+            httpTransportOutcome(isTimeout(e) ? ConnectionOutcome.TIMEOUT : ConnectionOutcome.ERROR);
             if (e.getCause() instanceof SocketException) {
                 // socket exception - the socket failed, probably killed by OS, proxy or client
                 helidonSocket.log(LOGGER, TRACE, "server I/O issue", e);
@@ -484,9 +472,7 @@ class ConnectionHandler implements InterruptableTask<Void>,
                 helidonSocket.log(LOGGER, WARNING, "unexpected I/O exception", e);
             }
         } catch (Exception e) {
-            httpTransportOutcome(isTimeout(e)
-                                         ? ConnectionOutcome.TIMEOUT
-                                         : ConnectionOutcome.ERROR);
+            httpTransportOutcome(isTimeout(e) ? ConnectionOutcome.TIMEOUT : ConnectionOutcome.ERROR);
             helidonSocket.log(LOGGER, WARNING, "unexpected exception", e);
         }
     }
