@@ -28,3 +28,13 @@ data:
           username: "${test.database.username}"
           password: "${test.database.password}"
           url: "${test.database.url}"
+          connection-factory-class-name: "oracle.jdbc.pool.OracleDataSource"
+          connection-factory-properties:
+            description: "Helidon UCP test connection factory"
+            explicitCachingEnabled: "false"
+            implicitCachingEnabled: true
+            maxStatements: "23"
+          connection-properties:
+            defaultRowPrefetch: "42"
+            includeSynonyms: "true"
+            remarksReporting: true
