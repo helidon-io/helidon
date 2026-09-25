@@ -16,10 +16,12 @@
 
 package io.helidon.tests.integration.h2spec;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -70,7 +72,7 @@ class H2SpecIT {
         }
     }
 
-    private static Stream<Arguments> runH2Spec() {
+    private static Stream<Arguments> runH2Spec() throws IOException {
 
         HttpRouting.Builder router = HttpRouting.builder();
         router.route(Http2Route.route(GET, "/", (req, res) -> {
@@ -114,6 +116,11 @@ class H2SpecIT {
                                      + " -p " + port)
                     .withStartupAttempts(1)
                     .start();
+
+            // The "Finished in" line is printed before the JUnit report is written.
+            try (var completion = cont.getDockerClient().waitContainerCmd(cont.getContainerId()).start()) {
+                completion.awaitStatusCode(30, TimeUnit.SECONDS);
+            }
 
             cont.copyFileFromContainer("/junit-report.xml", "./target/h2spec-report.xml");
             return cont.copyFileFromContainer("/junit-report.xml", H2SpecIT::parseReport);
