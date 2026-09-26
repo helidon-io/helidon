@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,11 +127,7 @@ class MultiFromByteChannel implements Multi<ByteBuffer> {
         }
         // Last or not
         if (count < 0) {
-            try {
-                channel.close();
-            } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "Cannot close readable byte channel! (Close attempt after fully read channel.)", e);
-            }
+            closeChannel();
             tryComplete();
             return true;
         } else {
@@ -181,7 +177,9 @@ class MultiFromByteChannel implements Multi<ByteBuffer> {
     }
 
     private synchronized void planNextTry(long afterMillis) {
-        executor.get().schedule(this::tryPublish, afterMillis, TimeUnit.MILLISECONDS);
+        if (!subscriber.isClosed()) {
+            executor.get().schedule(this::tryPublish, afterMillis, TimeUnit.MILLISECONDS);
+        }
     }
 
     private void tryComplete() {
@@ -192,6 +190,14 @@ class MultiFromByteChannel implements Multi<ByteBuffer> {
     private void tryComplete(Throwable t) {
         subscriber.close(sub -> sub.onError(t));
         closeExecutor();
+    }
+
+    private void closeChannel() {
+        try {
+            channel.close();
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Cannot close readable byte channel!", e);
+        }
     }
 
     private synchronized void closeExecutor() {

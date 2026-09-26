@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.buffers.DataListener;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.socket.NioSocket;
 import io.helidon.common.socket.SocketWriter;
@@ -73,6 +74,18 @@ public class CommonWebServerHotPathJmhBenchmark {
     @Benchmark
     public void dataReaderPipelined(DataReaderState state, Blackhole blackhole) {
         readRequest(state.pipelinedPrologue, state.pipelinedHeaders, blackhole);
+    }
+
+    @Benchmark
+    public void dataReaderWithListener(ListenerDataReaderState state, Blackhole blackhole) {
+        readRequest(state.prologue, state.headers, blackhole);
+        blackhole.consume(state.bytesRead);
+    }
+
+    @Benchmark
+    public void dataReaderPipelinedWithListener(ListenerDataReaderState state, Blackhole blackhole) {
+        readRequest(state.pipelinedPrologue, state.pipelinedHeaders, blackhole);
+        blackhole.consume(state.pipelinedBytesRead);
     }
 
     @Benchmark
@@ -201,6 +214,38 @@ public class CommonWebServerHotPathJmhBenchmark {
             headers = new Http1Headers(reader, 4096, false);
             prologue = new Http1Prologue(reader, 1024, false);
             DataReader pipelinedReader = DataReader.create(() -> PIPELINED_REQUESTS);
+            pipelinedHeaders = new Http1Headers(pipelinedReader, 4096, false);
+            pipelinedPrologue = new Http1Prologue(pipelinedReader, 1024, false);
+        }
+    }
+
+    @State(Scope.Thread)
+    public static class ListenerDataReaderState {
+        private Http1Headers headers;
+        private Http1Prologue prologue;
+        private Http1Headers pipelinedHeaders;
+        private Http1Prologue pipelinedPrologue;
+        private long bytesRead;
+        private long pipelinedBytesRead;
+
+        @Setup(Level.Trial)
+        public void setup() {
+            DataReader reader = DataReader.create(() -> REQUEST);
+            reader.listener(new DataListener<ListenerDataReaderState>() {
+                @Override
+                public void data(ListenerDataReaderState state, byte[] data, int position, int length) {
+                    state.bytesRead += length;
+                }
+            }, this);
+            headers = new Http1Headers(reader, 4096, false);
+            prologue = new Http1Prologue(reader, 1024, false);
+            DataReader pipelinedReader = DataReader.create(() -> PIPELINED_REQUESTS);
+            pipelinedReader.listener(new DataListener<ListenerDataReaderState>() {
+                @Override
+                public void data(ListenerDataReaderState state, byte[] data, int position, int length) {
+                    state.pipelinedBytesRead += length;
+                }
+            }, this);
             pipelinedHeaders = new Http1Headers(pipelinedReader, 4096, false);
             pipelinedPrologue = new Http1Prologue(pipelinedReader, 1024, false);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,12 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
+import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletionException;
@@ -35,14 +39,17 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
 
 import io.helidon.common.LazyValue;
 
 import org.hamcrest.collection.IsCollectionWithSize;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static java.time.Duration.ofSeconds;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -51,6 +58,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -60,6 +68,25 @@ import static org.junit.jupiter.api.Assertions.fail;
 public class MultiFromByteChannelTest {
 
     private static final int TEST_DATA_SIZE = 250 * 1024;
+
+    @Test
+    void testFirstKeepsChannelUsable(@TempDir Path directory) throws IOException {
+        Path path = Files.write(directory.resolve("channel.bin"), new byte[] {10, 20});
+        try (var channel = FileChannel.open(path, StandardOpenOption.READ)) {
+            ByteBuffer first = IoMulti.multiFromByteChannelBuilder(channel)
+                    .bufferCapacity(1)
+                    .build()
+                    .first()
+                    .await(ofSeconds(5));
+
+            assertThat(first.remaining(), is(1));
+            assertThat(first.get(), is((byte) 10));
+            var remaining = ByteBuffer.allocate(1);
+            assertThat("The caller must be able to read the next byte", channel.read(remaining), is(1));
+            remaining.flip();
+            assertThat(remaining.get(), is((byte) 20));
+        }
+    }
 
     @Test
     void testReadAllData() {
@@ -183,32 +210,60 @@ public class MultiFromByteChannelTest {
     }
 
     @Test
-    @Disabled("This test uses a sleep, so could cause issues on slow environments")
     void testOnClosedInProgress() throws Exception {
-        PeriodicalChannel pc = createChannelWithNoAvailableData(5, 2);
+        var reading = new CountDownLatch(1);
+        var closed = new CountDownLatch(1);
+        var reads = new AtomicInteger();
+        var channel = new ReadableByteChannel() {
+            @Override
+            public int read(ByteBuffer dst) throws IOException {
+                if (reads.getAndIncrement() == 0) {
+                    return 0;
+                }
+                reading.countDown();
+                try {
+                    if (!closed.await(5, TimeUnit.SECONDS)) {
+                        throw new IOException("Channel was not closed during the read");
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException(e);
+                }
+                throw new ClosedChannelException();
+            }
 
-        Multi<ByteBuffer> publisher = IoMulti.multiFromByteChannelBuilder(pc)
-                .retrySchema(RetrySchema.constant(TimeUnit.SECONDS.toMillis(2)))
+            @Override
+            public boolean isOpen() {
+                return closed.getCount() != 0;
+            }
+
+            @Override
+            public void close() {
+                closed.countDown();
+            }
+        };
+        Multi<ByteBuffer> publisher = IoMulti.multiFromByteChannelBuilder(channel)
+                .retrySchema(RetrySchema.constant(1))
                 .build();
-
-        // start reading (this will cause 2 second delay)
-        Single<byte[]> data = Multi.create(publisher)
-                .collect(new BufferCollector());
-
-        // run the stream
-        data.thenRun(() -> {
-        });
-        Thread.sleep(1000);
-        // immediately close the channel, so we fail reading
-        pc.close();
-
-        CompletionException c = assertThrows(CompletionException.class, () -> data.await(ofSeconds(5)));
-        assertThat(c.getCause(), instanceOf(ClosedChannelException.class));
-
         MultiFromByteChannel multi = (MultiFromByteChannel) publisher;
         LazyValue<ScheduledExecutorService> executor = multi.executor();
-        assertThat("Executor should have been used", executor.isLoaded(), is(true));
-        assertThat("Executor should have been shut down", executor.get().isShutdown(), is(true));
+
+        try {
+            var data = publisher.collect(new BufferCollector()).toCompletableFuture();
+            assertThat("Scheduled channel read did not start", reading.await(5, TimeUnit.SECONDS), is(true));
+            channel.close();
+
+            CompletionException exception = assertThrows(CompletionException.class, data::join);
+            assertThat(exception.getCause(), instanceOf(ClosedChannelException.class));
+            assertThat("Executor should have been used", executor.isLoaded(), is(true));
+            assertThat("Executor did not terminate", executor.get().awaitTermination(5, TimeUnit.SECONDS), is(true));
+            assertThat("Executor should have been shut down", executor.get().isShutdown(), is(true));
+        } finally {
+            channel.close();
+            if (executor.isLoaded()) {
+                executor.get().shutdownNow();
+            }
+        }
     }
 
     @Test
@@ -247,16 +302,18 @@ public class MultiFromByteChannelTest {
             }
         });
 
-        onNextCalled.await(5, TimeUnit.SECONDS);
+        assertThat("No channel data was delivered", onNextCalled.await(5, TimeUnit.SECONDS), is(true));
         subscriptionRef.get().cancel();
 
         assertThat("Should not complete", completeCalled.get(), is(false));
         assertThat("Exception should be null", failure.get(), is(nullValue()));
+        assertThat("Cancellation must leave the caller's channel open", pc.isOpen(), is(true));
 
         MultiFromByteChannel multi = (MultiFromByteChannel) publisher;
         LazyValue<ScheduledExecutorService> executor = multi.executor();
         assertThat("Executor should have been used", executor.isLoaded(), is(true));
         assertThat("Executor should have been shut down", executor.get().isShutdown(), is(true));
+        pc.close();
     }
 
     @Test
@@ -278,6 +335,104 @@ public class MultiFromByteChannelTest {
             fail("Did not throw expected CompletionException!");
         } catch (CompletionException e) {
             assertThat(e.getCause(), instanceOf(TimeoutException.class));
+        }
+        assertThat("Retry exhaustion must leave the caller's channel open", pc.isOpen(), is(true));
+        pc.close();
+    }
+
+    @Test
+    void testCancelBeforeDemandKeepsCustomExecutor() throws Exception {
+        var channel = new PeriodicalChannel(_ -> 1024, TEST_DATA_SIZE);
+        var executor = Executors.newSingleThreadScheduledExecutor();
+        try {
+            var subscriber = new TestSubscriber<ByteBuffer>();
+            IoMulti.multiFromByteChannelBuilder(channel).executor(executor).build().subscribe(subscriber);
+            subscriber.cancel().assertEmpty();
+
+            assertThat("Cancellation must leave the caller's channel open", channel.isOpen(), is(true));
+            assertThat(channel.readMethodCallCounter, is(0));
+            assertThat("The caller still owns the executor", executor.isShutdown(), is(false));
+            assertThat(executor.submit(() -> "available").get(5, TimeUnit.SECONDS), is("available"));
+        } finally {
+            channel.close();
+            executor.shutdownNow();
+            assertThat("Test executor did not terminate", executor.awaitTermination(5, TimeUnit.SECONDS), is(true));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {0, -1})
+    void testInvalidDemandKeepsChannelOpen(long demand) {
+        var channel = new PeriodicalChannel(_ -> 1024, TEST_DATA_SIZE);
+        var subscriptionRef = new AtomicReference<Subscription>();
+        var subscriber = new TestSubscriber<ByteBuffer>() {
+            @Override
+            public void onSubscribe(Subscription subscription) {
+                super.onSubscribe(subscription);
+                subscriptionRef.set(subscription);
+            }
+        };
+        IoMulti.multiFromByteChannelBuilder(channel).build().subscribe(subscriber);
+
+        subscriptionRef.get().request(demand);
+        subscriber.assertFailure(IllegalArgumentException.class);
+
+        assertThat("Invalid demand must leave the caller's channel open", channel.isOpen(), is(true));
+        assertThat(channel.readMethodCallCounter, is(0));
+        channel.close();
+    }
+
+    @Test
+    void testReadFailureKeepsChannelOpenAndPreservesError() throws IOException {
+        var readFailure = new IOException("read failed");
+        var closed = new AtomicBoolean();
+        var channel = new ReadableByteChannel() {
+            @Override
+            public int read(ByteBuffer dst) throws IOException {
+                throw readFailure;
+            }
+
+            @Override
+            public boolean isOpen() {
+                return !closed.get();
+            }
+
+            @Override
+            public void close() {
+                closed.set(true);
+            }
+        };
+        try (channel) {
+            var subscriber = new TestSubscriber<ByteBuffer>(Long.MAX_VALUE);
+            IoMulti.multiFromByteChannelBuilder(channel).build().subscribe(subscriber);
+
+            subscriber.assertFailure(IOException.class);
+            assertThat(subscriber.getLastError(), sameInstance(readFailure));
+            assertThat("Read failure must leave the caller's channel open", channel.isOpen(), is(true));
+        }
+    }
+
+    @Test
+    void testCancelDuringRetryDoesNotCreateExecutor() {
+        var channel = new PeriodicalChannel(_ -> 0, TEST_DATA_SIZE);
+        var subscriber = new TestSubscriber<ByteBuffer>(1);
+        var publisher = (MultiFromByteChannel) IoMulti.multiFromByteChannelBuilder(channel)
+                .retrySchema((_, _) -> {
+                    subscriber.cancel();
+                    return 1;
+                })
+                .build();
+        try {
+            publisher.subscribe(subscriber);
+
+            subscriber.assertEmpty();
+            assertAll(() -> assertThat("Cancellation must leave the caller's channel open", channel.isOpen(), is(true)),
+                      () -> assertThat("Cancellation must not create a retry executor", publisher.executor().isLoaded(), is(false)));
+        } finally {
+            channel.close();
+            if (publisher.executor().isLoaded()) {
+                publisher.executor().get().shutdownNow();
+            }
         }
     }
 
