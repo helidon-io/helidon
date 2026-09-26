@@ -71,8 +71,10 @@ class QuicPacketCounterBenchmarkTest {
         shared.setUp();
         List<PacketState> senders = createSenders(cipherSuite, datagramSize);
         var start = new CyclicBarrier(SENDERS);
-        try (var executor = Executors.newFixedThreadPool(SENDERS)) {
-            List<Future<?>> results = new ArrayList<>();
+        var executor = Executors.newFixedThreadPool(SENDERS,
+                                                   Thread.ofPlatform().daemon().name("quic-counter-test-", 0).factory());
+        List<Future<?>> results = new ArrayList<>();
+        try {
             for (PacketState sender : senders) {
                 results.add(executor.submit(() -> {
                     QuicPacketProtection receiver = createReceiver(cipherSuite);
@@ -93,6 +95,14 @@ class QuicPacketCounterBenchmarkTest {
             for (Future<?> result : results) {
                 result.get(30, TimeUnit.SECONDS);
             }
+        } finally {
+            for (Future<?> result : results) {
+                result.cancel(true);
+            }
+            executor.shutdownNow();
+            assertThat("benchmark senders terminate after cancellation",
+                       executor.awaitTermination(5, TimeUnit.SECONDS),
+                       is(true));
         }
         assertDisjointPacketNumbers(senders);
     }
