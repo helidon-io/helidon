@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,11 @@
 package io.helidon.webclient.grpc;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import io.helidon.grpc.core.WeightedBag;
+import io.helidon.webclient.api.HttpTransportConnectionCache;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.grpc.spi.GrpcClientService;
 import io.helidon.webclient.http2.Http2Client;
@@ -34,11 +37,16 @@ class GrpcClientImpl implements GrpcClient {
     private final WebClient webClient;
     private final Http2Client http2Client;
     private final GrpcClientConfig clientConfig;
+    private final HttpTransportConnectionCache<GrpcClientConnections> observedConnections;
 
     GrpcClientImpl(WebClient webClient, GrpcClientConfig clientConfig) {
         this.webClient = webClient;
         this.http2Client = webClient.client(Http2Client.PROTOCOL);
         this.clientConfig = clientConfig;
+        this.observedConnections = HttpTransportConnectionCache.create(GrpcClientConnections.class,
+                                                                       clientConfig,
+                                                                       GrpcClientConnections::new)
+                .orElse(null);
     }
 
     WebClient webClient() {
@@ -47,6 +55,26 @@ class GrpcClientImpl implements GrpcClient {
 
     Http2Client http2Client() {
         return http2Client;
+    }
+
+    GrpcClientConnections.Registration connectionRegistration() {
+        if (observedConnections == null) {
+            return null;
+        }
+        return observedConnections.cache().registration(observedConnections.observer());
+    }
+
+    @Override
+    public void closeResource() {
+        if (observedConnections != null) {
+            observedConnections.closeResource();
+        }
+    }
+
+    @Override
+    public CompletionStage<Void> closeResourceAsync() {
+        closeResource();
+        return observedConnections == null ? CompletableFuture.completedFuture(null) : observedConnections.completion();
     }
 
     @Override

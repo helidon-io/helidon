@@ -42,6 +42,12 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.SocketContext;
+import io.helidon.http.HttpTransportObserver;
+import io.helidon.http.HttpTransportObserver.ConnectionObservation;
+import io.helidon.http.HttpTransportObserver.ConnectionOutcome;
+import io.helidon.http.HttpTransportObserver.Direction;
+import io.helidon.http.HttpTransportObserver.Initiator;
+import io.helidon.http.HttpTransportObserver.StreamObservation;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.ConnectionFlowControl;
 import io.helidon.http.http2.FlowControl;
@@ -69,6 +75,7 @@ import io.helidon.http.http2.Http2WindowUpdate;
 import io.helidon.http.http2.StreamFlowControl;
 import io.helidon.http.http2.WindowSize;
 import io.helidon.webclient.api.ClientConnection;
+import io.helidon.webclient.api.HttpTransportObserverSupport;
 import io.helidon.webclient.api.ResolvedClientTarget;
 import io.helidon.webclient.api.TcpClientConnection;
 
@@ -103,6 +110,7 @@ public class Http2ClientConnection {
     private final PendingInboundHeaders pendingInboundHeaders;
     private final Http2ClientProtocolConfig protocolConfig;
     private final ClientConnection connection;
+    private final ConnectionObservation transportObservation;
     private final ResolvedClientTarget resolvedTarget;
     private final SocketContext ctx;
     private final Http2ConnectionWriter writer;
@@ -163,6 +171,8 @@ public class Http2ClientConnection {
                 .blockTimeout(protocolConfig.flowControlBlockTimeout())
                 .build();
         this.connection = connection;
+        ConnectionObservation observation = HttpTransportObserverSupport.connection(connection);
+        this.transportObservation = observation == ConnectionObservation.noop() ? null : observation;
         this.resolvedTarget = connection instanceof TcpClientConnection tcpConnection
                 ? tcpConnection.resolvedTarget().orElse(null)
                 : null;
@@ -242,6 +252,20 @@ public class Http2ClientConnection {
 
     Http2ConnectionWriter writer() {
         return writer;
+    }
+
+    StreamObservation observeStream() {
+        return transportObservation == null ? null : transportObservation.streamOpened(Direction.BIDIRECTIONAL, Initiator.LOCAL);
+    }
+
+    boolean transportClosed() {
+        return state.get() == State.CLOSED;
+    }
+
+    void transportFailed(Throwable failure) {
+        if (transportObservation != null && !transportClosed()) {
+            HttpTransportObserverSupport.connectionFailed(connection, failure);
+        }
     }
 
     ConnectionFlowControl flowControl() {
@@ -410,10 +434,15 @@ public class Http2ClientConnection {
             this.writer().writeData(frameData, FlowControl.Outbound.NOOP);
             boolean pongReceived = pingPongSemaphore.tryAcquire(protocolConfig.pingTimeout().toMillis(), TimeUnit.MILLISECONDS);
             if (!pongReceived) {
+                transportOutcome(ConnectionOutcome.TIMEOUT);
                 pingPongSemaphore.drainPermits();
             }
             return pongReceived;
-        } catch (UncheckedIOException | InterruptedException e) {
+        } catch (UncheckedIOException e) {
+            transportFailed(e);
+            ctx.log(LOGGER, DEBUG, "Ping failed!", e);
+            return false;
+        } catch (InterruptedException e) {
             ctx.log(LOGGER, DEBUG, "Ping failed!", e);
             return false;
         } finally {
@@ -773,6 +802,7 @@ public class Http2ClientConnection {
                 sendPreface(protocolConfig, sendSettings);
                 clientPrefaceSent = true;
             } catch (Throwable e) {
+                transportFailed(e);
                 ctx.log(LOGGER, WARNING, "Failed to send preface.", e);
             } finally {
                 // we must wait until the preface is sent, before continuing with client operations
@@ -790,6 +820,9 @@ public class Http2ClientConnection {
                 }
                 ctx.log(LOGGER, TRACE, "Client listener interrupted");
             } catch (Throwable t) {
+                if (!(t instanceof DataReader.InsufficientDataAvailableException)) {
+                    transportFailed(t);
+                }
                 RuntimeException failure = t instanceof RuntimeException runtimeException
                         ? runtimeException
                         : new IllegalStateException("HTTP/2 connection failed", t);
@@ -809,6 +842,7 @@ public class Http2ClientConnection {
 
         try {
             if (!cdl.await(20, TimeUnit.SECONDS)) {
+                transportOutcome(ConnectionOutcome.TIMEOUT);
                 throw new IllegalStateException("Filed to send HTTP/2 preface within 20 seconds, this connection is broken");
             }
         } catch (InterruptedException e) {
@@ -827,6 +861,7 @@ public class Http2ClientConnection {
         }
         try {
             if (!initialSettingsLatch.await(20, TimeUnit.SECONDS)) {
+                transportOutcome(ConnectionOutcome.TIMEOUT);
                 throw new IllegalStateException("Failed to receive initial HTTP/2 settings within 20 seconds");
             }
         } catch (InterruptedException e) {
@@ -888,17 +923,27 @@ public class Http2ClientConnection {
     }
 
     private boolean handle() {
-        this.reader.ensureAvailable();
-        BufferData frameHeaderBuffer = this.reader.readBuffer(FRAME_HEADER_LENGTH);
-        Http2FrameHeader frameHeader = Http2FrameHeader.create(frameHeaderBuffer);
-        if ((frameHeader.type() == Http2FrameType.HEADERS || frameHeader.type() == Http2FrameType.CONTINUATION)
-                && frameHeader.length() > protocolConfig.maxFrameSize()) {
-            throw new Http2Exception(Http2ErrorCode.FRAME_SIZE,
-                                     "Frame size " + frameHeader.length() + " is too big");
+        try {
+            this.reader.ensureAvailable();
+        } catch (DataReader.InsufficientDataAvailableException e) {
+            transportOutcome(ConnectionOutcome.REMOTE_CLOSE);
+            throw e;
         }
-        frameHeader.type().checkLength(frameHeader.length());
-        BufferData data = readFrameData(frameHeader);
-        return handle(frameHeader, data);
+        try {
+            BufferData frameHeaderBuffer = this.reader.readBuffer(FRAME_HEADER_LENGTH);
+            Http2FrameHeader frameHeader = Http2FrameHeader.create(frameHeaderBuffer);
+            if ((frameHeader.type() == Http2FrameType.HEADERS || frameHeader.type() == Http2FrameType.CONTINUATION)
+                    && frameHeader.length() > protocolConfig.maxFrameSize()) {
+                throw new Http2Exception(Http2ErrorCode.FRAME_SIZE,
+                                         "Frame size " + frameHeader.length() + " is too big");
+            }
+            frameHeader.type().checkLength(frameHeader.length());
+            BufferData data = readFrameData(frameHeader);
+            return handle(frameHeader, data);
+        } catch (DataReader.InsufficientDataAvailableException e) {
+            transportFailed(e);
+            throw e;
+        }
     }
 
     private BufferData readFrameData(Http2FrameHeader frameHeader) {
@@ -1004,6 +1049,9 @@ public class Http2ClientConnection {
         Http2GoAway http2GoAway = Http2GoAway.create(data);
         recvListener.frameHeader(ctx, streamId, frameHeader);
         recvListener.frame(ctx, streamId, http2GoAway);
+        transportOutcome(http2GoAway.errorCode() == Http2ErrorCode.NO_ERROR
+                                 ? ConnectionOutcome.REMOTE_CLOSE
+                                 : ConnectionOutcome.ERROR);
         close(new Http2Exception(http2GoAway.errorCode(),
                                  "Connection closed by remote peer, last stream: " + http2GoAway.lastStreamId()));
         ctx.log(LOGGER, TRACE, "Connection closed by remote peer, error code: %s, last stream: %d",
@@ -1032,6 +1080,9 @@ public class Http2ClientConnection {
             // SETTINGS arrive, HTTP/2 owns a permanent connection reader and applies timeouts to individual
             // streams, so the inherited socket timeout must be cleared before the next connection read.
             connection.readTimeout(Duration.ZERO);
+        }
+        if (!initialSettingsReceived && transportObservation != null) {
+            transportObservation.protocolSelected(HttpTransportObserver.PROTOCOL_HTTP_2);
         }
         initialSettingsReceived = true;
         initialSettingsLatch.countDown();
@@ -1138,6 +1189,7 @@ public class Http2ClientConnection {
             validateKnownAbandonedClientStream(streamId, Http2FrameType.RST_STREAM);
             logDroppedFrame(Http2FrameType.RST_STREAM, streamId);
         } else {
+            stream.remoteReset(rstStream.errorCode());
             stream.rstStream(rstStream);
         }
     }
@@ -1166,6 +1218,12 @@ public class Http2ClientConnection {
     private void restoreDiscardedConnectionCredit(Http2FrameHeader frameHeader) {
         connectionFlowControl.decrementInboundConnectionWindowSize(frameHeader.length());
         connectionFlowControl.incrementInboundConnectionWindowSize(frameHeader.length());
+    }
+
+    private void transportOutcome(ConnectionOutcome outcome) {
+        if (transportObservation != null && !transportClosed()) {
+            HttpTransportObserverSupport.connectionOutcome(connection, outcome);
+        }
     }
 
     private boolean handleHeadersFrame(int streamId, Http2FrameHeader frameHeader, BufferData data) {
@@ -1464,6 +1522,7 @@ public class Http2ClientConnection {
 
         @Override
         public void close() {
+            transportOutcome(ConnectionOutcome.ERROR);
             closeNow();
         }
     }

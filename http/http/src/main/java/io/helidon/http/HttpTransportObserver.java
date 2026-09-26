@@ -21,7 +21,7 @@ import java.util.List;
 import io.helidon.common.Api;
 
 /**
- * Protocol-neutral observation of HTTP transport lifecycle.
+ * HTTP-version-neutral observation of the HTTP transport lifecycle.
  *
  * <p>Callbacks must not block. Lifecycle events for one connection are published sequentially as specified by
  * {@link ConnectionObservation}. Callbacks for different connections may be invoked concurrently, so implementations

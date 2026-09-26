@@ -136,8 +136,32 @@ class MetricsFactoryFactoryTest {
     void noOpRegistryRejectsNullMeterEnablementArguments() {
         MeterRegistry meterRegistry = new NoOpMetricsFactory().globalRegistry();
 
+        assertThat(meterRegistry.isMeterEnabled("test"), is(false));
+        assertThat(meterRegistry.isMeterEnabled("test", Map.of()), is(false));
+        assertThrows(NullPointerException.class, () -> meterRegistry.isMeterEnabled(null));
         assertThrows(NullPointerException.class, () -> meterRegistry.isMeterEnabled(null, Map.of()));
         assertThrows(NullPointerException.class, () -> meterRegistry.isMeterEnabled("test", null));
+    }
+
+    @Test
+    void nameOnlyEnablementDoesNotInferDisabledFromMissingTags() {
+        MeterRegistry meterRegistry = (MeterRegistry) Proxy.newProxyInstance(
+                MeterRegistry.class.getClassLoader(),
+                new Class<?>[] {MeterRegistry.class},
+                (proxy, method, args) -> {
+                    if (method.getName().equals("isMeterEnabled") && args.length == 2) {
+                        return ((Map<?, ?>) args[1]).containsKey("enabled");
+                    }
+                    if (method.isDefault()) {
+                        return InvocationHandler.invokeDefault(proxy, method, args);
+                    }
+                    throw new AssertionError("Unexpected method: " + method);
+                });
+
+        assertThat(meterRegistry.isMeterEnabled("tag-dependent"), is(true));
+        assertThat(meterRegistry.isMeterEnabled("tag-dependent", Map.of()), is(false));
+        assertThat(meterRegistry.isMeterEnabled("tag-dependent", Map.of("enabled", "true")), is(true));
+        assertThrows(NullPointerException.class, () -> meterRegistry.isMeterEnabled(null));
     }
 
     @SuppressWarnings("removal")
@@ -145,7 +169,7 @@ class MetricsFactoryFactoryTest {
     void noOpRegistryUsesDefaultScopedEnablementBridge() {
         MeterRegistry meterRegistry = new NoOpMetricsFactory().globalRegistry();
 
-        assertThat(meterRegistry.isMeterEnabled("test", Map.of(), Optional.of("ignored")), is(true));
+        assertThat(meterRegistry.isMeterEnabled("test", Map.of(), Optional.of("ignored")), is(false));
         assertThrows(NullPointerException.class, () -> meterRegistry.isMeterEnabled(null, Map.of(), Optional.empty()));
         assertThrows(NullPointerException.class, () -> meterRegistry.isMeterEnabled("test", null, Optional.empty()));
         assertThrows(NullPointerException.class, () -> meterRegistry.isMeterEnabled("test", Map.of(), null));

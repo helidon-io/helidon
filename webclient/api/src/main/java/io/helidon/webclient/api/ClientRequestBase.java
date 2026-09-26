@@ -23,7 +23,6 @@ import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -704,9 +703,11 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         };
 
         List<WebClientService> services = clientConfig.services();
-        ListIterator<WebClientService> serviceIterator = services.listIterator(services.size());
-        while (serviceIterator.hasPrevious()) {
-            last = new ServiceChainImpl(last, serviceIterator.previous());
+        for (int i = services.size() - 1; i >= 0; i--) {
+            WebClientService service = services.get(i);
+            if (!(service instanceof HttpTransportObserverSupport.ObserverProvider)) {
+                last = new ServiceChainImpl(last, service);
+            }
         }
 
         WebClientServiceResponse response = last.proceed(serviceRequest);

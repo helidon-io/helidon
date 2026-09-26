@@ -110,6 +110,23 @@ public interface MeterRegistry extends Wrapper {
     void close();
 
     /**
+     * Returns whether any meter with the specified name can be enabled, regardless of its tags.
+     * A {@code false} result guarantees that no tag combination is enabled. A {@code true} result still permits
+     * tag-dependent filtering by {@link #isMeterEnabled(String, Map)}.
+     * <p>
+     * The default implementation conservatively returns {@code true}. Implementations can override this method when
+     * they can determine enablement without knowing the tags.
+     *
+     * @param name name of the meter to check
+     * @return false if every meter with this name is disabled; true otherwise
+     * @since 28.0.0
+     */
+    default boolean isMeterEnabled(String name) {
+        Objects.requireNonNull(name);
+        return true;
+    }
+
+    /**
      * Returns whether the specified meter is enabled.
      * <p>
      * The default implementation delegates to the deprecated overload for compatibility with existing implementations.

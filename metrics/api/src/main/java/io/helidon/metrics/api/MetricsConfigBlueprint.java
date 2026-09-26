@@ -67,6 +67,18 @@ interface MetricsConfigBlueprint {
     boolean enabled();
 
     /**
+     * Ordered settings for meters, selected by name pattern across all tags in this registry.
+     * The first pattern matching the entire meter name supplies all settings; matching entries are not merged.
+     * Unmatched meters retain their existing settings.
+     *
+     * @return meter settings
+     * @since 28.0.0
+     */
+    @Option.Configured
+    @Option.Singular
+    List<MeterConfig> meters();
+
+    /**
      * Whether to allow anybody to access the metrics endpoint when this config is used by a metrics observer.
      * This setting has no effect in the top-level {@code metrics} config which controls the shared registry.
      *
@@ -230,14 +242,36 @@ interface MetricsConfigBlueprint {
     }
 
     /**
+     * Finds the first configuration whose pattern matches the entire meter name, regardless of global enablement.
+     *
+     * @param name meter name before exporter-specific naming conversion
+     * @return matching meter configuration, or empty if no pattern matches
+     * @since 28.0.0
+     */
+    default Optional<MeterConfig> meterConfig(String name) {
+        Objects.requireNonNull(name);
+        for (MeterConfig meter : meters()) {
+            if (meter.namePattern().matcher(name).matches()) {
+                return Optional.of(meter);
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
      * Determines whether the meter with the specified name is enabled.
+     * Globally disabled metrics take precedence; otherwise, the first matching meter configuration applies.
+     * Meters without a matching configuration are enabled.
      *
      * @param name meter name
      * @return whether the meter is enabled
      */
     default boolean isMeterEnabled(String name) {
         Objects.requireNonNull(name);
-        return enabled();
+        if (!enabled()) {
+            return false;
+        }
+        return meterConfig(name).map(MeterConfig::enabled).orElse(true);
     }
 
     /**

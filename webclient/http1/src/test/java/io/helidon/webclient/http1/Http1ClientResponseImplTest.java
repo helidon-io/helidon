@@ -125,10 +125,10 @@ class Http1ClientResponseImplTest {
                 new Http1ClientImpl(null, Http1ClientConfig.builder().buildPrototype()),
                 serviceRequest,
                 connection,
-                connection.reader(),
                 Status.NO_CONTENT_204,
                 responseHeaders,
-                new CompletableFuture<>());
+                new CompletableFuture<>(),
+                null);
         InputStream serviceStream = serviceResponse.inputStream().orElseThrow();
         Http1ClientResponseImpl response = new Http1ClientResponseImpl(HttpClientConfig.builder().build(),
                                                                        Http1ClientProtocolConfig.create(),
@@ -140,7 +140,8 @@ class Http1ClientResponseImplTest {
                                                                        serviceStream,
                                                                        MediaContext.create(),
                                                                        ClientUri.create(URI.create("http://localhost/test")),
-                                                                       new CompletableFuture<>());
+                                                                       new CompletableFuture<>(),
+                                                                       null);
         InputStream tunnelStream = response.inputStream();
 
         byte[] actual = new byte[tunnelData.length()];
@@ -223,10 +224,10 @@ class Http1ClientResponseImplTest {
                                                                             Http1ClientConfig.builder().buildPrototype()),
                                                         new TestServiceRequest(method),
                                                         new TestConnection(),
-                                                        DataReader.create(() -> null),
                                                         status,
                                                         headers,
-                                                        new CompletableFuture<>());
+                                                        new CompletableFuture<>(),
+                                                        null);
     }
 
     private static Http1ClientResponseImpl response(ClientResponseHeaders headers,
@@ -242,7 +243,8 @@ class Http1ClientResponseImplTest {
                                            inputStream,
                                            MediaContext.create(),
                                            ClientUri.create(URI.create("http://localhost/test")),
-                                           new CompletableFuture<>());
+                                           new CompletableFuture<>(),
+                                           null);
     }
 
     private static InputStream inputStream(String entity) {

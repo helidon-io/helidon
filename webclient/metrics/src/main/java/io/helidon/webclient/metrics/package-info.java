@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,5 +15,9 @@
  */
 /**
  * Helidon WebClient Metrics Support.
+ *
+ * <p>{@link io.helidon.webclient.metrics.WebClientTransportMetrics} records HTTP transport meters using
+ * {@code role=client}. It is configured independently of the request metrics in
+ * {@link io.helidon.webclient.metrics.WebClientMetrics}, using the {@code http-metrics} service name.
  */
 package io.helidon.webclient.metrics;

@@ -319,13 +319,15 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                                                                      udsAddress,
                                                                      authorityHeaders(authority));
             }
-            return UnixDomainSocketClientConnection.create(
+            GrpcClientConnections.Registration registration = grpcClient.connectionRegistration();
+            ClientConnection connection = UnixDomainSocketClientConnection.create(
                 webClient,
                 connectionKey,
                 List.of(Http2Client.PROTOCOL_ID),
                 udsAddress,
-                connection -> false,
-                connection -> {}).connect();
+                _ -> false,
+                registration == null ? _ -> { } : registration::closed);
+            return registration == null ? connection.connect() : registration.connect(connection);
         }
 
         ConnectionKey connectionKey;
@@ -346,12 +348,13 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                     Proxy.noProxy(),
                     authorityHeaders(authority));
         }
-        return TcpClientConnection.create(webClient,
-                                          connectionKey,
-                                          List.of(Http2Client.PROTOCOL_ID),
-                                          connection -> false,
-                                          connection -> {
-                                          }).connect();
+        GrpcClientConnections.Registration registration = grpcClient.connectionRegistration();
+        ClientConnection connection = TcpClientConnection.create(webClient,
+                                                                 connectionKey,
+                                                                 List.of(Http2Client.PROTOCOL_ID),
+                                                                 _ -> false,
+                                                                 registration == null ? _ -> { } : registration::closed);
+        return registration == null ? connection.connect() : registration.connect(connection);
     }
 
     boolean hasUnreadData() {

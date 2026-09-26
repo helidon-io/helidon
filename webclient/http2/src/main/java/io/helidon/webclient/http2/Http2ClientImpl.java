@@ -18,6 +18,8 @@ package io.helidon.webclient.http2;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -32,11 +34,15 @@ import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2LoggingFrameListener;
 import io.helidon.webclient.api.AltSvcHeader;
 import io.helidon.webclient.api.ClientAltSvcConfig;
+import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientConnectionTarget;
 import io.helidon.webclient.api.ClientRequest;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.api.FullClientRequest;
+import io.helidon.webclient.api.HttpTransportConnectionCache;
+import io.helidon.webclient.api.HttpTransportObserverSupport;
+import io.helidon.webclient.api.HttpTransportObserverSupport.ObserverProvider;
 import io.helidon.webclient.api.ProxyRoute;
 import io.helidon.webclient.api.SniMode;
 import io.helidon.webclient.api.WebClient;
@@ -55,6 +61,8 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
     private final Http2ClientProtocolConfig protocolConfig;
     private final Http2ConnectionCache connectionCache;
     private final Http2ConnectionCache clientCache;
+    private final HttpTransportConnectionCache<Http2ConnectionCache> observedCache;
+    private final CompletableFuture<Void> closeCompletion;
     private final AtomicReference<Http1FallbackResources> http1FallbackResources = new AtomicReference<>();
     private final ReentrantLock lifecycleLock = new ReentrantLock();
     private final Http2FrameListener sendListener;
@@ -82,7 +90,15 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
                         || config.protocols().contains(Http2Client.PROTOCOL_ID))
                 .orElse(false);
         this.responseNotificationsManagedByWebClient = responseNotificationsManagedByWebClient;
-        if (clientConfig.shareConnectionCache()) {
+        this.observedCache = HttpTransportConnectionCache.create(Http2ConnectionCache.class,
+                                                                 clientConfig,
+                                                                 Http2ConnectionCache::create)
+                .orElse(null);
+        this.closeCompletion = observedCache == null ? null : new CompletableFuture<>();
+        if (observedCache != null) {
+            this.connectionCache = null;
+            this.clientCache = null;
+        } else if (clientConfig.shareConnectionCache()) {
             this.connectionCache = Http2ConnectionCache.shared();
             this.clientCache = null;
         } else {
@@ -122,6 +138,7 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
 
     @Override
     public SupportLevel supports(FullClientRequest<?> clientRequest, ClientUri clientUri) {
+        Http2ConnectionCache connectionCache = connectionCache();
         ConnectionKey connectionKey = Http2ConnectionKeys.create(clientUri, clientRequest, clientConfig);
         if (connectionCache.supports(connectionKey)) {
             return SupportLevel.SUPPORTED;
@@ -189,7 +206,7 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
 
         var receivedAt = response.receivedAt();
         AltSvcHeader.create(response.headers(), receivedAt)
-                .ifPresent(header -> connectionCache.recordAlternative(response.target().logicalTarget(),
+                .ifPresent(header -> connectionCache().recordAlternative(response.target().logicalTarget(),
                                                                         header,
                                                                         response.secure(),
                                                                         response.explicitConnection(),
@@ -241,10 +258,24 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
                 fallbackResources.closeResource();
             }
         } finally {
-            if (clientCache != null) {
-                this.clientCache.closeResource();
+            try {
+                if (observedCache != null) {
+                    observedCache.closeResource();
+                } else if (clientCache != null) {
+                    this.clientCache.closeResource();
+                }
+            } finally {
+                if (closeCompletion != null) {
+                    completeClose(fallbackResources);
+                }
             }
         }
+    }
+
+    @Override
+    public CompletionStage<Void> closeResourceAsync() {
+        closeResource();
+        return closeCompletion == null ? CompletableFuture.completedStage(null) : closeCompletion.minimalCompletionStage();
     }
 
     WebClient webClient() {
@@ -272,7 +303,7 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
             }
 
             WebClient fallbackWebClient = WebClientConfig.builder(webClient.prototype())
-                    .clearServices()
+                    .services(clientConfig.services().stream().filter(ObserverProvider.class::isInstance).toList())
                     .servicesDiscoverServices(false)
                     .addService(new Http1FallbackService())
                     .cookieManager(WebClientCookieManager.builder().build())
@@ -342,7 +373,11 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
     }
 
     Http2ConnectionCache connectionCache() {
-        return connectionCache;
+        return observedCache == null ? connectionCache : observedCache.cache();
+    }
+
+    <T extends ClientConnection> T observe(T connection) {
+        return observedCache == null ? connection : HttpTransportObserverSupport.observe(connection, observedCache.observer());
     }
 
     Http2FrameListener sendListener() {
@@ -351,6 +386,26 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
 
     Http2FrameListener recvListener() {
         return recvListener;
+    }
+
+    private void completeClose(Http1FallbackResources fallbackResources) {
+        CompletableFuture<?>[] completions;
+        if (fallbackResources == null) {
+            completions = new CompletableFuture<?>[] {observedCache.completion().toCompletableFuture()};
+        } else {
+            completions = new CompletableFuture<?>[] {
+                    observedCache.completion().toCompletableFuture(),
+                    fallbackResources.http1Client.closeResourceAsync().toCompletableFuture(),
+                    fallbackResources.webClient.closeResourceAsync().toCompletableFuture()
+            };
+        }
+        CompletableFuture.allOf(completions).whenComplete((_, failure) -> {
+            if (failure == null) {
+                closeCompletion.complete(null);
+            } else {
+                closeCompletion.completeExceptionally(failure);
+            }
+        });
     }
 
     private static final class Http1FallbackResources {

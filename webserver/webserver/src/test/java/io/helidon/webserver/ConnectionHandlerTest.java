@@ -16,6 +16,7 @@
 package io.helidon.webserver;
 
 import java.net.InetSocketAddress;
+import java.net.SocketTimeoutException;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -37,6 +38,8 @@ import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.configurable.AllowList;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.common.tls.Tls;
+import io.helidon.http.HttpTransportObserver.ConnectionObservation;
+import io.helidon.http.HttpTransportObserver.ConnectionOutcome;
 import io.helidon.webserver.spi.ServerConnection;
 import io.helidon.webserver.spi.ServerConnectionSelector;
 
@@ -46,6 +49,8 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -59,7 +64,7 @@ class ConnectionHandlerTest {
     }
 
     @Test
-    void logsUnexpectedThrowableFromConnectionHandling() throws Exception {
+    void unexpectedThrowableAndFatalObserverFailureStillCleanUp() throws Exception {
         AssertionError failure = new AssertionError("unexpected failure");
         ListenerConfig listenerConfig = mock(ListenerConfig.class);
         ListenerContext listenerContext = mock(ListenerContext.class);
@@ -71,6 +76,11 @@ class ConnectionHandlerTest {
         LimitAlgorithm.Token token = mock(LimitAlgorithm.Token.class);
         SocketChannel socket = mock(SocketChannel.class);
         when(socket.getRemoteAddress()).thenThrow(failure);
+        ConnectionObservation transportObservation = mock(ConnectionObservation.class);
+        doThrow(new AssertionError("observer failure"))
+                .when(transportObservation)
+                .close(ConnectionOutcome.ERROR);
+        AtomicReference<ConnectionHandler> removed = new AtomicReference<>();
         ConnectionHandler handler = new ConnectionHandler(listenerContext,
                                                           Optional.of(new TrustedProxyMatcher(AllowList.builder()
                                                                                                        .allowAll(true)
@@ -83,34 +93,82 @@ class ConnectionHandlerTest {
                                                           Router.empty(),
                                                           mock(Tls.class),
                                                           virtualHosts,
-                                                          it -> { });
+                                                          transportObservation,
+                                                          removed::set);
 
         try (TestLogHandler logHandler = TestLogHandler.install()) {
-            handler.run();
+            AssertionError observerFailure = assertThrows(AssertionError.class, handler::run);
 
             LogRecord record = logHandler.await();
             assertThat(record.getMessage(), containsString("Unexpected throwable while handling connection"));
             assertThat(record.getThrown(), sameInstance(failure));
+            assertThat(observerFailure.getMessage(), is("observer failure"));
             verify(token).ignore();
+            verify(transportObservation).close(ConnectionOutcome.ERROR);
+            assertThat(removed.get(), sameInstance(handler));
         }
     }
 
     @Test
     void socketWriterFailureIsTrace() throws Exception {
-        assertConnectionFailureLevel(new SocketWriterException(), Level.FINER);
+        assertConnectionFailureLevel(new SocketWriterException(), Level.FINER, ConnectionOutcome.ERROR);
+    }
+
+    @Test
+    void socketWriterTimeoutIsTraceAndRecordsTimeout() throws Exception {
+        assertConnectionFailureLevel(new SocketWriterException(new SocketTimeoutException("test timeout")),
+                                     Level.FINER,
+                                     ConnectionOutcome.TIMEOUT);
     }
 
     @Test
     void connectionInterruptionIsTrace() throws Exception {
-        assertConnectionFailureLevel(new InterruptedException("test interruption"), Level.FINER);
+        assertConnectionFailureLevel(new InterruptedException("test interruption"), Level.FINER, ConnectionOutcome.ERROR);
     }
 
     @Test
     void unexpectedConnectionFailureRemainsWarning() throws Exception {
-        assertConnectionFailureLevel(new IllegalStateException("unexpected"), Level.WARNING);
+        assertConnectionFailureLevel(new IllegalStateException("unexpected"), Level.WARNING, ConnectionOutcome.ERROR);
     }
 
-    private static void assertConnectionFailureLevel(Exception failure, Level expectedLevel) throws Exception {
+    @Test
+    void firstTransportOutcomeWins() throws Exception {
+        AssertionError failure = new AssertionError("unexpected failure");
+        ListenerConfig listenerConfig = mock(ListenerConfig.class);
+        ListenerContext listenerContext = mock(ListenerContext.class);
+        when(listenerContext.config()).thenReturn(listenerConfig);
+        ListenerConfig virtualHostConfig = mock(ListenerConfig.class);
+        when(virtualHostConfig.sni()).thenReturn(SniConfig.create());
+        when(virtualHostConfig.virtualHosts()).thenReturn(List.of());
+        VirtualHostRegistry virtualHosts = VirtualHostRegistry.create("server", virtualHostConfig, mock(Tls.class));
+        ConnectionObservation transportObservation = mock(ConnectionObservation.class);
+        SocketChannel socket = mock(SocketChannel.class);
+        when(socket.getRemoteAddress()).thenThrow(failure);
+        ConnectionHandler handler = new ConnectionHandler(listenerContext,
+                                                          Optional.of(new TrustedProxyMatcher(AllowList.builder()
+                                                                                                       .allowAll(true)
+                                                                                                       .build())),
+                                                          mock(LimitAlgorithm.Token.class),
+                                                          mock(Limit.class),
+                                                          ConnectionProviders.create(List.of()),
+                                                          socket,
+                                                          "server",
+                                                          Router.empty(),
+                                                          mock(Tls.class),
+                                                          virtualHosts,
+                                                          transportObservation,
+                                                          it -> { });
+
+        handler.httpTransportOutcome(ConnectionOutcome.REMOTE_CLOSE);
+        handler.httpTransportOutcome(ConnectionOutcome.ERROR);
+        handler.run();
+
+        verify(transportObservation).close(ConnectionOutcome.REMOTE_CLOSE);
+    }
+
+    private static void assertConnectionFailureLevel(Exception failure,
+                                                     Level expectedLevel,
+                                                     ConnectionOutcome expectedOutcome) throws Exception {
         ListenerConfig listenerConfig = mock(ListenerConfig.class);
         when(listenerConfig.useNio()).thenReturn(true);
         ListenerContext listenerContext = mock(ListenerContext.class);
@@ -125,6 +183,7 @@ class ConnectionHandlerTest {
         VirtualHostRegistry virtualHosts = VirtualHostRegistry.create("server", virtualHostConfig, tls);
         ConnectionProviders connectionProviders =
                 ConnectionProviders.create(List.of(new TestConnectionSelector(failure)));
+        ConnectionObservation transportObservation = mock(ConnectionObservation.class);
         ConnectionHandler handler = new ConnectionHandler(listenerContext,
                                                           Optional.empty(),
                                                           mock(LimitAlgorithm.Token.class),
@@ -135,6 +194,7 @@ class ConnectionHandlerTest {
                                                           Router.empty(),
                                                           tls,
                                                           virtualHosts,
+                                                          transportObservation,
                                                           _ -> { });
 
         try (TestLogHandler logHandler = TestLogHandler.install(failure)) {
@@ -145,6 +205,7 @@ class ConnectionHandlerTest {
             assertThat(thread.isAlive(), is(false));
             assertThat(record.getThrown(), sameInstance(failure));
             assertThat(record.getLevel(), is(expectedLevel));
+            verify(transportObservation).close(expectedOutcome);
         }
     }
 

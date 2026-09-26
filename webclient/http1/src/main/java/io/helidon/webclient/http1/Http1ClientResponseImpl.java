@@ -43,6 +43,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.Http1HeadersParser;
+import io.helidon.http.HttpTransportObserver.ConnectionOutcome;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.media.MediaContext;
@@ -52,6 +53,7 @@ import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientResponseEntity;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientConfig;
+import io.helidon.webclient.api.HttpTransportObserverSupport;
 import io.helidon.webclient.spi.Source;
 import io.helidon.webclient.spi.SourceHandlerProvider;
 
@@ -73,6 +75,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     private final InputStream inputStream;
     private final MediaContext mediaContext;
     private final CompletableFuture<Void> whenComplete;
+    private final Http1TransportObservation transportObservation;
     private final boolean hasTrailers;
     private final List<String> trailerNames;
     private final boolean entityAllowed;
@@ -99,7 +102,8 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
                             InputStream inputStream, // can be null if no entity
                             MediaContext mediaContext,
                             ClientUri lastEndpointUri,
-                            CompletableFuture<Void> whenComplete) {
+                            CompletableFuture<Void> whenComplete,
+                            Http1TransportObservation transportObservation) {
         this.clientConfig = clientConfig;
         this.protocolConfig = protocolConfig;
         this.responseStatus = responseStatus;
@@ -111,6 +115,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         this.parserMode = clientConfig.mediaTypeParserMode();
         this.lastEndpointUri = lastEndpointUri;
         this.whenComplete = whenComplete;
+        this.transportObservation = transportObservation;
         boolean successfulConnect = Http1CallChainBase.isSuccessfulConnect(requestMethod, responseStatus);
         this.entityAllowed = successfulConnect || Http1CallChainBase.statusAllowsEntity(responseStatus);
         this.trailers = LazyValue.create(this::readTrailers);
@@ -196,22 +201,22 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
                 if (closeConnectionOnClose
                         || headers().containsToken(HeaderValues.CONNECTION_CLOSE)
                         || entityLength == ENTITY_LENGTH_CLOSE_DELIMITED) {
-                    connection.closeResource();
+                    closeConnection();
                 } else {
                     if (inputStream == null
                             && entityLength == ENTITY_LENGTH_CHUNKED
                             && hasTrailers
                             && !trailers.isLoaded()) {
-                        connection.closeResource();
+                        closeConnection();
                     } else if (entityFullyRead || consumeUnreadEntity()) {
-                        connection.releaseResource();
+                        releaseConnection();
                     } else if (inputStream == null && connection.reader().available() > 0) {
                         // No-body response bytes that cannot be consumed as safe framing make reuse unsafe.
-                        connection.closeResource();
+                        closeConnection();
                     } else if (entityLength == 0) {
-                        connection.releaseResource();
+                        releaseConnection();
                     } else {
-                        connection.closeResource();
+                        closeConnection();
                     }
                 }
             } finally {
@@ -245,7 +250,44 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         closeConnectionOnClose = true;
     }
 
+    Http1TransportObservation transportObservation() {
+        return transportObservation;
+    }
+
+    private void closeConnection() {
+        if (transportObservation != null) {
+            transportObservation.cancel();
+            if (headers().containsToken(HeaderValues.CONNECTION_CLOSE)) {
+                HttpTransportObserverSupport.connectionOutcome(connection, ConnectionOutcome.REMOTE_CLOSE);
+            }
+        }
+        connection.closeResource();
+    }
+
+    private void releaseConnection() {
+        if (transportObservation != null) {
+            // Releasing a response also ends ownership of any unread body or trailers.
+            transportObservation.cancel();
+        }
+        connection.releaseResource();
+    }
+
     private Headers readTrailers() {
+        try {
+            Headers result = doReadTrailers();
+            if (transportObservation != null) {
+                transportObservation.complete();
+            }
+            return result;
+        } catch (RuntimeException e) {
+            if (transportObservation != null) {
+                transportObservation.fail(e);
+            }
+            throw e;
+        }
+    }
+
+    private Headers doReadTrailers() {
         if (!entityAllowed && entityLength != ENTITY_LENGTH_CHUNKED) {
             throw new IllegalStateException("Response trailers require chunked transfer coding");
         }
@@ -324,6 +366,9 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
                                                                                 StandardCharsets.US_ASCII)) == 0) {
                     reader.skip(endOfChunkSize + 4);
                     entityFullyRead = true;
+                    if (transportObservation != null) {
+                        transportObservation.complete();
+                    }
                     return true;
                 }
             } catch (RuntimeException e) {
@@ -338,6 +383,9 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         try {
             reader.skip((int) entityLength);
             entityFullyRead = true;
+            if (transportObservation != null) {
+                transportObservation.complete();
+            }
             return true;
         } catch (RuntimeException e) {
             LOGGER.log(Level.DEBUG, "Exception while consuming entity", e);

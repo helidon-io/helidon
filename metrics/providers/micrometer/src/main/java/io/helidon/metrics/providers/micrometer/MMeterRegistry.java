@@ -16,6 +16,7 @@
 package io.helidon.metrics.providers.micrometer;
 
 import java.lang.System.Logger.Level;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -32,6 +33,7 @@ import java.util.function.Predicate;
 
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.FunctionalCounter;
+import io.helidon.metrics.api.MeterConfig;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.SystemTagsManager;
@@ -278,13 +280,18 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     }
 
     @Override
+    public boolean isMeterEnabled(String name) {
+        return metricsConfig.isMeterEnabled(name);
+    }
+
+    @Override
     public boolean isMeterEnabled(String name, Map<String, String> tags) {
         /*
         This method uses only config, not any mutable data structures, so no need to lock.
          */
         Objects.requireNonNull(name);
         Objects.requireNonNull(tags);
-        return metricsConfig.isMeterEnabled(name);
+        return isMeterEnabled(name);
     }
 
     @Override
@@ -413,6 +420,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         if (disabledMeter != null) {
             return disabledMeter;
         }
+        configureMeter(builder);
 
         io.helidon.metrics.api.Meter helidonMeter;
 
@@ -525,6 +533,31 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         // If this is not "one of ours" then we need to create a new builder, based on the one passed in but with the correct
         // Micrometer delegate builder assigned.
         return (HM) getOrCreateUntyped(convertNeutralBuilder(builder));
+    }
+
+    private void configureMeter(io.helidon.metrics.api.Meter.Builder<?, ?> builder) {
+        MeterConfig meterConfig = metricsConfig.meterConfig(builder.name()).orElse(null);
+        if (meterConfig == null || (meterConfig.percentiles().isEmpty()
+                && meterConfig.buckets().isEmpty()
+                && meterConfig.minimumExpectedValue().isEmpty()
+                && meterConfig.maximumExpectedValue().isEmpty())) {
+            return;
+        }
+        if (!(builder instanceof io.helidon.metrics.api.Timer.Builder timerBuilder)) {
+            throw new IllegalArgumentException("Timer statistics are configured for a meter which is not a timer: "
+                                                       + builder.name());
+        }
+        meterConfig.percentiles().ifPresent(percentiles ->
+                timerBuilder.percentiles(percentiles.stream().mapToDouble(Double::doubleValue).toArray()));
+        meterConfig.buckets().ifPresent(buckets -> timerBuilder.buckets(buckets.toArray(Duration[]::new)));
+        meterConfig.minimumExpectedValue().ifPresent(timerBuilder::minimumExpectedValue);
+        meterConfig.maximumExpectedValue().ifPresent(timerBuilder::maximumExpectedValue);
+        if ((meterConfig.minimumExpectedValue().isPresent() || meterConfig.maximumExpectedValue().isPresent())
+                && timerBuilder.minimumExpectedValue().isPresent() && timerBuilder.maximumExpectedValue().isPresent()
+                && timerBuilder.minimumExpectedValue().get().compareTo(timerBuilder.maximumExpectedValue().get()) > 0) {
+            throw new IllegalArgumentException("Timer minimum-expected-value must not exceed maximum-expected-value: "
+                                                       + builder.name());
+        }
     }
 
     private io.helidon.metrics.api.Meter noopMeterIfDisabled(io.helidon.metrics.api.Meter.Builder<?, ?> builder) {

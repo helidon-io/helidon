@@ -18,12 +18,10 @@ package io.helidon.http;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.http.HttpTransportObserver.ConnectionObservation;
@@ -122,9 +120,9 @@ final class HttpTransportObservers {
     private static final class CompositeConnectionObservation implements ConnectionObservation {
         private final ReentrantLock lifecycleLock = new ReentrantLock();
         private final List<ConnectionObservation> observations;
-        private final Set<CompositeStreamObservation> streams = new HashSet<>();
         private final ArrayDeque<Runnable> transitions = new ArrayDeque<>();
         private CompositeHandshakeObservation handshake;
+        private CompositeStreamObservation streams;
         private String protocol;
         private ConnectionOutcome connectionOutcome;
         private int inFlightOperations;
@@ -235,7 +233,11 @@ final class HttpTransportObservers {
                     return NOOP_STREAM;
                 }
                 result = new CompositeStreamObservation(this);
-                streams.add(result);
+                result.next = streams;
+                if (streams != null) {
+                    streams.previous = result;
+                }
+                streams = result;
                 inFlightOperations++;
             } finally {
                 lifecycleLock.unlock();
@@ -248,15 +250,15 @@ final class HttpTransportObservers {
                                 "stream observation");
                         if (candidate != NOOP_STREAM) {
                             StreamOutcome closedOutcome;
-                            result.lifecycleLock.lock();
+                            lifecycleLock.lock();
                             try {
                                 closedOutcome = result.outcome;
                                 if (closedOutcome == null) {
-                                    result.observations.add(candidate);
+                                    result.addObservation(candidate);
                                     continue;
                                 }
                             } finally {
-                                result.lifecycleLock.unlock();
+                                lifecycleLock.unlock();
                             }
                             try {
                                 candidate.close(closedOutcome);
@@ -305,13 +307,14 @@ final class HttpTransportObservers {
                     case NORMAL, LOCAL_CLOSE, REMOTE_CLOSE -> StreamOutcome.CANCELLED;
                     case TIMEOUT, ERROR -> StreamOutcome.ERROR;
                 };
-                for (CompositeStreamObservation stream : streams) {
-                    List<StreamObservation> streamObservations = stream.prepareClose(streamOutcome);
-                    if (streamObservations != null) {
+                while (streams != null) {
+                    CompositeStreamObservation stream = streams;
+                    removeStreamLocked(stream);
+                    if (stream.prepareClose(streamOutcome)) {
+                        Object streamObservations = stream.takeObservations();
                         childClosures.add(() -> stream.dispatchClose(streamObservations, streamOutcome));
                     }
                 }
-                streams.clear();
             } finally {
                 lifecycleLock.unlock();
             }
@@ -343,14 +346,14 @@ final class HttpTransportObservers {
         }
 
         private void closeStream(CompositeStreamObservation stream, StreamOutcome outcome) {
-            List<StreamObservation> observations;
+            Object observations;
             lifecycleLock.lock();
             try {
-                observations = stream.prepareClose(outcome);
-                if (observations == null) {
+                if (!stream.prepareClose(outcome)) {
                     return;
                 }
-                streams.remove(stream);
+                observations = stream.takeObservations();
+                removeStreamLocked(stream);
                 inFlightOperations++;
             } finally {
                 lifecycleLock.unlock();
@@ -360,6 +363,19 @@ final class HttpTransportObservers {
             } finally {
                 operationFinished();
             }
+        }
+
+        private void removeStreamLocked(CompositeStreamObservation stream) {
+            if (stream.previous == null) {
+                streams = stream.next;
+            } else {
+                stream.previous.next = stream.next;
+            }
+            if (stream.next != null) {
+                stream.next.previous = stream.previous;
+            }
+            stream.previous = null;
+            stream.next = null;
         }
 
         private boolean enqueueTransitionLocked(Runnable transition) {
@@ -479,13 +495,20 @@ final class HttpTransportObservers {
     }
 
     private static final class CompositeStreamObservation implements StreamObservation {
-        private final ReentrantLock lifecycleLock = new ReentrantLock();
         private final CompositeConnectionObservation owner;
-        private final List<StreamObservation> observations = new ArrayList<>();
+
+        // Guarded by the owner's lifecycle lock. Holds a single delegate or a delegate array.
+        private Object observations;
+        private int observationCount;
+        private CompositeStreamObservation previous;
+        private CompositeStreamObservation next;
         private StreamOutcome outcome;
 
         private CompositeStreamObservation(CompositeConnectionObservation owner) {
             this.owner = owner;
+            if (owner.observations.size() > 1) {
+                this.observations = new StreamObservation[owner.observations.size()];
+            }
         }
 
         @Override
@@ -494,29 +517,47 @@ final class HttpTransportObservers {
             owner.closeStream(this, outcome);
         }
 
-        private List<StreamObservation> prepareClose(StreamOutcome outcome) {
-            lifecycleLock.lock();
+        private static void closeObservation(StreamObservation observation, StreamOutcome outcome) {
             try {
-                if (this.outcome != null) {
-                    return null;
-                }
-                this.outcome = outcome;
-                List<StreamObservation> result = List.copyOf(observations);
-                observations.clear();
-                return result;
-            } finally {
-                lifecycleLock.unlock();
+                observation.close(outcome);
+            } catch (RuntimeException failure) {
+                observerFailed("stream close", failure);
+            } catch (Throwable failure) {
+                throw failure;
             }
         }
 
-        private void dispatchClose(List<StreamObservation> observations, StreamOutcome outcome) {
-            for (StreamObservation observation : observations) {
-                try {
-                    observation.close(outcome);
-                } catch (RuntimeException failure) {
-                    observerFailed("stream close", failure);
-                } catch (Throwable failure) {
-                    throw failure;
+        private void addObservation(StreamObservation observation) {
+            if (observations instanceof StreamObservation[] array) {
+                array[observationCount++] = observation;
+            } else {
+                observations = observation;
+            }
+        }
+
+        private boolean prepareClose(StreamOutcome outcome) {
+            if (this.outcome != null) {
+                return false;
+            }
+            this.outcome = outcome;
+            return true;
+        }
+
+        private Object takeObservations() {
+            Object current = observations;
+            observations = null;
+            return current;
+        }
+
+        private void dispatchClose(Object observations, StreamOutcome outcome) {
+            // prepareClose prevents further additions before transferring ownership out of the lock.
+            if (observations instanceof StreamObservation observation) {
+                closeObservation(observation, outcome);
+            } else if (observations instanceof StreamObservation[] array) {
+                for (int i = 0; i < observationCount; i++) {
+                    StreamObservation observation = array[i];
+                    array[i] = null;
+                    closeObservation(observation, outcome);
                 }
             }
         }

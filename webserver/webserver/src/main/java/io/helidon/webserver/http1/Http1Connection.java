@@ -48,6 +48,10 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HtmlEncoder;
 import io.helidon.http.HttpPrologue;
+import io.helidon.http.HttpTransportObserver.ConnectionObservation;
+import io.helidon.http.HttpTransportObserver.ConnectionOutcome;
+import io.helidon.http.HttpTransportObserver.StreamObservation;
+import io.helidon.http.HttpTransportObserver.StreamOutcome;
 import io.helidon.http.InternalServerException;
 import io.helidon.http.Method;
 import io.helidon.http.RequestException;
@@ -60,6 +64,7 @@ import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ErrorHandling;
+import io.helidon.webserver.HttpTransportObserverSupport;
 import io.helidon.webserver.ProxyProtocolData;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.SniRequestSupport;
@@ -75,6 +80,10 @@ import io.helidon.webserver.spi.ServerConnection;
 import static io.helidon.http.HeaderNames.X_FORWARDED_FOR;
 import static io.helidon.http.HeaderNames.X_FORWARDED_PORT;
 import static io.helidon.http.HeaderNames.X_HELIDON_CN;
+import static io.helidon.http.HttpTransportObserver.Direction.BIDIRECTIONAL;
+import static io.helidon.http.HttpTransportObserver.Initiator.REMOTE;
+import static io.helidon.http.HttpTransportObserver.PROTOCOL_HTTP_1_1;
+import static io.helidon.webserver.HttpTransportObserverSupport.isTimeout;
 import static io.helidon.webserver.ProxyProtocolData.Family.IPv4;
 import static io.helidon.webserver.ProxyProtocolData.Family.IPv6;
 import static java.lang.System.Logger.Level.DEBUG;
@@ -106,11 +115,17 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     private final Http1ConnectionListener recvListener;
     private final Http1ConnectionListener sendListener;
     private final Header altSvcHeader;
+    private final ConnectionObservation transportObservation;
+    private final boolean transportObserved;
 
     // overall connection
     private int requestId;
     private long currentEntitySize;
     private long currentEntitySizeRead;
+    private boolean protocolSelected;
+    private boolean applicationProcessing;
+    private StreamObservation currentStream = StreamObservation.noop();
+    private boolean currentStreamOpen;
 
     private volatile Thread myThread;
     private volatile boolean canRun = true;
@@ -144,6 +159,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                     Map<String, Http1Upgrader> upgradeProviderMap,
                     Header altSvcHeader) {
         this.ctx = ctx;
+        this.transportObservation = HttpTransportObserverSupport.connection(ctx);
+        this.transportObserved = transportObservation != ConnectionObservation.noop();
         this.writer = ctx.dataWriter();
         this.reader = ctx.dataReader();
         this.http1Config = http1Config;
@@ -185,6 +202,9 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 if (http1Config.validatePrologue()) {
                     validatePrologue(prologue);
                 }
+
+                openStream();
+
                 WritableHeaders<?> headers = http1headers.readHeaders(prologue);
                 if (http1Config.validateRequestHeaders()) {
                     validateHostHeader(prologue, headers, true);
@@ -239,6 +259,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                         Http1ServerRequest request = createNoEntityRequest(prologue, headers, accepted);
                                         Http1ServerResponse response = createResponse(request, !headers.containsToken(
                                                 HeaderValues.CONNECTION_CLOSE));
+                                        applicationProcessing(true);
                                         Http1UpgradeResult upgradeResult = Objects.requireNonNull(upgradeRouting.routeUpgrade(
                                                 ctx, request, response, response, routedUpgrade.get()));
                                         switch (upgradeResult.kind()) {
@@ -269,21 +290,28 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                                         throw e;
                                     }
                                     if (!keepConnectionOpen) {
+                                        recordCloseInitiator(headers);
+                                        closeStream(StreamOutcome.COMPLETED);
                                         return;
                                     }
                                     if (routedUpgradeConnection != null) {
+                                        closeStream(StreamOutcome.COMPLETED);
                                         handleUpgradeConnection(limit, routedUpgradeConnection);
                                         return;
                                     }
+                                    closeStream(StreamOutcome.COMPLETED);
                                     continue;
                                 }
                             } else {
+                                applicationProcessing(true);
                                 ServerConnection upgradeConnection = upgrader.upgrade(ctx, prologue, headers);
                                 // upgrader may decide not to upgrade this connection
                                 if (upgradeConnection != null) {
+                                    closeStream(StreamOutcome.COMPLETED);
                                     handleUpgradeConnection(limit, upgradeConnection);
                                     return;
                                 }
+                                applicationProcessing(false);
                             }
                         }
                     }
@@ -300,24 +328,9 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 }
             }
         } catch (DataReader.InsufficientDataAvailableException e) {
-            throw new CloseConnectionException("Connection closed by client", e);
-        } catch (CloseConnectionException e) {
-            throw e;
-        } catch (BadRequestException e) {
-            handleRequestException(RequestException.builder()
-                                           .message(e.getMessage())
-                                           .cause(e)
-                                           .type(EventType.BAD_REQUEST)
-                                           .status(e.status())
-                                           .build());
-        } catch (RequestException e) {
-            handleRequestException(e);
-        } catch (Throwable e) {
-            handleRequestException(RequestException.builder()
-                                           .message("Internal error")
-                                           .type(EventType.INTERNAL_ERROR)
-                                           .cause(e)
-                                           .build());
+            handleConnectionFailure(new CloseConnectionException("Connection closed by client", e));
+        } catch (Throwable failure) {
+            handleConnectionFailure(failure);
         }
     }
 
@@ -363,6 +376,17 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         } catch (SocketWriterException | UncheckedIOException e) {
             throw new ServerConnectionException("Failed to write continue", e);
         }
+    }
+
+    private static boolean causedByInsufficientData(Throwable failure) {
+        Throwable current = failure;
+        while (current != null) {
+            if (current instanceof DataReader.InsufficientDataAvailableException) {
+                return true;
+            }
+            current = current.getCause();
+        }
+        return false;
     }
 
     private void handleUpgradeConnection(Limit limit, ServerConnection upgradeConnection) throws InterruptedException {
@@ -559,7 +583,9 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             this.lastRequestTimestamp = DateTime.timestamp();
             if (!keepConnectionOpen) {
                 flushBeforeClose();
+                recordCloseInitiator(headers);
             }
+            closeStream(StreamOutcome.COMPLETED);
             return keepConnectionOpen;
         } catch (Throwable e) {
             if (!permitCompleted) {
@@ -573,6 +599,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         try {
             writer.flush();
         } catch (RuntimeException e) {
+            closeStream(StreamOutcome.ERROR);
             throw new CloseConnectionException("Failed to flush closing response", e);
         }
     }
@@ -663,6 +690,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             Http1ServerRequest request = createNoEntityRequest(prologue, headers, limitOutcome);
             Http1ServerResponse response = createResponse(request, !headers.containsToken(HeaderValues.CONNECTION_CLOSE));
 
+            applicationProcessing(true);
             routing.route(ctx, request, response);
             // we have handled a request without request entity
             return response.keepConnectionOpen();
@@ -724,6 +752,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
         Http1ServerResponse response = createResponse(request,
                                                       !request.headers().containsToken(HeaderValues.CONNECTION_CLOSE));
 
+        applicationProcessing(true);
         routing.route(ctx, request, response);
 
         consumeEntity(request, response, entityReadLatch);
@@ -781,6 +810,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             if (!response.isSent()) {
                 throw new InternalServerException(e.getMessage(), e, keepAlive);
             }
+            closeStream(StreamOutcome.ERROR);
             throw new CloseConnectionException("Failed to consume request entity, must close", e);
         }
     }
@@ -846,6 +876,120 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 .setKeepAlive(false)
                 .message("Unsupported request transfer encoding")
                 .build();
+    }
+
+    private void applicationProcessing(boolean started) {
+        if (transportObserved) {
+            applicationProcessing = started;
+        }
+    }
+
+    private void openStream() {
+        if (!transportObserved) {
+            return;
+        }
+        if (!protocolSelected) {
+            transportObservation.protocolSelected(PROTOCOL_HTTP_1_1);
+            protocolSelected = true;
+        }
+        if (currentStreamOpen) {
+            throw new IllegalStateException("Previous HTTP/1 exchange observation is still open");
+        }
+        currentStream = transportObservation.streamOpened(BIDIRECTIONAL, REMOTE);
+        currentStreamOpen = true;
+        applicationProcessing = false;
+    }
+
+    private void closeStream(StreamOutcome outcome) {
+        if (!currentStreamOpen) {
+            return;
+        }
+        currentStreamOpen = false;
+        currentStream.close(outcome);
+        currentStream = StreamObservation.noop();
+    }
+
+    private void recordCloseInitiator(WritableHeaders<?> requestHeaders) {
+        if (!transportObserved) {
+            return;
+        }
+        HttpTransportObserverSupport.connectionOutcome(
+                ctx,
+                requestHeaders.containsToken(HeaderValues.CONNECTION_CLOSE)
+                        ? ConnectionOutcome.REMOTE_CLOSE
+                        : ConnectionOutcome.LOCAL_CLOSE);
+    }
+
+    private void handleObservedRequestException(RequestException exception) {
+        boolean error = applicationProcessing || exception.eventType() == EventType.INTERNAL_ERROR;
+        StreamOutcome streamOutcome = error ? StreamOutcome.ERROR : StreamOutcome.REJECTED;
+        ConnectionOutcome connectionOutcome = error ? ConnectionOutcome.ERROR : ConnectionOutcome.LOCAL_CLOSE;
+        try {
+            handleRequestException(exception);
+            HttpTransportObserverSupport.connectionOutcome(ctx, connectionOutcome);
+            closeStream(streamOutcome);
+        } catch (Throwable failure) {
+            ConnectionOutcome outcome = failure instanceof CloseConnectionException && isTimeout(failure)
+                    ? ConnectionOutcome.TIMEOUT
+                    : ConnectionOutcome.ERROR;
+            HttpTransportObserverSupport.connectionOutcome(ctx, outcome);
+            closeStream(StreamOutcome.ERROR);
+            throw failure;
+        }
+    }
+
+    private void handleConnectionFailure(Throwable failure) {
+        // Explicit HTTP request errors retain their response status regardless of their cause.
+        if (!(failure instanceof BadRequestException)
+                && !(failure instanceof RequestException)
+                && isTimeout(failure)) {
+            HttpTransportObserverSupport.connectionOutcome(ctx, ConnectionOutcome.TIMEOUT);
+            closeStream(applicationProcessing ? StreamOutcome.ERROR : StreamOutcome.CANCELLED);
+            if (failure instanceof RuntimeException runtimeException) {
+                throw runtimeException;
+            }
+            if (failure instanceof Error error) {
+                throw error;
+            }
+            throw new ServerConnectionException("HTTP/1 transport timed out", failure);
+        }
+
+        if (failure instanceof CloseConnectionException closeConnectionException) {
+            if (upgradeConnection != null) {
+                throw closeConnectionException;
+            } else if (causedByInsufficientData(closeConnectionException)) {
+                HttpTransportObserverSupport.connectionOutcome(ctx, ConnectionOutcome.REMOTE_CLOSE);
+                closeStream(StreamOutcome.CANCELLED);
+            } else {
+                HttpTransportObserverSupport.connectionOutcome(ctx, ConnectionOutcome.ERROR);
+                closeStream(StreamOutcome.ERROR);
+            }
+            throw closeConnectionException;
+        }
+
+        RequestException requestException;
+        if (failure instanceof BadRequestException badRequestException) {
+            requestException = RequestException.builder()
+                    .message(badRequestException.getMessage())
+                    .cause(badRequestException)
+                    .type(EventType.BAD_REQUEST)
+                    .status(badRequestException.status())
+                    .build();
+        } else if (failure instanceof RequestException failureRequestException) {
+            requestException = failureRequestException;
+        } else {
+            requestException = RequestException.builder()
+                    .message("Internal error")
+                    .type(EventType.INTERNAL_ERROR)
+                    .cause(failure)
+                    .build();
+        }
+
+        if (upgradeConnection == null) {
+            handleObservedRequestException(requestException);
+        } else {
+            handleRequestException(requestException);
+        }
     }
 
     private void handleRequestException(RequestException e) {

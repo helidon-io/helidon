@@ -42,7 +42,14 @@ abstract class Http2SubProtocolWriter implements Http2StreamWriter {
             return;
         }
         if (!terminal || connectionWriter() == null) {
-            delegate().write(frame);
+            try {
+                delegate().write(frame);
+            } catch (Http2Exception e) {
+                throw e;
+            } catch (RuntimeException e) {
+                streamFailed();
+                throw e;
+            }
             if (terminal) {
                 closeFromLocal();
             }
@@ -66,7 +73,14 @@ abstract class Http2SubProtocolWriter implements Http2StreamWriter {
         boolean terminal = (frame.header().flags() & Http2Flag.END_OF_STREAM) != 0;
         Http2ConnectionWriter connectionWriter = connectionWriter();
         if (!terminal || connectionWriter == null) {
-            delegate().writeData(frame, outboundFlowControl);
+            try {
+                delegate().writeData(frame, outboundFlowControl);
+            } catch (Http2Exception e) {
+                throw e;
+            } catch (RuntimeException e) {
+                streamFailed();
+                throw e;
+            }
             if (terminal) {
                 closeFromLocal();
             }
@@ -94,7 +108,15 @@ abstract class Http2SubProtocolWriter implements Http2StreamWriter {
         Objects.requireNonNull(outboundFlowControl);
         Http2ConnectionWriter connectionWriter = connectionWriter();
         if (!flags.endOfStream() || connectionWriter == null) {
-            int written = delegate().writeHeaders(http2Headers, streamId, flags, outboundFlowControl);
+            int written;
+            try {
+                written = delegate().writeHeaders(http2Headers, streamId, flags, outboundFlowControl);
+            } catch (Http2Exception e) {
+                throw e;
+            } catch (RuntimeException e) {
+                streamFailed();
+                throw e;
+            }
             if (flags.endOfStream()) {
                 closeFromLocal();
             }
@@ -135,7 +157,15 @@ abstract class Http2SubProtocolWriter implements Http2StreamWriter {
         }
         Http2ConnectionWriter connectionWriter = connectionWriter();
         if (!terminal || connectionWriter == null) {
-            int written = delegate().writeHeaders(http2Headers, streamId, flags, dataFrame, outboundFlowControl);
+            int written;
+            try {
+                written = delegate().writeHeaders(http2Headers, streamId, flags, dataFrame, outboundFlowControl);
+            } catch (Http2Exception e) {
+                throw e;
+            } catch (RuntimeException e) {
+                streamFailed();
+                throw e;
+            }
             if (terminal) {
                 closeFromLocal();
             }
@@ -171,6 +201,8 @@ abstract class Http2SubProtocolWriter implements Http2StreamWriter {
     abstract void cleanupAfterLocalClose();
 
     abstract void failPublication();
+
+    abstract void streamFailed();
 
     abstract void writeSubProtocolReset(Http2FrameData frame, boolean trackedPublication);
 }

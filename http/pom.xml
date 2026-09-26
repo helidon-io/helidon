@@ -43,6 +43,7 @@
         <module>http1</module>
         <module>http2</module>
         <module>media</module>
+        <module>metrics</module>
         <module>sse</module>
     </modules>
 

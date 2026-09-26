@@ -151,6 +151,34 @@ class MetricsObserverRegistryTest {
     }
 
     @Test
+    void preparesAutoMetricsOncePerSocketWithMultipleEndpointRoutings() {
+        MeterRegistry meterRegistry = Services.get(MetricsFactory.class)
+                .createMeterRegistry(MetricsConfig.builder()
+                                             .warnOnMultipleRegistries(false)
+                                             .build());
+        var providerInvocations = new AtomicInteger();
+        MetricsObserver observer = new MetricsObserver(MetricsObserverConfig.builder().buildPrototype(),
+                                                       () -> meterRegistry,
+                                                       List::of,
+                                                       () -> List.of(config -> {
+                                                           providerInvocations.incrementAndGet();
+                                                           return Optional.empty();
+                                                       }));
+
+        try {
+            observer.register(featureContext(HttpRouting.builder()),
+                              List.of(HttpRouting.builder(), HttpRouting.builder()),
+                              UnaryOperator.identity());
+
+            assertThat("Endpoint routing count does not multiply application filters",
+                       providerInvocations.get(),
+                       is(1));
+        } finally {
+            meterRegistry.close();
+        }
+    }
+
+    @Test
     void directProviderRetainsGlobalFallback() {
         Observer observer = new MetricsObserveProvider().create(Config.empty(), "metrics");
         HttpRouting routing = registerAndBuild(observer);

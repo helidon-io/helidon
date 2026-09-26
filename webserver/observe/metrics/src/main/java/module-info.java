@@ -26,6 +26,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.webserver.observe.metrics {
 
     requires io.helidon.http.media.json;
+    requires io.helidon.http.metrics;
     requires io.helidon.metrics.api;
     requires io.helidon.service.registry;
     requires io.helidon.webserver;

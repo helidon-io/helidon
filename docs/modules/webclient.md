@@ -787,6 +787,46 @@ WebClient.builder()
 2. Passing the client configuration node
 <!--@mdc :: -->
 
+### HTTP Transport Metrics
+
+The `helidon-webclient-metrics` dependency also provides
+`io.helidon.webclient.metrics.WebClientTransportMetrics` for physical
+connections, TLS handshakes, and HTTP exchanges:
+
+```java
+WebClient client = WebClient.builder()
+        .addService(WebClientTransportMetrics.create())
+        .build();
+```
+
+Enable the same service using configuration:
+
+```yaml [application.yaml]
+client:
+  services:
+    http-metrics:
+      enabled: true
+```
+
+This service records `helidon.http.*` meters with `role=client`. HTTP/1 and
+HTTP/2 exchanges use `direction=bidi` and `initiator=local`. gRPC contributes
+HTTP/2 exchanges; WebSocket contributes its HTTP upgrade exchange. Individual
+gRPC messages and WebSocket frames are not HTTP exchange observations.
+
+Use `WebClientTransportMetrics.builder().meterRegistry(registry).build()` to
+share an explicit registry with WebServer and expose both roles in one output.
+Compatible enabled clients share protocol connection caches within their
+registry. Absent and disabled services retain the unobserved cache path and
+do not acquire a metrics lease. Release clients, including gRPC clients, using
+`closeResource()` when they are no longer needed.
+When the application owns the registry, initiate closure of all clients using
+`closeResourceAsync()`, then await the returned stages before closing the
+registry. Finish outstanding responses and close WebSocket sessions first.
+
+This transport service is independent of the existing `services.metrics`
+request metric definitions. See [HTTP transport metrics](metrics/metrics.md#protocol-coverage)
+for supported events, tags, outcomes, and enablement.
+
 ## Setting Protocol configuration
 
 Individual protocols can be customized using the `protocol-config` parameter.
