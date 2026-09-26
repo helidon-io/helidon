@@ -33,10 +33,11 @@ jobs:
         with:
           fetch-depth: 0
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
+        uses: actions/setup-java@v6
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
+          cache-jdk: true
           cache: maven
       - name: Copyright
         run: etc/scripts/copyright.sh
@@ -46,10 +47,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
+        uses: actions/setup-java@v6
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
+          cache-jdk: true
           cache: maven
       - name: Checkstyle
         run: etc/scripts/checkstyle.sh
@@ -59,10 +61,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
+        uses: actions/setup-java@v6
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
+          cache-jdk: true
           cache: maven
       - name: Spotbugs
         run: etc/scripts/spotbugs.sh
@@ -75,10 +78,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
+        uses: actions/setup-java@v6
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
+          cache-jdk: true
           cache: maven
       - name: Maven build
         run: etc/scripts/github-build.sh
@@ -96,10 +100,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
+        uses: actions/setup-java@v6
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
+          cache-jdk: true
           cache: maven
       - name: Docs
         run: etc/scripts/site.sh
@@ -112,10 +117,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
+        uses: actions/setup-java@v6
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
+          cache-jdk: true
           cache: maven
       - name: Maven build
         run: etc/scripts/github-tck.sh
@@ -129,10 +135,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
+        uses: actions/setup-java@v6
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
+          cache-jdk: true
           cache: maven
       - name: Maven build
         run: |
@@ -148,10 +155,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
+        uses: actions/setup-java@v6
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
+          cache-jdk: true
           cache: maven
       - name: Test archetypes
         run: etc/scripts/test-archetypes.sh
@@ -173,10 +181,11 @@ jobs:
           set-java-home: false
           cache: maven
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
+        uses: actions/setup-java@v6
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
+          cache-jdk: true
           cache: maven
       - name: Build Helidon
         run: etc/scripts/github-compile.sh

@@ -25,10 +25,11 @@ jobs:
         with:
           fetch-depth: 0
       - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4.1.0
+        uses: actions/setup-java@v6
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
+          cache-jdk: true
           cache: maven
       - name: Copyright
         run: etc/scripts/copyright.sh
@@ -42,10 +43,11 @@ jobs:
           token: ${{ secrets.SERVICE_ACCOUNT_TOKEN }}
           fetch-depth: '0'
       - name: Set up JDK 17
-        uses: actions/setup-java@v4.1.0
+        uses: actions/setup-java@v6
         with:
           distribution: ${{ env.JAVA_DISTRO }}
           java-version: ${{ env.JAVA_VERSION }}
+          cache-jdk: true
           cache: maven
       - name: Release
         env:
