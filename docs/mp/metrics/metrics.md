@@ -763,8 +763,8 @@ so at the correct point in the CDI lifecycle. Configuration can influence how
 the metrics system behaves, as the [configuration](#configuration-options)
 section below explains. Your code should work with metrics only after the
 Helidon metrics system has initialized itself using configuration. One way to
-accomplish this is to deal with metrics in a method that observes the Helidon
-`RuntimeStart` CDI event, which the [extension example
+accomplish this is to deal with metrics in a method that observes the CDI
+`@Initialized(ApplicationScoped.class)` event, which the [extension example
 below](#working-with-metrics-in-cdi-extensions) illustrates.
 
 ## Configuration options
@@ -1310,33 +1310,37 @@ curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=applica
 #### Working with Metrics in CDI Extensions
 
 You can work with metrics from your own CDI extension by observing the
-`RuntimeStart` event.
+`@Initialized(ApplicationScoped.class)` event.
 
 CDI Extension that works correctly with metrics:
 
 <!--@mdc ::code-callout -->
 ```java
 public class MyExtension implements Extension {
-    void startup(@Observes @RuntimeStart Object event,  // <1>
-                 MetricRegistry metricRegistry) {       // <2>
-        metricRegistry.counter("myCounter");         // <3>
+    void startup(@Observes @Initialized(ApplicationScoped.class) Object event,  // <1>
+                 MetricRegistry metricRegistry) {                               // <2>
+        metricRegistry.counter("myCounter");                                    // <3>
     }
 }
 ```
-1. Declares that your observer method responds to the `RuntimeStart` event. By
-   this time, Helidon has initialized the metrics system.
+1. Declares that your observer method responds to the
+   `@Initialized(ApplicationScoped.class)` event. By this time, Helidon has
+   initialized the metrics system. Observing Helidon’s `@RuntimeStart` is too
+   early for this purpose.
 2. Injects a `MetricRegistry` (the application registry by default).
 3. Uses the injected registry to register a metric (a counter in this case).
 <!--@mdc :: -->
 
-Helidon does not prevent you from working with metrics earlier than the
-`RuntimeStart` event, but, if you do so, then Helidon might ignore certain
-configuration settings that would otherwise control how metrics behaves.
+Helidon does not prevent you from working with metrics earlier than
+`@Initialized(ApplicationScoped.class)`, but, if you do so, then Helidon might
+ignore certain configuration settings that would otherwise control how metrics
+behaves.
 
 Instead, consider writing your extension to use earlier lifecycle events (such
 as `ProcessAnnotatedType`) to gather and store information about metrics that
-you want to register. Then your extension’s `RuntimeStart` observer method would
-use that stored information to register the metrics you need.
+you want to register. Then your extension’s
+`@Initialized(ApplicationScoped.class)` observer method would use that stored
+information to register the metrics you need.
 
 ## Configuration Example
 
