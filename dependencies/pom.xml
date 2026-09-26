@@ -84,11 +84,11 @@
         <version.lib.narayana>7.1.0.Final</version.lib.narayana>
         <version.lib.ojdbc.family>23</version.lib.ojdbc.family>
         <version.lib.ojdbc>${version.lib.ojdbc.family}.26.1.0.0</version.lib.ojdbc>
+        <version.lib.opentelemetry>1.66.0</version.lib.opentelemetry>
         <version.lib.opentelemetry.semconv>1.44.0</version.lib.opentelemetry.semconv>
-        <version.lib.opentelemetry>1.65.0</version.lib.opentelemetry>
         <version.lib.parsson>1.1.9</version.lib.parsson>
         <version.lib.postgresql>42.7.13</version.lib.postgresql>
-        <version.lib.prometheus>1.7.0</version.lib.prometheus>
+        <version.lib.prometheus>1.9.0</version.lib.prometheus>
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
         <version.lib.slf4j>2.0.17</version.lib.slf4j>
         <version.lib.snakeyaml>2.7</version.lib.snakeyaml>
@@ -227,22 +227,6 @@
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
                 <version>${version.lib.snakeyaml}</version>
-            </dependency>
-            <!-- Prometheus related -->
-            <dependency>
-                <groupId>io.prometheus</groupId>
-                <artifactId>prometheus-metrics-exposition-textformats</artifactId>
-                <version>${version.lib.prometheus}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.prometheus</groupId>
-                <artifactId>prometheus-metrics-model</artifactId>
-                <version>${version.lib.prometheus}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.prometheus</groupId>
-                <artifactId>prometheus-metrics-tracer-common</artifactId>
-                <version>${version.lib.prometheus}</version>
             </dependency>
             <dependency>
                 <groupId>net.bytebuddy</groupId>
@@ -514,6 +498,13 @@
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-bom</artifactId>
                 <version>${version.lib.opentelemetry}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.prometheus</groupId>
+                <artifactId>prometheus-metrics-bom</artifactId>
+                <version>${version.lib.prometheus}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
