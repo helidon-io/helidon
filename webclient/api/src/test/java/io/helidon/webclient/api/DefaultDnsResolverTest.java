@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,14 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
+import static io.helidon.webclient.api.TestAddresses.V4_A;
+import static io.helidon.webclient.api.TestAddresses.V6_A;
+import static io.helidon.webclient.api.TestAddresses.ipv4First;
+import static io.helidon.webclient.api.TestAddresses.ipv6First;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class DefaultDnsResolverTest {
 
@@ -41,6 +47,40 @@ class DefaultDnsResolverTest {
         DefaultDnsResolver resolver = DefaultDnsResolver.create();
         InetAddress inetAddress = resolver.resolveAddress("localhost", DnsAddressLookup.IPV6_PREFERRED);
         assertThat(inetAddress.getHostAddress(), is("0:0:0:0:0:0:0:1"));
+    }
+
+    @Test
+    void testMixedIpv6FirstResolution() {
+        DefaultDnsResolver resolver = new DefaultDnsResolver(hostname -> ipv6First());
+        assertThat(resolver.resolveAddress("mixed", DnsAddressLookup.IPV4_PREFERRED), sameInstance(V4_A));
+        assertThat(resolver.resolveAddress("mixed", DnsAddressLookup.IPV6_PREFERRED), sameInstance(V6_A));
+        assertThat(resolver.resolveAddress("mixed", DnsAddressLookup.IPV4), sameInstance(V4_A));
+        assertThat(resolver.resolveAddress("mixed", DnsAddressLookup.IPV6), sameInstance(V6_A));
+        assertThat(resolver.resolveAddress("mixed", DnsAddressLookup.SYSTEM), sameInstance(V6_A));
+    }
+
+    @Test
+    void testMixedIpv4FirstResolution() {
+        DefaultDnsResolver resolver = new DefaultDnsResolver(hostname -> ipv4First());
+        assertThat(resolver.resolveAddress("mixed", DnsAddressLookup.IPV4_PREFERRED), sameInstance(V4_A));
+        assertThat(resolver.resolveAddress("mixed", DnsAddressLookup.IPV6_PREFERRED), sameInstance(V6_A));
+        assertThat(resolver.resolveAddress("mixed", DnsAddressLookup.IPV4), sameInstance(V4_A));
+        assertThat(resolver.resolveAddress("mixed", DnsAddressLookup.IPV6), sameInstance(V6_A));
+        assertThat(resolver.resolveAddress("mixed", DnsAddressLookup.SYSTEM), sameInstance(V4_A));
+    }
+
+    @Test
+    void testNoMatchingAddress() {
+        DefaultDnsResolver resolver = new DefaultDnsResolver(hostname -> new InetAddress[] {V4_A});
+        assertThrows(IllegalArgumentException.class, () -> resolver.resolveAddress("v4only", DnsAddressLookup.IPV6));
+    }
+
+    @Test
+    void testUnknownHost() {
+        DefaultDnsResolver resolver = new DefaultDnsResolver(hostname -> {
+            throw new UnknownHostException(hostname);
+        });
+        assertThrows(IllegalArgumentException.class, () -> resolver.resolveAddress("unknown", DnsAddressLookup.SYSTEM));
     }
 
     private boolean isIPv6Configured() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,10 +45,24 @@ public enum DnsAddressLookup {
     /**
      * Both IPv4 and IPv6 addresses will be used, but if there are any IPv6, they take precedence.
      */
-    IPV6_PREFERRED(new Ipv6Preferred());
+    IPV6_PREFERRED(new Ipv6Preferred()),
+
+    /**
+     * Both IPv4 and IPv6 addresses will be used, in the order returned by the resolver.
+     * This matches the JDK behavior when {@code java.net.preferIPv6Addresses} is set to {@code system}.
+     */
+    SYSTEM(new SystemOrder());
 
     /**
      * Default address lookup for this VM.
+     * <p>
+     * The default is derived from the JDK networking system properties:
+     * <ul>
+     *     <li>{@link #IPV4_PREFERRED} if {@code java.net.preferIPv4Stack} is {@code true}</li>
+     *     <li>{@link #IPV6_PREFERRED} if {@code java.net.preferIPv6Addresses} is {@code true}</li>
+     *     <li>{@link #SYSTEM} if {@code java.net.preferIPv6Addresses} is {@code system}</li>
+     *     <li>{@link #IPV4_PREFERRED} otherwise</li>
+     * </ul>
      *
      * @return default lookup
      */
@@ -110,6 +124,14 @@ public enum DnsAddressLookup {
             InetAddress[] copy = Arrays.copyOfRange(addresses, 0, addresses.length);
             Arrays.sort(copy, (o1, o2) -> COMPARATOR.compare(o1, o2) * -1);
             return copy;
+        }
+    }
+
+    private static class SystemOrder implements Function<InetAddress[], InetAddress[]> {
+
+        @Override
+        public InetAddress[] apply(InetAddress[] addresses) {
+            return Arrays.copyOfRange(addresses, 0, addresses.length);
         }
     }
 
