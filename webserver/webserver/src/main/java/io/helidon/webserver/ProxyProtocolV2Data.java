@@ -15,7 +15,9 @@
  */
 package io.helidon.webserver;
 
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.net.UnixDomainSocketAddress;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -36,23 +38,33 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
     Command command();
 
     /**
-     * The source address, which may be either an {@link java.net.InetSocketAddress} or a {@link java.net.UnixDomainSocketAddress}.
-     * If the address family is {@link io.helidon.webserver.ProxyProtocolData.Family#UNKNOWN}, then
-     * this will contain an {@link java.net.InetSocketAddress} with the contents "0.0.0.0:0".
+     * The source address, which may be either an {@link InetSocketAddress} or a
+     * {@link UnixDomainSocketAddress}.
+     * If the address family is {@link ProxyProtocolData.Family#UNKNOWN} or the transport protocol is
+     * {@link ProxyProtocolData.Protocol#UNKNOWN}, then
+     * this will contain an {@link InetSocketAddress} with the contents "0.0.0.0:0". If
+     * {@link #command()} is {@link Command#LOCAL}, this returns the same unspecified address because address
+     * information from LOCAL headers is ignored.
      * @return The source socket address.
      */
     SocketAddress sourceSocketAddress();
 
     /**
-     * The destination address, which may be either an {@link java.net.InetSocketAddress} or a {@link java.net.UnixDomainSocketAddress}.
-     * If the address family is {@link io.helidon.webserver.ProxyProtocolData.Family#UNKNOWN}, then
-     * this will contain an {@link java.net.InetSocketAddress} with the contents "0.0.0.0:0".
+     * The destination address, which may be either an {@link InetSocketAddress} or a
+     * {@link UnixDomainSocketAddress}.
+     * If the address family is {@link ProxyProtocolData.Family#UNKNOWN} or the transport protocol is
+     * {@link ProxyProtocolData.Protocol#UNKNOWN}, then
+     * this will contain an {@link InetSocketAddress} with the contents "0.0.0.0:0". If
+     * {@link #command()} is {@link Command#LOCAL}, this returns the same unspecified address because address
+     * information from LOCAL headers is ignored.
      * @return The destination socket address.
      */
     SocketAddress destSocketAddress();
 
     /**
-     * The possibly-empty list of additional Tag-Length-Value vectors included in the proxy header.
+     * The possibly-empty list of additional Tag-Length-Value vectors included in the proxy header. This is empty if
+     * {@link #command()} is {@link Command#LOCAL}, the address family is {@link ProxyProtocolData.Family#UNKNOWN},
+     * or the transport protocol is {@link ProxyProtocolData.Protocol#UNKNOWN}, because the header data is ignored.
      * @return A never-null list of Tag-Length-Value data.
      */
     List<Tlv> tlvs();
@@ -66,7 +78,8 @@ public interface ProxyProtocolV2Data extends ProxyProtocolData {
         /**
          * The connection was established on purpose by the proxy without being relayed.
          * The connection endpoints are the sender and the receiver. Such connections
-         * exist when the proxy sends health-checks to the server.
+         * exist when the proxy sends health-checks to the server. The protocol family and
+         * transport are ignored and reported as {@link Family#UNKNOWN} and {@link Protocol#UNKNOWN}.
          */
         LOCAL,
 

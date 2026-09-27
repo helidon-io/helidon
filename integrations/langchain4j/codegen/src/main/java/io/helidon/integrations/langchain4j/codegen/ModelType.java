@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,15 @@
 
 package io.helidon.integrations.langchain4j.codegen;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.common.types.TypeInfo;
@@ -82,14 +87,56 @@ enum ModelType {
     }
 
     static void allParents(TypeInfo ti, List<TypeInfo> lineage) {
-        lineage.add(ti);
-        for (Optional<TypeInfo> t = ti.superTypeInfo();
-                t.isPresent();
-                t = t.get().superTypeInfo()) {
-            allParents(t.get(), lineage);
+        // A pre-order traversal can emit a shared ancestor before a more specific sibling in a diamond.
+        // Collect immediate edges first so the lineage can be ordered child before parent.
+        Map<TypeName, TypeInfo> types = new LinkedHashMap<>();
+        Map<TypeName, Set<TypeName>> parents = new LinkedHashMap<>();
+        Map<TypeName, Integer> childCounts = new HashMap<>();
+        Deque<TypeInfo> toVisit = new ArrayDeque<>();
+        toVisit.add(ti);
+
+        while (!toVisit.isEmpty()) {
+            TypeInfo current = toVisit.removeFirst();
+            TypeName currentType = current.typeName();
+            if (types.putIfAbsent(currentType, current) != null) {
+                continue;
+            }
+
+            childCounts.putIfAbsent(currentType, 0);
+            Set<TypeName> currentParents = parents.computeIfAbsent(currentType, ignored -> new LinkedHashSet<>());
+            current.superTypeInfo().ifPresent(parent -> addParent(parent,
+                                                                  currentParents,
+                                                                  childCounts,
+                                                                  toVisit));
+            for (TypeInfo parent : current.interfaceTypeInfo()) {
+                addParent(parent, currentParents, childCounts, toVisit);
+            }
         }
-        for (TypeInfo i : ti.interfaceTypeInfo()) {
-            allParents(i, lineage);
+
+        Deque<TypeName> ready = new ArrayDeque<>();
+        types.keySet().stream()
+                .filter(type -> childCounts.get(type) == 0)
+                .forEach(ready::addLast);
+
+        while (!ready.isEmpty()) {
+            TypeName current = ready.removeFirst();
+            lineage.add(types.get(current));
+            for (TypeName parent : parents.getOrDefault(current, Set.of())) {
+                int remainingChildren = childCounts.compute(parent, (type, count) -> count - 1);
+                if (remainingChildren == 0) {
+                    ready.addLast(parent);
+                }
+            }
+        }
+    }
+
+    private static void addParent(TypeInfo parent,
+                                  Set<TypeName> parents,
+                                  Map<TypeName, Integer> childCounts,
+                                  Deque<TypeInfo> toVisit) {
+        if (parents.add(parent.typeName())) {
+            childCounts.merge(parent.typeName(), 1, Integer::sum);
+            toVisit.addLast(parent);
         }
     }
 }

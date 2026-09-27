@@ -21,7 +21,7 @@
     <parent>
         <groupId>io.helidon.tests.benchmark</groupId>
         <artifactId>helidon-tests-benchmark-project</artifactId>
-        <version>4.5.2-SNAPSHOT</version>
+        <version>4.5.6-SNAPSHOT</version>
     </parent>
 
     <artifactId>helidon-tests-benchmark-jmh</artifactId>
@@ -29,8 +29,20 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-uri</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.webclient</groupId>
             <artifactId>helidon-webclient-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-http1</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-http2</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.webclient</groupId>
@@ -43,6 +55,10 @@
         <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-http2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webclient</groupId>
+            <artifactId>helidon-webclient-http1</artifactId>
         </dependency>
         <dependency>
             <groupId>org.openjdk.jmh</groupId>

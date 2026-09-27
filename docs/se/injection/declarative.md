@@ -497,6 +497,10 @@ interceptor. Type-use validation is supported on nested `Optional`,
 `Collection`, `List`, `Set`, `Map` key/value types, array component types, and
 wildcard bounds.
 
+Cascaded validation is skipped when a value annotated with `@Validation.Valid`
+is `null`. The annotation does not make the value required; add
+`@Validation.NotNull` when `null` must be rejected.
+
 #### Usage
 
 Example of a validated type
@@ -787,6 +791,20 @@ Supported method parameters (no annotation required):
 - `int` (`@WebSocket.OnClose`) - the close code
 - `java.lang.String` (`@WebSocket.OnClose`) - the close reason
 - `java.lang.Throwable` (`@WebSocket.OnError`) - the throwable thrown
+
+When a message is combined before delivery, the server and client each use a
+default buffering threshold configured as 1 MiB. Configure the server limit
+with `server.protocols.websocket.max-buffered-message-size`, and the client
+limit with `protocol-config.max-buffered-message-size` in `WsClient`
+configuration. If a combined message exceeds the applicable limit, that side
+closes the connection with WebSocket close code `1009`. The server limit is
+independent of `max-frame-length`, which applies to each individual frame.
+Binary messages are measured exactly in bytes. Text message size is
+approximated using the number of UTF-16 code units in each decoded string
+fragment and may be smaller than the UTF-8 payload size. Methods that accept
+the trailing `boolean` fragment indicator, `Reader`, or `InputStream` consume
+fragments without whole-message buffering and are not limited by
+`max-buffered-message-size`.
 
 Annotations on endpoint type:
 

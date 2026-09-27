@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import io.helidon.common.Weight;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
 
-
 @Service.Singleton
 @Service.Named("*")
 @Weight(85.0D)
@@ -34,12 +33,22 @@ public class MockProxyFactory implements Service.ServicesFactory<Proxy> {
 
         return List.of(
                 Service.QualifiedInstance.create(createMockProxy("defaultProxy"), Qualifier.createNamed("@default")),
-                Service.QualifiedInstance.create(createMockProxy("customProxy"), Qualifier.createNamed("customProxy"))
+                Service.QualifiedInstance.create(createMockProxy("customProxy"), Qualifier.createNamed("customProxy")),
+                Service.QualifiedInstance.create(createSocksProxy("socksProxy"), Qualifier.createNamed("socksProxy"))
         );
     }
 
     private static Proxy createMockProxy(String name) {
         return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(8080)) {
+            @Override
+            public String toString() {
+                return name;
+            }
+        };
+    }
+
+    private static Proxy createSocksProxy(String name) {
+        return new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(1080)) {
             @Override
             public String toString() {
                 return name;

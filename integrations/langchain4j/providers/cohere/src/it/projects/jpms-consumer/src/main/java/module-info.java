@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package io.helidon.integrations.oci.tls.certificates;
-
-class OciTestUtils {
-    static boolean ociRealUsage() {
-        return Boolean.getBoolean("oci.real.usage");
-    }
+/**
+ * Downstream Cohere provider consumer.
+ */
+module io.helidon.integrations.langchain4j.providers.cohere.it {
+    requires io.helidon.integrations.langchain4j.providers.cohere;
 }

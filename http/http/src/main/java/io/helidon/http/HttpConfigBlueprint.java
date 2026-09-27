@@ -23,10 +23,22 @@ import io.helidon.common.Size;
 /**
  * Common configuration of HTTP protocol, regardless of its version.
  */
-@Prototype.Blueprint
+@Prototype.Blueprint(decorator = HttpConfigSupport.BuilderDecorator.class)
 @Prototype.Configured
 @Prototype.IncludeDefaultMethods
 interface HttpConfigBlueprint {
+    /**
+     * Configure the maximum allowed headers size, which must be greater than {@code 0}.
+     * Defaults to {@code 16384}.
+     *
+     * @return maximum headers size
+     */
+    @Option.Configured
+    @Option.DefaultInt(16384)
+    default int maxHeadersSize() {
+        return 16_384;
+    }
+
     /**
      * Configure the maximum size allowed for an entity that can be explicitly
      * buffered by the application by calling {@code io.helidon.http.media.ReadableEntity.buffer()}.

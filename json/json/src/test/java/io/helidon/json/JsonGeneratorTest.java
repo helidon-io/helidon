@@ -356,6 +356,40 @@ class JsonGeneratorTest {
 
     @ParameterizedTest
     @EnumSource(GeneratorMethod.class)
+    public void testWriteBoundedNegativeScaleJsonNumberAsInteger(GeneratorMethod generatorMethod) throws Exception {
+        for (String literal : new String[] {"1E+1", "1E+3"}) {
+            BigDecimal value = new BigDecimal(literal);
+            GeneratorMethod.Target target = generatorMethod.createTarget();
+            try (JsonGenerator generator = target.createGenerator()) {
+                generator.write(JsonNumber.create(value));
+            }
+
+            assertThat(target.generatedJson(), is(value.toBigIntegerExact().toString()));
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(GeneratorMethod.class)
+    public void testWriteLargeExponentJsonNumberInCompactForm(GeneratorMethod generatorMethod) throws Exception {
+        for (String literal : new String[] {"1e4", "-1e4",
+                                            "1e100000", "-1e100000",
+                                            "1e100001", "-1e100001",
+                                            "1e2147483647", "-1e2147483647",
+                                            "1e2147483648", "-1e2147483648"}) {
+            JsonNumber number = JsonParser.create(literal).readJsonValue().asNumber();
+            GeneratorMethod.Target target = generatorMethod.createTarget();
+            try (JsonGenerator generator = target.createGenerator()) {
+                generator.write(number);
+            }
+
+            String expected = new BigDecimal(literal).toString();
+            assertThat(target.generatedJson().length(), is(expected.length()));
+            assertThat(target.generatedJson(), is(expected));
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(GeneratorMethod.class)
     public void testWriteBigDecimalAsNumber(GeneratorMethod generatorMethod) throws Exception {
         GeneratorMethod.Target target = generatorMethod.createTarget();
         try (JsonGenerator generator = target.createGenerator()) {

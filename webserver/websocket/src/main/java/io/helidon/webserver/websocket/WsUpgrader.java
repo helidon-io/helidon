@@ -106,16 +106,18 @@ public class WsUpgrader implements Http1Upgrader {
     protected static final Header SUPPORTED_VERSION_HEADER = HeaderValues.create(WS_VERSION, SUPPORTED_VERSION);
     static final Headers EMPTY_HEADERS = WritableHeaders.create();
     private static final System.Logger LOGGER = System.getLogger(WsUpgrader.class.getName());
-    private static final Header CONNECTION_UPGRADE = HeaderValues.create(HeaderNames.CONNECTION, "Upgrade");
+    private static final Header CONNECTION_UPGRADE = HeaderValues.createCached(HeaderNames.CONNECTION, "Upgrade");
     private static final byte[] KEY_SUFFIX = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11".getBytes(US_ASCII);
     private static final int KEY_SUFFIX_LENGTH = KEY_SUFFIX.length;
     private static final Base64.Decoder B64_DECODER = Base64.getDecoder();
     private static final Base64.Encoder B64_ENCODER = Base64.getEncoder();
     private static final byte[] HEADERS_SEPARATOR = "\r\n".getBytes(US_ASCII);
+    private final WsConfig wsConfig;
     private final Set<String> origins;
     private final boolean anyOrigin;
 
     protected WsUpgrader(WsConfig wsConfig) {
+        this.wsConfig = wsConfig;
         this.origins = wsConfig.origins();
         this.anyOrigin = this.origins.isEmpty();
     }
@@ -164,7 +166,12 @@ public class WsUpgrader implements Http1Upgrader {
             LOGGER.log(Level.TRACE, "Upgraded to websocket version " + SUPPORTED_VERSION);
         }
 
-        return WsConnection.create(ctx, prologue, upgradeHeaders.orElse(EMPTY_HEADERS), prepared.wsKey, wsListener);
+        return WsConnection.create(ctx,
+                                   prologue,
+                                   upgradeHeaders.orElse(EMPTY_HEADERS),
+                                   prepared.wsKey,
+                                   wsListener,
+                                   wsConfig);
     }
 
     private Optional<PreparedUpgrade> prepareUpgrade(ConnectionContext ctx,
@@ -429,7 +436,12 @@ public class WsUpgrader implements Http1Upgrader {
             }
 
             return Http1UpgradeResult.upgraded(
-                    WsConnection.create(ctx, prologue, upgradeHeaders.orElse(EMPTY_HEADERS), prepared.wsKey, wsListener));
+                    WsConnection.create(ctx,
+                                        prologue,
+                                        upgradeHeaders.orElse(EMPTY_HEADERS),
+                                        prepared.wsKey,
+                                        wsListener,
+                                        wsConfig));
         }
     }
 

@@ -33,6 +33,24 @@ public final class AiProvider {
     }
 
     /**
+     * Lifecycle contract for model configurations consumed by generated model factories.
+     * <p>
+     * Generated factories close model instances by default. A configuration that supplies externally owned resources
+     * to a model can opt out so closing the model does not also close those resources.
+     */
+    public interface ModelLifecycle {
+
+        /**
+         * Whether the generated model factory owns and should close the configured model.
+         *
+         * @return {@code true} when the generated factory should close the model
+         */
+        default boolean closeModelOnShutdown() {
+            return true;
+        }
+    }
+
+    /**
      * Default config key used under langchain4j context for all model configs in the same class.
      * Override provider key otherwise derived from class name prefix.
      */

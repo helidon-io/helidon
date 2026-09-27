@@ -65,7 +65,7 @@ HTTP/1.1 server configuration
 <td>
 <code>true</code>
 </td>
-<td>If set to false, any query and fragment is accepted (even containing illegal characters)</td>
+<td>Disables query and fragment syntax validation when set to <code>false</code>; intended only for closed systems receiving trusted, valid request targets, as behavior for invalid input is unspecified</td>
 </tr>
 <tr>
 <td>
@@ -77,7 +77,7 @@ HTTP/1.1 server configuration
 <td>
 <code>true</code>
 </td>
-<td>If set to false, any path is accepted (even containing illegal characters)</td>
+<td>Whether to validate path characters and HTTP/1.1 request-target forms</td>
 </tr>
 <tr>
 <td>
@@ -89,7 +89,7 @@ HTTP/1.1 server configuration
 <td>
 <code>16384</code>
 </td>
-<td>Maximal size of received headers in bytes</td>
+<td>Maximum size of received headers in bytes, which must be greater than <code>0</code></td>
 </tr>
 <tr>
 <td>

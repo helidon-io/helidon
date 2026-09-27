@@ -21,8 +21,6 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.lang.System.Logger.Level;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -62,16 +60,33 @@ public abstract class WsListenerBase implements WsListener {
     private final AtomicReference<Future<?>> binaryFuture = new AtomicReference<>();
     private final AtomicReference<Future<?>> textFuture = new AtomicReference<>();
 
+    private long bufferedTextSize;
+    private long bufferedBinarySize;
+
     // this also does not need to be guarded, as the field is only accessed from the connection thread
     private SynchronousQueue<BinaryPayload> currentStreamQueue;
     private SynchronousQueue<TextPayload> currentReaderQueue;
 
-    private List<BufferData> buffers;
+    private BufferData bufferedBinary;
+
+    /**
+     * Constructor for subclasses.
+     */
+    protected WsListenerBase() {
+    }
 
     protected void textString(WsSession session,
                               String text,
                               boolean last,
                               Functions.CheckedConsumer<String, ?> stringConsumer) {
+        long fragmentSize = text.length();
+        long maxBufferedMessageSize = session.protocolConfig().maxBufferedMessageSize().toBytes();
+        if (fragmentSize > maxBufferedMessageSize - bufferedTextSize) {
+            stringBuilder.setLength(0);
+            bufferedTextSize = 0;
+            throw new WsCloseException("Message too large", WsCloseCodes.TOO_BIG);
+        }
+        bufferedTextSize += fragmentSize;
         stringBuilder.append(text);
 
         if (last) {
@@ -79,8 +94,10 @@ public abstract class WsListenerBase implements WsListener {
                 stringConsumer.accept(stringBuilder.toString());
             } catch (Throwable e) {
                 onError(session, e);
+            } finally {
+                stringBuilder.setLength(0);
+                bufferedTextSize = 0;
             }
-            stringBuilder.setLength(0);
         }
     }
 
@@ -145,18 +162,14 @@ public abstract class WsListenerBase implements WsListener {
                                     BufferData buffer,
                                     boolean last,
                                     Functions.CheckedConsumer<BufferData, ?> bufferDataConsumer) {
-
-        if (buffers == null) {
-            buffers = new ArrayList<>();
+        BufferData message = bufferBinary(session, buffer, last);
+        if (message == null) {
+            return;
         }
-        buffers.add(buffer);
-        if (last) {
-            try {
-                bufferDataConsumer.accept(BufferData.create(buffers));
-            } catch (Throwable e) {
-                onError(session, e);
-            }
-            buffers = null;
+        try {
+            bufferDataConsumer.accept(message);
+        } catch (Throwable e) {
+            onError(session, e);
         }
     }
 
@@ -164,22 +177,17 @@ public abstract class WsListenerBase implements WsListener {
                                     BufferData buffer,
                                     boolean last,
                                     Functions.CheckedConsumer<ByteBuffer, ?> streamConsumer) {
-
-        if (buffers == null) {
-            buffers = new ArrayList<>();
+        BufferData message = bufferBinary(session, buffer, last);
+        if (message == null) {
+            return;
         }
-        buffers.add(buffer);
-        if (last) {
-            try {
-                BufferData combined = BufferData.create(buffers);
-                ByteBuffer byteBuffer = ByteBuffer.allocate(combined.available());
-                combined.writeTo(byteBuffer, combined.available());
-                byteBuffer.flip();
-                streamConsumer.accept(byteBuffer);
-            } catch (Throwable e) {
-                onError(session, e);
-            }
-            buffers = null;
+        try {
+            ByteBuffer byteBuffer = ByteBuffer.allocate(message.available());
+            message.writeTo(byteBuffer, message.available());
+            byteBuffer.flip();
+            streamConsumer.accept(byteBuffer);
+        } catch (Throwable e) {
+            onError(session, e);
         }
     }
 
@@ -187,22 +195,48 @@ public abstract class WsListenerBase implements WsListener {
                                    BufferData buffer,
                                    boolean last,
                                    Functions.CheckedConsumer<byte[], ?> byteArrayConsumer) {
+        BufferData message = bufferBinary(session, buffer, last);
+        if (message == null) {
+            return;
+        }
+        try {
+            byte[] byteArray = message.available() == 0 ? BufferData.EMPTY_BYTES : new byte[message.available()];
+            message.read(byteArray);
+            byteArrayConsumer.accept(byteArray);
+        } catch (Throwable e) {
+            onError(session, e);
+        }
+    }
 
-        if (buffers == null) {
-            buffers = new ArrayList<>();
+    private BufferData bufferBinary(WsSession session, BufferData buffer, boolean last) {
+        int fragmentSize = buffer.available();
+        long maxBufferedMessageSize = session.protocolConfig().maxBufferedMessageSize().toBytes();
+        if (fragmentSize > maxBufferedMessageSize - bufferedBinarySize) {
+            bufferedBinary = null;
+            bufferedBinarySize = 0;
+            throw new WsCloseException("Message too large", WsCloseCodes.TOO_BIG);
         }
-        buffers.add(buffer);
-        if (last) {
-            try {
-                BufferData combined = BufferData.create(buffers);
-                byte[] byteArray = new byte[combined.available()];
-                combined.read(byteArray);
-                byteArrayConsumer.accept(byteArray);
-            } catch (Throwable e) {
-                onError(session, e);
+
+        if (last && bufferedBinary == null) {
+            return buffer;
+        }
+
+        if (fragmentSize != 0) {
+            if (bufferedBinary == null) {
+                bufferedBinary = BufferData.growing(fragmentSize);
             }
-            buffers = null;
+            bufferedBinary.write(buffer);
+            bufferedBinarySize += fragmentSize;
         }
+
+        if (!last) {
+            return null;
+        }
+
+        BufferData message = bufferedBinary;
+        bufferedBinary = null;
+        bufferedBinarySize = 0;
+        return message == null ? BufferData.empty() : message;
     }
 
     protected void binaryInputStream(WsSession session,

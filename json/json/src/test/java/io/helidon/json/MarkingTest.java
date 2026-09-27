@@ -16,9 +16,12 @@
 
 package io.helidon.json;
 
+import java.math.BigInteger;
+
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -61,6 +64,22 @@ class MarkingTest {
         parser.resetToMark();
         assertThat(parser.readDouble(), is(123.45));
         assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    public void testMarkAndResetDoesNotRestoreBigIntegerExpansionBudget(ParserMethod parserMethod) {
+        JsonParser parser = parserMethod.createParser("1e4096");
+        BigInteger expected = BigInteger.TEN.pow(4_096);
+
+        for (int i = 0; i < 16; i++) {
+            parser.mark();
+            assertThat(parser.readJsonNumber().bigIntegerValue(), is(expected));
+            parser.resetToMark();
+        }
+        JsonException exception = assertThrows(JsonException.class,
+                                               () -> parser.readJsonNumber().bigIntegerValue());
+        assertThat(exception.getMessage(), containsString("65536"));
     }
 
     @ParameterizedTest

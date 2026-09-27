@@ -677,6 +677,43 @@ class SmileGeneratorTest {
     }
 
     @Test
+    void encodesBoundedNegativeScaleJsonNumberUsingIntegerToken() {
+        for (String literal : new String[] {"1E+1", "1E+3"}) {
+            BigDecimal value = new BigDecimal(literal);
+            int intValue = value.intValueExact();
+
+            byte[] actual = generateBytes(gen -> gen.write(JsonNumber.create(value)));
+            byte[] expected;
+            if (intValue >= -16 && intValue <= 15) {
+                expected = bytes(HEADER_0, HEADER_1, HEADER_2, HEADER_FEATURES,
+                                 (byte) (0xC0 | (zigzagInt(intValue) & 0x1F)));
+            } else {
+                expected = concat(bytes(HEADER_0, HEADER_1, HEADER_2, HEADER_FEATURES, (byte) 0x24),
+                                  encodeVInt(zigzagInt(intValue)));
+            }
+
+            assertArrayEquals(expected, actual);
+        }
+    }
+
+    @Test
+    void encodesLargeNegativeScaleJsonNumberUsingBigDecimalToken() {
+        for (String literal : new String[] {"1E+4", "1E+100000", "-1E+100000",
+                                            "1E+2147483647", "-1E+2147483647",
+                                            "1E+2147483648", "-1E+2147483648"}) {
+            BigDecimal value = new BigDecimal(literal);
+            byte[] magnitude = value.unscaledValue().toByteArray();
+
+            byte[] actual = generateBytes(gen -> gen.write(JsonNumber.create(value)));
+            byte[] expected = concat(bytes(HEADER_0, HEADER_1, HEADER_2, HEADER_FEATURES, (byte) 0x2A),
+                                     concat(encodeVInt(zigzagInt(value.scale()) & 0xFFFFFFFFL),
+                                     concat(encodeVInt(magnitude.length), encode7Bit(magnitude))));
+
+            assertArrayEquals(expected, actual);
+        }
+    }
+
+    @Test
     void encodesJsonValueBooleanAndNull() {
         byte[] actualTrue = generateBytes(gen -> gen.write(JsonBoolean.TRUE));
         byte[] expectedTrue = bytes(HEADER_0, HEADER_1, HEADER_2, HEADER_FEATURES,

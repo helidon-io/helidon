@@ -18,8 +18,14 @@ package io.helidon.webserver.tests;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.List;
 
+import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
@@ -27,11 +33,15 @@ import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
 import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.RepeatedTest;
+import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.http.Status.INTERNAL_SERVER_ERROR_500;
@@ -42,9 +52,17 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ServerTest
 class KeepAliveTest {
     private final Http1Client webClient;
+    private final URI uri;
 
-    KeepAliveTest(Http1Client client) {
+    KeepAliveTest(Http1Client client, URI uri) {
         this.webClient = client;
+        this.uri = uri;
+    }
+
+    @SetUpServer
+    static void server(WebServerConfig.Builder server) {
+        server.writeQueueLength(2);
+        server.smartAsyncWrites(true);
     }
 
     @SetUpRoute
@@ -69,7 +87,19 @@ class KeepAliveTest {
                 res.status(INTERNAL_SERVER_ERROR_500)
                         .send(e.getMessage());
             }
-        });
+        }).get("/request-close", (req, res) -> res.send("done"))
+                .get("/response-close", (req, res) -> res.header(HeaderValues.CONNECTION_CLOSE)
+                        .send("done"))
+                .get("/request-close-stream", (req, res) -> sendStreamingResponse(res))
+                .get("/response-close-stream", (req, res) -> {
+                    res.header(HeaderValues.CONNECTION_CLOSE);
+                    sendStreamingResponse(res);
+                })
+                .route(Method.PUT, "/response-close-entity", (req, res) -> {
+                    req.content().as(String.class);
+                    res.header(HeaderValues.CONNECTION_CLOSE)
+                            .send("done");
+                });
     }
 
     @RepeatedTest(100)
@@ -93,6 +123,39 @@ class KeepAliveTest {
         try (HttpClientResponse response = testCall(webClient, true, "/close", INTERNAL_SERVER_ERROR_500)) {
             assertThat(response.headers(), hasHeader(HeaderValues.CONNECTION_KEEP_ALIVE));
         }
+    }
+
+    @Test
+    void requestConnectionCloseClosesSocket() throws Exception {
+        assertConnectionIsClosed(Method.GET, "/request-close", null, List.of("Connection: close"));
+    }
+
+    @Test
+    void requestConnectionCloseWithEntityClosesSocket() throws Exception {
+        assertConnectionIsClosed(Method.PUT, "/plain", "content", List.of("Connection: close"));
+    }
+
+    @Test
+    void responseConnectionCloseClosesSocket() throws Exception {
+        assertConnectionIsClosed(Method.GET, "/response-close", null, List.of());
+    }
+
+    @Test
+    void responseConnectionCloseWithEntityClosesSocket() throws Exception {
+        assertConnectionIsClosed(Method.PUT, "/response-close-entity", "content", List.of());
+    }
+
+    @Test
+    void requestConnectionCloseWithStreamingResponseClosesSocket() throws Exception {
+        assertConnectionIsClosed(Method.GET,
+                                 "/request-close-stream",
+                                 null,
+                                 List.of("Connection: close"));
+    }
+
+    @Test
+    void responseConnectionCloseWithStreamingResponseClosesSocket() throws Exception {
+        assertConnectionIsClosed(Method.GET, "/response-close-stream", null, List.of());
     }
 
     private static HttpClientResponse testCall(Http1Client client,
@@ -119,4 +182,23 @@ class KeepAliveTest {
 
         return response;
     }
+
+    private static void sendStreamingResponse(ServerResponse response) {
+        try (OutputStream outputStream = response.outputStream()) {
+            outputStream.write("first".getBytes(StandardCharsets.UTF_8));
+            outputStream.write("second".getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private void assertConnectionIsClosed(Method method, String path, String payload, List<String> headers) throws Exception {
+        try (SocketHttpClient client = SocketHttpClient.create(uri.getHost(), uri.getPort(), Duration.ofSeconds(2))) {
+            String response = client.sendAndReceive(method, path, payload, headers);
+            assertThat(SocketHttpClient.statusFromResponse(response), is(OK_200));
+            assertThat(SocketHttpClient.headersFromResponse(response), hasHeader(HeaderValues.CONNECTION_CLOSE));
+            client.assertConnectionIsClosed();
+        }
+    }
+
 }

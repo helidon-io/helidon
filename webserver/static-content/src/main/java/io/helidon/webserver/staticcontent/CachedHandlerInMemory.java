@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import io.helidon.http.Status;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
+import static io.helidon.webserver.staticcontent.StaticContentHandler.ifRangeMatches;
 import static io.helidon.webserver.staticcontent.StaticContentHandler.processEtag;
 import static io.helidon.webserver.staticcontent.StaticContentHandler.processModifyHeaders;
 
@@ -49,16 +50,18 @@ record CachedHandlerInMemory(MediaType mediaType,
                           ServerRequest request,
                           ServerResponse response,
                           String requestedResource) {
+        String etag = null;
         // etag etc.
         if (lastModified != null) {
-            processEtag(String.valueOf(lastModified.toEpochMilli()), request.headers(), response.headers());
+            etag = String.valueOf(lastModified.toEpochMilli());
+            processEtag(etag, request.headers(), response.headers());
             processModifyHeaders(lastModified, request.headers(), response.headers(), setLastModifiedHeader);
         }
 
         response.headers().contentType(mediaType);
 
         if (method == Method.GET) {
-            send(request, response);
+            send(request, response, etag);
         } else {
             response.headers().set(contentLengthHeader());
             response.send();
@@ -67,10 +70,10 @@ record CachedHandlerInMemory(MediaType mediaType,
         return true;
     }
 
-    private void send(ServerRequest request, ServerResponse response) {
+    private void send(ServerRequest request, ServerResponse response, String etag) {
         ServerRequestHeaders headers = request.headers();
 
-        if (headers.contains(HeaderNames.RANGE)) {
+        if (headers.contains(HeaderNames.RANGE) && ifRangeMatches(etag, headers)) {
             long contentLength = contentLength();
             List<ByteRangeRequest> ranges = ByteRangeRequest.parse(request,
                                                                    response,
@@ -90,7 +93,9 @@ record CachedHandlerInMemory(MediaType mediaType,
                 range.setContentRange(response);
 
                 // only send a part of the file
-                response.send(Arrays.copyOfRange(bytes(), (int) range.offset(), (int) range.length()));
+                int start = (int) range.offset();
+                int end = (int) (range.offset() + range.length());
+                response.send(Arrays.copyOfRange(bytes(), start, end));
             } else {
                 // not supported, send full
                 send(response);

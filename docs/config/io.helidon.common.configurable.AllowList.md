@@ -42,9 +42,11 @@
 
 - <a href="io.helidon.http.RequestedUriDiscoveryContext.md#trusted-proxies"><code>server.<wbr>protocols.<wbr>http_<wbr>1_1.<wbr>requested-<wbr>uri-<wbr>discovery.<wbr>trusted-<wbr>proxies</code></a>
 - <a href="io.helidon.http.RequestedUriDiscoveryContext.md#trusted-proxies"><code>server.<wbr>protocols.<wbr>http_<wbr>2.requested-<wbr>uri-<wbr>discovery.<wbr>trusted-<wbr>proxies</code></a>
+- <a href="io.helidon.webserver.ProxyProtocolConfig.md#trusted-proxies"><code>server.<wbr>proxy-<wbr>protocol.<wbr>trusted-<wbr>proxies</code></a>
 - <a href="io.helidon.http.RequestedUriDiscoveryContext.md#trusted-proxies"><code>server.<wbr>requested-<wbr>uri-<wbr>discovery.<wbr>trusted-<wbr>proxies</code></a>
 - <a href="io.helidon.http.RequestedUriDiscoveryContext.md#trusted-proxies"><code>server.<wbr>sockets.<wbr>protocols.<wbr>http_<wbr>1_1.<wbr>requested-<wbr>uri-<wbr>discovery.<wbr>trusted-<wbr>proxies</code></a>
 - <a href="io.helidon.http.RequestedUriDiscoveryContext.md#trusted-proxies"><code>server.<wbr>sockets.<wbr>protocols.<wbr>http_<wbr>2.requested-<wbr>uri-<wbr>discovery.<wbr>trusted-<wbr>proxies</code></a>
+- <a href="io.helidon.webserver.ProxyProtocolConfig.md#trusted-proxies"><code>server.<wbr>sockets.<wbr>proxy-<wbr>protocol.<wbr>trusted-<wbr>proxies</code></a>
 - <a href="io.helidon.http.RequestedUriDiscoveryContext.md#trusted-proxies"><code>server.<wbr>sockets.<wbr>requested-<wbr>uri-<wbr>discovery.<wbr>trusted-<wbr>proxies</code></a>
 
 ---

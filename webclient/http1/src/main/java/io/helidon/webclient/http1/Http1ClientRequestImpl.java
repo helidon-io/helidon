@@ -18,12 +18,14 @@ package io.helidon.webclient.http1;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.LogFormatter;
 import io.helidon.http.Method;
@@ -41,6 +43,9 @@ import io.helidon.webclient.api.WebClientServiceResponse;
 
 class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1ClientResponse> implements Http1ClientRequest {
     private static final System.Logger LOGGER = System.getLogger(Http1ClientRequestImpl.class.getName());
+    // RFC 9110, section 8.1: these define the replayed representation data's format and encoding.
+    private static final Set<HeaderName> REPRESENTATION_HEADERS = Set.of(HeaderNames.CONTENT_TYPE,
+                                                                         HeaderNames.CONTENT_ENCODING);
 
     private final Http1ClientImpl http1Client;
     private final FullClientRequest<?> delegate;
@@ -88,7 +93,8 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
     Http1ClientRequestImpl(Http1ClientRequestImpl request,
                            Method method,
                            ClientUri clientUri,
-                           Map<String, String> properties) {
+                           Map<String, String> properties,
+                           boolean preserveEntity) {
         this(request.http1Client,
              null,
              method,
@@ -102,6 +108,9 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         maxRedirects(request.maxRedirects());
         tls(request.tls());
         outputStreamRedirect(request.outputStreamRedirect());
+        if (preserveEntity) {
+            REPRESENTATION_HEADERS.forEach(name -> request.headers().find(name).ifPresent(headers()::set));
+        }
     }
 
     @Override
@@ -293,6 +302,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         return new Http1ClientResponseImpl(clientConfig(),
                                            http1Client().protocolConfig(),
                                            serviceResponse.status(),
+                                           serviceResponse.serviceRequest().method(),
                                            serviceResponse.serviceRequest().headers(),
                                            serviceResponse.headers(),
                                            responseConnection,

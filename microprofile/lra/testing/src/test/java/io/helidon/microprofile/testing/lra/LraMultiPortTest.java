@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.client.WebTarget;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.lra.annotation.Compensate;
 import org.eclipse.microprofile.lra.annotation.Complete;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
@@ -54,23 +55,30 @@ import static org.hamcrest.Matchers.is;
 @AddConfig(key = "server.sockets.0.name", value = "test-route")
 @AddConfig(key = "server.sockets.0.port", value = "0")
 @AddConfig(key = "server.sockets.0.host", value = "localhost")
+@AddConfig(key = LraMultiPortTest.CALLBACK_SECRET_KEY, value = LraMultiPortTest.CALLBACK_SECRET)
 @AddBean(TestLraCoordinator.class)
 @Path("/test/multi-port")
 public class LraMultiPortTest {
+
+    static final String CALLBACK_SECRET_KEY = "lra.participant.non-jax-rs.callback-auth.secret";
+    static final String CALLBACK_SECRET = "YWJjZGVmMDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZQ";
 
     private final WebTarget target;
     private final WebTarget otherTarget;
     private final Set<String> completedLras;
     private final Set<String> cancelledLras;
     private final TestLraCoordinator coordinator;
+    private final Config config;
 
     @Inject
     public LraMultiPortTest(WebTarget target,
                             TestLraCoordinator coordinator,
-                            @Socket("test-route") WebTarget otherTarget) {
+                            @Socket("test-route") WebTarget otherTarget,
+                            Config config) {
         this.target = target;
         this.coordinator = coordinator;
         this.otherTarget = otherTarget;
+        this.config = config;
         this.completedLras = new CopyOnWriteArraySet<>();
         this.cancelledLras = new CopyOnWriteArraySet<>();
     }
@@ -152,6 +160,11 @@ public class LraMultiPortTest {
             assertThat(res.getStatus(), is(200));
             assertThat(res.readEntity(String.class), is("Hello from test route!"));
         }
+    }
+
+    @Test
+    public void testCallbackSecretOverride() {
+        assertThat(config.getValue(CALLBACK_SECRET_KEY, String.class), is(CALLBACK_SECRET));
     }
 
 }

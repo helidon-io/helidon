@@ -181,6 +181,16 @@ abstract class StaticContentHandler implements StaticContentService {
         return dt.format(DateTime.RFC_1123_DATE_TIME);
     }
 
+    static boolean ifRangeMatches(String etag, ServerRequestHeaders requestHeaders) {
+        if (!requestHeaders.contains(HeaderNames.IF_RANGE)) {
+            return true;
+        }
+        String ifRange = requestHeaders.get(HeaderNames.IF_RANGE).get().trim();
+        return ifRange.startsWith("\"")
+                && etag != null
+                && unquoteETag(ifRange).equals(unquoteETag(etag));
+    }
+
     @Override
     public void beforeStart() {
         webServerCounter.incrementAndGet();

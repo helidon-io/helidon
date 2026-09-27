@@ -17,6 +17,7 @@
 package io.helidon.json.binding.converters;
 
 import java.time.OffsetDateTime;
+import java.time.format.DateTimeParseException;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
@@ -50,7 +51,12 @@ class OffsetDateTimeConverter implements JsonConverter<OffsetDateTime> {
     @Override
     public OffsetDateTime deserialize(JsonParser parser) {
         if (parser.currentByte() == '"') {
-            return OffsetDateTime.parse(parser.readString());
+            String value = parser.readString();
+            try {
+                return OffsetDateTime.parse(value);
+            } catch (DateTimeParseException e) {
+                throw parser.createException("Invalid OffsetDateTime value", e);
+            }
         }
         throw parser.createException("Only the string format of the OffsetDateTime is supported");
     }

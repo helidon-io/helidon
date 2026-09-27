@@ -149,21 +149,11 @@ class GrowingBufferData implements BufferData {
     }
 
     @Override
-    public void write(BufferData toWrite) {
-        ensureSize(toWrite.available());
-        byte[] buffer = new byte[toWrite.available()];
-        int read = toWrite.read(buffer);
-        System.arraycopy(buffer, 0, this.bytes, writePosition, read);
-        writePosition += read;
-    }
-
-    @Override
     public void write(BufferData toWrite, int length) {
         ensureSize(length);
-        byte[] buffer = new byte[length];
-        int read = toWrite.read(buffer);
-        System.arraycopy(buffer, 0, this.bytes, writePosition, read);
+        int read = toWrite.read(this.bytes, writePosition, length);
         writePosition += read;
+        this.length = Math.max(this.length, writePosition);
     }
 
     @Override
@@ -241,7 +231,7 @@ class GrowingBufferData implements BufferData {
     }
 
     private void ensureSize(int i) {
-        if (this.bytes.length > writePosition + i) {
+        if (this.bytes.length >= writePosition + i) {
             return;
         }
 

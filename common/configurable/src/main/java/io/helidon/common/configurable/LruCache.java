@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,6 +98,11 @@ public final class LruCache<K, V> implements io.helidon.common.LruCache<K, V>, R
     @Override
     public Optional<V> get(K key) {
         return delegate.get(key);
+    }
+
+    @Override
+    public V peek(K key, V defaultValue) {
+        return delegate.peek(key, defaultValue);
     }
 
     @Override

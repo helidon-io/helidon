@@ -67,6 +67,18 @@ Common configuration of HTTP protocol, regardless of its version
 </td>
 <td>Whether to validate request headers</td>
 </tr>
+<tr>
+<td>
+<code>max-<wbr>headers-<wbr>size</code>
+</td>
+<td>
+<code>Integer</code>
+</td>
+<td>
+<code>16384</code>
+</td>
+<td>Configure the maximum allowed headers size, which must be greater than <code>0</code></td>
+</tr>
 </tbody>
 </table>
 

@@ -21,6 +21,7 @@ server:
   protocols:
     http_2:
       max-frame-size: 8192
+      max-headers-size: 6144
       max-header-list-size: 4096
       max-concurrent-streams: 16384
       initial-window-size: 8192

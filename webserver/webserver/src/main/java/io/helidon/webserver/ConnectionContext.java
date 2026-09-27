@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,7 +67,7 @@ public interface ConnectionContext extends SocketContext {
      * Proxy protocol header data.
      *
      * @return protocol header data if proxy protocol is enabled on socket
-     * @see ListenerConfig#enableProxyProtocol()
+     * @see ListenerConfig#proxyProtocol()
      */
     default Optional<ProxyProtocolData> proxyProtocolData() {
         return Optional.empty();

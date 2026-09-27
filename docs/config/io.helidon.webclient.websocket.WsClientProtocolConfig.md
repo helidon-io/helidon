@@ -2,7 +2,7 @@
 
 ## Description
 
-Configuration of an HTTP/1.1 client
+WebSocket client protocol configuration
 
 ## Configuration options
 
@@ -19,6 +19,18 @@ Configuration of an HTTP/1.1 client
 <tbody>
 <tr>
 <td>
+<code>max-<wbr>buffered-<wbr>message-<wbr>size</code>
+</td>
+<td>
+<code>Size</code>
+</td>
+<td>
+<code>1 Mi<wbr>B</code>
+</td>
+<td>Maximum size of a WebSocket message buffered for delivery to a listener</td>
+</tr>
+<tr>
+<td>
 <code>sub-<wbr>protocols</code>
 </td>
 <td>
@@ -26,7 +38,7 @@ Configuration of an HTTP/1.1 client
 </td>
 <td>
 </td>
-<td><code>N/<wbr>A</code></td>
+<td>WebSocket sub-protocols requested by the client</td>
 </tr>
 <tr>
 <td>
@@ -38,7 +50,7 @@ Configuration of an HTTP/1.1 client
 <td>
 <code>websocket</code>
 </td>
-<td><code>N/<wbr>A</code></td>
+<td>Name of this protocol configuration</td>
 </tr>
 </tbody>
 </table>

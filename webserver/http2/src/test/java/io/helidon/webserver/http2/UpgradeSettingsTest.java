@@ -41,6 +41,7 @@ import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Settings;
 import io.helidon.http.http2.Http2Util;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.ServerConnectionException;
@@ -62,6 +63,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -83,7 +85,7 @@ class UpgradeSettingsTest {
                                        false);
         DataWriter dataWriter = mock(DataWriter.class);
         when(ctx.router()).thenReturn(Router.empty());
-        when(ctx.listenerContext()).thenReturn(mock(ListenerContext.class));
+        doReturn(mockListenerContext()).when(ctx).listenerContext();
         when(ctx.dataWriter()).thenReturn(dataWriter);
         when(ctx.dataReader()).thenReturn(mock(DataReader.class));
     }
@@ -184,7 +186,7 @@ class UpgradeSettingsTest {
 
         ConnectionContext connectionContext = mock(ConnectionContext.class);
         when(connectionContext.router()).thenReturn(Router.empty());
-        when(connectionContext.listenerContext()).thenReturn(mock(ListenerContext.class));
+        doReturn(mockListenerContext()).when(connectionContext).listenerContext();
         when(connectionContext.dataWriter()).thenReturn(dataWriter);
         when(connectionContext.dataReader()).thenReturn(mock(DataReader.class));
 
@@ -215,7 +217,7 @@ class UpgradeSettingsTest {
 
         ConnectionContext connectionContext = mock(ConnectionContext.class);
         when(connectionContext.router()).thenReturn(Router.empty());
-        when(connectionContext.listenerContext()).thenReturn(mock(ListenerContext.class));
+        doReturn(mockListenerContext()).when(connectionContext).listenerContext();
         when(connectionContext.dataWriter()).thenReturn(dataWriter);
         when(connectionContext.dataReader()).thenReturn(settingsReader(Http2Settings.builder()
                                                                   .add(MAX_FRAME_SIZE, 0L)
@@ -256,7 +258,7 @@ class UpgradeSettingsTest {
 
         ConnectionContext connectionContext = mock(ConnectionContext.class);
         when(connectionContext.router()).thenReturn(Router.empty());
-        when(connectionContext.listenerContext()).thenReturn(mock(ListenerContext.class));
+        doReturn(mockListenerContext()).when(connectionContext).listenerContext();
         when(connectionContext.dataWriter()).thenReturn(dataWriter);
         when(connectionContext.dataReader()).thenReturn(settingsReader(Http2Settings.builder()
                                                                   .add(INITIAL_WINDOW_SIZE, MAX_UNSIGNED_INT)
@@ -293,7 +295,7 @@ class UpgradeSettingsTest {
 
         ConnectionContext connectionContext = mock(ConnectionContext.class);
         when(connectionContext.router()).thenReturn(Router.empty());
-        when(connectionContext.listenerContext()).thenReturn(mock(ListenerContext.class));
+        doReturn(mockListenerContext()).when(connectionContext).listenerContext();
         when(connectionContext.dataWriter()).thenReturn(dataWriter);
         when(connectionContext.dataReader()).thenReturn(mock(DataReader.class));
 
@@ -322,6 +324,12 @@ class UpgradeSettingsTest {
         byte[] b = new byte[settingsFrameData.available()];
         settingsFrameData.read(b);
         return b;
+    }
+
+    private static ListenerContext mockListenerContext() {
+        ListenerContext listenerContext = mock(ListenerContext.class);
+        when(listenerContext.config()).thenReturn(ListenerConfig.builder().build());
+        return listenerContext;
     }
 
     private static DataReader settingsReader(Http2Settings settings) {

@@ -30,15 +30,19 @@ import java.util.Arrays;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.json.JsonArray;
 import io.helidon.json.JsonBoolean;
+import io.helidon.json.JsonDecodingException;
 import io.helidon.json.JsonException;
 import io.helidon.json.JsonNull;
 import io.helidon.json.JsonNumber;
 import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 import io.helidon.json.JsonParserBase;
 import io.helidon.json.JsonString;
 import io.helidon.json.JsonValue;
 import io.helidon.json.Parsers;
 
+import static io.helidon.json.JsonParserSupport.createJsonNumber;
+import static io.helidon.json.JsonParserSupport.toBigInteger;
 import static io.helidon.json.Parsers.translateHex;
 
 /**
@@ -68,6 +72,8 @@ final class SmileInputStreamParser extends JsonParserBase {
 
     private static final int SHARED_TABLE_SIZE_MAX = 1024;
     private static final int SHARED_TABLE_SIZE_INIT = 24;
+    private static final int STRUCTURE_STACK_SIZE_INIT = 64;
+    private static final int STRUCTURE_STACK_DEPTH_MAX = JsonParser.MAX_NESTING_DEPTH;
     private static final int FNV_OFFSET_BASIS = 0x811c9dc5;
     private static final int FNV_PRIME = 0x01000193;
 
@@ -166,7 +172,7 @@ final class SmileInputStreamParser extends JsonParserBase {
     private boolean keyExpected = false;
     private byte forcedEvent = -1;
 
-    private final boolean[] structureStack = new boolean[64];
+    private boolean[] structureStack = new boolean[STRUCTURE_STACK_SIZE_INIT];
     private int stackDepth = 0;
 
     /** The JSON-like translation of the current Smile token (e.g. '{', '[', '"', '1', 't', …). */
@@ -480,11 +486,9 @@ final class SmileInputStreamParser extends JsonParserBase {
         if (rawByte >= (SmileConstants.TOKEN_START_ARRAY & 0xFF)
                 && rawByte <= (SmileConstants.TOKEN_END_OBJECT & 0xFF)) {
             if (translatedToken == Bytes.BRACE_OPEN_BYTE) {
-                structureStack[++stackDepth] = true;
-                inObject = true;
+                pushStructure(true);
             } else if (translatedToken == Bytes.SQUARE_BRACKET_OPEN_BYTE) {
-                structureStack[++stackDepth] = false;
-                inObject = false;
+                pushStructure(false);
             } else if (translatedToken == Bytes.SQUARE_BRACKET_CLOSE_BYTE
                     || translatedToken == Bytes.BRACE_CLOSE_BYTE) {
                 validateStructureClose(translatedToken);
@@ -779,11 +783,11 @@ final class SmileInputStreamParser extends JsonParserBase {
         } else if (b == (SmileConstants.TOKEN_BIG_INT & 0xFF)) {
             number = JsonNumber.create(new BigDecimal(decodeBigInteger()));
         } else if (b == (SmileConstants.TOKEN_BIG_DEC & 0xFF)) {
-            number = JsonNumber.create(decodeBigDecimal());
+            number = createJsonNumber(this, decodeBigDecimal());
         } else if (b == (SmileConstants.TOKEN_FLOAT32 & 0xFF)) {
-            number = JsonNumber.create(decodeFloat());
+            number = createJsonNumber(this, decodeFloat());
         } else if (b == (SmileConstants.TOKEN_FLOAT64 & 0xFF)) {
-            number = JsonNumber.create(decodeDouble());
+            number = createJsonNumber(this, decodeDouble());
         } else {
             throw createException("Unsupported numeric value");
         }
@@ -1066,7 +1070,7 @@ final class SmileInputStreamParser extends JsonParserBase {
         } else if (b >= (SmileConstants.VALUE_SMALL_INT_MIN & 0xFF) && b <= (SmileConstants.VALUE_SMALL_INT_MAX & 0xFF)) {
             toReturn = BigInteger.valueOf(zigzagDecodeInt(b & 0x1F));
         } else if (b == (SmileConstants.TOKEN_BIG_DEC & 0xFF)) {
-            toReturn = decodeBigDecimal().toBigInteger();
+            toReturn = toBigInteger(this, decodeBigDecimal());
         } else if (b == (SmileConstants.TOKEN_FLOAT64 & 0xFF)) {
             toReturn = BigInteger.valueOf((long) decodeDouble());
         } else if (b == (SmileConstants.TOKEN_FLOAT32 & 0xFF)) {
@@ -1429,11 +1433,11 @@ final class SmileInputStreamParser extends JsonParserBase {
 
     @Override
     public JsonException createException(String message) {
-        return new JsonException(message + " (stream position ~" + currentIndex + ")");
+        return new JsonDecodingException(message + " (stream position ~" + currentIndex + ")");
     }
 
     public JsonException createException(String message, java.lang.Exception e) {
-        return new JsonException(message + " (stream position ~" + currentIndex + ")", e);
+        return new JsonDecodingException(message + " (stream position ~" + currentIndex + ")", e);
     }
 
     // -----------------------------------------------------------------------
@@ -2138,6 +2142,20 @@ final class SmileInputStreamParser extends JsonParserBase {
         if (token == Bytes.SQUARE_BRACKET_CLOSE_BYTE && inObject) {
             throw createException("Unexpected end-array token while in an object");
         }
+    }
+
+    private void pushStructure(boolean object) {
+        int nextDepth = stackDepth + 1;
+        if (nextDepth > STRUCTURE_STACK_DEPTH_MAX) {
+            throw createException("Maximum JSON nesting depth exceeded");
+        }
+        if (nextDepth == structureStack.length) {
+            structureStack = Arrays.copyOf(structureStack,
+                                           Math.min(structureStack.length * 2, STRUCTURE_STACK_DEPTH_MAX + 1));
+        }
+        structureStack[nextDepth] = object;
+        stackDepth = nextDepth;
+        inObject = object;
     }
 
     private void validateSmileString(byte[] source, int start, int length, boolean asciiToken) {

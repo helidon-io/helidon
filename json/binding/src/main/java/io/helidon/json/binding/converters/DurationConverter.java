@@ -17,6 +17,7 @@
 package io.helidon.json.binding.converters;
 
 import java.time.Duration;
+import java.time.format.DateTimeParseException;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
@@ -50,7 +51,12 @@ class DurationConverter implements JsonConverter<Duration> {
     @Override
     public Duration deserialize(JsonParser parser) {
         if (parser.currentByte() == '"') {
-            return Duration.parse(parser.readString());
+            String value = parser.readString();
+            try {
+                return Duration.parse(value);
+            } catch (DateTimeParseException e) {
+                throw parser.createException("Invalid Duration value", e);
+            }
         }
         throw parser.createException("Only the string format of the Duration is supported");
     }

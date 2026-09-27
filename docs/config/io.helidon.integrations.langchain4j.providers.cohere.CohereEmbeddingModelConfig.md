@@ -30,6 +30,73 @@ Configuration for LangChain4j model CohereEmbeddingModel
 </tr>
 <tr>
 <td>
+<code>http-<wbr>client-<wbr>builder</code>
+</td>
+<td>
+<code>Http<wbr>Client<wbr>Builder</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Embedding<wbr>Model.<wbr>Cohere<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>http<wbr>Client<wbr>Builder(<wbr>dev.<wbr>langchain4j.<wbr>http.<wbr>client.<wbr>Http<wbr>Client<wbr>Builder)</code></td>
+</tr>
+<tr>
+<td>
+<code>listeners</code>
+</td>
+<td>
+<code>List&lt;<wbr>Embedding<wbr>Model<wbr>Listener&gt;</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Embedding<wbr>Model.<wbr>Cohere<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>listeners(<wbr>java.<wbr>util.<wbr>List)</code></td>
+</tr>
+<tr>
+<td>
+<code>logger</code>
+</td>
+<td>
+<code>Logger</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Embedding<wbr>Model.<wbr>Cohere<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>logger(<wbr>org.<wbr>slf4j.<wbr>Logger)</code></td>
+</tr>
+<tr>
+<td>
+<code>log-<wbr>responses</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Embedding<wbr>Model.<wbr>Cohere<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>logResponses(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>If set to <code>false</code>, CohereEmbeddingModel will not be available even if configured</td>
+</tr>
+<tr>
+<td>
+<code>timeout</code>
+</td>
+<td>
+<code>Duration</code>
+</td>
+<td>
+</td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Embedding<wbr>Model.<wbr>Cohere<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>timeout(<wbr>java.<wbr>time.<wbr>Duration)</code></td>
+</tr>
+<tr>
+<td>
 <code>log-<wbr>requests</code>
 </td>
 <td>
@@ -52,14 +119,38 @@ Configuration for LangChain4j model CohereEmbeddingModel
 </tr>
 <tr>
 <td>
-<code>logger</code>
+<code>http-<wbr>client-<wbr>builder-<wbr>discover-<wbr>services</code>
 </td>
 <td>
-<code>Logger</code>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>http-<wbr>client-<wbr>builder</code></td>
+</tr>
+<tr>
+<td>
+<code>listeners-<wbr>discover-<wbr>services</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>listeners</code></td>
+</tr>
+<tr>
+<td>
+<code>v2-<wbr>base-<wbr>url</code>
+</td>
+<td>
+<code>String</code>
 </td>
 <td>
 </td>
-<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Embedding<wbr>Model.<wbr>Cohere<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>logger(<wbr>org.<wbr>slf4j.<wbr>Logger)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Embedding<wbr>Model.<wbr>Cohere<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>v2Base<wbr>Url(<wbr>java.<wbr>lang.<wbr>String)</code></td>
 </tr>
 <tr>
 <td>
@@ -85,17 +176,6 @@ Configuration for LangChain4j model CohereEmbeddingModel
 </tr>
 <tr>
 <td>
-<code>log-<wbr>responses</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-</td>
-<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Embedding<wbr>Model.<wbr>Cohere<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>logResponses(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
-</tr>
-<tr>
-<td>
 <code>max-<wbr>segments-<wbr>per-<wbr>batch</code>
 </td>
 <td>
@@ -104,29 +184,6 @@ Configuration for LangChain4j model CohereEmbeddingModel
 <td>
 </td>
 <td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Embedding<wbr>Model.<wbr>Cohere<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>maxSegments<wbr>PerBatch(<wbr>java.<wbr>lang.<wbr>Integer)</code></td>
-</tr>
-<tr>
-<td>
-<code>enabled</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-<code>true</code>
-</td>
-<td>If set to <code>false</code>, CohereEmbeddingModel will not be available even if configured</td>
-</tr>
-<tr>
-<td>
-<code>timeout</code>
-</td>
-<td>
-<code>Duration</code>
-</td>
-<td>
-</td>
-<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Embedding<wbr>Model.<wbr>Cohere<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>timeout(<wbr>java.<wbr>time.<wbr>Duration)</code></td>
 </tr>
 </tbody>
 </table>

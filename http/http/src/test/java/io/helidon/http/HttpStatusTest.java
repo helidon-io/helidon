@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,8 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class HttpStatusTest {
     private static final Class<Status> CLASS = Status.class;
@@ -73,6 +75,24 @@ class HttpStatusTest {
     void testEqualsAndHashCodeForCustomStatus() {
         assertThat(custom999_1, is(custom999_2));
         assertThat(custom999_1.hashCode(), is(custom999_2.hashCode()));
+    }
+
+    @Test
+    void testValidReasonPhraseCharacters() {
+        assertDoesNotThrow(() -> Status.create(200, "\t !~\u0080\u00ff"));
+    }
+
+    @Test
+    void testInvalidReasonPhraseCharacters() {
+        assertAll(
+                () -> assertThrows(IllegalArgumentException.class, () -> Status.create(200, "unsafe\rvalue")),
+                () -> assertThrows(IllegalArgumentException.class, () -> Status.create(200, "unsafe\nvalue")),
+                () -> assertThrows(IllegalArgumentException.class, () -> Status.create(200, "unsafe\u0000value")),
+                () -> assertThrows(IllegalArgumentException.class, () -> Status.create(200, "unsafe\u001fvalue")),
+                () -> assertThrows(IllegalArgumentException.class, () -> Status.create(200, "unsafe\u007fvalue")),
+                () -> assertThrows(IllegalArgumentException.class, () -> Status.create(200, "unsafe\u0100value")),
+                () -> assertThrows(IllegalArgumentException.class, () -> Status.create(200, "O\u212a"))
+        );
     }
 
     @Test

@@ -33,6 +33,7 @@
                 </model>
             </output>
         </method>
+        <!-- Compatibility-only support. OpenTelemetry stopped publishing this exporter in 1.65.0. -->
         <method name="tracing-zipkin">
             <output if="${tracing.provider} == 'zipkin'">
                 <model>
@@ -43,6 +44,7 @@
                         </map>
                     </list>
                     <value key="tracing.provider.for.otel">zipkin</value>
+                    <value key="tracing.provider.deprecated">true</value>
                 </model>
             </output>
         </method>
@@ -67,6 +69,8 @@
                 <value template="mustache"><![CDATA[
 #OpenTelemetry
 otel.sdk.disabled=false
+{{#tracing.provider.deprecated}}# WARNING: The OpenTelemetry Zipkin exporter is deprecated; migrate to OTLP.
+{{/tracing.provider.deprecated}}
 otel.traces.exporter={{tracing.provider.for.otel}}
 otel.service.name=helidon-tracing-service]]></value>
             </list>

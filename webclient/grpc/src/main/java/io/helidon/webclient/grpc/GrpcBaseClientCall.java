@@ -24,13 +24,13 @@ import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.buffers.CompositeBufferData;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.grpc.core.GrpcHeadersUtil;
 import io.helidon.http.Header;
@@ -67,8 +67,11 @@ import io.helidon.webclient.http2.StreamTimeoutException;
 
 import io.grpc.CallOptions;
 import io.grpc.ClientCall;
+import io.grpc.InternalStatus;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 
 import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 import static java.lang.System.Logger.Level.DEBUG;
@@ -114,6 +117,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private final Duration heartbeatPeriod;
     private final ClientUriSupplier clientUriSupplier;
     private final GrpcClientConfig grpcConfig;
+    private final GrpcDeframer deframer;
 
     private final MethodDescriptor.Marshaller<ReqT> requestMarshaller;
     private final MethodDescriptor.Marshaller<ResT> responseMarshaller;
@@ -127,6 +131,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
     private AtomicLong bytesSent;
     private AtomicLong bytesRcvd;
+    private BufferData unreadData;
 
     GrpcBaseClientCall(GrpcChannel grpcChannel, MethodDescriptor<ReqT, ResT> methodDescriptor, CallOptions callOptions) {
         this.grpcClient = (GrpcClientImpl) grpcChannel.grpcClient();
@@ -141,6 +146,9 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         this.abortPollTimeExpired = grpcClient.prototype().protocolConfig().abortPollTimeExpired();
         this.heartbeatPeriod = grpcClient.prototype().protocolConfig().heartbeatPeriod();
         this.clientUriSupplier = grpcClient.prototype().clientUriSupplier().orElse(null);
+        Integer maxInboundMessageSize = callOptions.getMaxInboundMessageSize();
+        this.deframer = new GrpcDeframer(initBufferSize,
+                                         maxInboundMessageSize == null ? Integer.MAX_VALUE : maxInboundMessageSize);
     }
 
     @Override
@@ -226,50 +234,47 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
      * @return data for gRPC frame or {@code null}
      */
     protected BufferData readGrpcFrame() {
-        // attempt to read HTTP/2 frame
-        Http2FrameData frameData;
-        try {
-            frameData = clientStream.readOne(pollWaitTime());
-        } catch (StreamTimeoutException e) {
-            handleStreamTimeout(e);
-            return null;
-        }
-        if (frameData == null) {
-            return null;
-        }
-
-        // read more HTTP/2 frames if long gRPC frame
-        BufferData bufferData = frameData.data();
-        bufferData.read();                                      // skip compression
-        long grpcLength = bufferData.readUnsignedInt32();       // length prefixed
-        grpcLength -= bufferData.available();
-
-        if (grpcLength > 0) {
-            // collect frames in composite buffer
-            CompositeBufferData compositeBuffer = BufferData.createComposite(bufferData);
-            do {
+        BufferData data = unreadData;
+        unreadData = null;
+        while (true) {
+            if (data == null || data.available() == 0) {
+                Http2FrameData frameData;
                 try {
-                    frameData = clientStream.readOne(pollWaitTime());
+                    frameData = clientStream().readOne(pollWaitTime());
                 } catch (StreamTimeoutException e) {
+                    if (deframer.hasPartialFrame() && responseEnded()) {
+                        endOfStream();
+                    }
                     handleStreamTimeout(e);
+                    if (!deframer.hasPartialFrame()) {
+                        return null;
+                    }
                     continue;
                 }
                 if (frameData == null) {
+                    if (!deframer.hasPartialFrame()) {
+                        return null;
+                    }
+                    if (responseEnded()) {
+                        endOfStream();
+                    }
                     continue;
                 }
+                data = frameData.data();
+            }
 
-                bufferData = frameData.data();
-                compositeBuffer.add(bufferData);
-                grpcLength -= bufferData.available();
-            } while (grpcLength > 0);
-
-            // switch to composite buffer
-            bufferData = compositeBuffer;
+            BufferData frame = deframer.deframe(data);
+            if (frame != null) {
+                if (deframer.hasRemainder()) {
+                    unreadData = data;
+                }
+                return frame;
+            }
+            if (deframer.hasPartialFrame() && responseEnded()) {
+                endOfStream();
+            }
+            data = null;
         }
-
-        // rewind and return
-        bufferData.rewind();
-        return bufferData;
     }
 
     /**
@@ -326,19 +331,21 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     }
 
     protected boolean isRemoteOpen() {
-        return clientStream.streamState() != Http2StreamState.HALF_CLOSED_REMOTE
-                && clientStream.streamState() != Http2StreamState.CLOSED;
+        return clientStream().streamState() != Http2StreamState.HALF_CLOSED_REMOTE
+                && clientStream().streamState() != Http2StreamState.CLOSED;
+    }
+
+    protected boolean hasUnreadData() {
+        return unreadData != null && unreadData.available() > 0;
     }
 
     protected ResT toResponse(BufferData bufferData) {
         bufferData.read();                  // compression
-        bufferData.readUnsignedInt32();     // length prefixed
-        return responseMarshaller.parse(new InputStream() {
-            @Override
-            public int read() {
-                return bufferData.available() > 0 ? bufferData.read() : -1;
-            }
-        });
+        long grpcLength = bufferData.readUnsignedInt32();     // length prefixed
+        if (grpcLength > bufferData.available()) {
+            throw new IllegalStateException("Incomplete gRPC message data");
+        }
+        return responseMarshaller.parse(new MessageInputStream(bufferData, (int) grpcLength));
     }
 
     protected byte[] serializeMessage(ReqT message) {
@@ -468,5 +475,75 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
             return new MethodMetrics(callStarted, callDuration, sentMessageSize, recvMessageSize);
         });
+    }
+
+    private boolean responseEnded() {
+        return !isRemoteOpen() || clientStream().trailers().isDone();
+    }
+
+    private void endOfStream() {
+        var trailersFuture = clientStream().trailers();
+        if (trailersFuture.isDone() && !trailersFuture.isCompletedExceptionally()) {
+            Metadata trailers;
+            try {
+                trailers = GrpcHeadersUtil.toMetadata(Http2Headers.create(trailersFuture.join()));
+            } catch (RuntimeException e) {
+                StatusRuntimeException failure = Status.INTERNAL
+                        .withDescription("Invalid gRPC response trailers")
+                        .withCause(e)
+                        .asRuntimeException();
+                deframer.endOfStream(failure);
+                return;
+            }
+            Status status = trailers.get(InternalStatus.CODE_KEY);
+            if (status != null && !status.isOk()) {
+                String description = trailers.get(InternalStatus.MESSAGE_KEY);
+                trailers.discardAll(InternalStatus.CODE_KEY);
+                trailers.discardAll(InternalStatus.MESSAGE_KEY);
+                Status actualStatus = description == null ? status : status.withDescription(description);
+                StatusRuntimeException failure = actualStatus.asRuntimeException(trailers);
+                deframer.endOfStream(failure);
+                return;
+            }
+        }
+        deframer.endOfStream();
+    }
+
+    private static final class MessageInputStream extends InputStream {
+        private final BufferData data;
+        private int remaining;
+
+        private MessageInputStream(BufferData data, int remaining) {
+            this.data = data;
+            this.remaining = remaining;
+        }
+
+        @Override
+        public int read() {
+            if (remaining == 0) {
+                return -1;
+            }
+            remaining--;
+            return data.read();
+        }
+
+        @Override
+        public int read(byte[] bytes, int offset, int length) {
+            Objects.checkFromIndexSize(offset, length, bytes.length);
+            if (length == 0) {
+                return 0;
+            }
+            if (remaining == 0) {
+                return -1;
+            }
+            int read = data.read(bytes, offset, Math.min(remaining, length));
+            remaining -= read;
+            return read;
+        }
+
+        @Override
+        public int available() {
+            return remaining;
+        }
     }
 }

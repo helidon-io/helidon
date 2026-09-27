@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,10 +37,10 @@ final class MethodHelper {
         KNOWN.clear();
     }
 
-    static Method byName(String upperCase) {
+    static Method byName(String name) {
         // optimization over Map (most commonly used methods fastest)
         for (AsciiMethodPair method : methods) {
-            if (method.string().equals(upperCase)) {
+            if (method.string().equals(name)) {
                 return method.method();
             }
         }

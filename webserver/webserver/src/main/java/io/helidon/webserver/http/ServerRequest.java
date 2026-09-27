@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,7 +119,7 @@ public interface ServerRequest extends HttpRequest {
      * Access proxy protocol data for the connection on which this request was sent.
      *
      * @return proxy protocol data, if available
-     * @see io.helidon.webserver.ListenerConfig#enableProxyProtocol()
+     * @see io.helidon.webserver.ListenerConfig#proxyProtocol()
      */
     Optional<ProxyProtocolData> proxyProtocolData();
 

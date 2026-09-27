@@ -68,6 +68,15 @@ public class ValidationTest {
     }
 
     @Test
+    public void testValidAndNotNullRejectsNull() {
+        var result = assertThrows(ValidationException.class, () -> service.process((ValidatedType) null));
+
+        assertThat(result.violations(), hasSize(1));
+        assertThat(result.violations().getFirst().annotation().typeName(),
+                   is(TypeName.create(Validation.NotNull.class)));
+    }
+
+    @Test
     public void testInterfaceMethodConstraint() {
         var response = interfaceConstrainedService.validate("value");
 

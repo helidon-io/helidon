@@ -578,7 +578,10 @@ freshness validation. Date freshness rejects stale or far-future signatures; it
 does not provide nonce-based replay detection within the accepted time window.
 The `(request-target)` field uses the lower-case HTTP method followed by a
 space, the request path, and the raw query string from the security environment,
-when present. Query parameter order and encoding are significant.
+when present. Query parameter order and encoding are significant. This
+draft-defined lowercasing does not bind the original method case: methods which
+differ only by case produce the same `(request-target)` method text. WebServer
+case-sensitive method parsing does not change this signature format.
 
 Use `sign-headers` to require additional signed fields such as `digest`,
 `content-length`, or `content-type` for selected methods.

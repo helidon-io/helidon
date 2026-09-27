@@ -26,6 +26,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.LinkedHashMap;
@@ -311,6 +312,98 @@ class Http1CrossOriginRedirectEntityTest {
                 assertThat(originRequest.header("expect"), is("100-continue"));
                 assertThat(originRequest.body(), is(""));
                 secondHop.assertNoRequest();
+            } finally {
+                client.closeResource();
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {307, 308})
+    @Timeout(20)
+    void doesNotSendOutputStreamBodyAfterRedirectTargetFinalResponse(int redirectStatus) throws Exception {
+        try (SecondHopFinalResponseServer secondHop =
+                     new SecondHopFinalResponseServer(InetAddress.getByName(SECOND_HOP_HOST));
+             FirstHopServer firstHop = new FirstHopServer(InetAddress.getByName(FIRST_HOP_HOST),
+                                                          secondHop.port(),
+                                                          false,
+                                                          redirectStatus)) {
+            Http1Client client = newClient(firstHop.port(), true);
+            try {
+                try (Http1ClientResponse response = client.post("/token")
+                        .maxRedirects(1)
+                        .sendExpectContinue(true)
+                        .readContinueTimeout(REQUEST_TIMEOUT)
+                        .readTimeout(REQUEST_TIMEOUT)
+                        .header(HeaderNames.CONTENT_TYPE, "application/x-www-form-urlencoded")
+                        .outputStream(outputStream -> {
+                            outputStream.write(requestBodyBytes());
+                            outputStream.close();
+                        })) {
+                    assertThat(response.status().code(), is(200));
+                }
+
+                CapturedRequest originRequest = firstHop.awaitRequest();
+                assertThat(originRequest.path(), is("/token"));
+                assertThat(originRequest.header("expect"), is("100-continue"));
+                assertThat(originRequest.body(), is(""));
+
+                CapturedRequest redirectRequest = secondHop.awaitRequest();
+                assertThat(redirectRequest.path(), is("/steal"));
+                assertThat(redirectRequest.header("expect"), is("100-continue"));
+                assertThat(redirectRequest.body(), is(""));
+            } finally {
+                client.closeResource();
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {307, 308})
+    @Timeout(20)
+    void closesConnectionAfterRedirectTargetFinalResponseBeforeBody(int redirectStatus) throws Exception {
+        try (SecondHopKeepAliveFinalResponseServer secondHop =
+                     new SecondHopKeepAliveFinalResponseServer(InetAddress.getByName(SECOND_HOP_HOST));
+             FirstHopServer firstHop = new FirstHopServer(InetAddress.getByName(FIRST_HOP_HOST),
+                                                          secondHop.port(),
+                                                          false,
+                                                          redirectStatus)) {
+            Http1Client client = newClient(firstHop.port(), true);
+            try {
+                try (Http1ClientResponse response = client.post("/token")
+                        .maxRedirects(1)
+                        .sendExpectContinue(true)
+                        .readContinueTimeout(REQUEST_TIMEOUT)
+                        .readTimeout(REQUEST_TIMEOUT)
+                        .header(HeaderNames.CONTENT_TYPE, "application/x-www-form-urlencoded")
+                        .outputStream(outputStream -> {
+                            outputStream.write(requestBodyBytes());
+                            outputStream.close();
+                        })) {
+                    assertThat(response.status().code(), is(200));
+                    assertThat(response.entity().as(String.class), is("OK"));
+                }
+
+                try (Http1ClientResponse response = client.get("http://" + SECOND_HOP_HOST + ":" + secondHop.port()
+                                                                       + "/reuse")
+                        .readTimeout(REQUEST_TIMEOUT)
+                        .request()) {
+                    assertThat(response.status().code(), is(200));
+                    assertThat(response.entity().as(String.class), is("REUSE"));
+                }
+
+                CapturedRequest originRequest = firstHop.awaitRequest();
+                assertThat(originRequest.path(), is("/token"));
+                assertThat(originRequest.header("expect"), is("100-continue"));
+                assertThat(originRequest.body(), is(""));
+
+                CapturedRequest redirectRequest = secondHop.awaitFinalRequest();
+                assertThat(redirectRequest.path(), is("/steal"));
+                assertThat(redirectRequest.header("expect"), is("100-continue"));
+                assertThat(redirectRequest.body(), is(""));
+
+                CapturedRequest reuseRequest = secondHop.awaitReuseRequest();
+                assertThat(reuseRequest.path(), is("/reuse"));
             } finally {
                 client.closeResource();
             }
@@ -643,6 +736,133 @@ class Http1CrossOriginRedirectEntityTest {
                                + "OK");
 
             return request.withBody(body);
+        }
+    }
+
+    private static final class SecondHopFinalResponseServer extends SingleRequestServer {
+        private SecondHopFinalResponseServer(InetAddress bindAddress) throws IOException {
+            super(bindAddress);
+        }
+
+        @Override
+        protected CapturedRequest handle(Socket socket) throws IOException {
+            InputStream inputStream = socket.getInputStream();
+            OutputStream outputStream = socket.getOutputStream();
+
+            CapturedRequest request = readHeadersOnly(inputStream);
+            writeAscii(outputStream,
+                       "HTTP/1.1 200 OK\r\n"
+                               + "Content-Length: 2\r\n"
+                               + "Connection: close\r\n"
+                               + "\r\n"
+                               + "OK");
+            socket.setSoTimeout(1_000);
+            try {
+                int read = inputStream.read();
+                if (read != -1) {
+                    throw new IOException("Expected no body after final redirect response");
+                }
+            } catch (SocketTimeoutException ignored) {
+                // No body arrived while the final response was available to the client.
+            }
+            return request;
+        }
+    }
+
+    private static final class SecondHopKeepAliveFinalResponseServer implements AutoCloseable {
+        private final ServerSocket serverSocket;
+        private final Thread thread;
+        private final CompletableFuture<CapturedRequest> finalRequestFuture = new CompletableFuture<>();
+        private final CompletableFuture<CapturedRequest> reuseRequestFuture = new CompletableFuture<>();
+        private volatile Socket finalSocket;
+        private volatile Socket reuseSocket;
+
+        private SecondHopKeepAliveFinalResponseServer(InetAddress bindAddress) throws IOException {
+            this.serverSocket = new ServerSocket();
+            this.serverSocket.bind(new InetSocketAddress(bindAddress, 0));
+            this.thread = new Thread(this::serve, getClass().getSimpleName() + "-" + port());
+            this.thread.setDaemon(true);
+            this.thread.start();
+        }
+
+        int port() {
+            return serverSocket.getLocalPort();
+        }
+
+        CapturedRequest awaitFinalRequest() throws InterruptedException, ExecutionException, TimeoutException {
+            return finalRequestFuture.get(10, TimeUnit.SECONDS);
+        }
+
+        CapturedRequest awaitReuseRequest() throws InterruptedException, ExecutionException, TimeoutException {
+            return reuseRequestFuture.get(10, TimeUnit.SECONDS);
+        }
+
+        @Override
+        public void close() throws Exception {
+            Socket socket = finalSocket;
+            if (socket != null) {
+                socket.close();
+            }
+            socket = reuseSocket;
+            if (socket != null) {
+                socket.close();
+            }
+            serverSocket.close();
+            thread.join(TimeUnit.SECONDS.toMillis(2));
+        }
+
+        private void serve() {
+            try {
+                try (Socket socket = serverSocket.accept()) {
+                    finalSocket = socket;
+                    socket.setSoTimeout((int) REQUEST_TIMEOUT.toMillis());
+                    InputStream inputStream = socket.getInputStream();
+                    OutputStream outputStream = socket.getOutputStream();
+
+                    CapturedRequest request = readHeadersOnly(inputStream);
+                    finalRequestFuture.complete(request);
+                    writeAscii(outputStream,
+                               "HTTP/1.1 200 OK\r\n"
+                                       + "Content-Length: 2\r\n"
+                                       + "\r\n"
+                                       + "OK");
+
+                    try {
+                        int read = inputStream.read();
+                        if (read != -1) {
+                            writeAscii(outputStream,
+                                       "HTTP/1.1 400 Bad Request\r\n"
+                                               + "Content-Length: 0\r\n"
+                                               + "Connection: close\r\n"
+                                               + "\r\n");
+                            throw new IOException("Expected client to close the incomplete upload connection, but received "
+                                                          + read + " on the same socket");
+                        }
+                    } catch (SocketException ignored) {
+                        // Peer closed or reset the incomplete upload connection.
+                    }
+                }
+
+                try (Socket socket = serverSocket.accept()) {
+                    reuseSocket = socket;
+                    socket.setSoTimeout((int) REQUEST_TIMEOUT.toMillis());
+                    CapturedRequest request = readHeadersOnly(socket.getInputStream());
+                    reuseRequestFuture.complete(request);
+                    writeAscii(socket.getOutputStream(),
+                               "HTTP/1.1 200 OK\r\n"
+                                       + "Content-Length: 5\r\n"
+                                       + "Connection: close\r\n"
+                                       + "\r\n"
+                                       + "REUSE");
+                }
+            } catch (Throwable t) {
+                if (!finalRequestFuture.isDone()) {
+                    finalRequestFuture.completeExceptionally(t);
+                }
+                if (!reuseRequestFuture.isDone()) {
+                    reuseRequestFuture.completeExceptionally(t);
+                }
+            }
         }
     }
 

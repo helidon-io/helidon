@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,10 @@ import io.helidon.http.Headers;
 import io.helidon.http.http2.Http2Headers;
 
 import io.grpc.CallOptions;
+import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 
 import static java.lang.System.Logger.Level.DEBUG;
 
@@ -108,7 +110,7 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
         // read response headers, or trailers if an error occurred
         responseHeaders = clientStream().readHeaders();
 
-        while (isRemoteOpen()) {
+        while (isRemoteOpen() || hasUnreadData()) {
             // trailers or eos received?
             if (clientStream().trailers().isDone() || !clientStream().hasEntity()) {
                 socket().log(LOGGER, DEBUG, "[Reading thread] trailers or eos received");
@@ -117,7 +119,17 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
             }
 
             // read single gRPC frame
-            BufferData bufferData = readGrpcFrame();
+            BufferData bufferData;
+            try {
+                bufferData = readGrpcFrame();
+            } catch (StatusRuntimeException e) {
+                Metadata trailers = e.getTrailers();
+                close(e.getStatus(), trailers == null ? EMPTY_METADATA : trailers);
+                return;
+            } catch (IllegalStateException e) {
+                close(Status.UNKNOWN.withDescription(e.getMessage()).withCause(e));
+                return;
+            }
             if (bufferData != null) {
                 socket().log(LOGGER, DEBUG, "response received");
 
@@ -138,9 +150,13 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     }
 
     private void close(Status status) {
+        close(status, EMPTY_METADATA);
+    }
+
+    private void close(Status status, Metadata metadata) {
         if (!closeCalled) {
             socket().log(LOGGER, DEBUG, "closing client call");
-            responseListener().onClose(status, EMPTY_METADATA);
+            responseListener().onClose(status, metadata);
             clientStream().cancel();
             connection().close();
 

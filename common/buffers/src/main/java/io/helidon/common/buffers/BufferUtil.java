@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ final class BufferUtil {
     }
 
     static String debugDataBinary(byte[] bytes, int position, int length) {
-        StringBuilder stringBuilder = new StringBuilder(BINARY_LINE.length() * length // each byte
+        StringBuilder stringBuilder = new StringBuilder(BINARY_LINE.length() * (length - position) // each byte
                                                                 + BINARY_LINE.length() // last line
                                                                 + BINARY_HEADER.length()); //first line
 
@@ -77,7 +77,7 @@ final class BufferUtil {
 |       0| 55    |U |
 +--------+-------------------------------------------------+----------------+
          */
-        StringBuilder stringBuilder = new StringBuilder(HEX_LINE.length() * (length / 16) // each 16 bytes
+        StringBuilder stringBuilder = new StringBuilder(HEX_LINE.length() * ((length - position) / 16) // each 16 bytes
                                                                 + 1 // to cover the first line
                                                                 + HEX_LINE.length() // last line
                                                                 + HEX_LINE.length()); //first line

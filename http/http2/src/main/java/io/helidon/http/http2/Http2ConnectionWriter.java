@@ -17,9 +17,11 @@
 package io.helidon.http.http2;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.SocketContext;
@@ -57,6 +59,29 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
     @Override
     public void write(Http2FrameData frame) {
         lockedWrite(frame);
+    }
+
+    /**
+     * Attempts to write a frame without waiting for another frame write to finish.
+     *
+     * @param frame frame to write
+     * @param beforeWrite action to invoke after acquiring the frame serialization lock and before writing
+     * @return {@code true} if the frame was written, {@code false} if another frame write is in progress
+     */
+    @Api.Internal
+    public boolean tryWrite(Http2FrameData frame, Runnable beforeWrite) {
+        Objects.requireNonNull(frame);
+        Objects.requireNonNull(beforeWrite);
+        if (!streamLock.tryLock()) {
+            return false;
+        }
+        try {
+            beforeWrite.run();
+            noLockWrite(frame);
+            return true;
+        } finally {
+            streamLock.unlock();
+        }
     }
 
     @Override

@@ -27,6 +27,7 @@ import io.helidon.microprofile.telemetry.spi.HelidonTelemetryContainerFilterHelp
 import io.helidon.tracing.Scope;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.Tracer;
 import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 
 import io.opentelemetry.semconv.ServerAttributes;
@@ -39,8 +40,10 @@ import jakarta.ws.rs.container.ContainerResponseContext;
 import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.container.ResourceInfo;
 import jakarta.ws.rs.core.Application;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
+import org.eclipse.microprofile.config.Config;
 import org.glassfish.jersey.server.ExtendedUriInfo;
 import org.glassfish.jersey.server.model.Resource;
 
@@ -56,24 +59,27 @@ import static io.helidon.microprofile.telemetry.HelidonTelemetryConstants.NET_HO
  */
 @Provider
 class HelidonTelemetryContainerFilter implements ContainerRequestFilter, ContainerResponseFilter {
-    private static final System.Logger LOGGER = System.getLogger(HelidonTelemetryContainerFilter.class.getName());
-    private static final String SPAN = Span.class.getName();
-    private static final String SPAN_SCOPE = Scope.class.getName();
-    private static final String HTTP_TARGET = "http.target";
-    private static final String HTTP_ROUTE = "http.route";
-
-    private static final String SPAN_NAME_FULL_URL = "telemetry.span.full.url";
-
-    private static final String HELPER_START_SPAN_PROPERTY = HelidonTelemetryContainerFilterHelper.class + ".startSpan";
+    static final String SPAN = Span.class.getName();
+    static final String SPAN_SCOPE = Scope.class.getName();
 
     @Deprecated(forRemoval = true, since = "4.1")
     static final String SPAN_NAME_INCLUDES_METHOD = "telemetry.span.name-includes-method";
 
-    private static boolean spanNameFullUrl = false;
-    private static AtomicBoolean spanNameWarningLogged = new AtomicBoolean();
+    @Deprecated(forRemoval = true, since = "4.5.4")
+    static final String AUTO_SPAN_INCLUDES_RESPONSE_WRITE = "telemetry.span.includes-response-write";
 
-    private final io.helidon.tracing.Tracer helidonTracer;
+    private static final System.Logger LOGGER = System.getLogger(HelidonTelemetryContainerFilter.class.getName());
+    private static final String HTTP_TARGET = "http.target";
+    private static final String HTTP_ROUTE = "http.route";
+    private static final String SPAN_NAME_FULL_URL = "telemetry.span.full.url";
+    private static final String HELPER_START_SPAN_PROPERTY = HelidonTelemetryContainerFilterHelper.class + ".startSpan";
+    private static final AtomicBoolean SPAN_NAME_WARNING_LOGGED = new AtomicBoolean();
+
+    private static boolean spanNameFullUrl = false;
+
+    private final Tracer helidonTracer;
     private final boolean isAgentPresent;
+    private final boolean autoSpanIncludesResponseWrite;
 
     /*
      MP Telemetry 1.1 adopts OpenTelemetry 1.29 semantic conventions which require the route to be in the REST span name.
@@ -86,22 +92,24 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
 
     private final List<HelidonTelemetryContainerFilterHelper> helpers;
 
-    @jakarta.ws.rs.core.Context
+    @Context
     private ResourceInfo resourceInfo;
 
     @Inject
-    HelidonTelemetryContainerFilter(io.helidon.tracing.Tracer helidonTracer,
-                                    org.eclipse.microprofile.config.Config mpConfig,
+    HelidonTelemetryContainerFilter(Tracer helidonTracer,
+                                    Config mpConfig,
                                     Instance<HelidonTelemetryContainerFilterHelper> helpersInstance) {
         this.helidonTracer = helidonTracer;
         isAgentPresent = HelidonOpenTelemetry.AgentDetector.isAgentPresent(MpConfig.toHelidonConfig(mpConfig));
+        autoSpanIncludesResponseWrite = mpConfig.getOptionalValue(AUTO_SPAN_INCLUDES_RESPONSE_WRITE, Boolean.class)
+                .orElse(false);
 
         // @Deprecated(forRemoval = true) In 5.x remove the following.
         mpConfig.getOptionalValue(SPAN_NAME_FULL_URL, Boolean.class).ifPresent(e -> spanNameFullUrl = e);
         Optional<Boolean> includeMethodConfig = mpConfig.getOptionalValue(SPAN_NAME_INCLUDES_METHOD, Boolean.class);
         restSpanNameIncludesMethod = includeMethodConfig.orElse(false);
-        if (!restSpanNameIncludesMethod && !spanNameWarningLogged.get()) {
-            spanNameWarningLogged.set(true);
+        if (!restSpanNameIncludesMethod && !SPAN_NAME_WARNING_LOGGED.get()) {
+            SPAN_NAME_WARNING_LOGGED.set(true);
             LOGGER.log(System.Logger.Level.WARNING,
                        String.format("""
                                Current OpenTelemetry semantic conventions include the HTTP method as part of REST span
@@ -156,8 +164,12 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
 
         Scope helidonScope = helidonSpan.activate();
 
-        requestContext.setProperty(SPAN, helidonSpan);
-        requestContext.setProperty(SPAN_SCOPE, helidonScope);
+        if (autoSpanIncludesResponseWrite) {
+            requestContext.setProperty(ServerSpanLifecycle.PROPERTY, new ServerSpanLifecycle(helidonSpan, helidonScope));
+        } else {
+            requestContext.setProperty(SPAN, helidonSpan);
+            requestContext.setProperty(SPAN_SCOPE, helidonScope);
+        }
 
     }
 
@@ -178,27 +190,52 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
         }
 
         try {
-            Span span = (Span) request.getProperty(SPAN);
+            ServerSpanLifecycle lifecycle = null;
+            Span span;
+            if (autoSpanIncludesResponseWrite) {
+                lifecycle = (ServerSpanLifecycle) request.getProperty(ServerSpanLifecycle.PROPERTY);
+                span = lifecycle == null ? null : lifecycle.span();
+            } else {
+                span = (Span) request.getProperty(SPAN);
+            }
             if (span == null) {
                 return;
             }
-            Scope scope = (Scope) request.getProperty(SPAN_SCOPE);
-            scope.close();
-
-            span.tag(HTTP_STATUS_CODE, response.getStatus());
-
-            // OpenTelemetry semantic conventions dictate what the span status should be.
-            // https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
-            if (response.getStatusInfo().getFamily().compareTo(Response.Status.Family.SERVER_ERROR) == 0) {
-                span.status(Span.Status.ERROR);
+            if (autoSpanIncludesResponseWrite) {
+                lifecycle.closeRequestScopeIfCurrent();
+            } else {
+                ((Scope) request.getProperty(SPAN_SCOPE)).close();
             }
-            span.end();
 
+            if (autoSpanIncludesResponseWrite) {
+                lifecycle.responseStatus(response.getStatus());
+            } else {
+                span.tag(HTTP_STATUS_CODE, response.getStatus());
 
+                // OpenTelemetry semantic conventions dictate what the span status should be.
+                // https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
+                if (response.getStatusInfo().getFamily().compareTo(Response.Status.Family.SERVER_ERROR) == 0) {
+                    span.status(Span.Status.ERROR);
+                }
+            }
+            // Response-write-inclusive spans end at Jersey's FINISHED request event.
+            if (!autoSpanIncludesResponseWrite) {
+                span.end();
+            }
         } finally {
-            request.removeProperty(SPAN);
-            request.removeProperty(SPAN_SCOPE);
+            if (!autoSpanIncludesResponseWrite) {
+                request.removeProperty(SPAN);
+                request.removeProperty(SPAN_SCOPE);
+            }
         }
+    }
+
+    private static Class<?> getRealClass(Class<?> object) {
+        Class<?> result = object;
+        while (result.isSynthetic()) {
+            result = result.getSuperclass();
+        }
+        return result;
     }
 
     private Optional<SpanContext> parentSpanContext(ContainerRequestContext requestContext) {
@@ -273,11 +310,4 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
         return path;
     }
 
-    private static Class<?> getRealClass(Class<?> object) {
-        Class<?> result = object;
-        while (result.isSynthetic()) {
-            result = result.getSuperclass();
-        }
-        return result;
-    }
 }

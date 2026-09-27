@@ -49,12 +49,15 @@ import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Status;
+import io.helidon.http.WritableHeaders;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentCaptor;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
@@ -67,7 +70,10 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @SuppressWarnings("removal")
@@ -200,6 +206,168 @@ class CachedHandlerTest {
         assertThat("Content length", cached.contentLength(), is(1230));
         assertThat("Last modified", cached.lastModified(), notNullValue());
         assertThat("Media type", cached.mediaType(), is(MEDIA_TYPE_ICON));
+    }
+
+    @Test
+    void testFsInMemoryRangePastFileLength(@TempDir Path tempDir) throws IOException {
+        Path root = tempDir.resolve("root");
+        Files.createDirectories(root);
+        Files.writeString(root.resolve("resource.txt"), "Content");
+
+        FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(root)
+                        .cachedFiles(Set.of("resource.txt"))
+                        .build());
+        handler.beforeStart();
+
+        var headers = WritableHeaders.create();
+        headers.add(HeaderValues.create(HeaderNames.RANGE, "bytes=1-9223372036854775807"));
+
+        ServerRequest req = mock(ServerRequest.class);
+        when(req.headers()).thenReturn(ServerRequestHeaders.create(headers));
+        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1",
+                                                            "http",
+                                                            "1.1",
+                                                            Method.GET,
+                                                            "/resource.txt",
+                                                            false));
+
+        ServerResponse res = mock(ServerResponse.class);
+        when(res.headers()).thenReturn(ServerResponseHeaders.create());
+
+        assertThat("Handler should serve the cached resource",
+                   handler.doHandle(Method.GET, "resource.txt", req, res, false),
+                   is(true));
+
+        ArgumentCaptor<Header> headerCaptor = ArgumentCaptor.forClass(Header.class);
+        ArgumentCaptor<byte[]> bytesCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(res).status(Status.PARTIAL_CONTENT_206);
+        verify(res).contentLength(6L);
+        verify(res, atLeastOnce()).header(headerCaptor.capture());
+        verify(res).send(bytesCaptor.capture());
+
+        boolean hasContentRange = headerCaptor.getAllValues()
+                .stream()
+                .anyMatch(it -> it.headerName().equals(HeaderNames.CONTENT_RANGE) && it.values().equals("bytes 1-6/7"));
+        assertThat("Content-Range header", hasContentRange, is(true));
+        assertThat("Response body", new String(bytesCaptor.getValue(), StandardCharsets.UTF_8), is("ontent"));
+    }
+
+    @Test
+    void testFsInMemoryStaleIfRangeSendsFullRepresentation(@TempDir Path tempDir) throws IOException {
+        Path root = tempDir.resolve("root");
+        Files.createDirectories(root);
+        Files.writeString(root.resolve("resource.txt"), "Content");
+
+        FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(root)
+                        .cachedFiles(Set.of("resource.txt"))
+                        .build());
+        handler.beforeStart();
+
+        var headers = WritableHeaders.create();
+        headers.add(HeaderValues.create(HeaderNames.RANGE, "bytes=0-0"));
+        headers.add(HeaderValues.create(HeaderNames.IF_RANGE, "\"old-etag\""));
+
+        ServerRequest req = mock(ServerRequest.class);
+        when(req.headers()).thenReturn(ServerRequestHeaders.create(headers));
+        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1",
+                                                            "http",
+                                                            "1.1",
+                                                            Method.GET,
+                                                            "/resource.txt",
+                                                            false));
+
+        ServerResponse res = mock(ServerResponse.class);
+        when(res.headers()).thenReturn(ServerResponseHeaders.create());
+
+        assertThat("Handler should serve the cached resource",
+                   handler.doHandle(Method.GET, "resource.txt", req, res, false),
+                   is(true));
+
+        ArgumentCaptor<byte[]> bytesCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(res, never()).status(Status.PARTIAL_CONTENT_206);
+        verify(res).send(bytesCaptor.capture());
+        assertThat("Response body", new String(bytesCaptor.getValue(), StandardCharsets.UTF_8), is("Content"));
+    }
+
+    @Test
+    void testFsInMemoryDateIfRangeSendsFullRepresentation(@TempDir Path tempDir) throws IOException {
+        Path root = tempDir.resolve("root");
+        Files.createDirectories(root);
+        Files.writeString(root.resolve("resource.txt"), "Content");
+
+        FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(root)
+                        .cachedFiles(Set.of("resource.txt"))
+                        .build());
+        handler.beforeStart();
+
+        var headers = WritableHeaders.create();
+        headers.add(HeaderValues.create(HeaderNames.RANGE, "bytes=0-0"));
+        headers.add(HeaderValues.create(HeaderNames.IF_RANGE, "Wed, 21 Oct 2015 07:28:00 GMT"));
+
+        ServerRequest req = mock(ServerRequest.class);
+        when(req.headers()).thenReturn(ServerRequestHeaders.create(headers));
+        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1",
+                                                            "http",
+                                                            "1.1",
+                                                            Method.GET,
+                                                            "/resource.txt",
+                                                            false));
+
+        ServerResponse res = mock(ServerResponse.class);
+        when(res.headers()).thenReturn(ServerResponseHeaders.create());
+
+        assertThat("Handler should serve the cached resource",
+                   handler.doHandle(Method.GET, "resource.txt", req, res, false),
+                   is(true));
+
+        ArgumentCaptor<byte[]> bytesCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(res, never()).status(Status.PARTIAL_CONTENT_206);
+        verify(res).send(bytesCaptor.capture());
+        assertThat("Response body", new String(bytesCaptor.getValue(), StandardCharsets.UTF_8), is("Content"));
+    }
+
+    @Test
+    void testFsInMemoryUnsupportedRangeUnitSendsFullRepresentation(@TempDir Path tempDir) throws IOException {
+        Path root = tempDir.resolve("root");
+        Files.createDirectories(root);
+        Files.writeString(root.resolve("resource.txt"), "Content");
+
+        FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(root)
+                        .cachedFiles(Set.of("resource.txt"))
+                        .build());
+        handler.beforeStart();
+
+        var headers = WritableHeaders.create();
+        headers.add(HeaderValues.create(HeaderNames.RANGE, "items=0-0"));
+
+        ServerRequest req = mock(ServerRequest.class);
+        when(req.headers()).thenReturn(ServerRequestHeaders.create(headers));
+        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1",
+                                                            "http",
+                                                            "1.1",
+                                                            Method.GET,
+                                                            "/resource.txt",
+                                                            false));
+
+        ServerResponse res = mock(ServerResponse.class);
+        when(res.headers()).thenReturn(ServerResponseHeaders.create());
+
+        assertThat("Handler should serve the cached resource",
+                   handler.doHandle(Method.GET, "resource.txt", req, res, false),
+                   is(true));
+
+        ArgumentCaptor<byte[]> bytesCaptor = ArgumentCaptor.forClass(byte[].class);
+        verify(res, never()).status(Status.PARTIAL_CONTENT_206);
+        verify(res).send(bytesCaptor.capture());
+        assertThat("Response body", new String(bytesCaptor.getValue(), StandardCharsets.UTF_8), is("Content"));
     }
 
     @Test

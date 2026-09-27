@@ -136,7 +136,7 @@ public interface ServerResponse {
      * @param length number of bytes send
      */
     default void send(byte[] bytes, int position, int length) {
-        send(Arrays.copyOfRange(bytes, position, length));
+        send(Arrays.copyOfRange(bytes, position, position + length));
     }
 
     /**

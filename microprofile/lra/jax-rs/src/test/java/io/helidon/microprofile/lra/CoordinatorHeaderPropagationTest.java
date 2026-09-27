@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,6 +98,8 @@ import static org.hamcrest.Matchers.not;
 @AddBean(CoordinatorHeaderPropagationTest.TestResourceLeave.class)
 @AddBean(CoordinatorHeaderPropagationTest.TestResourceJaxRsCompensate.class)
 @AddBean(CoordinatorHeaderPropagationTest.TestResourceNonJaxRsCompensate.class)
+@AddConfig(key = NonJaxRsCallbackAuthenticator.CONFIG_SECRET_KEY, value = ParticipantTest.TEST_CALLBACK_SECRET)
+@AddConfig(key = ParticipantService.CONFIG_PARTICIPANT_URL_KEY, value = "http://localhost:0")
 // Override context
 @AddConfig(key = CoordinatorClient.CONF_KEY_COORDINATOR_HEADERS_PROPAGATION_PREFIX + ".0", value = "Xxx-tmm-")
 @AddConfig(key = CoordinatorClient.CONF_KEY_COORDINATOR_HEADERS_PROPAGATION_PREFIX + ".1", value = "xbb-tmm-")
@@ -121,6 +123,8 @@ class CoordinatorHeaderPropagationTest {
     private static final Map<String, List<String>> afterHeadersParticipant = Collections.synchronizedMap(new HashMap<>());
     private static final Map<String, List<String>> joinHeadersCoordinator = Collections.synchronizedMap(new HashMap<>());
     private static final Map<String, List<String>> closeHeadersCoordinator = Collections.synchronizedMap(new HashMap<>());
+    private static final Map<String, URI> removedParticipantLinksCoordinator =
+            Collections.synchronizedMap(new HashMap<>());
     private static final CompletableFuture<Void> completedJaxRs = new CompletableFuture<>();
     private static final CompletableFuture<Void> completedNonJaxRs = new CompletableFuture<>();
     private static final AtomicLong lraIndex = new AtomicLong();
@@ -131,6 +135,9 @@ class CoordinatorHeaderPropagationTest {
 
     @Inject
     CoordinatorLocatorService coordinatorLocatorService;
+
+    @Inject
+    ParticipantService participantService;
 
     @Produces
     @ApplicationScoped
@@ -153,7 +160,7 @@ class CoordinatorHeaderPropagationTest {
                             .send();
                 })
                 .put("/{lraId}/remove", (req, res) -> {
-                    //mock leave
+                    removedParticipantLinksCoordinator.putAll(parseParticipantLinks(req.content().as(String.class)));
                     res.send();
                 })
                 .put("/{lraId}/close", (req, res) -> {
@@ -231,19 +238,22 @@ class CoordinatorHeaderPropagationTest {
                     String lraId = "http://localhost:" + port + "/lra-coordinator/" + req.path()
                             .pathParameters()
                             .get("lraId");
-                    String content = req.content().as(String.class);
-
-                    for (String part : content.split(",")) {
-                        String[] split = part.split(";");
-                        URI uri = URI.create(split[0]
-                                                     .replaceAll("^<", "")
-                                                     .replaceAll(">$", ""));
-                        String uriType = split[1].replaceAll("rel=\"([a-z]+)\"", "$1");
-                        lraMap.get(lraId).put(uriType.trim(), uri);
-
-                    }
+                    lraMap.get(lraId).putAll(parseParticipantLinks(req.content().as(String.class)));
                     res.send();
                 });
+    }
+
+    private static Map<String, URI> parseParticipantLinks(String content) {
+        Map<String, URI> links = new HashMap<>();
+        for (String part : content.split(",")) {
+            String[] split = part.split(";");
+            URI uri = URI.create(split[0]
+                                         .replaceAll("^<", "")
+                                         .replaceAll(">$", ""));
+            String uriType = split[1].replaceAll("rel=\"([a-z]+)\"", "$1");
+            links.put(uriType.trim(), uri);
+        }
+        return links;
     }
 
     private void ready(
@@ -328,6 +338,7 @@ class CoordinatorHeaderPropagationTest {
                 .get(TIMEOUT_SEC, TimeUnit.SECONDS);
 
         assertThat(response.getStatus(), AnyOf.anyOf(is(200), is(204)));
+        URI lraId = URI.create(response.getHeaderString(LRA_HTTP_CONTEXT_HEADER));
 
         assertThat(startHeadersParticipant, hasEntry(PROPAGATED_HEADER, List.of("yes me!")));
         assertThat(startHeadersParticipant, hasEntry(NOT_PROPAGATED_HEADER, List.of("not me!")));
@@ -339,6 +350,32 @@ class CoordinatorHeaderPropagationTest {
         assertThat(joinHeadersCoordinator, hasEntry(PROPAGATED_HEADER, List.of("yes me!")));
         assertThat(joinHeadersCoordinator, not(hasEntry(NOT_PROPAGATED_HEADER, List.of("not me!"))));
 
+        URI alternateBaseUri = target.getUriBuilder().host("127.0.0.1").build();
+        try (var client = ClientBuilder.newClient()) {
+            response = client.target(alternateBaseUri)
+                    .path("headers-test-leave")
+                    .path("leave")
+                    .request()
+                    .header(Work.HEADER_KEY, Work.NOOP)
+                    .header(LRA_HTTP_CONTEXT_HEADER, lraId)
+                    .header(PROPAGATED_HEADER, "yes me!")
+                    .header(NOT_PROPAGATED_HEADER, "not me!")
+                    .async()
+                    .put(Entity.text(""))
+                    .get(TIMEOUT_SEC, TimeUnit.SECONDS);
+        }
+
+        assertThat(response.getStatus(), AnyOf.anyOf(is(200), is(204)));
+        assertThat(removedParticipantLinksCoordinator, is(lraMap.get(lraId.toASCIIString())));
+
+        assertThat(leaveHeadersParticipant, hasEntry(PROPAGATED_HEADER, List.of("yes me!")));
+        assertThat(leaveHeadersParticipant, not(hasEntry(NOT_PROPAGATED_HEADER, List.of("not me!"))));
+
+        coordinatorClient.close(lraId,
+                                participantService.prepareCustomHeaderPropagation(
+                                        Map.of(PROPAGATED_HEADER, List.of("yes me!"),
+                                               NOT_PROPAGATED_HEADER, List.of("not me!"))));
+
         assertThat(closeHeadersCoordinator, hasEntry(PROPAGATED_HEADER, List.of("yes me!")));
         assertThat(closeHeadersCoordinator, not(hasEntry(NOT_PROPAGATED_HEADER, List.of("not me!"))));
 
@@ -347,27 +384,11 @@ class CoordinatorHeaderPropagationTest {
         // test after
         assertThat(afterHeadersParticipant, hasEntry(PROPAGATED_HEADER, List.of("yes me!")));
         assertThat(afterHeadersParticipant, not(hasEntry(NOT_PROPAGATED_HEADER, List.of("not me!"))));
-
-        // leave mock lra, not the one created above, that ended already
-        response = target.path("headers-test-leave")
-                .path("leave")
-                .request()
-                .header(Work.HEADER_KEY, Work.NOOP)
-                .header(LRA_HTTP_CONTEXT_HEADER, "http://localhost:" + port + "/lra-coordinator/xxx-xxx-0")
-                .header(PROPAGATED_HEADER, "yes me!")
-                .header(NOT_PROPAGATED_HEADER, "not me!")
-                .async()
-                .put(Entity.text(""))
-                .get(TIMEOUT_SEC, TimeUnit.SECONDS);
-
-        assertThat(response.getStatus(), AnyOf.anyOf(is(200), is(204)));
-
-        assertThat(leaveHeadersParticipant, hasEntry(PROPAGATED_HEADER, List.of("yes me!")));
-        assertThat(leaveHeadersParticipant, not(hasEntry(NOT_PROPAGATED_HEADER, List.of("not me!"))));
     }
 
     private static void reset() {
         lraMap.clear();
+        removedParticipantLinksCoordinator.clear();
         lraIndex.set(0);
         Stream.of(
                         startHeadersCoordinator,
@@ -388,7 +409,7 @@ class CoordinatorHeaderPropagationTest {
     @Path("/headers-test-leave")
     public static class TestResourceLeave {
         @PUT
-        @LRA(value = LRA.Type.REQUIRES_NEW)
+        @LRA(value = LRA.Type.REQUIRES_NEW, end = false)
         @Path("/start")
         public void start(
                 @HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId,

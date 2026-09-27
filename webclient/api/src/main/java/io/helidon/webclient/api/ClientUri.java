@@ -17,6 +17,7 @@
 package io.helidon.webclient.api;
 
 import java.net.URI;
+import java.util.Locale;
 
 import io.helidon.common.Api;
 import io.helidon.common.uri.UriFragment;
@@ -53,6 +54,7 @@ public class ClientUri implements UriInfo {
     private ClientUri(UriInfo baseUri) {
         this.base = baseUri;
         this.uriBuilder = UriInfo.builder(baseUri);
+        scheme(baseUri.scheme());
         this.skipUriEncoding = false;
         this.query = UriQueryWriteable.create().from(baseUri.query());
     }
@@ -124,6 +126,9 @@ public class ClientUri implements UriInfo {
      * @return updated instance
      */
     public ClientUri scheme(String scheme) {
+        if (!"http".equals(scheme) && !"https".equals(scheme)) {
+            scheme = scheme.toLowerCase(Locale.ROOT);
+        }
         uriBuilder.scheme(scheme);
         return this;
     }
@@ -186,7 +191,7 @@ public class ClientUri implements UriInfo {
         }
 
         if (uri.getScheme() != null) {
-            uriBuilder.scheme(uri.getScheme());
+            scheme(uri.getScheme());
         }
         if (uri.getHost() != null) {
             uriBuilder.host(uri.getHost());
@@ -232,6 +237,7 @@ public class ClientUri implements UriInfo {
      */
     public ClientUri resolve(ClientUri uri) {
         this.uriBuilder.from(uri);
+        scheme(uri.scheme());
         this.query.clear();
         this.query.from(uri.query());
         this.emptyQueryDelimiter = uri.emptyQueryDelimiter;

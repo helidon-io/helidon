@@ -25,12 +25,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.http.Status;
 import io.helidon.lra.coordinator.client.CoordinatorClient;
+import io.helidon.lra.coordinator.client.Participant;
 import io.helidon.microprofile.config.ConfigCdiExtension;
 import io.helidon.microprofile.lra.resources.DontEnd;
 import io.helidon.microprofile.lra.resources.Work;
@@ -66,6 +68,7 @@ import org.eclipse.microprofile.lra.annotation.Forget;
 import org.eclipse.microprofile.lra.annotation.LRAStatus;
 import org.eclipse.microprofile.lra.annotation.ParticipantStatus;
 import org.eclipse.microprofile.lra.annotation.ws.rs.LRA;
+import org.eclipse.microprofile.lra.annotation.ws.rs.Leave;
 import org.glassfish.jersey.ext.cdi1x.internal.CdiComponentProvider;
 import org.hamcrest.core.AnyOf;
 import org.junit.jupiter.api.Test;
@@ -76,6 +79,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.startsWith;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 @HelidonTest
 @DisableDiscovery
@@ -103,10 +110,14 @@ import static org.hamcrest.Matchers.startsWith;
 @AddBean(ParticipantTest.SuperclassConsumesInterfaceJaxRsParticipantResource.class)
 // Override context
 @AddConfig(key = NonJaxRsResource.CONFIG_CONTEXT_PATH_KEY, value = ParticipantTest.CUSTOM_CONTEXT)
+@AddConfig(key = NonJaxRsCallbackAuthenticator.CONFIG_SECRET_KEY, value = ParticipantTest.TEST_CALLBACK_SECRET)
+@AddConfig(key = ParticipantService.CONFIG_PARTICIPANT_URL_KEY, value = "http://localhost:0")
 class ParticipantTest {
 
     private static final long TIMEOUT_SEC = 10L;
+    private static final URI CALLBACK_LRA_ID = URI.create("http://localhost/lra-coordinator/test-lra");
     static final String CUSTOM_CONTEXT = "custom-lra-context";
+    static final String TEST_CALLBACK_SECRET = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=";
 
     private static final AtomicBoolean UNANNOTATED_METHOD_CALLED = new AtomicBoolean();
     private static final AtomicBoolean UNREGISTERED_PARTICIPANT_INITIALIZED = new AtomicBoolean();
@@ -140,6 +151,12 @@ class ParticipantTest {
 
     @Inject
     CoordinatorLocatorService coordinatorLocatorService;
+
+    @Inject
+    NonJaxRsCallbackAuthenticator callbackAuthenticator;
+
+    @Inject
+    ParticipantService participantService;
 
     @Produces
     @ApplicationScoped
@@ -379,6 +396,27 @@ class ParticipantTest {
     }
 
     @Test
+    void rejectUnauthenticatedNonJaxRsParticipantCallback(WebTarget target) throws Exception {
+        DIRECT_COMPENSATE_CALLED.set(false);
+
+        Response response = target.path(CUSTOM_CONTEXT)
+                .path("compensate")
+                .path(DirectCallbackResource.class.getName())
+                .path("compensate")
+                .request()
+                .header(LRA_HTTP_CONTEXT_HEADER, CALLBACK_LRA_ID)
+                .async()
+                .put(Entity.text(""))
+                .get(TIMEOUT_SEC, TimeUnit.SECONDS);
+
+        assertAll(
+                () -> assertThat(response.getStatus(),
+                                 AnyOf.anyOf(is(Response.Status.UNAUTHORIZED.getStatusCode()),
+                                             is(Response.Status.FORBIDDEN.getStatusCode()))),
+                () -> assertThat(DIRECT_COMPENSATE_CALLED.get(), is(false)));
+    }
+
+    @Test
     void invokeValidNonJaxRsParticipantMethods(WebTarget target) throws Exception {
         DIRECT_COMPLETE_CALLED.set(false);
         DIRECT_COMPENSATE_CALLED.set(false);
@@ -421,56 +459,25 @@ class ParticipantTest {
 
     @Test
     void methodScan() throws NoSuchMethodException {
-        ParticipantImpl p = new ParticipantImpl(
-                URI.create("http://localhost:8888"),
-                NonJaxRsResource.CONTEXT_PATH_DEFAULT,
-                DontEnd.class);
+        ParticipantImpl p = participant(DontEnd.class);
         assertThat(p.isLraMethod(DontEnd.class.getMethod("startDontEndLRA", URI.class)), is(true));
         assertThat(p.isLraMethod(DontEnd.class.getMethod("endLRA", URI.class)), is(true));
     }
 
     @Test
     void inheritedJaxRsPathUsedForParticipantUri() {
-        ParticipantImpl interfaceParticipant = new ParticipantImpl(
-                URI.create("http://localhost:8888"),
-                NonJaxRsResource.CONTEXT_PATH_DEFAULT,
-                InheritedJaxRsParticipantResource.class);
-        ParticipantImpl superclassParticipant = new ParticipantImpl(
-                URI.create("http://localhost:8888"),
-                NonJaxRsResource.CONTEXT_PATH_DEFAULT,
-                SuperclassJaxRsParticipantResource.class);
-        ParticipantImpl transitiveInterfaceParticipant = new ParticipantImpl(
-                URI.create("http://localhost:8888"),
-                NonJaxRsResource.CONTEXT_PATH_DEFAULT,
-                TransitiveInterfaceJaxRsParticipantResource.class);
-        ParticipantImpl genericInterfaceParticipant = new ParticipantImpl(
-                URI.create("http://localhost:8888"),
-                NonJaxRsResource.CONTEXT_PATH_DEFAULT,
-                GenericInterfaceJaxRsParticipantResource.class);
-        ParticipantImpl overridingParticipant = new ParticipantImpl(
-                URI.create("http://localhost:8888"),
-                NonJaxRsResource.CONTEXT_PATH_DEFAULT,
-                OverridingJaxRsParticipantResource.class);
-        ParticipantImpl superclassCallbackInterfaceParticipant = new ParticipantImpl(
-                URI.create("http://localhost:8888"),
-                NonJaxRsResource.CONTEXT_PATH_DEFAULT,
-                SuperclassCallbackInterfaceJaxRsParticipantResource.class);
-        ParticipantImpl partialOverrideParticipant = new ParticipantImpl(
-                URI.create("http://localhost:8888"),
-                NonJaxRsResource.CONTEXT_PATH_DEFAULT,
-                PartialOverrideJaxRsParticipantResource.class);
-        ParticipantImpl consumesOverrideParticipant = new ParticipantImpl(
-                URI.create("http://localhost:8888"),
-                NonJaxRsResource.CONTEXT_PATH_DEFAULT,
-                ConsumesOverrideJaxRsParticipantResource.class);
-        ParticipantImpl headerParamOverrideParticipant = new ParticipantImpl(
-                URI.create("http://localhost:8888"),
-                NonJaxRsResource.CONTEXT_PATH_DEFAULT,
-                HeaderParamOverrideJaxRsParticipantResource.class);
-        ParticipantImpl superclassConsumesInterfaceParticipant = new ParticipantImpl(
-                URI.create("http://localhost:8888"),
-                NonJaxRsResource.CONTEXT_PATH_DEFAULT,
-                SuperclassConsumesInterfaceJaxRsParticipantResource.class);
+        ParticipantImpl interfaceParticipant = participant(InheritedJaxRsParticipantResource.class);
+        ParticipantImpl superclassParticipant = participant(SuperclassJaxRsParticipantResource.class);
+        ParticipantImpl transitiveInterfaceParticipant = participant(TransitiveInterfaceJaxRsParticipantResource.class);
+        ParticipantImpl genericInterfaceParticipant = participant(GenericInterfaceJaxRsParticipantResource.class);
+        ParticipantImpl overridingParticipant = participant(OverridingJaxRsParticipantResource.class);
+        ParticipantImpl superclassCallbackInterfaceParticipant =
+                participant(SuperclassCallbackInterfaceJaxRsParticipantResource.class);
+        ParticipantImpl partialOverrideParticipant = participant(PartialOverrideJaxRsParticipantResource.class);
+        ParticipantImpl consumesOverrideParticipant = participant(ConsumesOverrideJaxRsParticipantResource.class);
+        ParticipantImpl headerParamOverrideParticipant = participant(HeaderParamOverrideJaxRsParticipantResource.class);
+        ParticipantImpl superclassConsumesInterfaceParticipant =
+                participant(SuperclassConsumesInterfaceJaxRsParticipantResource.class);
 
         assertThat(interfaceParticipant.compensate().orElseThrow().getPath(),
                    is("/inherited-jax-rs-participant-test/inherited-compensate"));
@@ -504,6 +511,52 @@ class ParticipantTest {
                               + "/compensate/"
                               + SuperclassConsumesInterfaceJaxRsParticipantResource.class.getName()
                               + "/superclassConsumesInterfaceCompensate"));
+        assertThat(superclassConsumesInterfaceParticipant.compensate().orElseThrow().getQuery(),
+                   startsWith(NonJaxRsCallbackAuthenticator.CAPABILITY_QUERY_PARAMETER + "=v1."));
+    }
+
+    @Test
+    void participantMetadataAndBaseUriRemainStable() {
+        URI joinBaseUri = URI.create("https://attacker.example");
+        URI leaveBaseUri = URI.create("https://later.example");
+        URI firstLraId = URI.create("https://coordinator.example/lra/first");
+        URI secondLraId = URI.create("https://coordinator.example/lra/second");
+
+        Participant firstJaxRs = participantService.participant(joinBaseUri, CachedJaxRsParticipant.class, firstLraId);
+        Participant leaveJaxRs = participantService.participant(leaveBaseUri, CachedJaxRsParticipant.class, firstLraId);
+        Participant firstNonJaxRs = participantService.participant(joinBaseUri, CachedNonJaxRsParticipant.class, firstLraId);
+        Participant secondNonJaxRs = participantService.participant(leaveBaseUri, CachedNonJaxRsParticipant.class, secondLraId);
+
+        assertAll(
+                () -> assertSame(firstJaxRs, leaveJaxRs),
+                () -> assertThat(leaveJaxRs.compensate().orElseThrow().getScheme(), is("http")),
+                () -> assertThat(leaveJaxRs.compensate().orElseThrow().getHost(), is("localhost")),
+                () -> assertThat(leaveJaxRs.compensate().orElseThrow().getPort(), is(port)),
+                () -> assertThat(leaveJaxRs.leave().orElseThrow().getHost(), is("localhost")),
+                () -> assertThat(leaveJaxRs.leave().orElseThrow().getPort(), is(port)),
+                () -> assertNotSame(firstNonJaxRs, secondNonJaxRs),
+                () -> assertThat(secondNonJaxRs.compensate().orElseThrow().getScheme(), is("http")),
+                () -> assertThat(secondNonJaxRs.compensate().orElseThrow().getHost(), is("localhost")),
+                () -> assertThat(secondNonJaxRs.compensate().orElseThrow().getPort(), is(port)),
+                () -> assertNotEquals(firstNonJaxRs.compensate(), secondNonJaxRs.compensate())
+        );
+    }
+
+    @Test
+    void participantStringDoesNotDecodeEscapedControlsOrExposeQuery() {
+        ParticipantImpl participant = new ParticipantImpl(
+                Map.of(Compensate.class,
+                       URI.create("https://participant.example/callback%0D%0Aforged?capability=secret")),
+                Map.of());
+
+        assertThat(participant.toString(), is("ParticipantImpl{/callback%0D%0Aforged}"));
+    }
+
+    private ParticipantImpl participant(Class<?> participantClass) {
+        return new ParticipantFactory(URI.create("http://localhost:8888"),
+                                      NonJaxRsResource.CONTEXT_PATH_DEFAULT,
+                                      participantClass)
+                .participant(CALLBACK_LRA_ID, callbackAuthenticator);
     }
 
     private Response participantCallback(WebTarget target,
@@ -522,8 +575,13 @@ class ParticipantTest {
                 .path(type)
                 .path(participantClass.getName())
                 .path(methodName)
+                .queryParam(NonJaxRsCallbackAuthenticator.CAPABILITY_QUERY_PARAMETER,
+                            callbackAuthenticator.capability(CALLBACK_LRA_ID,
+                                                             type,
+                                                             participantClass.getName(),
+                                                             methodName))
                 .request()
-                .header(LRA_HTTP_CONTEXT_HEADER, URI.create("http://localhost/lra-coordinator/test-lra"))
+                .header(LRA_HTTP_CONTEXT_HEADER, CALLBACK_LRA_ID)
                 .async()
                 .put(Entity.text(entity))
                 .get(TIMEOUT_SEC, TimeUnit.SECONDS);
@@ -617,6 +675,30 @@ class ParticipantTest {
         public Response jaxRsCompensate(URI lraId) {
             JAX_RS_COMPENSATE_CALLED.set(true);
             return Response.ok(ParticipantStatus.Compensated.name()).build();
+        }
+    }
+
+    @Path("/cached-jax-rs-participant")
+    static class CachedJaxRsParticipant {
+        @PUT
+        @Path("/compensate")
+        @Compensate
+        Response compensate(URI lraId) {
+            return Response.ok().build();
+        }
+
+        @PUT
+        @Path("/leave")
+        @Leave
+        Response leave(URI lraId) {
+            return Response.ok().build();
+        }
+    }
+
+    static class CachedNonJaxRsParticipant {
+        @Compensate
+        Response compensate(URI lraId) {
+            return Response.ok().build();
         }
     }
 
@@ -866,4 +948,5 @@ class ParticipantTest {
     @HttpMethod("CUSTOM")
     public @interface CustomHttpMethod {
     }
+
 }

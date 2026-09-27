@@ -165,7 +165,7 @@ public final class HeaderValues {
     public static Header createCached(HeaderName name, String value) {
         return new HeaderValueCached(name, false,
                                      false,
-                                     value.getBytes(StandardCharsets.US_ASCII),
+                                     encodeValue(value),
                                      value);
     }
 
@@ -397,7 +397,7 @@ public final class HeaderValues {
      * @return a new header
      */
     public static Header createCached(HeaderName name, boolean changing, boolean sensitive, String value) {
-        return new HeaderValueCached(name, changing, sensitive, value.getBytes(StandardCharsets.UTF_8), value);
+        return new HeaderValueCached(name, changing, sensitive, encodeValue(value), value);
     }
 
     /**
@@ -437,5 +437,14 @@ public final class HeaderValues {
      */
     public static Header create(HeaderName name, boolean changing, boolean sensitive, long value) {
         return create(name, changing, sensitive, String.valueOf(value));
+    }
+
+    private static byte[] encodeValue(String value) {
+        for (int i = 0; i < value.length(); i++) {
+            if (value.charAt(i) > 0xff) {
+                throw new IllegalArgumentException("Header value contains a character above 0xff");
+            }
+        }
+        return value.getBytes(StandardCharsets.ISO_8859_1);
     }
 }

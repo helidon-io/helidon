@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ class UriPartTest extends TestParent {
     }
 
     @Test
-    void testFragment() {
+    void testFragmentIsNotSent() {
         String fragment = "super fragment#&?/";
         String response = noSecurityClient.get()
                 .path("obtainedQuery")
@@ -93,18 +93,18 @@ class UriPartTest extends TestParent {
                 .queryParam("empty", "")
                 .fragment(fragment)
                 .requestEntity(String.class);
-        assertThat(response.trim(), is(fragment));
+        assertThat(response.trim(), is(""));
     }
 
     @Test
-    void testBadFragment() {
-        String fragment = "super fragment#&?/"; // contains illegal characters, that should break validation
+    void testUnencodedFragmentIsNotSent() {
+        String fragment = "super fragment#&?/";
         try (HttpClientResponse response = noSecurityClient.get()
                 .skipUriEncoding(true)
                 .fragment(fragment)
                 .request()) {
 
-            assertThat(response.status(), is(Status.BAD_REQUEST_400));
+            assertThat(response.status(), is(Status.OK_200));
         }
     }
 

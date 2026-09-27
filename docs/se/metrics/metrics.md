@@ -211,6 +211,12 @@ make the metrics data available in the Prometheus/OpenMetrics format. (To serve
 the data at the metrics endpoint in your service, your project must also depend
 on the Helidon metrics observer component.)
 
+> [!WARNING]
+> The `metrics.prometheus.histogramFlavor` configuration property is deprecated
+> as of Helidon 4.5.5 because a future release of the Prometheus Java client will
+> no longer honor it. A future Helidon release will adopt that Prometheus client
+> version.
+
 ### Configuration options
 
 <!--@include ../../config/io.helidon.metrics.providers.micrometer.PrometheusPublisher.md#configuration-options delim=--- offset=2 collapseTables=10 -->

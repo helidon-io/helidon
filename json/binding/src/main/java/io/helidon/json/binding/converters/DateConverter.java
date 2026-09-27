@@ -16,6 +16,7 @@
 
 package io.helidon.json.binding.converters;
 
+import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -60,7 +61,12 @@ class DateConverter implements JsonConverter<Date> {
     @Override
     public Date deserialize(JsonParser parser) {
         if (parser.currentByte() == '"') {
-            return Date.from(Instant.from(FORMATTER.parse(parser.readString())));
+            String value = parser.readString();
+            try {
+                return Date.from(Instant.from(FORMATTER.parse(value)));
+            } catch (DateTimeException | IllegalArgumentException e) {
+                throw parser.createException("Invalid Date value", e);
+            }
         }
         throw parser.createException("Only the string format of the Date is supported");
     }

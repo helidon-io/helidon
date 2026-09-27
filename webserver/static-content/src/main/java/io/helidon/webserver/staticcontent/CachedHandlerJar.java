@@ -116,7 +116,12 @@ class CachedHandlerJar implements CachedHandler {
             try {
                 if (path != null && Files.exists(path)) {
                     try (var channel = Files.newByteChannel(path)) {
-                        FileBasedContentHandler.send(request, response, channel);
+                        FileBasedContentHandler.send(request,
+                                                     response,
+                                                     channel,
+                                                     lastModified == null
+                                                             ? null
+                                                             : String.valueOf(lastModified.toEpochMilli()));
                     }
                     return true;
                 }

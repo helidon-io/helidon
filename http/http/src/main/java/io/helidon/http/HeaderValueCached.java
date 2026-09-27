@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,12 +46,12 @@ class HeaderValueCached extends HeaderValueBase {
 
     @Override
     public byte[] valueBytes() {
-        return cached;
+        return cached.clone();
     }
 
     @Override
     public void writeHttp1Header(BufferData buffer) {
-        buffer.write(cachedHttp1Header);
+        BufferData.writeFromShared(buffer, cachedHttp1Header);
     }
 
     @Override

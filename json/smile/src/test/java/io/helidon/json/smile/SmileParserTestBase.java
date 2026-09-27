@@ -36,8 +36,10 @@ import io.helidon.json.JsonValueType;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -47,6 +49,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * <p>Spec-trace comments quote exact Smile spec section titles and then paraphrase the exercised rule.</p>
  */
 abstract class SmileParserTestBase {
+
+    private static final int MAX_NESTING_DEPTH = JsonParser.MAX_NESTING_DEPTH;
 
     @FunctionalInterface
     protected interface JsonGeneratorWriter {
@@ -207,6 +211,126 @@ abstract class SmileParserTestBase {
     }
 
     @Test
+    public void testParseBigIntegerAtExpansionLimit() throws Exception {
+        BigInteger magnitude = BigInteger.TEN.pow(4_096);
+        for (String literal : new String[] {"1E+4096", "-1E+4096"}) {
+            byte[] smileData = generateSmileBytes(gen -> gen.write(new BigDecimal(literal)));
+            JsonParser parser = createParser(smileData);
+            BigInteger expected = literal.startsWith("-") ? magnitude.negate() : magnitude;
+
+            assertThat(parser.readBigInteger(), is(expected));
+            assertThat(parser.hasNext(), is(false));
+        }
+    }
+
+    @Test
+    public void testRejectExcessiveBigIntegerExpansion() throws Exception {
+        for (String literal : new String[] {"1E+4097", "-1E+4097",
+                                            "1E+2147483648", "-1E+2147483648"}) {
+            byte[] smileData = generateSmileBytes(gen -> gen.write(new BigDecimal(literal)));
+            JsonParser parser = createParser(smileData);
+
+            assertThrows(JsonException.class, parser::readBigInteger);
+        }
+    }
+
+    @Test
+    public void testAggregateBigIntegerExpansionBudget() throws Exception {
+        BigDecimal value = new BigDecimal("1E+4096");
+        BigInteger expected = BigInteger.TEN.pow(4_096);
+        byte[] smileData = generateSmileBytes(gen -> {
+            gen.writeArrayStart();
+            for (int i = 0; i < 17; i++) {
+                gen.write(value);
+            }
+            gen.writeArrayEnd();
+        });
+        JsonParser parser = createParser(smileData);
+
+        assertThat(parser.nextToken(), is((byte) '1'));
+        for (int i = 0; i < 16; i++) {
+            assertThat(parser.readBigInteger(), is(expected));
+            assertThat(parser.nextToken(), is((byte) ','));
+            assertThat(parser.nextToken(), is((byte) '1'));
+        }
+        JsonException exception = assertThrows(JsonException.class, parser::readBigInteger);
+        assertThat(exception.getMessage(), containsString("65536"));
+
+        JsonParser freshParser = createParser(smileData);
+        assertThat(freshParser.nextToken(), is((byte) '1'));
+        assertThat(freshParser.readBigInteger(), is(expected));
+    }
+
+    @Test
+    public void testFloatingPointJsonNumbersRetainAggregateBigIntegerExpansionBudget() throws Exception {
+        byte[][] values = {
+                generateSmileBytes(gen -> gen.write(Float.MAX_VALUE)),
+                generateSmileBytes(gen -> gen.write(Double.MAX_VALUE))
+        };
+        for (byte[] smileData : values) {
+            JsonNumber number = createParser(smileData).readJsonNumber();
+            int expansion = -number.bigDecimalValue().scale();
+            assertThat(expansion, greaterThan(0));
+
+            int conversions = 65_536 / expansion;
+            for (int i = 0; i < conversions; i++) {
+                number.bigIntegerValue();
+            }
+            JsonException exception = assertThrows(JsonException.class, number::bigIntegerValue);
+            assertThat(exception.getMessage(), containsString("65536"));
+        }
+    }
+
+    @Test
+    public void testParsedTreeSharesAggregateBigIntegerExpansionBudget() throws Exception {
+        BigDecimal value = new BigDecimal("1E+4096");
+        BigInteger expected = BigInteger.TEN.pow(4_096);
+        byte[] smileData = generateSmileBytes(gen -> {
+            gen.writeArrayStart();
+            for (int i = 0; i < 17; i++) {
+                gen.write(value);
+            }
+            gen.writeArrayEnd();
+        });
+        JsonArray array = createParser(smileData).readJsonArray();
+
+        for (int i = 0; i < 16; i++) {
+            assertThat(array.get(i).orElseThrow().asNumber().bigIntegerValue(), is(expected));
+        }
+        JsonException exception = assertThrows(JsonException.class,
+                                               () -> array.get(16).orElseThrow().asNumber().bigIntegerValue());
+        assertThat(exception.getMessage(), containsString("65536"));
+
+        JsonArray freshArray = createParser(smileData).readJsonArray();
+        assertThat(freshArray.get(0).orElseThrow().asNumber().bigIntegerValue(), is(expected));
+    }
+
+    @Test
+    public void testMarkAndResetDoesNotRestoreBigIntegerExpansionBudget() throws Exception {
+        BigInteger expected = BigInteger.TEN.pow(4_096);
+        byte[] smileData = generateSmileBytes(gen -> gen.write(new BigDecimal("1E+4096")));
+        JsonParser parser = createParser(smileData);
+
+        for (int i = 0; i < 16; i++) {
+            parser.mark();
+            assertThat(parser.readBigInteger(), is(expected));
+            parser.resetToMark();
+        }
+        JsonException exception = assertThrows(JsonException.class, parser::readBigInteger);
+        assertThat(exception.getMessage(), containsString("65536"));
+    }
+
+    @Test
+    public void testParseBigDecimalWithoutIntegerDigitsAsBigInteger() throws Exception {
+        BigDecimal value = new BigDecimal(BigInteger.ONE, Integer.MAX_VALUE);
+        byte[] smileData = generateSmileBytes(gen -> gen.write(value));
+        JsonParser parser = createParser(smileData);
+
+        assertThat(parser.readBigInteger(), is(BigInteger.ZERO));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
     public void testParseBigDecimal() throws Exception {
         BigDecimal testValue = new BigDecimal("1234567890.12345");
         byte[] smileData = generateSmileBytes(gen -> gen.write(testValue));
@@ -220,15 +344,18 @@ abstract class SmileParserTestBase {
 
     @Test
     public void testParseNegativeScaleBigDecimal() throws Exception {
-        BigDecimal testValue = new BigDecimal("1E+3");
-        byte[] smileData = generateSmileBytes(gen -> gen.write(testValue));
-        JsonParser parser = createParser(smileData);
+        for (String literal : new String[] {"1E+3", "1E+2147483647", "-1E+2147483647",
+                                            "1E+2147483648", "-1E+2147483648"}) {
+            BigDecimal testValue = new BigDecimal(literal);
+            byte[] smileData = generateSmileBytes(gen -> gen.write(testValue));
+            JsonParser parser = createParser(smileData);
 
-        BigDecimal result = parser.readBigDecimal();
+            BigDecimal result = parser.readBigDecimal();
 
-        assertThat(result, is(testValue));
-        assertThat(result.scale(), is(testValue.scale()));
-        assertThat(parser.hasNext(), is(false));
+            assertThat(result, is(testValue));
+            assertThat(result.scale(), is(testValue.scale()));
+            assertThat(parser.hasNext(), is(false));
+        }
     }
 
     @Test
@@ -285,6 +412,73 @@ abstract class SmileParserTestBase {
 
         assertThat(result.keys().isEmpty(), is(true));
         assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    public void testReadJsonArrayAllowsDepthBeyondInitialStructureStack() {
+        JsonParser parser = createParser(nestedArrays(65));
+        JsonArray result = parser.readJsonArray();
+
+        assertThat(nestedArrayDepth(result), is(65));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    public void testReadJsonArrayAllowsMaximumDepth() {
+        JsonParser parser = createParser(nestedArrays(MAX_NESTING_DEPTH));
+        JsonArray result = parser.readJsonArray();
+
+        assertThat(nestedArrayDepth(result), is(MAX_NESTING_DEPTH));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    public void testReadJsonArrayRejectsExcessiveDepth() {
+        JsonParser parser = createParser(nestedArrays(MAX_NESTING_DEPTH + 1));
+
+        JsonException exception = assertThrows(JsonException.class, parser::readJsonArray);
+
+        assertThat(exception.getMessage(), containsString("Maximum JSON nesting depth exceeded"));
+    }
+
+    @Test
+    public void testReadJsonObjectRejectsExcessiveDepth() {
+        JsonParser parser = createParser(nestedObjects(MAX_NESTING_DEPTH + 1));
+
+        JsonException exception = assertThrows(JsonException.class, parser::readJsonObject);
+
+        assertThat(exception.getMessage(), containsString("Maximum JSON nesting depth exceeded"));
+    }
+
+    @Test
+    public void testSkipArrayRejectsExcessiveDepth() {
+        JsonParser parser = createParser(nestedArrays(MAX_NESTING_DEPTH + 1));
+
+        JsonException exception = assertThrows(JsonException.class, parser::skip);
+
+        assertThat(exception.getMessage(), containsString("Maximum JSON nesting depth exceeded"));
+    }
+
+    @Test
+    public void testSkipObjectRejectsExcessiveDepth() {
+        JsonParser parser = createParser(nestedObjects(MAX_NESTING_DEPTH + 1));
+
+        JsonException exception = assertThrows(JsonException.class, parser::skip);
+
+        assertThat(exception.getMessage(), containsString("Maximum JSON nesting depth exceeded"));
+    }
+
+    @Test
+    public void testTokenIterationRejectsExcessiveDepth() {
+        JsonParser parser = createParser(nestedArrays(MAX_NESTING_DEPTH + 1));
+
+        JsonException exception = assertThrows(JsonException.class, () -> {
+            while (parser.hasNext()) {
+                parser.nextToken();
+            }
+        });
+
+        assertThat(exception.getMessage(), containsString("Maximum JSON nesting depth exceeded"));
     }
 
     /*
@@ -1399,6 +1593,52 @@ abstract class SmileParserTestBase {
         byte[] smileData = new byte[] {0x3A, 0x29, 0x0A, 0x03, (byte) 0xFA, 0x30, (byte) 0xFE};
         JsonParser parser = createParser(smileData);
         assertThrows(JsonException.class, parser::readJsonObject);
+    }
+
+    private static byte[] nestedArrays(int depth) {
+        byte[] smileData = new byte[SmileConstants.HEADER_LENGTH + depth + 1 + depth];
+        int index = writeHeader(smileData);
+        for (int i = 0; i < depth; i++) {
+            smileData[index++] = SmileConstants.TOKEN_START_ARRAY;
+        }
+        smileData[index++] = SmileConstants.TOKEN_NULL;
+        for (int i = 0; i < depth; i++) {
+            smileData[index++] = SmileConstants.TOKEN_END_ARRAY;
+        }
+        return smileData;
+    }
+
+    private static byte[] nestedObjects(int depth) {
+        byte[] smileData = new byte[SmileConstants.HEADER_LENGTH + depth * 4 + 1];
+        int index = writeHeader(smileData);
+        for (int i = 0; i < depth; i++) {
+            smileData[index++] = SmileConstants.TOKEN_START_OBJECT;
+            smileData[index++] = (byte) SmileConstants.KEY_SHORT_ASCII_PREFIX;
+            smileData[index++] = (byte) 'a';
+        }
+        smileData[index++] = SmileConstants.TOKEN_NULL;
+        for (int i = 0; i < depth; i++) {
+            smileData[index++] = SmileConstants.TOKEN_END_OBJECT;
+        }
+        return smileData;
+    }
+
+    private static int writeHeader(byte[] smileData) {
+        smileData[0] = SmileConstants.HEADER_0;
+        smileData[1] = SmileConstants.HEADER_1;
+        smileData[2] = SmileConstants.HEADER_2;
+        smileData[3] = 0;
+        return SmileConstants.HEADER_LENGTH;
+    }
+
+    private static int nestedArrayDepth(JsonArray array) {
+        int depth = 1;
+        JsonValue value = array.get(0, JsonNull.instance());
+        while (value.type() == JsonValueType.ARRAY) {
+            depth++;
+            value = value.asArray().get(0, JsonNull.instance());
+        }
+        return depth;
     }
 
     private static int fnv1aHashUtf8(String value) {

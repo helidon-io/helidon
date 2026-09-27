@@ -18,6 +18,7 @@ package io.helidon.webclient.api;
 
 import java.net.URI;
 
+import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQueryWriteable;
 
@@ -42,6 +43,32 @@ class ClientUriTest {
     @Test
     void testDefaultsHttps() {
         ClientUri helper = ClientUri.create(URI.create("https://localhost"));
+
+        assertThat(helper.authority(), is("localhost:443"));
+        assertThat(helper.host(), is("localhost"));
+        assertThat(helper.path(), is(UriPath.root()));
+        assertThat(helper.port(), is(443));
+        assertThat(helper.scheme(), is("https"));
+    }
+
+    @Test
+    void testDefaultsUppercaseHttps() {
+        ClientUri helper = ClientUri.create(URI.create("HTTPS://localhost"));
+
+        assertThat(helper.authority(), is("localhost:443"));
+        assertThat(helper.host(), is("localhost"));
+        assertThat(helper.path(), is(UriPath.root()));
+        assertThat(helper.port(), is(443));
+        assertThat(helper.scheme(), is("https"));
+    }
+
+    @Test
+    void testDefaultsUppercaseHttpsUriInfo() {
+        UriInfo baseUri = UriInfo.builder()
+                .scheme("HTTPS")
+                .host("localhost")
+                .build();
+        ClientUri helper = ClientUri.create(baseUri);
 
         assertThat(helper.authority(), is("localhost:443"));
         assertThat(helper.host(), is("localhost"));

@@ -160,7 +160,7 @@ class JsonParserArray extends JsonParserBase {
     public JsonNumber readJsonNumber() {
         int start = currentIndex;
         skipNumber();
-        return JsonNumber.create(buffer, start, currentIndex - start + 1);
+        return JsonNumber.create(buffer, start, currentIndex - start + 1, bigIntegerExpansionBudget());
     }
 
     @Override
@@ -624,7 +624,11 @@ class JsonParserArray extends JsonParserBase {
         int length = currentIndex - start;
         byte[] bytes = new byte[length];
         System.arraycopy(buffer, start, bytes, 0, length);
-        return Base64.getDecoder().decode(bytes);
+        try {
+            return Base64.getDecoder().decode(bytes);
+        } catch (IllegalArgumentException e) {
+            throw createException("Invalid Base64 value", e);
+        }
     }
 
     void ensure(int amount) {
@@ -973,13 +977,13 @@ class JsonParserArray extends JsonParserBase {
     @Override
     public JsonException createException(String message) {
         clearMark();
-        return new JsonException(exceptionMessage(message));
+        return new JsonDecodingException(exceptionMessage(message));
     }
 
     @Override
     public JsonException createException(String message, Exception e) {
         clearMark();
-        return new JsonException(exceptionMessage(message), e);
+        return new JsonDecodingException(exceptionMessage(message), e);
     }
 
     private String exceptionMessage(String message) {
@@ -2226,24 +2230,12 @@ class JsonParserArray extends JsonParserBase {
     }
 
     private void skipObject() {
-        byte b = nextToken();
-        if (b == '}') {
-            return;
-        }
-        if (b == '"') {
-            skipString();
-            b = nextToken();
-        } else {
-            throw createException("Key name start expected", b);
-        }
-        if (b != ':') {
-            throw createException("Colon expected after the key", b);
-        }
-        nextToken();
-        skip();
-        b = nextToken();
-        while (b == ',') {
-            b = nextToken();
+        enterStructure();
+        try {
+            byte b = nextToken();
+            if (b == '}') {
+                return;
+            }
             if (b == '"') {
                 skipString();
                 b = nextToken();
@@ -2256,31 +2248,51 @@ class JsonParserArray extends JsonParserBase {
             nextToken();
             skip();
             b = nextToken();
-        }
+            while (b == ',') {
+                b = nextToken();
+                if (b == '"') {
+                    skipString();
+                    b = nextToken();
+                } else {
+                    throw createException("Key name start expected", b);
+                }
+                if (b != ':') {
+                    throw createException("Colon expected after the key", b);
+                }
+                nextToken();
+                skip();
+                b = nextToken();
+            }
 
-        if (b == '}') {
-            return;
+            if (b != '}') {
+                throw createException("Comma or the end of the object expected", b);
+            }
+        } finally {
+            exitStructure();
         }
-        throw createException("Comma or the end of the object expected", b);
     }
 
     private void skipArray() {
-        byte b = nextToken();
-        if (b == ']') {
-            return;
-        }
-        skip(); // Skip the first array value
-        b = nextToken();
-        while (b == ',') {
-            nextToken();
-            skip();
+        enterStructure();
+        try {
+            byte b = nextToken();
+            if (b == ']') {
+                return;
+            }
+            skip(); // Skip the first array value
             b = nextToken();
-        }
+            while (b == ',') {
+                nextToken();
+                skip();
+                b = nextToken();
+            }
 
-        if (b == ']') {
-            return;
+            if (b != ']') {
+                throw createException("Comma or the end of the array expected", b);
+            }
+        } finally {
+            exitStructure();
         }
-        throw createException("Comma or the end of the array expected", b);
     }
 
 }

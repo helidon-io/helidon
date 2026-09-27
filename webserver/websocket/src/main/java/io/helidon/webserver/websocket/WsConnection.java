@@ -71,6 +71,9 @@ public class WsConnection implements ServerConnection, WsSession {
     private ContinuationType recvContinuation = ContinuationType.NONE;
     private boolean sendContinuation;
     private final AtomicBoolean closeSent = new AtomicBoolean();
+    private final AtomicBoolean closeNotified = new AtomicBoolean();
+    private WsCloseException pendingClose;
+    private boolean sendPendingClose;
 
     private volatile Thread myThread;
     private volatile boolean canRun = true;
@@ -82,6 +85,26 @@ public class WsConnection implements ServerConnection, WsSession {
                          Headers upgradeHeaders,
                          String wsKey,
                          WsListener wsListener) {
+        this(ctx,
+             prologue,
+             upgradeHeaders,
+             wsKey,
+             wsListener,
+             (WsConfig) ctx.listenerContext()
+                     .config()
+                     .protocols()
+                     .stream()
+                     .filter(p -> p instanceof WsConfig)
+                     .findFirst()
+                     .orElseThrow(() -> new InternalError("Unable to find WebSocket config")));
+    }
+
+    private WsConnection(ConnectionContext ctx,
+                         HttpPrologue prologue,
+                         Headers upgradeHeaders,
+                         String wsKey,
+                         WsListener wsListener,
+                         WsConfig wsConfig) {
         this.ctx = ctx;
         this.prologue = prologue;
         this.upgradeHeaders = upgradeHeaders;
@@ -89,13 +112,7 @@ public class WsConnection implements ServerConnection, WsSession {
         this.listener = wsListener;
         this.dataReader = ctx.dataReader();
         this.lastRequestTimestamp = DateTime.timestamp();
-        this.wsConfig = (WsConfig) ctx.listenerContext()
-                                      .config()
-                                      .protocols()
-                                      .stream()
-                                      .filter(p -> p instanceof WsConfig)
-                                      .findFirst()
-                                      .orElseThrow(() -> new InternalError("Unable to find WebSocket config"));
+        this.wsConfig = wsConfig;
     }
 
     /**
@@ -114,6 +131,15 @@ public class WsConnection implements ServerConnection, WsSession {
                                       String wsKey,
                                       WsListener wsListener) {
         return new WsConnection(ctx, prologue, upgradeHeaders, wsKey, wsListener);
+    }
+
+    static WsConnection create(ConnectionContext ctx,
+                               HttpPrologue prologue,
+                               Headers upgradeHeaders,
+                               String wsKey,
+                               WsListener wsListener,
+                               WsConfig wsConfig) {
+        return new WsConnection(ctx, prologue, upgradeHeaders, wsKey, wsListener, wsConfig);
     }
 
     /**
@@ -162,7 +188,19 @@ public class WsConnection implements ServerConnection, WsSession {
             readingNetwork = false;
             lastRequestTimestamp = DateTime.timestamp();
             try {
-                boolean result = limit.invoke(() -> processFrame(frame));
+                boolean result = limit.invoke(() -> {
+                    try {
+                        return processFrame(frame);
+                    } catch (WsCloseException e) {
+                        if (!closeNotified.compareAndSet(false, true)) {
+                            throw e;
+                        }
+                        pendingClose = e;
+                        sendPendingClose = closeSent.compareAndSet(false, true);
+                        listener.onClose(this, e.closeCode(), e.getMessage());
+                        return false;
+                    }
+                });
                 if (!result) {
                     lastRequestTimestamp = DateTime.timestamp();
                     return;
@@ -175,9 +213,23 @@ public class WsConnection implements ServerConnection, WsSession {
             } catch (CloseConnectionException e) {
                 throw e;
             } catch (Exception e) {
+                if (pendingClose != null) {
+                    if (e instanceof RuntimeException runtimeException) {
+                        throw runtimeException;
+                    }
+                    throw new IllegalStateException(e);
+                }
                 listener.onError(this, e);
                 this.close(WsCloseCodes.UNEXPECTED_CONDITION, e.getMessage());
                 return;
+            } finally {
+                WsCloseException close = pendingClose;
+                boolean sendClose = sendPendingClose;
+                pendingClose = null;
+                sendPendingClose = false;
+                if (sendClose) {
+                    sendClose(close.closeCode(), close.getMessage());
+                }
             }
         }
         this.close(WsCloseCodes.NORMAL_CLOSE, "Idle timeout");
@@ -229,6 +281,10 @@ public class WsConnection implements ServerConnection, WsSession {
             return this;
         }
 
+        return sendClose(code, reason);
+    }
+
+    private WsSession sendClose(int code, String reason) {
         sendLock.lock();
         try {
             byte[] reasonBytes = reason.getBytes(StandardCharsets.UTF_8);
@@ -251,6 +307,11 @@ public class WsConnection implements ServerConnection, WsSession {
     @Override
     public Optional<String> subProtocol() {
         return upgradeHeaders.first(WsUpgrader.PROTOCOL);
+    }
+
+    @Override
+    public WsConfig protocolConfig() {
+        return wsConfig;
     }
 
     @Override
@@ -295,8 +356,12 @@ public class WsConnection implements ServerConnection, WsSession {
                 recvContinuation = ContinuationType.NONE;
             }
             switch (ct) {
-            case TEXT -> listener.onMessage(this, payload.readString(payload.available(), StandardCharsets.UTF_8), finalFrame);
-            case BINARY -> listener.onMessage(this, payload, finalFrame);
+            case TEXT -> {
+                listener.onMessage(this, payload.readString(payload.available(), StandardCharsets.UTF_8), finalFrame);
+            }
+            case BINARY -> {
+                listener.onMessage(this, payload, finalFrame);
+            }
             default -> {
                 close(WsCloseCodes.PROTOCOL_ERROR, "Unexpected continuation received");
                 throw new CloseConnectionException("Websocket unexpected continuation");
@@ -320,7 +385,9 @@ public class WsConnection implements ServerConnection, WsSession {
                     reason = payload.readString(payload.available(), StandardCharsets.UTF_8);
                 }
             }
-            listener.onClose(this, status, reason);
+            if (closeNotified.compareAndSet(false, true)) {
+                listener.onClose(this, status, reason);
+            }
             if (!closeSent.get()) {
                 close(WsCloseCodes.NORMAL_CLOSE, "normal");
             }

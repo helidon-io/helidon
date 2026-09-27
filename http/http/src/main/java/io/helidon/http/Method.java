@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,16 @@ package io.helidon.http;
 import java.util.Collection;
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.Ascii;
 
 /**
  * HTTP request methods.
  * <p>
- * Although the constants are instances of this class, they can be compared using instance equality, as the only
- * way to obtain an instance is through method {@link #create(String)}, which ensures the same instance is returned for
- * known methods.
+ * Although the constants are instances of this class, they can be compared using instance equality, as the factory
+ * methods return the same instance for recognized standard method names. {@link #create(String)} normalizes names to
+ * uppercase; the internal parser factory {@link #createCaseSensitive(String)} recognizes standard names only in their
+ * exact case.
  * <p>
  * Methods that are not known (e.g. there is no constant for them) must be compared using {@link #equals(Object)} as usual.
  * <p>
@@ -178,15 +180,31 @@ public final class Method {
             return GET;
         }
 
-        String methodName = Ascii.toUpperCase(name);
+        return createValidated(Ascii.toUpperCase(name));
+    }
 
-        Method method = MethodHelper.byName(methodName);
-        if (method == null) {
-            // validate that it only contains characters allowed by a method
-            HttpToken.validate(methodName);
-            return new Method(methodName, false);
+    /**
+     * Create an HTTP request method from the exact provided name.
+     * <p>
+     * This method is intended for HTTP protocol parsers. Unlike {@link #create(String)}, it does not normalize the
+     * method name.
+     *
+     * @param name method name, must not be {@code null} or empty and must be a legal HTTP method token
+     * @return HTTP request method with the exact provided name
+     * @throws NullPointerException if the name is {@code null}
+     * @throws IllegalArgumentException if the name is empty or illegal
+     */
+    @Api.Internal
+    public static Method createCaseSensitive(String name) {
+        Objects.requireNonNull(name, "name");
+        if (name.isEmpty()) {
+            throw new IllegalArgumentException("HTTP method name must not be empty");
         }
-        return method;
+        if (name.equals(GET_NAME)) {
+            return GET;
+        }
+
+        return createValidated(name);
     }
 
     /**
@@ -277,5 +295,15 @@ public final class Method {
     @Override
     public int hashCode() {
         return Objects.hash(name);
+    }
+
+    private static Method createValidated(String name) {
+        Method method = MethodHelper.byName(name);
+        if (method == null) {
+            // validate that it only contains characters allowed by a method
+            HttpToken.validate(name);
+            return new Method(name, false);
+        }
+        return method;
     }
 }

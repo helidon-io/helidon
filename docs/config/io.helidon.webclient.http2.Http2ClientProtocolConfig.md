@@ -43,30 +43,6 @@ Configuration of an HTTP/2 client
 </tr>
 <tr>
 <td>
-<code>max-<wbr>buffered-<wbr>entity-<wbr>size</code>
-</td>
-<td>
-<code>Size</code>
-</td>
-<td>
-<code>64 KB</code>
-</td>
-<td>Configure the maximum size allowed for an entity that can be explicitly buffered by the application by calling <code>io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>Readable<wbr>Entity.<wbr>buffer(<wbr>)</code></td>
-</tr>
-<tr>
-<td>
-<code>prior-<wbr>knowledge</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-<code>false</code>
-</td>
-<td>Prior knowledge of HTTP/2 capabilities of the server</td>
-</tr>
-<tr>
-<td>
 <a id="log"></a>
 <a href="io.helidon.http.HttpLogConfig.md">
 <code>log</code>
@@ -78,18 +54,6 @@ Configuration of an HTTP/2 client
 <td>
 </td>
 <td>HTTP Log configuration</td>
-</tr>
-<tr>
-<td>
-<code>validate-<wbr>request-<wbr>headers</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-<code>true</code>
-</td>
-<td>Whether to validate request headers</td>
 </tr>
 <tr>
 <td>
@@ -129,6 +93,66 @@ Configuration of an HTTP/2 client
 </tr>
 <tr>
 <td>
+<code>initial-<wbr>window-<wbr>size</code>
+</td>
+<td>
+<code>Integer</code>
+</td>
+<td>
+<code>65535</code>
+</td>
+<td>Configure INITIAL_WINDOW_SIZE setting for new HTTP/2 connections</td>
+</tr>
+<tr>
+<td>
+<code>max-<wbr>headers-<wbr>size</code>
+</td>
+<td>
+<code>Integer</code>
+</td>
+<td>
+<code>16384</code>
+</td>
+<td>Configure the maximum allowed headers size, which must be greater than <code>0</code></td>
+</tr>
+<tr>
+<td>
+<code>max-<wbr>buffered-<wbr>entity-<wbr>size</code>
+</td>
+<td>
+<code>Size</code>
+</td>
+<td>
+<code>64 KB</code>
+</td>
+<td>Configure the maximum size allowed for an entity that can be explicitly buffered by the application by calling <code>io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>Readable<wbr>Entity.<wbr>buffer(<wbr>)</code></td>
+</tr>
+<tr>
+<td>
+<code>prior-<wbr>knowledge</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>false</code>
+</td>
+<td>Prior knowledge of HTTP/2 capabilities of the server</td>
+</tr>
+<tr>
+<td>
+<code>validate-<wbr>request-<wbr>headers</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether to validate request headers</td>
+</tr>
+<tr>
+<td>
 <code>name</code>
 </td>
 <td>
@@ -150,18 +174,6 @@ Configuration of an HTTP/2 client
 <code>-1</code>
 </td>
 <td>Configure initial MAX_HEADER_LIST_SIZE setting for new HTTP/2 connections</td>
-</tr>
-<tr>
-<td>
-<code>initial-<wbr>window-<wbr>size</code>
-</td>
-<td>
-<code>Integer</code>
-</td>
-<td>
-<code>65535</code>
-</td>
-<td>Configure INITIAL_WINDOW_SIZE setting for new HTTP/2 connections</td>
 </tr>
 </tbody>
 </table>

@@ -17,6 +17,7 @@
 package io.helidon.webserver.tests.http2;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -28,6 +29,7 @@ import io.helidon.http.http2.FlowControl;
 import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameData;
+import io.helidon.http.http2.Http2FrameHeader;
 import io.helidon.http.http2.Http2FrameType;
 import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2GoAway;
@@ -90,6 +92,7 @@ class ConcurrentStreamsLimitTest {
         server.addProtocol(Http2Config.builder()
                                    .sendErrorDetails(true)
                                    .maxConcurrentStreams(MAX_CONCURRENT_STREAMS)
+                                   .maxHeadersSize(512)
                                    .build());
     }
 
@@ -235,6 +238,72 @@ class ConcurrentStreamsLimitTest {
 
             h2conn.request(3, POST, BLOCKING_PATH, WritableHeaders.create(), BufferData.create(new byte[0]));
             assertOkResponse(h2conn, 3);
+        }
+    }
+
+    @Test
+    void decodedHeadersForLocallyResetRequestStillUseLocalLimit(Http2TestClient client) {
+        try (Http2TestConnection h2conn = client.createConnection()) {
+            WritableHeaders<?> headers = WritableHeaders.create();
+            headers.add(HeaderNames.CONTENT_LENGTH, 1);
+
+            Http2Headers h2Headers = Http2Headers.create(headers);
+            h2Headers.method(POST);
+            h2Headers.path(BLOCKING_PATH);
+            h2Headers.scheme(h2conn.clientUri().scheme());
+            h2Headers.authority(h2conn.clientUri().authority());
+            h2conn.writer().writeHeaders(h2Headers,
+                                         1,
+                                         Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                         FlowControl.Outbound.NOOP);
+            BufferData data = BufferData.create(new byte[2]);
+            h2conn.writer().writeData(
+                    new Http2FrameData(Http2FrameHeader.create(data.available(),
+                                                               Http2FrameTypes.DATA,
+                                                               Http2Flag.DataFlags.create(0),
+                                                               1),
+                                       data),
+                    FlowControl.Outbound.NOOP);
+
+            for (;;) {
+                Http2FrameData frame = h2conn.awaitNextFrame(TIMEOUT);
+                assertThat("Timed out waiting for RST_STREAM frame", frame, notNullValue());
+
+                if (frame.header().type() == Http2FrameType.GO_AWAY) {
+                    Http2GoAway goAway = Http2GoAway.create(frame.data());
+                    fail("Unexpected GOAWAY " + goAway.errorCode() + ": "
+                                 + frame.data().readString(frame.data().available()));
+                }
+                if (frame.header().streamId() == 0) {
+                    continue;
+                }
+                assertThat("Unexpected response stream", frame.header().streamId(), is(1));
+                assertThat("Unexpected frame type", frame.header().type(), is(Http2FrameType.RST_STREAM));
+                Http2RstStream rstStream = Http2RstStream.create(frame.data());
+                assertThat(rstStream.errorCode(), is(Http2ErrorCode.PROTOCOL));
+                break;
+            }
+
+            byte[] headerBlock = new byte[20];
+            Arrays.fill(headerBlock, (byte) 0x90);
+            h2conn.writer().write(new Http2FrameData(
+                    Http2FrameHeader.create(headerBlock.length,
+                                            Http2FrameTypes.HEADERS,
+                                            Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                                            1),
+                    BufferData.create(headerBlock)));
+
+            for (;;) {
+                Http2FrameData frame = h2conn.awaitNextFrame(TIMEOUT);
+                assertThat("Timed out waiting for GOAWAY frame", frame, notNullValue());
+
+                if (frame.header().type() != Http2FrameType.GO_AWAY) {
+                    continue;
+                }
+                Http2GoAway goAway = Http2GoAway.create(frame.data());
+                assertThat(goAway.errorCode(), is(Http2ErrorCode.ENHANCE_YOUR_CALM));
+                return;
+            }
         }
     }
 

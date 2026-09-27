@@ -28,7 +28,7 @@ module io.helidon.openapi {
     requires static io.helidon.config.metadata;
 
     requires io.helidon.common;
-    requires io.helidon.common.config;
+    requires io.helidon.config;
     requires io.helidon.common.media.type;
     requires io.helidon.servicecommon;
 

@@ -305,7 +305,7 @@ server:
         # protected paths on the web server
         paths: # <1>
           - path: "/greet"
-            methods: ["get"]
+            methods: ["GET"]
             authenticate: true
 security:
   providers:
@@ -546,7 +546,7 @@ security:
     # protected paths on the web server - do not include paths served by Jersey, as those are protected directly
     paths:
       - path: "/greet"
-        methods: ["get"]
+        methods: ["GET"]
         authenticate: true
 ```
 1. Replace this field by your Keycloak client ID.
@@ -633,7 +633,7 @@ web-server:
     # as those are protected directly
     paths:
       - path: "/greet"
-        methods: ["get"]
+        methods: ["GET"]
         roles-allowed: "admin"
         authenticate: true
 ```

@@ -173,6 +173,34 @@ server:
 See [Configuration options][io-helidon-webse].
 <!--/include-->
 
+### HTTP Method Case Parsing
+
+Helidon 4 normalizes inbound HTTP/1.1 and HTTP/2 method names using the
+backward-compatible `Method.create(String)` behavior by default. For example,
+wire text `delete` is exposed as `DELETE` and matches a route registered for
+`DELETE`.
+
+Enable case-sensitive parsing on a listener to preserve the exact method text
+received on the wire:
+
+```yaml [application.yaml]
+server:
+  case-sensitive-methods: true
+```
+
+The option is listener-scoped and defaults to `false`. It can also be set on an
+entry under `server.sockets` without changing other listeners.
+
+This option affects only inbound wire parsing. Configured method values can
+still normalize through existing APIs used by their owning components. With
+case-sensitive parsing enabled, lowercase wire text remains distinct from the
+usual uppercase method even when a separately configured lowercase value is
+normalized.
+
+We recommend enabling `case-sensitive-methods` and updating ordinary built-in
+method names in configuration to their standard uppercase form, such as `GET`
+instead of `get`, to align applications with future Helidon versions.
+
 ## Routing
 
 Routing lets you use request matching criteria to bind requests to a `handler`
@@ -1396,15 +1424,24 @@ preamble) that is based on either V1 or V2 of the protocol, thus making client
 information available to service developers.
 
 Proxy Protocol support is enabled via configuration, and can be done either
-declaratively or programmatically. Once enabled, every new connection on the
-corresponding port **MUST** be preambled by a proxy header for the connection
-not to be rejected as invalid --that is, proxy headers are never optional.
+declaratively or programmatically. You must also configure the trusted proxies
+that are allowed to provide proxy protocol headers. Once enabled, every new
+connection from a trusted proxy on the corresponding port **MUST** be preambled
+by a proxy header for the connection not to be rejected as invalid --that is,
+proxy headers are never optional.
+
+Connections from peers that do not match `trusted-proxies` are rejected before
+protocol negotiation. Direct clients and health checks must use a separate
+listener unless they are included in the allow list and send a valid Proxy
+Protocol header.
 
 Programmatically, support for the Proxy Protocol is enabled as follows:
 
 ```java
 WebServer.builder()
-        .enableProxyProtocol(true);
+        .proxyProtocol(it -> it.trustedProxies(AllowList.builder()
+                                                    .addAllowed("192.0.2.10")
+                                                    .build()));
 ```
 
 Declaratively, support for the Proxy Protocol is enabled as follows:
@@ -1413,8 +1450,18 @@ Declaratively, support for the Proxy Protocol is enabled as follows:
 server:
   port: 8080
   host: 0.0.0.0
-  enable-proxy-protocol: true
+  proxy-protocol:
+    trusted-proxies:
+      allow:
+        exact:
+          - "192.0.2.10"
 ```
+
+The deprecated `enable-proxy-protocol` option, and the corresponding
+programmatic `enableProxyProtocol(true)` option, are not sufficient by
+themselves. Existing users must configure `proxy-protocol.trusted-proxies`. If
+every peer that can connect to the listener is trusted to send proxy protocol
+headers, set `proxy-protocol.trusted-proxies.allow.all` to `true` explicitly.
 
 #### Accessing Proxy Protocol Data
 
@@ -1440,11 +1487,11 @@ rules.get("/", (req, res) -> {
 > Every request associated with a certain connection shall have access to the
 > Proxy Protocol data received when the connection was opened.
 
-Alternatively, the WebServer also makes the original client source address and
-source port available in the HTTP headers `X-Forwarded-For` and
-`X-Forwarded-Port`, respectively. In some cases, it is just simpler to inspect
-these headers instead of getting the complete `ProxyProtocolData` instance as
-shown above.
+Alternatively, when the PROXY data provides an IP source address and a
+destination port, the WebServer makes them available in the HTTP headers
+`X-Forwarded-For` and `X-Forwarded-Port`, respectively. For other valid PROXY
+commands or address families, access the complete `ProxyProtocolData` instance
+as shown above.
 
 #### Accessing Proxy Protocol V2 Data
 
@@ -1468,10 +1515,11 @@ rules.get("/", (req, res) -> {
         ProxyProtocolV2Data.Command command = v2Data.command();
 
         // Will be either an InetSocketAddress (for IPv4 or IPv6) or a UnixDomainSocketAddress.
+        // Ignore these values when command is LOCAL.
         SocketAddress sourceSocketAddress = v2Data.sourceSocketAddress();
         SocketAddress destSocketAddress = v2Data.destSocketAddress();
 
-        // Contains all of the Tag-Length-Value objects from the Proxy Protocol header.
+        // Contains all Tag-Length-Value objects from the Proxy Protocol header, unless command is LOCAL.
         List<ProxyProtocolV2Data.Tlv> tlvData = v2Data.tlvs();
     }
 });

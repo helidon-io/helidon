@@ -19,6 +19,7 @@ package io.helidon.webserver;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.channels.SocketChannel;
 import java.util.HexFormat;
@@ -44,6 +45,7 @@ import io.helidon.common.socket.NioSocket;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.socket.PlainSocket;
 import io.helidon.common.socket.SocketWriter;
+import io.helidon.common.socket.SocketWriterException;
 import io.helidon.common.socket.TlsNioSocket;
 import io.helidon.common.socket.TlsSocket;
 import io.helidon.common.task.InterruptableTask;
@@ -66,6 +68,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     private static final String HTTP_1_0 = "HTTP/1.0\r";
 
     private final ListenerContext listenerContext;
+    private final Optional<TrustedProxyMatcher> trustedProxyMatcher;
     // we must safely release the semaphore whenever this connection is finished, so other connections can be created!
     private final Semaphore connectionSemaphore;
     private final Limit requestLimit;
@@ -85,6 +88,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     private ProxyProtocolData proxyProtocolData;
 
     ConnectionHandler(ListenerContext listenerContext,
+                      Optional<TrustedProxyMatcher> trustedProxyMatcher,
                       Semaphore connectionSemaphore,
                       Limit requestLimit,
                       ConnectionProviders connectionProviders,
@@ -94,6 +98,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                       Router router,
                       Tls tls) {
         this.listenerContext = listenerContext;
+        this.trustedProxyMatcher = trustedProxyMatcher;
         this.connectionSemaphore = connectionSemaphore;
         this.requestLimit = requestLimit;
         this.connectionProviders = connectionProviders;
@@ -118,7 +123,25 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
 
         try {
             // proxy protocol before SSL handshake
-            if (listenerConfig.enableProxyProtocol()) {
+            if (trustedProxyMatcher.isPresent()) {
+                SocketAddress remoteAddress;
+                try {
+                    remoteAddress = socket.getRemoteAddress();
+                } catch (IOException e) {
+                    if (LOGGER.isLoggable(TRACE)) {
+                        LOGGER.log(TRACE, "[" + channelId + "] Failed to resolve remote address", e);
+                    }
+                    return;
+                }
+
+                if (!trustedProxyMatcher.get().test(remoteAddress)) {
+                    if (LOGGER.isLoggable(DEBUG)) {
+                        LOGGER.log(DEBUG, "[" + channelId + "] Rejecting PROXY protocol data from untrusted peer "
+                                + remoteAddress);
+                    }
+                    return;
+                }
+
                 ProxyProtocolHandler handler = new ProxyProtocolHandler(socket, channelId);
                 try {
                     proxyProtocolData = handler.get();
@@ -199,6 +222,12 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         } catch (CloseConnectionException e) {
             // end of request stream - safe to close the connection, as it was requested by our client
             helidonSocket.log(LOGGER, TRACE, "connection close requested", e);
+        } catch (DataReader.InsufficientDataAvailableException | SocketWriterException e) {
+            // the connection ended while reading or writing data
+            helidonSocket.log(LOGGER, TRACE, "server I/O issue", e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            helidonSocket.log(LOGGER, TRACE, "connection interrupted", e);
         } catch (UncheckedIOException e) {
             if (e.getCause() instanceof SocketException) {
                 // socket exception - the socket failed, probably killed by OS, proxy or client
@@ -369,7 +398,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                 int expectedBytes = candidate.bytesToIdentifyConnection();
 
                 ServerConnectionSelector.Support supports;
-                if (expectedBytes == 0 || expectedBytes < currentBuffer.available()) {
+                if (expectedBytes == 0 || expectedBytes <= currentBuffer.available()) {
                     supports = candidate.supports(currentBuffer);
                 } else {
                     // we need more data, let's keep this provider for now

@@ -17,6 +17,7 @@
 package io.helidon.json.binding.converters;
 
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
@@ -50,7 +51,12 @@ class InstantConverter implements JsonConverter<Instant> {
     @Override
     public Instant deserialize(JsonParser parser) {
         if (parser.currentByte() == '"') {
-            return Instant.parse(parser.readString());
+            String value = parser.readString();
+            try {
+                return Instant.parse(value);
+            } catch (DateTimeParseException e) {
+                throw parser.createException("Invalid Instant value", e);
+            }
         }
         long value = parser.readLong();
         return Instant.ofEpochMilli(value);

@@ -26,7 +26,9 @@ import javax.net.ssl.SSLException;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.SocketWriterException;
+import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
@@ -38,6 +40,7 @@ import io.helidon.webserver.WebServer;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -47,6 +50,21 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class Http1ServerResponseTest {
+
+    @Test
+    void customReasonPhrasePreservesObsText() {
+        BufferData buffer = BufferData.growing(128);
+
+        Http1ServerResponse.nonEntityBytes(ServerResponseHeaders.create(),
+                                           Status.create(400, "Caf\u00e9"),
+                                           buffer,
+                                           true,
+                                           true,
+                                           true);
+
+        String response = new String(buffer.readBytes(), StandardCharsets.ISO_8859_1);
+        assertThat(response, startsWith("HTTP/1.1 400 Caf\u00e9\r\n"));
+    }
 
     @Test
     void directSendWrapsUncheckedIOException() {

@@ -37,8 +37,9 @@ class RedirectionProcessor {
     }
 
     static boolean keepsMethodAndEntity(Status status) {
-        return status == Status.TEMPORARY_REDIRECT_307
-                || status == Status.PERMANENT_REDIRECT_308;
+        int statusCode = status.code();
+        return statusCode == Status.TEMPORARY_REDIRECT_307.code()
+                || statusCode == Status.PERMANENT_REDIRECT_308.code();
     }
 
     static void validateEntityRedirect(Http1ClientRequestImpl request,
@@ -103,14 +104,16 @@ class RedirectionProcessor {
                     clientRequest = new Http1ClientRequestImpl(clientRequest,
                                                                clientRequest.method(),
                                                                redirectUri,
-                                                               request.properties());
+                                                               request.properties(),
+                                                               true);
                 } else {
                     //It is possible to change to GET and send no entity with all other redirect codes
                     entityToBeSent = BufferData.EMPTY_BYTES; //We do not want to send entity after this redirect
                     clientRequest = new Http1ClientRequestImpl(clientRequest,
                                                                Method.GET,
                                                                redirectUri,
-                                                               request.properties());
+                                                               request.properties(),
+                                                               false);
                 }
             }
         }

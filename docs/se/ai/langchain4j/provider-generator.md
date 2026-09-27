@@ -70,6 +70,42 @@ the provider interface, you can do that for the properties that are too complex
 for setting via configuration. By adding annotation `@Option.RegistryService`
 you make it injectable from Helidon’s service registry.
 
+## Model Lifecycle and Ownership
+
+Generated model factories own the model instances they create. By default,
+during service registry shutdown a generated factory closes every owned model
+that implements `AutoCloseable`.
+
+If a model borrows a resource from the service registry and closing the model
+would also close that resource, make the provider interface extend
+`AiProvider.ModelLifecycle` and override `closeModelOnShutdown()`. Return
+`false` for a configuration that uses a borrowed resource so its owner remains
+responsible for closing it. Keep the default value, `true`, only when the model
+and its resources are created and owned by the generated factory and the close
+operation can complete safely during service registry shutdown.
+
+For example, this provider lets the generated factory close a model that
+creates its own client, but not a model configured with a registry-owned client:
+
+```java
+@AiProvider.ModelConfig(ExampleChatModel.class)
+interface ExampleLc4jProvider extends AiProvider.ModelLifecycle {
+
+    @Option.Configured
+    @Option.RegistryService
+    Optional<ExampleClient> client();
+
+    @Override
+    default boolean closeModelOnShutdown() {
+        return client().isEmpty();
+    }
+}
+```
+
+Opt out when model shutdown would transfer ownership incorrectly or cannot
+complete safely during service registry shutdown. Returning `false` also means
+that the generated factory does not invoke `close()` on the model itself.
+
 ## Configuration
 
 LangChain4j provider config key is by default derived from the provider

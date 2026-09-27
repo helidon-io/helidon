@@ -16,25 +16,33 @@
 
 package io.helidon.http;
 
+import java.util.Objects;
+
 /**
  * HTTP Token utility.
- * Token is defined by the HTTP specification and must not contain a set of characters.
+ * A token is defined by the HTTP specification as one or more ASCII {@code tchar} characters.
  */
 public final class HttpToken {
     private HttpToken() {
     }
 
     /**
-     * Validate if this is a good HTTP token.
+     * Validate an HTTP token.
      *
      * @param token token to validate
      * @throws IllegalArgumentException in case the token is not valid
      */
     public static void validate(String token) throws IllegalArgumentException {
-        char[] chars = token.toCharArray();
-        for (int i = 0; i < chars.length; i++) {
-            char aChar = chars[i];
-            if (aChar > 254) {
+        Objects.requireNonNull(token);
+        if (token.isEmpty()) {
+            throw new IllegalArgumentException("Token must not be empty");
+        }
+        if (isValid(token)) {
+            return;
+        }
+        for (int i = 0; i < token.length(); i++) {
+            char aChar = token.charAt(i);
+            if (aChar > 127) {
                 throw new IllegalArgumentException("Token contains non-ASCII character at position "
                                                            + hex(i));
             }
@@ -46,16 +54,34 @@ public final class HttpToken {
                 throw new IllegalArgumentException("Token contains whitespace character at position "
                                                            + hex(i));
             }
-            switch (aChar) {
-            case '(', ')', '<', '>', '@', ',', ';', ':', '\\', '"', '/', '[', ']', '?', '=', '{', '}' -> {
+            if (!isValidCharacter(aChar)) {
                 throw new IllegalArgumentException("Token contains illegal character at position "
                                                            + hex(i));
             }
-            default -> {
-                // this is a valid character
-            }
+        }
+    }
+
+    static boolean isValid(String token) {
+        Objects.requireNonNull(token);
+        if (token.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < token.length(); i++) {
+            if (!isValidCharacter(token.charAt(i))) {
+                return false;
             }
         }
+        return true;
+    }
+
+    private static boolean isValidCharacter(char character) {
+        return character >= '0' && character <= '9'
+                || character >= 'A' && character <= 'Z'
+                || character >= 'a' && character <= 'z'
+                || switch (character) {
+                    case '!', '#', '$', '%', '&', '\'', '*', '+', '-', '.', '^', '_', '`', '|', '~' -> true;
+                    default -> false;
+                };
     }
 
     private static String hex(int i) {

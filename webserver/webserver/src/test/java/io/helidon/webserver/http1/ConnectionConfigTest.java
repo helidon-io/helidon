@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http1;
 
+import java.lang.reflect.Method;
 import java.util.Map;
 
 import io.helidon.config.Config;
@@ -29,6 +30,13 @@ import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 
 public class ConnectionConfigTest {
+
+    @Test
+    void preservesMaxHeadersSizeBuilderDescriptor() throws NoSuchMethodException {
+        Method method = Http1Config.BuilderBase.class.getDeclaredMethod("maxHeadersSize", int.class);
+
+        assertThat(method.getReturnType().getName(), is(Http1Config.BuilderBase.class.getName()));
+    }
 
     @Test
     void testConnectionConfig() {

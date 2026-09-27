@@ -128,6 +128,7 @@ class WebServerConfigSupport {
 
     static class ListenerConfigDecorator implements Prototype.BuilderDecorator<ListenerConfig.BuilderBase<?, ?>> {
         @Override
+        @SuppressWarnings("removal")
         public void decorate(ListenerConfig.BuilderBase<?, ?> target) {
             if (target.bindAddress().isPresent()) {
                 if (target.address().isEmpty()) {
@@ -161,6 +162,28 @@ class WebServerConfigSupport {
                 if (!socketOptions.containsKey(StandardSocketOptions.SO_REUSEADDR)) {
                     target.putListenerSocketOption(StandardSocketOptions.SO_REUSEADDR, true);
                 }
+            }
+            Optional<ProxyProtocolConfig> proxyProtocol = target.proxyProtocol();
+            if (target.enableProxyProtocol()) {
+                if (proxyProtocol.isEmpty()) {
+                    throw new ConfigException("The deprecated \"enable-proxy-protocol\" option cannot enable PROXY protocol"
+                                                      + " support by itself. Configure \"proxy-protocol.trusted-proxies\""
+                                                      + " for the listener.");
+                }
+                if (!proxyProtocol.get().enabled()) {
+                    throw new ConfigException("\"enable-proxy-protocol\" and \"proxy-protocol.enabled\" conflict for"
+                                                      + " listener \"" + target.name() + "\".");
+                }
+            }
+            if (proxyProtocol.filter(ProxyProtocolConfig::enabled).isPresent()) {
+                if (proxyProtocol.get().trustedProxies().isEmpty()) {
+                    throw new ConfigException("PROXY protocol support for listener \"" + target.name()
+                                                      + "\" requires explicit trusted proxy configuration. Configure"
+                                                      + " \"proxy-protocol.trusted-proxies\" using allow and/or deny"
+                                                      + " settings. If all peers are trusted, explicitly set"
+                                                      + " \"proxy-protocol.trusted-proxies.allow.all\" to true.");
+                }
+                target.enableProxyProtocol(true);
             }
             if (target.requestedUriDiscoveryContext().isEmpty()) {
                 target.requestedUriDiscoveryContext(RequestedUriDiscoveryContext.builder()

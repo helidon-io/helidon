@@ -176,6 +176,7 @@ class CmPageResolverTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void testProviderDuplicateKeyRowAnchors() throws Exception {
         var resolver = resolver("provider-duplicate-keys");
 

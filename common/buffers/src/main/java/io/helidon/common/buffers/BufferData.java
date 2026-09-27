@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
+
 /**
  * Wrapper around a byte array.
  */
@@ -74,6 +76,27 @@ public interface BufferData {
      */
     static BufferData createReadOnly(byte[] bytes, int offset, int length) {
         return new ReadOnlyArrayData(bytes, offset, length);
+    }
+
+    /**
+     * Write shared bytes to a target without allowing an arbitrary target implementation to retain the byte array.
+     *
+     * @param target target buffer
+     * @param bytes shared bytes to write
+     */
+    @Api.Internal
+    static void writeFromShared(BufferData target, byte[] bytes) {
+        Objects.requireNonNull(target, "target");
+        Objects.requireNonNull(bytes, "bytes");
+        if (target.getClass() == FixedBufferData.class) {
+            ((FixedBufferData) target).write(bytes, 0, bytes.length);
+        } else if (target.getClass() == GrowingBufferData.class) {
+            ((GrowingBufferData) target).write(bytes, 0, bytes.length);
+        } else {
+            for (byte value : bytes) {
+                target.write(value);
+            }
+        }
     }
 
     /**

@@ -73,7 +73,7 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
      * Stream status trailers.
      */
     protected static final Header STREAM_TRAILERS =
-            HeaderValues.create(HeaderNames.TRAILER, STREAM_RESULT_NAME.defaultCase());
+            HeaderValues.createCached(HeaderNames.TRAILER, STREAM_RESULT_NAME.defaultCase());
     @SuppressWarnings("rawtypes")
     private static final List<SinkProvider> SINK_PROVIDERS =
             HelidonServiceLoader.builder(ServiceLoader.load(SinkProvider.class)).build().asList();

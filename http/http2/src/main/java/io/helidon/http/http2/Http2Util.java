@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.http.HeaderName;
 
 /**
  * HTTP/2 utility.
@@ -53,5 +54,9 @@ public final class Http2Util {
      */
     public static BufferData prefaceData() {
         return BufferData.create(PRIOR_KNOWLEDGE_PREFACE);
+    }
+
+    static long headerSize(HeaderName name, String value) {
+        return name.lowerCase().length() + value.getBytes(StandardCharsets.UTF_8).length;
     }
 }

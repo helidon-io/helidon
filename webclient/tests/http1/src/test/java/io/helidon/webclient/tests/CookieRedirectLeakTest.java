@@ -21,8 +21,11 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
+import io.helidon.webclient.api.WebClientCookieManager;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
@@ -34,6 +37,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 
@@ -45,15 +49,21 @@ class CookieRedirectLeakTest {
     private static final String SET_STORED_COOKIE = STORED_COOKIE + "; Path=/";
     private static final String TARGET_COOKIE = "target=attacker-token";
     private static final String SET_TARGET_COOKIE = TARGET_COOKIE + "; Path=/";
+    private static final String PATH_COOKIE = "pathOnly=redirect-secret";
+    private static final String SET_PATH_COOKIE = PATH_COOKIE + "; Path=/source";
+    private static final HeaderName REDIRECT_HEADER = HeaderNames.create("X-Redirect-Test");
 
     private static final AtomicReference<String> TRUSTED_COOKIE = new AtomicReference<>();
     private static final AtomicReference<String> LEAKED_STEP_COOKIE = new AtomicReference<>();
     private static final AtomicReference<String> LEAKED_COLLECT_COOKIE = new AtomicReference<>();
+    private static final AtomicReference<String> REDIRECT_SOURCE_COOKIE = new AtomicReference<>();
+    private static final AtomicReference<String> REDIRECT_TARGET_COOKIE = new AtomicReference<>();
 
     private static WebServer redirector;
     private static WebServer collector;
     private static Http1Client storedCookieClient;
     private static Http1Client defaultCookieClient;
+    private static Http1Client pathCookieClient;
 
     @BeforeAll
     static void beforeAll() {
@@ -68,7 +78,10 @@ class CookieRedirectLeakTest {
         redirector = WebServer.builder()
                 .host(TRUSTED_HOST)
                 .routing(rules -> rules.get("/prime", CookieRedirectLeakTest::primeTrustedHandler)
-                        .get("/bounce", CookieRedirectLeakTest::redirectHandler))
+                        .get("/bounce", CookieRedirectLeakTest::redirectHandler)
+                        .get("/source/prime", CookieRedirectLeakTest::primePathCookie)
+                        .put("/source/bounce", CookieRedirectLeakTest::redirectWithEntity)
+                        .put("/target/collect", CookieRedirectLeakTest::collectRedirectedEntity))
                 .build()
                 .start();
 
@@ -92,6 +105,11 @@ class CookieRedirectLeakTest {
         defaultCookieClient = Http1Client.builder()
                 .config(defaultConfig.get("client"))
                 .baseUri("http://" + TRUSTED_HOST + ":" + redirector.port())
+                .build();
+
+        pathCookieClient = Http1Client.builder()
+                .baseUri("http://" + TRUSTED_HOST + ":" + redirector.port())
+                .cookieManager(WebClientCookieManager.builder().automaticStoreEnabled(true).build())
                 .build();
     }
 
@@ -149,6 +167,27 @@ class CookieRedirectLeakTest {
                    LEAKED_COLLECT_COOKIE.get(), is(nullValue()));
     }
 
+    @Test
+    void methodPreservingRedirectReselectsCookiesForTargetPath() {
+        REDIRECT_SOURCE_COOKIE.set(null);
+        REDIRECT_TARGET_COOKIE.set(null);
+
+        try (Http1ClientResponse response = pathCookieClient.get("/source/prime").request()) {
+            assertThat(response.status(), is(Status.OK_200));
+        }
+
+        try (Http1ClientResponse response = pathCookieClient.put("/source/bounce")
+                .header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN)
+                .header(REDIRECT_HEADER, "drop")
+                .submit("entity")) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("text/plain:entity"));
+        }
+
+        assertThat(REDIRECT_SOURCE_COOKIE.get(), containsString(PATH_COOKIE));
+        assertThat(REDIRECT_TARGET_COOKIE.get(), is(nullValue()));
+    }
+
     private static void primeTrustedHandler(ServerRequest req, ServerResponse res) {
         res.header(HeaderNames.SET_COOKIE, SET_STORED_COOKIE)
                 .status(Status.OK_200)
@@ -178,6 +217,29 @@ class CookieRedirectLeakTest {
     private static void collectHandler(ServerRequest req, ServerResponse res) {
         LEAKED_COLLECT_COOKIE.set(extractCookie(req));
         res.status(Status.OK_200).send("collector reached");
+    }
+
+    private static void primePathCookie(ServerRequest req, ServerResponse res) {
+        res.header(HeaderNames.SET_COOKIE, SET_PATH_COOKIE)
+                .status(Status.OK_200)
+                .send();
+    }
+
+    private static void redirectWithEntity(ServerRequest req, ServerResponse res) {
+        REDIRECT_SOURCE_COOKIE.set(extractCookie(req));
+        res.status(Status.create(307, "Custom Temporary Redirect"))
+                .header(HeaderNames.LOCATION, "/target/collect")
+                .send();
+    }
+
+    private static void collectRedirectedEntity(ServerRequest req, ServerResponse res) {
+        REDIRECT_TARGET_COOKIE.set(extractCookie(req));
+        if (req.headers().contains(REDIRECT_HEADER)) {
+            res.status(Status.BAD_REQUEST_400).send("Custom header was preserved");
+            return;
+        }
+        String contentType = req.headers().contentType().orElseThrow().mediaType().text();
+        res.send(contentType + ":" + req.content().as(String.class));
     }
 
     private static String extractCookie(ServerRequest req) {

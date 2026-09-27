@@ -22,6 +22,7 @@ import java.net.SocketException;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Queue;
@@ -29,6 +30,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -41,6 +43,8 @@ import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.socket.SocketWriter;
 import io.helidon.common.socket.SocketWriterException;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.RequestException;
@@ -48,6 +52,7 @@ import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.http2.Http2ErrorCode;
+import io.helidon.http.http2.Http2Exception;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2FrameHeader;
@@ -66,7 +71,9 @@ import io.helidon.http.http2.Http2WindowUpdate;
 import io.helidon.http.http2.WindowSize;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.ListenerContext;
+import io.helidon.webserver.ProxyProtocolData;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.WebServer;
@@ -76,6 +83,7 @@ import io.helidon.webserver.http2.spi.SubProtocolResult;
 
 import org.junit.jupiter.api.Test;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -95,6 +103,71 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class Http2ConnectionTest {
+
+    @Test
+    void peerCloseWhileReadingPrefaceClosesConnection() {
+        byte[] preface = Http2Util.prefaceData().readBytes();
+        Queue<byte[]> input = new ConcurrentLinkedQueue<>();
+        input.add(Arrays.copyOf(preface, preface.length - 1));
+        DataWriter writer = mock(DataWriter.class);
+        Http2Connection connection = new Http2Connection(http2Context(writer, DataReader.create(input::poll)),
+                                                         Http2Config.create(),
+                                                         List.of());
+        connection.expectPreface();
+
+        CloseConnectionException exception = assertThrows(CloseConnectionException.class,
+                                                          () -> connection.handle(FixedLimit.create()));
+
+        assertThat(exception.getCause(), instanceOf(DataReader.InsufficientDataAvailableException.class));
+    }
+
+    @Test
+    void streamContextDoesNotRetainEmptyContinuations() {
+        Http2Connection.StreamContext streamContext =
+                new Http2Connection.StreamContext(1, 16_384, mock(Http2ServerStream.class));
+        Http2FrameHeader headers = Http2FrameHeader.create(0,
+                                                           Http2FrameTypes.HEADERS,
+                                                           Http2Flag.HeaderFlags.create(0),
+                                                           1);
+        streamContext.addHeadersToBeContinued(headers, BufferData.empty());
+
+        Http2FrameHeader continuation = Http2FrameHeader.create(0,
+                                                                Http2FrameTypes.CONTINUATION,
+                                                                Http2Flag.ContinuationFlags.create(0),
+                                                                1);
+        for (int i = 0; i < 1_000; i++) {
+            streamContext.addContinuation(new Http2FrameData(continuation, BufferData.empty()));
+        }
+
+        assertThat(streamContext.contData().length, is(1));
+    }
+
+    @Test
+    void streamContextLimitsRetainedHeaderFrames() {
+        Http2Connection.StreamContext streamContext =
+                new Http2Connection.StreamContext(1, Long.MAX_VALUE, mock(Http2ServerStream.class));
+        Http2FrameHeader headers = Http2FrameHeader.create(1,
+                                                           Http2FrameTypes.HEADERS,
+                                                           Http2Flag.HeaderFlags.create(0),
+                                                           1);
+        streamContext.addHeadersToBeContinued(headers, BufferData.create(new byte[1]));
+
+        Http2FrameHeader continuation = Http2FrameHeader.create(1,
+                                                                Http2FrameTypes.CONTINUATION,
+                                                                Http2Flag.ContinuationFlags.create(0),
+                                                                1);
+        for (int i = 1; i < 8_192; i++) {
+            streamContext.addContinuation(new Http2FrameData(continuation, BufferData.create(new byte[1])));
+        }
+
+        Http2FrameData excessContinuation = new Http2FrameData(continuation, BufferData.create(new byte[1]));
+        Http2Exception exception = assertThrows(Http2Exception.class,
+                                                () -> streamContext.addContinuation(excessContinuation));
+        assertAll(
+                () -> assertThat(exception.code(), is(Http2ErrorCode.ENHANCE_YOUR_CALM)),
+                () -> assertThat(streamContext.contData().length, is(8_192))
+        );
+    }
 
     @Test
     void h2cUpgradeRespectsConcurrentStreamLimit() throws InterruptedException {
@@ -215,6 +288,284 @@ class Http2ConnectionTest {
                      () -> connection.handle(mock(io.helidon.common.concurrency.limits.Limit.class)));
 
         assertThat(connection.idleTime(), lessThan(Duration.ofSeconds(5)));
+    }
+
+    @Test
+    void proxyProtocolHeadersReplaceClientForwardedHeaders() throws InterruptedException {
+        Queue<byte[]> input = new ConcurrentLinkedQueue<>();
+        WritableHeaders<?> forwardedHeaders = WritableHeaders.create()
+                .add(HeaderValues.create(HeaderNames.X_FORWARDED_FOR, "10.0.0.5"))
+                .add(HeaderValues.create(HeaderNames.X_FORWARDED_PORT, "1234"));
+        Http2Headers h2Headers = Http2Headers.create(forwardedHeaders);
+        h2Headers.method(Method.GET);
+        h2Headers.path("/data");
+        h2Headers.scheme("http");
+        h2Headers.authority("localhost");
+
+        BufferData headersData = BufferData.growing(512);
+        h2Headers.write(Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue()),
+                        Http2HuffmanEncoder.create(),
+                        headersData);
+        input.add(frameBytes(new Http2FrameData(Http2FrameHeader.create(headersData.available(),
+                                                                        Http2FrameTypes.HEADERS,
+                                                                        Http2Flag.HeaderFlags.create(
+                                                                                Http2Flag.END_OF_HEADERS
+                                                                                        | Http2Flag.END_OF_STREAM),
+                                                                        1),
+                                                headersData)));
+
+        ExecutorService executor = mock(ExecutorService.class);
+        doAnswer(invocation -> {
+            Runnable runnable = invocation.getArgument(0);
+            runnable.run();
+            return mock(Future.class);
+        }).when(executor).submit(any(Runnable.class));
+
+        AtomicReference<Http2ServerRequest> requestRef = new AtomicReference<>();
+        Router router = mock(Router.class);
+        HttpRouting routing = mock(HttpRouting.class);
+        when(router.routing(eq(HttpRouting.class), any(HttpRouting.class))).thenReturn(routing);
+        doAnswer(invocation -> {
+            requestRef.set(invocation.getArgument(1));
+            return null;
+        }).when(routing).route(any(), any(), any());
+
+        DataReader reader = DataReader.create(input::poll);
+        ConnectionContext ctx = http2Context(mock(DataWriter.class), reader);
+        when(ctx.router()).thenReturn(router);
+        when(ctx.executor()).thenReturn(executor);
+        PeerInfo peerInfo = mock(PeerInfo.class);
+        when(peerInfo.tlsCertificates()).thenReturn(Optional.empty());
+        when(ctx.remotePeer()).thenReturn(peerInfo);
+        ProxyProtocolData proxyProtocolData = mock(ProxyProtocolData.class);
+        when(proxyProtocolData.family()).thenReturn(ProxyProtocolData.Family.IPv4);
+        when(proxyProtocolData.sourceAddress()).thenReturn("192.168.0.1");
+        when(proxyProtocolData.destPort()).thenReturn(443);
+        when(ctx.proxyProtocolData()).thenReturn(Optional.of(proxyProtocolData));
+        ListenerContext listenerContext = mock(ListenerContext.class);
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentDecodingEnabled()).thenReturn(false);
+        when(listenerContext.contentEncodingContext()).thenReturn(contentEncodingContext);
+        when(listenerContext.config()).thenReturn(WebServer.builder().buildPrototype());
+        when(listenerContext.mediaContext()).thenReturn(MediaContext.create());
+        when(ctx.listenerContext()).thenReturn(listenerContext);
+
+        Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of());
+
+        assertThrows(CloseConnectionException.class,
+                     () -> connection.handle(FixedLimit.create()));
+
+        assertThat(requestRef.get(), notNullValue());
+        assertThat(requestRef.get().headers().all(HeaderNames.X_FORWARDED_FOR, List::of),
+                   is(List.of("192.168.0.1")));
+        assertThat(requestRef.get().headers().all(HeaderNames.X_FORWARDED_PORT, List::of),
+                   is(List.of("443")));
+    }
+
+    @Test
+    void proxyProtocolUnixAddressDoesNotBecomeForwardedHeader() throws InterruptedException {
+        Queue<byte[]> input = new ConcurrentLinkedQueue<>();
+        WritableHeaders<?> forwardedHeaders = WritableHeaders.create()
+                .add(HeaderValues.create(HeaderNames.X_FORWARDED_FOR, "10.0.0.5"))
+                .add(HeaderValues.create(HeaderNames.X_FORWARDED_PORT, "1234"));
+        Http2Headers h2Headers = Http2Headers.create(forwardedHeaders);
+        h2Headers.method(Method.GET);
+        h2Headers.path("/data");
+        h2Headers.scheme("http");
+        h2Headers.authority("localhost");
+
+        BufferData headersData = BufferData.growing(512);
+        h2Headers.write(Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue()),
+                        Http2HuffmanEncoder.create(),
+                        headersData);
+        input.add(frameBytes(new Http2FrameData(Http2FrameHeader.create(headersData.available(),
+                                                                        Http2FrameTypes.HEADERS,
+                                                                        Http2Flag.HeaderFlags.create(
+                                                                                Http2Flag.END_OF_HEADERS
+                                                                                        | Http2Flag.END_OF_STREAM),
+                                                                        1),
+                                                headersData)));
+
+        ExecutorService executor = mock(ExecutorService.class);
+        doAnswer(invocation -> {
+            Runnable runnable = invocation.getArgument(0);
+            runnable.run();
+            return mock(Future.class);
+        }).when(executor).submit(any(Runnable.class));
+
+        AtomicReference<Http2ServerRequest> requestRef = new AtomicReference<>();
+        Router router = mock(Router.class);
+        HttpRouting routing = mock(HttpRouting.class);
+        when(router.routing(eq(HttpRouting.class), any(HttpRouting.class))).thenReturn(routing);
+        doAnswer(invocation -> {
+            requestRef.set(invocation.getArgument(1));
+            return null;
+        }).when(routing).route(any(), any(), any());
+
+        DataReader reader = DataReader.create(input::poll);
+        ConnectionContext ctx = http2Context(mock(DataWriter.class), reader);
+        when(ctx.router()).thenReturn(router);
+        when(ctx.executor()).thenReturn(executor);
+        PeerInfo peerInfo = mock(PeerInfo.class);
+        when(peerInfo.tlsCertificates()).thenReturn(Optional.empty());
+        when(ctx.remotePeer()).thenReturn(peerInfo);
+        ProxyProtocolData proxyProtocolData = mock(ProxyProtocolData.class);
+        when(proxyProtocolData.family()).thenReturn(ProxyProtocolData.Family.UNIX);
+        when(proxyProtocolData.sourceAddress()).thenReturn("/tmp/source\r\nx-forwarded-for: attacker");
+        when(proxyProtocolData.destPort()).thenReturn(-1);
+        when(ctx.proxyProtocolData()).thenReturn(Optional.of(proxyProtocolData));
+        ListenerContext listenerContext = mock(ListenerContext.class);
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentDecodingEnabled()).thenReturn(false);
+        when(listenerContext.contentEncodingContext()).thenReturn(contentEncodingContext);
+        when(listenerContext.config()).thenReturn(WebServer.builder().buildPrototype());
+        when(listenerContext.mediaContext()).thenReturn(MediaContext.create());
+        when(ctx.listenerContext()).thenReturn(listenerContext);
+
+        Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of());
+
+        assertThrows(CloseConnectionException.class,
+                     () -> connection.handle(FixedLimit.create()));
+
+        assertThat(requestRef.get(), notNullValue());
+        assertThat(requestRef.get().headers().all(HeaderNames.X_FORWARDED_FOR, List::of),
+                   is(List.of()));
+        assertThat(requestRef.get().headers().all(HeaderNames.X_FORWARDED_PORT, List::of),
+                   is(List.of()));
+    }
+
+    @Test
+    void proxyProtocolHeadersRemoveClientPortWhenDestinationPortUnavailable() throws InterruptedException {
+        Queue<byte[]> input = new ConcurrentLinkedQueue<>();
+        WritableHeaders<?> forwardedHeaders = WritableHeaders.create()
+                .add(HeaderValues.create(HeaderNames.X_FORWARDED_FOR, "10.0.0.5"))
+                .add(HeaderValues.create(HeaderNames.X_FORWARDED_PORT, "1234"));
+        Http2Headers h2Headers = Http2Headers.create(forwardedHeaders);
+        h2Headers.method(Method.GET);
+        h2Headers.path("/data");
+        h2Headers.scheme("http");
+        h2Headers.authority("localhost");
+
+        BufferData headersData = BufferData.growing(512);
+        h2Headers.write(Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue()),
+                        Http2HuffmanEncoder.create(),
+                        headersData);
+        input.add(frameBytes(new Http2FrameData(Http2FrameHeader.create(headersData.available(),
+                                                                        Http2FrameTypes.HEADERS,
+                                                                        Http2Flag.HeaderFlags.create(
+                                                                                Http2Flag.END_OF_HEADERS
+                                                                                        | Http2Flag.END_OF_STREAM),
+                                                                        1),
+                                                headersData)));
+
+        ExecutorService executor = mock(ExecutorService.class);
+        doAnswer(invocation -> {
+            Runnable runnable = invocation.getArgument(0);
+            runnable.run();
+            return mock(Future.class);
+        }).when(executor).submit(any(Runnable.class));
+
+        AtomicReference<Http2ServerRequest> requestRef = new AtomicReference<>();
+        Router router = mock(Router.class);
+        HttpRouting routing = mock(HttpRouting.class);
+        when(router.routing(eq(HttpRouting.class), any(HttpRouting.class))).thenReturn(routing);
+        doAnswer(invocation -> {
+            requestRef.set(invocation.getArgument(1));
+            return null;
+        }).when(routing).route(any(), any(), any());
+
+        DataReader reader = DataReader.create(input::poll);
+        ConnectionContext ctx = http2Context(mock(DataWriter.class), reader);
+        when(ctx.router()).thenReturn(router);
+        when(ctx.executor()).thenReturn(executor);
+        PeerInfo peerInfo = mock(PeerInfo.class);
+        when(peerInfo.tlsCertificates()).thenReturn(Optional.empty());
+        when(ctx.remotePeer()).thenReturn(peerInfo);
+        ProxyProtocolData proxyProtocolData = mock(ProxyProtocolData.class);
+        when(proxyProtocolData.family()).thenReturn(ProxyProtocolData.Family.IPv4);
+        when(proxyProtocolData.sourceAddress()).thenReturn("192.168.0.1");
+        when(proxyProtocolData.destPort()).thenReturn(-1);
+        when(ctx.proxyProtocolData()).thenReturn(Optional.of(proxyProtocolData));
+        ListenerContext listenerContext = mock(ListenerContext.class);
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentDecodingEnabled()).thenReturn(false);
+        when(listenerContext.contentEncodingContext()).thenReturn(contentEncodingContext);
+        when(listenerContext.config()).thenReturn(WebServer.builder().buildPrototype());
+        when(listenerContext.mediaContext()).thenReturn(MediaContext.create());
+        when(ctx.listenerContext()).thenReturn(listenerContext);
+
+        Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of());
+
+        assertThrows(CloseConnectionException.class,
+                     () -> connection.handle(FixedLimit.create()));
+
+        assertThat(requestRef.get(), notNullValue());
+        assertThat(requestRef.get().headers().all(HeaderNames.X_FORWARDED_FOR, List::of),
+                   is(List.of("192.168.0.1")));
+        assertThat(requestRef.get().headers().all(HeaderNames.X_FORWARDED_PORT, List::of),
+                   is(List.of()));
+    }
+
+    @Test
+    void proxyProtocolHeadersValidateBeforeReplacement() throws InterruptedException {
+        Queue<byte[]> input = new ConcurrentLinkedQueue<>();
+        BufferData headersData = BufferData.growing(512);
+        headersData.write(0x82);       // :method GET
+        headersData.write(0x04);       // literal without indexing, indexed name :path
+        headersData.write(5);
+        headersData.write("/data".getBytes(US_ASCII));
+        headersData.write(0x86);       // :scheme http
+        headersData.write(0x01);       // literal without indexing, indexed name :authority
+        headersData.write(9);
+        headersData.write("localhost".getBytes(US_ASCII));
+        headersData.write(0x00);       // literal without indexing, custom name
+        headersData.write(16);
+        headersData.write("x-forwarded-port".getBytes(US_ASCII));
+        headersData.write(5);
+        headersData.write("\r1234".getBytes(US_ASCII));
+        input.add(frameBytes(new Http2FrameData(Http2FrameHeader.create(headersData.available(),
+                                                                        Http2FrameTypes.HEADERS,
+                                                                        Http2Flag.HeaderFlags.create(
+                                                                                Http2Flag.END_OF_HEADERS
+                                                                                        | Http2Flag.END_OF_STREAM),
+                                                                        1),
+                                                headersData)));
+
+        List<BufferData> writtenFrames = new ArrayList<>();
+        DataWriter writer = mock(DataWriter.class);
+        doAnswer(invocation -> {
+            BufferData data = invocation.getArgument(0);
+            writtenFrames.add(data.copy());
+            return null;
+        }).when(writer).writeNow(any(BufferData.class));
+
+        DataReader reader = DataReader.create(input::poll);
+        ConnectionContext ctx = http2Context(writer, reader);
+        ExecutorService executor = mock(ExecutorService.class);
+        when(ctx.executor()).thenReturn(executor);
+        PeerInfo peerInfo = mock(PeerInfo.class);
+        when(peerInfo.tlsCertificates()).thenReturn(Optional.empty());
+        when(ctx.remotePeer()).thenReturn(peerInfo);
+        ProxyProtocolData proxyProtocolData = mock(ProxyProtocolData.class);
+        when(proxyProtocolData.family()).thenReturn(ProxyProtocolData.Family.IPv4);
+        when(proxyProtocolData.sourceAddress()).thenReturn("192.168.0.1");
+        when(proxyProtocolData.destPort()).thenReturn(443);
+        when(ctx.proxyProtocolData()).thenReturn(Optional.of(proxyProtocolData));
+
+        Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of());
+        connection.handle(FixedLimit.create());
+
+        BufferData goAwayData = writtenFrames.get(writtenFrames.size() - 1);
+        byte[] headerBytes = new byte[Http2FrameHeader.LENGTH];
+        goAwayData.read(headerBytes);
+        Http2FrameHeader frameHeader = Http2FrameHeader.create(BufferData.create(headerBytes));
+        assertThat(frameHeader.type(), is(Http2FrameType.GO_AWAY));
+
+        byte[] payloadBytes = new byte[frameHeader.length()];
+        goAwayData.read(payloadBytes);
+        Http2GoAway goAway = Http2GoAway.create(BufferData.create(payloadBytes));
+        assertThat(goAway.errorCode(), is(Http2ErrorCode.PROTOCOL));
+        verify(executor, never()).submit(any(Runnable.class));
     }
 
     @Test
@@ -741,11 +1092,7 @@ class Http2ConnectionTest {
                 .when(writer)
                 .writeNow(any(BufferData.class));
 
-        ConnectionContext ctx = mock(ConnectionContext.class);
-        when(ctx.router()).thenReturn(Router.empty());
-        when(ctx.listenerContext()).thenReturn(mock(ListenerContext.class));
-        when(ctx.dataWriter()).thenReturn(writer);
-        when(ctx.dataReader()).thenReturn(mock(DataReader.class));
+        ConnectionContext ctx = http2Context(writer);
 
         Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of());
         connection.pendingPing(Http2Ping.create());
@@ -818,11 +1165,7 @@ class Http2ConnectionTest {
         Http2Config config = Http2Config.builder()
                 .maxRapidResets(0)
                 .build();
-        ConnectionContext ctx = mock(ConnectionContext.class);
-        when(ctx.router()).thenReturn(Router.empty());
-        when(ctx.listenerContext()).thenReturn(mock(ListenerContext.class));
-        when(ctx.dataWriter()).thenReturn(writer);
-        when(ctx.dataReader()).thenReturn(mock(DataReader.class));
+        ConnectionContext ctx = http2Context(writer);
 
         Http2Connection connection = new Http2Connection(ctx, config, List.of());
         Http2ConnectionChecks checks = new Http2ConnectionChecks(config, connection);
@@ -914,8 +1257,10 @@ class Http2ConnectionTest {
 
     private static ConnectionContext http2Context(DataWriter writer, DataReader reader) {
         ConnectionContext ctx = mock(ConnectionContext.class);
+        ListenerContext listenerContext = mock(ListenerContext.class);
         when(ctx.router()).thenReturn(Router.empty());
-        when(ctx.listenerContext()).thenReturn(mock(ListenerContext.class));
+        when(listenerContext.config()).thenReturn(ListenerConfig.builder().build());
+        when(ctx.listenerContext()).thenReturn(listenerContext);
         when(ctx.dataWriter()).thenReturn(writer);
         when(ctx.dataReader()).thenReturn(reader);
         return ctx;

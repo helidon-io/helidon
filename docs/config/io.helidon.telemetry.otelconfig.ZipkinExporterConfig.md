@@ -2,7 +2,7 @@
 
 ## Description
 
-<code>N/<wbr>A</code>
+Configuration for the deprecated OpenTelemetry Zipkin exporter
 
 ## Configuration options
 

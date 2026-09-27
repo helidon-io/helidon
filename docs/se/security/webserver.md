@@ -67,7 +67,7 @@ security:
         authenticate: true
       paths:
         - path: "/service1/*"
-          methods: ["get"]
+          methods: ["GET"]
           roles-allowed: ["user"]
           # "authenticate: true" is implicit, as it is configured in defaults above
 ```

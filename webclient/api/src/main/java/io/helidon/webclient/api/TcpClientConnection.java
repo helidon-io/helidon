@@ -246,7 +246,7 @@ public class TcpClientConnection implements ClientConnection {
 
     @Override
     public boolean isConnected() {
-        return socket != null && socket.isConnected() && helidonSocket().isConnected();
+        return !closed && socket != null && socket.isConnected() && helidonSocket().isConnected();
     }
 
     @Override
