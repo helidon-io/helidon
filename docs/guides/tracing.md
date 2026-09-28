@@ -99,23 +99,15 @@ cd helidon-quickstart-se
 First, run the Jaeger backend. Helidon communicates with this backend at
 runtime.
 
-Run Jaeger within a docker container:
+Run Jaeger 2 within a Docker container:
 
 <!--@mdc ::code-callout -->
 ```shell [Terminal]
 docker run -d --name jaeger \ # <1>
-  -e COLLECTOR_OTLP_ENABLED=true \
-  -p 6831:6831/udp \
-  -p 6832:6832/udp \
-  -p 5778:5778 \
   -p 16686:16686 \
   -p 4317:4317 \
   -p 4318:4318 \
-  -p 14250:14250 \
-  -p 14268:14268 \
-  -p 14269:14269 \
-  -p 9411:9411 \
-  jaegertracing/all-in-one:1.50
+  cr.jaegertracing.io/jaegertracing/jaeger:2.21.0
 ```
 1. Run the Jaeger docker image.
 <!--@mdc :: -->
@@ -615,11 +607,8 @@ metadata:
 spec:
   containers:
     - name: jaeger
-      image: jaegertracing/all-in-one
+      image: cr.jaegertracing.io/jaegertracing/jaeger:2.21.0
       imagePullPolicy: IfNotPresent
-      env:
-        - name: COLLECTOR_OTLP_ENABLED
-          value: "true"
       ports:
         - containerPort: 4317
         - containerPort: 16686
@@ -641,7 +630,7 @@ Create an external Jaeger UI service on port 16687:
 kubectl expose pod  jaeger --name=jaeger-external --port=16687 --target-port=16686 --type=LoadBalancer
 ```
 
-Navigate to <http://localhost:16687/jaeger> to validate that you can access
+Navigate to <http://localhost:16687> to validate that you can access
 Jaeger running in Kubernetes. It may take a few seconds before it is ready.
 
 ### Deploy Your Helidon Application into Kubernetes
@@ -727,7 +716,7 @@ curl http://localhost:31143/greet
 }
 ```
 
-Access the Jaeger UI at <http://localhost:16687/jaeger> and click on the refresh
+Access the Jaeger UI at <http://localhost:16687> and click on the refresh
 icon to see the trace that was just created.
 
 ### Cleanup
