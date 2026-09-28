@@ -535,7 +535,7 @@ final class HelidonPrometheusFormatter implements MeterRegistryFormatter {
     }
 
     private static String escape(String value) {
-        return value.replace("\\", "\\\\").replace("\n", "\\n").replace("\r", "\\n").replace("\"", "\\\"");
+        return value.replace("\\", "\\\\").replace("\n", "\\n").replace("\"", "\\\"");
     }
 
     private static String escapeHelp(String value) {
