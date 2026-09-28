@@ -22,8 +22,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionSummary;
@@ -41,9 +45,12 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.startsWith;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TestHelidonPrometheusFormatting {
@@ -257,6 +264,16 @@ class TestHelidonPrometheusFormatting {
                                                 + "{le=\"1.0\"} 0\n"),
                          containsString("fallback_histogram_summary_bucket"
                                                 + "{le=\"+Inf\"} 1\n")));
+    }
+
+    @Test
+    void concurrentRecordingPreservesPrometheusHistogramInvariants() throws Exception {
+        assertConcurrentHistogramExports(MediaTypes.TEXT_PLAIN);
+    }
+
+    @Test
+    void concurrentRecordingPreservesOpenMetricsHistogramInvariants() throws Exception {
+        assertConcurrentHistogramExports(MediaTypes.APPLICATION_OPENMETRICS_TEXT);
     }
 
     @Test
@@ -552,6 +569,101 @@ class TestHelidonPrometheusFormatting {
                 .formatter(context, new TestRegistry());
 
         assertThat("Provider declines a registry from another provider", formatter, is(Optional.empty()));
+    }
+
+    private static void assertConcurrentHistogramExports(MediaType mediaType) throws Exception {
+        int bucketCount = 1024;
+        double[] summaryBuckets = new double[bucketCount];
+        Duration[] timerBuckets = new Duration[bucketCount];
+        for (int bucket = 0; bucket < bucketCount; bucket++) {
+            summaryBuckets[bucket] = bucket + 1;
+            timerBuckets[bucket] = Duration.ofMillis(bucket + 1);
+        }
+        MetricsConfig metricsConfig = MetricsConfig.create();
+        HelidonMetricsFactory factory = HelidonMetricsFactory.create();
+        try {
+            MeterRegistry registry = factory.createMeterRegistry(metricsConfig);
+            Timer timer = registry.getOrCreate(factory.timerBuilder("concurrent.timer").buckets(timerBuckets));
+            DistributionSummary summary = registry.getOrCreate(
+                    factory.distributionSummaryBuilder("concurrent.summary",
+                                                       factory.distributionStatisticsConfigBuilder()
+                                                               .buckets(summaryBuckets)));
+            for (int amount : List.of(0, 1, bucketCount / 2, bucketCount, bucketCount + 1)) {
+                timer.record(amount, TimeUnit.MILLISECONDS);
+                summary.record(amount);
+            }
+            FormatterContext context = FormatterContext.builder()
+                    .mediaType(mediaType)
+                    .metricsConfig(metricsConfig)
+                    .build();
+            var formatter = new HelidonPrometheusFormatterProvider().formatter(context, registry).orElseThrow();
+            var started = new CountDownLatch(1);
+            var recording = new AtomicBoolean(true);
+            try (var executor = Executors.newSingleThreadExecutor()) {
+                var writer = executor.submit(() -> {
+                    while (recording.get() && !Thread.currentThread().isInterrupted()) {
+                        // Keep new observations in the last finite bucket, with only the seeded overflow excluded.
+                        timer.record(bucketCount, TimeUnit.MILLISECONDS);
+                        summary.record(bucketCount);
+                        started.countDown();
+                    }
+                });
+                try {
+                    assertThat("The writer records both meters before scraping",
+                               started.await(5, TimeUnit.SECONDS), is(true));
+                    long initialTimerCount = timer.count();
+                    long initialSummaryCount = summary.count();
+                    for (int scrape = 0; scrape < 128; scrape++) {
+                        String output = (String) formatter.format().orElseThrow();
+                        String description = mediaType + " scrape " + scrape;
+                        assertAll(() -> assertHistogramExport(description, output,
+                                                              "concurrent_timer_seconds", bucketCount, 1000),
+                                  () -> assertHistogramExport(description, output, "concurrent_summary", bucketCount, 1));
+                    }
+                    assertThat("Timer recording continues while scraping", timer.count(),
+                               greaterThan(initialTimerCount));
+                    assertThat("Summary recording continues while scraping", summary.count(),
+                               greaterThan(initialSummaryCount));
+                } finally {
+                    recording.set(false);
+                    try {
+                        writer.get(5, TimeUnit.SECONDS);
+                    } finally {
+                        writer.cancel(true);
+                    }
+                }
+            }
+        } finally {
+            factory.close();
+        }
+    }
+
+    private static void assertHistogramExport(String description,
+                                               String output,
+                                               String name,
+                                               int bucketCount,
+                                               double divisor) {
+        String prefix = name + "_bucket{le=\"";
+        List<String> buckets = output.lines().filter(line -> line.startsWith(prefix)).toList();
+        assertThat(description + " " + name + " finite buckets and +Inf", buckets.size(), is(bucketCount + 1));
+        long previousCount = 0;
+        for (int bucket = 0; bucket < bucketCount; bucket++) {
+            String sample = buckets.get(bucket);
+            assertThat(description + " configured boundary " + bucket, sample,
+                       startsWith(prefix + (bucket + 1) / divisor + "\"} "));
+            long count = Long.parseLong(sample.substring(sample.lastIndexOf(' ') + 1));
+            assertThat(description + " cumulative " + sample, count, greaterThanOrEqualTo(previousCount));
+            previousCount = count;
+        }
+        String infiniteBucket = buckets.get(bucketCount);
+        assertThat(description + " final bucket", infiniteBucket, startsWith(prefix + "+Inf\"} "));
+        long infiniteCount = Long.parseLong(infiniteBucket.substring(infiniteBucket.lastIndexOf(' ') + 1));
+        assertThat(description + " " + name + " +Inf includes every finite bucket", infiniteCount,
+                   greaterThanOrEqualTo(previousCount));
+        assertThat(description + " " + name + " contains recorded observations", infiniteCount, greaterThan(0L));
+        List<String> counts = output.lines().filter(line -> line.startsWith(name + "_count ")).toList();
+        assertThat(description + " " + name + " emits one count matching +Inf", counts,
+                   is(List.of(name + "_count " + infiniteCount)));
     }
 
     private static String format(MetricsConfig metricsConfig, MeterRegistry registry) {
