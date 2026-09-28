@@ -97,13 +97,14 @@ final class HelidonHistogram {
     }
 
     HelidonHistogramSnapshot snapshot() {
-        long snapshotCount = count();
         long[] snapshotBucketCounts = new long[bucketCounts.length];
         long cumulative = 0;
         for (int i = 0; i < bucketCounts.length; i++) {
             cumulative += bucketCounts[i].sum();
             snapshotBucketCounts[i] = cumulative;
         }
+        // Independently sampled adders must still describe buckets bounded by the observation count.
+        long snapshotCount = Math.max(count(), cumulative);
         return HelidonHistogramSnapshot.create(snapshotCount,
                                                total(),
                                                max(),

@@ -23,6 +23,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.StreamSupport;
 
 import io.helidon.metrics.api.Bucket;
@@ -36,10 +37,15 @@ import io.helidon.metrics.api.ValueAtPercentile;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 class TestHelidonHistogramRecords {
@@ -141,6 +147,59 @@ class TestHelidonHistogramRecords {
                                         List.of(2_000_000D, 5_000_000D), List.of(3072L, 6144L)));
     }
 
+    @ParameterizedTest
+    @ValueSource(ints = {1, 4})
+    void concurrentSnapshotsKeepBucketsWithinObservationCount(int writers) throws Exception {
+        var ready = new CountDownLatch(writers);
+        var start = new CountDownLatch(1);
+        var observed = new CountDownLatch(writers);
+        var recording = new AtomicBoolean(true);
+        List<Future<Long>> recordings = new ArrayList<>();
+        long observations = 0;
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            try {
+                for (int worker = 0; worker < writers; worker++) {
+                    recordings.add(executor.submit(() -> {
+                        ready.countDown();
+                        assertThat("Recording starts after all callers are ready", start.await(5, TimeUnit.SECONDS), is(true));
+                        long recorded = 0;
+                        do {
+                            summary.record(1);
+                            timer.record(1, TimeUnit.MILLISECONDS);
+                            if (recorded++ == 0) {
+                                observed.countDown();
+                            }
+                        } while (recording.get() && !Thread.currentThread().isInterrupted());
+                        return recorded;
+                    }));
+                }
+                assertThat("All recording callers are ready", ready.await(5, TimeUnit.SECONDS), is(true));
+                start.countDown();
+                assertThat("Every caller records before snapshots are checked", observed.await(5, TimeUnit.SECONDS), is(true));
+                for (int sample = 0; sample < 2000; sample++) {
+                    assertConcurrentSnapshot("summary", summary.snapshot());
+                    assertConcurrentSnapshot("timer", timer.snapshot());
+                }
+            } finally {
+                recording.set(false);
+                start.countDown();
+                try {
+                    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+                    for (Future<Long> result : recordings) {
+                        observations += result.get(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
+                    }
+                } finally {
+                    recordings.forEach(result -> result.cancel(true));
+                }
+            }
+        }
+
+        assertHistogram(summary.snapshot(), observations, observations, 1, List.of(2D, 5D),
+                        List.of(observations, observations));
+        assertHistogram(timer.snapshot(), observations, observations * 1_000_000D, 1_000_000,
+                        List.of(2_000_000D, 5_000_000D), List.of(observations, observations));
+    }
+
     @Test
     void singleValuedPercentilesRemainExactBeyondReservoirCapacity() {
         for (int observation = 0; observation < 10_000; observation++) {
@@ -203,6 +262,21 @@ class TestHelidonHistogramRecords {
                   () -> assertThat("Summary count tracks observations, not scaled amounts", scaled.count(), is(4L)),
                   () -> assertThat("Summary total includes scaled overflow", scaled.totalAmount(), is(13D)),
                   () -> assertThat("Summary mean agrees with its snapshot", scaled.mean(), is(3.25)));
+    }
+
+    private static void assertConcurrentSnapshot(String name, HistogramSnapshot snapshot) {
+        assertThat(name + " snapshot contains observations", snapshot.count(), greaterThan(0L));
+        int buckets = 0;
+        long previousCount = 0;
+        for (Bucket bucket : snapshot.histogramCounts()) {
+            assertThat(name + " cumulative count at boundary " + bucket.boundary(),
+                       bucket.count(), greaterThanOrEqualTo(previousCount));
+            assertThat(name + " bucket at boundary " + bucket.boundary() + " cannot exceed the snapshot count",
+                       bucket.count(), lessThanOrEqualTo(snapshot.count()));
+            previousCount = bucket.count();
+            buckets++;
+        }
+        assertThat(name + " snapshot contains both configured buckets", buckets, is(2));
     }
 
     private static void assertHistogram(HistogramSnapshot snapshot,
