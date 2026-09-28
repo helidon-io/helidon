@@ -68,7 +68,7 @@
         <!-- Check Hibernate when upgrading to ensure its supplied jaxb-runtime is compatible. -->
         <version.lib.jakarta.xml.bind-api>4.0.2</version.lib.jakarta.xml.bind-api>
         <version.lib.jboss.logging>3.6.3.Final</version.lib.jboss.logging>
-        <version.lib.jaxb-runtime>4.0.5</version.lib.jaxb-runtime>
+        <version.lib.jaxb-runtime>4.0.9</version.lib.jaxb-runtime>
         <!-- Jetbrains annotations: dependency convergence requirement, we never use this directly -->
         <version.lib.jetbrains.annotations>17.0.0</version.lib.jetbrains.annotations>
         <version.lib.jspecify>1.0.1</version.lib.jspecify>
