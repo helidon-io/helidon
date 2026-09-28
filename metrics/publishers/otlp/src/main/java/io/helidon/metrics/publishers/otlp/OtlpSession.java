@@ -34,6 +34,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
+import io.helidon.common.buffers.DataReader;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.task.DeadlineGuard;
 import io.helidon.http.Header;
@@ -293,7 +294,8 @@ final class OtlpSession implements HelidonMetricsPublisher.Session {
                 // JSON parser exceptions can contain response bytes; keep payloads out of diagnostics.
                 LOGGER.log(WARNING, "OTLP metrics receiver returned invalid JSON");
                 return;
-            } catch (UncheckedIOException | RuntimeUnknownHostException | IOException e) {
+            } catch (UncheckedIOException | RuntimeUnknownHostException | DataReader.InsufficientDataAvailableException
+                     | IOException e) {
                 if (Thread.currentThread().isInterrupted()) {
                     return;
                 }

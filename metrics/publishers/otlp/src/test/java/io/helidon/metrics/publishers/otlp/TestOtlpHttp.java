@@ -16,13 +16,23 @@
 
 package io.helidon.metrics.publishers.otlp;
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntFunction;
 
@@ -45,9 +55,13 @@ import static io.helidon.metrics.publishers.otlp.OtlpTestSupport.dataPoints;
 import static io.helidon.metrics.publishers.otlp.OtlpTestSupport.longValue;
 import static io.helidon.metrics.publishers.otlp.OtlpTestSupport.metric;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.startsWith;
 
 class TestOtlpHttp {
     private static final Duration EXPORT_TIMEOUT = Duration.ofSeconds(5);
@@ -107,6 +121,70 @@ class TestOtlpHttp {
                        longValue(dataPoints(metric(request, "retry.gauge"), "gauge").getFirst(), "asInt"), is(1L));
             assertThat("Retry does not sample the gauge again", samples.get(), is(1));
             assertThat("Successful retry ends export", collector.requestCount(), is(2));
+        }
+    }
+
+    @Test
+    void disconnectDuringFinalExportRetriesIdenticalPayload() throws Exception {
+        try (var listener = new ServerSocket(0, 1, InetAddress.getLoopbackAddress());
+             var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            listener.setSoTimeout(5000);
+            URI endpoint = new URI("http", null, listener.getInetAddress().getHostAddress(), listener.getLocalPort(),
+                                   "/v1/metrics", null, null);
+            var responseStarted = new AtomicBoolean();
+            var collector = executor.submit(() -> {
+                List<byte[]> requests = new ArrayList<>();
+                for (int attempt = 0; attempt < 2; attempt++) {
+                    try (var socket = listener.accept()) {
+                        socket.setSoTimeout(5000);
+                        requests.add(readPost(new BufferedInputStream(socket.getInputStream())));
+                        if (attempt == 1) {
+                            var output = socket.getOutputStream();
+                            output.write(("HTTP/1.1 200 OK\r\n"
+                                                  + "Content-Type: application/json\r\n"
+                                                  + "Content-Length: 2\r\n"
+                                                  + "Connection: close\r\n\r\n").getBytes(StandardCharsets.US_ASCII));
+                            // Publish the marker before the body can let the publisher finish shutdown.
+                            responseStarted.set(true);
+                            output.write("{}".getBytes(StandardCharsets.US_ASCII));
+                            output.flush();
+                        }
+                    }
+                }
+                return requests;
+            });
+            try {
+                var samples = new AtomicInteger();
+                HelidonMetricsFactory factory = HelidonMetricsFactory.builder()
+                        .metricsConfig(MetricsConfig.builder().addPublisher(OtlpPublisher.builder()
+                                .endpoint(endpoint)
+                                .interval(Duration.ofDays(1))
+                                .timeout(EXPORT_TIMEOUT).build()))
+                        .build();
+                try {
+                    factory.globalRegistry().getOrCreate(factory.counterBuilder("disconnect.counter")).increment(7);
+                    factory.globalRegistry().getOrCreate(
+                            factory.gaugeBuilder("disconnect.gauge", samples::incrementAndGet));
+                } finally {
+                    factory.close();
+                }
+                boolean respondedBeforeCloseReturned = responseStarted.get();
+                List<byte[]> requests = collector.get(10, TimeUnit.SECONDS);
+                assertThat("Shutdown waits for the successful retry response", respondedBeforeCloseReturned, is(true));
+                assertThat("Collector receives the disconnected request and retry", requests.size(), is(2));
+                assertThat("Retry preserves the final snapshot", requests.get(1), is(requests.getFirst()));
+                var request = JsonParser.create(requests.getFirst()).readJsonObject();
+                assertThat("The final counter value survives the disconnect",
+                           longValue(dataPoints(metric(request, "disconnect.counter"), "sum").getFirst(), "asInt"),
+                           is(7L));
+                assertThat("Retry retains the original gauge sample",
+                           longValue(dataPoints(metric(request, "disconnect.gauge"), "gauge").getFirst(), "asInt"),
+                           is(1L));
+                assertThat("Retry does not sample the gauge again", samples.get(), is(1));
+            } finally {
+                listener.close();
+                collector.cancel(true);
+            }
         }
     }
 
@@ -181,6 +259,36 @@ class TestOtlpHttp {
                         .interval(interval)
                         .timeout(EXPORT_TIMEOUT).build()))
                 .build();
+    }
+
+    private static byte[] readPost(InputStream input) throws IOException {
+        byte[] separator = {'\r', '\n', '\r', '\n'};
+        var headers = new ByteArrayOutputStream();
+        int matched = 0;
+        while (matched < separator.length && headers.size() < 16 * 1024) {
+            int next = input.read();
+            assertThat("Collector receives complete request headers", next, not(-1));
+            headers.write(next);
+            if (next == separator[matched]) {
+                matched++;
+            } else {
+                matched = next == '\r' ? 1 : 0;
+            }
+        }
+        assertThat("Request headers end within the collector limit", matched, is(separator.length));
+        List<String> lines = headers.toString(StandardCharsets.US_ASCII).lines().toList();
+        assertThat("OTLP uses the metrics POST endpoint", lines.getFirst(), startsWith("POST /v1/metrics HTTP/1.1"));
+        List<String> lengths = lines.stream()
+                .filter(line -> line.regionMatches(true, 0, "Content-Length:", 0, "Content-Length:".length()))
+                .map(line -> line.substring("Content-Length:".length()).strip())
+                .toList();
+        assertThat("Request declares a single content length", lengths.size(), is(1));
+        int length = Integer.parseInt(lengths.getFirst());
+        assertThat("Request contains an OTLP snapshot", length, greaterThan(0));
+        assertThat("Request fits the collector limit", length, lessThanOrEqualTo(1024 * 1024));
+        byte[] body = input.readNBytes(length);
+        assertThat("Collector reads the entire request before disconnecting", body.length, is(length));
+        return body;
     }
 
     private record Request(byte[] body, String contentType, String accept, String testHeader) {
