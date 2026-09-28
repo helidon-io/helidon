@@ -128,7 +128,11 @@ final class Http3BenchmarkEnvironment implements AutoCloseable {
     }
 
     Http3Client client(String baseUri, Duration handshakeTimeout) {
-        return Http3Client.builder()
+        return client(baseUri, handshakeTimeout, _ -> { });
+    }
+
+    Http3Client client(String baseUri, Duration handshakeTimeout, Consumer<Http3ClientConfig.Builder> customizer) {
+        var builder = Http3Client.builder()
                 .baseUri(baseUri)
                 .shareConnectionCache(false)
                 .proxy(Proxy.noProxy())
@@ -138,8 +142,9 @@ final class Http3BenchmarkEnvironment implements AutoCloseable {
                                         .priorKnowledge(true)
                                         .initialResponseTimeout(handshakeTimeout)
                                         .handshakeTimeout(handshakeTimeout)
-                                        .build())
-                .build();
+                                        .build());
+        customizer.accept(builder);
+        return builder.build();
     }
 
     @Override
