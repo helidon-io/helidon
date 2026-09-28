@@ -1325,8 +1325,7 @@ public class MyExtension implements Extension {
 ```
 1. Declares that your observer method responds to the
    `@Initialized(ApplicationScoped.class)` event. By this time, Helidon has
-   initialized the metrics system. Observing Helidon’s `@RuntimeStart` is too
-   early for this purpose.
+   initialized the metrics system.
 2. Injects a `MetricRegistry` (the application registry by default).
 3. Uses the injected registry to register a metric (a counter in this case).
 <!--@mdc :: -->
@@ -1334,7 +1333,10 @@ public class MyExtension implements Extension {
 Helidon does not prevent you from working with metrics earlier than
 `@Initialized(ApplicationScoped.class)`, but, if you do so, then Helidon might
 ignore certain configuration settings that would otherwise control how metrics
-behaves.
+behaves. The side effects can be even worse, because registering metrics too
+early can trigger the creation of two sets instead of one set of underlying
+data structures, and the early-registered metrics might not even appear in the
+output.
 
 Instead, consider writing your extension to use earlier lifecycle events (such
 as `ProcessAnnotatedType`) to gather and store information about metrics that
