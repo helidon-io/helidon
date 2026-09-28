@@ -477,15 +477,7 @@ final class HelidonMeterRegistry implements MeterRegistry {
         if (builder instanceof Timer.Builder timerBuilder) {
             HelidonTimer.Builder result = HelidonTimer.builder(timerBuilder.name());
             result.from(timerBuilder);
-            List<Double> percentiles = new ArrayList<>();
-            timerBuilder.percentiles().forEach(percentiles::add);
-            if (!percentiles.isEmpty()) {
-                double[] percentileArray = new double[percentiles.size()];
-                for (int i = 0; i < percentiles.size(); i++) {
-                    percentileArray[i] = percentiles.get(i);
-                }
-                result.percentiles(percentileArray);
-            }
+            result.percentiles(HelidonTypes.doubleArray(timerBuilder.percentiles()));
             List<Duration> buckets = new ArrayList<>();
             timerBuilder.buckets().forEach(buckets::add);
             if (!buckets.isEmpty()) {
