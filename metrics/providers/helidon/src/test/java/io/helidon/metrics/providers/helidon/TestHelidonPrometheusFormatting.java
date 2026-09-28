@@ -17,6 +17,7 @@
 package io.helidon.metrics.providers.helidon;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -42,6 +43,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.greaterThan;
@@ -560,6 +562,16 @@ class TestHelidonPrometheusFormatting {
     }
 
     @Test
+    void prometheusPreservesDistinctLabelValues() {
+        assertDistinctLabelValues(MediaTypes.TEXT_PLAIN);
+    }
+
+    @Test
+    void openMetricsPreservesDistinctLabelValues() {
+        assertDistinctLabelValues(MediaTypes.APPLICATION_OPENMETRICS_TEXT);
+    }
+
+    @Test
     void providerDeclinesNonHelidonRegistry() {
         FormatterContext context = FormatterContext.builder()
                 .mediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
@@ -569,6 +581,41 @@ class TestHelidonPrometheusFormatting {
                 .formatter(context, new TestRegistry());
 
         assertThat("Provider declines a registry from another provider", formatter, is(Optional.empty()));
+    }
+
+    private static void assertDistinctLabelValues(MediaType mediaType) {
+        MetricsConfig metricsConfig = MetricsConfig.create();
+        HelidonMetricsFactory factory = HelidonMetricsFactory.create();
+        try {
+            MeterRegistry registry = factory.createMeterRegistry(metricsConfig);
+            List<String> tagValues = List.of("first\rsecond", "first\nsecond", "first\r\nsecond",
+                                             "first\\rsecond", "first\\nsecond");
+            for (int i = 0; i < tagValues.size(); i++) {
+                registry.getOrCreate(factory.counterBuilder("requests")
+                                             .addTag(factory.tagCreate("path", tagValues.get(i))))
+                        .increment(i + 2);
+            }
+            FormatterContext context = FormatterContext.builder()
+                    .mediaType(mediaType)
+                    .metricsConfig(metricsConfig)
+                    .build();
+            var formatter = new HelidonPrometheusFormatterProvider().formatter(context, registry).orElseThrow();
+            String output = (String) formatter.format().orElseThrow();
+            // Both formats delimit samples with LF; CR within a label value is part of its identity.
+            List<String> samples = Arrays.stream(output.split("\n"))
+                    .filter(line -> !line.startsWith("#") && !line.isEmpty())
+                    .toList();
+
+            assertThat(mediaType + " preserves each label value and its counter",
+                       samples,
+                       containsInAnyOrder("requests_total{path=\"first\rsecond\"} 2.0",
+                                          "requests_total{path=\"first\\nsecond\"} 3.0",
+                                          "requests_total{path=\"first\r\\nsecond\"} 4.0",
+                                          "requests_total{path=\"first\\\\rsecond\"} 5.0",
+                                          "requests_total{path=\"first\\\\nsecond\"} 6.0"));
+        } finally {
+            factory.close();
+        }
     }
 
     private static void assertConcurrentHistogramExports(MediaType mediaType) throws Exception {
