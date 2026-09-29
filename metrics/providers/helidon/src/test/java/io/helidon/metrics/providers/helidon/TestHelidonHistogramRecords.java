@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -263,10 +264,10 @@ class TestHelidonHistogramRecords {
                                             timerSnapshot, observations, 1_000_000));
     }
 
-    @Test
-    void crossingReservoirCapacityRetainsAFullDistinctSample() {
+    @ParameterizedTest
+    @ValueSource(ints = {4097, 8192, 65_536})
+    void crossingReservoirCapacityRetainsAFullDistinctSample(int observations) {
         preparePercentileHistograms(fullSamplePercentiles());
-        int observations = RESERVOIR_CAPACITY + 1;
         for (int amount = 1; amount <= observations; amount++) {
             summary.record(amount);
             timer.record(amount, TimeUnit.MILLISECONDS);
@@ -281,6 +282,69 @@ class TestHelidonHistogramRecords {
                                         List.of(2_000_000D, 5_000_000D), List.of(2L, 5L)),
                   () -> assertFullDistinctSample("summary", summarySnapshot, observations, 1),
                   () -> assertFullDistinctSample("timer", timerSnapshot, observations, 1_000_000));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {1, 4})
+    void concurrentSnapshotsRetainFullDistinctSamples(int writers) throws Exception {
+        preparePercentileHistograms(fullSamplePercentiles());
+        for (int observation = 1; observation <= RESERVOIR_CAPACITY; observation++) {
+            summary.record(2 * observation);
+            timer.record(2 * observation, TimeUnit.MILLISECONDS);
+        }
+
+        int observations = 65_536;
+        var batch = new CyclicBarrier(writers + 1);
+        List<Future<?>> recordings = new ArrayList<>();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            try {
+                for (int writer = 0; writer < writers; writer++) {
+                    int first = writer + 1;
+                    recordings.add(executor.submit(() -> {
+                        for (int offset = RESERVOIR_CAPACITY; offset < observations; offset += RESERVOIR_CAPACITY) {
+                            batch.await(5, TimeUnit.SECONDS);
+                            for (int observation = offset + first;
+                                 observation <= offset + RESERVOIR_CAPACITY;
+                                 observation += writers) {
+                                summary.record(2 * observation);
+                                timer.record(2 * observation, TimeUnit.MILLISECONDS);
+                            }
+                            batch.await(5, TimeUnit.SECONDS);
+                        }
+                        return null;
+                    }));
+                }
+                for (int offset = RESERVOIR_CAPACITY; offset < observations; offset += RESERVOIR_CAPACITY) {
+                    batch.await(5, TimeUnit.SECONDS);
+                    for (int sample = 0; sample < 8; sample++) {
+                        String context = writers + " writers, batch starting at " + offset + ", snapshot " + sample;
+                        assertFullDistinctSample("summary with " + context, summary.snapshot(),
+                                                 offset + RESERVOIR_CAPACITY, 2);
+                        assertFullDistinctSample("timer with " + context, timer.snapshot(),
+                                                 offset + RESERVOIR_CAPACITY, 2_000_000);
+                    }
+                    batch.await(5, TimeUnit.SECONDS);
+                }
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+                for (Future<?> recording : recordings) {
+                    recording.get(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
+                }
+            } finally {
+                recordings.forEach(recording -> recording.cancel(true));
+            }
+        }
+
+        HistogramSnapshot summarySnapshot = summary.snapshot();
+        HistogramSnapshot timerSnapshot = timer.snapshot();
+        double total = observations * (observations + 1D);
+        assertAll(() -> assertHistogram(summarySnapshot, observations, total, 2D * observations,
+                                        List.of(2D, 5D), List.of(1L, 2L)),
+                  () -> assertHistogram(timerSnapshot, observations, total * 1_000_000, observations * 2_000_000D,
+                                        List.of(2_000_000D, 5_000_000D), List.of(1L, 2L)),
+                  () -> assertFullDistinctSample("summary with " + writers + " writers",
+                                                 summarySnapshot, observations, 2),
+                  () -> assertFullDistinctSample("timer with " + writers + " writers",
+                                                 timerSnapshot, observations, 2_000_000));
     }
 
     @ParameterizedTest
