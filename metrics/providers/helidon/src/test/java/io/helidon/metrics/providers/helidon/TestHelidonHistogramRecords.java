@@ -38,6 +38,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -50,6 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 
 class TestHelidonHistogramRecords {
     private static final List<Integer> AMOUNTS = List.of(0, 1, 2, 3, 4, 5, 6, 9);
+    private static final int RESERVOIR_CAPACITY = 4096;
 
     private HelidonMetricsFactory factory;
     private MeterRegistry registry;
@@ -215,6 +217,97 @@ class TestHelidonHistogramRecords {
                   () -> assertPercentiles(timer.snapshot(), 1_250_000));
     }
 
+    @ParameterizedTest
+    @CsvSource({"512, 1", "512, 4", "4095, 1", "4095, 4", "4096, 1", "4096, 4"})
+    void percentilesRetainEveryObservationUntilReservoirCapacity(int observations, int writers) throws Exception {
+        preparePercentileHistograms(fullSamplePercentiles());
+        var ready = new CountDownLatch(writers);
+        var start = new CountDownLatch(1);
+        List<Future<?>> recordings = new ArrayList<>();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            try {
+                for (int writer = 0; writer < writers; writer++) {
+                    int first = writer + 1;
+                    recordings.add(executor.submit(() -> {
+                        ready.countDown();
+                        assertThat("Unique observations start after every writer is ready",
+                                   start.await(5, TimeUnit.SECONDS), is(true));
+                        for (int amount = first; amount <= observations; amount += writers) {
+                            summary.record(amount);
+                            timer.record(amount, TimeUnit.MILLISECONDS);
+                        }
+                        return null;
+                    }));
+                }
+                assertThat("All unique-observation writers are ready", ready.await(5, TimeUnit.SECONDS), is(true));
+                start.countDown();
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+                for (Future<?> recording : recordings) {
+                    recording.get(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
+                }
+            } finally {
+                start.countDown();
+                recordings.forEach(recording -> recording.cancel(true));
+            }
+        }
+
+        HistogramSnapshot summarySnapshot = summary.snapshot();
+        HistogramSnapshot timerSnapshot = timer.snapshot();
+        double total = observations * (observations + 1D) / 2;
+        assertAll(() -> assertHistogram(summarySnapshot, observations, total, observations,
+                                        List.of(2D, 5D), List.of(2L, 5L)),
+                  () -> assertHistogram(timerSnapshot, observations, total * 1_000_000, observations * 1_000_000D,
+                                        List.of(2_000_000D, 5_000_000D), List.of(2L, 5L)),
+                  () -> assertObservedRanks("summary with " + writers + " writers", summarySnapshot, observations, 1),
+                  () -> assertObservedRanks("timer with " + writers + " writers",
+                                            timerSnapshot, observations, 1_000_000));
+    }
+
+    @Test
+    void crossingReservoirCapacityRetainsAFullDistinctSample() {
+        preparePercentileHistograms(fullSamplePercentiles());
+        int observations = RESERVOIR_CAPACITY + 1;
+        for (int amount = 1; amount <= observations; amount++) {
+            summary.record(amount);
+            timer.record(amount, TimeUnit.MILLISECONDS);
+        }
+
+        HistogramSnapshot summarySnapshot = summary.snapshot();
+        HistogramSnapshot timerSnapshot = timer.snapshot();
+        double total = observations * (observations + 1D) / 2;
+        assertAll(() -> assertHistogram(summarySnapshot, observations, total, observations,
+                                        List.of(2D, 5D), List.of(2L, 5L)),
+                  () -> assertHistogram(timerSnapshot, observations, total * 1_000_000, observations * 1_000_000D,
+                                        List.of(2_000_000D, 5_000_000D), List.of(2L, 5L)),
+                  () -> assertFullDistinctSample("summary", summarySnapshot, observations, 1),
+                  () -> assertFullDistinctSample("timer", timerSnapshot, observations, 1_000_000));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void percentilesRepresentLifetimeDistributionAcrossValuePhases(boolean highValuesFirst) {
+        preparePercentileHistograms(0.5, 0.7, 0.9);
+        for (int phase = 0; phase < 2; phase++) {
+            boolean high = (phase == 0) == highValuesFirst;
+            int amount = high ? 100 : 1;
+            int observations = high ? 16_384 : 65_536;
+            for (int observation = 0; observation < observations; observation++) {
+                summary.record(amount);
+                timer.record(amount, TimeUnit.MILLISECONDS);
+            }
+        }
+
+        HistogramSnapshot summarySnapshot = summary.snapshot();
+        HistogramSnapshot timerSnapshot = timer.snapshot();
+        String order = highValuesFirst ? "high then low" : "low then high";
+        assertAll(() -> assertHistogram(summarySnapshot, 81_920, 1_703_936, 100,
+                                        List.of(2D, 5D), List.of(65_536L, 65_536L)),
+                  () -> assertHistogram(timerSnapshot, 81_920, 1_703_936_000_000D, 100_000_000,
+                                        List.of(2_000_000D, 5_000_000D), List.of(65_536L, 65_536L)),
+                  () -> assertLifetimePercentiles("summary, " + order, summarySnapshot, 1),
+                  () -> assertLifetimePercentiles("timer, " + order, timerSnapshot, 1_000_000));
+    }
+
     @Test
     void invalidObservationsLeaveEmptyAndPopulatedHistogramsUnchanged() {
         recordInvalidObservations();
@@ -264,6 +357,58 @@ class TestHelidonHistogramRecords {
                   () -> assertThat("Summary mean agrees with its snapshot", scaled.mean(), is(3.25)));
     }
 
+    private static double[] fullSamplePercentiles() {
+        double[] percentiles = new double[RESERVOIR_CAPACITY];
+        for (int index = 0; index < percentiles.length; index++) {
+            percentiles[index] = (index + 1D) / RESERVOIR_CAPACITY;
+        }
+        return percentiles;
+    }
+
+    private static void assertObservedRanks(String name, HistogramSnapshot snapshot, int observations, double scale) {
+        List<? extends ValueAtPercentile> percentiles = StreamSupport
+                .stream(snapshot.percentileValues().spliterator(), false)
+                .toList();
+        assertThat(name + " reports every requested percentile", percentiles.size(), is(RESERVOIR_CAPACITY));
+        for (int index = 0; index < percentiles.size(); index++) {
+            double coordinate = (index + 1D) / RESERVOIR_CAPACITY;
+            ValueAtPercentile percentile = percentiles.get(index);
+            assertThat(name + " percentile coordinate " + index, percentile.percentile(), is(coordinate));
+            assertThat(name + " retains the observed rank at percentile " + coordinate + " of " + observations,
+                       percentile.value(), is(Math.ceil(coordinate * observations) * scale));
+        }
+    }
+
+    private static void assertFullDistinctSample(String name,
+                                                HistogramSnapshot snapshot,
+                                                int observations,
+                                                double scale) {
+        List<Double> values = StreamSupport.stream(snapshot.percentileValues().spliterator(), false)
+                .map(ValueAtPercentile::value)
+                .toList();
+        assertThat(name + " reports all sample ranks", values.size(), is(RESERVOIR_CAPACITY));
+        assertThat(name + " retains a full reservoir of distinct observations after crossing capacity",
+                   values.stream().distinct().count(), is((long) RESERVOIR_CAPACITY));
+        double previous = 0;
+        for (double value : values) {
+            assertThat(name + " sample ranks remain strictly increasing", value, greaterThan(previous));
+            assertThat(name + " sampled value was observed", value / scale, is(Math.rint(value / scale)));
+            assertThat(name + " sampled value is within the recorded range", value,
+                       lessThanOrEqualTo(observations * scale));
+            previous = value;
+        }
+    }
+
+    private static void assertLifetimePercentiles(String name, HistogramSnapshot snapshot, double scale) {
+        List<? extends ValueAtPercentile> percentiles = StreamSupport
+                .stream(snapshot.percentileValues().spliterator(), false)
+                .toList();
+        assertThat(name + " percentile coordinates",
+                   percentiles.stream().map(ValueAtPercentile::percentile).toList(), contains(0.5, 0.7, 0.9));
+        assertThat(name + " percentiles reflect the lifetime 80% low / 20% high distribution",
+                   percentiles.stream().map(ValueAtPercentile::value).toList(), contains(scale, scale, 100 * scale));
+    }
+
     private static void assertConcurrentSnapshot(String name, HistogramSnapshot snapshot) {
         assertThat(name + " snapshot contains observations", snapshot.count(), greaterThan(0L));
         int buckets = 0;
@@ -303,6 +448,14 @@ class TestHelidonHistogramRecords {
                                   percentiles.stream().map(ValueAtPercentile::percentile).toList(), contains(0D, 0.5, 1D)),
                   () -> assertThat("Every percentile of a single-valued distribution is exact",
                                    percentiles.stream().map(ValueAtPercentile::value).toList(), contains(value, value, value)));
+    }
+
+    private void preparePercentileHistograms(double... percentiles) {
+        summary = registry.getOrCreate(factory.distributionSummaryBuilder("sample.summary",
+                factory.distributionStatisticsConfigBuilder().buckets(2, 5).percentiles(percentiles)));
+        timer = registry.getOrCreate(factory.timerBuilder("sample.timer")
+                                            .buckets(Duration.ofMillis(2), Duration.ofMillis(5))
+                                            .percentiles(percentiles));
     }
 
     private void recordInvalidObservations() {

@@ -65,6 +65,12 @@ Prometheus/OpenMetrics and JSON endpoint output:
 </dependency>
 ```
 
+Timer and distribution-summary percentiles in the Helidon provider retain every
+observation until their 4096-observation reservoir is full. After that, percentiles
+are approximate, using a uniform sample of observations over the meter's lifetime,
+without a rolling time window. Counts, totals, maxima, and bucket counts still
+include every valid observation.
+
 Alternatively, choose the Micrometer provider for direct Micrometer integration
 or Micrometer-specific publisher settings:
 
