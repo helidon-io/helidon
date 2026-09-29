@@ -56,6 +56,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -311,18 +312,76 @@ class TestHelidonRegistryLifecycle {
     @Test
     void disabledMetersAreCachedWithoutRegistryNotifications() {
         HelidonMetricsFactory factory = HelidonMetricsFactory.create();
-        MeterRegistry registry = factory.createMeterRegistry(MetricsConfig.builder()
-                                                               .enabled(false)
-                                                               .build());
-        AtomicInteger adds = new AtomicInteger();
-        registry.onMeterAdded(_ -> adds.incrementAndGet());
+        try {
+            MeterRegistry registry = factory.createMeterRegistry(MetricsConfig.builder().enabled(false).build());
+            AtomicInteger adds = new AtomicInteger();
+            registry.onMeterAdded(_ -> adds.incrementAndGet());
+            Counter red = registry.getOrCreate(factory.counterBuilder("disabled.cached")
+                                                      .addTag(factory.tagCreate("color", "red"))
+                                                      .description("Red counter")
+                                                      .baseUnit(Meter.BaseUnits.BYTES));
+            Counter blue = registry.getOrCreate(factory.counterBuilder("disabled.cached")
+                                                       .addTag(factory.tagCreate("color", "blue"))
+                                                       .description("Blue counter")
+                                                       .baseUnit(Meter.BaseUnits.BITS));
+            red.increment(7);
+            blue.increment(11);
 
-        Counter first = registry.getOrCreate(factory.counterBuilder("disabled.cached"));
-        Counter second = registry.getOrCreate(factory.counterBuilder("disabled.cached"));
+            assertAll(() -> assertThat("Different tagged IDs have distinct no-op meters", blue, not(sameInstance(red))),
+                      () -> assertThat("Red identity retains its tags", red.id().tagsMap(), is(Map.of("color", "red"))),
+                      () -> assertThat("Blue identity retains its tags", blue.id().tagsMap(),
+                                       is(Map.of("color", "blue"))),
+                      () -> assertThat("Disabled meters retain their name", red.id().name(), is("disabled.cached")),
+                      () -> assertThat("Red description", red.description(), is(Optional.of("Red counter"))),
+                      () -> assertThat("Blue description", blue.description(), is(Optional.of("Blue counter"))),
+                      () -> assertThat("Red base unit", red.baseUnit(), is(Optional.of(Meter.BaseUnits.BYTES))),
+                      () -> assertThat("Blue base unit", blue.baseUnit(), is(Optional.of(Meter.BaseUnits.BITS))),
+                      () -> assertThat("Repeated red ID reuses its no-op meter", registry.getOrCreate(
+                              factory.counterBuilder("disabled.cached").addTag(factory.tagCreate("color", "red"))),
+                                       sameInstance(red)),
+                      () -> assertThat("Repeated blue ID reuses its no-op meter", registry.getOrCreate(
+                              factory.counterBuilder("disabled.cached").addTag(factory.tagCreate("color", "blue"))),
+                                       sameInstance(blue)),
+                      () -> assertThat("Red meter remains disabled", red.count(), is(0L)),
+                      () -> assertThat("Blue meter remains disabled", blue.count(), is(0L)),
+                      () -> assertThat("Disabled meters remain absent from enumeration", registry.meters(), empty()),
+                      () -> assertThat("Disabled meters do not notify add listeners", adds.get(), is(0)));
+        } finally {
+            factory.close();
+        }
+    }
 
-        assertThat(second, sameInstance(first));
-        assertThat(registry.meters(), empty());
-        assertThat(adds.get(), is(0));
+    @Test
+    void disabledMetersPreserveOriginCustomization() {
+        String origin = TestHelidonRegistryLifecycle.class.getName();
+        HelidonMetricsFactory factory = HelidonMetricsFactory.builder()
+                .metricsConfig(MetricsConfig.builder().enabled(false))
+                .addMeterBuilderCustomizer(builder -> builder.origin().ifPresent(source -> {
+                    builder.addTag(new HelidonTag("source", source));
+                    builder.description("Created by " + source);
+                    builder.baseUnit(Meter.BaseUnits.BYTES);
+                }))
+                .build();
+        try {
+            MeterRegistry registry = factory.globalRegistry();
+            Counter counter = registry.getOrCreate(factory.counterBuilder("disabled.customized").origin(origin));
+            counter.increment(7);
+
+            assertAll(() -> assertThat("Origin customizer supplies the disabled meter's tags",
+                                       counter.id().tagsMap(), is(Map.of("source", origin))),
+                      () -> assertThat("Origin customizer supplies the disabled meter's description",
+                                       counter.description(), is(Optional.of("Created by " + origin))),
+                      () -> assertThat("Origin customizer supplies the disabled meter's unit",
+                                       counter.baseUnit(), is(Optional.of(Meter.BaseUnits.BYTES))),
+                      () -> assertThat("Customized disabled ID remains cached",
+                                       registry.getOrCreate(factory.counterBuilder("disabled.customized")
+                                                                    .origin(origin)),
+                                       sameInstance(counter)),
+                      () -> assertThat("Customization does not enable recording", counter.count(), is(0L)),
+                      () -> assertThat("Customized disabled meter is not enumerated", registry.meters(), empty()));
+        } finally {
+            factory.close();
+        }
     }
 
     @Test

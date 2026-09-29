@@ -335,7 +335,7 @@ public interface MetricsFactory {
 
     /**
      * Returns a no-op {@link io.helidon.metrics.api.Meter} of the type implied by the builder's runtime type, initialized with
-     * the builder's name and other required parameters.
+     * the builder's name, tags, description, base unit, and other required parameters.
      *
      * @param builder original builder
      * @return corresponding no-op meter
@@ -355,6 +355,10 @@ public interface MetricsFactory {
         } else {
             throw new IllegalArgumentException("Unrecognized meter builder type " + builder.getClass().getName());
         }
+        builder.tags().forEach((key, value) -> noOpBuilder.addTag(new NoOpTag(key, value)));
+        builder.description().ifPresent(noOpBuilder::description);
+        builder.baseUnit().ifPresent(noOpBuilder::baseUnit);
+        builder.origin().ifPresent(noOpBuilder::origin);
         return noOpBuilder.build();
     }
 }
