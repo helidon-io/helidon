@@ -51,6 +51,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 import java.util.function.LongFunction;
@@ -2469,26 +2470,26 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
      * given packet.
      *
      * @param packet the packet to encrypt
+     * @param permit the reservation for the packet's destination path
      * @return a new {@link ByteBuffer} with sufficient space to encrypt
      *        the given packet.
      */
-    protected ByteBuffer allocateDatagramForEncryption(QuicPacket packet) {
+    protected ByteBuffer allocateDatagramForEncryption(QuicPacket packet, QuicPathManager.SendPermit permit) {
+        int maxDatagramSize = permit.size();
         int size = packet.size();
         if (packet.hasLength()) { // packet can be coalesced
-            size = Math.max(size, maxDatagramSize());
+            size = Math.max(size, maxDatagramSize);
         }
-        if (size > maxDatagramSize()) {
+        if (size > maxDatagramSize) {
 
             if (LOGGER.isLoggable(System.Logger.Level.ERROR)) {
                 var error = new AssertionError("%s: Size too big: %s > %s".formatted(
                         logTag(),
-                        size, maxDatagramSize()));
+                        size, maxDatagramSize));
                 log(LOGGER, System.Logger.Level.ERROR, "Packet too big: %s", error, packet.prettyPrint());
             }
-            // Revisit: if we implement Path MTU detection, then the max datagram size
-            //       may evolve, increasing or decreasing as the path change.
-            //       In which case - we may want to tune this, down and only
-            //       log an error or warning?
+            // A path change can lower the current path's limit while a packet is being prepared.
+            // The packet must fit its own reservation, which retains the original destination and budget.
             String errMsg = "Failed to encode packet, too big: " + size;
             terminator.terminate(transport(PROTOCOL_VIOLATION, errMsg));
             throw terminator.termination().closeCause();
@@ -3217,10 +3218,11 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
     protected ByteBuffer outgoingByteBuffer(int size) {
         boolean trace = LOGGER.isLoggable(System.Logger.Level.TRACE);
         if (useDirectBufferPool) {
-            if (size <= maxDatagramSize()) {
+            int pooledBufferSize = maxDatagramSize();
+            if (size <= pooledBufferSize) {
                 ByteBuffer buffer = bbPool.poll();
                 if (buffer != null) {
-                    if (buffer.limit() >= maxDatagramSize()) {
+                    if (buffer.limit() >= pooledBufferSize) {
                         if (trace) {
                             log(LOGGER, System.Logger.Level.TRACE, "DIRECTBB: got direct buffer from pool");
                         }
@@ -3239,7 +3241,7 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
                         if (trace) {
                             log(LOGGER, System.Logger.Level.TRACE, "DIRECTBB: allocating direct buffer #%s", allocated + 1);
                         }
-                        return ByteBuffer.allocateDirect(maxDatagramSize());
+                        return ByteBuffer.allocateDirect(pooledBufferSize);
                     }
                 }
                 if (trace) {
@@ -5229,8 +5231,8 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
         public static ProtectionRecord single(QuicPacket packet,
                                               InetSocketAddress destination,
                                               QuicPathManager.SendPermit permit,
-                                              Function<QuicPacket, ByteBuffer> allocator) {
-            ByteBuffer datagram = allocator.apply(packet);
+                                              BiFunction<QuicPacket, QuicPathManager.SendPermit, ByteBuffer> allocator) {
+            ByteBuffer datagram = allocator.apply(packet, permit);
             int offset = datagram.position();
             return new ProtectionRecord(packet, datagram,
                                         offset, offset, NOT_RETRANSMITTED, 0,
@@ -5262,8 +5264,8 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
                                                       long retransmittedPacketNumber,
                                                       InetSocketAddress destination,
                                                       QuicPathManager.SendPermit permit,
-                                                      Function<QuicPacket, ByteBuffer> allocator) {
-            ByteBuffer datagram = allocator.apply(packet);
+                                                      BiFunction<QuicPacket, QuicPathManager.SendPermit, ByteBuffer> allocator) {
+            ByteBuffer datagram = allocator.apply(packet, permit);
             int offset = datagram.position();
             return new ProtectionRecord(packet, datagram, offset, offset,
                                         retransmittedPacketNumber, 0, destination, permit);
