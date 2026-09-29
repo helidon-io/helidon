@@ -45,6 +45,9 @@ final class HelidonDistributionSummary extends HelidonMeter implements Distribut
 
     @Override
     public void record(double amount) {
+        if (amount < 0) {
+            return;
+        }
         histogram.record(amount * scale);
     }
 

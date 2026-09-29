@@ -357,6 +357,57 @@ class TestHelidonHistogramRecords {
                   () -> assertThat("Summary mean agrees with its snapshot", scaled.mean(), is(3.25)));
     }
 
+    @ParameterizedTest(name = "scale {0}")
+    @CsvSource({"0.0, 0.0, 2, 0, 2, 2, 0.0",
+                "-0.0, -0.0, 2, 0, 2, 2, -0.0",
+                "-1, -0.0, 1, 0, 1, 1, -0.0",
+                "0.5, 0.0, 2, 2, 2, 2, 2",
+                "1, 0.0, 2, 4, 1, 2, 4",
+                "2, 0.0, 2, 8, 1, 1, 8"})
+    void negativeSummaryAmountsAreRejectedBeforeScaling(double scale,
+                                                        double zeroPercentile,
+                                                        long expectedCount,
+                                                        double expectedTotal,
+                                                        long lowerBucket,
+                                                        long upperBucket,
+                                                        double largestPercentile) {
+        DistributionSummary scaled = registry.getOrCreate(factory.distributionSummaryBuilder("signed.scaled.summary",
+                factory.distributionStatisticsConfigBuilder().buckets(2, 5).percentiles(0, 0.5, 1))
+                .scale(scale));
+        List<Double> rejected = List.of(-1D, -Double.MIN_VALUE, Double.NaN,
+                                        Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+        rejected.forEach(scaled::record);
+        HistogramSnapshot empty = scaled.snapshot();
+        scaled.record(0);
+        rejected.forEach(scaled::record);
+        HistogramSnapshot populated = scaled.snapshot();
+        scaled.record(4);
+        HistogramSnapshot positive = scaled.snapshot();
+
+        assertAll(() -> assertHistogram(empty, 0, 0, 0, List.of(2D, 5D), List.of(0L, 0L)),
+                  () -> assertPercentiles(empty, Double.NaN),
+                  () -> assertHistogram(populated, 1, 0, 0, List.of(2D, 5D), List.of(1L, 1L)),
+                  () -> assertPercentiles(populated, zeroPercentile),
+                  () -> assertHistogram(positive, expectedCount, expectedTotal, expectedTotal,
+                                        List.of(2D, 5D), List.of(lowerBucket, upperBucket)),
+                  () -> assertThat("Valid observations retain their scaled percentile values, including signed zero",
+                                   StreamSupport.stream(positive.percentileValues().spliterator(), false)
+                                           .map(ValueAtPercentile::value).toList(),
+                                   contains(zeroPercentile, zeroPercentile, largestPercentile)));
+    }
+
+    @Test
+    void positiveSummarySubnormalUnderflowRemainsAnObservation() {
+        DistributionSummary scaled = registry.getOrCreate(factory.distributionSummaryBuilder("underflow.summary",
+                factory.distributionStatisticsConfigBuilder().buckets(2, 5).percentiles(0, 0.5, 1))
+                .scale(0.5));
+        scaled.record(Double.MIN_VALUE);
+        HistogramSnapshot snapshot = scaled.snapshot();
+
+        assertAll(() -> assertHistogram(snapshot, 1, 0, 0, List.of(2D, 5D), List.of(1L, 1L)),
+                  () -> assertPercentiles(snapshot, 0));
+    }
+
     private static double[] fullSamplePercentiles() {
         double[] percentiles = new double[RESERVOIR_CAPACITY];
         for (int index = 0; index < percentiles.length; index++) {
