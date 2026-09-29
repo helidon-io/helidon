@@ -29,6 +29,9 @@ import java.util.stream.Stream;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
+import org.junit.jupiter.api.parallel.ResourceAccessMode;
+import org.junit.jupiter.api.parallel.ResourceLock;
+import org.junit.jupiter.api.parallel.Resources;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.openjdk.jmh.results.RunResult;
@@ -40,6 +43,7 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.openjdk.jmh.runner.options.TimeValue;
 
+@ResourceLock(value = Resources.SYSTEM_PROPERTIES, mode = ResourceAccessMode.READ)
 public class JunitJmhRunnerTest {
 
     private static final String ERROR_MARGIN_PERCENT_DEFAULT = "15";
@@ -49,8 +53,6 @@ public class JunitJmhRunnerTest {
     private static final String HTTP2_FLOW_CONTROL_BENCHMARK = ".*Http2FlowControlJmhTest.*";
     private static final int DEFAULT_THREADS = 8;
     private static final int HTTP2_REUSE_THREADS = 1;
-    private static final int ERROR_MARGIN =
-            Integer.parseInt(System.getProperty("webserver.jmh.errorMargin", ERROR_MARGIN_PERCENT_DEFAULT));
 
     static Stream<Histogram.Benchmark> httpBenchmarks() throws RunnerException, IOException {
         Options defaultOptions = optionsBuilder("./target/benchmark-result.json")
@@ -112,17 +114,20 @@ public class JunitJmhRunnerTest {
     void renderResult(Histogram.Benchmark benchmark) {
         String render = benchmark.render();
 
-        double errMargin = (benchmark.currentScore() / 100) * ERROR_MARGIN;
-        String errMarginDesc = String.format("%s%%(%.2f)", ERROR_MARGIN, errMargin);
+        int errorMargin = Integer.parseInt(System.getProperty("webserver.jmh.errorMargin", ERROR_MARGIN_PERCENT_DEFAULT));
+        double errMargin = (benchmark.currentScore() / 100) * errorMargin;
+        String errMarginDesc = String.format("%s%%(%.2f)", errorMargin, errMargin);
+        boolean higherIsBetter = benchmark.higherIsBetter();
         MatcherAssert.assertThat(
                 "\n" + render + "\n" +
                         benchmark.name() + " regression detected. Error margin " + errMarginDesc,
-                benchmark.currentScore() + errMargin,
-                Matchers.greaterThanOrEqualTo(benchmark.baseLineScore()));
+                higherIsBetter ? benchmark.currentScore() + errMargin : benchmark.currentScore() - errMargin,
+                higherIsBetter ? Matchers.greaterThanOrEqualTo(benchmark.baseLineScore())
+                        : Matchers.lessThanOrEqualTo(benchmark.baseLineScore()));
 
         System.out.println(render);
 
-        if (benchmark.currentScore() < benchmark.baseLineScore()) {
+        if (benchmark.regression()) {
             System.out.println("⚠ Still within the error margin " + errMarginDesc);
         }
     }
