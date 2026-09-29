@@ -39,13 +39,11 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  */
 public class OraDbSuite implements SuiteProvider {
     private static final System.Logger LOGGER = System.getLogger(OraDbSuite.class.getName());
-    private static final DockerImageName IMAGE = DockerImageName.parse(
-            "container-registry.oracle.com/database/free:latest-lite");
-
     private final TestContainerHandler containerHandler;
 
     public OraDbSuite() {
-        GenericContainer<?> container = new GenericContainer<>(IMAGE);
+        GenericContainer<?> container = new GenericContainer<>(DockerImageName.parse(
+                "container-registry.oracle.com/database/free:23.26.3.0-lite"));
         this.containerHandler = SqlTestContainerConfig.configureContainer(container,
                                                                           ConfigSources.classpath("application.yaml"));
 
