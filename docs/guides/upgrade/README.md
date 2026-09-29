@@ -9,6 +9,7 @@ index:
 -->
 # Upgrade
 
+- [28.x Upgrade](28.md)
 - [27.x Upgrade](27.md)
 - [4.x Upgrade](4x.md)
 - [3.x Upgrade](3x.md)
