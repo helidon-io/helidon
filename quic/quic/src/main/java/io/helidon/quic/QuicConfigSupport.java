@@ -39,6 +39,7 @@ final class QuicConfigSupport {
     static final long DEFAULT_INITIAL_MAX_DATA = 15L << 20;
     static final long MAX_STREAM_COUNT = 1L << 60;
     static final int DEFAULT_MAX_UDP_PAYLOAD_SIZE = MAXIMUM_DATAGRAM_SIZE;
+    static final int DEFAULT_SEND_DATAGRAM_SIZE = MINIMUM_DATAGRAM_SIZE;
     static final Duration MAX_IDLE_TIMEOUT = Duration.ofMillis(MAX_VL_INTEGER);
 
     private QuicConfigSupport() {
@@ -72,6 +73,11 @@ final class QuicConfigSupport {
                     || target.maxUdpPayloadSize() > MAXIMUM_DATAGRAM_SIZE) {
                 throw new IllegalArgumentException("maxUdpPayloadSize must be between 1200 and 65527: "
                                                            + target.maxUdpPayloadSize());
+            }
+            if (target.sendDatagramSize() < MINIMUM_DATAGRAM_SIZE
+                    || target.sendDatagramSize() > MAXIMUM_DATAGRAM_SIZE) {
+                throw new IllegalArgumentException("sendDatagramSize must be between 1200 and 65527: "
+                                                           + target.sendDatagramSize());
             }
             if (target.maxAckRangesPerFrame() < 1
                     || target.maxAckRangesPerFrame() > MAX_ACK_RANGES_PER_FRAME) {

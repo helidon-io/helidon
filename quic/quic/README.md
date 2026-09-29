@@ -108,6 +108,30 @@ QUIC protects packets and updates keys without TLS records or TLS KeyUpdate mess
 packets than its AEAD confidentiality limit permits. TLS alerts terminate the QUIC connection, including alerts that
 have warning semantics in TLS over TCP.
 
+## Datagram Size
+
+QUIC sends UDP payloads of at most 1200 bytes by default. The incubating `QuicConfig.sendDatagramSize()` option sets an
+experimental outgoing datagram ceiling. The size includes QUIC headers and protected content, but excludes the IP and
+UDP headers. For example, on a path known to support a 1452-byte UDP payload:
+
+```java
+QuicConfig config = QuicConfig.builder()
+        .sendDatagramSize(1452)
+        .buildPrototype();
+```
+
+Pass the configuration to the `quicConfig` option of a `QuicClient` or `QuicServer` builder. Configure each endpoint
+separately when both directions need larger datagrams. Values from 1200 through 65527 are accepted. Sending remains
+capped at 1200 bytes until the peer's transport parameters arrive, then is capped by the configured value, the peer's
+advertised receive limit, and the IP-family maximum (65507 for IPv4 or 65527 for IPv6).
+
+This option assumes every path used by the connection supports the configured size. Helidon does not discover the path
+MTU or automatically reduce the size when a path cannot carry it. Oversized datagrams can be dropped, causing connection
+stalls or timeouts. Keep the default unless the network path, including any tunnels, is known to support a larger size.
+
+`maxUdpPayloadSize()` is separate: it controls the endpoint's receive capacity and the limit advertised to its peer.
+Increasing it alone does not increase outgoing datagram sizes.
+
 ## Sessions and Streams
 
 A session can open locally initiated bidirectional and unidirectional streams. Opening a stream can block while waiting

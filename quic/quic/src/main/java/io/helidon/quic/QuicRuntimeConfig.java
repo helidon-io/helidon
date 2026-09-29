@@ -30,7 +30,6 @@ import static io.helidon.quic.QuicEndpoint.ChannelType.NON_BLOCKING_WITH_SELECTO
 final class QuicRuntimeConfig {
     static final int DEFAULT_MAX_BUFFERED_HIGH = 512 << 10;
     static final int DEFAULT_MAX_BUFFERED_LOW = 384 << 10;
-    static final int DEFAULT_DATAGRAM_SIZE = 1200;
     static final int DEFAULT_MAX_PTO_BACKOFF_EXPONENT = 8;
     static final Duration DEFAULT_MAX_PTO_BACKOFF_TIMEOUT = Duration.ofMinutes(4);
     static final Duration DEFAULT_MIN_PTO_BACKOFF_TIMEOUT = Duration.ofSeconds(15);
@@ -77,7 +76,7 @@ final class QuicRuntimeConfig {
                              DEFAULT_MAX_BUFFERED_HIGH,
                              DEFAULT_MAX_BUFFERED_LOW,
                              true,
-                             DEFAULT_DATAGRAM_SIZE),
+                             userConfig.sendDatagramSize()),
                 new Recovery(DEFAULT_MAX_PTO_BACKOFF_EXPONENT,
                              DEFAULT_MAX_PTO_BACKOFF_TIMEOUT,
                              DEFAULT_MIN_PTO_BACKOFF_TIMEOUT,

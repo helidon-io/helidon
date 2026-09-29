@@ -150,6 +150,18 @@ QUIC protocol configuration and durable transport policy
 </tr>
 <tr>
 <td>
+<code>send-<wbr>datagram-<wbr>size</code>
+</td>
+<td>
+<code>Integer</code>
+</td>
+<td>
+<code>1200</code>
+</td>
+<td>Experimental limit on the UDP payload size to send, excluding IP and UDP headers</td>
+</tr>
+<tr>
+<td>
 <a id="congestion-algorithm"></a>
 <a href="io.helidon.quic.QuicCongestionAlgorithm.md">
 <code>congestion-<wbr>algorithm</code>
@@ -208,7 +220,7 @@ QUIC protocol configuration and durable transport policy
 <td>
 <code>65527</code>
 </td>
-<td>Maximum UDP payload size the transport should attempt to send or accept</td>
+<td>Maximum UDP payload size this endpoint accepts and advertises to its peer</td>
 </tr>
 </tbody>
 </table>
