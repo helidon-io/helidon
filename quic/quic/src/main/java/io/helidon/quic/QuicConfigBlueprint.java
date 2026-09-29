@@ -73,8 +73,11 @@ interface QuicConfigBlueprint {
     int maxUdpPayloadSize();
 
     /**
-     * Experimental limit on the UDP payload size to send, excluding IP and UDP headers.
-     * The value must be between {@code 1200} and {@code 65527}, inclusive, and defaults to {@code 1200}.
+     * Experimental limit on the UDP payload size to send, from {@code 1200} to {@code 65507} bytes inclusive,
+     * excluding IP and UDP headers.
+     * The default is {@code 1200}.
+     * Both IP versions use the IPv4-compatible maximum so migration from IPv6 to IPv4 does not reduce the packet budget
+     * needed to retransmit outstanding data.
      * Sending is limited to {@code 1200} bytes until the peer's transport parameters are available, and is then capped
      * by the peer's advertised receive limit and the maximum UDP payload size for the path's IP version.
      * <p>

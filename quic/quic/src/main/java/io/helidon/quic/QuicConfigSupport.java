@@ -27,6 +27,7 @@ import static io.helidon.quic.frame.QuicFrame.MAX_VL_INTEGER;
 final class QuicConfigSupport {
     static final int MINIMUM_DATAGRAM_SIZE = 1200;
     static final int MAXIMUM_DATAGRAM_SIZE = 65527;
+    static final int MAXIMUM_SEND_DATAGRAM_SIZE = 65507;
     // Every additional ACK range needs at least a one-byte gap and a one-byte range length.
     static final int MAX_ACK_RANGES_PER_FRAME = MAXIMUM_DATAGRAM_SIZE / 2;
     static final int DEFAULT_MAX_ACK_RANGES_PER_FRAME = 1024;
@@ -75,8 +76,8 @@ final class QuicConfigSupport {
                                                            + target.maxUdpPayloadSize());
             }
             if (target.sendDatagramSize() < MINIMUM_DATAGRAM_SIZE
-                    || target.sendDatagramSize() > MAXIMUM_DATAGRAM_SIZE) {
-                throw new IllegalArgumentException("sendDatagramSize must be between 1200 and 65527: "
+                    || target.sendDatagramSize() > MAXIMUM_SEND_DATAGRAM_SIZE) {
+                throw new IllegalArgumentException("sendDatagramSize must be between 1200 and 65507: "
                                                            + target.sendDatagramSize());
             }
             if (target.maxAckRangesPerFrame() < 1
