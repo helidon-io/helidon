@@ -518,7 +518,7 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
         this.defaultInitialStreamMaxData = quicConfig.initialMaxStreamData();
         this.defaultMaxBidiStreams = quicConfig.maxBidiStreams();
         this.defaultMaxUniStreams = quicConfig.maxUniStreams();
-        int initialDatagramSize = runtimeConfig.endpoint().defaultDatagramSize();
+        int configuredDatagramSize = runtimeConfig.endpoint().defaultDatagramSize();
         this.useDirectBufferPool = runtimeConfig.endpoint().useDirectBufferPool();
         this.rttEstimator = QuicRttEstimator.create(runtimeConfig.recovery());
         this.oneRttRcvQueue = new OneRttFlowControlledReceivingQueue(this::logTag, defaultInitialMaxData);
@@ -534,16 +534,16 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
         this.pathManager = new QuicPathManager(isClientConn,
                                                localAddress,
                                                peerAddress,
-                                               initialDatagramSize,
+                                               configuredDatagramSize,
                                                peerConnIdManager);
         this.pathRecoveryState = new PacketSpaceManager.PathRecoveryState(pathManager.generation());
-        this.maxPeerAdvertisedPayloadSize = initialDatagramSize;
+        this.maxPeerAdvertisedPayloadSize = SMALLEST_MAXIMUM_DATAGRAM_SIZE;
         this.cachedToString = String.format(logTagFormat.formatted("quic:%s:%s:%s"), labelId,
                                             Arrays.toString(sslParameters.getApplicationProtocols()), peerAddress);
         this.connectionId = this.endpoint.idFactory().newConnectionId();
         this.congestionController = switch (runtimeConfig.userConfig().congestionAlgorithm()) {
-            case RENO -> QuicRenoCongestionController.create(runtimeConfig, logTag, rttEstimator, initialDatagramSize);
-            case CUBIC -> QuicCubicCongestionController.create(runtimeConfig, logTag, rttEstimator, initialDatagramSize);
+            case RENO -> QuicRenoCongestionController.create(runtimeConfig, logTag, rttEstimator, maxDatagramSize());
+            case CUBIC -> QuicCubicCongestionController.create(runtimeConfig, logTag, rttEstimator, maxDatagramSize());
         };
         this.originalVersion = firstFlightVersion;
         this.quicVersion = firstFlightVersion;
@@ -1218,14 +1218,13 @@ public class QuicConnectionImpl implements QuicConnection, QuicPacketReceiver {
      * @return the maximum datagram size that can be used on the
      *         connection path
      *
-     * @implSpec Initially this is 1200 bytes, but the value will then be decided if the peer sends a specific size
-     *        in the transport parameters and the value can further evolve based
-     *        on path MTU.
+     * @implSpec Initially this is 1200 bytes. Once the peer's transport parameters are available, this is the minimum
+     *        of the configured send limit, the peer's receive limit, and the path's IP-version limit.
      */
     int maxDatagramSize() {
         // The current transport stays within the peer-advertised payload size
-        // and the configured path MTU. Dynamic path MTU discovery is deliberately
-        // left outside the initial HTTP/3 scope.
+        // and the configured path MTU. The configured size assumes path support;
+        // dynamic path MTU discovery is not implemented.
         return Math.min(maxPeerAdvertisedPayloadSize, pathManager.pathMtu());
     }
 

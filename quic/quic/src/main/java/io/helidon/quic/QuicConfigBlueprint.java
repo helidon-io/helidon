@@ -62,7 +62,8 @@ interface QuicConfigBlueprint {
     Optional<Integer> socketSendBufferSize();
 
     /**
-     * Maximum UDP payload size the transport should attempt to send or accept.
+     * Maximum UDP payload size this endpoint accepts and advertises to its peer.
+     * This receive limit is independent of {@link #sendDatagramSize()}.
      * The value must be between {@code 1200} and {@code 65527}, inclusive.
      *
      * @return maximum UDP payload size in bytes
@@ -70,6 +71,25 @@ interface QuicConfigBlueprint {
     @Option.Configured
     @Option.DefaultInt(QuicConfigSupport.DEFAULT_MAX_UDP_PAYLOAD_SIZE)
     int maxUdpPayloadSize();
+
+    /**
+     * Experimental limit on the UDP payload size to send, excluding IP and UDP headers.
+     * The value must be between {@code 1200} and {@code 65527}, inclusive, and defaults to {@code 1200}.
+     * Sending is limited to {@code 1200} bytes until the peer's transport parameters are available, and is then capped
+     * by the peer's advertised receive limit and the maximum UDP payload size for the path's IP version.
+     * <p>
+     * This is an experimental configuration option. The implementation does not discover the path MTU or automatically
+     * fall back to smaller datagrams when a configured size is too large. Set a value above {@code 1200} only when every
+     * network path the connection can use supports that UDP payload size, including any tunnel overhead. Datagrams that
+     * exceed the path MTU can be dropped, causing packet loss, stalled transfers, or connection timeouts.
+     * Increasing {@link #maxUdpPayloadSize()} alone does not increase the outgoing datagram size.
+     *
+     * @return maximum outgoing UDP payload size in bytes
+     */
+    @Api.Incubating
+    @Option.Configured
+    @Option.DefaultInt(QuicConfigSupport.DEFAULT_SEND_DATAGRAM_SIZE)
+    int sendDatagramSize();
 
     /**
      * Maximum number of packet-number ranges accepted in one peer ACK frame, including the first ACK range; after structural

@@ -235,6 +235,7 @@ class QuicTransportConfigTest {
                         .socketReceiveBufferSize(65_536)
                         .socketSendBufferSize(32_768)
                         .maxUdpPayloadSize(1_350)
+                        .sendDatagramSize(1_450)
                         .maxHandshakeMessageSize(16_384)
                         .initialMaxData(8_192)
                         .maxBidiStreams(4))
@@ -249,6 +250,7 @@ class QuicTransportConfigTest {
         assertThat(quicConfig.socketReceiveBufferSize().orElseThrow(), is(65_536));
         assertThat(quicConfig.socketSendBufferSize().orElseThrow(), is(32_768));
         assertThat(quicConfig.maxUdpPayloadSize(), is(1_350));
+        assertThat(quicConfig.sendDatagramSize(), is(1_450));
         assertThat(quicConfig.maxHandshakeMessageSize(), is(16_384));
         assertThat(quicConfig.initialMaxData(), is(8_192L));
         assertThat(quicConfig.maxBidiStreams(), is(4L));
@@ -273,6 +275,7 @@ class QuicTransportConfigTest {
                                                                            .addValue("socket-receive-buffer-size", "65536")
                                                                            .addValue("socket-send-buffer-size", "32768")
                                                                            .addValue("max-udp-payload-size", "1350")
+                                                                           .addValue("send-datagram-size", "1450")
                                                                            .addValue("max-handshake-message-size", "16384")
                                                                            .addValue("initial-max-data", "8192")
                                                                            .addValue("max-bidi-streams", "4")
@@ -296,6 +299,7 @@ class QuicTransportConfigTest {
         assertThat(quicConfig.socketReceiveBufferSize().orElseThrow(), is(65_536));
         assertThat(quicConfig.socketSendBufferSize().orElseThrow(), is(32_768));
         assertThat(quicConfig.maxUdpPayloadSize(), is(1_350));
+        assertThat(quicConfig.sendDatagramSize(), is(1_450));
         assertThat(quicConfig.maxHandshakeMessageSize(), is(16_384));
         assertThat(quicConfig.initialMaxData(), is(8_192L));
         assertThat(quicConfig.maxBidiStreams(), is(4L));

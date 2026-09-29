@@ -113,6 +113,31 @@ QUIC-specific transport and protocol settings. A listener configured with only
 HTTP/3 still has the default TCP overlay. A listener without an enabled QUIC
 protocol does not activate the QUIC binding.
 
+`max-udp-payload-size` controls the QUIC endpoint's receive capacity and the
+limit advertised to clients. Outgoing UDP payloads remain capped at 1200 bytes
+by default. To opt into a larger outgoing ceiling on a path known to support
+it, add the experimental `send-datagram-size` option:
+
+```yaml [application.yaml]
+server:
+  bindings:
+    quic:
+      send-datagram-size: 1452
+```
+
+This incubating option corresponds to `QuicConfig.sendDatagramSize()` and
+excludes IP and UDP headers. Values from 1200 through 65527 are accepted.
+Sending remains capped at 1200 until the peer's transport parameters arrive,
+then is also capped by the peer's advertised receive limit and the IP-family
+maximum. Configure the client's send ceiling separately for larger request
+datagrams.
+
+The configured size must work on every path used by the connection, including
+any tunnels. Helidon does not discover the path MTU or automatically reduce
+the size for an unsuitable path. Oversized datagrams can be dropped, causing
+connection stalls or timeouts. Keep the default unless the network path is
+known to support a larger size.
+
 The `http_1_1.alt-svc` block opts HTTP/1.1 into advertising the HTTP/3 endpoint.
 HTTP/1.1 and HTTP/2 do not advertise HTTP/3 by default; configure `alt-svc`
 under at least one TCP protocol used by clients for ordinary HTTP/3 discovery.

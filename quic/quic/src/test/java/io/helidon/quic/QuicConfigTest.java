@@ -28,6 +28,8 @@ import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.helidon.quic.QuicEndpoint.ChannelType.BLOCKING_WITH_VIRTUAL_THREADS;
 import static io.helidon.quic.QuicTransportParameters.ParameterId.initial_max_streams_bidi;
@@ -35,6 +37,7 @@ import static io.helidon.quic.QuicTransportParameters.ParameterId.initial_max_st
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -57,6 +60,7 @@ class QuicConfigTest {
                 () -> assertThat(config.socketReceiveBufferSize().isEmpty(), is(true)),
                 () -> assertThat(config.socketSendBufferSize().isEmpty(), is(true)),
                 () -> assertThat(config.maxUdpPayloadSize(), is(QuicConfigSupport.DEFAULT_MAX_UDP_PAYLOAD_SIZE)),
+                () -> assertThat(config.sendDatagramSize(), is(1200)),
                 () -> assertThat(config.maxAckRangesPerFrame(),
                                  is(QuicConfigSupport.DEFAULT_MAX_ACK_RANGES_PER_FRAME)),
                 () -> assertThat(config.maxHandshakeMessageSize(),
@@ -87,6 +91,7 @@ class QuicConfigTest {
                 .socketReceiveBufferSize(65_536)
                 .socketSendBufferSize(32_768)
                 .maxUdpPayloadSize(1400)
+                .sendDatagramSize(1452)
                 .maxAckRangesPerFrame(2048)
                 .maxHandshakeMessageSize(8192)
                 .initialMaxData(8192)
@@ -105,6 +110,7 @@ class QuicConfigTest {
                 () -> assertThat(config.socketReceiveBufferSize().orElseThrow(), is(65_536)),
                 () -> assertThat(config.socketSendBufferSize().orElseThrow(), is(32_768)),
                 () -> assertThat(config.maxUdpPayloadSize(), is(1400)),
+                () -> assertThat(config.sendDatagramSize(), is(1452)),
                 () -> assertThat(config.maxAckRangesPerFrame(), is(2048)),
                 () -> assertThat(config.maxHandshakeMessageSize(), is(8192)),
                 () -> assertThat(config.initialMaxData(), is(8192L)),
@@ -116,6 +122,51 @@ class QuicConfigTest {
                 () -> assertThat(config.congestionAlgorithm(), is(QuicCongestionAlgorithm.RENO)),
                 () -> assertThat(config.maxBytesInFlight(), is(65_536L)),
                 () -> assertThat(config.unsafeRawData(), is(true)));
+    }
+
+    @Test
+    void shouldLoadAndCopySendDatagramSizeIndependentlyOfReceiveCapacity() {
+        Config externalConfig = Config.just(ConfigSources.create(Map.of("send-datagram-size", "1452",
+                                                                        "max-udp-payload-size", "1200")));
+        QuicConfig config = QuicConfig.create(externalConfig);
+        QuicConfig copied = QuicConfig.builder(config).buildPrototype();
+        QuicConfig smaller = QuicConfig.builder(config).sendDatagramSize(1200).buildPrototype();
+
+        assertAll(
+                () -> assertThat(config.sendDatagramSize(), is(1452)),
+                () -> assertThat(config.maxUdpPayloadSize(), is(1200)),
+                () -> assertThat(QuicRuntimeConfig.create(config).endpoint().defaultDatagramSize(), is(1452)),
+                () -> assertThat(copied.sendDatagramSize(), is(1452)),
+                () -> assertThat(copied, is(config)),
+                () -> assertThat(copied.hashCode(), is(config.hashCode())),
+                () -> assertThat(smaller, not(config)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {1200, 65_527})
+    void shouldAcceptSendDatagramSizeBounds(int size) {
+        QuicConfig programmatic = QuicConfig.builder().sendDatagramSize(size).buildPrototype();
+        Config externalConfig = Config.just(ConfigSources.create(Map.of("send-datagram-size", Integer.toString(size))));
+
+        assertAll(
+                () -> assertThat(programmatic.sendDatagramSize(), is(size)),
+                () -> assertThat(QuicConfig.create(externalConfig).sendDatagramSize(), is(size)));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {1199, 65_528})
+    void shouldRejectInvalidSendDatagramSizes(int size) {
+        IllegalArgumentException programmatic = assertThrows(
+                IllegalArgumentException.class,
+                () -> QuicConfig.builder().sendDatagramSize(size).buildPrototype());
+        Config externalConfig = Config.just(ConfigSources.create(Map.of("send-datagram-size", Integer.toString(size))));
+        IllegalArgumentException configured = assertThrows(IllegalArgumentException.class,
+                                                           () -> QuicConfig.create(externalConfig));
+
+        assertAll(
+                () -> assertThat(programmatic.getMessage(),
+                                 is("sendDatagramSize must be between 1200 and 65527: " + size)),
+                () -> assertThat(configured.getMessage(), is(programmatic.getMessage())));
     }
 
     @Test
@@ -196,7 +247,7 @@ class QuicConfigTest {
                                  is(QuicRuntimeConfig.DEFAULT_MAX_BUFFERED_LOW)),
                 () -> assertThat(runtimeConfig.endpoint().useDirectBufferPool(), is(true)),
                 () -> assertThat(runtimeConfig.endpoint().defaultDatagramSize(),
-                                 is(QuicRuntimeConfig.DEFAULT_DATAGRAM_SIZE)),
+                                 is(1200)),
                 () -> assertThat(runtimeConfig.recovery().maxPtoBackoffExponent(),
                                  is(QuicRuntimeConfig.DEFAULT_MAX_PTO_BACKOFF_EXPONENT)),
                 () -> assertThat(runtimeConfig.recovery().maxPtoBackoffTimeout(),

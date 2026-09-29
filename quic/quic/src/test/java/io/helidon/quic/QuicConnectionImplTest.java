@@ -783,9 +783,12 @@ class QuicConnectionImplTest {
         assertThat(failure.getCause(), sameInstance(overflow));
     }
 
-    @Test
-    void boundsLargePeerMaxUdpPayloadSizeByLocalPath() throws Exception {
-        try (ConnectionHarness harness = ConnectionHarness.create(EnumSet.of(KeySpace.ONE_RTT))) {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void boundsLargePeerMaxUdpPayloadSizeByLocalPath(boolean client) throws Exception {
+        try (ConnectionHarness harness = client
+                ? ConnectionHarness.create(EnumSet.of(KeySpace.ONE_RTT))
+                : ConnectionHarness.createServer(EnumSet.of(KeySpace.ONE_RTT))) {
             for (long advertised : List.of(65_528L, VariableLengthEncoder.MAX_ENCODED_INTEGER)) {
                 QuicTransportParameters peerParameters = QuicTransportParameters.create();
                 peerParameters.intParameter(QuicTransportParameters.ParameterId.max_udp_payload_size, advertised);
@@ -796,8 +799,63 @@ class QuicConnectionImplTest {
                                    .orElseThrow()
                                    .intParameter(QuicTransportParameters.ParameterId.max_udp_payload_size),
                            is(advertised));
-                assertThat(harness.connection.maxDatagramSize(), is(QuicRuntimeConfig.DEFAULT_DATAGRAM_SIZE));
+                assertThat(harness.connection.maxDatagramSize(), is(1200));
             }
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true, CUBIC, 65527, 1452", "false, CUBIC, 65527, 1452",
+                "true, RENO, 65527, 1452", "false, RENO, 65527, 1452",
+                "true, CUBIC, 1300, 1300", "false, CUBIC, 1300, 1300",
+                "true, RENO, 1300, 1300", "false, RENO, 1300, 1300",
+                "true, CUBIC, 1200, 1200", "false, CUBIC, 1200, 1200",
+                "true, RENO, 1200, 1200", "false, RENO, 1200, 1200"})
+    void appliesConfiguredSendDatagramSizeAfterPeerParameters(boolean client,
+                                                            QuicCongestionAlgorithm algorithm,
+                                                            int peerLimit,
+                                                            int expectedSize) throws Exception {
+        QuicConfig config = QuicConfig.builder()
+                .sendDatagramSize(1452)
+                .maxUdpPayloadSize(1200)
+                .congestionAlgorithm(algorithm)
+                .buildPrototype();
+        try (ConnectionHarness harness = client
+                ? ConnectionHarness.create(EnumSet.of(KeySpace.ONE_RTT), config)
+                : ConnectionHarness.createServer(EnumSet.of(KeySpace.ONE_RTT), config)) {
+            TestQuicConnection connection = harness.connection();
+            assertThat(connection.maxDatagramSize(), is(1200));
+            assertThat(connection.congestionController().maxDatagramSize(), is(1200L));
+            assertThat(connection.congestionController().congestionWindow(), is(12_000L));
+            assertThat(connection.localTransportParameters().orElseThrow().intParameter(ParameterId.max_udp_payload_size),
+                       is(1200L));
+            QuicTransportParameters peerParameters = QuicTransportParameters.create();
+            peerParameters.intParameter(ParameterId.max_udp_payload_size, peerLimit);
+
+            connection.installPeerTransportParameters(peerParameters);
+
+            assertThat(connection.maxDatagramSize(), is(expectedSize));
+            assertThat(connection.congestionController().maxDatagramSize(), is((long) expectedSize));
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"127.0.0.1, 65507", "::1, 65527"})
+    void boundsConfiguredSendDatagramSizeByIpFamily(String address, int expectedSize) throws Exception {
+        QuicConfig config = QuicConfig.builder().sendDatagramSize(65_527).buildPrototype();
+        FakeQuicTLSEngine engine = new FakeQuicTLSEngine(EnumSet.of(KeySpace.ONE_RTT));
+        try (TestQuicInstance instance = new TestQuicInstance(quicTlsContext(engine), true, config)) {
+            TestQuicConnection connection = new TestQuicConnection(QuicVersion.QUIC_V1,
+                                                                 instance,
+                                                                 QuicRuntimeConfig.create(config),
+                                                                 new InetSocketAddress(InetAddress.getByName(address), 4433));
+            QuicTransportParameters peerParameters = QuicTransportParameters.create();
+            peerParameters.intParameter(ParameterId.max_udp_payload_size, VariableLengthEncoder.MAX_ENCODED_INTEGER);
+
+            connection.installPeerTransportParameters(peerParameters);
+
+            assertThat(connection.maxDatagramSize(), is(expectedSize));
+            assertThat(connection.congestionController().maxDatagramSize(), is((long) expectedSize));
         }
     }
 
@@ -2761,10 +2819,20 @@ class QuicConnectionImplTest {
         protected TestQuicConnection(QuicVersion firstFlightVersion,
                                      TestQuicInstance quicInstance,
                                      QuicRuntimeConfig runtimeConfig) throws Exception {
+            this(firstFlightVersion,
+                 quicInstance,
+                 runtimeConfig,
+                 new InetSocketAddress(InetAddress.getLoopbackAddress(), 4433));
+        }
+
+        private TestQuicConnection(QuicVersion firstFlightVersion,
+                                  TestQuicInstance quicInstance,
+                                  QuicRuntimeConfig runtimeConfig,
+                                  InetSocketAddress peerAddress) throws Exception {
             super(firstFlightVersion,
                   quicInstance,
                   runtimeConfig,
-                  new InetSocketAddress(InetAddress.getLoopbackAddress(), 4433),
+                  peerAddress,
                   "example.com",
                   4433,
                   sslParameters(),

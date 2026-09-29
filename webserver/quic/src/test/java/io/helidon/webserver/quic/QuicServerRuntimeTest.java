@@ -26,13 +26,16 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -54,7 +57,9 @@ import io.helidon.quic.QuicTransportErrors;
 import io.helidon.quic.QuicVersion;
 import io.helidon.quic.SequentialScheduler;
 import io.helidon.quic.VariableLengthEncoder;
+import io.helidon.quic.stream.QuicReceiverStream;
 import io.helidon.quic.stream.QuicSenderStream;
+import io.helidon.quic.stream.QuicStreamReader;
 import io.helidon.quic.stream.QuicStreamWriter;
 
 import org.junit.jupiter.api.Test;
@@ -65,6 +70,8 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class QuicServerRuntimeTest {
@@ -1021,6 +1028,177 @@ class QuicServerRuntimeTest {
         }
     }
 
+    @Test
+    void shouldKeepDefaultClientAndServerDatagramsAt1200Bytes() throws Exception {
+        assertDatagramSizes(quicConfig(), quicConfig(), 1_200, 1_200, 1_200);
+    }
+
+    @Test
+    void shouldSendLargerConfiguredDatagramsFromClientAndServer() throws Exception {
+        QuicConfig clientConfig = QuicConfig.builder(quicConfig())
+                .sendDatagramSize(1_400)
+                .buildPrototype();
+        QuicConfig serverConfig = QuicConfig.builder(quicConfig())
+                .sendDatagramSize(1_450)
+                .buildPrototype();
+
+        assertDatagramSizes(clientConfig, serverConfig, 1_400, 1_450, 1_201);
+    }
+
+    @Test
+    void shouldExchangeDatagramsLargerThanInitialAmplificationCredit() throws Exception {
+        QuicConfig config = QuicConfig.builder(quicConfig())
+                .sendDatagramSize(8_192)
+                .buildPrototype();
+
+        assertDatagramSizes(config, config, 8_192, 8_192, 3 * 1_200 + 1);
+    }
+
+    @Test
+    void shouldLimitClientAndServerDatagramsToPeerReceiveCapacity() throws Exception {
+        QuicConfig clientConfig = QuicConfig.builder(quicConfig())
+                .sendDatagramSize(1_450)
+                .maxUdpPayloadSize(1_350)
+                .buildPrototype();
+        QuicConfig serverConfig = QuicConfig.builder(quicConfig())
+                .sendDatagramSize(1_450)
+                .maxUdpPayloadSize(1_250)
+                .buildPrototype();
+
+        assertDatagramSizes(clientConfig, serverConfig, 1_250, 1_350, 1_201);
+    }
+
+    private static void assertDatagramSizes(QuicConfig clientConfig,
+                                            QuicConfig serverConfig,
+                                            int clientMaximum,
+                                            int serverMaximum,
+                                            int minimumObservedSize) throws Exception {
+        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+        List<Future<?>> cleanupTasks = new ArrayList<>(2);
+        Future<Boolean> serverCleanup;
+        Exception cleanupFailure = null;
+        boolean interrupted = false;
+        boolean executorTerminated;
+        try {
+            QuicServerRuntime server = QuicServerRuntime.builder()
+                    .executor(executor)
+                    .quicConfig(serverConfig)
+                    .tls(serverTls())
+                    .applicationProtocols(List.of(ALPN))
+                    .bindAddress(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0))
+                    .build();
+            try {
+                QuicClientRuntime client = QuicClientRuntime.builder()
+                        .executor(executor)
+                        .quicConfig(clientConfig)
+                        .tls(clientTls())
+                        .build();
+                try (NatRebindingProxy proxy = new NatRebindingProxy(executor, server.localAddress())) {
+                    CompletableFuture<QuicConnection> accepted = server.accept();
+                    QuicClientConnection clientConnection = createConnection(client, proxy.clientAddress());
+                    clientConnection.startHandshake().get(20, TimeUnit.SECONDS);
+                    QuicConnection serverConnection = accepted.get(20, TimeUnit.SECONDS);
+
+                    byte[] clientPayload = bytes(16_384, 17);
+                    byte[] serverPayload = bytes(16_384, 89);
+                    CompletableFuture<QuicReceiverStream> serverStream = new CompletableFuture<>();
+                    CompletableFuture<QuicReceiverStream> clientStream = new CompletableFuture<>();
+                    try (var _ = serverConnection.addRemoteStreamListener(serverStream::complete);
+                         var _ = clientConnection.addRemoteStreamListener(clientStream::complete)) {
+                        QuicSenderStream clientSender = clientConnection.openNewLocalUniStream(Duration.ofSeconds(5))
+                                .get(10, TimeUnit.SECONDS);
+                        clientSender.connectWriter(SequentialScheduler.lockingScheduler(() -> { }))
+                                .scheduleForWritingAndGetDispatchCompletion(BufferData.create(clientPayload), true)
+                                .get(10, TimeUnit.SECONDS);
+                        assertThat("client payload delivered to server",
+                                   readAll(serverStream.get(10, TimeUnit.SECONDS)).get(10, TimeUnit.SECONDS),
+                                   is(clientPayload));
+
+                        QuicSenderStream serverSender = serverConnection.openNewLocalUniStream(Duration.ofSeconds(5))
+                                .get(10, TimeUnit.SECONDS);
+                        serverSender.connectWriter(SequentialScheduler.lockingScheduler(() -> { }))
+                                .scheduleForWritingAndGetDispatchCompletion(BufferData.create(serverPayload), true)
+                                .get(10, TimeUnit.SECONDS);
+                        assertThat("server payload delivered to client",
+                                   readAll(clientStream.get(10, TimeUnit.SECONDS)).get(10, TimeUnit.SECONDS),
+                                   is(serverPayload));
+                    }
+
+                    assertThat("initial client datagram before peer parameters", proxy.firstClientDatagramSize.get(), is(1_200));
+                    assertThat("client UDP payload maximum", proxy.maxClientDatagramSize.get(), lessThanOrEqualTo(clientMaximum));
+                    assertThat("server UDP payload maximum", proxy.maxServerDatagramSize.get(), lessThanOrEqualTo(serverMaximum));
+                    assertThat("client used the datagram budget",
+                               proxy.maxClientDatagramSize.get(), greaterThanOrEqualTo(minimumObservedSize));
+                    assertThat("server used the datagram budget",
+                               proxy.maxServerDatagramSize.get(), greaterThanOrEqualTo(minimumObservedSize));
+                } finally {
+                    cleanupTasks.add(executor.submit(client::close));
+                }
+            } finally {
+                serverCleanup = executor.submit(() -> server.close(Duration.ofSeconds(5)));
+                cleanupTasks.add(serverCleanup);
+            }
+        } finally {
+            try {
+                for (Future<?> cleanup : cleanupTasks) {
+                    try {
+                        cleanup.get(5, TimeUnit.SECONDS);
+                    } catch (InterruptedException failure) {
+                        interrupted = true;
+                        cleanupFailure = failure;
+                    } catch (ExecutionException | TimeoutException failure) {
+                        cleanupFailure = failure;
+                    }
+                }
+            } finally {
+                cleanupTasks.forEach(cleanup -> cleanup.cancel(true));
+                executor.shutdownNow();
+                try {
+                    executorTerminated = executor.awaitTermination(5, TimeUnit.SECONDS);
+                } catch (InterruptedException failure) {
+                    interrupted = true;
+                    cleanupFailure = failure;
+                    executorTerminated = false;
+                }
+                if (interrupted) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+        assertThat("runtime cleanup completed", cleanupFailure, nullValue());
+        assertThat("datagram exchange executor terminated", executorTerminated, is(true));
+        assertThat("server runtime closed", serverCleanup.get(0, TimeUnit.SECONDS), is(true));
+    }
+
+    private static CompletableFuture<byte[]> readAll(QuicReceiverStream stream) {
+        CompletableFuture<byte[]> result = new CompletableFuture<>();
+        BufferData output = BufferData.growing(256);
+        AtomicReference<QuicStreamReader> readerRef = new AtomicReference<>();
+        SequentialScheduler scheduler = SequentialScheduler.lockingScheduler(() -> {
+            try {
+                QuicStreamReader reader = readerRef.get();
+                for (;;) {
+                    Optional<BufferData> next = reader.poll();
+                    if (next.isEmpty()) {
+                        return;
+                    }
+                    BufferData buffer = next.orElseThrow();
+                    if (buffer == QuicStreamReader.EOF) {
+                        result.complete(output.readBytes());
+                        return;
+                    }
+                    output.write(buffer);
+                }
+            } catch (Throwable failure) {
+                result.completeExceptionally(failure);
+            }
+        });
+        QuicStreamReader reader = stream.connectReader(scheduler);
+        readerRef.set(reader);
+        reader.start();
+        return result;
+    }
+
     private static QuicServerRuntime createServer(ExecutorService executor) throws Exception {
         return createServer(executor, List.of(QuicVersion.QUIC_V1));
     }
@@ -1223,6 +1401,9 @@ class QuicServerRuntimeTest {
         private final AtomicReference<SocketAddress> clientPeer = new AtomicReference<>();
         private final AtomicInteger retryPackets = new AtomicInteger();
         private final AtomicInteger clientPackets = new AtomicInteger();
+        private final AtomicInteger firstClientDatagramSize = new AtomicInteger();
+        private final AtomicInteger maxClientDatagramSize = new AtomicInteger();
+        private final AtomicInteger maxServerDatagramSize = new AtomicInteger();
         private final CountDownLatch retrySeen = new CountDownLatch(1);
         private final CountDownLatch secondClientPacket = new CountDownLatch(1);
         private final CountDownLatch firstNonRetryServerPacket = new CountDownLatch(1);
@@ -1313,6 +1494,8 @@ class QuicServerRuntimeTest {
                     }
                     clientPeer.set(source);
                     int packetCount = clientPackets.incrementAndGet();
+                    firstClientDatagramSize.compareAndSet(0, buffer.position());
+                    maxClientDatagramSize.accumulateAndGet(buffer.position(), Math::max);
                     buffer.flip();
                     if (forwardClientPackets) {
                         activeUpstream.get().send(buffer, serverAddress);
@@ -1334,6 +1517,7 @@ class QuicServerRuntimeTest {
             while (upstream.isOpen()) {
                 try {
                     upstream.receive(buffer);
+                    maxServerDatagramSize.accumulateAndGet(buffer.position(), Math::max);
                     boolean retryPacket = false;
                     if (buffer.position() >= 5) {
                         int firstByte = Byte.toUnsignedInt(buffer.get(0));

@@ -186,6 +186,18 @@ QUIC transport binding configuration
 </tr>
 <tr>
 <td>
+<code>send-<wbr>datagram-<wbr>size</code>
+</td>
+<td>
+<code>Integer</code>
+</td>
+<td>
+<code>1200</code>
+</td>
+<td>Experimental limit on the UDP payload size to send, excluding IP and UDP headers</td>
+</tr>
+<tr>
+<td>
 <code>alpn-<wbr>preference</code>
 </td>
 <td>
@@ -255,7 +267,7 @@ QUIC transport binding configuration
 <td>
 <code>65527</code>
 </td>
-<td>Maximum UDP payload size the transport should attempt to send or accept</td>
+<td>Maximum UDP payload size this endpoint accepts and advertises to its peer</td>
 </tr>
 <tr>
 <td>

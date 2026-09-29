@@ -149,6 +149,7 @@ class Http3ExchangeClientTest {
                 .availableVersions(List.of(QuicVersion.QUIC_V2))
                 .idleTimeout(Duration.ofSeconds(42))
                 .maxUdpPayloadSize(1_350)
+                .sendDatagramSize(1_450)
                 .maxBidiStreams(7)
                 .buildPrototype();
         Http3ClientProtocolConfig protocolConfig = Http3ClientProtocolConfig.builder()
@@ -175,12 +176,24 @@ class Http3ExchangeClientTest {
         assertThat(settings.quicConfig().availableVersions(), equalTo(List.of(QuicVersion.QUIC_V2)));
         assertThat(settings.quicConfig().idleTimeout().toMillis(), equalTo(Duration.ofSeconds(42).toMillis()));
         assertThat(settings.quicConfig().maxUdpPayloadSize(), equalTo(1_350));
+        assertThat(settings.quicConfig().sendDatagramSize(), equalTo(1_450));
         assertThat(settings.quicConfig().maxBidiStreams(), equalTo(7L));
         assertThat(settings.logConfig().receiveLog(), equalTo(false));
         assertThat(settings.logConfig().sendLog(), equalTo(true));
         assertThat(settings.logConfig().loggerName().orElseThrow(), equalTo("http3.test"));
         assertThat(controlStreamSettings(Http3Protocol.controlStreamPreamble(settings.localSettings())),
                    equalTo(Map.of(0x01L, 4_096L, 0x06L, 32_768L, 0x07L, 16L)));
+    }
+
+    @Test
+    void shouldMapExternalQuicDatagramSettings() {
+        Config config = Config.just(ConfigSources.create(Map.of("quic.send-datagram-size", "1450",
+                                                                "quic.max-udp-payload-size", "1350")));
+        Http3ExchangeClient.ClientSettings settings = Http3ExchangeClient.clientSettings(
+                Http3ClientProtocolConfig.create(config));
+
+        assertThat(settings.quicConfig().sendDatagramSize(), equalTo(1_450));
+        assertThat(settings.quicConfig().maxUdpPayloadSize(), equalTo(1_350));
     }
 
     @Test
@@ -195,6 +208,7 @@ class Http3ExchangeClientTest {
         assertThat(settings.localSettings().qpackBlockedStreams(), equalTo(0L));
         assertThat(settings.quicConfig().availableVersions(), equalTo(List.of(QuicVersion.QUIC_V2, QuicVersion.QUIC_V1)));
         assertThat(settings.quicConfig().idleTimeout().toMillis(), equalTo(Duration.ofSeconds(30).toMillis()));
+        assertThat(settings.quicConfig().sendDatagramSize(), equalTo(1_200));
         assertThat(settings.quicConfig().maxBidiStreams(), equalTo(100L));
         assertThat(settings.logConfig().receiveLog(), equalTo(true));
         assertThat(settings.logConfig().sendLog(), equalTo(true));

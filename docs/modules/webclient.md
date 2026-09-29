@@ -301,6 +301,36 @@ try {
 }
 ```
 
+### Configuring QUIC Datagram Size
+
+HTTP/3 sends UDP payloads of at most 1200 bytes by default. The incubating
+`QuicConfig.sendDatagramSize()` option, configured as `send-datagram-size`,
+provides an experimental outgoing datagram ceiling. The size excludes IP and
+UDP headers. For a generic WebClient, configure it under
+`client.protocol-configs.h3.quic`:
+
+```yaml [application.yaml]
+client:
+  protocol-configs:
+    h3:
+      quic:
+        send-datagram-size: 1452
+```
+
+Use a value above 1200 only when every path used by the connection, including
+any tunnels and alternative endpoints, is known to support it. Helidon does
+not discover the path MTU or automatically reduce the configured size for an
+unsuitable path. Oversized datagrams can be dropped, causing connection stalls
+or timeouts.
+
+Values from 1200 through 65527 are accepted. Sending remains capped at 1200
+until the peer's transport parameters arrive. The effective ceiling then also
+respects the peer's advertised receive limit and the IP-family maximum.
+`max-udp-payload-size` independently controls local receive capacity and the
+limit advertised to the peer; increasing it alone does not increase outgoing
+datagram sizes. Configure the server's send ceiling separately for larger
+response datagrams.
+
 ### Creating the Request
 
 WebClient offers a set of request methods that are used to specify the type of
