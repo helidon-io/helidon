@@ -20,12 +20,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.StreamSupport;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
+import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.FormatterContext;
+import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.metrics.api.MetricsConfig;
@@ -42,8 +45,12 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Testing.Test(perMethod = true)
@@ -67,6 +74,74 @@ class TestProviderSelection {
     @Test
     void copiedTimerKeepsDisabledPercentiles() {
         assertCopiedTimerPercentiles(builder -> builder.percentiles(new double[0]), List.of());
+    }
+
+    @Test
+    void disabledMicrometerCounterPreservesTaggedMetadata() {
+        MetricsFactory factory = new MicrometerMetricsFactoryProvider().create(Config.empty(),
+                MetricsConfig.builder().enabled(false).build(), List.of());
+        try {
+            MeterRegistry registry = factory.globalRegistry();
+            Counter counter = registry.getOrCreate(factory.counterBuilder("disabled.metadata")
+                                                          .addTag(factory.tagCreate("color", "red"))
+                                                          .description("Disabled counter")
+                                                          .baseUnit(Meter.BaseUnits.BYTES));
+            counter.increment(7);
+
+            assertAll(() -> assertThat("Disabled Micrometer caller retains the name",
+                                       counter.id().name(), is("disabled.metadata")),
+                      () -> assertThat("Disabled Micrometer caller retains the tags",
+                                       counter.id().tagsMap(), is(Map.of("color", "red"))),
+                      () -> assertThat("Disabled Micrometer caller retains the description",
+                                       counter.description(), is(Optional.of("Disabled counter"))),
+                      () -> assertThat("Disabled Micrometer caller retains the base unit",
+                                       counter.baseUnit(), is(Optional.of(Meter.BaseUnits.BYTES))),
+                      () -> assertThat("Disabled Micrometer counter does not record", counter.count(), is(0L)),
+                      () -> assertThat("Disabled Micrometer counter is not enumerated", registry.meters(), empty()));
+        } finally {
+            factory.close();
+        }
+    }
+
+    @Test
+    void disabledNativeRegistryPreservesForeignCounterMetadata() {
+        MetricsFactory foreignFactory = Services.get(MetricsFactory.class);
+        MetricsFactory nativeFactory = new HelidonMetricsFactoryProvider().create(Config.empty(),
+                MetricsConfig.builder().enabled(false).build(), List.of());
+        try {
+            MeterRegistry registry = nativeFactory.globalRegistry();
+            var additions = new AtomicInteger();
+            registry.onMeterAdded(_ -> additions.incrementAndGet());
+            Counter first = registry.getOrCreate(foreignFactory.counterBuilder("disabled.foreign")
+                                                               .addTag(foreignFactory.tagCreate("color", "red"))
+                                                               .description("Foreign counter")
+                                                               .baseUnit(Meter.BaseUnits.BYTES));
+            Counter second = registry.getOrCreate(foreignFactory.counterBuilder("disabled.foreign")
+                                                                .addTag(foreignFactory.tagCreate("color", "blue")));
+            first.increment(7);
+            second.increment(11);
+
+            assertAll(() -> assertThat("Foreign tagged IDs produce distinct disabled meters",
+                                       second, not(sameInstance(first))),
+                      () -> assertThat("First foreign ID retains its tags",
+                                       first.id().tagsMap(), is(Map.of("color", "red"))),
+                      () -> assertThat("Second foreign ID retains its tags",
+                                       second.id().tagsMap(), is(Map.of("color", "blue"))),
+                      () -> assertThat("Foreign description survives native conversion",
+                                       first.description(), is(Optional.of("Foreign counter"))),
+                      () -> assertThat("Foreign base unit survives native conversion",
+                                       first.baseUnit(), is(Optional.of(Meter.BaseUnits.BYTES))),
+                      () -> assertThat("Repeated foreign ID reuses the native disabled meter", registry.getOrCreate(
+                              foreignFactory.counterBuilder("disabled.foreign")
+                                      .addTag(foreignFactory.tagCreate("color", "red"))), sameInstance(first)),
+                      () -> assertThat("First foreign counter remains disabled", first.count(), is(0L)),
+                      () -> assertThat("Second foreign counter remains disabled", second.count(), is(0L)),
+                      () -> assertThat("Foreign disabled meters are not enumerated", registry.meters(), empty()),
+                      () -> assertThat("Foreign disabled meters do not notify native add listeners",
+                                       additions.get(), is(0)));
+        } finally {
+            nativeFactory.close();
+        }
     }
 
     @Test
