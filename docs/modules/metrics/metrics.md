@@ -872,6 +872,12 @@ an HTTP upgrade request. An upgrade completes that exchange observation before
 the upgraded protocol takes over. WebSocket messages and frames are not stream
 observations.
 
+For WebClient, an HTTP proxy CONNECT exchange is connection setup and does not
+create a stream observation. The physical proxy connection is counted before
+CONNECT completes. A rejected CONNECT response or EOF closes that connection
+observation with `outcome=error`; a successful CONNECT retains the same
+observation for tunneled application exchanges.
+
 HTTP/2 connections report `protocol=http/2`, including TLS, cleartext prior
 knowledge, and HTTP/1 upgrade connections. Each HTTP/2 request stream is one
 exchange observation, including a gRPC call. Individual gRPC messages are not
