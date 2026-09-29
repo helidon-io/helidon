@@ -129,12 +129,39 @@ final class OtlpEncoder implements AutoCloseable {
     }
 
     private static MetricAccumulator metric(Map<MetricKey, MetricAccumulator> metrics, Meter meter, Kind kind, String unit) {
-        var key = new MetricKey(meter.id().name(), unit, kind);
+        var key = new MetricKey(meter.id().name(), otlpUnit(unit), kind);
         MetricAccumulator result = metrics.computeIfAbsent(key, MetricAccumulator::new);
         if (result.description.isEmpty()) {
             meter.description().ifPresent(description -> result.description = description);
         }
         return result;
+    }
+
+    private static String otlpUnit(String baseUnit) {
+        return switch (baseUnit) {
+            case Meter.BaseUnits.NONE -> "";
+            case Meter.BaseUnits.BITS -> "bit";
+            case Meter.BaseUnits.KILOBITS -> "kbit";
+            case Meter.BaseUnits.MEGABITS -> "Mbit";
+            case Meter.BaseUnits.GIGABITS -> "Gbit";
+            case Meter.BaseUnits.KIBIBITS -> "Kibit";
+            case Meter.BaseUnits.MEBIBITS -> "Mibit";
+            case Meter.BaseUnits.GIBIBITS -> "Gibit";
+            case Meter.BaseUnits.BYTES -> "By";
+            case Meter.BaseUnits.KILOBYTES -> "kBy";
+            case Meter.BaseUnits.MEGABYTES -> "MBy";
+            case Meter.BaseUnits.GIGABYTES -> "GBy";
+            case Meter.BaseUnits.NANOSECONDS -> "ns";
+            case Meter.BaseUnits.MICROSECONDS -> "us";
+            case Meter.BaseUnits.MILLISECONDS -> "ms";
+            case Meter.BaseUnits.SECONDS -> "s";
+            case Meter.BaseUnits.MINUTES -> "min";
+            case Meter.BaseUnits.HOURS -> "h";
+            case Meter.BaseUnits.DAYS -> "d";
+            case Meter.BaseUnits.PERCENT -> "%";
+            case Meter.BaseUnits.PER_SECOND -> "1/s";
+            default -> baseUnit;
+        };
     }
 
     private void warnConflictingIdentities(Set<MetricKey> metricKeys) {

@@ -156,9 +156,9 @@ class TestOtlpIdentityConflicts {
             assertThat(metrics, hasSize(2));
             assertThat(metrics.stream().collect(Collectors.toMap(metric -> metric.stringValue("unit").orElseThrow(),
                     metric -> longValue(dataPoints(metric, "sum").getFirst(), "asInt"))),
-                       is(Map.of("bytes", 7L, "requests", 11L)));
+                       is(Map.of("By", 7L, "requests", 11L)));
             metrics.forEach(metric -> assertThat(dataPoints(metric, "sum"), hasSize(1)));
-            assertWarning("transfer", "SUM", "bytes", "requests");
+            assertWarning("transfer", "SUM", "By", "requests");
         }
     }
 
@@ -213,7 +213,7 @@ class TestOtlpIdentityConflicts {
 
             Gauge<Integer> differentUnit = gauge("requests", "south", "bytes");
             encoder.collect();
-            assertWarning("requests", "SUM", "GAUGE", "{request}", "bytes");
+            assertWarning("requests", "SUM", "GAUGE", "{request}", "By");
             registry.remove(differentUnit);
             encoder.collect();
             assertWarning("requests", "SUM", "GAUGE");
