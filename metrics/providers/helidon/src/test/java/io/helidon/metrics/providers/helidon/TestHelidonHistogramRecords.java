@@ -264,13 +264,38 @@ class TestHelidonHistogramRecords {
                                             timerSnapshot, observations, 1_000_000));
     }
 
-    @ParameterizedTest
-    @ValueSource(ints = {4097, 8192, 65_536})
-    void crossingReservoirCapacityRetainsAFullDistinctSample(int observations) {
+    @ParameterizedTest(name = "{0} observations, {1} writers")
+    @CsvSource({"4097, 1", "8192, 1", "65536, 1", "4099, 4"})
+    void crossingReservoirCapacityRetainsAFullDistinctSample(int observations, int writers) throws Exception {
         preparePercentileHistograms(fullSamplePercentiles());
-        for (int amount = 1; amount <= observations; amount++) {
+        for (int amount = 1; amount < RESERVOIR_CAPACITY; amount++) {
             summary.record(amount);
             timer.record(amount, TimeUnit.MILLISECONDS);
+        }
+
+        var start = new CyclicBarrier(writers + 1);
+        List<Future<?>> recordings = new ArrayList<>();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            try {
+                for (int writer = 0; writer < writers; writer++) {
+                    int first = RESERVOIR_CAPACITY + writer;
+                    recordings.add(executor.submit(() -> {
+                        start.await(5, TimeUnit.SECONDS);
+                        for (int amount = first; amount <= observations; amount += writers) {
+                            summary.record(amount);
+                            timer.record(amount, TimeUnit.MILLISECONDS);
+                        }
+                        return null;
+                    }));
+                }
+                start.await(5, TimeUnit.SECONDS);
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+                for (Future<?> recording : recordings) {
+                    recording.get(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
+                }
+            } finally {
+                recordings.forEach(recording -> recording.cancel(true));
+            }
         }
 
         HistogramSnapshot summarySnapshot = summary.snapshot();
