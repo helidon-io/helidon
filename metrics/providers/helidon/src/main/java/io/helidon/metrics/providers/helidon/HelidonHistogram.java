@@ -18,8 +18,6 @@ package io.helidon.metrics.providers.helidon;
 
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.concurrent.atomic.DoubleAccumulator;
 import java.util.concurrent.atomic.DoubleAdder;
 import java.util.concurrent.atomic.LongAdder;
@@ -102,10 +100,11 @@ final class HelidonHistogram {
         }
         // Independently sampled adders must still describe buckets bounded by the observation count.
         long snapshotCount = Math.max(count(), cumulative);
+        double[] samples = reservoir == null ? new double[0] : reservoir.samples(snapshotCount);
         return HelidonHistogramSnapshot.create(snapshotCount,
                                                total(),
                                                max(),
-                                               samples(snapshotCount),
+                                               samples,
                                                percentiles,
                                                buckets,
                                                snapshotBucketCounts);
@@ -153,24 +152,6 @@ final class HelidonHistogram {
         return result;
     }
 
-    private double[] samples(long snapshotCount) {
-        if (reservoir == null) {
-            return new double[0];
-        }
-
-        AtomicLongArray values = reservoir.values;
-        int targetSampleCount = (int) Math.min(snapshotCount, values.length());
-        double[] samples = new double[targetSampleCount];
-        int sampleCount = 0;
-        for (int i = 0; i < values.length() && sampleCount < targetSampleCount; i++) {
-            double sample = Double.longBitsToDouble(values.get(i));
-            if (!Double.isNaN(sample)) {
-                samples[sampleCount++] = sample;
-            }
-        }
-        return sampleCount < samples.length ? Arrays.copyOf(samples, sampleCount) : samples;
-    }
-
     private int firstBucket(double amount) {
         int index = Arrays.binarySearch(buckets, amount);
         if (index < 0) {
@@ -180,52 +161,116 @@ final class HelidonHistogram {
     }
 
     private static final class Reservoir {
-        private static final long EMPTY = Double.doubleToRawLongBits(Double.NaN);
-
-        private final AtomicLong observations = new AtomicLong();
-        private final AtomicLongArray values = new AtomicLongArray(HelidonTypes.DEFAULT_RESERVOIR_SIZE);
-        private final long[] lastReplacement = new long[values.length()];
-        private final ReentrantLock[] locks = new ReentrantLock[16];
-
-        private Reservoir() {
-            for (int i = 0; i < values.length(); i++) {
-                values.set(i, EMPTY);
-            }
-            for (int i = 0; i < locks.length; i++) {
-                locks[i] = new ReentrantLock();
-            }
-        }
+        // The lowest independent random priorities form a uniform lifetime sample; ties are sampled uniformly too.
+        private final double[] values = new double[HelidonTypes.DEFAULT_RESERVOIR_SIZE];
+        private final int[] priorities = new int[values.length];
+        private final ReentrantLock lock = new ReentrantLock();
+        private volatile int threshold = Integer.MAX_VALUE;
+        private int size;
+        private int thresholdCount;
+        private long thresholdObservations;
 
         private void record(double amount) {
-            long sequence = observations.incrementAndGet();
-            if (sequence <= 0) {
-                // The observation count can no longer represent a sampling probability after overflow.
-                return;
-            }
-            long bits = Double.doubleToRawLongBits(amount);
-            if (sequence <= values.length()) {
-                // A delayed initial observation must not overwrite a later replacement in its slot.
-                values.compareAndSet((int) sequence - 1, EMPTY, bits);
+            var random = ThreadLocalRandom.current();
+            int priority = random.nextInt() >>> 1;
+            if (priority > threshold) {
                 return;
             }
 
-            // Algorithm R: observation n selects a slot uniformly from [0, n).
-            long selected = ThreadLocalRandom.current().nextLong(sequence);
-            if (selected >= values.length()) {
-                return;
-            }
-            int slot = (int) selected;
-            ReentrantLock lock = locks[slot % locks.length];
             lock.lock();
             try {
-                // Publish in observation order even if concurrent writers arrive at this slot out of order.
-                if (sequence > lastReplacement[slot]) {
-                    values.set(slot, bits);
-                    lastReplacement[slot] = sequence;
+                if (size < values.length) {
+                    values[size] = amount;
+                    priorities[size++] = priority;
+                    if (size == values.length) {
+                        // Keep every initial observation, then build the max-heap in linear time.
+                        for (int index = size / 2 - 1; index >= 0; index--) {
+                            replace(index, priorities[index], values[index]);
+                        }
+                        updateThreshold();
+                    }
+                    return;
+                }
+
+                int currentThreshold = priorities[0];
+                if (priority > currentThreshold) {
+                    return;
+                }
+                if (priority == currentThreshold) {
+                    // Equal priorities form their own uniform reservoir at the sampling boundary.
+                    if (thresholdObservations == Long.MAX_VALUE) {
+                        // The metric's long observation count can no longer represent this population.
+                        return;
+                    }
+                    long selected = random.nextLong(++thresholdObservations);
+                    if (selected < thresholdCount) {
+                        values[thresholdIndex((int) selected)] = amount;
+                    }
+                    return;
+                }
+
+                int index = thresholdCount == 1 ? 0 : thresholdIndex(random.nextInt(thresholdCount));
+                replace(index, priority, amount);
+                if (priorities[0] == currentThreshold) {
+                    thresholdCount--;
+                } else {
+                    updateThreshold();
                 }
             } finally {
                 lock.unlock();
             }
+        }
+
+        private double[] samples(long snapshotCount) {
+            lock.lock();
+            try {
+                return Arrays.copyOf(values, (int) Math.min(snapshotCount, size));
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        private void replace(int index, int priority, double amount) {
+            int child;
+            while ((child = index * 2 + 1) < size) {
+                if (child + 1 < size && priorities[child + 1] > priorities[child]) {
+                    child++;
+                }
+                if (priority >= priorities[child]) {
+                    break;
+                }
+                priorities[index] = priorities[child];
+                values[index] = values[child];
+                index = child;
+            }
+            priorities[index] = priority;
+            values[index] = amount;
+        }
+
+        private void updateThreshold() {
+            int currentThreshold = priorities[0];
+            thresholdCount = countAtThreshold(0, currentThreshold);
+            // Every observation at a newly lower boundary was retained while the boundary was higher.
+            thresholdObservations = thresholdCount;
+            // Publish only after updating the heap. A stale, higher threshold merely takes the lock unnecessarily.
+            threshold = currentThreshold;
+        }
+
+        private int countAtThreshold(int index, int priority) {
+            if (index >= size || priorities[index] != priority) {
+                return 0;
+            }
+            return 1 + countAtThreshold(index * 2 + 1, priority) + countAtThreshold(index * 2 + 2, priority);
+        }
+
+        private int thresholdIndex(int selected) {
+            int priority = priorities[0];
+            for (int index = 0; index < size; index++) {
+                if (priorities[index] == priority && selected-- == 0) {
+                    return index;
+                }
+            }
+            throw new IllegalStateException("Reservoir boundary observation is missing");
         }
     }
 }
