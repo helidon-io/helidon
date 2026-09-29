@@ -23,7 +23,7 @@
         xsi:schemaLocation="https://github.com/spotbugs/filter/3.0.0 https://raw.githubusercontent.com/spotbugs/spotbugs/3.1.0/spotbugs/etc/findbugsfilter.xsd">
     <Match>
         <!-- Randomness selects statistical reservoir slots; it does not protect security-sensitive values. -->
-        <Class name="io.helidon.metrics.providers.helidon.HelidonHistogram"/>
+        <Class name="io.helidon.metrics.providers.helidon.HelidonHistogram$Reservoir"/>
         <Method name="record"/>
         <Bug pattern="PREDICTABLE_RANDOM"/>
     </Match>

@@ -18,16 +18,18 @@ package io.helidon.metrics.providers.helidon;
 
 import java.util.Arrays;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.concurrent.atomic.DoubleAccumulator;
 import java.util.concurrent.atomic.DoubleAdder;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.concurrent.locks.ReentrantLock;
 
 final class HelidonHistogram {
     private final double[] percentiles;
     private final double[] buckets;
     private final LongAdder[] bucketCounts;
-    private final AtomicLongArray reservoir;
+    private final Reservoir reservoir;
     private final LongAdder count = new LongAdder();
     private final DoubleAdder total = new DoubleAdder();
     private final DoubleAccumulator max = new DoubleAccumulator(Double::max, 0D);
@@ -49,12 +51,7 @@ final class HelidonHistogram {
         for (int i = 0; i < bucketCounts.length; i++) {
             bucketCounts[i] = new LongAdder();
         }
-        this.reservoir = this.percentiles.length == 0 ? null : new AtomicLongArray(HelidonTypes.DEFAULT_RESERVOIR_SIZE);
-        if (reservoir != null) {
-            for (int i = 0; i < reservoir.length(); i++) {
-                reservoir.set(i, Double.doubleToRawLongBits(Double.NaN));
-            }
-        }
+        this.reservoir = this.percentiles.length == 0 ? null : new Reservoir();
     }
 
     static HelidonHistogram create(double[] percentiles, double[] buckets) {
@@ -68,7 +65,7 @@ final class HelidonHistogram {
         }
 
         if (reservoir != null) {
-            reservoir.set(ThreadLocalRandom.current().nextInt(reservoir.length()), Double.doubleToRawLongBits(amount));
+            reservoir.record(amount);
         }
         count.increment();
         total.add(amount);
@@ -161,11 +158,12 @@ final class HelidonHistogram {
             return new double[0];
         }
 
-        int targetSampleCount = (int) Math.min(snapshotCount, reservoir.length());
+        AtomicLongArray values = reservoir.values;
+        int targetSampleCount = (int) Math.min(snapshotCount, values.length());
         double[] samples = new double[targetSampleCount];
         int sampleCount = 0;
-        for (int i = 0; i < reservoir.length() && sampleCount < targetSampleCount; i++) {
-            double sample = Double.longBitsToDouble(reservoir.get(i));
+        for (int i = 0; i < values.length() && sampleCount < targetSampleCount; i++) {
+            double sample = Double.longBitsToDouble(values.get(i));
             if (!Double.isNaN(sample)) {
                 samples[sampleCount++] = sample;
             }
@@ -179,5 +177,55 @@ final class HelidonHistogram {
             index = -index - 1;
         }
         return index;
+    }
+
+    private static final class Reservoir {
+        private static final long EMPTY = Double.doubleToRawLongBits(Double.NaN);
+
+        private final AtomicLong observations = new AtomicLong();
+        private final AtomicLongArray values = new AtomicLongArray(HelidonTypes.DEFAULT_RESERVOIR_SIZE);
+        private final long[] lastReplacement = new long[values.length()];
+        private final ReentrantLock[] locks = new ReentrantLock[16];
+
+        private Reservoir() {
+            for (int i = 0; i < values.length(); i++) {
+                values.set(i, EMPTY);
+            }
+            for (int i = 0; i < locks.length; i++) {
+                locks[i] = new ReentrantLock();
+            }
+        }
+
+        private void record(double amount) {
+            long sequence = observations.incrementAndGet();
+            if (sequence <= 0) {
+                // The observation count can no longer represent a sampling probability after overflow.
+                return;
+            }
+            long bits = Double.doubleToRawLongBits(amount);
+            if (sequence <= values.length()) {
+                // A delayed initial observation must not overwrite a later replacement in its slot.
+                values.compareAndSet((int) sequence - 1, EMPTY, bits);
+                return;
+            }
+
+            // Algorithm R: observation n selects a slot uniformly from [0, n).
+            long selected = ThreadLocalRandom.current().nextLong(sequence);
+            if (selected >= values.length()) {
+                return;
+            }
+            int slot = (int) selected;
+            ReentrantLock lock = locks[slot % locks.length];
+            lock.lock();
+            try {
+                // Publish in observation order even if concurrent writers arrive at this slot out of order.
+                if (sequence > lastReplacement[slot]) {
+                    values.set(slot, bits);
+                    lastReplacement[slot] = sequence;
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
     }
 }
