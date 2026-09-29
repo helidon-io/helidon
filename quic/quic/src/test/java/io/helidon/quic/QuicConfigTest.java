@@ -143,18 +143,25 @@ class QuicConfigTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {1200, 65_527})
+    @ValueSource(ints = {1200, 65_507})
     void shouldAcceptSendDatagramSizeBounds(int size) {
-        QuicConfig programmatic = QuicConfig.builder().sendDatagramSize(size).buildPrototype();
-        Config externalConfig = Config.just(ConfigSources.create(Map.of("send-datagram-size", Integer.toString(size))));
+        QuicConfig programmatic = QuicConfig.builder()
+                .sendDatagramSize(size)
+                .maxUdpPayloadSize(65_527)
+                .buildPrototype();
+        Config externalConfig = Config.just(ConfigSources.create(Map.of("send-datagram-size", Integer.toString(size),
+                                                                        "max-udp-payload-size", "65527")));
+        QuicConfig configured = QuicConfig.create(externalConfig);
 
         assertAll(
                 () -> assertThat(programmatic.sendDatagramSize(), is(size)),
-                () -> assertThat(QuicConfig.create(externalConfig).sendDatagramSize(), is(size)));
+                () -> assertThat(programmatic.maxUdpPayloadSize(), is(65_527)),
+                () -> assertThat(configured.sendDatagramSize(), is(size)),
+                () -> assertThat(configured.maxUdpPayloadSize(), is(65_527)));
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {1199, 65_528})
+    @ValueSource(ints = {1199, 65_508, 65_527, 65_528})
     void shouldRejectInvalidSendDatagramSizes(int size) {
         IllegalArgumentException programmatic = assertThrows(
                 IllegalArgumentException.class,
@@ -165,7 +172,7 @@ class QuicConfigTest {
 
         assertAll(
                 () -> assertThat(programmatic.getMessage(),
-                                 is("sendDatagramSize must be between 1200 and 65527: " + size)),
+                                 is("sendDatagramSize must be between 1200 and 65507: " + size)),
                 () -> assertThat(configured.getMessage(), is(programmatic.getMessage())));
     }
 

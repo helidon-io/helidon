@@ -841,28 +841,39 @@ class QuicConnectionImplTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"127.0.0.1, 65507", "::1, 65527"})
-    void boundsConfiguredSendDatagramSizeByIpFamily(String address, int expectedSize) throws Exception {
-        QuicConfig config = QuicConfig.builder().sendDatagramSize(65_527).buildPrototype();
+    @CsvSource({"true, 127.0.0.1", "false, 127.0.0.1", "true, ::1", "false, ::1"})
+    void boundsConfiguredSendDatagramSizeForBothIpFamilies(boolean client, String address) throws Exception {
+        QuicConfig config = QuicConfig.builder()
+                .sendDatagramSize(65_507)
+                .maxUdpPayloadSize(65_527)
+                .buildPrototype();
         FakeQuicTLSEngine engine = new FakeQuicTLSEngine(EnumSet.of(KeySpace.ONE_RTT));
-        try (TestQuicInstance instance = new TestQuicInstance(quicTlsContext(engine), true, config)) {
+        try (TestQuicInstance instance = new TestQuicInstance(quicTlsContext(engine), client, config)) {
             TestQuicConnection connection = new TestQuicConnection(QuicVersion.QUIC_V1,
                                                                  instance,
                                                                  QuicRuntimeConfig.create(config),
-                                                                 new InetSocketAddress(InetAddress.getByName(address), 4433));
+                                                                 new InetSocketAddress(InetAddress.getByName(address), 4433)) {
+                @Override
+                public boolean isClientConnection() {
+                    return client;
+                }
+            };
+            connection.seedPeerConnectionId(PEER_CONNECTION_ID);
             QuicTransportParameters peerParameters = QuicTransportParameters.create();
             peerParameters.intParameter(ParameterId.max_udp_payload_size, VariableLengthEncoder.MAX_ENCODED_INTEGER);
 
             connection.installPeerTransportParameters(peerParameters);
 
-            assertThat(connection.maxDatagramSize(), is(expectedSize));
-            assertThat(connection.congestionController().maxDatagramSize(), is((long) expectedSize));
+            assertThat(connection.maxDatagramSize(), is(65_507));
+            assertThat(connection.congestionController().maxDatagramSize(), is(65_507L));
+            assertThat(connection.localTransportParameters().orElseThrow().intParameter(ParameterId.max_udp_payload_size),
+                       is(65_527L));
         }
     }
 
     @Test
     void preservesReservedIpv6DatagramAcrossIpv4Migration() throws Exception {
-        QuicConfig config = QuicConfig.builder().sendDatagramSize(65_527).buildPrototype();
+        QuicConfig config = QuicConfig.builder().sendDatagramSize(65_507).buildPrototype();
         FakeQuicTLSEngine engine = new FakeQuicTLSEngine(EnumSet.of(KeySpace.ONE_RTT));
         try (TestQuicInstance instance = new TestQuicInstance(quicTlsContext(engine), false, config)) {
             InetSocketAddress initialPeer = new InetSocketAddress(InetAddress.getByName("::1"), 4433);
@@ -881,21 +892,26 @@ class QuicConnectionImplTest {
             connection.installPeerTransportParameters(peerParameters);
             QuicPathManager paths = connection.pathManager();
             paths.addressValidated(initialPeer);
-            QuicPathManager.SendPermit permit = paths.reserve(65_527).orElseThrow();
+            QuicPathManager.SendPermit permit = paths.reserve(65_507).orElseThrow();
             try {
-                assertThat(permit.size(), is(65_527));
+                assertThat(permit.size(), is(65_507));
                 QuicPacket packet = mock(QuicPacket.class);
-                when(packet.size()).thenReturn(65_527);
+                when(packet.size()).thenReturn(65_507);
                 InetSocketAddress rebound = new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 4434);
                 QuicPathManager.ReceiveResult migration = paths.authenticated(paths.receive(rebound, 1200), 1, true, 100);
+                assertThat(migration.pathChanged(), is(true));
                 paths.pathChangeCompleted(migration.generation());
+                assertThat(paths.peerAddress(), is(rebound));
+                assertThat(paths.pathMtu(), is(65_507));
                 assertThat(connection.maxDatagramSize(), is(65_507));
 
                 ProtectionRecord record = ProtectionRecord.single(packet,
                                                                    permit.destination(),
                                                                    permit,
                                                                    connection::allocateDatagramForEncryption);
-                assertThat(record.datagram().capacity(), is(65_527));
+                assertThat(permit.size(), is(65_507));
+                assertThat(permit.destination(), is(initialPeer));
+                assertThat(record.datagram().capacity(), is(65_507));
                 assertThat(record.destination(), is(initialPeer));
             } finally {
                 permit.release();

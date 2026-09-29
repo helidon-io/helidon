@@ -121,9 +121,10 @@ QuicConfig config = QuicConfig.builder()
 ```
 
 Pass the configuration to the `quicConfig` option of a `QuicClient` or `QuicServer` builder. Configure each endpoint
-separately when both directions need larger datagrams. Values from 1200 through 65527 are accepted. Sending remains
-capped at 1200 bytes until the peer's transport parameters arrive, then is capped by the configured value, the peer's
-advertised receive limit, and the IP-family maximum (65507 for IPv4 or 65527 for IPv6).
+separately when both directions need larger datagrams. Values from 1200 through 65507 are accepted. Both IP versions use
+the IPv4-compatible maximum so migration from IPv6 to IPv4 does not reduce the packet budget needed to retransmit
+outstanding data. Sending remains capped at 1200 bytes until the peer's transport parameters arrive, then is capped by
+the configured value, the peer's advertised receive limit, and the IP-family maximum.
 
 This option assumes every path used by the connection supports the configured size. Helidon does not discover the path
 MTU or automatically reduce the size when a path cannot carry it. Oversized datagrams can be dropped, causing connection

@@ -158,7 +158,7 @@ QUIC protocol configuration and durable transport policy
 <td>
 <code>1200</code>
 </td>
-<td>Experimental limit on the UDP payload size to send, excluding IP and UDP headers</td>
+<td>Experimental limit on the UDP payload size to send, from <code>1200</code> to <code>65507</code> bytes inclusive, excluding IP and UDP headers</td>
 </tr>
 <tr>
 <td>

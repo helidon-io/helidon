@@ -126,7 +126,9 @@ server:
 ```
 
 This incubating option corresponds to `QuicConfig.sendDatagramSize()` and
-excludes IP and UDP headers. Values from 1200 through 65527 are accepted.
+excludes IP and UDP headers. Values from 1200 through 65507 are accepted for
+both IP versions. This common maximum prevents IPv6-to-IPv4 migration from
+reducing the packet budget needed to retransmit outstanding data.
 Sending remains capped at 1200 until the peer's transport parameters arrive,
 then is also capped by the peer's advertised receive limit and the IP-family
 maximum. Configure the client's send ceiling separately for larger request

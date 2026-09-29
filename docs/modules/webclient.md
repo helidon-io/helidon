@@ -323,7 +323,9 @@ not discover the path MTU or automatically reduce the configured size for an
 unsuitable path. Oversized datagrams can be dropped, causing connection stalls
 or timeouts.
 
-Values from 1200 through 65527 are accepted. Sending remains capped at 1200
+Values from 1200 through 65507 are accepted for both IP versions. This common
+maximum prevents IPv6-to-IPv4 migration from reducing the packet budget needed
+to retransmit outstanding data. Sending remains capped at 1200
 until the peer's transport parameters arrive. The effective ceiling then also
 respects the peer's advertised receive limit and the IP-family maximum.
 `max-udp-payload-size` independently controls local receive capacity and the
