@@ -425,11 +425,15 @@ public class TcpClientConnection implements ClientConnection, ConnectionObservat
         /*
         Obtain target socket through proxy (if enabled), or connect to target socket
          */
-        connectionKey.proxy()
-                .tcpSocket(webClient,
-                           target,
-                           webClient.prototype().socketOptions(),
-                           this::socketConnected);
+        if (transportObservation == null) {
+            socketConnected(connectionKey.proxy().tcpSocket(webClient, target, webClient.prototype().socketOptions()));
+        } else {
+            connectionKey.proxy()
+                    .tcpSocket(webClient,
+                               target,
+                               webClient.prototype().socketOptions(),
+                               this::socketConnected);
+        }
 
         if (LOGGER.isLoggable(DEBUG)) {
             LOGGER.log(DEBUG, String.format("[client %s] client connected %s:%d %s",
