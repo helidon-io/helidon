@@ -214,6 +214,7 @@ public class TcpClientConnection implements ClientConnection, ConnectionObservat
     }
 
     @Override
+    @Api.Internal
     public void httpTransportObserver(HttpTransportObserver observer) {
         if (socket != null || transportObservation != null) {
             throw new IllegalStateException("Transport observation must be configured once before connecting");
@@ -222,11 +223,13 @@ public class TcpClientConnection implements ClientConnection, ConnectionObservat
     }
 
     @Override
+    @Api.Internal
     public ConnectionObservation httpTransportObservation() {
         return transportObservation == null ? ConnectionObservation.noop() : transportObservation;
     }
 
     @Override
+    @Api.Internal
     public void httpTransportOutcome(ConnectionOutcome outcome) {
         if (transportObservation != null) {
             transportObservation.outcome(outcome);

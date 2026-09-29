@@ -250,6 +250,7 @@ public class UnixDomainSocketClientConnection implements ClientConnection, Conne
     }
 
     @Override
+    @Api.Internal
     public void httpTransportObserver(HttpTransportObserver observer) {
         if (channel != null || transportObservation != null) {
             throw new IllegalStateException("Transport observation must be configured once before connecting");
@@ -258,11 +259,13 @@ public class UnixDomainSocketClientConnection implements ClientConnection, Conne
     }
 
     @Override
+    @Api.Internal
     public ConnectionObservation httpTransportObservation() {
         return transportObservation == null ? ConnectionObservation.noop() : transportObservation;
     }
 
     @Override
+    @Api.Internal
     public void httpTransportOutcome(ConnectionOutcome outcome) {
         if (transportObservation != null) {
             transportObservation.outcome(outcome);
