@@ -17,12 +17,12 @@ package io.helidon.data.tests.codegen.mysql.scripts;
 
 import io.helidon.config.ConfigSources;
 import io.helidon.data.sql.testing.SqlTestContainerConfig;
-import io.helidon.data.sql.testing.SqlTestContainerImages;
 import io.helidon.data.sql.testing.TestContainerHandler;
 import io.helidon.testing.junit5.suite.TestSuite;
 import io.helidon.testing.junit5.suite.spi.SuiteProvider;
 
 import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.utility.DockerImageName;
 
 /**
  * MySQL suite.
@@ -32,7 +32,9 @@ public class MySqlSuite implements SuiteProvider {
     private final TestContainerHandler containerHandler;
 
     public MySqlSuite() {
-        MySQLContainer<?> container = new MySQLContainer<>(SqlTestContainerImages.mySqlImageReference());
+        MySQLContainer<?> container = new MySQLContainer<>(DockerImageName.parse(
+                "container-registry.oracle.com/mysql/community-server:9.7.3")
+                .asCompatibleSubstituteFor("mysql"));
         this.containerHandler = SqlTestContainerConfig.configureContainer(container,
                                                                           ConfigSources.classpath("application.yaml"));
     }

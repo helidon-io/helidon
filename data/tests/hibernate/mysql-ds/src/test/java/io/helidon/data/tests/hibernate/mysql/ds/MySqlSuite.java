@@ -17,7 +17,6 @@ package io.helidon.data.tests.hibernate.mysql.ds;
 
 import io.helidon.config.ConfigSources;
 import io.helidon.data.sql.testing.SqlTestContainerConfig;
-import io.helidon.data.sql.testing.SqlTestContainerImages;
 import io.helidon.data.sql.testing.TestContainerHandler;
 import io.helidon.data.tests.common.InitialData;
 import io.helidon.data.tests.repository.PokemonRepository;
@@ -28,6 +27,7 @@ import io.helidon.testing.junit5.suite.spi.SuiteProvider;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -40,7 +40,9 @@ public class MySqlSuite implements SuiteProvider {
     private final TestContainerHandler containerHandler;
 
     public MySqlSuite() {
-        MySQLContainer<?> container = new MySQLContainer<>(SqlTestContainerImages.mySqlImageReference());
+        MySQLContainer<?> container = new MySQLContainer<>(DockerImageName.parse(
+                "container-registry.oracle.com/mysql/community-server:9.7.3")
+                .asCompatibleSubstituteFor("mysql"));
         this.containerHandler = SqlTestContainerConfig.configureContainer(container,
                                                                           ConfigSources.classpath("application.yaml"));
     }

@@ -19,13 +19,13 @@ import java.time.Duration;
 
 import io.helidon.config.ConfigSources;
 import io.helidon.data.sql.testing.SqlTestContainerConfig;
-import io.helidon.data.sql.testing.SqlTestContainerImages;
 import io.helidon.data.sql.testing.TestContainerHandler;
 import io.helidon.testing.junit5.suite.TestSuite;
 import io.helidon.testing.junit5.suite.spi.SuiteProvider;
 
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.utility.DockerImageName;
 
 /**
  * MySQL suite.
@@ -35,7 +35,8 @@ public class OraDbSuite implements SuiteProvider {
     private final TestContainerHandler containerHandler;
 
     public OraDbSuite() {
-        GenericContainer<?> container = new GenericContainer<>(SqlTestContainerImages.oracleImageReference());
+        GenericContainer<?> container = new GenericContainer<>(DockerImageName.parse(
+                "container-registry.oracle.com/database/free:23.26.3.0-lite"));
         this.containerHandler = SqlTestContainerConfig.configureContainer(container,
                                                                           ConfigSources.classpath("application.yaml"));
 
