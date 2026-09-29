@@ -28,6 +28,8 @@ import io.helidon.quic.frame.PathChallengeFrame;
 import io.helidon.quic.frame.PathResponseFrame;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
@@ -76,8 +78,94 @@ class QuicPathManagerTest {
 
         manager.addressValidated(INITIAL_PEER);
         QuicPathManager.SendPermit permit = manager.reserveValidated(10_000).orElseThrow();
-        assertThat(permit.size(), is(10_000));
+        assertThat(permit.size(), is(1200));
         permit.release();
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void capsClientAndValidatedServerReservations(boolean client) {
+        QuicPathManager manager = new QuicPathManager(client, LOCAL, INITIAL_PEER, 1452);
+        if (!client) {
+            manager.addressValidated(INITIAL_PEER);
+        }
+
+        QuicPathManager.SendPermit current = manager.reserve(1453).orElseThrow();
+        assertThat("current path reservation", current.size(), is(1452));
+        assertThat(current.destination(), is(INITIAL_PEER));
+        current.release();
+
+        QuicPathManager.SendPermit explicit = manager.reserve(INITIAL_PEER, 1453).orElseThrow();
+        assertThat("explicit destination reservation", explicit.size(), is(1452));
+        assertThat(explicit.destination(), is(INITIAL_PEER));
+        explicit.release();
+
+        QuicPathManager.SendPermit validated = manager.reserveValidated(1453).orElseThrow();
+        assertThat("validated path reservation", validated.size(), is(1452));
+        validated.release();
+
+        QuicPathManager.SendPermit smaller = manager.reserve(1200).orElseThrow();
+        assertThat("request below the path limit", smaller.size(), is(1200));
+        smaller.release();
+    }
+
+    @Test
+    void capsUnvalidatedReservationsByPathAndAmplificationCredit() {
+        QuicPathManager manager = serverManager(INITIAL_PEER, 1452);
+        manager.receive(INITIAL_PEER, 1000);
+
+        QuicPathManager.SendPermit first = manager.reserve(3000).orElseThrow();
+        assertThat("current path reservation", first.size(), is(1452));
+        first.commit();
+
+        QuicPathManager.SendPermit second = manager.reserve(INITIAL_PEER, 3000).orElseThrow();
+        assertThat("explicit destination reservation", second.size(), is(1452));
+        second.commit();
+
+        QuicPathManager.SendPermit remaining = manager.reserve(3000).orElseThrow();
+        assertThat("remaining amplification credit", remaining.size(), is(96));
+        remaining.commit();
+        assertThat(manager.reserve(1).isEmpty(), is(true));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void reservesUsingSelectedPathLimitAfterIpv6ToIpv4Migration(boolean validateNewPath) {
+        InetSocketAddress ipv6Peer = new InetSocketAddress("::1", 50000);
+        InetSocketAddress ipv4Peer = new InetSocketAddress("127.0.0.1", 50001);
+        QuicPathManager manager = serverManager(ipv6Peer, 65527);
+        manager.addressValidated(ipv6Peer);
+        int requestedBytes = manager.pathMtu();
+        assertThat(requestedBytes, is(65527));
+        QuicPathManager.SendPermit beforeMigration = manager.reserve(requestedBytes).orElseThrow();
+
+        QuicPathManager.ReceiveResult migration =
+                manager.authenticated(manager.receive(ipv4Peer, 65507), 1, true, 100);
+        assertThat(migration.pathChanged(), is(true));
+        manager.pathChangeCompleted(migration.generation());
+        if (validateNewPath) {
+            manager.addressValidated(ipv4Peer);
+        }
+        assertThat(manager.pathMtu(), is(65507));
+
+        QuicPathManager.SendPermit current = manager.reserve(requestedBytes).orElseThrow();
+        assertThat("current IPv4 path reservation", current.size(), is(65507));
+        assertThat(current.destination(), is(ipv4Peer));
+        current.release();
+
+        QuicPathManager.SendPermit explicitCurrent = manager.reserve(ipv4Peer, requestedBytes).orElseThrow();
+        assertThat("explicit IPv4 destination reservation", explicitCurrent.size(), is(65507));
+        assertThat(explicitCurrent.destination(), is(ipv4Peer));
+        explicitCurrent.release();
+
+        QuicPathManager.SendPermit previous = manager.reserve(ipv6Peer, requestedBytes).orElseThrow();
+        assertThat("explicit previous IPv6 destination reservation", previous.size(), is(65527));
+        assertThat(previous.destination(), is(ipv6Peer));
+        previous.release();
+
+        assertThat("reservation made before migration", beforeMigration.size(), is(65527));
+        assertThat(beforeMigration.destination(), is(ipv6Peer));
+        beforeMigration.release();
     }
 
     @Test
@@ -103,7 +191,12 @@ class QuicPathManagerTest {
         assertThat(result.pathChanged(), is(false));
         assertThat(context.credited(), is(true));
         assertThat(context.amplificationBudgetIncreased(), is(true));
-        assertThat(manager.reserve(REBOUND_PEER, 3000).orElseThrow().size(), is(3000));
+        for (int expectedBytes : List.of(1200, 1200, 600)) {
+            QuicPathManager.SendPermit permit = manager.reserve(REBOUND_PEER, 3000).orElseThrow();
+            assertThat(permit.size(), is(expectedBytes));
+            permit.commit();
+        }
+        assertThat(manager.reserve(REBOUND_PEER, 1).isEmpty(), is(true));
     }
 
     @Test
@@ -280,9 +373,11 @@ class QuicPathManagerTest {
         ByteBuffer responseData = ((PathChallengeFrame) challenge.frame()).data();
         assertThat(manager.pathResponse(responseData, 20, 100), is(true));
 
-        QuicPathManager.SendPermit permit = manager.reserve(REBOUND_PEER, 100_000).orElseThrow();
-        assertThat(permit.size(), is(100_000));
-        permit.release();
+        for (int i = 0; i < 4; i++) {
+            QuicPathManager.SendPermit permit = manager.reserve(REBOUND_PEER, 100_000).orElseThrow();
+            assertThat("validated reservation " + i, permit.size(), is(1200));
+            permit.commit();
+        }
     }
 
     @Test
@@ -384,7 +479,11 @@ class QuicPathManagerTest {
         manager.authenticated(responsePath, 2, false, 100);
 
         assertThat(manager.pathResponse(((PathChallengeFrame) challenge.frame()).data(), 30, 100), is(true));
-        assertThat(manager.reserve(REBOUND_PEER, 100_000).orElseThrow().size(), is(100_000));
+        for (int i = 0; i < 4; i++) {
+            QuicPathManager.SendPermit permit = manager.reserve(REBOUND_PEER, 100_000).orElseThrow();
+            assertThat("validated reservation " + i, permit.size(), is(1200));
+            permit.commit();
+        }
     }
 
     @Test
@@ -570,12 +669,14 @@ class QuicPathManagerTest {
     }
 
     @Test
-    void clientRejectsUnknownServerAddressAndIsSendUnrestricted() {
+    void clientRejectsUnknownServerAddressAndDoesNotNeedAmplificationCredit() {
         QuicPathManager manager = new QuicPathManager(true, LOCAL, INITIAL_PEER, 1200);
 
         assertThat(manager.accepts(INITIAL_PEER), is(true));
         assertThat(manager.accepts(REBOUND_PEER), is(false));
-        assertThat(manager.reserve(Integer.MAX_VALUE).orElseThrow().size(), is(Integer.MAX_VALUE));
+        QuicPathManager.SendPermit permit = manager.reserve(Integer.MAX_VALUE).orElseThrow();
+        assertThat(permit.size(), is(1200));
+        permit.release();
     }
 
     @Test
@@ -621,12 +722,16 @@ class QuicPathManagerTest {
     }
 
     private static QuicPathManager serverManager() {
+        return serverManager(INITIAL_PEER, 1200);
+    }
+
+    private static QuicPathManager serverManager(InetSocketAddress peer, int datagramSize) {
         PeerConnIdManager connectionIdManager = mock(PeerConnIdManager.class);
         PeerConnIdManager.PathCidBinding binding = mock(PeerConnIdManager.PathCidBinding.class);
         when(binding.valid()).thenReturn(true);
         when(connectionIdManager.acquirePathBinding(any())).thenReturn(Optional.of(binding));
         when(connectionIdManager.acquirePathUse(any())).thenReturn(true);
-        return new QuicPathManager(false, LOCAL, INITIAL_PEER, 1200, connectionIdManager);
+        return new QuicPathManager(false, LOCAL, peer, datagramSize, connectionIdManager);
     }
 
     private static QuicPathManager.Probe pollProbe(QuicPathManager manager) {

@@ -369,7 +369,8 @@ final class QuicPathManager implements AutoCloseable {
         if (active.sendReady && (client || active.validated)) {
             active.activePermits.incrementAndGet();
             if (!closed && current == active && active.sendReady && !active.retirementPending) {
-                return Optional.of(new UnrestrictedSendPermit(this, active, requestedBytes));
+                int reservedBytes = Math.min(requestedBytes, active.pathMtu);
+                return Optional.of(new UnrestrictedSendPermit(this, active, reservedBytes));
             }
             permitCompleted(active);
         }
@@ -413,7 +414,8 @@ final class QuicPathManager implements AutoCloseable {
         if (active.key.equals(key) && active.sendReady && (client || active.validated)) {
             active.activePermits.incrementAndGet();
             if (!closed && current == active && active.sendReady && !active.retirementPending) {
-                return Optional.of(new UnrestrictedSendPermit(this, active, requestedBytes));
+                int reservedBytes = Math.min(requestedBytes, active.pathMtu);
+                return Optional.of(new UnrestrictedSendPermit(this, active, reservedBytes));
             }
             permitCompleted(active);
         }
@@ -1230,11 +1232,12 @@ final class QuicPathManager implements AutoCloseable {
     }
 
     private Optional<SendPermit> reserve(Path path, int requestedBytes) {
-        int reservedBytes = requestedBytes;
+        // The caller may have read its size limit before a migration selected this path.
+        int reservedBytes = Math.min(requestedBytes, path.pathMtu);
         if (!client && !path.validated) {
             long limit = saturatingMultiply(path.received, 3);
             long available = Math.max(0, limit - saturatingAdd(path.sent, path.reserved));
-            reservedBytes = (int) Math.min(requestedBytes, available);
+            reservedBytes = (int) Math.min(reservedBytes, available);
             if (reservedBytes == 0) {
                 return Optional.empty();
             }
