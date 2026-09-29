@@ -264,6 +264,68 @@ class TestHelidonHistogramRecords {
                                             timerSnapshot, observations, 1_000_000));
     }
 
+    @ParameterizedTest
+    @ValueSource(ints = {1, 4})
+    void concurrentSnapshotsDuringInitialFillContainOnlyObservedValues(int writers) throws Exception {
+        preparePercentileHistograms(fullSamplePercentiles());
+        summary.record(2);
+        timer.record(2, TimeUnit.MILLISECONDS);
+
+        int batchSize = 256;
+        var batch = new CyclicBarrier(writers + 1);
+        List<Future<?>> recordings = new ArrayList<>();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            try {
+                for (int writer = 0; writer < writers; writer++) {
+                    int first = writer + 1;
+                    recordings.add(executor.submit(() -> {
+                        for (int offset = 1; offset < RESERVOIR_CAPACITY; offset += batchSize) {
+                            batch.await(5, TimeUnit.SECONDS);
+                            for (int observation = offset + first;
+                                 observation <= Math.min(offset + batchSize, RESERVOIR_CAPACITY);
+                                 observation += writers) {
+                                summary.record(2 * observation);
+                                timer.record(2 * observation, TimeUnit.MILLISECONDS);
+                            }
+                            batch.await(5, TimeUnit.SECONDS);
+                        }
+                        return null;
+                    }));
+                }
+                for (int offset = 1; offset < RESERVOIR_CAPACITY; offset += batchSize) {
+                    batch.await(5, TimeUnit.SECONDS);
+                    for (int sample = 0; sample < 2; sample++) {
+                        HistogramSnapshot summarySnapshot = summary.snapshot();
+                        HistogramSnapshot timerSnapshot = timer.snapshot();
+                        String context = writers + " writers, batch starting at " + offset + ", snapshot " + sample;
+                        int upperBound = Math.min(offset + batchSize, RESERVOIR_CAPACITY);
+                        assertInitialSample("summary with " + context, summarySnapshot, upperBound, 2);
+                        assertInitialSample("timer with " + context, timerSnapshot, upperBound, 2_000_000);
+                    }
+                    batch.await(5, TimeUnit.SECONDS);
+                }
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+                for (Future<?> recording : recordings) {
+                    recording.get(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
+                }
+            } finally {
+                recordings.forEach(recording -> recording.cancel(true));
+            }
+        }
+
+        HistogramSnapshot summarySnapshot = summary.snapshot();
+        HistogramSnapshot timerSnapshot = timer.snapshot();
+        double total = RESERVOIR_CAPACITY * (RESERVOIR_CAPACITY + 1D);
+        assertAll(() -> assertHistogram(summarySnapshot, RESERVOIR_CAPACITY, total, 2D * RESERVOIR_CAPACITY,
+                                        List.of(2D, 5D), List.of(1L, 2L)),
+                  () -> assertHistogram(timerSnapshot, RESERVOIR_CAPACITY, total * 1_000_000, RESERVOIR_CAPACITY * 2_000_000D,
+                                        List.of(2_000_000D, 5_000_000D), List.of(1L, 2L)),
+                  () -> assertObservedRanks("summary with " + writers + " writers",
+                                            summarySnapshot, RESERVOIR_CAPACITY, 2),
+                  () -> assertObservedRanks("timer with " + writers + " writers",
+                                            timerSnapshot, RESERVOIR_CAPACITY, 2_000_000));
+    }
+
     @ParameterizedTest(name = "{0} observations, {1} writers")
     @CsvSource({"4097, 1", "8192, 1", "65536, 1", "4099, 4"})
     void crossingReservoirCapacityRetainsAFullDistinctSample(int observations, int writers) throws Exception {
@@ -516,6 +578,22 @@ class TestHelidonHistogramRecords {
             assertThat(name + " percentile coordinate " + index, percentile.percentile(), is(coordinate));
             assertThat(name + " retains the observed rank at percentile " + coordinate + " of " + observations,
                        percentile.value(), is(Math.ceil(coordinate * observations) * scale));
+        }
+    }
+
+    private static void assertInitialSample(String name, HistogramSnapshot snapshot, int observations, double scale) {
+        List<Double> values = StreamSupport.stream(snapshot.percentileValues().spliterator(), false)
+                .map(ValueAtPercentile::value)
+                .toList();
+        assertThat(name + " reports all requested sample ranks", values.size(), is(RESERVOIR_CAPACITY));
+        double previous = scale;
+        for (double value : values) {
+            assertThat(name + " sampled value is positive and ranks remain ordered", value, greaterThanOrEqualTo(previous));
+            assertThat(name + " sampled value is within the submitted range", value,
+                       lessThanOrEqualTo(observations * scale));
+            assertThat(name + " sampled value corresponds to a submitted observation", value / scale,
+                       is(Math.rint(value / scale)));
+            previous = value;
         }
     }
 
