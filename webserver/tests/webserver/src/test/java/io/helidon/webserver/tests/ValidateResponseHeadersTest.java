@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
@@ -90,7 +89,10 @@ class ValidateResponseHeadersTest {
             String responseHeaderValue = response.headers().get(HeaderNames.create(headerName)).values();
             assertThat(responseHeaderValue, is(headerValue.trim()));
         } else {
-            assertThat(response.status(), not(Status.OK_200));
+            assertThat(response.status(), is(Status.INTERNAL_SERVER_ERROR_500));
+            assertThat(response.headers().get(HeaderNames.VARY).get(), is("Origin"));
+            assertThat(response.headers().get(HeaderNames.SET_COOKIE).get(), is("session=preserved"));
+            assertThat(response.headers().get(HeaderNames.create("x-preserved")).get(), is("value"));
         }
     }
 
@@ -105,7 +107,10 @@ class ValidateResponseHeadersTest {
             String responseHeaderValue = response.headers().get(HeaderNames.create(headerName)).values();
             assertThat(responseHeaderValue, is(headerValue.trim()));
         } else {
-            assertThat(response.status(), not(Status.OK_200));
+            assertThat(response.status(), is(Status.INTERNAL_SERVER_ERROR_500));
+            assertThat(response.headers().get(HeaderNames.VARY).get(), is("Origin"));
+            assertThat(response.headers().get(HeaderNames.SET_COOKIE).get(), is("session=preserved"));
+            assertThat(response.headers().get(HeaderNames.create("x-preserved")).get(), is("value"));
         }
     }
 
@@ -125,6 +130,9 @@ class ValidateResponseHeadersTest {
 
     private static void setHeader(ServerRequest request, ServerResponse response) {
         String[] header = request.content().as(String.class).split(HEADER_NAME_VALUE_DELIMETER);
+        response.header(HeaderNames.VARY, "Origin");
+        response.header(HeaderNames.SET_COOKIE, "session=preserved");
+        response.header("x-preserved", "value");
         response.headers().add(HeaderValues.create(header[0], header[1]));
     }
 

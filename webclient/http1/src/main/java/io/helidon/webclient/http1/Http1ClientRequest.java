@@ -28,6 +28,15 @@ import io.helidon.webclient.api.ClientRequest;
  */
 @Api.Stable
 public interface Http1ClientRequest extends ClientRequest<Http1ClientRequest> {
+    /**
+     * Submit the request with the provided entity.
+     * For streamed entities, an {@link io.helidon.http.media.EntityWriter} without instance-writer support can run on a
+     * helper virtual thread using the current Helidon context. The writer can prepare request headers before its first
+     * output, and this method waits for the writer to terminate, including when an early response cancels the upload.
+     *
+     * @param entity request entity
+     * @return response
+     */
     @Override
     Http1ClientResponse submit(Object entity);
 
@@ -36,6 +45,19 @@ public interface Http1ClientRequest extends ClientRequest<Http1ClientRequest> {
         return submit(BufferData.EMPTY_BYTES);
     }
 
+    /**
+     * Handle an output stream and submit this request.
+     * When negotiating {@code Expect: 100-continue}, request headers are sent before invoking the handler.
+     * An early final response or a redirect that discards the request entity can therefore bypass the handler entirely.
+     * Configure request headers before calling this method, rather than inside the handler.
+     * <p>
+     * A handler that writes no bytes can still trigger the handshake when the content length is unknown.
+     * An explicit content length of zero bypasses the handshake. A method-preserving redirect received after an upload
+     * can invoke the handler again to replay the entity.
+     *
+     * @param outputStreamConsumer handler that writes and closes the request output stream
+     * @return response
+     */
     @Override
     Http1ClientResponse outputStream(OutputStreamHandler outputStreamConsumer);
 

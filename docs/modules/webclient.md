@@ -12,12 +12,10 @@ retrieve corresponding responses in a programmatic way.
 
 Helidon WebClient provides the following features:
 
-- **Blocking approach** The WebClient uses the blocking approach to
-  synchronously process a request and its corresponding response. Both
-  `HTTP/1.1` and `HTTP/2` request and response normally run in the thread of the
-  user. HTTP/1 also offers an explicit streaming `exchange` operation with a
-  concurrent upload. Additionally, for `HTTP/2`, a virtual thread manages the
-  connection.
+- **Blocking approach** WebClient request methods execute synchronously.
+  This does not guarantee that every callback runs on the calling thread:
+  `HTTP/1.1` can use a helper virtual thread for streamed entity writers,
+  and `HTTP/2` uses a virtual thread to manage the connection.
 
 - **Builder-like setup and execution** Creates every client and request as a
   builder pattern. This improves readability and code maintenance.
@@ -380,6 +378,28 @@ ordering between upload and response completion callbacks.
 This API is available on the protocol-specific `Http1Client`. The existing
 `outputStream` API invokes its upload handler before returning a response;
 use `exchange` when uploading and reading must overlap.
+
+### Streaming Request Entities
+
+For `HTTP/1.1`, `submit(...)` can stream an entity using `InstanceWriter.write(...)`
+or an `EntityWriter` without instance-writer support. Entity writing can run on
+a helper virtual thread with the current Helidon context so the writer can
+prepare request headers before its first output. The call waits for the writer
+to terminate, including when an early response cancels the upload. Writers must
+release owned resources when output fails. Custom writers must not assume
+caller-thread affinity or propagation of arbitrary thread-local state.
+
+For `HTTP/1.1` `outputStream(...)`, configure request headers before calling
+the method, not inside its handler. When negotiating `Expect: 100-continue`,
+the client sends the headers before invoking the handler. An early final
+response or a redirect that discards the entity can bypass the handler
+entirely. A method-preserving redirect received after an upload can invoke
+the handler again to replay the entity, so account for both bypass and replay
+when the handler has side effects or consumes a one-shot source.
+
+A handler that writes no bytes can still trigger the `HTTP/1.1`
+`Expect: 100-continue` handshake when the content length is unknown. An explicit
+content length of zero bypasses that handshake.
 
 ### Protocol Used
 

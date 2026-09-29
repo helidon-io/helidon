@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -34,6 +35,7 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.DateTime;
 import io.helidon.http.Header;
+import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
@@ -359,6 +361,21 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         if (trailers != null) {
             trailers.clear();
         }
+        // Keep valid response metadata, but do not let a rejected header prevent error-response recovery.
+        var invalidHeaders = new ArrayList<HeaderName>();
+        BufferData buffer = BufferData.growing(128);
+        for (Header header : headers) {
+            try {
+                if (validateHeaders) {
+                    header.validate();
+                }
+                buffer.clear();
+                header.writeHttp1Header(buffer);
+            } catch (IllegalArgumentException _) {
+                invalidHeaders.add(header.headerName());
+            }
+        }
+        invalidHeaders.forEach(headers::remove);
         return true;
     }
 
@@ -622,6 +639,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         private boolean forcedChunked;
 
         private BufferData firstBuffer;
+        private BufferData trailerBuffer;
         private boolean closed;
         private long bytesWritten;
         private long contentLength;
@@ -760,6 +778,23 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
 
         void committing() {
             committing = headRequest;
+            if (closed || isNoEntityStatus(status.get()) || (headRequest && headResponseSent)
+                    || !(isChunked || forcedChunked)
+                    || !(request.headers().containsToken(HeaderValues.TE_TRAILERS) || headers.contains(HeaderNames.TRAILER))) {
+                return;
+            }
+            trailers.set(STREAM_RESULT_NAME, streamResult.get());
+            if (beforeTrailers != null) {
+                beforeTrailers.accept(ServerResponseTrailers.wrap(trailers));
+            }
+            if (!headRequest) {
+                // Validate and serialize before the final flush can commit any buffered response data.
+                BufferData buffer = BufferData.growing(128);
+                writeHeaders(trailers, buffer, validateHeaders);
+                buffer.write('\r');
+                buffer.write('\n');
+                trailerBuffer = buffer;
+            }
         }
 
         void commit() {
@@ -775,26 +810,20 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                 forcedChunked = false;
             }
             normalizeNoEntityHeaders(headers, usedStatus);
-            boolean sendTrailers =
-                    (isChunked || forcedChunked)
-                    && (request.headers().containsToken(HeaderValues.TE_TRAILERS)
-                                || headers.contains(HeaderNames.TRAILER));
+            boolean sendTrailers = trailerBuffer != null && (isChunked || forcedChunked);
 
             if (noEntityResponse && !headResponseSent) {
                 sendNoEntityResponse(usedStatus);
             } else if (headRequest) {
                 if (!headResponseSent) {
-                    if (sendTrailers && beforeTrailers != null) {
-                        trailers.set(STREAM_RESULT_NAME, streamResult.get());
-                        beforeTrailers.accept(ServerResponseTrailers.wrap(trailers));
-                    }
                     sendHeadResponse(true);
                 }
             } else if (firstByte) {
-                if (forcedChunked && firstBuffer != null) {
-                    // no sense in sending no data, only do this if chunked requested through a header
+                if (forcedChunked || sendTrailers) {
                     sendHeadersAndPrepare();
-                    writeChunked(firstBuffer);
+                    if (firstBuffer != null) {
+                        writeChunked(firstBuffer);
+                    }
                     terminatingChunk(sendTrailers);
                 } else {
                     sendFirstChunkOnly();
@@ -804,16 +833,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             }
 
             if (sendTrailers && !headRequest) {
-                // not optimized, trailers enabled: we need to write trailers
-                trailers.set(STREAM_RESULT_NAME, streamResult.get());
-                if (beforeTrailers != null) {
-                    beforeTrailers.accept(ServerResponseTrailers.wrap(trailers));
-                }
-                BufferData buffer = BufferData.growing(128);
-                writeHeaders(trailers, buffer, this.validateHeaders);
-                buffer.write('\r');        // "\r\n" - empty line after headers
-                buffer.write('\n');
-                writeResponse(dataWriter, buffer, "Failed to write response trailers");
+                writeResponse(dataWriter, trailerBuffer, "Failed to write response trailers");
             }
 
             responseCloseRunnable.run();
@@ -1271,8 +1291,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                 }
                 return;
             }
-            closingDelegate.committing();
             try {
+                closingDelegate.committing();
                 flush();
                 closingDelegate.commit();
             } catch (IOException | UncheckedIOException | SocketWriterException e) {
@@ -1280,6 +1300,9 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                         new ServerConnectionException("Failed to flush server output stream", e);
                 failedWrite(failure);
                 throw failure;
+            } catch (RuntimeException e) {
+                failedWrite(e);
+                throw e;
             }
         }
 

@@ -75,6 +75,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -254,7 +256,6 @@ class Http1ClientResponseImplTest {
                                                              connection.reader(),
                                                              new CompletableFuture<>(),
                                                              new AtomicReference<>(),
-                                                             true,
                                                              new Http1ConnectionListener() { },
                                                              null);
         var headers = WritableHeaders.create();
@@ -530,6 +531,7 @@ class Http1ClientResponseImplTest {
                                                                        MediaContext.create(),
                                                                        ClientUri.create(URI.create("http://localhost/test")),
                                                                        new CompletableFuture<>(),
+                                                                       serviceResponse,
                                                                        null);
         InputStream tunnelStream = response.inputStream();
 
@@ -762,7 +764,7 @@ class Http1ClientResponseImplTest {
         };
         WritableHeaders<?> headers = WritableHeaders.create();
         headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
-        TestConnection connection = new TestConnection();
+        TestConnection connection = new TestConnection(dataReader("\r\n"));
         Http1ClientResponseImpl response = response(ClientResponseHeaders.create(headers), inputStream, connection);
         ExecutorService executor = Executors.newSingleThreadExecutor();
 
@@ -789,7 +791,6 @@ class Http1ClientResponseImplTest {
                                                                            connection.reader(),
                                                                            new CompletableFuture<>(),
                                                                            new AtomicReference<>(),
-                                                                           false,
                                                                            new Http1ConnectionListener() {
                                                                            }, null);
 
@@ -804,11 +805,11 @@ class Http1ClientResponseImplTest {
         IllegalStateException closeFailure = new IllegalStateException("Connection close failed");
         TestConnection connection = new TestConnection(dataReader("2\r\nOK\r\n"), closeFailure);
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
+        WebClientServiceResponse serviceResponse = serviceResponse(Method.HEAD, Status.OK_200, contentLengthHeaders());
         InputStream inputStream = new Http1CallChainBase.ChunkedInputStream(connection,
                                                                            connection.reader(),
                                                                            whenComplete,
-                                                                           new AtomicReference<>(),
-                                                                           false,
+                                                                           new AtomicReference<>(serviceResponse),
                                                                            new Http1ConnectionListener() {
                                                                            }, null);
 
@@ -816,6 +817,365 @@ class Http1ClientResponseImplTest {
 
         assertThat(actualFailure, sameInstance(closeFailure));
         assertThat(whenComplete.isDone(), is(true));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"content-length", "close-delimited", "chunked"})
+    void zeroLengthReadDoesNotReadOrCompleteResponse(String framing) throws IOException {
+        DataReader reader = DataReader.create(() -> {
+            throw new AssertionError("Zero-length read requested network data");
+        });
+        var whenComplete = new CompletableFuture<WebClientServiceResponse>();
+        InputStream stream = responseStream(framing, new TestConnection(reader), whenComplete);
+
+        assertThat(stream.read(new byte[1], 1, 0), is(0));
+        assertThat(whenComplete.isDone(), is(false));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"content-length", "chunked"})
+    void zeroLengthReadReturnsZeroAfterEndOfResponse(String framing) throws IOException {
+        String data = framing.equals("chunked") ? "1\r\na\r\n0\r\n\r\n" : "a";
+        var whenComplete = new CompletableFuture<WebClientServiceResponse>();
+        InputStream stream = responseStream(framing, new TestConnection(dataReader(data)), whenComplete);
+
+        assertThat(new String(stream.readAllBytes(), StandardCharsets.US_ASCII), is("a"));
+        assertThat(whenComplete.isDone(), is(true));
+        assertThat(stream.read(new byte[0], 0, 0), is(0));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"content-length", "close-delimited", "chunked"})
+    void zeroLengthReadValidatesArgumentsBeforeReading(String framing) {
+        DataReader reader = DataReader.create(() -> {
+            throw new AssertionError("Invalid read requested network data");
+        });
+        InputStream stream = responseStream(framing, new TestConnection(reader), new CompletableFuture<>());
+
+        assertThrows(NullPointerException.class, () -> stream.read(null, 0, 0));
+        assertThrows(IndexOutOfBoundsException.class, () -> stream.read(new byte[1], -1, 0));
+        assertThrows(IndexOutOfBoundsException.class, () -> stream.read(new byte[1], 2, 0));
+        assertThrows(IndexOutOfBoundsException.class, () -> stream.read(new byte[1], 0, -1));
+    }
+
+    @Test
+    void rejectsFirstChunkDelimiterByteWithoutReadingAgain() {
+        AtomicInteger reads = new AtomicInteger();
+        DataReader reader = DataReader.create(() -> {
+            if (reads.getAndIncrement() == 0) {
+                return "1\r\naX".getBytes(StandardCharsets.US_ASCII);
+            }
+            throw new IllegalStateException("Unexpected network read after invalid first delimiter byte");
+        });
+        TestConnection connection = new TestConnection(reader);
+        var whenComplete = new CompletableFuture<WebClientServiceResponse>();
+        InputStream stream = responseStream("chunked", connection, whenComplete);
+
+        IllegalStateException failure = assertThrows(IllegalStateException.class, stream::read);
+
+        assertThat(failure.getMessage(), containsString("chunk data is not followed by CRLF"));
+        assertThat(reads.get(), is(1));
+        assertThat(connection.releaseCount(), is(0));
+        assertThat(connection.closeCount(), is(1));
+        assertThat(whenComplete.isDone(), is(true));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void consumesChunkedTrailersBeforeReleasingConnection(boolean advertised) {
+        TestConnection connection = new TestConnection(dataReader("2\r\nOK\r\n0\r\nX-Test: value\r\n\r\n"));
+        Http1ClientResponseImpl response = chunkedResponse(connection, advertised, Http1ClientProtocolConfig.create());
+
+        assertThat(response.entity().as(String.class), is("OK"));
+
+        assertThat(response.trailers(), hasHeader(HeaderNames.create("X-Test"), "value"));
+        assertThat(connection.reader().available(), is(0));
+        assertThat(connection.releaseCount(), is(1));
+        assertThat(connection.closeCount(), is(0));
+        response.close();
+        assertThat(connection.releaseCount(), is(1));
+    }
+
+    @Test
+    void returnsEmptyUnadvertisedTrailersBeforeReadingEntity() {
+        AtomicInteger reads = new AtomicInteger();
+        DataReader reader = DataReader.create(() -> {
+            if (reads.getAndIncrement() != 0) {
+                throw new AssertionError("Unexpected read beyond complete chunked response");
+            }
+            return "2\r\nOK\r\n0\r\nX-Test: value\r\n\r\n".getBytes(StandardCharsets.US_ASCII);
+        });
+        TestConnection connection = new TestConnection(reader);
+        Http1ClientResponseImpl response = chunkedResponse(connection, false, Http1ClientProtocolConfig.create());
+
+        assertThat(response.trailers().size(), is(0));
+        var entity = response.entity();
+        assertThat(response.trailers().size(), is(0));
+        assertThat(reads.get(), is(0));
+        assertThat(connection.releaseCount(), is(0));
+        assertThat(entity.as(String.class), is("OK"));
+
+        assertThat(response.trailers(), hasHeader(HeaderNames.create("X-Test"), "value"));
+        assertThat(reads.get(), is(1));
+        assertThat(connection.releaseCount(), is(1));
+        assertThat(connection.closeCount(), is(0));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"0\r\n\r\n", "0;extension=value\r\n\r\n"})
+    void releasesUntouchedChunkedResponseWithBufferedEmptyFraming(String framing) {
+        TestConnection connection = new TestConnection(bufferedReaderWithoutFurtherReads(framing));
+        Http1ClientResponseImpl response = chunkedResponse(connection, false, Http1ClientProtocolConfig.create());
+
+        response.close();
+
+        assertThat(connection.reader().available(), is(0));
+        assertThat(connection.releaseCount(), is(1));
+        assertThat(connection.closeCount(), is(0));
+        assertThat(response.trailers().size(), is(0));
+        response.close();
+        assertThat(connection.releaseCount(), is(1));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"0\r\n", "0\r\nX-Test: value\r\n\r\n", "0\r\n\r\nstale",
+            "1\r\nX\r\n0\r\n\r\n", "1\r\n0\r\n\r\n"})
+    void closesUntouchedChunkedResponseWhenBufferedFramingCannotBeDrained(String framing) {
+        TestConnection connection = new TestConnection(bufferedReaderWithoutFurtherReads(framing));
+        Http1ClientResponseImpl response = chunkedResponse(connection, false, Http1ClientProtocolConfig.create());
+
+        response.close();
+
+        assertThat(connection.releaseCount(), is(0));
+        assertThat(connection.closeCount(), is(1));
+    }
+
+    @Test
+    void closesPartiallyReadChunkedResponseWithBufferedFinalChunk() throws IOException {
+        TestConnection connection = new TestConnection(bufferedReaderWithoutFurtherReads("2\r\nOK\r\n0\r\n\r\n"));
+        Http1ClientResponseImpl response = chunkedResponse(connection, false, Http1ClientProtocolConfig.create());
+
+        assertThat(response.inputStream().read(), is((int) 'O'));
+        response.close();
+
+        assertThat(connection.releaseCount(), is(0));
+        assertThat(connection.closeCount(), is(1));
+    }
+
+    @Test
+    void retainsConnectionUntilCompleteUnadvertisedTrailerSectionArrives() {
+        String[] fragments = {"2\r\nOK\r\n0\r\n", "X-Test: val", "ue\r\n", "\r\n"};
+        AtomicInteger reads = new AtomicInteger();
+        var currentConnection = new AtomicReference<TestConnection>();
+        DataReader reader = DataReader.create(() -> {
+            assertThat("Connection released before complete trailers arrived",
+                       currentConnection.get().releaseCount(), is(0));
+            assertThat("Connection closed while receiving valid trailers", currentConnection.get().closeCount(), is(0));
+            int index = reads.getAndIncrement();
+            return index < fragments.length ? fragments[index].getBytes(StandardCharsets.US_ASCII) : null;
+        });
+        TestConnection connection = new TestConnection(reader);
+        currentConnection.set(connection);
+        Http1ClientResponseImpl response = chunkedResponse(connection, false, Http1ClientProtocolConfig.create());
+
+        assertThat(response.entity().as(String.class), is("OK"));
+
+        assertThat(response.trailers(), hasHeader(HeaderNames.create("X-Test"), "value"));
+        assertThat(reads.get(), is(fragments.length));
+        assertThat(connection.releaseCount(), is(1));
+        assertThat(connection.closeCount(), is(0));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void consumesTrailersWhenClosingAfterExactPayloadRead(boolean advertised) throws IOException {
+        TestConnection connection = new TestConnection(dataReader("2\r\nOK\r\n0\r\nX-Test: value\r\n\r\n"));
+        Http1ClientResponseImpl response = chunkedResponse(connection, advertised, Http1ClientProtocolConfig.create());
+
+        try (InputStream stream = response.inputStream()) {
+            byte[] bytes = new byte[2];
+            assertThat(stream.read(bytes), is(2));
+            assertThat(new String(bytes, StandardCharsets.US_ASCII), is("OK"));
+            assertThat(connection.releaseCount(), is(0));
+        }
+
+        assertThat(response.trailers(), hasHeader(HeaderNames.create("X-Test"), "value"));
+        assertThat(connection.reader().available(), is(0));
+        assertThat(connection.releaseCount(), is(1));
+        assertThat(connection.closeCount(), is(0));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void closesConnectionWhenTrailersExceedHeaderLimit(boolean advertised) {
+        TestConnection connection = new TestConnection(dataReader("2\r\nOK\r\n0\r\nX-Test: "
+                                                                        + "a".repeat(64) + "\r\n\r\n"));
+        Http1ClientResponseImpl response = chunkedResponse(connection,
+                                                           advertised,
+                                                           Http1ClientProtocolConfig.builder().maxHeadersSize(32).build());
+
+        IllegalStateException failure = assertThrows(IllegalStateException.class, () -> response.entity().as(String.class));
+        assertThat(failure.getCause().getMessage(), is("Header size exceeded"));
+        response.close();
+
+        assertThat(connection.releaseCount(), is(0));
+        assertThat(connection.closeCount(), is(1));
+    }
+
+    @Test
+    void closesConnectionWhenUnadvertisedTrailersAreIncomplete() {
+        TestConnection connection = new TestConnection(dataReader("2\r\nOK\r\n0\r\nX-Test: value\r\n"));
+        Http1ClientResponseImpl response = chunkedResponse(connection, false, Http1ClientProtocolConfig.create());
+
+        assertThrows(IllegalStateException.class, () -> response.entity().as(String.class));
+        response.close();
+
+        assertThat(connection.releaseCount(), is(0));
+        assertThat(connection.closeCount(), is(1));
+    }
+
+    @Test
+    void closesConnectionAfterUnadvertisedTrailersFollowedByData() {
+        TestConnection connection = new TestConnection(dataReader("2\r\nOK\r\n0\r\nX-Test: value\r\n\r\nstale"));
+        Http1ClientResponseImpl response = chunkedResponse(connection, false, Http1ClientProtocolConfig.create());
+
+        assertThat(response.entity().as(String.class), is("OK"));
+        assertThat(response.trailers(), hasHeader(HeaderNames.create("X-Test"), "value"));
+        response.close();
+
+        assertThat(connection.releaseCount(), is(0));
+        assertThat(connection.closeCount(), is(1));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void readsResetContentTrailersWithoutExposingEntity(boolean advertised) {
+        TestConnection connection = new TestConnection(dataReader("0\r\nX-Test: value\r\n\r\n"));
+        Http1ClientResponseImpl response = resetContentResponse(connection, advertised);
+
+        assertThat(response.entity().hasEntity(), is(false));
+        assertThat(response.trailers(), hasHeader(HeaderNames.create("X-Test"), "value"));
+        response.close();
+
+        assertThat(connection.reader().available(), is(0));
+        assertThat(connection.releaseCount(), is(1));
+        assertThat(connection.closeCount(), is(0));
+    }
+
+    @Test
+    void emptyResetContentTrailersRemainReadableAfterConnectionRelease() {
+        AtomicInteger reads = new AtomicInteger();
+        DataReader reader = DataReader.create(() -> {
+            if (reads.getAndIncrement() == 0) {
+                return "0\r\n\r\n".getBytes(StandardCharsets.US_ASCII);
+            }
+            throw new AssertionError("Trailer access read from a released connection");
+        });
+        reader.pullData();
+        TestConnection connection = new TestConnection(reader);
+        Http1ClientResponseImpl response = resetContentResponse(connection, false);
+
+        assertThat(response.entity().hasEntity(), is(false));
+        response.close();
+
+        assertThat(connection.releaseCount(), is(1));
+        assertThat(response.trailers().size(), is(0));
+        assertThat(reads.get(), is(1));
+        assertThat(connection.closeCount(), is(0));
+    }
+
+    @Test
+    void closesResetContentConnectionAfterUnadvertisedFramingFailure() {
+        TestConnection connection = new TestConnection(dataReader("1\r\n0\r\n\r\n"));
+        Http1ClientResponseImpl response = resetContentResponse(connection, false);
+
+        assertThat(response.entity().hasEntity(), is(false));
+        assertThrows(IllegalStateException.class, response::trailers);
+        response.close();
+
+        assertThat(connection.releaseCount(), is(0));
+        assertThat(connection.closeCount(), is(1));
+    }
+
+    private static Http1ClientResponseImpl resetContentResponse(TestConnection connection, boolean advertised) {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+        if (advertised) {
+            headers.add(HeaderNames.TRAILER, "X-Test");
+        }
+        return new Http1ClientResponseImpl(HttpClientConfig.builder().build(),
+                                           Http1ClientProtocolConfig.create(),
+                                           Status.RESET_CONTENT_205,
+                                           Method.GET,
+                                           ClientRequestHeaders.create(WritableHeaders.create()),
+                                           ClientResponseHeaders.create(headers),
+                                           connection,
+                                           null,
+                                           MediaContext.create(),
+                                           ClientUri.create(URI.create("http://localhost/test")),
+                                           new CompletableFuture<>(),
+                                           null,
+                                           null);
+    }
+
+    private static InputStream responseStream(String framing,
+                                              TestConnection connection,
+                                              CompletableFuture<WebClientServiceResponse> whenComplete) {
+        var listener = new Http1ConnectionListener() {
+        };
+        var response = new AtomicReference<>(serviceResponse(Method.HEAD, Status.OK_200, contentLengthHeaders()));
+        return switch (framing) {
+            case "content-length" -> new Http1CallChainBase.ContentLengthInputStream(connection.helidonSocket(),
+                                                                                     connection.reader(),
+                                                                                     whenComplete,
+                                                                                     response,
+                                                                                     1,
+                                                                                     listener, null);
+            case "close-delimited" -> new Http1CallChainBase.EverythingInputStream(connection.helidonSocket(),
+                                                                                  connection.reader(),
+                                                                                  whenComplete,
+                                                                                  response,
+                                                                                  listener, null);
+            case "chunked" -> new Http1CallChainBase.ChunkedInputStream(connection,
+                                                                       connection.reader(),
+                                                                       whenComplete,
+                                                                       response,
+                                                                       listener, null);
+            default -> throw new IllegalArgumentException("Unexpected framing: " + framing);
+        };
+    }
+
+    private static Http1ClientResponseImpl chunkedResponse(TestConnection connection,
+                                                          boolean advertised,
+                                                          Http1ClientProtocolConfig protocolConfig) {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+        if (advertised) {
+            headers.add(HeaderNames.TRAILER, "X-Test");
+        }
+        ClientResponseHeaders responseHeaders = ClientResponseHeaders.create(headers);
+        TestServiceRequest serviceRequest = new TestServiceRequest(Method.GET);
+        WebClientServiceResponse serviceResponse = Http1CallChainBase.createServiceResponse(
+                new Http1ClientImpl(null, Http1ClientConfig.builder().buildPrototype()),
+                serviceRequest,
+                connection,
+                Status.OK_200,
+                responseHeaders,
+                new CompletableFuture<>(),
+                null);
+        return new Http1ClientResponseImpl(HttpClientConfig.builder().build(),
+                                           protocolConfig,
+                                           Status.OK_200,
+                                           Method.GET,
+                                           serviceRequest.headers(),
+                                           responseHeaders,
+                                           (ClientConnection) serviceResponse.connection(),
+                                           serviceResponse.inputStream().orElseThrow(),
+                                           MediaContext.create(),
+                                           ClientUri.create(URI.create("http://localhost/test")),
+                                           new CompletableFuture<>(),
+                                           serviceResponse,
+                                           null);
     }
 
     private static InputStream decoder(boolean gzip, boolean truncated, Runnable whenSourceCloses) throws IOException {
@@ -872,6 +1232,7 @@ class Http1ClientResponseImplTest {
                                            MediaContext.create(),
                                            ClientUri.create(URI.create("http://localhost/test")),
                                            new CompletableFuture<>(),
+                                           null,
                                            null);
     }
 
@@ -882,6 +1243,19 @@ class Http1ClientResponseImplTest {
     private static DataReader dataReader(String entity) {
         AtomicReference<byte[]> bytes = new AtomicReference<>(entity.getBytes(StandardCharsets.UTF_8));
         DataReader reader = DataReader.create(() -> bytes.getAndSet(null));
+        reader.pullData();
+        return reader;
+    }
+
+    private static DataReader bufferedReaderWithoutFurtherReads(String data) {
+        var bytes = new AtomicReference<>(data.getBytes(StandardCharsets.US_ASCII));
+        DataReader reader = DataReader.create(() -> {
+            byte[] result = bytes.getAndSet(null);
+            if (result == null) {
+                throw new AssertionError("Unexpected network read while closing a response or reading consumed trailers");
+            }
+            return result;
+        });
         reader.pullData();
         return reader;
     }

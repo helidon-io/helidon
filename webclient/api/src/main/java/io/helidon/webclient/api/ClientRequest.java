@@ -407,6 +407,12 @@ public interface ClientRequest<T extends ClientRequest<T>> {
 
     /**
      * Submit an entity.
+     * For HTTP/1.1 streamed entities, entity writing can run on a helper virtual thread using the current Helidon context.
+     * This includes {@link io.helidon.http.media.InstanceWriter#write(java.io.OutputStream)} and
+     * {@link io.helidon.http.media.EntityWriter} implementations without instance-writer support.
+     * The writer can prepare request headers before its first output, and this method waits for the writer to terminate,
+     * including when an early response cancels the upload. Writers must release owned resources when output fails.
+     * Custom writers must not assume caller-thread affinity or propagation of arbitrary thread-local state.
      *
      * @param entity request entity
      * @return response
@@ -415,6 +421,7 @@ public interface ClientRequest<T extends ClientRequest<T>> {
 
     /**
      * Submit an entity and request a specific type.
+     * The entity-writing behavior described by {@link #submit(Object)} also applies.
      *
      * @param entity        request entity
      * @param requestedType type of response entity
@@ -428,6 +435,7 @@ public interface ClientRequest<T extends ClientRequest<T>> {
 
     /**
      * Submit an entity and request a specific type.
+     * The entity-writing behavior described by {@link #submit(Object)} also applies.
      *
      * @param entity        request entity
      * @param requestedType generic type of response entity
@@ -441,14 +449,23 @@ public interface ClientRequest<T extends ClientRequest<T>> {
 
     /**
      * Handle output stream and submit the request.
+     * For HTTP/1.1, request headers are sent before invoking the handler when negotiating {@code Expect: 100-continue}.
+     * An early final response or a redirect that discards the request entity can therefore bypass the handler entirely.
+     * Configure request headers before calling this method, rather than inside the handler.
+     * <p>
+     * A handler that writes no bytes can still trigger the HTTP/1.1 handshake when the content length is unknown.
+     * An explicit content length of zero bypasses the handshake. A method-preserving redirect received after an upload
+     * can invoke the handler again to replay the entity. Account for both bypass and replay when the handler has side
+     * effects or consumes a one-shot source.
      *
-     * @param outputStreamConsumer output stream to write request entity
+     * @param outputStreamConsumer handler that writes and closes the request output stream
      * @return response
      */
     HttpClientResponse outputStream(OutputStreamHandler outputStreamConsumer);
 
     /**
      * Handle output stream and request a specific type.
+     * The handler behavior described by {@link #outputStream(OutputStreamHandler)} also applies.
      *
      * @param outputStreamConsumer output stream consumer to write request entity
      * @param requestedType        type of response entity

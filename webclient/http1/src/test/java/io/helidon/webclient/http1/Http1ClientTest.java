@@ -349,6 +349,7 @@ class Http1ClientTest {
                                                                    MediaContext.create(),
                                                                    ClientUri.create(URI.create("http://localhost/test")),
                                                                    new CompletableFuture<>(),
+                                                                   null,
                                                                    null);
 
         try (response) {
@@ -1244,6 +1245,47 @@ class Http1ClientTest {
             assertThat(response.entity().as(String.class), is("OK"));
         }
         assertThat(connection.closeCount(), is(1));
+        assertThat(connection.releaseCount(), is(0));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testDecoderConstructionFailureCompletesExceptionally(boolean readsEntity) {
+        AtomicReference<CompletionStage<WebClientServiceResponse>> completion = new AtomicReference<>();
+        IllegalStateException decoderFailure = new IllegalStateException("Cannot initialize response decoder");
+        Http1Client client = Http1Client.builder()
+                .contentEncoding(ContentEncodingContext.builder()
+                                         .addContentEncoding(new TestContentEncoding("broken", network -> {
+                                             if (readsEntity) {
+                                                 try {
+                                                     network.readAllBytes();
+                                                 } catch (IOException e) {
+                                                     throw new UncheckedIOException(e);
+                                                 }
+                                             }
+                                             throw decoderFailure;
+                                         }))
+                                         .build())
+                .addService((chain, request) -> {
+                    completion.set(request.whenComplete());
+                    return chain.proceed(request);
+                })
+                .build();
+        String rawResponse = "HTTP/1.1 200 OK\r\n"
+                + "Content-Length: 2\r\n"
+                + "Content-Encoding: broken\r\n\r\nOK";
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(rawResponse);
+
+        IllegalStateException requestFailure = assertThrows(IllegalStateException.class,
+                                                             () -> client.get("http://localhost:" + dummyPort + "/test")
+                                                                     .connection(connection)
+                                                                     .request());
+        var future = completion.get().toCompletableFuture();
+        assertThat("Request completion after decoder construction fails", future.isCompletedExceptionally(), is(true));
+        CompletionException completionFailure = assertThrows(CompletionException.class, future::join);
+
+        assertThat(requestFailure, sameInstance(decoderFailure));
+        assertThat(completionFailure.getCause(), sameInstance(decoderFailure));
         assertThat(connection.releaseCount(), is(0));
     }
 

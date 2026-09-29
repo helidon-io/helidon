@@ -52,9 +52,7 @@ class Http1CallEntityChain extends Http1CallChainBase {
                                               DataReader reader,
                                               BufferData writeBuffer) {
 
-        if (!originalRequest().outputStreamRedirect()) {
-            headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, entity.length));
-        }
+        headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, entity.length));
 
         writeHeaders(connection,
                      headers,

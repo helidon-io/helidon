@@ -668,7 +668,7 @@ class Http1TransportObservationTest {
             Http1Client client = client(server, observer);
             try (var response = client.get().request()) {
                 assertThat(response.entity().as(String.class), is("body"));
-                // Entity consumption validates trailers before releasing the connection.
+                // Entity consumption completes the wire trailer section before releasing the connection.
                 assertThat(observer.onlyConnection().outcomes(), is(List.of(StreamOutcome.COMPLETED)));
                 assertThat(response.trailers().get(HeaderNames.create("X-Result")).get(), is("done"));
                 assertThat(observer.onlyConnection().outcomes(), is(List.of(StreamOutcome.COMPLETED)));
