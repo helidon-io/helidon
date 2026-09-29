@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -46,6 +47,8 @@ import org.w3c.dom.Node;
 
 import static io.helidon.http.Method.GET;
 import static io.helidon.http.Method.POST;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 @Testcontainers(disabledWithoutDocker = true)
 class H2SpecIT {
@@ -68,7 +71,7 @@ class H2SpecIT {
         }
     }
 
-    private static Stream<Arguments> runH2Spec() {
+    private static Stream<Arguments> runH2Spec() throws Exception {
 
         HttpRouting.Builder router = HttpRouting.builder();
         router.route(Http2Route.route(GET, "/", (req, res) -> {
@@ -113,6 +116,12 @@ class H2SpecIT {
                     .withStartupAttempts(1)
                     .start();
 
+            // The completion log precedes report generation. Wait for exit, including a failing suite's nonzero exit,
+            // so the report is fully written before copying it and reporting individual protocol failures.
+            try (var completion = cont.getDockerClient().waitContainerCmd(cont.getContainerId()).start()) {
+                assertThat("h2spec completed writing its JUnit report",
+                           completion.awaitCompletion(30, TimeUnit.SECONDS), is(true));
+            }
             cont.copyFileFromContainer("/junit-report.xml", "./target/h2spec-report.xml");
             return cont.copyFileFromContainer("/junit-report.xml", H2SpecIT::parseReport);
         } finally {
