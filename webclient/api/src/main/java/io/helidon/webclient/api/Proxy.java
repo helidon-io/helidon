@@ -35,6 +35,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -322,20 +323,8 @@ public class Proxy {
     public Socket tcpSocket(WebClient webClient,
                             ResolvedClientTarget target,
                             SocketOptions socketOptions) {
-        Objects.requireNonNull(target, "target");
-        Objects.requireNonNull(socketOptions, "socketOptions");
-        ProxyRoute route = target.proxyRoute();
-        if (!route.belongsTo(this)) {
-            throw new IllegalArgumentException("Resolved target belongs to a different proxy policy");
-        }
-        if (route.direct()) {
-            return connect(new Socket(), target.localAddress(), target.peerAddress(), socketOptions);
-        }
-        if (route.systemProxyType() != null) {
-            Socket socket = new Socket(new java.net.Proxy(route.systemProxyType(), target.peerAddress()));
-            return connect(socket, target.localAddress(), target.destinationAddress(), socketOptions);
-        }
-        return connectToProxy(webClient, target, this);
+        return tcpSocket(webClient, target, socketOptions, _ -> {
+        });
     }
 
     /**
@@ -398,6 +387,32 @@ public class Proxy {
     @Api.Internal
     public ProxyRoute effectiveRoute(String scheme, String host, int port, boolean tls) {
         return effectiveRoute(scheme, host, port, tls, null, null);
+    }
+
+    Socket tcpSocket(WebClient webClient,
+                     ResolvedClientTarget target,
+                     SocketOptions socketOptions,
+                     Consumer<Socket> socketConnected) {
+        Objects.requireNonNull(target, "target");
+        Objects.requireNonNull(socketOptions, "socketOptions");
+        Objects.requireNonNull(socketConnected, "socketConnected");
+        ProxyRoute route = target.proxyRoute();
+        if (!route.belongsTo(this)) {
+            throw new IllegalArgumentException("Resolved target belongs to a different proxy policy");
+        }
+        Socket socket;
+        if (route.direct()) {
+            socket = connect(new Socket(), target.localAddress(), target.peerAddress(), socketOptions);
+        } else if (route.systemProxyType() != null) {
+            socket = connect(new Socket(new java.net.Proxy(route.systemProxyType(), target.peerAddress())),
+                             target.localAddress(),
+                             target.destinationAddress(),
+                             socketOptions);
+        } else {
+            return connectToProxy(webClient, target, this, socketConnected);
+        }
+        socketConnected.accept(socket);
+        return socket;
     }
 
     ProxyRoute effectiveRoute(String scheme,
@@ -678,7 +693,8 @@ public class Proxy {
 
     private static Socket connectToProxy(WebClient webClient,
                                          ResolvedClientTarget target,
-                                         Proxy proxy) {
+                                         Proxy proxy,
+                                         Consumer<Socket> socketConnected) {
         WebClientConfig clientConfig = webClient.prototype();
         InetSocketAddress configuredProxy = target.proxyRoute().proxyAddress().orElseThrow();
         ConnectionKey proxyConnectionKey = ConnectionKey.create("http",
@@ -715,6 +731,8 @@ public class Proxy {
                                                                     it -> {
                                                                     })
                 .connect();
+        // Transfer physical socket ownership before the CONNECT exchange can fail.
+        socketConnected.accept(connection.socket());
         if (target.proxyRoute().kind() == ProxyRoute.Kind.HTTP_TUNNEL) {
             HttpClientRequest request = webClient.method(Method.CONNECT)
                     .followRedirects(false)

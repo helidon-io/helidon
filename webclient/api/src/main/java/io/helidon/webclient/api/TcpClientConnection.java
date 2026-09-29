@@ -422,16 +422,11 @@ public class TcpClientConnection implements ClientConnection, ConnectionObservat
         /*
         Obtain target socket through proxy (if enabled), or connect to target socket
          */
-        this.socket = connectionKey.proxy()
+        connectionKey.proxy()
                 .tcpSocket(webClient,
                            target,
-                           webClient.prototype().socketOptions());
-
-        this.channelId = createChannelId(socket);
-
-        if (transportObservation != null) {
-            transportObservation.opened(HttpTransportObserver.TRANSPORT_TCP, tls.enabled() ? Handshake.TLS : Handshake.NONE);
-        }
+                           webClient.prototype().socketOptions(),
+                           this::socketConnected);
 
         if (LOGGER.isLoggable(DEBUG)) {
             LOGGER.log(DEBUG, String.format("[client %s] client connected %s:%d %s",
@@ -504,6 +499,15 @@ public class TcpClientConnection implements ClientConnection, ConnectionObservat
         this.writer = new BufferedDataWriter(helidonSocket, writeBufferSize);
 
         return this;
+    }
+
+    private void socketConnected(Socket socket) {
+        this.socket = socket;
+        this.channelId = createChannelId(socket);
+        if (transportObservation != null) {
+            transportObservation.opened(HttpTransportObserver.TRANSPORT_TCP,
+                                        connectionKey.tls().enabled() ? Handshake.TLS : Handshake.NONE);
+        }
     }
 
     static class BufferedDataWriter implements DataWriter {

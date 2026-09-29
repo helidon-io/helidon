@@ -51,6 +51,7 @@ import io.helidon.http.HttpTransportObserver.StreamOutcome;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpTransportObserverSupport.ObserverLifecycle;
 import io.helidon.webclient.api.HttpTransportObserverSupport.ObserverProvider;
+import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
@@ -65,6 +66,90 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Timeout(20)
 class Http1TransportObservationTest {
+    @Test
+    void rejectedProxyConnectObservesThePhysicalConnectionWithoutAnApplicationStream() throws Exception {
+        var observer = new RecordingProvider();
+        var openedBeforeResponse = new AtomicInteger(-1);
+        try (var proxy = new RawServer(1, socket -> {
+            assertThat(readHead(socket), containsString("CONNECT target.invalid:8080 HTTP/1.1"));
+            openedBeforeResponse.set(observer.connections.size());
+            write(socket, "HTTP/1.1 407 Proxy Authentication Required\r\nContent-Length: 0\r\n\r\n");
+            assertThat(socket.getInputStream().read(), is(-1));
+        })) {
+            Http1Client client = proxyClient(proxy, observer);
+            try {
+                var failure = assertThrows(IllegalStateException.class, () -> client.get().request());
+                assertThat(failure.getMessage(), containsString("407"));
+            } finally {
+                client.closeResourceAsync().toCompletableFuture().get(10, TimeUnit.SECONDS);
+            }
+            proxy.await();
+        }
+        assertThat("Physical connection is observed before the CONNECT response", openedBeforeResponse.get(), is(1));
+        var connection = observer.onlyConnection();
+        assertThat("CONNECT does not create an application stream", connection.streams.size(), is(0));
+        assertThat("Rejected CONNECT closes the physical connection as an error", connection.outcome,
+                   is(ConnectionOutcome.ERROR));
+        connection.assertClosed();
+    }
+
+    @Test
+    void proxyEofDuringConnectClosesThePhysicalObservationAsAnError() throws Exception {
+        var observer = new RecordingProvider();
+        var openedBeforeEof = new AtomicInteger(-1);
+        try (var proxy = new RawServer(1, socket -> {
+            assertThat(readHead(socket), containsString("CONNECT target.invalid:8080 HTTP/1.1"));
+            openedBeforeEof.set(observer.connections.size());
+        })) {
+            Http1Client client = proxyClient(proxy, observer);
+            try {
+                assertThrows(RuntimeException.class, () -> client.get().request());
+            } finally {
+                client.closeResourceAsync().toCompletableFuture().get(10, TimeUnit.SECONDS);
+            }
+            proxy.await();
+        }
+        assertThat("Physical connection is observed before EOF during CONNECT", openedBeforeEof.get(), is(1));
+        var connection = observer.onlyConnection();
+        assertThat("CONNECT does not create an application stream", connection.streams.size(), is(0));
+        assertThat("EOF during CONNECT closes the physical connection as an error", connection.outcome,
+                   is(ConnectionOutcome.ERROR));
+        connection.assertClosed();
+    }
+
+    @Test
+    void successfulProxyConnectHandsOffOnePhysicalObservationToTheApplicationExchange() throws Exception {
+        var observer = new RecordingProvider();
+        var openedBeforeResponse = new AtomicInteger(-1);
+        var streamsBeforeResponse = new AtomicInteger(-1);
+        try (var proxy = new RawServer(1, socket -> {
+            assertThat(readHead(socket), containsString("CONNECT target.invalid:8080 HTTP/1.1"));
+            openedBeforeResponse.set(observer.connections.size());
+            streamsBeforeResponse.set(observer.connections.stream().mapToInt(connection -> connection.streams.size()).sum());
+            write(socket, "HTTP/1.1 200 Connection Established\r\n\r\n");
+            assertThat(readHead(socket), containsString("GET / HTTP/1.1"));
+            write(socket, "HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\nbody");
+            assertThat(socket.getInputStream().read(), is(-1));
+        })) {
+            Http1Client client = proxyClient(proxy, observer);
+            try {
+                consume(client, 200);
+                assertThat("Successful CONNECT retains the physical connection", observer.onlyConnection().closes.get(), is(0));
+            } finally {
+                client.closeResourceAsync().toCompletableFuture().get(10, TimeUnit.SECONDS);
+            }
+            proxy.await();
+        }
+        assertThat("Physical connection is observed before the CONNECT response", openedBeforeResponse.get(), is(1));
+        assertThat("CONNECT does not create an application stream", streamsBeforeResponse.get(), is(0));
+        var connection = observer.onlyConnection();
+        assertThat("Only the tunneled application exchange is observed", connection.outcomes(),
+                   is(List.of(StreamOutcome.COMPLETED)));
+        assertThat(connection.events, is(List.of("protocol:http/1.1", "stream:open", "stream:COMPLETED",
+                                                 "connection:LOCAL_CLOSE")));
+        connection.assertClosed();
+    }
+
     @Test
     void firstTerminalOutcomeSurvivesRepeatedCompletionAndLateFailure() throws Exception {
         for (StreamOutcome first : List.of(StreamOutcome.COMPLETED, StreamOutcome.CANCELLED, StreamOutcome.ERROR)) {
@@ -412,6 +497,21 @@ class Http1TransportObservationTest {
     private static Http1Client client(RawServer server, RecordingProvider provider) {
         return Http1Client.builder()
                 .baseUri("http://localhost:" + server.port())
+                .readTimeout(Duration.ofSeconds(5))
+                .shareConnectionCache(true)
+                .addService(provider)
+                .build();
+    }
+
+    private static Http1Client proxyClient(RawServer proxy, RecordingProvider provider) {
+        return Http1Client.builder()
+                .baseUri("http://target.invalid:8080")
+                .proxy(Proxy.builder()
+                               .type(Proxy.ProxyType.HTTP)
+                               .host("localhost")
+                               .port(proxy.port())
+                               .forceHttpConnect(true)
+                               .build())
                 .readTimeout(Duration.ofSeconds(5))
                 .shareConnectionCache(true)
                 .addService(provider)
