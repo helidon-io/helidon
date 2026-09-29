@@ -203,6 +203,18 @@ given its *higher* weight of `Interceptor.USER + 100`.
 > mechanisms, it is recommended to use the `intercept` method on a `GrpcRouting`
 > builder, as shown above, to ensure correct ordering based on weights.
 
+### Deadlines
+
+The server reads the client's `grpc-timeout` header and makes the deadline
+available through `io.grpc.Context.current().getDeadline()` in server
+interceptors and service callbacks, including streaming callbacks. Calls
+without a timeout have no deadline.
+
+When the deadline expires, the server cancels the call's gRPC context and
+returns `DEADLINE_EXCEEDED`. Service code should observe context cancellation
+and stop any work it owns. An outbound Helidon gRPC call created within the
+handler inherits the remaining context deadline; see [Client Deadlines](client.md#deadlines).
+
 ### Metrics
 
 Helidon supports a few metrics that are specific to gRPC and are based on those

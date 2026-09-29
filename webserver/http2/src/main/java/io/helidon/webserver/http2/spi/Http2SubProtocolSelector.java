@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -74,6 +74,18 @@ public interface Http2SubProtocolSelector {
          * HTTP/2 stream thread.
          */
         void init();
+
+        /**
+         * Release resources when the stream handler exits or its connection closes, including after normal completion.
+         * Called at most once for this stream, on either the HTTP/2 connection thread or the stream thread.
+         * This may happen before or concurrently with {@link #init()} or other callbacks.
+         * Implementations must tolerate an already completed or cancelled operation and must not block the calling thread
+         * or write further frames.
+         *
+         * The default implementation does nothing.
+         */
+        default void close() {
+        }
 
         /**
          * Current stream state.
