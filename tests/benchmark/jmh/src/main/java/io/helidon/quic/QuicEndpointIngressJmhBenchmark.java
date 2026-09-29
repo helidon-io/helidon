@@ -2429,7 +2429,7 @@ public class QuicEndpointIngressJmhBenchmark {
                                                        maxBufferedHigh,
                                                        maxBufferedLow,
                                                        true,
-                                                       QuicRuntimeConfig.DEFAULT_DATAGRAM_SIZE),
+                                                       defaults.endpoint().defaultDatagramSize()),
                         defaults.recovery(),
                         defaults.transportParameters(),
                         defaults.confidentialityLimits());

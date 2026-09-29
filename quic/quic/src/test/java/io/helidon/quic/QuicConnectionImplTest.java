@@ -56,6 +56,7 @@ import javax.net.ssl.SSLSession;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.SocketContext;
+import io.helidon.quic.QuicConnectionImpl.ProtectionRecord;
 import io.helidon.quic.QuicEndpoint.QuicDatagram;
 import io.helidon.quic.QuicTLSEngine.HandshakeState;
 import io.helidon.quic.QuicTLSEngine.KeySpace;
@@ -856,6 +857,49 @@ class QuicConnectionImplTest {
 
             assertThat(connection.maxDatagramSize(), is(expectedSize));
             assertThat(connection.congestionController().maxDatagramSize(), is((long) expectedSize));
+        }
+    }
+
+    @Test
+    void preservesReservedIpv6DatagramAcrossIpv4Migration() throws Exception {
+        QuicConfig config = QuicConfig.builder().sendDatagramSize(65_527).buildPrototype();
+        FakeQuicTLSEngine engine = new FakeQuicTLSEngine(EnumSet.of(KeySpace.ONE_RTT));
+        try (TestQuicInstance instance = new TestQuicInstance(quicTlsContext(engine), false, config)) {
+            InetSocketAddress initialPeer = new InetSocketAddress(InetAddress.getByName("::1"), 4433);
+            TestQuicConnection connection = new TestQuicConnection(QuicVersion.QUIC_V1,
+                                                                 instance,
+                                                                 QuicRuntimeConfig.create(config),
+                                                                 initialPeer) {
+                @Override
+                public boolean isClientConnection() {
+                    return false;
+                }
+            };
+            connection.seedPeerConnectionId(PEER_CONNECTION_ID);
+            QuicTransportParameters peerParameters = QuicTransportParameters.create();
+            peerParameters.intParameter(ParameterId.max_udp_payload_size, 65_527);
+            connection.installPeerTransportParameters(peerParameters);
+            QuicPathManager paths = connection.pathManager();
+            paths.addressValidated(initialPeer);
+            QuicPathManager.SendPermit permit = paths.reserve(65_527).orElseThrow();
+            try {
+                assertThat(permit.size(), is(65_527));
+                QuicPacket packet = mock(QuicPacket.class);
+                when(packet.size()).thenReturn(65_527);
+                InetSocketAddress rebound = new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 4434);
+                QuicPathManager.ReceiveResult migration = paths.authenticated(paths.receive(rebound, 1200), 1, true, 100);
+                paths.pathChangeCompleted(migration.generation());
+                assertThat(connection.maxDatagramSize(), is(65_507));
+
+                ProtectionRecord record = ProtectionRecord.single(packet,
+                                                                   permit.destination(),
+                                                                   permit,
+                                                                   connection::allocateDatagramForEncryption);
+                assertThat(record.datagram().capacity(), is(65_527));
+                assertThat(record.destination(), is(initialPeer));
+            } finally {
+                permit.release();
+            }
         }
     }
 
