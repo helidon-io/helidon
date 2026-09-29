@@ -1280,9 +1280,6 @@ Annotations on endpoint methods:
 
 - [`io.helidon.websocket.WebSocket.OnMessage`][io-helidon-webso-2] - receives
   either a binary or a text message
-- [`io.helidon.websocket.WebSocket.OnHttpUpgrade`][io-helidon-webso-3] - invoked
-  during HTTP upgrade, the method may return `Headers` to be sent during the
-  upgrade response
 - [`io.helidon.websocket.WebSocket.OnOpen`][io-helidon-webso-4] - invoked when
   the WebSocket connection is established (after upgrade)
 - [`io.helidon.websocket.WebSocket.OnClose`][io-helidon-webso-5] - invoked when

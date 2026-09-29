@@ -628,7 +628,8 @@ with the generated application binding to activate services with a run level and
 
 `@WebSocketServer.Endpoint` marks a server endpoint, with `@Http.Path` for its path and `@WebSocketServer.Listener` for
 listener selection. `@WebSocketClient.Endpoint` marks a client endpoint class. Both use callbacks in
-`io.helidon.websocket.WebSocket`: `@OnMessage`, `@OnOpen`, `@OnClose`, `@OnError`, and `@OnHttpUpgrade`.
+`io.helidon.websocket.WebSocket`: `@OnMessage`, `@OnOpen`, `@OnClose`, and `@OnError`.
+Server endpoints also support `@OnHttpUpgrade`.
 
 Callback parameters expose the session, message, close status, or error, as appropriate. `@Http.PathParam` supplies typed
 path parameters. Message handlers can receive text or binary messages, fragments with a trailing `boolean` indicator,
