@@ -219,7 +219,7 @@ class TestHelidonHistogramRecords {
     }
 
     @ParameterizedTest
-    @CsvSource({"512, 1", "512, 4", "4095, 1", "4095, 4", "4096, 1", "4096, 4"})
+    @CsvSource({"512, 1", "512, 4", "512, 8", "4095, 1", "4095, 4", "4096, 1", "4096, 4", "4096, 8"})
     void percentilesRetainEveryObservationUntilReservoirCapacity(int observations, int writers) throws Exception {
         preparePercentileHistograms(fullSamplePercentiles());
         var ready = new CountDownLatch(writers);
@@ -265,7 +265,7 @@ class TestHelidonHistogramRecords {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {1, 4})
+    @ValueSource(ints = {1, 4, 8})
     void concurrentSnapshotsDuringInitialFillContainOnlyObservedValues(int writers) throws Exception {
         preparePercentileHistograms(fullSamplePercentiles());
         summary.record(2);
@@ -327,7 +327,7 @@ class TestHelidonHistogramRecords {
     }
 
     @ParameterizedTest(name = "{0} observations, {1} writers")
-    @CsvSource({"4097, 1", "8192, 1", "65536, 1", "4099, 4"})
+    @CsvSource({"4097, 1", "8192, 1", "65536, 1", "4099, 4", "4103, 8"})
     void crossingReservoirCapacityRetainsAFullDistinctSample(int observations, int writers) throws Exception {
         preparePercentileHistograms(fullSamplePercentiles());
         for (int amount = 1; amount < RESERVOIR_CAPACITY; amount++) {
