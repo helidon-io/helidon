@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -32,6 +33,7 @@ import io.helidon.json.JsonObject;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionSummary;
+import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.Timer;
@@ -39,7 +41,9 @@ import io.helidon.metrics.providers.helidon.HelidonMetricsFactory;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 
 import static io.helidon.metrics.publishers.otlp.OtlpTestSupport.attributes;
 import static io.helidon.metrics.publishers.otlp.OtlpTestSupport.collect;
@@ -57,6 +61,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TestOtlpEncoder {
@@ -120,6 +125,53 @@ class TestOtlpEncoder {
                 assertThat("Integer oneof excludes asDouble", point.containsKey("asDouble"), is(false));
             });
         }
+    }
+
+    @TestFactory
+    List<DynamicTest> normalizesBaseUnitsWithoutChangingObservations() {
+        List<DynamicTest> tests = new ArrayList<>();
+        for (var mapping : List.of(Map.entry(Meter.BaseUnits.NONE, ""),
+                                   Map.entry(Meter.BaseUnits.BITS, "bit"),
+                                   Map.entry(Meter.BaseUnits.KILOBITS, "kbit"),
+                                   Map.entry(Meter.BaseUnits.MEGABITS, "Mbit"),
+                                   Map.entry(Meter.BaseUnits.GIGABITS, "Gbit"),
+                                   Map.entry(Meter.BaseUnits.KIBIBITS, "Kibit"),
+                                   Map.entry(Meter.BaseUnits.MEBIBITS, "Mibit"),
+                                   Map.entry(Meter.BaseUnits.GIBIBITS, "Gibit"),
+                                   Map.entry(Meter.BaseUnits.BYTES, "By"),
+                                   Map.entry(Meter.BaseUnits.KILOBYTES, "kBy"),
+                                   Map.entry(Meter.BaseUnits.MEGABYTES, "MBy"),
+                                   Map.entry(Meter.BaseUnits.GIGABYTES, "GBy"),
+                                   Map.entry(Meter.BaseUnits.NANOSECONDS, "ns"),
+                                   Map.entry(Meter.BaseUnits.MICROSECONDS, "us"),
+                                   Map.entry(Meter.BaseUnits.MILLISECONDS, "ms"),
+                                   Map.entry(Meter.BaseUnits.SECONDS, "s"),
+                                   Map.entry(Meter.BaseUnits.MINUTES, "min"),
+                                   Map.entry(Meter.BaseUnits.HOURS, "h"),
+                                   Map.entry(Meter.BaseUnits.DAYS, "d"),
+                                   Map.entry(Meter.BaseUnits.PERCENT, "%"),
+                                   Map.entry(Meter.BaseUnits.PER_SECOND, "1/s"),
+                                   Map.entry("", ""),
+                                   Map.entry("By", "By"),
+                                   Map.entry("ms", "ms"),
+                                   Map.entry("{request}", "{request}"),
+                                   Map.entry("widgets", "widgets"))) {
+            tests.add(DynamicTest.dynamicTest("'" + mapping.getKey() + "' exports as '" + mapping.getValue() + "'",
+                                             () -> assertNormalizedUnit(Optional.of(mapping.getKey()),
+                                                                        mapping.getValue())));
+        }
+        tests.add(DynamicTest.dynamicTest("Absent base unit stays empty",
+                                         () -> assertNormalizedUnit(Optional.empty(), "")));
+        return tests;
+    }
+
+    @TestFactory
+    List<DynamicTest> groupsEquivalentNormalizedUnits() {
+        return List.of(DynamicTest.dynamicTest("bytes and By share one metric",
+                                              () -> assertEquivalentUnits(Meter.BaseUnits.BYTES,
+                                                                         Optional.of("By"), "By")),
+                       DynamicTest.dynamicTest("NONE and absent unit share one metric",
+                                              () -> assertEquivalentUnits(Meter.BaseUnits.NONE, Optional.empty(), "")));
     }
 
     @Test
@@ -377,6 +429,87 @@ class TestOtlpEncoder {
         assertThat(counts.stream().mapToLong(Long::longValue).sum(), is(longValue(point, "count")));
         if (longValue(point, "count") == 0) {
             assertThat(point.doubleValue("sum").orElseThrow(), is(0D));
+        }
+    }
+
+    private void assertNormalizedUnit(Optional<String> baseUnit, String expectedUnit) {
+        MeterRegistry unitRegistry = factory.createMeterRegistry(clock, metricsConfig);
+        var counter = factory.counterBuilder("unit.counter");
+        var functionalCounter = factory.functionalCounterBuilder("unit.functional",
+                                                                  new AtomicLong(11), AtomicLong::get);
+        var gauge = factory.gaugeBuilder("unit.gauge", () -> 3.25);
+        var summary = factory.distributionSummaryBuilder("unit.summary",
+                factory.distributionStatisticsConfigBuilder().buckets(1.25, 3));
+        baseUnit.ifPresent(unit -> {
+            counter.baseUnit(unit);
+            functionalCounter.baseUnit(unit);
+            gauge.baseUnit(unit);
+            summary.baseUnit(unit);
+        });
+        unitRegistry.getOrCreate(counter).increment(7);
+        unitRegistry.getOrCreate(functionalCounter);
+        unitRegistry.getOrCreate(gauge);
+        DistributionSummary recordedSummary = unitRegistry.getOrCreate(summary);
+        recordedSummary.record(1.25);
+        recordedSummary.record(3);
+        recordedSummary.record(4.5);
+
+        try (var encoder = new OtlpEncoder(unitRegistry, metricsConfig, Map.of())) {
+            JsonObject request = collect(encoder);
+            JsonObject summaryPoint = dataPoints(metric(request, "unit.summary"), "histogram").getFirst();
+            assertAll(() -> assertThat("Every meter kind exports the normalized unit",
+                                       metrics(request).stream().collect(Collectors.toMap(
+                                               item -> item.stringValue("name").orElseThrow(),
+                                               item -> item.stringValue("unit").orElse(""))),
+                                       is(Map.of("unit.counter", expectedUnit,
+                                                 "unit.functional", expectedUnit,
+                                                 "unit.gauge", expectedUnit,
+                                                 "unit.summary", expectedUnit))),
+                      () -> assertThat("Counter value is not rescaled",
+                                       longValue(dataPoints(metric(request, "unit.counter"), "sum").getFirst(), "asInt"),
+                                       is(7L)),
+                      () -> assertThat("Functional counter value is not rescaled",
+                                       longValue(dataPoints(metric(request, "unit.functional"), "sum").getFirst(),
+                                                 "asInt"),
+                                       is(11L)),
+                      () -> assertThat("Fractional gauge value is not rescaled",
+                                       dataPoints(metric(request, "unit.gauge"), "gauge").getFirst()
+                                               .doubleValue("asDouble").orElseThrow(), is(3.25)),
+                      () -> assertThat("Histogram observation count", longValue(summaryPoint, "count"), is(3L)),
+                      () -> assertThat("Histogram sum is not rescaled",
+                                       summaryPoint.doubleValue("sum").orElseThrow(), is(8.75)),
+                      () -> assertThat("Histogram maximum is not rescaled",
+                                       summaryPoint.doubleValue("max").orElseThrow(), is(4.5)),
+                      () -> assertThat("Histogram boundaries are not rescaled",
+                                       doubleValues(summaryPoint, "explicitBounds"), contains(1.25, 3D)),
+                      () -> assertThat("Histogram populations and overflow are unchanged",
+                                       longValues(summaryPoint, "bucketCounts"), contains(1L, 1L, 1L)));
+        }
+    }
+
+    private void assertEquivalentUnits(String firstUnit, Optional<String> secondUnit, String expectedUnit) {
+        MeterRegistry unitRegistry = factory.createMeterRegistry(clock, metricsConfig);
+        unitRegistry.getOrCreate(factory.counterBuilder("equivalent.units")
+                                        .baseUnit(firstUnit)
+                                        .addTag(factory.tagCreate("kind", "counter")))
+                .increment(7);
+        var functionalCounter = factory.functionalCounterBuilder("equivalent.units",
+                                                                  new AtomicLong(11), AtomicLong::get)
+                .addTag(factory.tagCreate("kind", "functional"));
+        secondUnit.ifPresent(functionalCounter::baseUnit);
+        unitRegistry.getOrCreate(functionalCounter);
+
+        try (var encoder = new OtlpEncoder(unitRegistry, metricsConfig, Map.of())) {
+            JsonObject request = collect(encoder);
+            assertThat("Equivalent unit spellings share one OTLP metric identity", metrics(request).size(), is(1));
+            JsonObject metric = metric(request, "equivalent.units");
+            assertThat("Grouped metric uses the normalized unit", metric.stringValue("unit").orElse(""),
+                       is(expectedUnit));
+            List<JsonObject> points = dataPoints(metric, "sum");
+            assertThat("Both tagged observations are retained", points.size(), is(2));
+            assertThat("Grouping preserves the tags and values", points.stream().collect(Collectors.toMap(
+                    point -> attributes(point).get("kind"), point -> longValue(point, "asInt"))),
+                       is(Map.of("counter", 7L, "functional", 11L)));
         }
     }
 
