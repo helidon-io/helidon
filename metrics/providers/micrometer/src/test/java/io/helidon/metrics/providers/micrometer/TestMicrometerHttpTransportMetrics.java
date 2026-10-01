@@ -45,6 +45,7 @@ import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.service.registry.Services;
 
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.distribution.ValueAtPercentile;
 import org.junit.jupiter.api.BeforeAll;
@@ -55,6 +56,7 @@ import static io.helidon.http.HttpTransportObserver.Direction.BIDIRECTIONAL;
 import static io.helidon.http.HttpTransportObserver.Handshake.NONE;
 import static io.helidon.http.HttpTransportObserver.Initiator.REMOTE;
 import static io.helidon.http.HttpTransportObserver.PROTOCOL_HTTP_1_1;
+import static io.helidon.http.HttpTransportObserver.PROTOCOL_HTTP_2;
 import static io.helidon.http.HttpTransportObserver.Role.SERVER;
 import static io.helidon.http.HttpTransportObserver.StreamOutcome.COMPLETED;
 import static io.helidon.http.HttpTransportObserver.TRANSPORT_TCP;
@@ -154,6 +156,75 @@ class TestMicrometerHttpTransportMetrics {
             awaitCompletion(first);
             awaitCompletion(second);
             owningRegistry.close();
+        }
+    }
+
+    @Test
+    void tagRejectedWrapperDoesNotContributeWhenOpenedFirst() throws Exception {
+        assertTagFilteredWrappers(true);
+    }
+
+    @Test
+    void tagRejectedWrapperDoesNotContributeWhenOpenedLast() throws Exception {
+        assertTagFilteredWrappers(false);
+    }
+
+    @Test
+    void observationsCanCloseBeforeTagSelectionCompletes() throws Exception {
+        MeterRegistry owningRegistry = createRegistry();
+        TestRegistry enabledRegistry = new TestRegistry(owningRegistry);
+        TestRegistry rejectedRegistry = new TestRegistry(owningRegistry, _ -> true,
+                                                        tags -> !"server".equals(tags.get("role")));
+        HttpTransportMetrics.Lease enabled = HttpTransportMetrics.acquire(enabledRegistry);
+        HttpTransportMetrics.Lease rejected = HttpTransportMetrics.acquire(rejectedRegistry);
+        ProviderBarrier barrier = enabledRegistry.blockNextRegistration();
+        ConnectionObservation barrierConnection = enabled.connectionOpened(SERVER, barrier.transport(), NONE);
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            try {
+                barrier.awaitEntered();
+                executor.submit(() -> {
+                    for (HttpTransportMetrics.Lease lease : List.of(enabled, rejected)) {
+                        ConnectionObservation connection = lease.connectionOpened(SERVER, TRANSPORT_TCP, NONE);
+                        try {
+                            connection.protocolSelected(PROTOCOL_HTTP_1_1);
+                            var stream = connection.streamOpened(BIDIRECTIONAL, REMOTE);
+                            connection.protocolSelected(PROTOCOL_HTTP_2);
+                            stream.close(COMPLETED);
+                        } finally {
+                            connection.close(NORMAL);
+                        }
+                    }
+                }).get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
+
+                barrier.release();
+                synchronize(enabledRegistry, enabled);
+                io.micrometer.core.instrument.MeterRegistry nativeRegistry =
+                        owningRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
+                for (String protocol : List.of("unknown", PROTOCOL_HTTP_1_1, PROTOCOL_HTTP_2)) {
+                    assertGauge(nativeRegistry, "helidon.http.connections.active", 0,
+                                "role", "server", "transport", "tcp", "protocol", protocol);
+                }
+                assertGauge(nativeRegistry, "helidon.http.streams.active", 0,
+                            "role", "server", "protocol", "http/1.1", "direction", "bidi", "initiator", "remote");
+                assertCounter(nativeRegistry, "helidon.http.connections.opened", 1,
+                              "role", "server", "transport", "tcp", "handshake", "none");
+                assertCounter(nativeRegistry, "helidon.http.connections.closed", 1,
+                              "role", "server", "transport", "tcp", "protocol", "http/2", "outcome", "normal");
+                assertCounter(nativeRegistry, "helidon.http.streams.opened", 1,
+                              "role", "server", "protocol", "http/1.1", "direction", "bidi", "initiator", "remote");
+                assertCounter(nativeRegistry, "helidon.http.streams.closed", 1,
+                              "role", "server", "protocol", "http/1.1", "direction", "bidi", "initiator", "remote",
+                              "outcome", "completed");
+            } finally {
+                barrier.release();
+                enabledRegistry.releaseBarrier();
+                barrierConnection.close(NORMAL);
+                enabled.close();
+                rejected.close();
+                awaitCompletion(enabled);
+                awaitCompletion(rejected);
+                owningRegistry.close();
+            }
         }
     }
 
@@ -364,6 +435,107 @@ class TestMicrometerHttpTransportMetrics {
         assertStreamDurationStatistics(config, List.of(0.5, 0.99));
     }
 
+    private static void assertTagFilteredWrappers(boolean rejectedFirst) throws Exception {
+        MeterRegistry owningRegistry = createRegistry();
+        TestRegistry enabledRegistry = new TestRegistry(owningRegistry);
+        TestRegistry rejectedRegistry = new TestRegistry(owningRegistry, _ -> true,
+                                                        tags -> !"server".equals(tags.get("role")));
+        HttpTransportMetrics.Lease enabled = HttpTransportMetrics.acquire(enabledRegistry);
+        HttpTransportMetrics.Lease rejected = HttpTransportMetrics.acquire(rejectedRegistry);
+        HttpTransportMetrics.Lease first = rejectedFirst ? rejected : enabled;
+        HttpTransportMetrics.Lease second = rejectedFirst ? enabled : rejected;
+        ConnectionObservation firstConnection = null;
+        ConnectionObservation secondConnection = null;
+        try {
+            assertThat(rejectedRegistry.isMeterEnabled("helidon.http.connections.active"), is(true));
+            assertThat(rejectedRegistry.isMeterEnabled("helidon.http.streams.active"), is(true));
+            assertThat(enabledRegistry.unwrap(Object.class), sameInstance(rejectedRegistry.unwrap(Object.class)));
+            firstConnection = first.connectionOpened(SERVER, TRANSPORT_TCP, NONE);
+            firstConnection.protocolSelected(PROTOCOL_HTTP_1_1);
+            var firstStream = firstConnection.streamOpened(BIDIRECTIONAL, REMOTE);
+            synchronize(enabledRegistry, enabled);
+            secondConnection = second.connectionOpened(SERVER, TRANSPORT_TCP, NONE);
+            secondConnection.protocolSelected(PROTOCOL_HTTP_1_1);
+            var secondStream = secondConnection.streamOpened(BIDIRECTIONAL, REMOTE);
+            synchronize(enabledRegistry, enabled);
+
+            io.micrometer.core.instrument.MeterRegistry nativeRegistry =
+                    owningRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
+            assertCounter(nativeRegistry, "helidon.http.connections.opened", 1,
+                          "role", "server", "transport", "tcp", "handshake", "none");
+            assertCounter(nativeRegistry, "helidon.http.streams.opened", 1,
+                          "role", "server", "protocol", "http/1.1", "direction", "bidi", "initiator", "remote");
+            assertGauge(nativeRegistry, "helidon.http.connections.active", 1,
+                        "role", "server", "transport", "tcp", "protocol", "http/1.1");
+            assertGauge(nativeRegistry, "helidon.http.streams.active", 1,
+                        "role", "server", "protocol", "http/1.1", "direction", "bidi", "initiator", "remote");
+
+            firstConnection.protocolSelected(PROTOCOL_HTTP_2);
+            secondConnection.protocolSelected(PROTOCOL_HTTP_2);
+            synchronize(enabledRegistry, enabled);
+            assertGauge(nativeRegistry, "helidon.http.connections.active", 0,
+                        "role", "server", "transport", "tcp", "protocol", "http/1.1");
+            assertGauge(nativeRegistry, "helidon.http.connections.active", 1,
+                        "role", "server", "transport", "tcp", "protocol", "http/2");
+            assertGauge(nativeRegistry, "helidon.http.streams.active", 1,
+                        "role", "server", "protocol", "http/1.1", "direction", "bidi", "initiator", "remote");
+
+            var rejectedStream = rejectedFirst ? firstStream : secondStream;
+            ConnectionObservation rejectedConnection = rejectedFirst ? firstConnection : secondConnection;
+            rejectedStream.close(COMPLETED);
+            rejectedConnection.close(NORMAL);
+            synchronize(enabledRegistry, enabled);
+            assertGauge(nativeRegistry, "helidon.http.connections.active", 1,
+                        "role", "server", "transport", "tcp", "protocol", "http/2");
+            assertGauge(nativeRegistry, "helidon.http.streams.active", 1,
+                        "role", "server", "protocol", "http/1.1", "direction", "bidi", "initiator", "remote");
+
+            var enabledStream = rejectedFirst ? secondStream : firstStream;
+            ConnectionObservation enabledConnection = rejectedFirst ? secondConnection : firstConnection;
+            enabledStream.close(COMPLETED);
+            enabledConnection.close(NORMAL);
+            synchronize(enabledRegistry, enabled);
+            assertGauge(nativeRegistry, "helidon.http.connections.active", 0,
+                        "role", "server", "transport", "tcp", "protocol", "http/2");
+            assertGauge(nativeRegistry, "helidon.http.streams.active", 0,
+                        "role", "server", "protocol", "http/1.1", "direction", "bidi", "initiator", "remote");
+            assertCounter(nativeRegistry, "helidon.http.connections.closed", 1,
+                          "role", "server", "transport", "tcp", "protocol", "http/2", "outcome", "normal");
+            assertCounter(nativeRegistry, "helidon.http.streams.closed", 1,
+                          "role", "server", "protocol", "http/1.1", "direction", "bidi", "initiator", "remote",
+                          "outcome", "completed");
+        } finally {
+            enabledRegistry.releaseBarrier();
+            if (firstConnection != null) {
+                firstConnection.close(NORMAL);
+            }
+            if (secondConnection != null) {
+                secondConnection.close(NORMAL);
+            }
+            enabled.close();
+            rejected.close();
+            awaitCompletion(enabled);
+            awaitCompletion(rejected);
+            owningRegistry.close();
+        }
+    }
+
+    private static void assertGauge(io.micrometer.core.instrument.MeterRegistry registry,
+                                   String name,
+                                   double expected,
+                                   String... tags) {
+        Gauge gauge = registry.get(name).tags(tags).gauge();
+        assertThat(name + " " + Arrays.toString(tags), gauge.value(), is(expected));
+    }
+
+    private static void assertCounter(io.micrometer.core.instrument.MeterRegistry registry,
+                                     String name,
+                                     double expected,
+                                     String... tags) {
+        io.micrometer.core.instrument.Counter counter = registry.get(name).tags(tags).counter();
+        assertThat(name + " " + Arrays.toString(tags), counter.count(), is(expected));
+    }
+
     private static void assertStreamDurationStatistics(MetricsConfig config, List<Double> expectedPercentiles) throws Exception {
         MeterRegistry owningRegistry = metricsFactory().createMeterRegistry(config);
         TestRegistry registry = new TestRegistry(owningRegistry);
@@ -497,6 +669,7 @@ class TestMicrometerHttpTransportMetrics {
     private static final class TestRegistry implements MeterRegistry {
         private final MeterRegistry delegate;
         private final Predicate<String> enabledMeters;
+        private final Predicate<Map<String, String>> enabledTags;
         private final AtomicInteger barrierSequence = new AtomicInteger();
         private final AtomicReference<ProviderBarrier> providerBarrier = new AtomicReference<>();
         private final AtomicInteger closeCount = new AtomicInteger();
@@ -506,8 +679,15 @@ class TestMicrometerHttpTransportMetrics {
         }
 
         private TestRegistry(MeterRegistry delegate, Predicate<String> enabledMeters) {
+            this(delegate, enabledMeters, _ -> true);
+        }
+
+        private TestRegistry(MeterRegistry delegate,
+                             Predicate<String> enabledMeters,
+                             Predicate<Map<String, String>> enabledTags) {
             this.delegate = delegate;
             this.enabledMeters = enabledMeters;
+            this.enabledTags = enabledTags;
         }
 
         private ProviderBarrier blockNextRegistration() {
@@ -563,7 +743,7 @@ class TestMicrometerHttpTransportMetrics {
 
         @Override
         public boolean isMeterEnabled(String name, Map<String, String> tags, Optional<String> scope) {
-            return delegate.isMeterEnabled(name, tags, scope);
+            return enabledTags.test(tags) && delegate.isMeterEnabled(name, tags, scope);
         }
 
         @Override

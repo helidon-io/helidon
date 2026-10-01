@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.StampedLock;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.Wrapper;
@@ -483,15 +484,20 @@ final class HttpTransportMetricsState {
             return new MetricsConnectionObservation(this, role, transport, handshake, onClosed);
         }
 
-        private GaugeValue active(MetricId id, String event) {
+        private AtomicLong active(MetricId id, String event) {
             if (!enabled(id.name)) {
                 return null;
             }
-            GaugeValue value = state.gauge(epoch, id);
-            if (value != null) {
-                registerGauge(id, value, event);
+            GaugeValue sharedGauge = state.gauge(epoch, id);
+            if (sharedGauge == null) {
+                return null;
             }
-            return value;
+            MeterSlot slot = meters.getOrCreate(id, () -> new MeterSlot(id, sharedGauge));
+            if (slot == null) {
+                return null;
+            }
+            registerGauge(slot, event);
+            return slot.gaugeValue;
         }
 
         private ProtocolStreamMetrics streamMetrics(Role role, String protocol) {
@@ -503,7 +509,7 @@ final class HttpTransportMetricsState {
             if (!enabled(id.name)) {
                 return null;
             }
-            return meters.getOrCreate(id, () -> new MeterSlot(id));
+            return meters.getOrCreate(id, () -> new MeterSlot(id, null));
         }
 
         private void count(MetricId id, String event) {
@@ -586,15 +592,14 @@ final class HttpTransportMetricsState {
             return Math.max(0, finished - started);
         }
 
-        private void registerGauge(MetricId id, GaugeValue value, String event) {
-            MeterSlot slot = meters.getOrCreate(id, () -> new MeterSlot(id));
-            if (slot == null || slot.resolved != null || !slot.registrationQueued.compareAndSet(false, true)) {
+        private void registerGauge(MeterSlot slot, String event) {
+            if (slot.resolved != null || !slot.registrationQueued.compareAndSet(false, true)) {
                 return;
             }
             state.dispatcher.submit(event,
                                     () -> {
                                         try {
-                                            resolve(slot, value);
+                                            resolve(slot);
                                         } finally {
                                             slot.registrationQueued.set(false);
                                         }
@@ -603,10 +608,6 @@ final class HttpTransportMetricsState {
         }
 
         private Optional<Meter> resolve(MeterSlot slot) {
-            return resolve(slot, null);
-        }
-
-        private Optional<Meter> resolve(MeterSlot slot, GaugeValue gaugeValue) {
             Optional<Meter> existing = slot.resolved;
             if (existing != null) {
                 return existing;
@@ -616,6 +617,7 @@ final class HttpTransportMetricsState {
             if (!registry.isMeterEnabled(id.name, id.tagMap, Optional.of(VENDOR))) {
                 resolved = Optional.empty();
             } else {
+                GaugeValue gaugeValue = slot.sharedGauge;
                 List<Tag> tags = id.tags.stream()
                         .map(tag -> metricsFactory.tagCreate(tag.key, tag.value))
                         .toList();
@@ -644,6 +646,10 @@ final class HttpTransportMetricsState {
                     default -> throw new IllegalArgumentException("Unsupported HTTP transport meter type " + id.type);
                 };
                 state.bind(epoch, this, id, meter);
+                if (gaugeValue != null) {
+                    // Only selected wrappers contribute, including observations completed before selection.
+                    gaugeValue.contributions.add(slot.gaugeValue);
+                }
                 resolved = Optional.of(meter);
             }
             slot.resolved = resolved;
@@ -651,7 +657,11 @@ final class HttpTransportMetricsState {
         }
 
         private void clear() {
-            meters.clear();
+            meters.clear(slot -> {
+                if (slot.sharedGauge != null) {
+                    slot.sharedGauge.contributions.remove(slot.gaugeValue);
+                }
+            });
             streamMetrics.clear();
         }
     }
@@ -755,7 +765,7 @@ final class HttpTransportMetricsState {
         private final long started;
         private final List<MetricsStreamObservation> streams = new ArrayList<>();
         private String protocol = UNKNOWN_PROTOCOL;
-        private GaugeValue active;
+        private AtomicLong active;
         private MetricsHandshakeObservation handshakeObservation;
         private ProtocolStreamMetrics protocolStreamMetrics;
         private long protocolGeneration;
@@ -782,7 +792,7 @@ final class HttpTransportMetricsState {
             MetricId activeId = connectionActive(UNKNOWN_PROTOCOL);
             active = recorder.active(activeId, "connection active registration");
             if (active != null) {
-                active.increment();
+                active.incrementAndGet();
             }
             recorder.count(opened, "connection open");
         }
@@ -812,14 +822,14 @@ final class HttpTransportMetricsState {
             established = true;
             protocolStreamMetrics = recorder.streamMetrics(role, protocol);
 
-            GaugeValue selectedActive = recorder.active(connectionActive(protocol), "connection active registration");
+            AtomicLong selectedActive = recorder.active(connectionActive(protocol), "connection active registration");
             if (closed == 0 && protocolGeneration == generation && this.protocol.equals(protocol)) {
                 if (active != null) {
-                    active.decrement();
+                    active.decrementAndGet();
                 }
                 active = selectedActive;
                 if (active != null) {
-                    active.increment();
+                    active.incrementAndGet();
                 }
             }
             if (firstSelection) {
@@ -869,7 +879,7 @@ final class HttpTransportMetricsState {
             }
             MetricsHandshakeObservation handshakeToClose = handshakeObservation;
             List<MetricsStreamObservation> streamsToClose = detachStreams();
-            GaugeValue activeToClose = active;
+            AtomicLong activeToClose = active;
             active = null;
             String finalProtocol = protocol;
             try {
@@ -886,7 +896,7 @@ final class HttpTransportMetricsState {
                 };
                 streamsToClose.forEach(stream -> stream.close(streamOutcome));
                 if (activeToClose != null) {
-                    activeToClose.decrement();
+                    activeToClose.decrementAndGet();
                 }
                 List<TagValue> tags = List.of(tag("role", role),
                                               tag("transport", transport),
@@ -1016,7 +1026,7 @@ final class HttpTransportMetricsState {
                 owner.removeStream(previousSlot);
             }
             if (metrics.active != null) {
-                metrics.active.decrement();
+                metrics.active.decrementAndGet();
             }
             StreamOutcomeMetrics outcomeMetrics = metrics.outcome(outcome);
             owner.recorder.record(outcomeMetrics.closed,
@@ -1027,7 +1037,7 @@ final class HttpTransportMetricsState {
 
         private void open() {
             if (metrics.active != null) {
-                metrics.active.increment();
+                metrics.active.incrementAndGet();
             }
             owner.recorder.count(metrics.opened, "stream open");
         }
@@ -1068,7 +1078,7 @@ final class HttpTransportMetricsState {
 
         private final Recorder recorder;
         private final List<TagValue> tags;
-        private final GaugeValue active;
+        private final AtomicLong active;
         private final MeterSlot opened;
         private final boolean enabled;
         private final boolean durationEnabled;
@@ -1404,21 +1414,22 @@ final class HttpTransportMetricsState {
             values.clear();
             size.set(0);
         }
+
+        private void clear(Consumer<V> cleanup) {
+            values.values().forEach(cleanup);
+            clear();
+        }
     }
 
     private static final class GaugeValue {
-        private final AtomicLong value = new AtomicLong();
-
-        private void increment() {
-            value.incrementAndGet();
-        }
-
-        private void decrement() {
-            value.decrementAndGet();
-        }
+        private final Set<AtomicLong> contributions = ConcurrentHashMap.newKeySet();
 
         private long get() {
-            return value.get();
+            long value = 0;
+            for (AtomicLong contribution : contributions) {
+                value += contribution.get();
+            }
+            return value;
         }
     }
 
@@ -1486,10 +1497,14 @@ final class HttpTransportMetricsState {
     private static final class MeterSlot {
         private final AtomicBoolean registrationQueued = new AtomicBoolean();
         private final MetricId id;
+        private final AtomicLong gaugeValue;
+        private final GaugeValue sharedGauge;
         private volatile Optional<Meter> resolved;
 
-        private MeterSlot(MetricId id) {
+        private MeterSlot(MetricId id, GaugeValue sharedGauge) {
             this.id = id;
+            this.sharedGauge = sharedGauge;
+            gaugeValue = sharedGauge == null ? null : new AtomicLong();
         }
     }
 
