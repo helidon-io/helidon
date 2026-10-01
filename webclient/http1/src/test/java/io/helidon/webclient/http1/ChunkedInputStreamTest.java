@@ -27,6 +27,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.socket.SocketContext;
+import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
+import io.helidon.http.WritableHeaders;
 import io.helidon.http.http1.Http1ConnectionListener;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.http1.Http1ClientResponseImplTest.TestConnection;
@@ -67,8 +71,7 @@ class ChunkedInputStreamTest {
                 new TestConnection(reader),
                 reader,
                 whenComplete,
-                new AtomicReference<>(),
-                false,
+                response(),
                 listener);
         byte[] firstBytes = new byte[3];
 
@@ -97,8 +100,7 @@ class ChunkedInputStreamTest {
                 new TestConnection(reader),
                 reader,
                 whenComplete,
-                new AtomicReference<>(),
-                false,
+                response(),
                 Http1ConnectionListener.create(List.of()));
         byte[] firstByte = new byte[1];
 
@@ -124,8 +126,7 @@ class ChunkedInputStreamTest {
         try (var inputStream = new Http1CallChainBase.ChunkedInputStream(connection,
                                                                          reader,
                                                                          whenComplete,
-                                                                         new AtomicReference<>(),
-                                                                         false,
+                                                                         response(),
                                                                          Http1ConnectionListener.create(List.of()))) {
             assertThat(new String(inputStream.readNBytes(3), StandardCharsets.US_ASCII), is("ABC"));
         }
@@ -148,8 +149,7 @@ class ChunkedInputStreamTest {
         try (var inputStream = new Http1CallChainBase.ChunkedInputStream(connection,
                                                                          reader,
                                                                          whenComplete,
-                                                                         new AtomicReference<>(),
-                                                                         false,
+                                                                         response(),
                                                                          Http1ConnectionListener.create(List.of()))) {
             assertThat(inputStream.read(), is((int) 'A'));
             assertThat(pulls.get(), is(1));
@@ -176,7 +176,6 @@ class ChunkedInputStreamTest {
                                                                          reader,
                                                                          whenComplete,
                                                                          new AtomicReference<>(),
-                                                                         false,
                                                                          Http1ConnectionListener.create(List.of()))) {
             assertThat(inputStream.read(), is((int) 'A'));
             assertThat(pulls.get(), is(1));
@@ -203,7 +202,6 @@ class ChunkedInputStreamTest {
                                                                          reader,
                                                                          whenComplete,
                                                                          new AtomicReference<>(),
-                                                                         false,
                                                                          Http1ConnectionListener.create(List.of()))) {
             IllegalStateException failure = assertThrows(IllegalStateException.class, inputStream::read);
             assertThat(failure.getMessage(), containsString("not followed by CRLF"));
@@ -227,8 +225,7 @@ class ChunkedInputStreamTest {
         try (var inputStream = new Http1CallChainBase.ChunkedInputStream(connection,
                                                                          reader,
                                                                          whenComplete,
-                                                                         new AtomicReference<>(),
-                                                                         false,
+                                                                         response(),
                                                                          Http1ConnectionListener.create(List.of()))) {
             assertThat(inputStream.read(), is((int) 'A'));
             assertThat(pulls.get(), is(1));
@@ -236,5 +233,12 @@ class ChunkedInputStreamTest {
 
         assertThat(whenComplete.isDone(), is(true));
         assertThat(connection.closeCount(), is(1));
+    }
+
+    private static AtomicReference<WebClientServiceResponse> response() {
+        return new AtomicReference<>(Http1ClientResponseImplTest.serviceResponse(Method.GET,
+                                                                               Status.OK_200,
+                                                                               ClientResponseHeaders.create(
+                                                                                       WritableHeaders.create())));
     }
 }

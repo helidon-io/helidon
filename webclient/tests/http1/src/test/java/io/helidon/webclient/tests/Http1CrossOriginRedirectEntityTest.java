@@ -160,7 +160,7 @@ class Http1CrossOriginRedirectEntityTest {
     @ValueSource(ints = {307, 308})
     @Timeout(20)
     void doesNotReplayOutputStreamEntityAcrossCrossOriginRedirect(int redirectStatus) throws Exception {
-        try (SecondHopServer secondHop = new SecondHopServer(InetAddress.getByName(SECOND_HOP_HOST));
+        try (SecondHopRejectedEntityServer secondHop = new SecondHopRejectedEntityServer(InetAddress.getByName(SECOND_HOP_HOST));
              FirstHopServer firstHop = new FirstHopServer(InetAddress.getByName(FIRST_HOP_HOST),
                                                           secondHop.port(),
                                                           false,
@@ -184,7 +184,7 @@ class Http1CrossOriginRedirectEntityTest {
                 assertThat(originRequest.path(), is("/token"));
                 assertThat(originRequest.header("expect"), is("100-continue"));
                 assertThat(originRequest.body(), is(""));
-                secondHop.assertNoRequest();
+                assertRejectedEntity(secondHop.awaitRequest());
             } finally {
                 client.closeResource();
             }
@@ -217,7 +217,7 @@ class Http1CrossOriginRedirectEntityTest {
 
                 CapturedRequest originRequest = firstHop.awaitRequest();
                 assertThat(originRequest.path(), is("/token"));
-                assertThat(originRequest.header("expect"), is((String) null));
+                assertThat(originRequest.header("expect"), is("100-continue"));
                 assertThat(originRequest.body(), is(""));
 
                 CapturedRequest redirectRequest = secondHop.awaitRequest();
@@ -312,7 +312,7 @@ class Http1CrossOriginRedirectEntityTest {
     @ValueSource(ints = {307, 308})
     @Timeout(20)
     void doesNotTreatZeroLengthWriteAsReplayableEntity(int redirectStatus) throws Exception {
-        try (SecondHopServer secondHop = new SecondHopServer(InetAddress.getByName(SECOND_HOP_HOST));
+        try (SecondHopRejectedEntityServer secondHop = new SecondHopRejectedEntityServer(InetAddress.getByName(SECOND_HOP_HOST));
              FirstHopServer firstHop = new FirstHopServer(InetAddress.getByName(FIRST_HOP_HOST),
                                                           secondHop.port(),
                                                           false,
@@ -337,7 +337,7 @@ class Http1CrossOriginRedirectEntityTest {
                 assertThat(originRequest.path(), is("/token"));
                 assertThat(originRequest.header("expect"), is("100-continue"));
                 assertThat(originRequest.body(), is(""));
-                secondHop.assertNoRequest();
+                assertRejectedEntity(secondHop.awaitRequest());
             } finally {
                 client.closeResource();
             }
@@ -353,7 +353,7 @@ class Http1CrossOriginRedirectEntityTest {
         // entity, and replay to the redirected origin is blocked. The test must observe that the exact first-hop TCP
         // connection is closed, not returned to the pool with unread bytes. WebServer handlers abstract that connection
         // lifecycle and may consume, flush, or close the response in ways that would hide the client-side pooling bug.
-        try (SecondHopServer secondHop = new SecondHopServer(InetAddress.getByName(SECOND_HOP_HOST));
+        try (SecondHopRejectedEntityServer secondHop = new SecondHopRejectedEntityServer(InetAddress.getByName(SECOND_HOP_HOST));
              FirstHopBodyRedirectServer firstHop = new FirstHopBodyRedirectServer(InetAddress.getByName(FIRST_HOP_HOST),
                                                                                   secondHop.port(),
                                                                                   redirectStatus)) {
@@ -376,7 +376,7 @@ class Http1CrossOriginRedirectEntityTest {
                 assertThat(originRequest.path(), is("/token"));
                 assertThat(originRequest.header("expect"), is("100-continue"));
                 assertThat(originRequest.body(), is(""));
-                secondHop.assertNoRequest();
+                assertRejectedEntity(secondHop.awaitRequest());
             } finally {
                 client.closeResource();
             }
@@ -670,6 +670,13 @@ class Http1CrossOriginRedirectEntityTest {
         return REQUEST_BODY.getBytes(StandardCharsets.UTF_8);
     }
 
+    private static void assertRejectedEntity(CapturedRequest request) {
+        assertThat(request.path(), is("/steal"));
+        assertThat(request.header("authorization"), is((String) null));
+        assertThat(request.header("expect"), is("100-continue"));
+        assertThat(request.body(), is(""));
+    }
+
     private record AuthorizationService() implements WebClientService {
         @Override
         public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
@@ -780,6 +787,21 @@ class Http1CrossOriginRedirectEntityTest {
             case 308 -> "Permanent Redirect";
             default -> throw new IllegalArgumentException("Unexpected redirect status: " + status);
         };
+    }
+
+    private static final class SecondHopRejectedEntityServer extends SingleRequestServer {
+        private SecondHopRejectedEntityServer(InetAddress bindAddress) throws IOException {
+            super(bindAddress);
+        }
+
+        @Override
+        protected CapturedRequest handle(Socket socket) throws IOException {
+            InputStream inputStream = socket.getInputStream();
+            CapturedRequest request = readHeadersOnly(inputStream);
+            writeAscii(socket.getOutputStream(), "HTTP/1.1 100 Continue\r\n\r\n");
+            assertThat("blocked upload must close before sending any body framing or bytes", inputStream.read(), is(-1));
+            return request;
+        }
     }
 
     private static final class SecondHopServer extends SingleRequestServer {

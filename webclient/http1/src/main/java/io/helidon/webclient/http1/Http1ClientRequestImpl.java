@@ -17,10 +17,14 @@
 package io.helidon.webclient.http1;
 
 import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.net.UnixDomainSocketAddress;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiConsumer;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
@@ -28,6 +32,7 @@ import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.LogFormatter;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
@@ -57,9 +62,6 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
 
     private final Http1ClientImpl http1Client;
     private final FullClientRequest<?> delegate;
-
-    private boolean outputStreamRedirect;
-    private int outputStreamRedirects;
 
     Http1ClientRequestImpl(Http1ClientImpl http1Client,
                            Method method,
@@ -125,8 +127,6 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         readTimeout(request.readTimeout());
         readContinueTimeout(request.readContinueTimeout());
         request.sendExpectContinue().ifPresent(this::sendExpectContinue);
-        outputStreamRedirect(request.outputStreamRedirect());
-        outputStreamRedirects(request.outputStreamRedirects());
         if (preserveEntity) {
             REPLAYABLE_HEADERS.forEach(name -> request.headers().find(name).ifPresent(headers()::set));
         }
@@ -170,17 +170,20 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
                 } else {
                     long length = instanceWriter.contentLength().orElse(configuredContentLength);
                     if (length == -1) {
-                        return doOutputStream(instanceWriter::write);
+                        return doOutputStream((output, _) -> instanceWriter.write(output));
                     } else if (length > clientConfig().maxInMemoryEntity()) {
                         headers().contentLength(length);
-                        return doOutputStream(instanceWriter::write);
+                        return doOutputStream((output, _) -> instanceWriter.write(output));
                     } else {
                         entityBytes = instanceWriter.instanceBytes();
                     }
                 }
             } else {
                 if (configuredContentLength == -1 || configuredContentLength > clientConfig().maxInMemoryEntity()) {
-                    return doOutputStream(it -> mediaWriter.write(genericType, entity, it, headers()));
+                    return doOutputStream((output, requestHeaders) -> mediaWriter.write(genericType,
+                                                                                       entity,
+                                                                                       output,
+                                                                                       requestHeaders));
                 } else {
                     // safe to cast to int, as the maxInMemoryEntity configuration option is an int
                     ByteArrayOutputStream baos = new ByteArrayOutputStream((int) configuredContentLength);
@@ -202,15 +205,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
 
     @Override
     public Http1ClientResponse doOutputStream(OutputStreamHandler streamHandler) {
-        CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
-        CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
-        Http1CallChainBase callChain = new Http1CallOutputStreamChain(http1Client,
-                                                                      this,
-                                                                      whenSent,
-                                                                      whenComplete,
-                                                                      streamHandler);
-
-        return invokeWithServices(callChain, whenSent, whenComplete);
+        return doOutputStream(streamHandler, null);
     }
 
     @Override
@@ -304,13 +299,22 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
      * @return check if protocol upgrade can proceed
      */
     static boolean upgradeSuccessful(Header requestUpgrade, Header responseUpgrade) {
-        String selectedProtocol = responseUpgrade.get();
-        for (String protocol : requestUpgrade.allValues()) {
-            if (protocol.equalsIgnoreCase(selectedProtocol)) {
-                return true;
+        var requestedProtocols = upgradeProtocols(requestUpgrade);
+        var selectedProtocols = upgradeProtocols(responseUpgrade);
+        if (selectedProtocols.isEmpty()) {
+            return false;
+        }
+        // RFC 2817, section 3.3 retains HTTP/1.1 above the newly selected TLS layer.
+        boolean tlsWithRetainedHttp = selectedProtocols.size() == 2
+                && selectedProtocols.getFirst().matches("(?i)TLS/[0-9]\\.[0-9]")
+                && Http1Client.PROTOCOL_ID.equalsIgnoreCase(selectedProtocols.getLast());
+        for (String selectedProtocol : selectedProtocols) {
+            if (requestedProtocols.stream().noneMatch(protocol -> protocol.equalsIgnoreCase(selectedProtocol))
+                    && !(tlsWithRetainedHttp && Http1Client.PROTOCOL_ID.equalsIgnoreCase(selectedProtocol))) {
+                return false;
             }
         }
-        return false;
+        return true;
     }
 
     Http1ClientResponseImpl invokeRequestWithEntity(byte[] entity) {
@@ -325,8 +329,12 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         return invokeWithServices(callChain, whenSent, whenComplete);
     }
 
-    Http1ClientResponseImpl redirectProbe() {
-        return (Http1ClientResponseImpl) requestWithoutRouteCleanup();
+    private static List<String> upgradeProtocols(Header header) {
+        return header.allValues().stream()
+                .flatMap(value -> Arrays.stream(value.split(",")))
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .toList();
     }
 
     private Http1ClientResponseImpl invokeWithServices(Http1CallChainBase callChain,
@@ -366,23 +374,8 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
                                            serviceResponse.inputStream().orElse(null),
                                            mediaContext(),
                                            resolvedUri,
-                                           complete);
-    }
-
-    /**
-     * Whether this request is part of an output stream redirection probe.
-     * Default is {@code false}.
-     *
-     * @param outputStreamRedirect whether this request is part of output stream redirection
-     * @return updated request
-     */
-    Http1ClientRequestImpl outputStreamRedirect(boolean outputStreamRedirect) {
-        this.outputStreamRedirect = outputStreamRedirect;
-        return this;
-    }
-
-    boolean outputStreamRedirect() {
-        return outputStreamRedirect;
+                                           complete,
+                                           callChain.transportResponse());
     }
 
     boolean ownsExplicitConnection() {
@@ -392,13 +385,97 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
                 && delegate.connection().orElse(null) != current;
     }
 
-    Http1ClientRequestImpl outputStreamRedirects(int outputStreamRedirects) {
-        this.outputStreamRedirects = outputStreamRedirects;
-        return this;
+    private Http1ClientResponseImpl doOutputStream(BiConsumer<OutputStream, ClientRequestHeaders> mediaWriter) {
+        Http1ClientResponseImpl response = null;
+        try (Http1EntityWriter entityWriter = new Http1EntityWriter(mediaWriter)) {
+            response = doOutputStream(null, entityWriter);
+            return response;
+        } catch (RuntimeException | Error failure) {
+            if (response != null) {
+                try {
+                    response.closeConnectionOnClose();
+                    response.close();
+                } catch (RuntimeException | Error closeFailure) {
+                    if (closeFailure != failure) {
+                        failure.addSuppressed(closeFailure);
+                    }
+                }
+            }
+            throw failure;
+        }
     }
 
-    int outputStreamRedirects() {
-        return outputStreamRedirects;
+    private Http1ClientResponseImpl doOutputStream(OutputStreamHandler streamHandler, Http1EntityWriter entityWriter) {
+        Http1ClientRequestImpl request = this;
+        OutputStreamHandler handler = streamHandler;
+        boolean allowEntity = true;
+        int followedRedirects = 0;
+        while (true) {
+            CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
+            CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
+            Http1CallOutputStreamChain callChain = new Http1CallOutputStreamChain(http1Client,
+                                                                                 request,
+                                                                                 whenSent,
+                                                                                 whenComplete,
+                                                                                 handler,
+                                                                                 allowEntity,
+                                                                                 entityWriter);
+            Http1ClientResponseImpl response = request.invokeWithServices(callChain, whenSent, whenComplete);
+            if (!request.followRedirects() || !RedirectionProcessor.redirectionStatusCode(response.status())) {
+                return response;
+            }
+
+            Http1ClientRequestImpl redirectedRequest;
+            boolean sendEntity;
+            boolean emptyLegacyEntity = false;
+            try (response) {
+                // Finish this hop's services and release its response before the next hop starts its own service chain.
+                response.closeConnectionOnClose();
+                if (followedRedirects >= maxRedirects()) {
+                    throw RedirectionProcessor.maxRedirectsReached(maxRedirects());
+                }
+                followedRedirects++;
+                if (!response.headers().contains(HeaderNames.LOCATION)) {
+                    throw new IllegalStateException("There is no " + HeaderNames.LOCATION
+                                                            + " header present in the response! "
+                                                            + "It is not clear where to redirect.");
+                }
+                ClientUri redirectUri = request.redirectUri(response.headers().get(HeaderNames.LOCATION).get());
+                sendEntity = RedirectionProcessor.keepsMethodAndEntity(request.method(), response.status());
+                allowEntity = !sendEntity || request.canReplayEntityTo(redirectUri);
+                if (!allowEntity) {
+                    if (callChain.hasEntity()) {
+                        throw new IllegalStateException("Cross-origin redirect with request entity is disabled.");
+                    }
+                    if (callChain.handlerInvoked()) {
+                        handler = OutputStream::close;
+                        if (entityWriter != null) {
+                            entityWriter.close();
+                            entityWriter = null;
+                            emptyLegacyEntity = true;
+                        }
+                    }
+                    // An uninvoked unknown-length handler may still be empty; reject its first nonempty write on the next hop.
+                }
+                redirectedRequest = new Http1ClientRequestImpl(request,
+                                                              sendEntity ? request.method() : Method.GET,
+                                                              redirectUri,
+                                                              request.properties(),
+                                                              sendEntity);
+                if (emptyLegacyEntity) {
+                    redirectedRequest.header(HeaderValues.CONTENT_LENGTH_ZERO);
+                }
+            }
+            if (!sendEntity) {
+                if (entityWriter != null) {
+                    entityWriter.close();
+                }
+                return RedirectionProcessor.invokeWithFollowRedirects(redirectedRequest,
+                                                                      followedRedirects,
+                                                                      BufferData.EMPTY_BYTES);
+            }
+            request = redirectedRequest;
+        }
     }
 
 }

@@ -204,6 +204,172 @@ class Http1ServerResponseTest {
     }
 
     @Test
+    void resetEntityRemovesInvalidResponseHeaders() {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create());
+        response.header("invalid\nname", "value");
+        response.header("invalid-value", "value\r\ninjected: true");
+        response.header("unencodable-value", "\u0100");
+        response.header("x-preserved", "value");
+        response.header(HeaderNames.VARY, "Origin");
+        response.header(HeaderNames.SET_COOKIE, "session=preserved");
+
+        assertThrows(IllegalArgumentException.class,
+                     () -> response.send("original".getBytes(StandardCharsets.UTF_8)));
+        verifyZeroInteractions(writer);
+        assertThat(response.resetEntity(), is(true));
+        response.status(Status.INTERNAL_SERVER_ERROR_500);
+        response.send("recovered".getBytes(StandardCharsets.UTF_8));
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, startsWith("HTTP/1.1 500 Internal Server Error\r\n")),
+                () -> assertThat(responseText, containsString("x-preserved: value\r\n")),
+                () -> assertThat(responseText, containsString("Vary: Origin\r\n")),
+                () -> assertThat(responseText, containsString("Set-Cookie: session=preserved\r\n")),
+                () -> assertThat(responseText, not(containsString("invalid"))),
+                () -> assertThat(responseText, not(containsString("unencodable"))),
+                () -> assertThat(responseText, endsWith("\r\n\r\nrecovered"))
+        );
+    }
+
+    @Test
+    void resetEntityRemovesUnencodableResponseHeaderWithoutValidation() {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer,
+                                                     Method.GET,
+                                                     ContentEncodingContext.create(),
+                                                     WebServer.builder().buildPrototype(),
+                                                     false);
+        response.header("unencodable-value", "\u0100");
+        response.header("x-preserved", "value");
+
+        assertThrows(IllegalArgumentException.class,
+                     () -> response.send("original".getBytes(StandardCharsets.UTF_8)));
+        verifyZeroInteractions(writer);
+        assertThat(response.resetEntity(), is(true));
+        response.status(Status.INTERNAL_SERVER_ERROR_500);
+        response.send("recovered".getBytes(StandardCharsets.UTF_8));
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, startsWith("HTTP/1.1 500 Internal Server Error\r\n")),
+                () -> assertThat(responseText, containsString("x-preserved: value\r\n")),
+                () -> assertThat(responseText, not(containsString("unencodable"))),
+                () -> assertThat(responseText, endsWith("\r\n\r\nrecovered"))
+        );
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void invalidBufferedTrailerCanRecoverBeforeCommit(boolean closeOutput) throws IOException {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create());
+        response.header(HeaderNames.TRAILER, "x-trailer");
+        response.beforeTrailers(trailers -> trailers.set(HeaderNames.create("x-trailer"), "bad\r\ninjected: true"));
+        OutputStream output = response.outputStream();
+        output.write("original".getBytes(StandardCharsets.UTF_8));
+        if (closeOutput) {
+            output.close();
+        }
+
+        assertThrows(IllegalArgumentException.class, response::commit);
+        output.close();
+        verifyZeroInteractions(writer);
+        assertThat(response.resetEntity(), is(true));
+        response.status(Status.INTERNAL_SERVER_ERROR_500);
+        response.send("recovered".getBytes(StandardCharsets.UTF_8));
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, startsWith("HTTP/1.1 500 Internal Server Error\r\n")),
+                () -> assertThat(responseText, not(containsString("Trailer:"))),
+                () -> assertThat(responseText, not(containsString("original"))),
+                () -> assertThat(responseText, endsWith("\r\n\r\nrecovered"))
+        );
+    }
+
+    @Test
+    void invalidCommittedTrailerDoesNotTerminateResponse() throws IOException {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create());
+        response.header(HeaderNames.TRAILER, "x-trailer");
+        response.trailers().set(HeaderNames.create("x-trailer"), "bad\r\ninjected: true");
+        OutputStream output = response.outputStream();
+        response.flushHeaders();
+        output.write("hello".getBytes(StandardCharsets.UTF_8));
+        output.flush();
+
+        assertThrows(IllegalArgumentException.class, response::commit);
+        assertThat(response.resetEntity(), is(false));
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, startsWith("HTTP/1.1 200 OK\r\n")),
+                () -> assertThat(responseText, endsWith("\r\n5\r\nhello\r\n")),
+                () -> assertThat(responseText, not(containsString("\r\n0\r\n"))),
+                () -> assertThat(responseText, not(containsString("injected")))
+        );
+    }
+
+    @Test
+    void emptyForcedChunkedResponseRemovesContentLength() throws IOException {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create());
+        response.contentLength(0);
+        response.header(HeaderNames.TRANSFER_ENCODING, "chunked");
+        response.outputStream().close();
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, containsString("Transfer-Encoding: chunked\r\n")),
+                () -> assertThat(responseText, not(containsString("Content-Length:"))),
+                () -> assertThat(responseText, endsWith("\r\n\r\n0\r\n\r\n"))
+        );
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void emptyForcedChunkedResponseWritesTrailersAfterTerminalChunk(boolean lateContentLength) throws IOException {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create());
+        AtomicInteger beforeTrailersCalls = new AtomicInteger();
+        response.header(HeaderNames.TRAILER, "x-trailer");
+        response.beforeTrailers(trailers -> {
+            beforeTrailersCalls.incrementAndGet();
+            trailers.set(HeaderNames.create("x-trailer"), "value");
+            if (lateContentLength) {
+                response.headers().set(HeaderValues.CONTENT_LENGTH_ZERO);
+            }
+        });
+        response.outputStream().close();
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(beforeTrailersCalls.get(), is(1)),
+                () -> assertThat(responseText, containsString("Transfer-Encoding: chunked\r\n")),
+                () -> assertThat(responseText, not(containsString("Content-Length:"))),
+                () -> assertThat(responseText, containsString("\r\n\r\n0\r\n")),
+                () -> assertThat(responseText, containsString("x-trailer: value\r\n")),
+                () -> assertThat(responseText, endsWith("\r\n\r\n"))
+        );
+    }
+
+    @Test
     void customReasonPhrasePreservesObsText() {
         BufferData buffer = BufferData.growing(128);
 
@@ -1496,6 +1662,14 @@ class Http1ServerResponseTest {
                                                       Method method,
                                                       ContentEncodingContext contentEncodingContext,
                                                       ListenerConfig listenerConfig) {
+        return createResponse(dataWriter, method, contentEncodingContext, listenerConfig, true);
+    }
+
+    private static Http1ServerResponse createResponse(DataWriter dataWriter,
+                                                      Method method,
+                                                      ContentEncodingContext contentEncodingContext,
+                                                      ListenerConfig listenerConfig,
+                                                      boolean validateHeaders) {
         Http1ServerRequest request = mock(Http1ServerRequest.class);
         HttpPrologue prologue = mock(HttpPrologue.class);
         when(prologue.method()).thenReturn(method);
@@ -1515,6 +1689,6 @@ class Http1ServerResponseTest {
                                        dataWriter,
                                        request,
                                        true,
-                                       true);
+                                       validateHeaders);
     }
 }

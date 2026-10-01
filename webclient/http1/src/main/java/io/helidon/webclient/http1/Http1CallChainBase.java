@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.http1;
 
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -91,6 +92,7 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
     private ClientConnection effectiveConnection;
     private boolean forwardProxy;
     private WebClientProtocolResponse pendingProtocolResponse;
+    private WebClientServiceResponse transportResponse;
 
     Http1CallChainBase(Http1ClientImpl http1Client,
                        Http1ClientRequestImpl clientRequest,
@@ -135,16 +137,25 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
 
         if (exposeEntity) {
             // this may be an entity (if content length is set to zero, we know there is no entity)
-            InputStream inputStream = successfulConnect
-                    ? new EverythingInputStream(responseConnection.helidonSocket(), reader, whenComplete, response, recvListener)
-                    : inputStream(clientConfig,
-                                  recvListener,
-                                  responseConnection,
-                                  response,
-                                  responseHeaders,
-                                  reader,
-                                  whenComplete);
-            builder.inputStream(inputStream);
+            try {
+                InputStream inputStream = successfulConnect
+                        ? new EverythingInputStream(responseConnection.helidonSocket(),
+                                                    reader,
+                                                    whenComplete,
+                                                    response,
+                                                    recvListener)
+                        : inputStream(clientConfig,
+                                      recvListener,
+                                      responseConnection,
+                                      response,
+                                      responseHeaders,
+                                      reader,
+                                      whenComplete);
+                builder.inputStream(inputStream);
+            } catch (RuntimeException | Error e) {
+                whenComplete.completeExceptionally(e);
+                throw e;
+            }
         }
 
         WebClientServiceResponse serviceResponse = builder
@@ -157,6 +168,10 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
 
         response.set(serviceResponse);
         return serviceResponse;
+    }
+
+    static boolean isChunkedEntityDiscarded(InputStream inputStream) {
+        return inputStream instanceof CloseOnceInputStream closeOnce && closeOnce.chunkedInputStream.discarded;
     }
 
     static void writeHeaders(ClientConnection connection,
@@ -277,7 +292,15 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
 
             prologue(effectiveConnection, writeBuffer, serviceRequest, uri);
 
-            return doProceed(effectiveConnection, serviceRequest, headers, writer, reader, writeBuffer);
+            WebClientServiceResponse response = doProceed(effectiveConnection,
+                                                          serviceRequest,
+                                                          headers,
+                                                          writer,
+                                                          reader,
+                                                          writeBuffer);
+            // Preserve the original framing and body ownership before client services replace response headers or content.
+            transportResponse = response;
+            return response;
         } catch (RuntimeException | Error e) {
             if (!explicitConnectionRequest) {
                 try {
@@ -298,13 +321,6 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
     @Override
     public Optional<WebClientProtocolResponse> protocolResponse(WebClientServiceResponse response) {
         return Optional.ofNullable(takeProtocolResponse());
-    }
-
-    void publishProtocolResponse() {
-        WebClientProtocolResponse response = takeProtocolResponse();
-        if (response != null) {
-            http1Client.webClient().responseReceived(response);
-        }
     }
 
     abstract WebClientServiceResponse doProceed(ClientConnection connection,
@@ -377,6 +393,10 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         return effectiveConnection;
     }
 
+    WebClientServiceResponse transportResponse() {
+        return transportResponse;
+    }
+
     Http1ClientRequestImpl originalRequest() {
         return originalRequest;
     }
@@ -388,9 +408,7 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
     WebClientServiceResponse readResponse(WebClientServiceRequest serviceRequest,
                                           ClientConnection connection,
                                           DataReader reader) {
-        ResponseHead responseHead = originalRequest.outputStreamRedirect()
-                ? readResponseHead(connection, reader, Http1CallChainBase::isPreContinueInterimResponse)
-                : readResponseHead(connection, reader);
+        ResponseHead responseHead = readResponseHead(connection, reader);
 
         captureProtocolResponse(connection, responseHead.status(), responseHead.headers());
         return createServiceResponse(http1Client,
@@ -405,7 +423,7 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
     void captureProtocolResponse(ClientConnection connection,
                                  Status status,
                                  ClientResponseHeaders headers) {
-        // One terminal callback is available per chain; nested redirect chains publish their own responses.
+        // Each redirect hop has its own chain and publishes its response before its services unwind.
         if (altSvcEnabled
                 && pendingProtocolResponse == null
                 && headers.contains(HeaderNames.ALT_SVC)
@@ -562,12 +580,12 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         }
         InputStream inputStream;
         if (isChunkedFinalTransferCoding(responseHeaders)) {
-            inputStream = new ChunkedInputStream(connection,
-                                                 reader,
-                                                 whenComplete,
-                                                 response,
-                                                 responseHeaders.contains(HeaderNames.TRAILER),
-                                                 recvListener);
+            var chunkedInputStream = new ChunkedInputStream(connection,
+                                                          reader,
+                                                          whenComplete,
+                                                          response,
+                                                          recvListener);
+            return new CloseOnceInputStream(decoder.apply(chunkedInputStream), chunkedInputStream);
         } else if (!responseHeaders.contains(HeaderNames.TRANSFER_ENCODING)
                 && responseHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
             long length = responseHeaders.contentLength().getAsLong();
@@ -628,6 +646,14 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         }
         reader.skip(available);
         return true;
+    }
+
+    private static void completeResponse(CompletableFuture<WebClientServiceResponse> whenComplete,
+                                         AtomicReference<WebClientServiceResponse> response) {
+        WebClientServiceResponse serviceResponse = response.get();
+        if (serviceResponse != null) {
+            whenComplete.complete(serviceResponse);
+        }
     }
 
     private static String requestTarget(ClientUri uri) {
@@ -697,7 +723,7 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
 
             // we can only get the response at the time of completion, as the instance is created after this constructor
             // returns
-            this.entityProcessedRunnable = () -> whenComplete.complete(response.get());
+            this.entityProcessedRunnable = () -> completeResponse(whenComplete, response);
         }
 
         @Override
@@ -719,6 +745,10 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
 
         @Override
         public int read(byte[] b, int off, int len) {
+            Objects.checkFromIndexSize(off, len, b.length);
+            if (len == 0) {
+                return 0;
+            }
             if (finished) {
                 return -1;
             }
@@ -783,7 +813,7 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
 
             // we can only get the response at the time of completion, as the instance is created after this constructor
             // returns
-            this.entityProcessedRunnable = () -> whenComplete.complete(response.get());
+            this.entityProcessedRunnable = () -> completeResponse(whenComplete, response);
         }
 
         @Override
@@ -800,6 +830,10 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
 
         @Override
         public int read(byte[] b, int off, int len) {
+            Objects.checkFromIndexSize(off, len, b.length);
+            if (len == 0) {
+                return 0;
+            }
             if (finished) {
                 return -1;
             }
@@ -837,7 +871,6 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         private final Http1ConnectionListener recvListener;
         private final CompletableFuture<WebClientServiceResponse> whenComplete;
         private final AtomicReference<WebClientServiceResponse> response;
-        private final boolean hasTrailers;
         private final Runnable entityProcessedRunnable;
 
         private BufferData currentBuffer;
@@ -845,12 +878,12 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         private int remainingChunkLength;
         private boolean chunkTerminatorPending;
         private boolean finished;
+        private boolean discarded;
 
         ChunkedInputStream(ClientConnection connection,
                            DataReader reader,
                            CompletableFuture<WebClientServiceResponse> whenComplete,
                            AtomicReference<WebClientServiceResponse> response,
-                           boolean hasTrailers,
                            Http1ConnectionListener recvListener) {
             this.connection = connection;
             this.helidonSocket = connection.helidonSocket();
@@ -858,11 +891,10 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
             this.recvListener = recvListener;
             this.whenComplete = whenComplete;
             this.response = response;
-            this.hasTrailers = hasTrailers;
 
             // we can only get the response at the time of completion, as the instance is created after this constructor
             // returns
-            this.entityProcessedRunnable = () -> whenComplete.complete(response.get());
+            this.entityProcessedRunnable = () -> completeResponse(whenComplete, response);
         }
 
         @Override
@@ -900,12 +932,12 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
                         && currentBuffer.consumed()
                         && remainingChunkLength == 0) {
                     consumeChunkTerminator();
-                    if (consumeExpectedFinalChunk()) {
-                        finish();
-                        return;
-                    }
+                    consumeExpectedFinalChunk();
+                    finish();
+                    return;
                 }
                 finished = true;
+                discarded = true;
                 currentBuffer = null;
                 try {
                     connection.closeResource();
@@ -921,22 +953,11 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
             }
         }
 
-        private boolean consumeExpectedFinalChunk() {
+        private void consumeExpectedFinalChunk() {
             try {
                 if (readChunkSize(reader) != 0) {
                     throw new IllegalStateException("HTTP content decoder completed before the final response chunk");
                 }
-                if (hasTrailers) {
-                    return true;
-                }
-                if (!reader.startsWithNewLine()) {
-                    if (reader.lookup() == Bytes.CR_BYTE) {
-                        throw new IllegalStateException("HTTP response final chunk is not followed by CRLF");
-                    }
-                    return false;
-                }
-                reader.skip(2);
-                return reader.available() == 0;
             } catch (RuntimeException e) {
                 throw fail(new IllegalStateException("HTTP response chunked transfer coding is incomplete", e));
             }
@@ -959,11 +980,7 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
                     throw e;
                 }
                 if (remainingChunkLength == 0) {
-                    if (!hasTrailers && reader.startsWithNewLine()) {
-                        // No trailers, skip second CRLF
-                        reader.skip(2);
-                    }
-
+                    // The response lifecycle consumes the complete trailer section before releasing the connection.
                     finish();
                     return;
                 }
@@ -978,7 +995,7 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
             if (remainingChunkLength == 0) {
                 chunkTerminatorPending = true;
                 // Reject malformed framing already in memory, but do not pull it before returning available payload.
-                if (reader.available() >= 2) {
+                if (reader.available() >= 2 || (reader.available() == 1 && reader.lookup() != Bytes.CR_BYTE)) {
                     consumeChunkTerminator();
                 }
             }
@@ -992,16 +1009,12 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
             if (!chunkTerminatorPending) {
                 return;
             }
-            byte firstDelimiterByte;
-            byte secondDelimiterByte;
             try {
-                firstDelimiterByte = reader.read();
-                secondDelimiterByte = reader.read();
+                if (reader.read() != Bytes.CR_BYTE || reader.read() != Bytes.LF_BYTE) {
+                    throw new IllegalStateException("HTTP response chunk data is not followed by CRLF");
+                }
             } catch (RuntimeException e) {
                 throw fail(e);
-            }
-            if (firstDelimiterByte != Bytes.CR_BYTE || secondDelimiterByte != Bytes.LF_BYTE) {
-                throw fail(new IllegalStateException("HTTP response chunk data is not followed by CRLF"));
             }
             chunkTerminatorPending = false;
         }
@@ -1031,6 +1044,23 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
                 failure.addSuppressed(e);
             }
             return failure;
+        }
+    }
+
+    private static final class CloseOnceInputStream extends FilterInputStream {
+        private final AtomicBoolean closed = new AtomicBoolean();
+        private final ChunkedInputStream chunkedInputStream;
+
+        private CloseOnceInputStream(InputStream inputStream, ChunkedInputStream chunkedInputStream) {
+            super(inputStream);
+            this.chunkedInputStream = chunkedInputStream;
+        }
+
+        @Override
+        public void close() throws IOException {
+            if (closed.compareAndSet(false, true)) {
+                super.close();
+            }
         }
     }
 

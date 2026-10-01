@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -162,9 +162,11 @@ class KeepAliveTest {
         var m = Method.create(method);
         Status port;
         try(var res = client.method(m).path("/empty-chunked").submit("Hello")){
+            assertThat(res.entity().asOptional(String.class).orElse(""), is(""));
             port = res.status();
         }
         try(var res2 = client.method(m).path("/empty-chunked").submit("Hello")){
+            assertThat(res2.entity().asOptional(String.class).orElse(""), is(""));
             assertThat(res2.status(), is(port));
         }
     }
