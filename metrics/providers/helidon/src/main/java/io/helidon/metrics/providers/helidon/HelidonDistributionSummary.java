@@ -24,14 +24,13 @@ import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.HistogramSnapshot;
 import io.helidon.metrics.api.Meter;
 
-final class HelidonDistributionSummary extends HelidonMeter implements DistributionSummary {
+sealed class HelidonDistributionSummary extends HelidonMeter implements DistributionSummary {
     private final HelidonHistogram histogram;
     private final double scale;
 
-    private HelidonDistributionSummary(Meter.Id id, Builder builder) {
+    private HelidonDistributionSummary(Meter.Id id, Builder builder, HelidonHistogram histogram) {
         super(id, Type.DISTRIBUTION_SUMMARY, builder);
-        this.histogram = HelidonHistogram.create(HelidonTypes.doubleArray(builder.percentiles()),
-                                                 builder.histogramBuckets());
+        this.histogram = histogram;
         this.scale = builder.scale().orElse(1D);
     }
 
@@ -40,7 +39,11 @@ final class HelidonDistributionSummary extends HelidonMeter implements Distribut
     }
 
     static HelidonDistributionSummary create(Meter.Id id, Builder builder) {
-        return new HelidonDistributionSummary(id, builder);
+        var histogram = HelidonHistogram.create(HelidonTypes.doubleArray(builder.percentiles()),
+                                               builder.histogramBuckets());
+        return histogram.hasPercentiles()
+                ? new PercentileDistributionSummary(id, builder, histogram)
+                : new HelidonDistributionSummary(id, builder, histogram);
     }
 
     @Override
@@ -83,6 +86,21 @@ final class HelidonDistributionSummary extends HelidonMeter implements Distribut
                 + ", total=" + totalAmount()
                 + ", max=" + max()
                 + "]";
+    }
+
+    // Separate record methods keep plain and percentile histogram receiver profiles apart.
+    private static final class PercentileDistributionSummary extends HelidonDistributionSummary {
+        private PercentileDistributionSummary(Meter.Id id, Builder builder, HelidonHistogram histogram) {
+            super(id, builder, histogram);
+        }
+
+        @Override
+        public void record(double amount) {
+            if (amount < 0) {
+                return;
+            }
+            super.histogram.record(amount * super.scale);
+        }
     }
 
     static final class Builder extends HelidonMeter.AbstractBuilder<DistributionSummary.Builder, DistributionSummary>

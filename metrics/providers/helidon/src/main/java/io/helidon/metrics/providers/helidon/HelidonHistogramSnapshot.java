@@ -54,18 +54,29 @@ final class HelidonHistogramSnapshot implements HistogramSnapshot {
                                            double[] percentiles,
                                            double[] buckets,
                                            long[] bucketCounts) {
-        double[] sorted = HelidonTypes.sorted(samples);
-        List<ValueAtPercentile> percentileValues = new ArrayList<>(percentiles.length);
-        for (double percentile : percentiles) {
-            percentileValues.add(new HelidonValueAtPercentile(percentile, valueAt(sorted, percentile)));
-        }
+        return create(count, total, max, percentileValues(HelidonTypes.sorted(samples), percentiles), buckets, bucketCounts);
+    }
 
+    static HelidonHistogramSnapshot create(long count,
+                                           double total,
+                                           double max,
+                                           List<ValueAtPercentile> percentileValues,
+                                           double[] buckets,
+                                           long[] bucketCounts) {
         List<Bucket> histogramCounts = new ArrayList<>(buckets.length);
         for (int i = 0; i < buckets.length; i++) {
             histogramCounts.add(new HelidonBucket(buckets[i], bucketCounts[i]));
         }
 
         return new HelidonHistogramSnapshot(count, total, max, percentileValues, histogramCounts);
+    }
+
+    static List<ValueAtPercentile> percentileValues(double[] sortedSamples, double[] percentiles) {
+        List<ValueAtPercentile> percentileValues = new ArrayList<>(percentiles.length);
+        for (double percentile : percentiles) {
+            percentileValues.add(new HelidonValueAtPercentile(percentile, valueAt(sortedSamples, percentile)));
+        }
+        return List.copyOf(percentileValues);
     }
 
     static HelidonHistogramSnapshot empty(long count, double total, double max) {

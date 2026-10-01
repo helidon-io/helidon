@@ -24,7 +24,7 @@
     <Match>
         <!-- Randomness selects statistical reservoir slots; it does not protect security-sensitive values. -->
         <Class name="io.helidon.metrics.providers.helidon.HelidonHistogram$Reservoir"/>
-        <Method name="record"/>
+        <Method name="~(merge|addSamples|nextLongPositive)"/>
         <Bug pattern="PREDICTABLE_RANDOM"/>
     </Match>
 </FindBugsFilter>
