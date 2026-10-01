@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -65,6 +66,7 @@ import io.grpc.ServerCallHandler;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.Status;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -127,6 +129,30 @@ class GrpcProtocolHandlerTest {
         }
         assertThat(Context.current(), sameInstance(previous));
         assertThat(writer.trailerWrites.get(), is(1));
+    }
+
+    @Test
+    @Timeout(20)
+    void testRequestFromWorkerWhileOnMessageIsActive() throws Exception {
+        requestFromWorkerWhileOnMessageIsActive(false, false);
+    }
+
+    @Test
+    @Timeout(20)
+    void testRequestFromWorkerWhileOnMessageIsActiveWithDeadline() throws Exception {
+        requestFromWorkerWhileOnMessageIsActive(false, true);
+    }
+
+    @Test
+    @Timeout(20)
+    void testRequestFromWorkerWithQueuedMessages() throws Exception {
+        requestFromWorkerWhileOnMessageIsActive(true, false);
+    }
+
+    @Test
+    @Timeout(20)
+    void testRequestFromWorkerWithQueuedMessagesAndDeadline() throws Exception {
+        requestFromWorkerWhileOnMessageIsActive(true, true);
     }
 
     @Test
@@ -793,6 +819,82 @@ class GrpcProtocolHandlerTest {
         assertThat(serverCall.isCancelled(), is(true));
     }
 
+    private static void requestFromWorkerWhileOnMessageIsActive(boolean queuedMessages, boolean withDeadline) throws Exception {
+        var callReference = new AtomicReference<ServerCall<String, String>>();
+        var requested = new CompletableFuture<CompletableFuture<Void>>();
+        var release = new CompletableFuture<Void>();
+        var secondReceived = new CompletableFuture<Void>();
+        List<String> callbacks = new CopyOnWriteArrayList<>();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var handler = deadlineHandler(withDeadline ? "1H" : null, (call, metadata) -> {
+                callReference.set(call);
+                return new ServerCall.Listener<>() {
+                    @Override
+                    public void onMessage(String message) {
+                        callbacks.add("entered " + message);
+                        if (message.equals("first")) {
+                            var request = CompletableFuture.runAsync(() -> call.request(1), executor);
+                            requested.complete(request);
+                            // The release future also lets cleanup recover an implementation that deadlocks in request.
+                            CompletableFuture.anyOf(request, release).join();
+                            release.join();
+                        }
+                        callbacks.add("returned " + message);
+                        if (message.equals("second")) {
+                            secondReceived.complete(null);
+                        }
+                    }
+                };
+            }, new RecordingWriter());
+            handler.init();
+            ServerCall<String, String> call = callReference.get();
+            try {
+                if (queuedMessages) {
+                    sendStreamingRequest(handler, "first");
+                    sendStreamingRequest(handler, "second");
+                    sendStreamingRequest(handler, "third");
+                    assertThat("messages wait for demand", callbacks, is(List.of()));
+                } else {
+                    call.request(1);
+                }
+                var delivery = executor.submit(() -> {
+                    if (queuedMessages) {
+                        call.request(1);
+                    } else {
+                        sendStreamingRequest(handler, "first");
+                    }
+                });
+
+                requested.get(5, TimeUnit.SECONDS).get(5, TimeUnit.SECONDS);
+                assertThat("request returns while the first callback remains active",
+                           callbacks, is(List.of("entered first")));
+                release.complete(null);
+                delivery.get(5, TimeUnit.SECONDS);
+
+                if (!queuedMessages) {
+                    sendStreamingRequest(handler, "second");
+                }
+                secondReceived.get(5, TimeUnit.SECONDS);
+                List<String> firstTwo = List.of("entered first", "returned first", "entered second", "returned second");
+                assertThat("worker demand delivers the second message after the first callback returns",
+                           callbacks, is(firstTwo));
+
+                if (!queuedMessages) {
+                    sendStreamingRequest(handler, "third");
+                }
+                assertThat("the third message still needs its own demand", callbacks, is(firstTwo));
+                call.request(1);
+                assertThat("demand is retained and callbacks remain ordered",
+                           callbacks,
+                           is(List.of("entered first", "returned first", "entered second", "returned second",
+                                      "entered third", "returned third")));
+            } finally {
+                release.complete(null);
+                call.close(Status.OK, new Metadata());
+            }
+        }
+    }
+
     private static ServerCall<String, String> createServerCall(Http2StreamWriter streamWriter) {
         GrpcProtocolHandler<String, String> handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
                                                                                 Http2Headers.create(WritableHeaders.create()),
@@ -834,6 +936,16 @@ class GrpcProtocolHandlerTest {
         data.write(message);
         handler.data(Http2FrameHeader.create(data.available(), Http2FrameTypes.DATA,
                                              Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM), 1), data);
+    }
+
+    private static void sendStreamingRequest(GrpcProtocolHandler<String, String> handler, String message) {
+        byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
+        BufferData data = BufferData.create(5 + bytes.length);
+        data.write(0);
+        data.writeUnsignedInt32(bytes.length);
+        data.write(bytes);
+        handler.data(Http2FrameHeader.create(data.available(), Http2FrameTypes.DATA,
+                                             Http2Flag.DataFlags.create(0), 1), data);
     }
 
     private static void await(CountDownLatch latch) {

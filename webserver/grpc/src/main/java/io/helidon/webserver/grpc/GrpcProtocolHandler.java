@@ -272,6 +272,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             } finally {
                 listenerLock.unlock();
             }
+            flushQueue();
         } catch (CloseConnectionException e) {
             cancelContext(e);
             throw e;
@@ -397,6 +398,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 } finally {
                     listenerLock.unlock();
                 }
+                flushQueue();
                 currentStreamState.updateAndGet(
                         current -> nextStreamState(current, Http2StreamState.HALF_CLOSED_REMOTE));
                 // update metrics
@@ -568,16 +570,32 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     }
 
     private void flushQueue() {
-        listenerLock.lock();
-        try {
-            if (listener != null) {
-                while (!callClosed() && !listenerQueue.isEmpty() && numMessages.getAndDecrement() > 0) {
-                    listener.onMessage(listenerQueue.poll());
-                }
-            }
-        } finally {
-            listenerLock.unlock();
+        if (listenerLock.isHeldByCurrentThread()) {
+            return;
         }
+        do {
+            // A callback may wait for another thread to replenish demand. Let the active
+            // callback drain that demand on return instead of making request() wait for it.
+            if (!listenerLock.tryLock()) {
+                return;
+            }
+            try {
+                if (listener != null) {
+                    while (!callClosed() && numMessages.get() > 0) {
+                        REQ request = listenerQueue.poll();
+                        if (request == null) {
+                            break;
+                        }
+                        numMessages.decrementAndGet();
+                        listener.onMessage(request);
+                    }
+                }
+            } finally {
+                listenerLock.unlock();
+            }
+            // Demand or data can arrive after the last check while this thread still owns
+            // the lock. Recheck after releasing it so those requests cannot be stranded.
+        } while (!callClosed() && listener != null && numMessages.get() > 0 && !listenerQueue.isEmpty());
     }
 
     private void cancelContext(Throwable cause) {
