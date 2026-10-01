@@ -270,6 +270,38 @@ class Http2ClientTransportTest {
     }
 
     @Test
+    void failedStreamPingWriteClassifiesStreamAndPhysicalClosure() {
+        var fixture = new Fixture();
+        var stream = fixture.stream();
+        stream.writeHeaders(requestHeaders(), false);
+        var failure = new UncheckedIOException(new IOException("Heartbeat PING write failed"));
+        doThrow(failure).when(fixture.writer).writeNow(any(BufferData.class));
+
+        assertThat(assertThrows(UncheckedIOException.class, stream::sendPing), sameInstance(failure));
+        stream.close();
+        fixture.connection.closeNow();
+
+        assertThat(fixture.events,
+                   is(List.of("protocol:http/2", "stream:LOCAL", "closed:ERROR", "connection:ERROR")));
+    }
+
+    @Test
+    void timedOutStreamPingWriteClassifiesStreamAndPhysicalClosure() {
+        var fixture = new Fixture();
+        var stream = fixture.stream();
+        stream.writeHeaders(requestHeaders(), false);
+        var failure = new UncheckedIOException(new SocketTimeoutException("Heartbeat PING write timed out"));
+        doThrow(failure).when(fixture.writer).writeNow(any(BufferData.class));
+
+        assertThat(assertThrows(UncheckedIOException.class, stream::sendPing), sameInstance(failure));
+        stream.close();
+        fixture.connection.closeNow();
+
+        assertThat(fixture.events,
+                   is(List.of("protocol:http/2", "stream:LOCAL", "closed:ERROR", "connection:TIMEOUT")));
+    }
+
+    @Test
     void pingTimeoutClassifiesPhysicalClosure() {
         var fixture = new Fixture();
         var stream = fixture.stream();

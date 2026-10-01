@@ -659,7 +659,13 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
      * Sends PING frame to server. Can be used to check if connection is healthy.
      */
     public void sendPing() {
-        connection.writer().write(Http2Ping.create().toFrameData());
+        try {
+            connection.writer().write(Http2Ping.create().toFrameData());
+        } catch (UncheckedIOException e) {
+            connection.transportFailed(e);
+            closeObservation(StreamOutcome.ERROR);
+            throw e;
+        }
     }
 
     /**
