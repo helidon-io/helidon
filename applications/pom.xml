@@ -33,7 +33,6 @@
     <description>Maven boilerplate for Helidon applications</description>
 
     <modules>
-        <module>parent</module>
         <module>se</module>
     </modules>
 </project>
