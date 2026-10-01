@@ -122,6 +122,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private final GrpcDeframer deframer;
     private final Context context;
     private final Deadline deadline;
+    private final ReentrantLock lifecycleLock = new ReentrantLock();
     private final ReentrantLock listenerLock = new ReentrantLock();
     private final Context.CancellationListener cancellationListener =
             cancelled -> close(Contexts.statusFromCancelled(cancelled));
@@ -199,14 +200,14 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
             methodMetrics.callStarted.increment();
         }
 
-        listenerLock.lock();
+        lifecycleLock.lock();
         try {
             if (this.responseListener != null) {
                 throw new IllegalStateException("Call already started");
             }
             this.responseListener = Objects.requireNonNull(responseListener);
         } finally {
-            listenerLock.unlock();
+            lifecycleLock.unlock();
         }
         if (isClosed()) {
             notifyClose();
@@ -232,7 +233,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         // An owned virtual thread allows cancellation to interrupt connection setup without
         // interrupting the caller's thread. Calls without a deadline or context retain the direct path.
         var ready = new CompletableFuture<Void>();
-        listenerLock.lock();
+        lifecycleLock.lock();
         try {
             if (isClosed()) {
                 return;
@@ -251,7 +252,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
             }));
             startThread.start();
         } finally {
-            listenerLock.unlock();
+            lifecycleLock.unlock();
         }
         ready.join();
     }
@@ -277,6 +278,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
             }
         } finally {
             listenerLock.unlock();
+            notifyClose();
         }
     }
 
@@ -292,7 +294,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     }
 
     protected final void close(Status status, Metadata metadata) {
-        listenerLock.lock();
+        lifecycleLock.lock();
         try {
             if (isClosed()) {
                 return;
@@ -300,7 +302,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
             closeStatus = status;
             closeMetadata = metadata;
         } finally {
-            listenerLock.unlock();
+            lifecycleLock.unlock();
         }
 
         context.removeListener(cancellationListener);
@@ -606,13 +608,13 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         // obtain HTTP2 connection
         ClientUri clientUri = nextClientUri();
         ClientConnection clientConnection = clientConnection(clientUri);
-        listenerLock.lock();
+        lifecycleLock.lock();
         try {
             if (!isClosed()) {
                 transportConnection = clientConnection;
             }
         } finally {
-            listenerLock.unlock();
+            lifecycleLock.unlock();
         }
         if (transportConnection != clientConnection) {
             clientConnection.closeResource();
@@ -627,13 +629,13 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
             clientConnection.closeResource();
             throw t;
         }
-        listenerLock.lock();
+        lifecycleLock.lock();
         try {
             if (!isClosed()) {
                 connection = newConnection;
             }
         } finally {
-            listenerLock.unlock();
+            lifecycleLock.unlock();
         }
         if (connection != newConnection) {
             newConnection.close();
@@ -671,13 +673,13 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                 http2Client.prototype(),
                 connection.streamIdSequence(),
                 http2Client);
-        listenerLock.lock();
+        lifecycleLock.lock();
         try {
             if (!isClosed()) {
                 clientStream = newStream;
             }
         } finally {
-            listenerLock.unlock();
+            lifecycleLock.unlock();
         }
         if (clientStream != newStream) {
             newStream.close();
@@ -718,9 +720,16 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     }
 
     private void notifyClose() {
-        listenerLock.lock();
+        if (!closeComplete || responseListener == null) {
+            return;
+        }
+        // Cancellation must not wait for an application callback. That callback delivers the
+        // terminal notification on return, including when it cancels the call itself.
+        if (listenerLock.isHeldByCurrentThread() || !listenerLock.tryLock()) {
+            return;
+        }
         try {
-            if (closeComplete && responseListener != null && !closeNotified) {
+            if (!closeNotified) {
                 closeNotified = true;
                 try {
                     context.run(() -> responseListener.onClose(closeStatus, closeMetadata));

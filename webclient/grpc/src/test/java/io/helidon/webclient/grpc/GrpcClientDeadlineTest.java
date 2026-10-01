@@ -27,6 +27,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -40,8 +41,10 @@ import java.util.logging.Logger;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameHeader;
 import io.helidon.http.http2.Http2FrameType;
+import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http2.Http2ClientProtocolConfig;
 import io.helidon.webserver.WebServer;
@@ -278,6 +281,107 @@ class GrpcClientDeadlineTest {
         }
     }
 
+    @ParameterizedTest
+    @EnumSource(CancellationSource.class)
+    void cancellationClosesTransportWhileListenerIsBlocked(CancellationSource source) throws Exception {
+        var nanos = new AtomicLong();
+        var deadline = Deadline.after(1, TimeUnit.SECONDS, new Deadline.Ticker() {
+            @Override
+            public long nanoTime() {
+                return nanos.get();
+            }
+        });
+        CallOptions options = source == CancellationSource.DEADLINE
+                ? CallOptions.DEFAULT.withDeadline(deadline) : CallOptions.DEFAULT;
+        var accepted = new CompletableFuture<Socket>();
+        var received = new CompletableFuture<String>();
+        var release = new CompletableFuture<Void>();
+        var listenerCancellationReturned = new CompletableFuture<Void>();
+        var status = new CompletableFuture<Status>();
+        var closeCount = new AtomicInteger();
+        List<String> callbacks = new CopyOnWriteArrayList<>();
+        try (var context = Context.current().withCancellation();
+             var executor = Executors.newVirtualThreadPerTaskExecutor();
+             var listening = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))) {
+            listening.setSoTimeout(5000);
+            var peer = executor.submit(() -> {
+                try (Socket socket = listening.accept()) {
+                    accepted.complete(socket);
+                    socket.setSoTimeout(10000);
+                    sendStreamingResponse(socket);
+                    socket.getInputStream().readAllBytes();
+                }
+                return null;
+            });
+            var client = GrpcClient.builder()
+                    .baseUri("http://127.0.0.1:" + listening.getLocalPort())
+                    .tls(tls -> tls.enabled(false))
+                    .readTimeout(Duration.ofSeconds(10))
+                    .build();
+            var call = context.call(() -> client.channel()
+                    .newCall(descriptor(MethodDescriptor.MethodType.BIDI_STREAMING), options));
+            try {
+                call.start(new ClientCall.Listener<>() {
+                    @Override
+                    public void onMessage(String message) {
+                        callbacks.add("onMessage entered");
+                        received.complete(message);
+                        try {
+                            if (source == CancellationSource.ON_MESSAGE) {
+                                call.cancel("cancelled by listener", null);
+                                listenerCancellationReturned.complete(null);
+                            }
+                            // Cancellation can interrupt this thread. Keep the application callback blocked.
+                            release.join();
+                        } finally {
+                            callbacks.add("onMessage returned");
+                        }
+                    }
+
+                    @Override
+                    public void onClose(Status result, Metadata trailers) {
+                        callbacks.add("onClose");
+                        closeCount.incrementAndGet();
+                        status.complete(result);
+                    }
+                }, new Metadata());
+                call.request(1);
+                call.sendMessage("request");
+                assertThat(received.get(5, TimeUnit.SECONDS), is("response"));
+
+                var cancellation = executor.submit(() -> {
+                    switch (source) {
+                        case CALL -> call.cancel("explicit cancellation", null);
+                        case CONTEXT -> context.cancel(null);
+                        case DEADLINE -> nanos.set(TimeUnit.SECONDS.toNanos(1));
+                        case ON_MESSAGE -> listenerCancellationReturned.join();
+                    }
+                });
+                // Both the cancellation operation and the peer's EOF must precede the callback's release.
+                cancellation.get(5, TimeUnit.SECONDS);
+                peer.get(5, TimeUnit.SECONDS);
+                assertThat("onClose waits for onMessage to return", status.isDone(), is(false));
+                assertThat("callbacks do not overlap", callbacks, is(List.of("onMessage entered")));
+
+                release.complete(null);
+                Status.Code expected = source == CancellationSource.DEADLINE
+                        ? Status.Code.DEADLINE_EXCEEDED : Status.Code.CANCELLED;
+                assertThat(status.get(5, TimeUnit.SECONDS).getCode(), is(expected));
+                call.cancel("repeated cancellation", null);
+                context.cancel(null);
+                assertThat(closeCount.get(), is(1));
+                assertThat("terminal callback follows the message callback",
+                           callbacks, is(List.of("onMessage entered", "onMessage returned", "onClose")));
+            } finally {
+                release.complete(null);
+                if (accepted.isDone()) {
+                    accepted.join().close();
+                }
+                call.cancel("test cleanup", null);
+            }
+        }
+    }
+
     @Test
     void contextCancellationBeforeStartDoesNotConnect() throws Exception {
         try (var context = Context.current().withCancellation()) {
@@ -411,6 +515,45 @@ class GrpcClientDeadlineTest {
                 .build();
     }
 
+    private static void sendStreamingResponse(Socket socket) throws IOException {
+        var input = socket.getInputStream();
+        var output = socket.getOutputStream();
+        Http2FrameHeader.create(0, Http2FrameTypes.SETTINGS, Http2Flag.SettingsFlags.create(0), 0)
+                .write().writeTo(output);
+        assertThat(new String(input.readNBytes(24), StandardCharsets.US_ASCII),
+                   is("PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"));
+        int streamId;
+        while (true) {
+            byte[] bytes = input.readNBytes(Http2FrameHeader.LENGTH);
+            assertThat("complete HTTP/2 frame header", bytes.length, is(Http2FrameHeader.LENGTH));
+            Http2FrameHeader frame = Http2FrameHeader.create(BufferData.create(bytes));
+            assertThat("complete HTTP/2 frame payload", input.readNBytes(frame.length()).length, is(frame.length()));
+            if (frame.type() == Http2FrameType.SETTINGS && !frame.flags(Http2FrameTypes.SETTINGS).ack()) {
+                Http2FrameHeader.create(0, Http2FrameTypes.SETTINGS, Http2Flag.SettingsFlags.create(Http2Flag.ACK), 0)
+                        .write().writeTo(output);
+            } else if (frame.type() == Http2FrameType.HEADERS) {
+                streamId = frame.streamId();
+                break;
+            }
+        }
+        // HPACK static index 8 is :status 200; index 31 names the literal content-type field.
+        byte[] contentType = "application/grpc".getBytes(StandardCharsets.US_ASCII);
+        Http2FrameHeader.create(4 + contentType.length, Http2FrameTypes.HEADERS,
+                               Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS), streamId)
+                .write().writeTo(output);
+        output.write(new byte[] {(byte) 0x88, 0x0f, 0x10, (byte) contentType.length});
+        output.write(contentType);
+        byte[] message = "response".getBytes(StandardCharsets.UTF_8);
+        Http2FrameHeader.create(5 + message.length, Http2FrameTypes.DATA, Http2Flag.DataFlags.create(0), streamId)
+                .write().writeTo(output);
+        BufferData prefix = BufferData.create(5);
+        prefix.writeInt8(0);
+        prefix.writeUnsignedInt32(message.length);
+        prefix.writeTo(output);
+        output.write(message);
+        output.flush();
+    }
+
     private static WebServer server(HttpRouting.Builder routing) {
         return WebServer.builder()
                 .addConnectionSelector(Http2ConnectionSelector.builder().http2Config(Http2Config.create()).build())
@@ -446,6 +589,13 @@ class GrpcClientDeadlineTest {
     private enum DeadlineSource {
         CONTEXT,
         CALL_OPTIONS
+    }
+
+    private enum CancellationSource {
+        CALL,
+        CONTEXT,
+        DEADLINE,
+        ON_MESSAGE
     }
 
     private static final class ResponseListener extends ClientCall.Listener<String> {
