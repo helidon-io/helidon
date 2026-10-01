@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -58,9 +59,20 @@ import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Timeout(20)
 class GrpcClientCallTest {
+    @Test
+    void zeroDemandDoesNotCloseCallOrDeliverMessages() throws Exception {
+        nonPositiveDemandDoesNotCloseCall(0);
+    }
+
+    @Test
+    void negativeDemandThrowsWithoutClosingCall() throws Exception {
+        nonPositiveDemandDoesNotCloseCall(-1);
+    }
+
     @Test
     void peerResetClosesConnectionWithoutInterruptingListener() throws Exception {
         peerResetClosesConnection(false);
@@ -69,6 +81,89 @@ class GrpcClientCallTest {
     @Test
     void peerResetClosesTransportWhenGoAwayWriteFails() throws Exception {
         peerResetClosesConnection(true);
+    }
+
+    private static void nonPositiveDemandDoesNotCloseCall(int demand) throws Exception {
+        var accepted = new CompletableFuture<Socket>();
+        var sendSecond = new CompletableFuture<Void>();
+        var secondSent = new CompletableFuture<Void>();
+        var firstReceived = new CompletableFuture<String>();
+        var secondReceived = new CompletableFuture<String>();
+        var status = new CompletableFuture<Status>();
+        var messageCount = new AtomicInteger();
+        var closeCount = new AtomicInteger();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor();
+             var listening = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))) {
+            listening.setSoTimeout(5000);
+            var peer = executor.submit(() -> {
+                try (Socket socket = listening.accept()) {
+                    accepted.complete(socket);
+                    socket.setSoTimeout(10000);
+                    int streamId = sendStreamingResponse(socket);
+                    sendSecond.get(5, TimeUnit.SECONDS);
+                    sendResponseMessage(socket, streamId, "second response");
+                    secondSent.complete(null);
+                    socket.getInputStream().readAllBytes();
+                }
+                return null;
+            });
+            var client = GrpcClient.builder()
+                    .baseUri("http://127.0.0.1:" + listening.getLocalPort())
+                    .tls(tls -> tls.enabled(false))
+                    .readTimeout(Duration.ofSeconds(10))
+                    .protocolConfig(GrpcClientProtocolConfig.builder()
+                                            .nextRequestWaitTime(Duration.ofSeconds(10))
+                                            .build())
+                    .build();
+            var call = client.channel().newCall(descriptor(), CallOptions.DEFAULT);
+            try {
+                call.start(new ClientCall.Listener<>() {
+                    @Override
+                    public void onMessage(String message) {
+                        if (messageCount.incrementAndGet() == 1) {
+                            firstReceived.complete(message);
+                        } else {
+                            secondReceived.complete(message);
+                        }
+                    }
+
+                    @Override
+                    public void onClose(Status result, Metadata trailers) {
+                        closeCount.incrementAndGet();
+                        status.complete(result);
+                    }
+                }, new Metadata());
+                call.request(1);
+                assertThat(firstReceived.get(5, TimeUnit.SECONDS), is("response"));
+
+                if (demand < 0) {
+                    assertThrows(IllegalArgumentException.class, () -> call.request(demand));
+                } else {
+                    call.request(demand);
+                }
+                assertThat("non-positive demand does not close the call", status.isDone(), is(false));
+                sendSecond.complete(null);
+                secondSent.get(5, TimeUnit.SECONDS);
+                assertThrows(TimeoutException.class, () -> secondReceived.get(250, TimeUnit.MILLISECONDS));
+                assertThat("the second message still needs positive demand", messageCount.get(), is(1));
+                assertThat("the call remains open while awaiting demand", status.isDone(), is(false));
+
+                call.request(1);
+                assertThat(secondReceived.get(5, TimeUnit.SECONDS), is("second response"));
+                assertThat(messageCount.get(), is(2));
+                assertThat("positive demand resumes the same call", status.isDone(), is(false));
+                call.cancel("test complete", null);
+                assertThat(status.get(5, TimeUnit.SECONDS).getCode(), is(Status.Code.CANCELLED));
+                assertThat(closeCount.get(), is(1));
+                peer.get(5, TimeUnit.SECONDS);
+            } finally {
+                sendSecond.complete(null);
+                if (accepted.isDone()) {
+                    accepted.join().close();
+                }
+                call.cancel("test cleanup", null);
+            }
+        }
     }
 
     private static void peerResetClosesConnection(boolean failGoAway) throws Exception {
@@ -196,7 +291,13 @@ class GrpcClientCallTest {
                 .write().writeTo(output);
         output.write(new byte[] {(byte) 0x88, 0x0f, 0x10, (byte) contentType.length});
         output.write(contentType);
-        byte[] message = "response".getBytes(StandardCharsets.UTF_8);
+        sendResponseMessage(socket, streamId, "response");
+        return streamId;
+    }
+
+    private static void sendResponseMessage(Socket socket, int streamId, String response) throws IOException {
+        var output = socket.getOutputStream();
+        byte[] message = response.getBytes(StandardCharsets.UTF_8);
         Http2FrameHeader.create(5 + message.length, Http2FrameTypes.DATA, Http2Flag.DataFlags.create(0), streamId)
                 .write().writeTo(output);
         BufferData prefix = BufferData.create(5);
@@ -205,7 +306,6 @@ class GrpcClientCallTest {
         prefix.writeTo(output);
         output.write(message);
         output.flush();
-        return streamId;
     }
 
     private static MethodDescriptor<String, String> descriptor() {

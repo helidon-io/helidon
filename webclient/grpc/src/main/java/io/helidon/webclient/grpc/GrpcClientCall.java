@@ -71,14 +71,13 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
     @Override
     public void request(int numMessages) {
-        if (isClosed()) {
+        if (numMessages < 0) {
+            throw new IllegalArgumentException("Number of messages must not be negative");
+        }
+        if (isClosed() || numMessages == 0) {
             return;
         }
         LOGGER.log(DEBUG, "request called {0}", numMessages);
-        if (numMessages < 1) {
-            close(Status.INVALID_ARGUMENT);
-            return;
-        }
         messageRequest.release(numMessages);
         startReadBarrier.countDown();
     }
