@@ -71,6 +71,13 @@ are approximate, using a uniform sample of observations over the meter's lifetim
 without a rolling time window. Counts, totals, maxima, and bucket counts still
 include every valid observation.
 
+Percentiles are enabled by default for timers and distribution summaries in the
+Helidon provider. Each meter with percentiles enabled uses reusable recording
+buffers that grow on demand. A fully populated histogram can retain
+about 1 MiB of sample storage, in addition to object overhead. This cost applies
+to each meter, including each distinct tag set; account for it when using
+percentiles for many meters, including with the default configuration.
+
 Alternatively, choose the Micrometer provider for direct Micrometer integration
 or Micrometer-specific publisher settings:
 

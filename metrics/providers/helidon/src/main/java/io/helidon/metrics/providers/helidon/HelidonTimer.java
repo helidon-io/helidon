@@ -30,15 +30,14 @@ import io.helidon.metrics.api.HistogramSnapshot;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.Timer;
 
-final class HelidonTimer extends HelidonMeter implements Timer {
+sealed class HelidonTimer extends HelidonMeter implements Timer {
     private final HelidonHistogram histogram;
     private final Clock clock;
     private final Optional<TimeUnit> baseTimeUnit;
 
-    private HelidonTimer(Meter.Id id, Builder builder, Clock clock) {
+    private HelidonTimer(Meter.Id id, Builder builder, Clock clock, HelidonHistogram histogram) {
         super(id, Type.TIMER, builder);
-        this.histogram = HelidonHistogram.create(HelidonTypes.doubleArray(builder.percentiles()),
-                                                 builder.histogramBucketsAsNanos());
+        this.histogram = histogram;
         this.clock = Objects.requireNonNull(clock);
         this.baseTimeUnit = Optional.ofNullable(builder.baseTimeUnit);
     }
@@ -48,7 +47,11 @@ final class HelidonTimer extends HelidonMeter implements Timer {
     }
 
     static HelidonTimer create(Meter.Id id, Builder builder, Clock clock) {
-        return new HelidonTimer(id, builder, clock);
+        var histogram = HelidonHistogram.create(HelidonTypes.doubleArray(builder.percentiles()),
+                                               builder.histogramBucketsAsNanos());
+        return histogram.hasPercentiles()
+                ? new PercentileTimer(id, builder, clock, histogram)
+                : new HelidonTimer(id, builder, clock, histogram);
     }
 
     static Timer.Sample start(Clock clock) {
@@ -162,6 +165,21 @@ final class HelidonTimer extends HelidonMeter implements Timer {
                 + ", totalTime=" + HelidonTypes.durationString(histogram.total())
                 + ", max=" + HelidonTypes.durationString(histogram.max())
                 + "]";
+    }
+
+    // Separate record methods keep plain and percentile histogram receiver profiles apart.
+    private static final class PercentileTimer extends HelidonTimer {
+        private PercentileTimer(Meter.Id id, Builder builder, Clock clock, HelidonHistogram histogram) {
+            super(id, builder, clock, histogram);
+        }
+
+        @Override
+        public void record(long amount, TimeUnit unit) {
+            Objects.requireNonNull(unit);
+            if (amount >= 0) {
+                super.histogram.record(HelidonTypes.toNanos(amount, unit));
+            }
+        }
     }
 
     static final class Sample implements Timer.Sample {
