@@ -39,18 +39,19 @@
         <maven.compiler.source>27</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
         <maven.compiler.release>${maven.compiler.source}</maven.compiler.release>
-        <version.plugin.compiler>3.11.0</version.plugin.compiler>
+        <version.plugin.compiler>3.16.0</version.plugin.compiler>
         <version.plugin.dependency>3.6.0</version.plugin.dependency>
         <version.plugin.exec>3.1.0</version.plugin.exec>
-        <version.plugin.failsafe>3.1.2</version.plugin.failsafe>
+        <version.plugin.failsafe>3.5.6</version.plugin.failsafe>
         <version.plugin.helidon>4.0.26</version.plugin.helidon>
         <version.plugin.helidon-cli>4.0.26</version.plugin.helidon-cli>
+        <version.plugin.install>3.2.0</version.plugin.install>
         <version.plugin.jar>3.3.0</version.plugin.jar>
         <version.plugin.nativeimage>0.10.2</version.plugin.nativeimage>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
         <version.plugin.protobuf>0.6.1</version.plugin.protobuf>
         <version.plugin.resources>3.3.1</version.plugin.resources>
-        <version.plugin.surefire>3.1.0</version.plugin.surefire>
+        <version.plugin.surefire>3.5.6</version.plugin.surefire>
         <version.lib.google-protobuf>4.36.2</version.lib.google-protobuf>
         <version.lib.grpc>1.73.0</version.lib.grpc>
         <helidon.test.config.profile>test</helidon.test.config.profile>
