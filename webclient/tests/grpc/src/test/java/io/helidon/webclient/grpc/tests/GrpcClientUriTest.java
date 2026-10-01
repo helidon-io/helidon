@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,15 @@
 
 package io.helidon.webclient.grpc.tests;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.URI;
 import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.tls.Tls;
@@ -78,23 +84,34 @@ class GrpcClientUriTest extends GrpcBaseTest {
      * Should fail to connect to first URI but succeed with second after retrying.
      */
     @Test
-    void testSupplierWithRetries() {
-        CountDownLatch latch = new CountDownLatch(2);
-        ClientUri badUri = ClientUri.create(URI.create("https://foo:8000"));
-        ClientUri goodUri = ClientUri.create(URI.create("https://localhost:" + server.port()));
-        GrpcClient grpcClient = GrpcClient.builder()
-                .tls(clientTls)
-                .clientUriSupplier(new ClientUriSupplierTest(latch, badUri, goodUri))
-                .build();
-        StringServiceGrpc.StringServiceBlockingStub service = StringServiceGrpc.newBlockingStub(grpcClient.channel());
+    void testSupplierWithRetries() throws Exception {
+        try (ServerSocket failingServer = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))) {
+            CompletableFuture<Void> rejectedConnection = CompletableFuture.runAsync(() -> {
+                try {
+                    // Close the first connection immediately so its failure does not depend on DNS or a connect timeout.
+                    failingServer.accept().close();
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            });
+            CountDownLatch latch = new CountDownLatch(2);
+            ClientUri badUri = ClientUri.create(URI.create("https://127.0.0.1:" + failingServer.getLocalPort()));
+            ClientUri goodUri = ClientUri.create(URI.create("https://localhost:" + server.port()));
+            GrpcClient grpcClient = GrpcClient.builder()
+                    .tls(clientTls)
+                    .clientUriSupplier(new ClientUriSupplierTest(latch, badUri, goodUri))
+                    .build();
+            StringServiceGrpc.StringServiceBlockingStub service = StringServiceGrpc.newBlockingStub(grpcClient.channel());
 
-        Retry retry = Retry.builder()
-                .overallTimeout(Duration.ofMillis(5000))
-                .calls(2)
-                .build();
-        Strings.StringMessage res = retry.invoke(() -> service.upper(newStringMessage("hello")));
-        assertThat(res.getText(), is("HELLO"));
-        assertThat(latch.getCount(), is(0L));
+            Retry retry = Retry.builder()
+                    .overallTimeout(Duration.ofMillis(5000))
+                    .calls(2)
+                    .build();
+            Strings.StringMessage res = retry.invoke(() -> service.upper(newStringMessage("hello")));
+            assertThat(res.getText(), is("HELLO"));
+            assertThat(latch.getCount(), is(0L));
+            rejectedConnection.get(5, TimeUnit.SECONDS);
+        }
     }
 
     static class ClientUriSupplierTest extends ClientUriSuppliers.RoundRobinSupplier {
