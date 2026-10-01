@@ -42,6 +42,8 @@ import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2Settings;
 import io.helidon.http.http2.Http2StreamState;
+import io.helidon.webclient.api.ClientConnection;
+import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.http2.Http2ClientImpl;
 import io.helidon.webclient.http2.Http2StreamConfig;
 import io.helidon.webclient.http2.LockingStreamIdSequence;
@@ -64,9 +66,56 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class GrpcBaseClientCallTest {
+
+    @Test
+    void unaryCancelWithoutConnection() {
+        GrpcClient client = grpcClient();
+        IllegalStateException connectFailure = new IllegalStateException("connect failed");
+        var call = new GrpcUnaryClientCall<String, String>((GrpcChannel) client.channel(),
+                                                           stringDescriptor(), CallOptions.DEFAULT) {
+            @Override
+            ClientConnection clientConnection(ClientUri clientUri, String authority) {
+                throw connectFailure;
+            }
+        };
+
+        assertThat(assertThrows(IllegalStateException.class,
+                                () -> call.start(new ClientCall.Listener<>() { }, new Metadata())),
+                   sameInstance(connectFailure));
+        call.cancel("after failed start", connectFailure);
+
+        var unstartedCall = new GrpcUnaryClientCall<String, String>((GrpcChannel) client.channel(),
+                                                                    stringDescriptor(), CallOptions.DEFAULT);
+        unstartedCall.cancel("before start", null);
+    }
+
+    @Test
+    void streamingCancelWithoutConnection() {
+        GrpcClient client = grpcClient();
+        IllegalStateException connectFailure = new IllegalStateException("connect failed");
+        var call = new GrpcClientCall<String, String>((GrpcChannel) client.channel(),
+                                                      stringDescriptor(MethodDescriptor.MethodType.BIDI_STREAMING),
+                                                      CallOptions.DEFAULT) {
+            @Override
+            ClientConnection clientConnection(ClientUri clientUri, String authority) {
+                throw connectFailure;
+            }
+        };
+
+        assertThat(assertThrows(IllegalStateException.class,
+                                () -> call.start(new ClientCall.Listener<>() { }, new Metadata())),
+                   sameInstance(connectFailure));
+        call.cancel("after failed start", connectFailure);
+
+        var unstartedCall = new GrpcClientCall<String, String>((GrpcChannel) client.channel(),
+                                                               stringDescriptor(MethodDescriptor.MethodType.BIDI_STREAMING),
+                                                               CallOptions.DEFAULT);
+        unstartedCall.cancel("before start", null);
+    }
 
     @Test
     void testHeadersAndMetadata() {

@@ -118,6 +118,9 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
     @Override
     public void cancel(String message, Throwable cause) {
+        if (clientStream() == null) {
+            return;
+        }
         socket().log(LOGGER, DEBUG, "cancel called %s", message);
         if (!terminal.get()) {
             try {
