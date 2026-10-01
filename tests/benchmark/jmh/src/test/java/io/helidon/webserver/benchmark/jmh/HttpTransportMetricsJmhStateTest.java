@@ -16,10 +16,40 @@
 
 package io.helidon.webserver.benchmark.jmh;
 
+import java.util.regex.Pattern;
+
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.RunnerException;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
+import org.openjdk.jmh.runner.options.TimeValue;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 
 class HttpTransportMetricsJmhStateTest {
+    @ParameterizedTest
+    @ValueSource(strings = {"disabledHttp1KeepAliveExchange", "disabledHttp1ConnectionLifecycle"})
+    void disabledHttp1BenchmarksSupportConcurrentThreads(String benchmarkMethod) throws RunnerException {
+        String benchmark = HttpTransportMetricsJmhTest.class.getName() + "." + benchmarkMethod;
+        var options = new OptionsBuilder()
+                .include("^" + Pattern.quote(benchmark) + "$")
+                .threads(8)
+                .forks(0)
+                .mode(Mode.AverageTime)
+                .warmupIterations(0)
+                .measurementIterations(1)
+                .measurementTime(TimeValue.seconds(1))
+                .timeout(TimeValue.seconds(15))
+                .shouldFailOnError(true)
+                .build();
+
+        assertThat("Concurrent benchmark must complete: " + benchmarkMethod, new Runner(options).run(), hasSize(1));
+    }
+
     @ParameterizedTest
     @CsvSource({
             "noop, false", "noop, true",

@@ -107,12 +107,12 @@ public class HttpTransportMetricsJmhTest {
             """.getBytes(StandardCharsets.US_ASCII);
 
     @Benchmark
-    public int disabledHttp1KeepAliveExchange(DisabledServerState state) throws IOException {
+    public int disabledHttp1KeepAliveExchange(DisabledClientState state) throws IOException {
         return state.keepAliveExchange();
     }
 
     @Benchmark
-    public int disabledHttp1ConnectionLifecycle(DisabledServerState state) throws IOException {
+    public int disabledHttp1ConnectionLifecycle(DisabledClientState state) throws IOException {
         return state.connectionLifecycle();
     }
 
@@ -296,17 +296,10 @@ public class HttpTransportMetricsJmhTest {
         private static final Header CONTENT_LENGTH = HeaderValues.createCached(HeaderNames.CONTENT_LENGTH,
                                                                                 String.valueOf(RESPONSE_BYTES.length));
 
-        private final byte[] keepAliveResponse = new byte[RESPONSE_BUFFER_SIZE];
-        private final byte[] closeResponse = new byte[RESPONSE_BUFFER_SIZE];
-
         private WebServer server;
-        private int serverPort;
-        private Socket keepAliveSocket;
-        private InputStream keepAliveInput;
-        private OutputStream keepAliveOutput;
 
         @Setup(Level.Trial)
-        public void setup() throws IOException {
+        public void setup() {
             server = WebServer.builder()
                     .featuresDiscoverServices(false)
                     .connectionOptions(builder -> builder
@@ -316,7 +309,38 @@ public class HttpTransportMetricsJmhTest {
                     .routing(routing -> routing.get("/benchmark", new BenchmarkHandler()))
                     .build()
                     .start();
-            serverPort = server.port();
+        }
+
+        @TearDown(Level.Trial)
+        public void tearDown() {
+            if (server != null) {
+                server.stop();
+            }
+        }
+
+        private static final class BenchmarkHandler implements Handler {
+            @Override
+            public void handle(ServerRequest req, ServerResponse res) {
+                res.header(CONTENT_LENGTH);
+                res.send(RESPONSE_BYTES);
+            }
+        }
+    }
+
+    /** Per-thread HTTP/1 connections and response buffers for the shared server. */
+    @State(Scope.Thread)
+    public static class DisabledClientState {
+        private final byte[] keepAliveResponse = new byte[RESPONSE_BUFFER_SIZE];
+        private final byte[] closeResponse = new byte[RESPONSE_BUFFER_SIZE];
+
+        private int serverPort;
+        private Socket keepAliveSocket;
+        private InputStream keepAliveInput;
+        private OutputStream keepAliveOutput;
+
+        @Setup(Level.Trial)
+        public void setup(DisabledServerState serverState) throws IOException {
+            serverPort = serverState.server.port();
             keepAliveSocket = newSocket();
             keepAliveInput = keepAliveSocket.getInputStream();
             keepAliveOutput = keepAliveSocket.getOutputStream();
@@ -327,14 +351,8 @@ public class HttpTransportMetricsJmhTest {
 
         @TearDown(Level.Trial)
         public void tearDown() throws IOException {
-            try {
-                if (keepAliveSocket != null) {
-                    keepAliveSocket.close();
-                }
-            } finally {
-                if (server != null) {
-                    server.stop();
-                }
+            if (keepAliveSocket != null) {
+                keepAliveSocket.close();
             }
         }
 
@@ -363,14 +381,6 @@ public class HttpTransportMetricsJmhTest {
             socket.setTcpNoDelay(true);
             socket.setSoTimeout(SOCKET_READ_TIMEOUT_MILLIS);
             return socket;
-        }
-
-        private static final class BenchmarkHandler implements Handler {
-            @Override
-            public void handle(ServerRequest req, ServerResponse res) {
-                res.header(CONTENT_LENGTH);
-                res.send(RESPONSE_BYTES);
-            }
         }
     }
 
