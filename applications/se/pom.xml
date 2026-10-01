@@ -47,7 +47,6 @@
         <version.plugin.helidon-cli>4.0.26</version.plugin.helidon-cli>
         <version.plugin.install>3.2.0</version.plugin.install>
         <version.plugin.jar>3.3.0</version.plugin.jar>
-        <version.plugin.nativeimage>0.10.2</version.plugin.nativeimage>
         <version.plugin.os>1.5.0.Final</version.plugin.os>
         <version.plugin.protobuf>0.6.1</version.plugin.protobuf>
         <version.plugin.resources>3.3.1</version.plugin.resources>
