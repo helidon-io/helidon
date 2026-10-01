@@ -171,7 +171,7 @@ public class ClientSecurityFilter implements ClientRequestFilter {
 
             MultivaluedMap<String, Object> headers = requestContext.getHeaders();
             for (Map.Entry<String, List<String>> entry : newHeaders.entrySet()) {
-                LOGGER.log(Level.TRACE, () -> "    + Header: " + entry.getKey() + ": " + entry.getValue());
+                LOGGER.log(Level.TRACE, () -> "    + Header: " + entry.getKey() + ": <redacted>");
 
                 //replace existing
                 headers.remove(entry.getKey());

@@ -17,9 +17,11 @@
 package io.helidon.microprofile.security;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ResourceBundle;
 
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
@@ -33,6 +35,7 @@ import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.SecurityResponse;
 import io.helidon.security.annotations.Authorized;
+import io.helidon.security.integration.common.AtnTracing;
 import io.helidon.security.integration.common.SecurityTracing;
 import io.helidon.security.providers.common.spi.AnnotationAnalyzer;
 
@@ -46,7 +49,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -439,16 +444,78 @@ class SecurityFilterTest {
         assertThat(env.requestedQuery().orElseThrow().rawValue(), is(""));
     }
 
+    @Test
+    void traceLogsDoNotExposeRequestData() {
+        String authorizationSecret = "AUTHORIZATION-SECRET";
+        String cookieSecret = "COOKIE-SECRET";
+        String querySecret = "QUERY-SECRET";
+        URI requestUri = URI.create("https://example.org/secured/resource?token=" + querySecret);
+        RecordingLogger logger = new RecordingLogger();
+        SecurityContext securityContext = security.createContext("testTraceLogsDoNotExposeRequestData");
+        TestSecurityFilter filter = new TestSecurityFilter(security, logger);
+        ContainerRequest request = mock(ContainerRequest.class);
+        ExtendedUriInfo uriInfo = mock(ExtendedUriInfo.class);
+        MultivaluedHashMap<String, String> headers = new MultivaluedHashMap<>();
+
+        headers.put("Authorization", List.of("Bearer " + authorizationSecret));
+        headers.put("Cookie", List.of("SESSION=" + cookieSecret));
+        when(request.getMethod()).thenReturn("GET");
+        when(request.getUriInfo()).thenReturn(uriInfo);
+        when(request.getHeaders()).thenReturn(headers);
+        when(uriInfo.getRequestUri()).thenReturn(requestUri);
+
+        filter.doFilter(request, securityContext);
+        new TestSecurityFilter(security, logger, true)
+                .doFilter(request, security.createContext("testTraceLogsDoNotExposeMissingResourceData"));
+
+        SecurityDefinition definition = new SecurityDefinition(false, false);
+        SecurityFilterContext filterContext = new SecurityFilterContext();
+        filterContext.methodSecurity(definition);
+        filterContext.resourcePath(requestUri.getRawPath());
+        filterContext.targetUri(requestUri);
+
+        definition.requiresAuthentication(true);
+        filter.authenticate(filterContext, securityContext, tracing.atnTracing());
+        definition.requiresAuthentication(false);
+        filter.authenticate(filterContext, securityContext, tracing.atnTracing());
+
+        definition.atzExplicit(true);
+        filter.authorize(filterContext, securityContext, tracing.atzTracing());
+        definition.atzExplicit(false);
+        definition.requiresAuthorization(true);
+        filter.authorize(filterContext, securityContext, tracing.atzTracing());
+        definition.requiresAuthorization(false);
+        filter.authorize(filterContext, securityContext, tracing.atzTracing());
+
+        String messages = logger.messages();
+        assertThat(messages, containsString("/secured/resource"));
+        assertThat(messages, not(containsString(authorizationSecret)));
+        assertThat(messages, not(containsString(cookieSecret)));
+        assertThat(messages, not(containsString(querySecret)));
+    }
+
     private static final class TestSecurityFilter extends SecurityFilterCommon {
         private static final System.Logger LOGGER = System.getLogger(TestSecurityFilter.class.getName());
+        private final System.Logger logger;
+        private final boolean finishRequest;
 
         private TestSecurityFilter(Security security) {
+            this(security, LOGGER, false);
+        }
+
+        private TestSecurityFilter(Security security, System.Logger logger) {
+            this(security, logger, false);
+        }
+
+        private TestSecurityFilter(Security security, System.Logger logger, boolean finishRequest) {
             super(security, new FeatureConfig());
+            this.logger = logger;
+            this.finishRequest = finishRequest;
         }
 
         @Override
         protected System.Logger logger() {
-            return LOGGER;
+            return logger;
         }
 
         @Override
@@ -465,7 +532,54 @@ class SecurityFilterTest {
 
             context.methodSecurity(methodDef);
             context.resourceName("jax-rs");
+            context.shouldFinish(finishRequest);
             return configureContext(context, requestContext, requestContext.getUriInfo());
+        }
+
+        @Override
+        protected void processAuthentication(SecurityFilterContext context,
+                                             SecurityClientBuilder<AuthenticationResponse> clientBuilder,
+                                             SecurityDefinition methodSecurity,
+                                             AtnTracing atnTracing) {
+        }
+
+        @Override
+        protected void processAuthorization(SecurityFilterContext context,
+                                            SecurityClientBuilder<AuthorizationResponse> clientBuilder) {
+        }
+    }
+
+    private static final class RecordingLogger implements System.Logger {
+        private final List<String> messages = new ArrayList<>();
+
+        @Override
+        public String getName() {
+            return RecordingLogger.class.getName();
+        }
+
+        @Override
+        public boolean isLoggable(Level level) {
+            return true;
+        }
+
+        @Override
+        public void log(Level level, ResourceBundle bundle, String message, Throwable thrown) {
+            messages.add(message);
+            if (thrown != null) {
+                messages.add(thrown.toString());
+            }
+        }
+
+        @Override
+        public void log(Level level, ResourceBundle bundle, String format, Object... params) {
+            messages.add(format);
+            for (Object param : params) {
+                messages.add(String.valueOf(param));
+            }
+        }
+
+        private String messages() {
+            return String.join("\n", messages);
         }
     }
 }

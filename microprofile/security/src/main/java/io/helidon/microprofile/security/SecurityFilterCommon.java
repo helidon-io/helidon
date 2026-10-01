@@ -106,23 +106,23 @@ abstract class SecurityFilterCommon {
         tracing.securityContext(securityContext);
 
         SecurityFilterContext filterContext = initRequestFiltering(request);
+        URI requestUri = request.getUriInfo().getRequestUri();
 
         if (logger().isLoggable(Level.TRACE)) {
             logger().log(Level.TRACE, "Endpoint {0} security context: {1}",
-                         request.getUriInfo().getRequestUri(),
+                         requestUri.getRawPath(),
                          filterContext);
         }
 
         if (filterContext.shouldFinish()) {
             if (logger().isLoggable(Level.TRACE)) {
-                logger().log(Level.TRACE, "Endpoint %s not found, no security", request.getUriInfo().getRequestUri());
+                logger().log(Level.TRACE, "Endpoint %s not found, no security", requestUri.getRawPath());
             }
             // 404
             tracing.finish();
             return;
         }
 
-        URI requestUri = request.getUriInfo().getRequestUri();
         String query = requestUri.getRawQuery();
         String path = requestUri.getRawPath();
         path = path == null || path.isEmpty() ? "/" : path;
@@ -225,7 +225,7 @@ abstract class SecurityFilterCommon {
 
             if (methodSecurity.requiresAuthentication()) {
                 if (logger().isLoggable(Level.TRACE)) {
-                    logger().log(Level.TRACE, "Endpoint {0} requires authentication", context.targetUri());
+                    logger().log(Level.TRACE, "Endpoint {0} requires authentication", context.targetUri().getRawPath());
                 }
                 //authenticate request
                 SecurityClientBuilder<AuthenticationResponse> clientBuilder = securityContext
@@ -237,7 +237,9 @@ abstract class SecurityFilterCommon {
                 processAuthentication(context, clientBuilder, methodSecurity, atnTracing);
             } else {
                 if (logger().isLoggable(Level.TRACE)) {
-                    logger().log(Level.TRACE, "Endpoint {0} does not require authentication", context.targetUri());
+                    logger().log(Level.TRACE,
+                                 "Endpoint {0} does not require authentication",
+                                 context.targetUri().getRawPath());
                 }
             }
         } finally {
@@ -342,7 +344,9 @@ abstract class SecurityFilterCommon {
         if (context.methodSecurity().atzExplicit()) {
             // authorization is explicitly done by user, we MUST skip it here
             if (logger().isLoggable(Level.TRACE)) {
-                logger().log(Level.TRACE, "Endpoint {0} uses explicit authorization, skipping", context.targetUri());
+                logger().log(Level.TRACE,
+                             "Endpoint {0} uses explicit authorization, skipping",
+                             context.targetUri().getRawPath());
             }
             context.explicitAtz(true);
             return;
@@ -353,7 +357,7 @@ abstract class SecurityFilterCommon {
             // access
             if (context.methodSecurity().requiresAuthorization()) {
                 if (logger().isLoggable(Level.TRACE)) {
-                    logger().log(Level.TRACE, "Endpoint {0} requires authorization", context.targetUri());
+                    logger().log(Level.TRACE, "Endpoint {0} requires authorization", context.targetUri().getRawPath());
                 }
                 SecurityClientBuilder<AuthorizationResponse> clientBuilder = securityContext.atzClientBuilder()
                         .tracingSpan(atzTracing.findParent().orElse(null))
@@ -363,7 +367,7 @@ abstract class SecurityFilterCommon {
             } else {
                 if (logger().isLoggable(Level.TRACE)) {
                     logger().log(Level.TRACE, "Endpoint {0} does not require authorization. Method security: {1}",
-                                 context.targetUri(),
+                                 context.targetUri().getRawPath(),
                                  context.methodSecurity());
                 }
             }
