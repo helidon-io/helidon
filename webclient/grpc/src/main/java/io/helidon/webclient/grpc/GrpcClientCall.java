@@ -61,6 +61,8 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     private volatile Future<?> readStreamFuture;
     private volatile Future<?> writeStreamFuture;
     private volatile Future<?> heartbeatFuture;
+    private volatile Thread readStreamThread;
+    private volatile Thread writeStreamThread;
 
     GrpcClientCall(GrpcChannel grpcChannel, MethodDescriptor<ReqT, ResT> methodDescriptor, CallOptions callOptions) {
         super(grpcChannel, methodDescriptor, callOptions);
@@ -130,6 +132,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
         // write streaming thread
         writeStreamFuture = executor.submit(() -> {
+            writeStreamThread = Thread.currentThread();
             try {
                 startWriteBarrier.await();
                 socket().log(LOGGER, DEBUG, "[Writing thread] started");
@@ -164,12 +167,15 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                     socket().log(LOGGER, ERROR, e.getMessage(), e);
                     close(Status.UNKNOWN.withDescription(e.getMessage()).withCause(e));
                 }
+            } finally {
+                writeStreamThread = null;
             }
             socket().log(LOGGER, DEBUG, "[Writing thread] exiting");
         });
 
         // read streaming thread
         readStreamFuture = executor.submit(() -> {
+            readStreamThread = Thread.currentThread();
             try {
                 startReadBarrier.await();
                 socket().log(LOGGER, DEBUG, "[Reading thread] started");
@@ -245,6 +251,8 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                     socket().log(LOGGER, ERROR, e.getMessage(), e);
                     close(Status.UNKNOWN.withDescription(e.getMessage()).withCause(e));
                 }
+            } finally {
+                readStreamThread = null;
             }
             socket().log(LOGGER, DEBUG, "[Reading thread] exiting");
         });
@@ -252,8 +260,13 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
     @Override
     protected void closeStreamingThreads() {
-        cancelFuture(readStreamFuture);
-        cancelFuture(writeStreamFuture);
+        // The worker performing cleanup must remain able to write the final HTTP/2 frames.
+        if (readStreamThread != Thread.currentThread()) {
+            cancelFuture(readStreamFuture);
+        }
+        if (writeStreamThread != Thread.currentThread()) {
+            cancelFuture(writeStreamFuture);
+        }
         cancelFuture(heartbeatFuture);
         sendingQueue.clear();
         receivingQueue.clear();

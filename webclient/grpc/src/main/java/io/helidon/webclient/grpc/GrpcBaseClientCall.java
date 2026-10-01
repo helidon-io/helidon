@@ -317,16 +317,9 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         boolean abortTransport = status.getCode() == Status.Code.CANCELLED
                 || status.getCode() == Status.Code.DEADLINE_EXCEEDED;
         if (abortTransport) {
-            try {
-                // Each call owns its connection. Abort the raw socket before cleanup can wait for
-                // an HTTP/2 writer blocked by the peer, including a TLS write or a stream reset.
-                ClientConnection currentTransport = transportConnection;
-                if (currentTransport != null) {
-                    currentTransport.closeResource();
-                }
-            } catch (Throwable t) {
-                LOGGER.log(DEBUG, "Failed to abort gRPC transport", t);
-            }
+            // Each call owns its connection. Abort the raw socket before cleanup can wait for
+            // an HTTP/2 writer blocked by the peer, including a TLS write or a stream reset.
+            closeTransport();
         }
         try {
             closeStreamingThreads();
@@ -359,6 +352,9 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
             } catch (Throwable t) {
                 LOGGER.log(DEBUG, "Failed to close gRPC connection", t);
             } finally {
+                // A failed graceful shutdown, including an interrupted GOAWAY write, must not
+                // leave the dedicated raw connection open after the terminal callback.
+                closeTransport();
                 closeComplete = true;
                 try {
                     notifyClose();
@@ -716,6 +712,17 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                 closeStreamingThreads();
                 newStream.close();
             }
+        }
+    }
+
+    private void closeTransport() {
+        try {
+            ClientConnection currentTransport = transportConnection;
+            if (currentTransport != null) {
+                currentTransport.closeResource();
+            }
+        } catch (Throwable t) {
+            LOGGER.log(DEBUG, "Failed to close gRPC transport", t);
         }
     }
 
