@@ -22,10 +22,12 @@ import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -39,12 +41,14 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.context.Contexts;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameHeader;
 import io.helidon.http.http2.Http2FrameType;
 import io.helidon.http.http2.Http2FrameTypes;
+import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http2.Http2ClientProtocolConfig;
 import io.helidon.webserver.WebServer;
@@ -64,11 +68,13 @@ import io.grpc.stub.ClientCalls;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
@@ -76,6 +82,107 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Timeout(15)
 class GrpcClientDeadlineTest {
+    @ParameterizedTest(name = "{0}, Helidon context={1}")
+    @CsvSource({"CALL_DEADLINE, true", "CALL_DEADLINE, false", "GRPC_CONTEXT, true", "GRPC_CONTEXT, false",
+                "DIRECT, true", "DIRECT, false"})
+    void preservesContextsWhenStartingTransport(StartupMode mode, boolean withHelidonContext) throws Exception {
+        WebServer server = server(HttpRouting.builder().post("/test.Deadline/Call", (req, res) -> {
+            byte[] message = "response".getBytes(StandardCharsets.UTF_8);
+            BufferData data = BufferData.create(5 + message.length);
+            data.writeInt8(0);
+            data.writeUnsignedInt32(message.length);
+            data.write(message);
+            res.header(HeaderValues.create(HeaderNames.CONTENT_TYPE, "application/grpc"));
+            res.header(HeaderValues.create(HeaderNames.create("grpc-status"), "0"));
+            res.send(data.readBytes());
+        }));
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var unreachableUri = ClientUri.create(URI.create("http://127.0.0.1:1"));
+            var serverUri = ClientUri.create(URI.create("http://127.0.0.1:" + server.port()));
+            var constructorContext = io.helidon.common.context.Context.create();
+            constructorContext.register(unreachableUri);
+            var startContext = io.helidon.common.context.Context.create();
+            startContext.register(serverUri);
+            var supplierContext = new CompletableFuture<Optional<io.helidon.common.context.Context>>();
+            var supplierGrpcContext = new CompletableFuture<Context>();
+            var suppliedUri = new CompletableFuture<ClientUri>();
+            var client = GrpcClient.builder()
+                    .baseUri(unreachableUri)
+                    .tls(tls -> tls.enabled(false))
+                    .readTimeout(Duration.ofSeconds(5))
+                    .clientUriSupplier(new ClientUriSupplier() {
+                        @Override
+                        public boolean hasNext() {
+                            return true;
+                        }
+
+                        @Override
+                        public ClientUri next() {
+                            var context = Contexts.context();
+                            supplierContext.complete(context);
+                            supplierGrpcContext.complete(Context.current());
+                            ClientUri uri = context.flatMap(current -> current.get(ClientUri.class))
+                                    .orElse(withHelidonContext ? unreachableUri : serverUri);
+                            suppliedUri.complete(uri);
+                            return uri;
+                        }
+                    })
+                    .build();
+            Context grpcContext = mode == StartupMode.GRPC_CONTEXT
+                    ? Context.ROOT.withValue(Context.key("startup-context"), "captured") : Context.ROOT;
+            CallOptions options = mode == StartupMode.CALL_DEADLINE
+                    ? CallOptions.DEFAULT.withDeadlineAfter(1, TimeUnit.MINUTES) : CallOptions.DEFAULT;
+            ClientCall<String, String> call = Contexts.runInContext(constructorContext,
+                                                                   () -> grpcContext.call(() -> client.channel()
+                                                                           .newCall(descriptor(MethodDescriptor.MethodType.UNARY),
+                                                                                    options)));
+            var received = new CompletableFuture<String>();
+            var status = new CompletableFuture<Status>();
+            var listener = new ClientCall.Listener<String>() {
+                @Override
+                public void onMessage(String message) {
+                    received.complete(message);
+                }
+
+                @Override
+                public void onClose(Status result, Metadata trailers) {
+                    status.complete(result);
+                }
+            };
+            try {
+                var invocation = executor.submit(() -> {
+                    Runnable request = () -> grpcContext.run(() -> {
+                        call.start(listener, new Metadata());
+                        call.request(1);
+                        call.sendMessage("request");
+                        call.halfClose();
+                    });
+                    if (withHelidonContext) {
+                        Contexts.runInContext(startContext, request);
+                    } else {
+                        request.run();
+                    }
+                    assertThat("the caller's gRPC context is restored", Context.current(), sameInstance(Context.ROOT));
+                    return Contexts.context();
+                });
+                assertThat("the caller's Helidon context is restored", invocation.get(5, TimeUnit.SECONDS),
+                           is(Optional.empty()));
+                assertThat("URI selection uses the Helidon context from start",
+                           supplierContext.get(5, TimeUnit.SECONDS),
+                           is(withHelidonContext ? Optional.of(startContext) : Optional.empty()));
+                assertThat("URI selection preserves the captured gRPC context",
+                           supplierGrpcContext.get(5, TimeUnit.SECONDS), sameInstance(grpcContext));
+                assertThat(suppliedUri.get(5, TimeUnit.SECONDS), sameInstance(serverUri));
+                assertThat(status.get(5, TimeUnit.SECONDS).getCode(), is(Status.Code.OK));
+                assertThat(received.get(5, TimeUnit.SECONDS), is("response"));
+            } finally {
+                call.cancel("test cleanup", null);
+            }
+        } finally {
+            server.stop();
+        }
+    }
+
     @ParameterizedTest
     @EnumSource(value = MethodDescriptor.MethodType.class,
                 names = {"UNARY", "CLIENT_STREAMING", "SERVER_STREAMING", "BIDI_STREAMING"})
@@ -584,6 +691,12 @@ class GrpcClientDeadlineTest {
                 .setRequestMarshaller(marshaller)
                 .setResponseMarshaller(marshaller)
                 .build();
+    }
+
+    private enum StartupMode {
+        CALL_DEADLINE,
+        GRPC_CONTEXT,
+        DIRECT
     }
 
     private enum DeadlineSource {

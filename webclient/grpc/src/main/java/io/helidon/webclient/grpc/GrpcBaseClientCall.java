@@ -34,6 +34,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.grpc.core.GrpcHeadersUtil;
 import io.helidon.http.Header;
@@ -71,7 +72,6 @@ import io.helidon.webclient.http2.StreamTimeoutException;
 import io.grpc.CallOptions;
 import io.grpc.ClientCall;
 import io.grpc.Context;
-import io.grpc.Contexts;
 import io.grpc.Deadline;
 import io.grpc.InternalStatus;
 import io.grpc.Metadata;
@@ -79,6 +79,7 @@ import io.grpc.MethodDescriptor;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 
+import static io.grpc.Contexts.statusFromCancelled;
 import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
@@ -125,7 +126,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private final ReentrantLock lifecycleLock = new ReentrantLock();
     private final ReentrantLock listenerLock = new ReentrantLock();
     private final Context.CancellationListener cancellationListener =
-            cancelled -> close(Contexts.statusFromCancelled(cancelled));
+            cancelled -> close(statusFromCancelled(cancelled));
 
     private final MethodDescriptor.Marshaller<ReqT> requestMarshaller;
     private final MethodDescriptor.Marshaller<ResT> responseMarshaller;
@@ -232,6 +233,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
         // An owned virtual thread allows cancellation to interrupt connection setup without
         // interrupting the caller's thread. Calls without a deadline or context retain the direct path.
+        var helidonContext = Contexts.context();
         var ready = new CompletableFuture<Void>();
         lifecycleLock.lock();
         try {
@@ -245,7 +247,11 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
             }
             startThread = Thread.ofVirtual().name("grpc-client-start").unstarted(context.wrap(() -> {
                 try {
-                    startTransport(metadata);
+                    if (helidonContext.isPresent()) {
+                        Contexts.runInContext(helidonContext.get(), () -> startTransport(metadata));
+                    } else {
+                        startTransport(metadata);
+                    }
                 } finally {
                     ready.complete(null);
                 }
