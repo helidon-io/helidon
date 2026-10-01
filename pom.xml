@@ -87,14 +87,14 @@
         <!-- maven plugin versions -->
         <version.plugin.build-helper>3.6.1</version.plugin.build-helper>
         <version.plugin.checkstyle>3.6.0</version.plugin.checkstyle>
-        <version.plugin.compiler>3.15.0</version.plugin.compiler>
+        <version.plugin.compiler>3.16.0</version.plugin.compiler>
         <version.plugin.dependency>3.11.0</version.plugin.dependency>
         <version.plugin.directory>1.0</version.plugin.directory>
         <version.plugin.enforcer>3.6.3</version.plugin.enforcer>
         <version.plugin.exec>3.6.3</version.plugin.exec>
         <version.plugin.failsafe>3.5.6</version.plugin.failsafe>
         <version.plugin.helidon-build-tools>4.0.26</version.plugin.helidon-build-tools>
-        <version.plugin.install>3.1.4</version.plugin.install>
+        <version.plugin.install>3.2.0</version.plugin.install>
         <version.plugin.invoker>3.10.1</version.plugin.invoker>
         <version.plugin.jar>3.5.1</version.plugin.jar>
         <version.plugin.javadoc>3.12.0</version.plugin.javadoc>
