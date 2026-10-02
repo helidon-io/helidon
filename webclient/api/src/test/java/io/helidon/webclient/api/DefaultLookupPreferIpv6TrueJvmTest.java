@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,19 +15,12 @@
  */
 package io.helidon.webclient.api;
 
-import org.junit.jupiter.api.Test;
+/**
+ * Default lookup in a JVM started with {@code -Djava.net.preferIPv6Addresses=true}.
+ */
+class DefaultLookupPreferIpv6TrueJvmTest extends DefaultLookupJvmTestBase {
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-
-class Ipv4LookupFinderTest {
-
-    /**
-     * Default is to prefer IPv4 addresses.
-     */
-    @Test
-    void testIpv4Preference() {
-        DnsAddressLookup dnsAddressLookup = DefaultAddressLookupFinder.defaultDnsAddressLookup();
-        assertThat(dnsAddressLookup, is(DnsAddressLookup.IPV4_PREFERRED));
+    DefaultLookupPreferIpv6TrueJvmTest() {
+        super(null, "true", DnsAddressLookup.IPV6_PREFERRED);
     }
 }

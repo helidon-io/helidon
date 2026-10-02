@@ -345,6 +345,30 @@ WebClient provides three DNS resolver implementations out of the box:
 </dependency>
 ```
 
+#### Address Family Preference
+
+When a host resolves to both IPv4 and IPv6 addresses, the DNS address lookup
+strategy decides which addresses are used and in which order. Unless set
+explicitly with `dnsAddressLookup(...)` on the client builder, the default is
+derived from the [JDK networking properties][jdk-net-properties]:
+
+| JVM system properties                           | Default lookup   | Behavior                                        |
+|-------------------------------------------------|------------------|-------------------------------------------------|
+| `java.net.preferIPv4Stack=true`                 | `IPV4_PREFERRED` | IPv4 first; takes precedence over other values  |
+| `java.net.preferIPv6Addresses=true`             | `IPV6_PREFERRED` | IPv6 addresses first                            |
+| `java.net.preferIPv6Addresses=system`           | `SYSTEM`         | Order returned by the system resolver is kept   |
+| not set, `false`, or any other value            | `IPV4_PREFERRED` | IPv4 addresses first                            |
+
+The available strategies are `IPV4` and `IPV6` (a single address family),
+`IPV4_PREFERRED` and `IPV6_PREFERRED` (both families, preferred family first),
+and `SYSTEM` (both families, in resolver order).
+
+```java
+WebClient client = WebClient.builder()
+        .dnsAddressLookup(DnsAddressLookup.SYSTEM)
+        .build();
+```
+
 ## Configuration options
 
 <!--@include ../config/io.helidon.webclient.api.WebClient.md#configuration-options delim=--- offset=1 collapseTables=10 -->
@@ -998,3 +1022,4 @@ See the [manifest](../config/manifest.md) for all available types.
 [io-helidon-webcl-2]: ../config/io.helidon.webclient.http1.Http1ClientProtocolConfig.md#configuration-options
 [io-helidon-webcl-3]: ../config/io.helidon.webclient.http2.Http2ClientProtocolConfig.md#configuration-options
 [io-helidon-webcl-4]: ../config/io.helidon.webclient.context.WebClientContextService.md#configuration-options
+[jdk-net-properties]: https://docs.oracle.com/en/java/javase/27/docs/api/java.base/java/net/doc-files/net-properties.html

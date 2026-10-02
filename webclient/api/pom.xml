@@ -186,6 +186,65 @@
                     <forkCount>1</forkCount>
                     <reuseForks>false</reuseForks>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>default-test</id>
+                        <configuration>
+                            <excludes>
+                                <!-- run in dedicated executions below, with JVM networking properties -->
+                                <exclude>**/DefaultLookupPreferIpv*JvmTest.java</exclude>
+                            </excludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>dns-prefer-ipv6-false</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <argLine>${surefire.argLine} ${surefire.coverage.argline} -Djava.net.preferIPv6Addresses=false</argLine>
+                            <includes>
+                                <include>**/DefaultLookupPreferIpv6FalseJvmTest.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>dns-prefer-ipv6-true</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <argLine>${surefire.argLine} ${surefire.coverage.argline} -Djava.net.preferIPv6Addresses=true</argLine>
+                            <includes>
+                                <include>**/DefaultLookupPreferIpv6TrueJvmTest.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>dns-prefer-ipv6-system</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <argLine>${surefire.argLine} ${surefire.coverage.argline} -Djava.net.preferIPv6Addresses=system</argLine>
+                            <includes>
+                                <include>**/DefaultLookupPreferIpv6SystemJvmTest.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>dns-prefer-ipv4-stack</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <argLine>${surefire.argLine} ${surefire.coverage.argline} -Djava.net.preferIPv4Stack=true -Djava.net.preferIPv6Addresses=system</argLine>
+                            <includes>
+                                <include>**/DefaultLookupPreferIpv4StackJvmTest.java</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
