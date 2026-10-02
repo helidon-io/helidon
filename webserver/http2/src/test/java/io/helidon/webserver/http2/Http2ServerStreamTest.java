@@ -44,6 +44,7 @@ import io.helidon.webserver.Router;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
+import io.helidon.webserver.http2.spi.SubProtocolResult;
 
 import org.junit.jupiter.api.Test;
 
@@ -53,12 +54,125 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class Http2ServerStreamTest {
     private static final int STREAM_ID = 1;
+
+    @Test
+    void testSubProtocolClosedWhenStreamExits() {
+        var handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
+        when(handler.streamState()).thenReturn(Http2StreamState.CLOSED);
+        var stream = stream(handler);
+        stream.headers(headers(), false);
+
+        stream.run();
+        stream.closeFromConnection();
+
+        verify(handler).close();
+    }
+
+    @Test
+    void testConnectionCloseDuringSubProtocolInitDoesNotReopenStream() throws Exception {
+        var entered = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        var handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
+        when(handler.streamState()).thenReturn(Http2StreamState.OPEN);
+        doAnswer(invocation -> {
+            entered.countDown();
+            awaitIgnoringInterrupts(release);
+            return null;
+        }).when(handler).init();
+        var stream = stream(handler);
+        stream.headers(headers(), false);
+        var failure = new AtomicReference<Throwable>();
+        var thread = Thread.ofVirtual().uncaughtExceptionHandler((t, e) -> failure.set(e)).start(stream);
+        try {
+            assertThat("handler initialization started", entered.await(5, TimeUnit.SECONDS), is(true));
+            stream.closeFromConnection();
+            verify(handler).close();
+            release.countDown();
+            thread.join(5_000);
+
+            assertThat("stream stopped", thread.isAlive(), is(false));
+            assertThat(failure.get(), nullValue());
+            assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
+            verify(handler, times(1)).close();
+        } finally {
+            release.countDown();
+            thread.interrupt();
+            thread.join(5_000);
+        }
+    }
+
+    @Test
+    void testConnectionCloseDuringSubProtocolSelectionClosesWithoutInit() throws Exception {
+        var entered = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        var handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
+        Http2SubProtocolSelector selector = (context, prologue, headers, writer, streamId, serverSettings,
+                                             clientSettings, flowControl, streamState, router) -> {
+            entered.countDown();
+            awaitIgnoringInterrupts(release);
+            return new SubProtocolResult(true, handler);
+        };
+        var stream = stream(selector, noOpWriter());
+        stream.headers(headers(), false);
+        var failure = new AtomicReference<Throwable>();
+        var thread = Thread.ofVirtual().uncaughtExceptionHandler((t, e) -> failure.set(e)).start(stream);
+        try {
+            assertThat("handler selection started", entered.await(5, TimeUnit.SECONDS), is(true));
+            stream.closeFromConnection();
+            release.countDown();
+            thread.join(5_000);
+
+            assertThat("stream stopped", thread.isAlive(), is(false));
+            assertThat(failure.get(), nullValue());
+            assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
+            verify(handler, never()).init();
+            verify(handler).close();
+        } finally {
+            release.countDown();
+            thread.interrupt();
+            thread.join(5_000);
+        }
+    }
+
+    @Test
+    void testFailingSubProtocolCloseDoesNotPreventTransportCleanup() throws Exception {
+        var entered = new CountDownLatch(1);
+        var handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
+        when(handler.streamState()).thenReturn(Http2StreamState.OPEN);
+        doAnswer(invocation -> {
+            entered.countDown();
+            return null;
+        }).when(handler).init();
+        doThrow(new IllegalStateException("test cleanup failure")).when(handler).close();
+        var stream = stream(handler);
+        stream.headers(headers(), false);
+        var failure = new AtomicReference<Throwable>();
+        var thread = Thread.ofVirtual().uncaughtExceptionHandler((t, e) -> failure.set(e)).start(stream);
+        try {
+            assertThat("handler initialization started", entered.await(5, TimeUnit.SECONDS), is(true));
+            stream.closeFromConnection();
+            thread.join(5_000);
+
+            assertThat("stream stopped", thread.isAlive(), is(false));
+            assertThat(failure.get(), nullValue());
+            assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
+            assertThat(stream.isRunning(), is(false));
+            verify(handler).close();
+        } finally {
+            thread.interrupt();
+            thread.join(5_000);
+        }
+    }
 
     @Test
     void testClosedSubProtocolInitCreditsQueuedData() {
@@ -196,11 +310,6 @@ class Http2ServerStreamTest {
 
     private static Http2ServerStream stream(Http2SubProtocolSelector.SubProtocolHandler handler,
                                             Http2StreamWriter writer) {
-        ConnectionContext ctx = mock(ConnectionContext.class);
-        when(ctx.router()).thenReturn(Router.empty());
-        when(ctx.socketId()).thenReturn("socket");
-        when(ctx.childSocketId()).thenReturn("child");
-        ConnectionFlowControl flowControl = ConnectionFlowControl.serverBuilder((streamId, update) -> { }).build();
         Http2SubProtocolSelector selector = (connectionContext,
                                              prologue,
                                              headers,
@@ -210,7 +319,16 @@ class Http2ServerStreamTest {
                                              clientSettings,
                                              streamFlowControl,
                                              currentStreamState,
-                                             router) -> new io.helidon.webserver.http2.spi.SubProtocolResult(true, handler);
+                                             router) -> new SubProtocolResult(true, handler);
+        return stream(selector, writer);
+    }
+
+    private static Http2ServerStream stream(Http2SubProtocolSelector selector, Http2StreamWriter writer) {
+        ConnectionContext ctx = mock(ConnectionContext.class);
+        when(ctx.router()).thenReturn(Router.empty());
+        when(ctx.socketId()).thenReturn("socket");
+        when(ctx.childSocketId()).thenReturn("child");
+        ConnectionFlowControl flowControl = ConnectionFlowControl.serverBuilder((streamId, update) -> { }).build();
         return new Http2ServerStream(ctx,
                                      new Http2ConnectionStreams(),
                                      ignored -> { },
@@ -250,6 +368,24 @@ class Http2ServerStreamTest {
             Thread.sleep(10);
         }
         return false;
+    }
+
+    private static void awaitIgnoringInterrupts(CountDownLatch latch) {
+        boolean interrupted = false;
+        try {
+            while (true) {
+                try {
+                    assertThat("callback released", latch.await(10, TimeUnit.SECONDS), is(true));
+                    return;
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                }
+            }
+        } finally {
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     private static Http2StreamWriter noOpWriter() {

@@ -22,6 +22,7 @@ import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -102,6 +103,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
     private final Http2ConcurrentConnectionStreams streams;
     private final HttpRouting routing;
     private final AtomicReference<WriteState> writeState = new AtomicReference<>(WriteState.INIT);
+    private final AtomicBoolean subProtocolClosed = new AtomicBoolean();
     private final Lock inboundDataLock = new ReentrantLock();
     private boolean wasLastDataFrame = false;
     private boolean hasEntity = true;
@@ -110,7 +112,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
     private volatile Thread streamThread;
     // used from this instance and from connection
     private volatile Http2StreamState state = Http2StreamState.IDLE;
-    private Http2SubProtocolSelector.SubProtocolHandler subProtocolHandler;
+    private volatile Http2SubProtocolSelector.SubProtocolHandler subProtocolHandler;
     private long expectedLength = -1;
     private HttpPrologue prologue;
     // create a limit if accessed before we get the one from connection
@@ -430,6 +432,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                     flowControl.outbound());
             }
         } finally {
+            closeSubProtocol();
             streamThread = null;
             headers = null;
             subProtocolHandler = null;
@@ -461,7 +464,13 @@ class Http2ServerStream implements Runnable, Http2Stream {
     }
 
     void closeFromConnection() {
-        this.state = Http2StreamState.CLOSED;
+        inboundDataLock.lock();
+        try {
+            this.state = Http2StreamState.CLOSED;
+        } finally {
+            inboundDataLock.unlock();
+        }
+        closeSubProtocol();
         streams.remove(streamId);
         inboundData.clear();
         if (!inboundData.offer(TERMINATING_FRAME)) {
@@ -769,37 +778,64 @@ class Http2ServerStream implements Runnable, Http2Stream {
                 }
             }
         } else {
-            subProtocolHandler.init();
-            boolean closedAfterInit;
+            handleSubProtocol();
+        }
+    }
+
+    private void handleSubProtocol() {
+        if (state == Http2StreamState.CLOSED) {
+            return;
+        }
+        subProtocolHandler.init();
+        boolean closedAfterInit;
+        inboundDataLock.lock();
+        try {
+            if (this.state != Http2StreamState.CLOSED) {
+                this.state = subProtocolHandler.streamState();
+            }
+            closedAfterInit = this.state == Http2StreamState.CLOSED;
+            if (closedAfterInit) {
+                drainInboundData();
+            }
+        } finally {
+            inboundDataLock.unlock();
+        }
+        if (closedAfterInit) {
+            return;
+        }
+        while (this.state != Http2StreamState.CLOSED) {
+            DataFrame frame;
+            try {
+                frame = inboundData.take();
+                flowControl.inbound().incrementWindowSize(frame.header().length());
+            } catch (InterruptedException e) {
+                // this stream was interrupted, does not make sense to do anything else
+                String handlerName = subProtocolHandler.getClass().getSimpleName();
+                ctx.log(LOGGER, System.Logger.Level.DEBUG, "%s interrupted stream %d", handlerName, streamId);
+                return;
+            }
+            if (this.state == Http2StreamState.CLOSED) {
+                return;
+            }
+            subProtocolHandler.data(frame.header, frame.data);
             inboundDataLock.lock();
             try {
-                this.state = subProtocolHandler.streamState();
-                closedAfterInit = this.state == Http2StreamState.CLOSED;
-                if (closedAfterInit) {
-                    drainInboundData();
+                if (this.state != Http2StreamState.CLOSED) {
+                    this.state = subProtocolHandler.streamState();
                 }
             } finally {
                 inboundDataLock.unlock();
             }
-            if (closedAfterInit) {
-                return;
-            }
-            while (this.state != Http2StreamState.CLOSED) {
-                DataFrame frame;
-                try {
-                    frame = inboundData.take();
-                    flowControl.inbound().incrementWindowSize(frame.header().length());
-                } catch (InterruptedException e) {
-                    // this stream was interrupted, does not make sense to do anything else
-                    String handlerName = subProtocolHandler.getClass().getSimpleName();
-                    ctx.log(LOGGER, System.Logger.Level.DEBUG, "%s interrupted stream %d", handlerName, streamId);
-                    return;
-                }
-                if (this.state == Http2StreamState.CLOSED) {
-                    return;
-                }
-                subProtocolHandler.data(frame.header, frame.data);
-                this.state = subProtocolHandler.streamState();
+        }
+    }
+
+    private void closeSubProtocol() {
+        Http2SubProtocolSelector.SubProtocolHandler handler = subProtocolHandler;
+        if (handler != null && subProtocolClosed.compareAndSet(false, true)) {
+            try {
+                handler.close();
+            } catch (Throwable e) {
+                LOGGER.log(System.Logger.Level.WARNING, "Failed to close HTTP/2 sub-protocol handler", e);
             }
         }
     }
