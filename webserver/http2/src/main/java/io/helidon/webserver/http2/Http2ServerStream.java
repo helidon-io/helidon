@@ -115,7 +115,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
     private final Http2ConcurrentConnectionStreams streams;
     private final Http2StreamAdmissionGate streamAdmissionGate;
     private final HttpRouting routing;
-    private final AtomicReference<WriteState> writeState = new AtomicReference<>(WriteState.INIT);
+    private final AtomicReference<Http2StreamWriteState> writeState = new AtomicReference<>(Http2StreamWriteState.INIT);
     private final ReentrantLock resetCompletionLock = new ReentrantLock();
     private final ReentrantLock runnerLock = new ReentrantLock();
     private boolean wasLastDataFrame = false;
@@ -137,6 +137,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
     private Http2RstStream pendingSubProtocolReset;
     private long expectedLength = -1;
     private HttpPrologue prologue;
+    private Http2TransportObservation.Stream transportObservation;
     // must be volatile, as it is accessed both from connection thread and from stream thread
     private volatile Limit requestLimit;
 
@@ -282,7 +283,10 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         resetCompletionLock.lock();
         try {
             remoteResetReceived = true;
-            rapidReset = writeState.getAndSet(WriteState.END) == WriteState.INIT;
+            if (transportObservation != null) {
+                transportObservation.remoteReset();
+            }
+            rapidReset = writeState.getAndSet(Http2StreamWriteState.END) == Http2StreamWriteState.INIT;
         } finally {
             resetCompletionLock.unlock();
         }
@@ -317,7 +321,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         try {
             connectionAborted = true;
             state = Http2StreamState.CLOSED;
-            writeState.set(WriteState.END);
+            writeState.set(Http2StreamWriteState.END);
             runner = runnerThread;
             if (!subProtocolTerminal) {
                 subProtocolTerminal = true;
@@ -355,7 +359,15 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
 
     @Override
     void failPublication() {
+        streamFailed();
         streamAdmissionGate.fail();
+    }
+
+    @Override
+    void streamFailed() {
+        if (transportObservation != null) {
+            transportObservation.fail();
+        }
     }
 
     @Override
@@ -377,6 +389,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         try {
             writer.write(frame);
         } catch (RuntimeException | Error e) {
+            streamFailed();
             if (trackedPublication) {
                 streamAdmissionGate.fail();
             }
@@ -576,6 +589,9 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                         } else {
                             state = Http2StreamState.HALF_CLOSED_REMOTE;
                         }
+                        if (transportObservation != null) {
+                            transportObservation.remoteEnd();
+                        }
                     }
                 }
             }
@@ -672,6 +688,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             }
             // no sense in throwing an exception, as this is invoked from an executor service directly
         } catch (RequestException e) {
+            requestFailed();
             if (!handleRequestException(e)) {
                 return;
             }
@@ -684,6 +701,9 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             completed = true;
         } finally {
             try {
+                if (!completed) {
+                    streamFailed();
+                }
                 if (!completed && state != Http2StreamState.CLOSED) {
                     if (!connectionFailed && !resetSent) {
                         boolean sendReset = claimResetStreamSent();
@@ -745,7 +765,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
     }
 
     private boolean handleRequestException(RequestException exception) {
-        if (state == Http2StreamState.CLOSED || writeState.get() == WriteState.END) {
+        if (state == Http2StreamState.CLOSED || writeState.get() == Http2StreamWriteState.END) {
             return false;
         }
         ErrorHandling errorHandling = ctx.listenerContext()
@@ -859,6 +879,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             }
             throw writeFailure;
         } catch (RuntimeException | Error writeFailure) {
+            streamFailed();
             if (connectionWriter != null) {
                 streamAdmissionGate.fail();
             }
@@ -888,6 +909,9 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                         ? Http2StreamState.CLOSED
                         : Http2StreamState.HALF_CLOSED_REMOTE;
             }
+            if (transportObservation != null) {
+                transportObservation.remoteEnd();
+            }
             // we need to notify that there is no data coming
             inboundData.finish();
         } finally {
@@ -898,10 +922,10 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
     int writeHeaders(Http2Headers http2Headers, final boolean endOfStream) {
         writeState.updateAndGet(s -> {
             if (endOfStream) {
-                return s.checkAndMove(WriteState.HEADERS_SENT)
-                        .checkAndMove(WriteState.END);
+                return s.checkAndMove(Http2StreamWriteState.HEADERS_SENT)
+                        .checkAndMove(Http2StreamWriteState.END);
             }
-            return s.checkAndMove(WriteState.HEADERS_SENT);
+            return s.checkAndMove(Http2StreamWriteState.HEADERS_SENT);
         });
 
         Http2Flag.HeaderFlags flags;
@@ -922,7 +946,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                                                             flowControl.outbound(),
                                                             this::terminalFrameWritten);
                 } catch (RuntimeException | Error e) {
-                    streamAdmissionGate.fail();
+                    failPublication();
                     throw e;
                 }
                 cleanupAfterLocalClose();
@@ -934,15 +958,21 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             }
             return written;
         } catch (UncheckedIOException e) {
+            streamFailed();
             throw new ServerConnectionException("Failed to write headers", e);
+        } catch (Http2Exception e) {
+            throw e;
+        } catch (RuntimeException e) {
+            streamFailed();
+            throw e;
         }
     }
 
     int writeHeadersWithData(Http2Headers http2Headers, int contentLength, BufferData bufferData, boolean endOfStream) {
         writeState.updateAndGet(s -> {
-            WriteState newState = s.checkAndMove(WriteState.HEADERS_SENT)
-                    .checkAndMove(WriteState.DATA_SENT);
-            return endOfStream ? newState.checkAndMove(WriteState.END) : newState;
+            Http2StreamWriteState newState = s.checkAndMove(Http2StreamWriteState.HEADERS_SENT)
+                    .checkAndMove(Http2StreamWriteState.DATA_SENT);
+            return endOfStream ? newState.checkAndMove(Http2StreamWriteState.END) : newState;
         });
 
         Http2FrameData frameData =
@@ -964,7 +994,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                 } catch (Http2Exception e) {
                     throw e;
                 } catch (RuntimeException | Error e) {
-                    streamAdmissionGate.fail();
+                    failPublication();
                     throw e;
                 }
                 cleanupAfterLocalClose();
@@ -976,6 +1006,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                                        flowControl.outbound())
                     + writeDataFrame(frameData, endOfStream);
         } catch (UncheckedIOException e) {
+            streamFailed();
             if (endOfStream) {
                 closeFromLocal();
             }
@@ -983,6 +1014,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         } catch (Http2Exception e) {
             throw e;
         } catch (RuntimeException e) {
+            streamFailed();
             if (endOfStream) {
                 closeFromLocal();
             }
@@ -993,10 +1025,10 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
     int writeData(BufferData bufferData, final boolean endOfStream) {
         writeState.updateAndGet(s -> {
             if (endOfStream) {
-                return s.checkAndMove(WriteState.DATA_SENT)
-                        .checkAndMove(WriteState.END);
+                return s.checkAndMove(Http2StreamWriteState.DATA_SENT)
+                        .checkAndMove(Http2StreamWriteState.END);
             }
-            return s.checkAndMove(WriteState.DATA_SENT);
+            return s.checkAndMove(Http2StreamWriteState.DATA_SENT);
         });
 
         Http2FrameData frameData =
@@ -1009,6 +1041,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         try {
             return writeDataFrame(frameData, endOfStream);
         } catch (UncheckedIOException e) {
+            streamFailed();
             if (endOfStream) {
                 closeFromLocal();
             }
@@ -1016,6 +1049,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         } catch (Http2Exception e) {
             throw e;
         } catch (RuntimeException e) {
+            streamFailed();
             if (endOfStream) {
                 closeFromLocal();
             }
@@ -1024,7 +1058,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
     }
 
     int writeTrailers(Http2Headers http2trailers) {
-        writeState.updateAndGet(s -> s.checkAndMove(WriteState.TRAILERS_SENT));
+        writeState.updateAndGet(s -> s.checkAndMove(Http2StreamWriteState.TRAILERS_SENT));
 
         try {
             Http2Flag.HeaderFlags flags =
@@ -1038,7 +1072,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                                                             flowControl.outbound(),
                                                             this::terminalFrameWritten);
                 } catch (RuntimeException | Error e) {
-                    streamAdmissionGate.fail();
+                    failPublication();
                     throw e;
                 }
                 cleanupAfterLocalClose();
@@ -1048,14 +1082,20 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             closeFromLocal();
             return written;
         } catch (UncheckedIOException e) {
+            streamFailed();
             throw new ServerConnectionException("Failed to write trailers", e);
+        } catch (Http2Exception e) {
+            throw e;
+        } catch (RuntimeException e) {
+            streamFailed();
+            throw e;
         }
     }
 
     void write100Continue() {
-        if (WriteState.EXPECTED_100 == writeState.getAndUpdate(s -> {
-            if (WriteState.EXPECTED_100 == s) {
-                return s.checkAndMove(WriteState.CONTINUE_100_SENT);
+        if (Http2StreamWriteState.EXPECTED_100 == writeState.getAndUpdate(s -> {
+            if (Http2StreamWriteState.EXPECTED_100 == s) {
+                return s.checkAndMove(Http2StreamWriteState.CONTINUE_100_SENT);
             }
             return s;
         })) {
@@ -1067,7 +1107,13 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                                     Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
                                     flowControl.outbound());
             } catch (UncheckedIOException e) {
+                streamFailed();
                 throw new ServerConnectionException("Failed to write 100-Continue", e);
+            } catch (Http2Exception e) {
+                throw e;
+            } catch (RuntimeException e) {
+                streamFailed();
+                throw e;
             }
         }
     }
@@ -1084,7 +1130,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         try {
             ignoreInboundDataAfterReset = true;
             state = Http2StreamState.CLOSED;
-            writeState.updateAndGet(s -> s.checkAndMove(WriteState.END));
+            writeState.updateAndGet(s -> s.checkAndMove(Http2StreamWriteState.END));
             sendReset = !resetStreamSent;
             if (sendReset) {
                 resetStreamSent = true;
@@ -1134,6 +1180,18 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         this.prologue = prologue;
     }
 
+    void observe(Http2TransportObservation owner, boolean initiallyRemoteEnded) {
+        if (transportObservation == null) {
+            transportObservation = owner.openStream(initiallyRemoteEnded);
+        }
+    }
+
+    void reject() {
+        if (transportObservation != null) {
+            transportObservation.rejected();
+        }
+    }
+
     private int writeDataFrame(Http2FrameData frameData, boolean endOfStream) {
         if (connectionWriter == null) {
             writer.writeData(frameData, flowControl.outbound());
@@ -1150,7 +1208,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         } catch (Http2Exception e) {
             throw e;
         } catch (RuntimeException | Error e) {
-            streamAdmissionGate.fail();
+            failPublication();
             throw e;
         }
         if (endOfStream) {
@@ -1172,6 +1230,9 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             } else {
                 state = Http2StreamState.HALF_CLOSED_LOCAL;
             }
+            if (transportObservation != null) {
+                transportObservation.localEnd();
+            }
         } finally {
             resetCompletionLock.unlock();
         }
@@ -1182,7 +1243,10 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             resetCompletionLock.lock();
             try {
                 state = Http2StreamState.CLOSED;
-                writeState.set(WriteState.END);
+                writeState.set(Http2StreamWriteState.END);
+                if (transportObservation != null) {
+                    transportObservation.localReset();
+                }
             } finally {
                 resetCompletionLock.unlock();
             }
@@ -1277,7 +1341,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         try {
             resetCompletionLock.lock();
             try {
-                writeState.updateAndGet(s -> s.checkAndMove(WriteState.END));
+                writeState.updateAndGet(s -> s.checkAndMove(Http2StreamWriteState.END));
                 boolean remoteAlreadyComplete = remoteEndOfStream || remoteAlreadyComplete();
                 if (resetRequestBody
                         && !remoteResetReceived
@@ -1397,7 +1461,11 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         }
         try {
             writer.write(reset.toFrameData(settings, streamId, Http2Flag.NoFlags.create()));
+            if (transportObservation != null) {
+                transportObservation.localReset();
+            }
         } catch (RuntimeException | Error e) {
+            streamFailed();
             if (connectionWriter != null) {
                 streamAdmissionGate.fail();
             }
@@ -1474,7 +1542,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                     .build();
         }
         if (httpHeaders.containsToken(HeaderValues.EXPECT_100)) {
-            writeState.updateAndGet(s -> s.checkAndMove(WriteState.EXPECTED_100));
+            writeState.updateAndGet(s -> s.checkAndMove(Http2StreamWriteState.EXPECTED_100));
         }
         ctx.sniContext().ifPresent(sniContext -> {
             String authority = headers.authority();
@@ -1555,6 +1623,9 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                     LimitAlgorithm.Outcome.Accepted accepted = (LimitAlgorithm.Outcome.Accepted) outcome;
                     LimitAlgorithm.Token permit = accepted.token();
                     try {
+                        if (transportObservation != null) {
+                            transportObservation.applicationStarted();
+                        }
                         routing.route(ctx, request, response);
                     } finally {
                         if (response.status() == Status.NOT_FOUND_404) {
@@ -1574,6 +1645,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                     }
                 } else {
                     ctx.log(LOGGER, TRACE, "Too many concurrent requests, rejecting request.");
+                    requestFailed();
                     response.status(Status.SERVICE_UNAVAILABLE_503)
                             .send("Too Many Concurrent Requests");
                     response.commit();
@@ -1636,6 +1708,9 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         } finally {
             runnerLock.unlock();
         }
+        if (transportObservation != null) {
+            transportObservation.applicationStarted();
+        }
         selectedSubProtocol.init();
         if (updateSubProtocolState(selectedSubProtocol)) {
             return;
@@ -1685,6 +1760,12 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         }
     }
 
+    private void requestFailed() {
+        if (transportObservation != null) {
+            transportObservation.requestFailed();
+        }
+    }
+
     interface LocallyResetStreamTracker {
         void add(int streamId, LocallyResetStreamState streamState);
 
@@ -1716,35 +1797,6 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
 
         long discardedData() {
             return discardedData.get();
-        }
-    }
-
-    private enum WriteState {
-        END,
-        TRAILERS_SENT(END),
-        DATA_SENT(TRAILERS_SENT, END),
-        HEADERS_SENT(DATA_SENT, TRAILERS_SENT, END),
-        CONTINUE_100_SENT(HEADERS_SENT, END),
-        EXPECTED_100(CONTINUE_100_SENT, HEADERS_SENT, END),
-        INIT(EXPECTED_100, HEADERS_SENT, END);
-
-        private final Set<WriteState> allowedTransitions;
-
-        WriteState(WriteState... allowedTransitions) {
-            this.allowedTransitions = Set.of(allowedTransitions);
-        }
-
-        WriteState checkAndMove(WriteState newState) {
-            if (this == newState || allowedTransitions.contains(newState)) {
-                return newState;
-            }
-
-            IllegalStateException badTransitionException =
-                    new IllegalStateException("Transition from " + this + " to " + newState + " is not allowed!");
-            if (this == END) {
-                throw new IllegalStateException("Stream is already closed.", badTransitionException);
-            }
-            throw badTransitionException;
         }
     }
 

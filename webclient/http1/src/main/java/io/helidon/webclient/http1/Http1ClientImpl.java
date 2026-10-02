@@ -17,15 +17,20 @@
 package io.helidon.webclient.http1;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 
 import io.helidon.http.HttpLogConfig;
 import io.helidon.http.LogFormatter;
 import io.helidon.http.Method;
 import io.helidon.http.http1.Http1ConnectionListener;
 import io.helidon.http.http1.Http1LoggingConnectionListener;
+import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientRequest;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.FullClientRequest;
+import io.helidon.webclient.api.HttpTransportConnectionCache;
+import io.helidon.webclient.api.HttpTransportObserverSupport;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.spi.HttpClientSpi;
 
@@ -35,6 +40,7 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
     private final Http1ClientProtocolConfig protocolConfig;
     private final Http1ConnectionCache connectionCache;
     private final Http1ConnectionCache clientCache;
+    private final HttpTransportConnectionCache<Http1ConnectionCache> observedCache;
     private final Http1ConnectionListener recvListener;
     private final Http1ConnectionListener sendListener;
     private final LogFormatter logFormatter;
@@ -43,7 +49,14 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
         this.webClient = webClient;
         this.clientConfig = clientConfig;
         this.protocolConfig = clientConfig.protocolConfig();
-        if (clientConfig.shareConnectionCache()) {
+        this.observedCache = HttpTransportConnectionCache.create(Http1ConnectionCache.class,
+                                                                 clientConfig,
+                                                                 Http1ConnectionCache::create)
+                .orElse(null);
+        if (observedCache != null) {
+            this.connectionCache = null;
+            this.clientCache = null;
+        } else if (clientConfig.shareConnectionCache()) {
             this.connectionCache = Http1ConnectionCache.shared();
             this.clientCache = null;
         } else {
@@ -123,9 +136,17 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
 
     @Override
     public void closeResource() {
-        if (clientCache != null) {
+        if (observedCache != null) {
+            observedCache.closeResource();
+        } else if (clientCache != null) {
             this.clientCache.closeResource();
         }
+    }
+
+    @Override
+    public CompletionStage<Void> closeResourceAsync() {
+        closeResource();
+        return observedCache == null ? CompletableFuture.completedStage(null) : observedCache.completion();
     }
 
     Http1ConnectionListener recvListener() {
@@ -153,6 +174,11 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
     }
 
     Http1ConnectionCache connectionCache() {
-        return connectionCache;
+        return observedCache == null ? connectionCache : observedCache.cache();
+    }
+
+    <T extends ClientConnection> T observe(T connection) {
+        return observedCache == null ? connection
+                : HttpTransportObserverSupport.observe(connection, observedCache.observer());
     }
 }
