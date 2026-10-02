@@ -76,7 +76,28 @@ public interface JsonGenerator extends AutoCloseable {
      * @return new Generator instance
      */
     static JsonGenerator create(Writer writer, boolean prettyPrint) {
-        return new JsonGeneratorWriter(writer, prettyPrint);
+        return create((Appendable) writer, prettyPrint);
+    }
+
+    /**
+     * Create a {@link JsonGenerator} instance to write to the provided {@link Appendable}.
+     *
+     * @param appendable {@link Appendable} to write to
+     * @return new Generator instance
+     */
+    static JsonGenerator create(Appendable appendable) {
+        return create(appendable, false);
+    }
+
+    /**
+     * Create a {@link JsonGenerator} instance to write to the provided {@link Appendable}.
+     *
+     * @param appendable {@link Appendable} to write to
+     * @param prettyPrint whether to pretty print the generated JSON
+     * @return new Generator instance
+     */
+    static JsonGenerator create(Appendable appendable, boolean prettyPrint) {
+        return new JsonGeneratorAppendable(appendable, prettyPrint);
     }
 
     /**
