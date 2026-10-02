@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.logging.Handler;
@@ -29,7 +28,7 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import io.helidon.common.features.api.HelidonFlavor;
-import io.helidon.common.features.metadata.FeatureRegistry;
+import io.helidon.metadata.MetadataConstants;
 
 import org.junit.jupiter.api.Test;
 
@@ -100,15 +99,15 @@ class HelidonFeaturesLoggingTest {
         private FeatureClassLoader() {
             super(new URL[] {
                     HelidonFeatures.class.getProtectionDomain().getCodeSource().getLocation(),
-                    HelidonFeaturesLoggingTest.class.getProtectionDomain().getCodeSource().getLocation()
+                    HelidonFeaturesLoggingTest.class.getProtectionDomain().getCodeSource().getLocation(),
+                    HelidonFeaturesLoggingTest.class.getClassLoader().getResource("feature-tree/")
             }, HelidonFeaturesLoggingTest.class.getClassLoader());
         }
 
         @Override
         public Enumeration<URL> getResources(String name) throws IOException {
-            if (name.equals(FeatureRegistry.FEATURE_REGISTRY_LOCATION_V1)) {
-                return Collections.enumeration(List.of(getResource("feature-tree/root.properties"),
-                                                       getResource("feature-tree/child.properties")));
+            if (name.startsWith(MetadataConstants.LOCATION + "/")) {
+                return findResources(name);
             }
             return super.getResources(name);
         }

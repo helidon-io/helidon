@@ -1,0 +1,12 @@
+[
+  {
+    "module": "test.child",
+    "name": "Test Child",
+    "description": "Child description",
+    "path": ["Root", "Undescribed", "Child"],
+    "flavor": ["SE"],
+    "aot": {
+      "supported": false
+    }
+  }
+]
