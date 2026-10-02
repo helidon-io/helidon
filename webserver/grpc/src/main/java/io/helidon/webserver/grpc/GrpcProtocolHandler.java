@@ -381,6 +381,13 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     REQ request = route.method().parseRequest(entityCompressed ? decompressor.decompress(is) : is);
                     entityCompressed = false;
                     listenerQueue.add(request);
+                    // Backpressure incoming DATA while another thread owns the callback.
+                    listenerLock.lock();
+                    try {
+                        drainQueue();
+                    } finally {
+                        listenerLock.unlock();
+                    }
                     flushQueue();
 
                     // reset entityBytes

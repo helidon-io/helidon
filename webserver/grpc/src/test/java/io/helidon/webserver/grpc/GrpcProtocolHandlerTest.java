@@ -30,6 +30,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.GZIPOutputStream;
@@ -165,6 +166,18 @@ class GrpcProtocolHandlerTest {
     @Timeout(20)
     void testRequestedMessagesPrecedeHalfCloseWithDeadline() throws Exception {
         requestedMessagesPrecedeHalfClose(true);
+    }
+
+    @Test
+    @Timeout(20)
+    void testInboundDataWaitsForActiveMessageCallback() throws Exception {
+        inboundDataWaitsForActiveMessageCallback(false);
+    }
+
+    @Test
+    @Timeout(20)
+    void testInboundDataWaitsForActiveMessageCallbackWithDeadline() throws Exception {
+        inboundDataWaitsForActiveMessageCallback(true);
     }
 
     @Test
@@ -974,6 +987,101 @@ class GrpcProtocolHandlerTest {
         }
     }
 
+    private static void inboundDataWaitsForActiveMessageCallback(boolean withDeadline) throws Exception {
+        var callReference = new AtomicReference<ServerCall<String, String>>();
+        var entered = new CompletableFuture<Void>();
+        var release = new CompletableFuture<Void>();
+        var secondParsed = new CompletableFuture<Void>();
+        List<String> parsed = new CopyOnWriteArrayList<>();
+        List<String> callbacks = new CopyOnWriteArrayList<>();
+        var descriptor = stringMethodDescriptor();
+        var marshaller = descriptor.getRequestMarshaller();
+        descriptor = descriptor.toBuilder()
+                .setType(MethodDescriptor.MethodType.BIDI_STREAMING)
+                .setRequestMarshaller(new MethodDescriptor.Marshaller<String>() {
+                    @Override
+                    public InputStream stream(String value) {
+                        return marshaller.stream(value);
+                    }
+
+                    @Override
+                    public String parse(InputStream stream) {
+                        String message = marshaller.parse(stream);
+                        parsed.add(message);
+                        if (message.equals("second")) {
+                            secondParsed.complete(null);
+                        }
+                        return message;
+                    }
+                })
+                .build();
+        var writer = new RecordingWriter();
+        var handler = deadlineHandler(withDeadline ? "1H" : null, (call, metadata) -> {
+            callReference.set(call);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onMessage(String message) {
+                    callbacks.add("entered " + message);
+                    if (message.equals("first")) {
+                        entered.complete(null);
+                        release.join();
+                    }
+                    callbacks.add("returned " + message);
+                }
+
+                @Override
+                public void onComplete() {
+                    callbacks.add("complete");
+                }
+            };
+        }, writer, descriptor);
+        var executor = Executors.newVirtualThreadPerTaskExecutor();
+        try {
+            handler.init();
+            ServerCall<String, String> call = callReference.get();
+            sendStreamingRequest(handler, "first");
+            var delivery = executor.submit(() -> call.request(1));
+            entered.get(5, TimeUnit.SECONDS);
+            executor.submit(() -> call.request(2)).get(5, TimeUnit.SECONDS);
+            assertThat("request returns while the first callback remains active",
+                       callbacks, is(List.of("entered first")));
+
+            byte[] second = "second".getBytes(StandardCharsets.UTF_8);
+            byte[] third = "third".getBytes(StandardCharsets.UTF_8);
+            BufferData data = BufferData.create(5 + second.length + 5 + third.length);
+            for (byte[] message : List.of(second, third)) {
+                data.write(0);
+                data.writeUnsignedInt32(message.length);
+                data.write(message);
+            }
+            var inbound = executor.submit(() -> handler.data(
+                    Http2FrameHeader.create(data.available(), Http2FrameTypes.DATA, Http2Flag.DataFlags.create(0), 1), data));
+            secondParsed.get(5, TimeUnit.SECONDS);
+            assertThrows(TimeoutException.class, () -> inbound.get(200, TimeUnit.MILLISECONDS),
+                         "DATA must wait for the active callback instead of queuing the remaining messages");
+            assertThat("the same DATA frame is not parsed ahead of the active callback",
+                       parsed, is(List.of("first", "second")));
+            assertThat("message callbacks remain serialized", callbacks, is(List.of("entered first")));
+
+            release.complete(null);
+            delivery.get(5, TimeUnit.SECONDS);
+            inbound.get(5, TimeUnit.SECONDS);
+            assertThat("all messages are parsed after the callback returns", parsed, is(List.of("first", "second", "third")));
+            assertThat("outstanding demand delivers each message in order",
+                       callbacks,
+                       is(List.of("entered first", "returned first", "entered second", "returned second",
+                                  "entered third", "returned third")));
+            call.close(Status.OK, new Metadata());
+            assertThat("completion follows the final message", callbacks.getLast(), is("complete"));
+            assertThat("the call completes once", writer.trailerWrites.get(), is(1));
+        } finally {
+            release.complete(null);
+            executor.shutdownNow();
+            handler.close();
+            assertThat("DATA and demand workers stopped", executor.awaitTermination(5, TimeUnit.SECONDS), is(true));
+        }
+    }
+
     private static ServerCall<String, String> createServerCall(Http2StreamWriter streamWriter) {
         GrpcProtocolHandler<String, String> handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
                                                                                 Http2Headers.create(WritableHeaders.create()),
@@ -993,6 +1101,13 @@ class GrpcProtocolHandlerTest {
     private static GrpcProtocolHandler<String, String> deadlineHandler(String timeout,
                                                                        ServerCallHandler<String, String> callHandler,
                                                                        Http2StreamWriter writer) {
+        return deadlineHandler(timeout, callHandler, writer, stringMethodDescriptor());
+    }
+
+    private static GrpcProtocolHandler<String, String> deadlineHandler(String timeout,
+                                                                       ServerCallHandler<String, String> callHandler,
+                                                                       Http2StreamWriter writer,
+                                                                       MethodDescriptor<String, String> descriptor) {
         WritableHeaders<?> headers = WritableHeaders.create();
         if (timeout != null) {
             headers.add(HeaderNames.create("grpc-timeout"), timeout);
@@ -1003,7 +1118,9 @@ class GrpcProtocolHandlerTest {
                                          1,
                                          null,
                                          Http2StreamState.OPEN,
-                                         route(callHandler),
+                                         GrpcRouteHandler.methodDefinition(ServerMethodDefinition.create(descriptor, callHandler),
+                                                                          null,
+                                                                          WeightedBag.create()),
                                          GrpcConfig.create());
     }
 
