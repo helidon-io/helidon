@@ -55,7 +55,7 @@ interface ConfigObserverConfigBlueprint extends ObserverConfigBase, Prototype.Fa
     boolean permitAll();
 
     /**
-     * Secret patterns (regular expressions) to exclude from output.
+     * Secret patterns (regular expressions) matched against unescaped configuration keys to exclude from output.
      * Any pattern that matches a key will cause the output to be obfuscated and not contain the value.
      * Patterns are matched case-insensitively.
      * <p>
@@ -92,10 +92,13 @@ interface ConfigObserverConfigBlueprint extends ObserverConfigBase, Prototype.Fa
     Set<String> secrets();
 
     /**
-     * Safe key patterns (regular expressions) to include in output.
+     * Safe key patterns (regular expressions) matched against escaped configuration keys to include in output,
+     * with dots within node names represented as {@code ~1}.
      * Any pattern that matches a key will cause the output to contain the value, unless it also matches a
      * {@link #secrets()} pattern.
-     * Patterns are matched case-insensitively.
+     * Patterns are matched case-insensitively against the escaped configuration key, preserving the distinction
+     * between path separators and dots within a node name. For example, {@code server[.]host} matches the
+     * {@code host} child of {@code server}, while {@code server~1host} matches a single node named {@code server.host}.
      *
      * @return set of regular expression patterns for keys, where values can be included in output
      */

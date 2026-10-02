@@ -169,6 +169,11 @@ configured `secrets` patterns are always obfuscated. Set `unsafe-values` to
 `true` to restore the previous behavior and include all values except those
 matching `secrets` patterns.
 
+Safe-key patterns match escaped configuration keys: `server[.]host` matches
+the `host` child of `server`, but not a single node named `server.host`, whose
+escaped key is `server~1host`. Secret patterns match unescaped names and take
+precedence over safe-key patterns. Bulk JSON output uses unescaped key names.
+
 #### Health Observability
 
 Health observability allows reading application readiness to serve requests,
