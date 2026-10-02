@@ -55,6 +55,13 @@ class NoOpMeter implements Meter, NoOpWrapper {
              builder.type);
     }
 
+    private NoOpMeter(Meter.Builder<?, ?> builder, Type type) {
+        this(new NoOpMeter.Id(builder.name(), builder.tags()),
+             builder.baseUnit().orElse(null),
+             builder.description().orElse(null),
+             type);
+    }
+
     private NoOpMeter(Id id, String baseUnit, String description, Type type) {
         this.id = id;
         this.unit = Objects.requireNonNullElse(baseUnit, "");
@@ -220,6 +227,10 @@ class NoOpMeter implements Meter, NoOpWrapper {
             super(builder);
         }
 
+        protected Counter(io.helidon.metrics.api.Counter.Builder builder) {
+            super(builder, Type.COUNTER);
+        }
+
         static Counter create(String name, Iterable<Tag> tags) {
             return builder(name)
                     .tags(tags)
@@ -260,6 +271,10 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
         private FunctionalCounter(Builder<?> builder) {
             super(builder);
+        }
+
+        protected FunctionalCounter(io.helidon.metrics.api.FunctionalCounter.Builder<?> builder) {
+            super(builder, Type.COUNTER);
         }
 
         static <T> FunctionalCounter.Builder<T> builder(String name, T target, Function<T, Long> fn) {
@@ -304,6 +319,10 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
         private DistributionSummary(Builder builder) {
             super(builder);
+        }
+
+        protected DistributionSummary(io.helidon.metrics.api.DistributionSummary.Builder builder) {
+            super(builder, Type.DISTRIBUTION_SUMMARY);
         }
 
         static DistributionSummary.Builder builder(String name) {
@@ -461,6 +480,20 @@ class NoOpMeter implements Meter, NoOpWrapper {
             super(builder);
         }
 
+        private Gauge(io.helidon.metrics.api.Gauge.Builder<N> builder) {
+            super(builder, Type.GAUGE);
+        }
+
+        static <N extends Number> Gauge<N> create(io.helidon.metrics.api.Gauge.Builder<N> builder) {
+            Supplier<N> supplier = builder.supplier();
+            return new Gauge<>(builder) {
+                @Override
+                public N value() {
+                    return supplier.get();
+                }
+            };
+        }
+
         static <T> Builder.DoubleFunctionBased<T> builder(String name, T stateObject, ToDoubleFunction<T> fn) {
             return new Builder.DoubleFunctionBased<>(name, stateObject, fn);
         }
@@ -533,6 +566,10 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
         private Timer(Builder builder) {
             super(builder);
+        }
+
+        protected Timer(io.helidon.metrics.api.Timer.Builder builder) {
+            super(builder, Type.TIMER);
         }
 
         static Sample start() {
