@@ -341,24 +341,18 @@ public interface MetricsFactory {
      * @return corresponding no-op meter
      */
     default Meter noOpMeter(Meter.Builder<?, ?> builder) {
-        NoOpMeter.Builder<?, ?> noOpBuilder;
         if (builder instanceof Counter.Builder cb) {
-            noOpBuilder = NoOpMeter.Counter.builder(cb.name());
-        } else if (builder instanceof FunctionalCounter.Builder fcb) {
-            noOpBuilder = NoOpMeter.FunctionalCounter.builder(fcb.name(), fcb.stateObject(), fcb.fn());
+            return new NoOpMeter.Counter(cb);
+        } else if (builder instanceof FunctionalCounter.Builder<?> fcb) {
+            return new NoOpMeter.FunctionalCounter(fcb);
         } else if (builder instanceof DistributionSummary.Builder sb) {
-            noOpBuilder = NoOpMeter.DistributionSummary.builder(sb.name());
-        } else if (builder instanceof Gauge.Builder gb) {
-            noOpBuilder = NoOpMeter.Gauge.builder(gb.name(), gb.supplier());
+            return new NoOpMeter.DistributionSummary(sb);
+        } else if (builder instanceof Gauge.Builder<?> gb) {
+            return NoOpMeter.Gauge.create(gb);
         } else if (builder instanceof Timer.Builder tb) {
-            noOpBuilder = NoOpMeter.Timer.builder(tb.name());
+            return new NoOpMeter.Timer(tb);
         } else {
             throw new IllegalArgumentException("Unrecognized meter builder type " + builder.getClass().getName());
         }
-        builder.tags().forEach((key, value) -> noOpBuilder.addTag(new NoOpTag(key, value)));
-        builder.description().ifPresent(noOpBuilder::description);
-        builder.baseUnit().ifPresent(noOpBuilder::baseUnit);
-        builder.origin().ifPresent(noOpBuilder::origin);
-        return noOpBuilder.build();
     }
 }
