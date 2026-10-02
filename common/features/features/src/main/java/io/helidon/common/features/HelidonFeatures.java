@@ -23,6 +23,7 @@ import java.util.EnumMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
@@ -103,6 +104,7 @@ public final class HelidonFeatures {
      * @param classLoader to look for features in
      */
     public static void nativeBuildTime(ClassLoader classLoader) {
+        Objects.requireNonNull(classLoader, "classLoader is null");
         scan(classLoader);
         for (FeatureMetadata feat : ALL_FEATURES) {
             if (feat.aot().isPresent()) {

@@ -13,9 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-m=test.child
-n=Test Child
-d=Child description
-p=Root,Undescribed,Child
-in=SE
-aot=false
+# Merged metadata uses resource discovery even with a single classpath root.
+#HELIDON MANIFEST#
+META-INF/helidon/feature-registry.json
+#HELIDON MANIFEST#
+META-INF/helidon/test.child/feature-registry.json
