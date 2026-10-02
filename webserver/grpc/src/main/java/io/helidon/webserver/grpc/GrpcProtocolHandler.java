@@ -392,6 +392,9 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             if (header.flags(Http2FrameTypes.DATA).endOfStream()) {
                 listenerLock.lock();
                 try {
+                    // A competing queue drain may have deferred delivery. Keep requested messages
+                    // ahead of half-close while holding the same callback lock.
+                    drainQueue();
                     if (!callClosed()) {
                         listener.onHalfClose();
                     }
@@ -580,22 +583,26 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 return;
             }
             try {
-                if (listener != null) {
-                    while (!callClosed() && numMessages.get() > 0) {
-                        REQ request = listenerQueue.poll();
-                        if (request == null) {
-                            break;
-                        }
-                        numMessages.decrementAndGet();
-                        listener.onMessage(request);
-                    }
-                }
+                drainQueue();
             } finally {
                 listenerLock.unlock();
             }
             // Demand or data can arrive after the last check while this thread still owns
             // the lock. Recheck after releasing it so those requests cannot be stranded.
         } while (!callClosed() && listener != null && numMessages.get() > 0 && !listenerQueue.isEmpty());
+    }
+
+    private void drainQueue() {
+        if (listener != null) {
+            while (!callClosed() && numMessages.get() > 0) {
+                REQ request = listenerQueue.poll();
+                if (request == null) {
+                    break;
+                }
+                numMessages.decrementAndGet();
+                listener.onMessage(request);
+            }
+        }
     }
 
     private void cancelContext(Throwable cause) {

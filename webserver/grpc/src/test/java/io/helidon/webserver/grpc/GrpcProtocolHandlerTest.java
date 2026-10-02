@@ -156,6 +156,18 @@ class GrpcProtocolHandlerTest {
     }
 
     @Test
+    @Timeout(20)
+    void testRequestedMessagesPrecedeHalfClose() throws Exception {
+        requestedMessagesPrecedeHalfClose(false);
+    }
+
+    @Test
+    @Timeout(20)
+    void testRequestedMessagesPrecedeHalfCloseWithDeadline() throws Exception {
+        requestedMessagesPrecedeHalfClose(true);
+    }
+
+    @Test
     void testDeadlineExpiresWhileServiceCallbackIsBlocked() throws Exception {
         var entered = new CountDownLatch(1);
         var release = new CountDownLatch(1);
@@ -895,6 +907,73 @@ class GrpcProtocolHandlerTest {
         }
     }
 
+    private static void requestedMessagesPrecedeHalfClose(boolean withDeadline) throws Exception {
+        var callReference = new AtomicReference<ServerCall<String, String>>();
+        var requested = new CompletableFuture<CompletableFuture<Void>>();
+        var release = new CompletableFuture<Void>();
+        var endStreamStarted = new CompletableFuture<Void>();
+        var writer = new RecordingWriter();
+        List<String> callbacks = new CopyOnWriteArrayList<>();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var handler = deadlineHandler(withDeadline ? "1H" : null, (call, metadata) -> {
+                callReference.set(call);
+                return new ServerCall.Listener<>() {
+                    @Override
+                    public void onMessage(String message) {
+                        callbacks.add("entered " + message);
+                        if (message.equals("first")) {
+                            var request = CompletableFuture.runAsync(() -> call.request(2), executor);
+                            requested.complete(request);
+                            CompletableFuture.anyOf(request, release).join();
+                            release.join();
+                        }
+                        callbacks.add("returned " + message);
+                    }
+
+                    @Override
+                    public void onHalfClose() {
+                        callbacks.add("half-close");
+                        call.close(Status.OK, new Metadata());
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        callbacks.add("complete");
+                    }
+                };
+            }, writer);
+            handler.init();
+            ServerCall<String, String> call = callReference.get();
+            try {
+                sendStreamingRequest(handler, "first");
+                sendStreamingRequest(handler, "second");
+                assertThat("messages wait for demand", callbacks, is(List.of()));
+                var delivery = executor.submit(() -> call.request(1));
+                requested.get(5, TimeUnit.SECONDS).get(5, TimeUnit.SECONDS);
+                var endStream = executor.submit(() -> {
+                    endStreamStarted.complete(null);
+                    sendStreamingRequest(handler, "third", true);
+                });
+                endStreamStarted.get(5, TimeUnit.SECONDS);
+                assertThat("callbacks wait for the active message callback",
+                           callbacks, is(List.of("entered first")));
+                release.complete(null);
+                delivery.get(5, TimeUnit.SECONDS);
+                endStream.get(5, TimeUnit.SECONDS);
+
+                assertThat("requested messages precede half-close and survive completion",
+                           callbacks,
+                           is(List.of("entered first", "returned first", "entered second", "returned second",
+                                      "entered third", "returned third", "half-close", "complete")));
+                assertThat("half-close completes the call once", writer.trailerWrites.get(), is(1));
+                assertThat(handler.streamState(), is(Http2StreamState.CLOSED));
+            } finally {
+                release.complete(null);
+                call.close(Status.OK, new Metadata());
+            }
+        }
+    }
+
     private static ServerCall<String, String> createServerCall(Http2StreamWriter streamWriter) {
         GrpcProtocolHandler<String, String> handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
                                                                                 Http2Headers.create(WritableHeaders.create()),
@@ -939,13 +1018,17 @@ class GrpcProtocolHandlerTest {
     }
 
     private static void sendStreamingRequest(GrpcProtocolHandler<String, String> handler, String message) {
+        sendStreamingRequest(handler, message, false);
+    }
+
+    private static void sendStreamingRequest(GrpcProtocolHandler<String, String> handler, String message, boolean endOfStream) {
         byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
         BufferData data = BufferData.create(5 + bytes.length);
         data.write(0);
         data.writeUnsignedInt32(bytes.length);
         data.write(bytes);
         handler.data(Http2FrameHeader.create(data.available(), Http2FrameTypes.DATA,
-                                             Http2Flag.DataFlags.create(0), 1), data);
+                                             Http2Flag.DataFlags.create(endOfStream ? Http2Flag.END_OF_STREAM : 0), 1), data);
     }
 
     private static void await(CountDownLatch latch) {
