@@ -38,8 +38,7 @@ interface ContextRecordConfigBlueprint {
      *
      * @return header name
      */
-    @Option.Configured(metadata = false)
-    @Prototype.Annotated("io.helidon.config.metadata.ConfiguredOption(type = java.lang.String.class, required = true)")
+    @Option.Configured
     HeaderName header();
 
     /**
