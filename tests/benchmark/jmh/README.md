@@ -8,6 +8,11 @@ file `benchmarks/jmh/jmh-baseline.json` doesn't exist. Baseline is used for curr
 error margin(15% by default)
 is detected, build fails.
 
+The comparison treats higher throughput and lower average, sampled, or single-shot time as improvements. The error margin
+is a percentage of the current score. Histograms show the score unit reported by JMH; an existing baseline with a different
+unit must be regenerated before comparison. Deterministic runner tests execute with the ordinary `tests` profile;
+benchmark campaigns additionally require the `jmh` profile.
+
 ```shell
 [ERROR] Failures: 
 [ERROR]   JunitJMHRunnerTest.renderResult:69 

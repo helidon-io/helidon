@@ -64,6 +64,10 @@
         -->
         <version.lib.asm>9.10.1</version.lib.asm>
         <version.lib.checkstyle>14.1.0</version.lib.checkstyle>
+        <!-- Persistence providers used only by tests. -->
+        <version.lib.eclipselink>5.0.2</version.lib.eclipselink>
+        <version.lib.hibernate.family>7.4</version.lib.hibernate.family>
+        <version.lib.hibernate>${version.lib.hibernate.family}.11.Final</version.lib.hibernate>
         <!-- Dependencies convergence via jinjava -->
         <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mockserver>5.15.0</version.lib.mockserver>
@@ -122,7 +126,7 @@
         <javadoc.link.jakarta-transaction>https://jakarta.ee/specifications/transactions/2.0/apidocs/</javadoc.link.jakarta-transaction>
 
         <javadoc.link.narayana>https://narayana.io/docs/api/</javadoc.link.narayana>
-        <javadoc.link.eclipselink>https://www.eclipse.org/eclipselink/api/4.0/</javadoc.link.eclipselink>
+        <javadoc.link.eclipselink>https://www.eclipse.org/eclipselink/api/5.0/</javadoc.link.eclipselink>
         <javadoc.link.hibernate>https://docs.jboss.org/hibernate/orm/${version.lib.hibernate.family}/javadocs/</javadoc.link.hibernate>
         <javadoc.link.ojdbc>https://docs.oracle.com/en/database/oracle/oracle-database/${version.lib.ojdbc.family}/jajdb/</javadoc.link.ojdbc>
         <javadoc.link.ucp>https://docs.oracle.com/en/database/oracle/oracle-database/${version.lib.ojdbc.family}/jjuar/</javadoc.link.ucp>
@@ -764,6 +768,22 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- Persistence providers used only by tests. -->
+            <dependency>
+                <groupId>org.eclipse.persistence</groupId>
+                <artifactId>org.eclipse.persistence.core</artifactId>
+                <version>${version.lib.eclipselink}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.persistence</groupId>
+                <artifactId>org.eclipse.persistence.jpa</artifactId>
+                <version>${version.lib.eclipselink}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate.orm</groupId>
+                <artifactId>hibernate-core</artifactId>
+                <version>${version.lib.hibernate}</version>
+            </dependency>
             <dependency>
                 <groupId>com.github.akarnokd</groupId>
                 <artifactId>rxjava2-jdk9-interop</artifactId>
