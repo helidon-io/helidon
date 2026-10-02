@@ -25,8 +25,7 @@ import io.helidon.common.Api;
 import io.helidon.metadata.hson.Hson;
 
 /**
- * Metadata of a feature, as stored in one of the Helidon specific files
- * {@link io.helidon.common.features.metadata.FeatureRegistry#FEATURE_REGISTRY_LOCATION_V1} or
+ * Metadata of a feature, as stored in the Helidon feature registry
  * {@link io.helidon.common.features.metadata.FeatureRegistry#FEATURE_REGISTRY_LOCATION_V2}.
  */
 @Api.Internal

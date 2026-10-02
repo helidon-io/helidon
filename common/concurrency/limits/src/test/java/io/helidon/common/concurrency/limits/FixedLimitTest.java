@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
@@ -184,6 +185,28 @@ public class FixedLimitTest {
     }
 
     @Test
+    void testQueueTimeoutDoesNotRetryReleasedPermit() {
+        var semaphore = new Semaphore(0) {
+            @Override
+            public boolean tryAcquire(long timeout, TimeUnit unit) {
+                release();
+                return false;
+            }
+        };
+        var limiter = FixedLimit.builder()
+                .semaphore(semaphore)
+                .queueLength(1)
+                .queueTimeout(Duration.ofMillis(10))
+                .build();
+
+        var outcome = limiter.tryAcquireOutcome(true);
+
+        assertThat(outcome.disposition(), is(LimitAlgorithm.Outcome.Disposition.REJECTED));
+        assertThat(outcome.timing(), is(LimitAlgorithm.Outcome.Timing.DEFERRED));
+        assertThat("The timed-out acquisition must leave the released permit available", semaphore.availablePermits(), is(1));
+    }
+
+    @Test
     public void testSemaphoreReleased() throws Exception {
         Limit limit = FixedLimit.builder()
                 .permits(5)
@@ -242,6 +265,28 @@ public class FixedLimitTest {
         assertThat(limiter.rejectedRequests().get(), is(1));
 
         accepted.token().success();
+    }
+
+    @Test
+    public void testInterruptedWaitPreservesInterruptStatus() {
+        FixedLimit limiter = FixedLimit.builder()
+                .permits(1)
+                .queueLength(1)
+                .build();
+        LimitAlgorithm.Outcome.Accepted accepted =
+                (LimitAlgorithm.Outcome.Accepted) limiter.tryAcquireOutcome(false);
+
+        try {
+            Thread.currentThread().interrupt();
+            LimitAlgorithm.Outcome outcome = limiter.tryAcquireOutcome(true);
+
+            assertThat(outcome.disposition(), is(LimitAlgorithm.Outcome.Disposition.REJECTED));
+            assertThat(outcome.timing(), is(LimitAlgorithm.Outcome.Timing.DEFERRED));
+            assertThat(Thread.currentThread().isInterrupted(), is(true));
+        } finally {
+            Thread.interrupted();
+            accepted.token().success();
+        }
     }
 
     @Test

@@ -94,34 +94,11 @@ when used outside Helidon repository, the `dependencies` section is not required
 
 # Registry file format
 
-## Version 1
-
-Created by deprecated feature annotation processing.
-This is now obsolete and will be removed from Helidon in version 5.0.0
-
-The registry is stored in each module in `META-INF/helidon/feature-metadata.properties`.
-The following keys are supported:
-
-| Key    | Name             | Description                                     |
-|--------|------------------|-------------------------------------------------|
-| `m`    | Module           | Name of the module                              |
-| `n`    | Name             | Feature name                                    |
-| `d`    | Description      | Feature description                             |
-| `s`    | Since            | First version that contains this feature        |
-| `p`    | Path             | Path of the feature                             |
-| `in`   | Flavor           | Flavor(s) that should print this feature        |
-| `not`  | Not in Flavor    | Flavor(s) that this feature is not supported in |
-| `aot`  | Ahead of time    | Whether ahead of time compilation is supported  |
-| `aotd` | Description aot  | Description of AOT support                      |
-| `i`    | Incubating       | This is an incubating feature                   |
-| `pr`   | Preview          | This is a preview feature                       |
-| `dep`  | Deprecated       | This feature is deprecated                      |
-| `deps` | Deprecated since | First version this feature was deprecated in    |
-
 ## Version 2
 
-Created by `helidon-common-features-codegen`, using new `Features.*` annotations.
-The registry is stored in each module in `META-INF/helidon/feature-registry.json`.
+Created by `helidon-common-features-codegen`, using `Features.*` annotations.
+The generator writes `META-INF/helidon/<module-name>/feature-registry.json` and lists it in
+`META-INF/helidon/manifest`. Discovery also supports JSON registries at `META-INF/helidon/feature-registry.json`.
 The root element is an array, to allow merging of all features into a single file.
 
 The format is as follows (using `//` to comment sections, not part of the format):
