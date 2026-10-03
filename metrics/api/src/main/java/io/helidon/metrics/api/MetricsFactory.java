@@ -335,26 +335,24 @@ public interface MetricsFactory {
 
     /**
      * Returns a no-op {@link io.helidon.metrics.api.Meter} of the type implied by the builder's runtime type, initialized with
-     * the builder's name and other required parameters.
+     * the builder's name, tags, description, base unit, and other required parameters.
      *
      * @param builder original builder
      * @return corresponding no-op meter
      */
     default Meter noOpMeter(Meter.Builder<?, ?> builder) {
-        NoOpMeter.Builder<?, ?> noOpBuilder;
         if (builder instanceof Counter.Builder cb) {
-            noOpBuilder = NoOpMeter.Counter.builder(cb.name());
-        } else if (builder instanceof FunctionalCounter.Builder fcb) {
-            noOpBuilder = NoOpMeter.FunctionalCounter.builder(fcb.name(), fcb.stateObject(), fcb.fn());
+            return new NoOpMeter.Counter(cb);
+        } else if (builder instanceof FunctionalCounter.Builder<?> fcb) {
+            return new NoOpMeter.FunctionalCounter(fcb);
         } else if (builder instanceof DistributionSummary.Builder sb) {
-            noOpBuilder = NoOpMeter.DistributionSummary.builder(sb.name());
-        } else if (builder instanceof Gauge.Builder gb) {
-            noOpBuilder = NoOpMeter.Gauge.builder(gb.name(), gb.supplier());
+            return new NoOpMeter.DistributionSummary(sb);
+        } else if (builder instanceof Gauge.Builder<?> gb) {
+            return NoOpMeter.Gauge.create(gb);
         } else if (builder instanceof Timer.Builder tb) {
-            noOpBuilder = NoOpMeter.Timer.builder(tb.name());
+            return new NoOpMeter.Timer(tb);
         } else {
             throw new IllegalArgumentException("Unrecognized meter builder type " + builder.getClass().getName());
         }
-        return noOpBuilder.build();
     }
 }

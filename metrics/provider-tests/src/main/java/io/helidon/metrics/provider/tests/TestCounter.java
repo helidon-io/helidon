@@ -17,9 +17,11 @@ package io.helidon.metrics.provider.tests;
 
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +37,12 @@ class TestCounter {
     @BeforeAll
     static void prep() {
         metricsFactory = Services.get(MetricsFactory.class);
-        meterRegistry = Services.get(MeterRegistry.class);
+        meterRegistry = metricsFactory.createMeterRegistry(MetricsConfig.create());
+    }
+
+    @AfterAll
+    static void closeRegistry() {
+        meterRegistry.close();
     }
 
     @Test

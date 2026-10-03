@@ -27,13 +27,13 @@ import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.emptyIterable;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -49,18 +49,18 @@ class SimpleMeterRegistryTests {
     @BeforeAll
     static void prep() {
         metricsFactory = Services.get(MetricsFactory.class);
-        meterRegistry = Services.get(MeterRegistry.class);
+        meterRegistry = metricsFactory.createMeterRegistry(MetricsConfig.create());
+    }
+
+    @AfterAll
+    static void closeRegistry() {
+        meterRegistry.close();
     }
 
     @Test
     void testConflictingMeterType() {
-        assertThat("MeterRegistry class name",
-                   meterRegistry.getClass().getSimpleName(),
-                   equalTo("MMeterRegistry"));
-
         Counter counter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("b"));
         assertThat("Counter", counter, notNullValue());
-        assertThat("Counter", counter.getClass().getSimpleName(), equalTo("MCounter"));
 
         assertThrows(IllegalArgumentException.class, () -> {
             assertThat("Meter registry before adding timer", meterRegistry.meters(), not(empty()));

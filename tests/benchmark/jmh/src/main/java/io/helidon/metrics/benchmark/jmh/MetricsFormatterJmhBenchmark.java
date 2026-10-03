@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.metrics.api.FormatterContext;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.metrics.api.MetricsConfig;
@@ -218,12 +219,14 @@ public class MetricsFormatterJmhBenchmark {
                                               MeterRegistry meterRegistry,
                                               Map<String, Collection<String>> tagSelection,
                                               Collection<String> meterNameSelection) {
+        FormatterContext context = FormatterContext.builder()
+                .mediaType(mediaType)
+                .metricsConfig(metricsConfig)
+                .tagSelections(tagSelection)
+                .nameSelection(meterNameSelection)
+                .build();
         return Services.all(MeterRegistryFormatterProvider.class).stream()
-                .map(provider -> provider.formatter(mediaType,
-                                                    metricsConfig,
-                                                    meterRegistry,
-                                                    tagSelection,
-                                                    meterNameSelection))
+                .map(provider -> provider.formatter(context, meterRegistry))
                 .flatMap(Optional::stream)
                 .findFirst()
                 .orElseThrow();

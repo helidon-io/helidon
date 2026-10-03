@@ -15,7 +15,6 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,6 +27,7 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionSummary;
+import io.helidon.metrics.api.FormatterContext;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
@@ -199,6 +199,7 @@ class TestPrometheusFormatting {
     }
 
     @Test
+    @SuppressWarnings("removal")
     void testRetrievingByTag() {
 
         Counter c = meterRegistry.getOrCreate(metricsFactory.counterBuilder("c3")
@@ -215,15 +216,22 @@ class TestPrometheusFormatting {
                                                     .addTag(metricsFactory.tagCreate(TEST_TAG_NAME, "app")));
         e.record(2, TimeUnit.SECONDS);
 
-        MeterRegistryFormatter formatter = new MicrometerPrometheusFormatterProvider()
-                .formatter(MediaTypes.APPLICATION_OPENMETRICS_TEXT,
-                           metricsConfig,
-                           meterRegistry,
-                           Map.<String, Collection<String>>of(TEST_TAG_NAME, Set.of("app")),
-                           Set.of())
+        FormatterContext context = FormatterContext.builder()
+                .mediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
+                .metricsConfig(metricsConfig)
+                .tagSelections(Map.of(TEST_TAG_NAME, Set.of("app")))
+                .build();
+        var provider = new MicrometerPrometheusFormatterProvider();
+        MeterRegistryFormatter formatter = provider.formatter(context, meterRegistry)
                 .orElseThrow();
 
         Optional<Object> outputOpt = formatter.format();
+        MeterRegistryFormatter deprecatedFormatter = provider.formatter(context.mediaType(),
+                                                                         metricsConfig,
+                                                                         meterRegistry,
+                                                                         context.tagSelections(),
+                                                                         context.nameSelection()).orElseThrow();
+        assertThat("Deprecated formatter preserves tag selections", deprecatedFormatter.format(), is(outputOpt));
 
         assertThat("Formatted output",
                    checkAndCast(outputOpt),

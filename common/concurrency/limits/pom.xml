@@ -69,7 +69,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.metrics.providers</groupId>
-            <artifactId>helidon-metrics-providers-micrometer</artifactId>
+            <artifactId>helidon-metrics-providers-helidon</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

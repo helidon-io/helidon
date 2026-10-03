@@ -29,6 +29,7 @@ import io.helidon.http.HttpException;
 import io.helidon.http.Status;
 import io.helidon.http.media.json.JsonSupport;
 import io.helidon.json.JsonObject;
+import io.helidon.metrics.api.FormatterContext;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.metrics.api.MetricsConfig;
@@ -174,12 +175,14 @@ class MetricsFeature {
                                                    MediaType mediaType,
                                                    Map<String, Collection<String>> tagSelection,
                                                    Iterable<String> nameSelection) {
+        var context = FormatterContext.builder()
+                .mediaType(mediaType)
+                .metricsConfig(metricsConfig)
+                .tagSelections(tagSelection)
+                .nameSelection(nameSelection)
+                .build();
         Optional<MeterRegistryFormatter> formatter = formatterProviders.stream()
-                .map(provider -> provider.formatter(mediaType,
-                                                    metricsConfig,
-                                                    meterRegistry,
-                                                    tagSelection,
-                                                    nameSelection))
+                .map(provider -> provider.formatter(context, meterRegistry))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .findFirst();
@@ -304,13 +307,13 @@ class MetricsFeature {
     }
 
     boolean enabled() {
+        var context = FormatterContext.builder()
+                .mediaType(MediaTypes.TEXT_PLAIN)
+                .metricsConfig(metricsConfig)
+                .build();
         return metricsObserverConfig.metricsConfig().enabled()
                 && formatterProviders.stream()
-                .map(provider -> provider.formatter(MediaTypes.TEXT_PLAIN,
-                                                    metricsConfig,
-                                                    meterRegistry,
-                                                    Map.of(),
-                                                    List.of()))
+                .map(provider -> provider.formatter(context, meterRegistry))
                 .anyMatch(Optional::isPresent);
     }
 

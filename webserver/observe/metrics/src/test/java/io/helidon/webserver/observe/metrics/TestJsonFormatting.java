@@ -27,6 +27,8 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.json.JsonObject;
 import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.DistributionSummary;
+import io.helidon.metrics.api.FormatterContext;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.metrics.api.MetricsConfig;
@@ -83,6 +85,47 @@ class TestJsonFormatting {
         }
     }
 
+
+    @Test
+    void testPercentilesBeforeAndAfterRecording() {
+        MetricsConfig metricsConfig = MetricsConfig.create();
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(metricsConfig);
+        try {
+            Timer timer = meterRegistry.getOrCreate(metricsFactory.timerBuilder("timer")
+                                                            .percentiles(0.5, 0.95));
+            DistributionSummary summary = meterRegistry.getOrCreate(
+                    metricsFactory.distributionSummaryBuilder("summary",
+                                                              metricsFactory.distributionStatisticsConfigBuilder()
+                                                                      .percentiles(0.5, 0.95)));
+            JsonFormatter formatter = JsonFormatter.builder(metricsConfig, meterRegistry).build();
+
+            JsonObject emptyOutput = checkAndCast(formatter.format());
+            for (String name : List.of("timer", "summary")) {
+                JsonObject meterOutput = emptyOutput.objectValue(name).orElseThrow();
+                assertThat(name + " has no recorded samples",
+                           meterOutput.numberValue("count").orElseThrow().longValue(), is(0L));
+                for (String percentile : List.of("p0.5", "p0.95")) {
+                    assertThat(name + " empty " + percentile,
+                               meterOutput.numberValue(percentile).orElseThrow().doubleValue(), is(0D));
+                }
+            }
+
+            timer.record(Duration.ofMillis(1250));
+            summary.record(8.5D);
+
+            JsonObject recordedOutput = checkAndCast(formatter.format());
+            Map.of("timer", 1.25D, "summary", 8.5D).forEach((name, expectedValue) -> {
+                JsonObject meterOutput = recordedOutput.objectValue(name).orElseThrow();
+                for (String percentile : List.of("p0.5", "p0.95")) {
+                    assertThat(name + " recorded " + percentile,
+                               meterOutput.numberValue(percentile).orElseThrow().doubleValue(), is(expectedValue));
+                }
+            });
+        } finally {
+            meterRegistry.close();
+        }
+    }
 
     @Test
     void testRetrievingByName() {
@@ -191,6 +234,7 @@ class TestJsonFormatting {
     }
 
     @Test
+    @SuppressWarnings("removal")
     void testRetrievingByTags() {
         MetricsConfig metricsConfig = MetricsConfig.create();
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
@@ -204,13 +248,13 @@ class TestJsonFormatting {
             blue.increment(5);
             meterRegistry.getOrCreate(metricsFactory.counterBuilder("trucks")).increment();
 
-            MeterRegistryFormatter formatter = new JsonMeterRegistryFormatterProvider()
-                    .formatter(MediaTypes.APPLICATION_JSON,
-                               metricsConfig,
-                               meterRegistry,
-                               Map.of("color", List.of("red")),
-                               Set.of())
-                    .orElseThrow();
+            FormatterContext context = FormatterContext.builder()
+                    .mediaType(MediaTypes.APPLICATION_JSON)
+                    .metricsConfig(metricsConfig)
+                    .tagSelections(Map.of("color", List.of("red")))
+                    .build();
+            var provider = new JsonMeterRegistryFormatterProvider();
+            MeterRegistryFormatter formatter = provider.formatter(context, meterRegistry).orElseThrow();
 
             JsonObject jsonOutput = checkAndCast(formatter.format());
             assertThat("Selected tagged counter",
@@ -218,6 +262,13 @@ class TestJsonFormatting {
                        is(3));
             assertThat("Unselected tagged counter", jsonOutput.value("cars;color=blue").orElse(null), nullValue());
             assertThat("Meter missing selected tag", jsonOutput.value("trucks").orElse(null), nullValue());
+            MeterRegistryFormatter deprecatedFormatter = provider.formatter(context.mediaType(),
+                                                                             metricsConfig,
+                                                                             meterRegistry,
+                                                                             context.tagSelections(),
+                                                                             context.nameSelection()).orElseThrow();
+            assertThat("Deprecated formatter preserves tag selections",
+                       checkAndCast(deprecatedFormatter.format()), is(jsonOutput));
         } finally {
             meterRegistry.close();
         }
@@ -311,22 +362,27 @@ class TestJsonFormatting {
     }
 
     @Test
-    void testProviderRejectsNullArguments() {
+    @SuppressWarnings("removal")
+    void testProviderRejectsNullContextAndDeprecatedArguments() {
         var provider = new JsonMeterRegistryFormatterProvider();
         MetricsConfig metricsConfig = MetricsConfig.create();
         MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
         Map<String, Collection<String>> tagSelection = Map.of();
         Iterable<String> nameSelection = Set.of();
+        FormatterContext context = FormatterContext.builder()
+                .mediaType(MediaTypes.TEXT_PLAIN)
+                .metricsConfig(metricsConfig)
+                .build();
 
         assertThat("Valid non-matching media type",
-                   provider.formatter(MediaTypes.TEXT_PLAIN,
-                                      metricsConfig,
-                                      meterRegistry,
-                                      tagSelection,
-                                      nameSelection),
+                   provider.formatter(context, meterRegistry),
                    OptionalMatcher.optionalEmpty());
 
-        assertAll("Generic formatter arguments",
+        assertAll("Formatter context arguments",
+                  () -> assertThrows(NullPointerException.class, () -> provider.formatter(null, meterRegistry)),
+                  () -> assertThrows(NullPointerException.class, () -> provider.formatter(context, null)));
+
+        assertAll("Deprecated generic formatter arguments",
                   () -> assertThrows(NullPointerException.class,
                                      () -> provider.formatter(null,
                                                               metricsConfig,

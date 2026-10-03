@@ -22,6 +22,7 @@ import java.util.Optional;
 
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.metrics.api.FormatterContext;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.metrics.api.MetricsConfig;
@@ -38,20 +39,38 @@ public class JsonMeterRegistryFormatterProvider implements MeterRegistryFormatte
     public JsonMeterRegistryFormatterProvider() {
     }
 
+    /**
+     * Returns a formatter for the requested output format and meter selections.
+     *
+     * @deprecated Use {@link #formatter(FormatterContext, MeterRegistry)}.
+     */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     @Override
     public Optional<MeterRegistryFormatter> formatter(MediaType mediaType,
                                                       MetricsConfig metricsConfig,
                                                       MeterRegistry meterRegistry,
                                                       Map<String, Collection<String>> tagSelection,
                                                       Iterable<String> nameSelection) {
-        Objects.requireNonNull(mediaType);
-        Objects.requireNonNull(metricsConfig);
+        return formatter(FormatterContext.builder()
+                                 .mediaType(mediaType)
+                                 .metricsConfig(metricsConfig)
+                                 .tagSelections(tagSelection)
+                                 .nameSelection(nameSelection)
+                                 .build(),
+                         meterRegistry);
+    }
+
+    @Override
+    public Optional<MeterRegistryFormatter> formatter(FormatterContext context, MeterRegistry meterRegistry) {
+        Objects.requireNonNull(context);
         Objects.requireNonNull(meterRegistry);
-        Objects.requireNonNull(tagSelection);
-        Objects.requireNonNull(nameSelection);
+        MediaType mediaType = context.mediaType();
         return mediaType.type().equals(MediaTypes.APPLICATION_JSON.type())
                 && mediaType.subtype().equals(MediaTypes.APPLICATION_JSON.subtype())
-                ? Optional.of(create(metricsConfig, meterRegistry, tagSelection, nameSelection))
+                ? Optional.of(create(context.metricsConfig(),
+                                     meterRegistry,
+                                     context.tagSelections(),
+                                     context.nameSelection()))
                 : Optional.empty();
     }
 
@@ -65,7 +84,7 @@ public class JsonMeterRegistryFormatterProvider implements MeterRegistryFormatte
      * @param scopeSelection ignored; must not be {@code null}
      * @param nameSelection meter names to format; empty means no name-based restriction
      * @return compatible formatter; empty if none
-     * @deprecated Use {@link #formatter(MediaType, MetricsConfig, MeterRegistry, Map, Iterable)}. Scope-specific arguments
+     * @deprecated Use {@link #formatter(FormatterContext, MeterRegistry)}. Scope-specific arguments
      * are ignored and this method will be removed.
      */
     @Deprecated(since = "27.0.0", forRemoval = true)

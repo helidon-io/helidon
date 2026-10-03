@@ -39,7 +39,7 @@ module io.helidon.declarative.tests.http {
 
     // required for generated binding
     requires io.helidon.health.checks;
-    requires io.helidon.metrics.providers.micrometer;
+    requires io.helidon.metrics.providers.helidon;
     requires io.helidon.webserver.context;
     requires io.helidon.webserver.observe;
     requires io.helidon.webserver.observe.health;

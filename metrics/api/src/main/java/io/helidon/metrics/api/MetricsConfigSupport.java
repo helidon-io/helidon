@@ -25,7 +25,6 @@ import java.util.regex.Pattern;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.Config;
-import io.helidon.service.registry.Services;
 
 class MetricsConfigSupport {
 
@@ -131,7 +130,7 @@ class MetricsConfigSupport {
         @SuppressWarnings("removal")
         public void decorate(MetricsConfig.BuilderBase<?, ?> builder) {
             if (builder.config().isEmpty()) {
-                builder.config(Services.get(Config.class).get(MetricsConfigBlueprint.METRICS_CONFIG_KEY));
+                builder.config(Config.empty());
             }
             if (builder.keyPerformanceIndicatorMetricsConfig().isEmpty()) {
                 builder.keyPerformanceIndicatorMetricsConfig(KeyPerformanceIndicatorMetricsConfig.create());
