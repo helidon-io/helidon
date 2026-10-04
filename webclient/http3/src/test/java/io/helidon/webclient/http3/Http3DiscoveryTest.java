@@ -35,7 +35,6 @@ import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.ClientResponseTrailers;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
-import io.helidon.http.HttpTransportObserver;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.MediaContext;
@@ -1287,7 +1286,7 @@ class Http3DiscoveryTest {
                     uri.scheme(),
                     UriAuthority.create(uri.authority()),
                     request.tls().generation(),
-                    HttpTransportObserver.noop());
+                    clientImpl.connectionCache());
             Http3Discovery discovery = clock == null
                     ? clientImpl.connectionCache().discovery()
                     : Http3Discovery.create(clock, (_, _) -> { });
