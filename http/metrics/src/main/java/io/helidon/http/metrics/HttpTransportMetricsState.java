@@ -16,6 +16,7 @@
 
 package io.helidon.http.metrics;
 
+import java.io.Serial;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.ReferenceQueue;
@@ -56,6 +57,7 @@ import io.helidon.http.HttpTransportObserver.StreamObservation;
 import io.helidon.http.HttpTransportObserver.StreamOutcome;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
@@ -351,8 +353,17 @@ final class HttpTransportMetricsState {
             IdentityReference lookup = new IdentityReference(meterIdentity);
             MeterBinding binding = selectedEpoch.bindings.get(lookup);
             if (binding == null) {
+                GaugeValue gaugeValue = null;
+                if (slot.sharedGauge != null) {
+                    // An earlier registration can create the gauge and then fail before binding it.
+                    // Recover the backing retained by that gauge, which may differ from this slot's candidate.
+                    if (!(((Gauge<?>) meter).value() instanceof GaugeValue registeredValue)) {
+                        throw new IllegalStateException("An HTTP transport gauge has an unsupported backing value");
+                    }
+                    gaugeValue = registeredValue;
+                }
                 IdentityReference retained = new IdentityReference(meterIdentity, selectedEpoch.collectedMeters);
-                binding = new MeterBinding(retained, id, slot.sharedGauge);
+                binding = new MeterBinding(retained, id, gaugeValue);
                 selectedEpoch.bindings.put(retained, binding);
             } else if (!binding.id.equals(id)) {
                 throw new IllegalStateException("A native meter is bound to more than one HTTP transport meter ID");
@@ -614,12 +625,13 @@ final class HttpTransportMetricsState {
                                                                  .origin(HttpTransportMetrics.class.getName())
                                                                  .tags(tags)
                                                                  .description(id.description));
-                    case GAUGE -> registry.getOrCreate(metricsFactory.gaugeBuilder(id.name,
-                                                                                    Objects.requireNonNull(gaugeValue),
-                                                                                    GaugeValue::get)
-                                                               .origin(HttpTransportMetrics.class.getName())
-                                                               .tags(tags)
-                                                               .description(id.description));
+                    case GAUGE -> {
+                        GaugeValue activeValue = Objects.requireNonNull(gaugeValue);
+                        yield registry.getOrCreate(metricsFactory.gaugeBuilder(id.name, () -> activeValue)
+                                                           .origin(HttpTransportMetrics.class.getName())
+                                                            .tags(tags)
+                                                            .description(id.description));
+                    }
                     case TIMER -> {
                         Timer.Builder builder = metricsFactory.timerBuilder(id.name)
                                 .origin(HttpTransportMetrics.class.getName())
@@ -1398,15 +1410,39 @@ final class HttpTransportMetricsState {
         }
     }
 
-    private static final class GaugeValue {
+    private static final class GaugeValue extends Number {
+        @Serial
+        private static final long serialVersionUID = 1L;
+
         private final Set<AtomicLong> contributions = ConcurrentHashMap.newKeySet();
 
-        private long get() {
+        @Override
+        public int intValue() {
+            return (int) longValue();
+        }
+
+        @Override
+        public long longValue() {
             long value = 0;
             for (AtomicLong contribution : contributions) {
                 value += contribution.get();
             }
             return value;
+        }
+
+        @Override
+        public float floatValue() {
+            return longValue();
+        }
+
+        @Override
+        public double doubleValue() {
+            return longValue();
+        }
+
+        @Override
+        public String toString() {
+            return Long.toString(longValue());
         }
     }
 

@@ -205,6 +205,16 @@ class TestMicrometerHttpTransportMetrics {
     }
 
     @Test
+    void connectionGaugeRecoversBackingAfterRegistrationThrows() throws Exception {
+        assertGaugeRegistrationRecovery(false);
+    }
+
+    @Test
+    void streamGaugeRecoversBackingAfterRegistrationThrows() throws Exception {
+        assertGaugeRegistrationRecovery(true);
+    }
+
+    @Test
     void tagRejectedWrapperDoesNotContributeWhenOpenedFirst() throws Exception {
         assertTagFilteredWrappers(true);
     }
@@ -478,6 +488,90 @@ class TestMicrometerHttpTransportMetrics {
                 """;
         MetricsConfig config = MetricsConfig.create(Config.just(configText, MediaTypes.APPLICATION_YAML).get("metrics"));
         assertStreamDurationStatistics(config, List.of(0.5, 0.99));
+    }
+
+    private static void assertGaugeRegistrationRecovery(boolean streams) throws Exception {
+        MeterRegistry owningRegistry = createRegistry();
+        TestRegistry firstRegistry = new TestRegistry(owningRegistry);
+        TestRegistry secondRegistry = new TestRegistry(owningRegistry);
+        String gaugeName = streams ? "helidon.http.streams.active" : "helidon.http.connections.active";
+        firstRegistry.failGaugeRegistrationName.set(gaugeName);
+        HttpTransportMetrics.Lease first = HttpTransportMetrics.acquire(firstRegistry);
+        HttpTransportMetrics.Lease second = HttpTransportMetrics.acquire(secondRegistry);
+        List<ConnectionObservation> connections = new ArrayList<>();
+        List<StreamObservation> openedStreams = new ArrayList<>();
+        try {
+            assertThat("Wrappers share the native registry", firstRegistry.unwrap(Object.class),
+                       sameInstance(secondRegistry.unwrap(Object.class)));
+            ConnectionObservation firstConnection = first.connectionOpened(SERVER, TRANSPORT_TCP, NONE);
+            connections.add(firstConnection);
+            firstConnection.protocolSelected(PROTOCOL_HTTP_1_1);
+            if (streams) {
+                openedStreams.add(firstConnection.streamOpened(BIDIRECTIONAL, REMOTE));
+            }
+            synchronize(secondRegistry, second).awaitIdle();
+            assertThat("Failure after native gauge registration was injected",
+                       firstRegistry.failedGaugeRegistrations.get(), is(1));
+            io.micrometer.core.instrument.MeterRegistry nativeRegistry =
+                    owningRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
+            Gauge gauge = streams
+                    ? nativeRegistry.get(gaugeName)
+                            .tags("role", "server", "protocol", "http/1.1", "direction", "bidi", "initiator", "remote").gauge()
+                    : nativeRegistry.get(gaugeName)
+                            .tags("role", "server", "transport", "tcp", "protocol", "http/1.1").gauge();
+            assertThat("Failed registration does not contribute", gauge.value(), is(0.0));
+
+            ConnectionObservation secondConnection = second.connectionOpened(SERVER, TRANSPORT_TCP, NONE);
+            connections.add(secondConnection);
+            secondConnection.protocolSelected(PROTOCOL_HTTP_1_1);
+            if (streams) {
+                openedStreams.add(secondConnection.streamOpened(BIDIRECTIONAL, REMOTE));
+            }
+            synchronize(secondRegistry, second).awaitIdle();
+            assertThat("Successful wrapper contributes through the native gauge's existing backing", gauge.value(), is(1.0));
+
+            if (!streams) {
+                ConnectionObservation retryConnection = first.connectionOpened(SERVER, TRANSPORT_TCP, NONE);
+                connections.add(retryConnection);
+                retryConnection.protocolSelected(PROTOCOL_HTTP_1_1);
+                synchronize(secondRegistry, second).awaitIdle();
+                assertThat("Retry attaches the failed wrapper's outstanding observations", gauge.value(), is(3.0));
+                retryConnection.close(NORMAL);
+                synchronize(secondRegistry, second).awaitIdle();
+                assertThat("Closing the retry removes one contribution", gauge.value(), is(2.0));
+            }
+            if (streams) {
+                openedStreams.getFirst().close(COMPLETED);
+            }
+            firstConnection.close(NORMAL);
+            synchronize(secondRegistry, second).awaitIdle();
+            assertThat("Closing the first wrapper preserves the second", gauge.value(), is(1.0));
+            if (streams) {
+                openedStreams.get(1).close(COMPLETED);
+            }
+            secondConnection.close(NORMAL);
+            synchronize(secondRegistry, second).awaitIdle();
+            assertThat("All observations closed", gauge.value(), is(0.0));
+            first.close();
+            second.close();
+            awaitCompletion(first);
+            awaitCompletion(second);
+            assertThat("Native gauge removed after final release", nativeRegistry.find(gaugeName).gauge(), nullValue());
+        } finally {
+            firstRegistry.releaseBarrier();
+            secondRegistry.releaseBarrier();
+            firstRegistry.failGaugeRegistrationName.set(null);
+            openedStreams.forEach(stream -> stream.close(COMPLETED));
+            connections.forEach(connection -> connection.close(NORMAL));
+            first.close();
+            second.close();
+            try {
+                awaitCompletion(first);
+                awaitCompletion(second);
+            } finally {
+                owningRegistry.close();
+            }
+        }
     }
 
     private static void assertTaggedGaugeReacquisition(boolean removalFails) throws Exception {
@@ -927,6 +1021,8 @@ class TestMicrometerHttpTransportMetrics {
         private final Predicate<Map<String, String>> enabledTags;
         private final List<Tag> additionalTags;
         private final AtomicBoolean failGaugeRemoval = new AtomicBoolean();
+        private final AtomicReference<String> failGaugeRegistrationName = new AtomicReference<>();
+        private final AtomicInteger failedGaugeRegistrations = new AtomicInteger();
         private final AtomicInteger barrierSequence = new AtomicInteger();
         private final AtomicReference<ProviderBarrier> providerBarrier = new AtomicReference<>();
         private final AtomicInteger closeCount = new AtomicInteger();
@@ -1035,7 +1131,15 @@ class TestMicrometerHttpTransportMetrics {
                 barrier.enter();
             }
             additionalTags.forEach(builder::addTag);
-            return delegate.getOrCreate(builder);
+            M meter = delegate.getOrCreate(builder);
+            String failedGaugeName = failGaugeRegistrationName.get();
+            if (PROTOCOL_HTTP_1_1.equals(builder.tags().get("protocol"))
+                    && builder.name().equals(failedGaugeName)
+                    && failGaugeRegistrationName.compareAndSet(failedGaugeName, null)) {
+                failedGaugeRegistrations.incrementAndGet();
+                throw new IllegalStateException("Simulated failure after native gauge registration");
+            }
+            return meter;
         }
 
         @Override
