@@ -57,6 +57,7 @@ import io.helidon.webclient.api.HttpTransportObserverSupport.ObserverProvider;
 import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.ProxyRoute;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.api.WebClientCookieManager;
 import io.helidon.webclient.api.WebClientProtocolResponse;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
@@ -801,6 +802,7 @@ class Http3ClientTest {
             Http3ClientConfig config = builder.buildPrototype();
             WebClient webClient = mock(WebClient.class);
             when(webClient.executor()).thenReturn(tasks);
+            when(webClient.cookieManager()).thenReturn(WebClientCookieManager.builder().build());
             Http3ClientImpl first = new Http3ClientImpl(webClient, config);
             Http3ClientImpl second = new Http3ClientImpl(webClient, config);
             Future<WebClientServiceResponse> pending = null;
