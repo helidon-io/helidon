@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.LockSupport;
 
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
@@ -64,7 +65,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.everyItem;
-import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
@@ -116,10 +117,17 @@ class WebClientTelemetryProviderTest {
             IllegalStateException failure = new IllegalStateException("Request failed");
 
             long startTime = System.nanoTime();
-            assertThat(service.handle(_ -> successResponse, successRequest), sameInstance(successResponse));
-            assertThat(service.handle(_ -> errorResponse, errorRequest), sameInstance(errorResponse));
+            assertThat(service.handle(_ -> {
+                delayRequest();
+                return successResponse;
+            }, successRequest), sameInstance(successResponse));
+            assertThat(service.handle(_ -> {
+                delayRequest();
+                return errorResponse;
+            }, errorRequest), sameInstance(errorResponse));
             assertThat(assertThrows(IllegalStateException.class,
                                     () -> service.handle(_ -> {
+                                        delayRequest();
                                         throw failure;
                                     }, request("http://localhost/failure"))),
                        sameInstance(failure));
@@ -129,8 +137,9 @@ class WebClientTelemetryProviderTest {
             ArgumentCaptor<Attributes> attributes = ArgumentCaptor.forClass(Attributes.class);
             verify(meterProvider).get(OTEL_SERVICE);
             verify(histogram, times(3)).record(durations.capture(), attributes.capture());
-            assertThat("Request durations must be positive seconds within the measured interval",
-                       durations.getAllValues(), everyItem(allOf(greaterThan(0.0), lessThanOrEqualTo(elapsedSeconds))));
+            assertThat("Each request takes at least one millisecond within the measured interval, in seconds",
+                       durations.getAllValues(), everyItem(allOf(greaterThanOrEqualTo(0.001),
+                                                                 lessThanOrEqualTo(elapsedSeconds))));
             assertThat(attributes.getAllValues().get(0).get(AttributeKey.stringKey("http.request.method")), is("_OTHER"));
             assertThat(attributes.getAllValues().stream()
                                .map(value -> value.get(AttributeKey.longKey("http.response.status.code")))
@@ -217,6 +226,13 @@ class WebClientTelemetryProviderTest {
 
         assertThat(second.handle(_ -> response, request), sameInstance(response));
         assertThat(tracer.spanNames(), empty());
+    }
+
+    private static void delayRequest() {
+        long startTime = System.nanoTime();
+        do {
+            LockSupport.parkNanos(1_000_000);
+        } while (System.nanoTime() - startTime < 1_000_000);
     }
 
     private static WebClientServiceRequest request(String uri) {
