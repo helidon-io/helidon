@@ -65,7 +65,9 @@
  * <p>The adapter owns all exact meter IDs it creates, including any pre-existing meter returned by the registry
  * for one of those IDs. Applications must not pre-register an exact gauge ID because the Metrics API cannot expose and
  * adopt the gauge's backing value. Configured registry wrappers retain their filtering, listeners, factory, and clock.
- * Wrappers which recursively unwrap to the same native registry share meter ownership and active gauge values.
+ * Wrappers which recursively unwrap to the same native registry share meter ownership. Active gauge values are shared
+ * only when registration returns the same native gauge; wrappers which return different native gauges retain independent
+ * active values.
  *
  * <p>First-use meter registration and final meter removal run on a bounded asynchronous dispatcher. At most 1024
  * observed provider actions are admitted during one continuously busy dispatch wave. The admission budget resets only
