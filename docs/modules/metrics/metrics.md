@@ -1002,8 +1002,8 @@ WebClient client = WebClient.builder()
 `WebClientTransportMetrics` is in `io.helidon.webclient.metrics`. Its builder
 accepts `meterRegistry(registry)` to use an explicit registry, including the
 same registry as a WebServer metrics observer. The service applies to HTTP/1,
-HTTP/2, gRPC calls, and WebSocket HTTP upgrades. The existing `services.metrics`
-request metric definitions and telemetry services remain independent.
+HTTP/2, HTTP/3, gRPC calls, and WebSocket HTTP upgrades. The existing
+`services.metrics` request metric definitions and telemetry services remain independent.
 
 Omit the service or set `enabled: false` to disable client transport metrics.
 Disabled services do not acquire a metrics lease or enter the request service
@@ -1027,8 +1027,8 @@ releasing a response with unread trailers. Read or write failures record
 
 The [per-meter registry settings](#selecting-meters-and-timer-percentiles)
 apply to both client and server transport metrics, including HTTP/1, HTTP/2,
-gRPC exchanges, and WebSocket HTTP upgrades. Client/server enablement controls
-whether observation participates; registry settings select the individual
+HTTP/3, gRPC exchanges, and WebSocket HTTP upgrades. Client/server enablement
+controls whether observation participates; registry settings select the individual
 measurements and timer statistics. Enabling a meter in the registry does not
 enable observation on a disabled client or listener.
 
