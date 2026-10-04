@@ -33,17 +33,17 @@ import io.helidon.http.HttpTransportObserver.Initiator;
 import io.helidon.http.HttpTransportObserver.Role;
 import io.helidon.http.HttpTransportObserver.StreamObservation;
 import io.helidon.http.HttpTransportObserver.StreamOutcome;
+import io.helidon.webclient.api.HttpTransportObserverSupport.ObserverLifecycle;
+import io.helidon.webclient.api.HttpTransportObserverSupport.ObserverProvider;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
-import io.helidon.webclient.spi.WebClientTransportObserverProvider;
 
-final class RecordingTransportObserverService implements WebClientService, WebClientTransportObserverProvider {
+final class RecordingTransportObserverService implements WebClientService, ObserverProvider {
     private final Object identity = new Object();
     private final AtomicInteger requests = new AtomicInteger();
-    private final AtomicInteger registrationsOpened = new AtomicInteger();
-    private final AtomicInteger registrationsClosed = new AtomicInteger();
-    private final AtomicInteger registrationCompletions = new AtomicInteger();
+    private final AtomicInteger lifecyclesStarted = new AtomicInteger();
+    private final AtomicInteger lifecyclesStopped = new AtomicInteger();
     private final List<String> events = new CopyOnWriteArrayList<>();
     private final List<ConnectionRecord> connections = new CopyOnWriteArrayList<>();
 
@@ -59,29 +59,28 @@ final class RecordingTransportObserverService implements WebClientService, WebCl
     }
 
     @Override
-    public Object transportObserverIdentity() {
+    public boolean enabled() {
+        return true;
+    }
+
+    @Override
+    public Object scope() {
         return identity;
     }
 
     @Override
-    public Registration openTransportObserver() {
-        registrationsOpened.incrementAndGet();
-        return new Registration() {
+    public ObserverLifecycle createObserver() {
+        return new ObserverLifecycle() {
             @Override
-            public HttpTransportObserver observer() {
+            public HttpTransportObserver start() {
+                lifecyclesStarted.incrementAndGet();
                 return RecordingTransportObserverService.this::connectionOpened;
             }
 
             @Override
-            public void close() {
-                events.add("registration-close");
-                registrationsClosed.incrementAndGet();
-            }
-
-            @Override
-            public CompletionStage<Void> completion() {
-                events.add("registration-completion");
-                registrationCompletions.incrementAndGet();
+            public CompletionStage<Void> stop() {
+                events.add("lifecycle-stop");
+                lifecyclesStopped.incrementAndGet();
                 return CompletableFuture.completedFuture(null);
             }
         };
@@ -91,16 +90,12 @@ final class RecordingTransportObserverService implements WebClientService, WebCl
         return requests.get();
     }
 
-    int registrationsOpened() {
-        return registrationsOpened.get();
+    int lifecyclesStarted() {
+        return lifecyclesStarted.get();
     }
 
-    int registrationsClosed() {
-        return registrationsClosed.get();
-    }
-
-    int registrationCompletions() {
-        return registrationCompletions.get();
+    int lifecyclesStopped() {
+        return lifecyclesStopped.get();
     }
 
     List<String> events() {

@@ -120,10 +120,9 @@ class Http3ConnectionReuseTest {
             client.closeResource();
         }
 
-        assertThat(observer.requests(), is(2));
-        assertThat(observer.registrationsOpened(), is(1));
-        assertThat(observer.registrationsClosed(), is(1));
-        assertThat(observer.registrationCompletions(), is(1));
+        assertThat(observer.requests(), is(0));
+        assertThat(observer.lifecyclesStarted(), is(1));
+        assertThat(observer.lifecyclesStopped(), is(1));
         assertThat(observer.connections().size(), is(1));
 
         RecordingTransportObserverService.ConnectionRecord connection = observer.connections().getFirst();
@@ -152,7 +151,7 @@ class Http3ConnectionReuseTest {
         List<String> events = observer.events();
         assertThat(events.indexOf("connection-open"), lessThan(events.indexOf("handshake-start")));
         assertThat(events.indexOf("handshake-SUCCESS"), lessThan(events.indexOf("protocol-" + PROTOCOL_HTTP_3)));
-        assertThat(events.indexOf("connection-LOCAL_CLOSE"), lessThan(events.indexOf("registration-close")));
+        assertThat(events.indexOf("connection-LOCAL_CLOSE"), lessThan(events.indexOf("lifecycle-stop")));
     }
 
     @Test

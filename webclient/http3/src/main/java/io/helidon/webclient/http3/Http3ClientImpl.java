@@ -17,11 +17,13 @@
 package io.helidon.webclient.http3;
 
 import java.net.UnixDomainSocketAddress;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.uri.UriAuthority;
@@ -29,6 +31,7 @@ import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpLogConfig;
+import io.helidon.http.HttpTransportObserver;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.http3.Http3FrameListener;
@@ -42,13 +45,14 @@ import io.helidon.webclient.api.ClientRequestOrigin;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.api.FullClientRequest;
+import io.helidon.webclient.api.HttpTransportConnectionCache;
+import io.helidon.webclient.api.HttpTransportObserverSupport.ObserverProvider;
 import io.helidon.webclient.api.ProxyRoute;
 import io.helidon.webclient.api.SniConfig;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.api.WebClientConfig;
 import io.helidon.webclient.api.WebClientCookieManager;
 import io.helidon.webclient.api.WebClientProtocolResponse;
-import io.helidon.webclient.api.WebClientTransportObserverSupport;
 import io.helidon.webclient.spi.HttpClientSpi;
 
 /**
@@ -70,11 +74,13 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
     private final Http3FrameListener sendFrameListener;
     private final ReentrantLock fallbackClientLock = new ReentrantLock();
     private final CompletableFuture<Void> closeCompletion = new CompletableFuture<>();
-    private final Object observerIdentity;
+    private final HttpTransportConnectionCache<Http3ConnectionCache> observedCache;
+    private final CompletableFuture<Void> observationCompletion = new CompletableFuture<>();
     private final boolean altSvcNotificationsEnabled;
     private final boolean altSvcEnabled;
     private final boolean responseNotificationsManagedByWebClient;
     private final boolean ownsWebClient;
+    private volatile Http3ConnectionCache acquiredCache;
     private volatile WebClient fallbackClient;
     private volatile Lifecycle lifecycle = Lifecycle.OPEN;
     private Thread closingThread;
@@ -96,7 +102,6 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
         this.clientConfig = clientConfig;
         this.protocolConfig = clientConfig.protocolConfig();
         this.clientSettings = Http3ExchangeClient.clientSettings(protocolConfig);
-        this.observerIdentity = WebClientTransportObserverSupport.observerIdentity(webClient);
         Optional<ClientAltSvcConfig> altSvc = clientConfig.altSvc()
                 .filter(ClientAltSvcConfig::enabled);
         this.altSvcNotificationsEnabled = altSvc.isPresent();
@@ -106,7 +111,14 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
                 .orElse(false);
         this.responseNotificationsManagedByWebClient = responseNotificationsManagedByWebClient;
         this.ownsWebClient = ownsWebClient;
-        if (clientConfig.shareConnectionCache()) {
+        this.observedCache = HttpTransportConnectionCache.create(Http3ConnectionCache.class,
+                                                                 clientConfig,
+                                                                 Http3ConnectionCache::create)
+                .orElse(null);
+        if (observedCache != null) {
+            this.connectionCache = null;
+            this.clientCache = null;
+        } else if (clientConfig.shareConnectionCache()) {
             this.connectionCache = Http3ConnectionCache.shared();
             this.clientCache = null;
         } else {
@@ -163,7 +175,7 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
                 Http3Discovery.EndpointContextHint hint = endpointContextHint(clientRequest,
                                                                                clientUri,
                                                                                clientRequest.headers());
-                shouldAttempt = connectionCache.discovery().hasAutomaticTarget(hint);
+                shouldAttempt = connectionCache().discovery().hasAutomaticTarget(hint);
             }
             return shouldAttempt && tlsCompatibility.compatible(clientRequest.tls())
                     ? SupportLevel.SUPPORTED
@@ -180,10 +192,10 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
 
         boolean shouldAttempt = protocolConfig.priorKnowledge() || allowsDirectHttp3();
         if (!shouldAttempt && altSvcEnabled) {
-            shouldAttempt = connectionCache.discovery()
+            shouldAttempt = connectionCache().discovery()
                     .automaticTarget(endpointKey,
                                      true,
-                                     target -> connectionCache.hasSession(connectionCacheKey(endpointKey, target)))
+                                     target -> connectionCache().hasSession(connectionCacheKey(endpointKey, target)))
                     .isPresent();
         }
         return shouldAttempt && tlsCompatibility.compatible(clientRequest.tls())
@@ -277,7 +289,8 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
         try {
             switch (lifecycle) {
             case OPEN -> {
-                if (clientCache != null && clientCache.closeWouldBlockCurrentThread()) {
+                Http3ConnectionCache closingCache = observedCache == null ? clientCache : acquiredCache;
+                if (closingCache != null && closingCache.closeWouldBlockCurrentThread()) {
                     throw new IllegalStateException(
                             "HTTP/3 client must not be closed from a DNS resolver or request task "
                                     + "currently executing on behalf of the client");
@@ -310,9 +323,13 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
                         failure = closeFailure;
                     }
                 }
-                if (clientCache != null) {
+                if (observedCache != null || clientCache != null) {
                     try {
-                        clientCache.closeResource();
+                        if (observedCache != null) {
+                            observedCache.closeResource();
+                        } else {
+                            clientCache.closeResource();
+                        }
                     } catch (Throwable closeFailure) {
                         if (failure == null) {
                             failure = closeFailure;
@@ -355,6 +372,7 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
                     && !(failure instanceof Error)) {
                 failure = new IllegalStateException("Failed to close HTTP/3 client resources", failure);
             }
+            completeObservationClose(fallback, failure);
             if (failure == null) {
                 closeCompletion.complete(null);
             } else {
@@ -372,6 +390,16 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
         if (closeFailure != null) {
             throw new IllegalStateException("Failed to close HTTP/3 client resources", closeFailure);
         }
+    }
+
+    @Override
+    public CompletionStage<Void> closeResourceAsync() {
+        try {
+            closeResource();
+        } catch (RuntimeException failure) {
+            return CompletableFuture.failedStage(failure);
+        }
+        return observationCompletion.minimalCompletionStage();
     }
 
     @Override
@@ -402,7 +430,7 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
 
         var receivedAt = response.receivedAt();
         AltSvcHeader.create(response.headers(), receivedAt)
-                .ifPresent(header -> connectionCache.discovery()
+                .ifPresent(header -> connectionCache().discovery()
                         .recordAltSvc(endpointContextKey(responseTarget), header, receivedAt));
     }
 
@@ -419,7 +447,16 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
     }
 
     Http3ConnectionCache connectionCache() {
-        return connectionCache;
+        if (observedCache == null) {
+            return connectionCache;
+        }
+        Http3ConnectionCache cache = observedCache.cache();
+        acquiredCache = cache;
+        return cache;
+    }
+
+    HttpTransportObserver transportObserver() {
+        return observedCache == null ? HttpTransportObserver.noop() : observedCache.observer();
     }
 
     Http3FrameListener receiveFrameListener() {
@@ -456,9 +493,8 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
                         throw new IllegalStateException("HTTP/3 fallback requires at least one configured TCP protocol.");
                     }
                     client = WebClientConfig.builder(webClient.prototype())
-                            .clearServices()
+                            .services(clientConfig.services().stream().filter(ObserverProvider.class::isInstance).toList())
                             .servicesDiscoverServices(false)
-                            .addService(WebClientTransportObserverSupport.borrowingService(webClient))
                             .cookieManager(WebClientCookieManager.builder().build())
                             .protocolPreference(protocols)
                             .build();
@@ -485,20 +521,20 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
         if (!endpointKey.proxyRoute().supportsDatagrams()) {
             return Optional.empty();
         }
-        return connectionCache.discovery().requestTarget(endpointKey,
+        return connectionCache().discovery().requestTarget(endpointKey,
                                                          clientUri,
                                                          altSvcEnabled,
                                                          allowDirect,
-                                                         target -> connectionCache.hasSession(
+                                                         target -> connectionCache().hasSession(
                                                                  connectionCacheKey(endpointKey, target)));
     }
 
     void recordSuccess(Http3Discovery.Selection selection) {
-        connectionCache.discovery().recordSuccess(selection);
+        connectionCache().discovery().recordSuccess(selection);
     }
 
     void recordFailure(Http3Discovery.Selection selection) {
-        connectionCache.discovery().recordFailure(selection);
+        connectionCache().discovery().recordFailure(selection);
     }
 
     boolean altSvcNotificationsEnabled() {
@@ -628,7 +664,7 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
                                                      connectionTarget.originAuthority(),
                                                      connectionTarget.tlsGeneration(),
                                                      altSvcEnabled,
-                                                     observerIdentity,
+                                                     connectionCache(),
                                                      connectionTarget.proxyRoute());
     }
 
@@ -646,7 +682,38 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
                                                       effectiveAuthority,
                                                       connectionKey.tls().generation(),
                                                       altSvcEnabled,
-                                                      observerIdentity);
+                                                      connectionCache());
+    }
+
+    private void completeObservationClose(WebClient fallback, Throwable closeFailure) {
+        var completions = new ArrayList<CompletableFuture<Void>>();
+        completions.add(closeFailure == null
+                                ? CompletableFuture.completedFuture(null)
+                                : CompletableFuture.failedFuture(closeFailure));
+        if (observedCache != null) {
+            completions.add(observedCache.completion().toCompletableFuture());
+        }
+        if (fallback != null) {
+            try {
+                completions.add(fallback.closeResourceAsync().toCompletableFuture());
+            } catch (RuntimeException failure) {
+                completions.add(CompletableFuture.failedFuture(failure));
+            }
+        }
+        if (ownsWebClient) {
+            try {
+                completions.add(webClient.closeResourceAsync().toCompletableFuture());
+            } catch (RuntimeException failure) {
+                completions.add(CompletableFuture.failedFuture(failure));
+            }
+        }
+        CompletableFuture.allOf(completions.toArray(CompletableFuture<?>[]::new)).whenComplete((_, failure) -> {
+            if (failure == null) {
+                observationCompletion.complete(null);
+            } else {
+                observationCompletion.completeExceptionally(failure);
+            }
+        });
     }
 
     private void ensureOpen() {

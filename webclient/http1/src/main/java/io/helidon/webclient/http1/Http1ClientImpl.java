@@ -188,7 +188,15 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
     @Override
     public CompletionStage<Void> closeResourceAsync() {
         closeResource();
-        return observedCache == null ? CompletableFuture.completedStage(null) : observedCache.completion();
+        CompletionStage<Void> completion = observedCache == null
+                ? CompletableFuture.completedStage(null)
+                : observedCache.completion();
+        if (ownsWebClient) {
+            return CompletableFuture.allOf(completion.toCompletableFuture(),
+                                           webClient.closeResourceAsync().toCompletableFuture())
+                    .minimalCompletionStage();
+        }
+        return completion;
     }
 
     Http1ConnectionListener recvListener() {

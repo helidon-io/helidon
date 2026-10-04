@@ -59,7 +59,6 @@ import io.helidon.webclient.api.WebClientCookieManager;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
-import io.helidon.webclient.spi.WebClientTransportObserverProvider;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.ServerRequest;
