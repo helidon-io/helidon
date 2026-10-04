@@ -527,7 +527,7 @@ class Http1ClientResponseImplTest {
                                                            CompletableFuture<ClientResponseTrailers> serviceTrailers) {
         WebClientServiceResponse serviceResponse = Http1CallChainBase.createServiceResponse(
                 new Http1ClientImpl(null, Http1ClientConfig.builder().buildPrototype()),
-                new TestServiceRequest(method), connection, connection.reader(), status, headers, new CompletableFuture<>());
+                new TestServiceRequest(method), connection, status, headers, new CompletableFuture<>(), null);
         return new Http1ClientResponseImpl(HttpClientConfig.builder().readTimeout(Duration.ofSeconds(5)).build(),
                                            Http1ClientProtocolConfig.create(),
                                            status,
@@ -540,7 +540,8 @@ class Http1ClientResponseImplTest {
                                            ClientUri.create(URI.create("http://localhost/test")),
                                            lifecycle,
                                            transportTrailers,
-                                           serviceTrailers);
+                                           serviceTrailers,
+                                           null);
     }
 
     private static ClientResponseHeaders chunkedTrailerHeaders() {
