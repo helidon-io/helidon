@@ -40,7 +40,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Timer;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -61,8 +63,14 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.tls.Tls;
 import io.helidon.config.Config;
+import io.helidon.http.HttpTransportObserver;
+import io.helidon.http.HttpTransportObserver.ConnectionObservation;
+import io.helidon.http.HttpTransportObserver.ConnectionOutcome;
+import io.helidon.http.HttpTransportObserver.Handshake;
+import io.helidon.http.HttpTransportObserver.Role;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
+import io.helidon.webserver.HttpTransportObserverSupport.ObserverLifecycle;
 import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
@@ -76,6 +84,7 @@ import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
+import static io.helidon.http.HttpTransportObserver.TRANSPORT_TCP;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -1466,6 +1475,7 @@ class ServerListenerLifecycleTest {
                                                      MediaContext.create(),
                                                      ContentEncodingContext.create(),
                                                      DirectHandlers.create(),
+                                                     List.of(),
                                                      (failedListener, _) -> failedListener.stop());
         AtomicReference<Throwable> firstStopFailure = new AtomicReference<>();
         AtomicReference<Throwable> secondStopFailure = new AtomicReference<>();
@@ -1505,6 +1515,182 @@ class ServerListenerLifecycleTest {
         }
 
         assertThat(firstStopFailure.get(), nullValue());
+    }
+
+    @Test
+    void httpTransportObserverFollowsListenerLifecycle() {
+        TestTransportBindingProvider.reset();
+        AtomicInteger starts = new AtomicInteger();
+        AtomicInteger stops = new AtomicInteger();
+        AtomicInteger connections = new AtomicInteger();
+        HttpTransportObserver observer = (role, transport, handshake) -> {
+            connections.incrementAndGet();
+            return ConnectionObservation.noop();
+        };
+        ObserverLifecycle lifecycle = new ObserverLifecycle() {
+            @Override
+            public HttpTransportObserver start() {
+                starts.incrementAndGet();
+                return observer;
+            }
+
+            @Override
+            public CompletionStage<Void> stop() {
+                stops.incrementAndGet();
+                return CompletableFuture.completedFuture(null);
+            }
+        };
+        Timer timer = new Timer("test-listener-transport-observer", true);
+        ServerListener listener = testListener(timer, listenerConfigWithoutTcp(), List.of(lifecycle));
+
+        try {
+            assertThat(starts.get(), is(0));
+            listener.start();
+            assertThat(starts.get(), is(1));
+
+            HttpTransportObserverSupport.observer(listener)
+                    .connectionOpened(Role.SERVER, TRANSPORT_TCP, Handshake.NONE)
+                    .close(ConnectionOutcome.NORMAL);
+            assertThat(connections.get(), is(1));
+
+            listener.stop();
+            assertThat(TestTransportBindingProvider.stops("test"), is(1));
+            assertThat(stops.get(), is(1));
+
+            HttpTransportObserverSupport.observer(listener)
+                    .connectionOpened(Role.SERVER, TRANSPORT_TCP, Handshake.NONE)
+                    .close(ConnectionOutcome.NORMAL);
+            assertThat(connections.get(), is(1));
+        } finally {
+            listener.stop();
+            timer.cancel();
+        }
+    }
+
+    @Test
+    void listenerWaitsForHttpTransportObserverCleanup() throws Exception {
+        TestTransportBindingProvider.reset();
+        CountDownLatch stopStarted = new CountDownLatch(1);
+        CompletableFuture<Void> cleanup = new CompletableFuture<>();
+        ObserverLifecycle lifecycle = new ObserverLifecycle() {
+            @Override
+            public HttpTransportObserver start() {
+                return HttpTransportObserver.noop();
+            }
+
+            @Override
+            public CompletionStage<Void> stop() {
+                stopStarted.countDown();
+                return cleanup;
+            }
+        };
+        Timer timer = new Timer("test-listener-transport-observer-cleanup", true);
+        ServerListener listener = testListener(timer, listenerConfigWithoutTcp(), List.of(lifecycle));
+        AtomicReference<Throwable> stopFailure = new AtomicReference<>();
+        Thread stopThread = Thread.ofPlatform()
+                .name("listener-transport-observer-stop")
+                .unstarted(() -> stopListener(listener, stopFailure));
+
+        try {
+            listener.start();
+            stopThread.start();
+            assertThat(stopStarted.await(5, TimeUnit.SECONDS), is(true));
+            assertThat(stopThread.isAlive(), is(true));
+
+            cleanup.complete(null);
+            stopThread.join(TimeUnit.SECONDS.toMillis(5));
+
+            assertThat(stopThread.isAlive(), is(false));
+            assertThat(stopFailure.get(), nullValue());
+        } finally {
+            cleanup.complete(null);
+            if (stopThread.isAlive()) {
+                stopThread.interrupt();
+                stopThread.join(TimeUnit.SECONDS.toMillis(5));
+            }
+            listener.stop();
+            timer.cancel();
+        }
+    }
+
+    @Test
+    void failedBindingStartStopsHttpTransportObserver() {
+        TestTransportBindingProvider.reset();
+        AtomicInteger starts = new AtomicInteger();
+        AtomicInteger stops = new AtomicInteger();
+        ObserverLifecycle lifecycle = new ObserverLifecycle() {
+            @Override
+            public HttpTransportObserver start() {
+                starts.incrementAndGet();
+                return HttpTransportObserver.noop();
+            }
+
+            @Override
+            public CompletionStage<Void> stop() {
+                stops.incrementAndGet();
+                return CompletableFuture.completedFuture(null);
+            }
+        };
+        WebServerConfig config = WebServer.builder()
+                .shutdownHook(false)
+                .bindingsDiscoverServices(false)
+                .addBinding(disabledTcpBinding())
+                .addBinding(new TestTransportBindingConfig("failing", true, true))
+                .buildPrototype();
+        Timer timer = new Timer("test-listener-transport-observer-rollback", true);
+        ServerListener listener = testListener(timer, config, List.of(lifecycle));
+
+        try {
+            assertThrows(RuntimeException.class, listener::start);
+            assertThat(starts.get(), is(1));
+            assertThat(stops.get(), is(1));
+        } finally {
+            listener.stop();
+            timer.cancel();
+        }
+    }
+
+    @Test
+    void failedHttpTransportObserverStartRollsBackStartedObservers() {
+        TestTransportBindingProvider.reset();
+        AtomicInteger stops = new AtomicInteger();
+        ObserverLifecycle startedLifecycle = new ObserverLifecycle() {
+            @Override
+            public HttpTransportObserver start() {
+                return HttpTransportObserver.noop();
+            }
+
+            @Override
+            public CompletionStage<Void> stop() {
+                stops.incrementAndGet();
+                return CompletableFuture.completedFuture(null);
+            }
+        };
+        ObserverLifecycle failingLifecycle = new ObserverLifecycle() {
+            @Override
+            public HttpTransportObserver start() {
+                throw new AssertionError("observer start failed");
+            }
+
+            @Override
+            public CompletionStage<Void> stop() {
+                throw new AssertionError("unstarted observer must not stop");
+            }
+        };
+        Timer timer = new Timer("test-listener-transport-observer-start-rollback", true);
+        ServerListener listener = testListener(timer,
+                                               listenerConfigWithoutTcp(),
+                                               List.of(startedLifecycle, failingLifecycle));
+
+        try {
+            AssertionError failure = assertThrows(AssertionError.class, listener::start);
+            assertThat(failure.getMessage(), is("observer start failed"));
+            assertThat(stops.get(), is(1));
+            assertThat(TestTransportBindingProvider.starts("test"), is(0));
+        } finally {
+            listener.stop();
+            timer.cancel();
+        }
     }
 
     @Test
@@ -2092,6 +2278,23 @@ class ServerListenerLifecycleTest {
                 .socket(UnixDomainSocketAddress.of(socketPath))
                 .required(true)
                 .buildPrototype();
+    }
+
+    private static ServerListener testListener(Timer timer,
+                                               WebServerConfig config,
+                                               List<ObserverLifecycle> observerLifecycles) {
+        return new ServerListener(WebServer.DEFAULT_SOCKET_NAME,
+                                  config,
+                                  Router.empty(),
+                                  Context.builder()
+                                          .id("transport-observer-lifecycle-test")
+                                          .build(),
+                                  timer,
+                                  MediaContext.create(),
+                                  ContentEncodingContext.create(),
+                                  DirectHandlers.create(),
+                                  observerLifecycles,
+                                  (failedListener, _) -> failedListener.stop());
     }
 
     private static WebServerConfig listenerConfigWithoutTcp() {

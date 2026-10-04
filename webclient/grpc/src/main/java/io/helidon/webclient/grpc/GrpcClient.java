@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.webclient.api.ReleasableResource;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.spi.Protocol;
 
@@ -29,7 +30,7 @@ import io.grpc.ClientInterceptor;
 /**
  * gRPC client.
  */
-public interface GrpcClient extends RuntimeType.Api<GrpcClientConfig> {
+public interface GrpcClient extends RuntimeType.Api<GrpcClientConfig>, ReleasableResource {
     /**
      * Protocol ID constant for gRPC.
      */
@@ -120,5 +121,15 @@ public interface GrpcClient extends RuntimeType.Api<GrpcClientConfig> {
      * @return the configuration
      */
     GrpcClientConfig clientConfig();
+
+    /**
+     * Releases resources owned by this client. Close a client when it is no longer needed, including clients obtained
+     * using {@link #create()}. The last client sharing transport observation resources closes active observed
+     * connections before releasing those resources. Use {@link #closeResourceAsync()} to await observer cleanup before
+     * closing a caller-owned metrics registry; close every sharing client before awaiting their cleanup stages.
+     */
+    @Override
+    default void closeResource() {
+    }
 
 }

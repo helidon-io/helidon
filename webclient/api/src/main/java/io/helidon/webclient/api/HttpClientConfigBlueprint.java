@@ -327,6 +327,12 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      * that shared cache. For each connection target, the first shared client to create the target entry establishes
      * its capacity from {@link #connectionCacheSize()} for as long as that entry remains cached. When {@code false},
      * each client owns its connection caches, which are closed when the client is closed. Defaults to {@code true}.
+     * <p>
+     * Transport observation partitions shared caches by observer configuration and meter registry. Observed clients
+     * cannot borrow unobserved connections or connections reporting to another registry. The last client owning an
+     * observed partition retires its cache when closed; asynchronous observer cleanup can finish after active
+     * connections close. Use {@link ReleasableResource#closeResourceAsync()} to await that cleanup after all sharing
+     * clients have been closed.
      *
      * @return whether to use protocol-specific JVM-wide shared connection caches
      */

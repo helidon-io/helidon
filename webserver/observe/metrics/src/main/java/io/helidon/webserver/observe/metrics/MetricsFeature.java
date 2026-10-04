@@ -122,6 +122,10 @@ class MetricsFeature {
         routing.register(endpoint, new MetricsService());
     }
 
+    MeterRegistry meterRegistry() {
+        return meterRegistry;
+    }
+
     Optional<?> output(ServerRequest req,
                        MediaType mediaType,
                        Iterable<String> nameSelection) {

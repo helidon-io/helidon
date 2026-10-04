@@ -47,7 +47,6 @@ import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.ResolvedClientTarget;
 import io.helidon.webclient.api.TcpClientConnection;
 import io.helidon.webclient.api.UnixDomainSocketClientConnection;
-import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
@@ -604,7 +603,7 @@ class Http2ClientConnectionHandler {
             try {
                 ResolvedClientTarget resolvedTarget = selection.originTarget()
                         .resolve(selection.host(), selection.port(), selection.networkGeneration());
-                clientConnection = connectAlternative(http2Client.webClient(), resolvedTarget);
+                clientConnection = connectAlternative(http2Client, resolvedTarget);
                 requireHttp2(clientConnection);
                 connection = createHttp2Connection(http2Client, clientConnection, true);
                 ensureAlternativeCurrent(selection);
@@ -756,11 +755,10 @@ class Http2ClientConnectionHandler {
             throw new IllegalStateException("Interrupted", e);
         }
         try {
-            WebClient webClient = http2Client.webClient();
             if (request.tls().enabled() && "https".equals(initialUri.scheme())) {
                 // use ALPN, not upgrade
                 List<String> alpn = alpnProtocolIds(request);
-                ClientConnection clientConnection = connectClient(webClient, requestTarget, request, initialUri, alpn);
+                ClientConnection clientConnection = connectClient(http2Client, requestTarget, request, initialUri, alpn);
                 if (clientConnection.helidonSocket().protocolNegotiated()) {
                     if (Http2Client.PROTOCOL_ID.equals(clientConnection.helidonSocket().protocol())) {
                         result.set(Result.HTTP_2);
@@ -1018,7 +1016,6 @@ class Http2ClientConnectionHandler {
                                                    ClientUri requestUri,
                                                    WebClientServiceRequest serviceRequest,
                                                    Http1FallbackHandler http1FallbackHandler) {
-        WebClient webClient = http2Client.webClient();
         Http2ClientProtocolConfig protocolConfig = http2Client.protocolConfig();
         Optional<ClientConnection> maybeConnection = request.connection();
         Http2ClientConnection usedConnection;
@@ -1032,7 +1029,7 @@ class Http2ClientConnectionHandler {
 
             // we know that this is HTTP/2 capable server - still need to support all three (prior, upgrade, alpn)
             if (request.tls().enabled() && "https".equals(requestUri.scheme())) {
-                connection = connectClient(webClient,
+                connection = connectClient(http2Client,
                                            requestTarget,
                                            request,
                                            requestUri,
@@ -1040,7 +1037,7 @@ class Http2ClientConnectionHandler {
                 usedConnection = createHttp2Connection(http2Client, connection, true);
             } else {
                 if (request.priorKnowledge()) {
-                    connection = connectClient(webClient,
+                    connection = connectClient(http2Client,
                                                requestTarget,
                                                request,
                                                requestUri,
@@ -1235,34 +1232,34 @@ class Http2ClientConnectionHandler {
         toRetire.forEach(Http2ClientConnection::retire);
     }
 
-    private ClientConnection connectAlternative(WebClient webClient, ResolvedClientTarget resolvedTarget) {
-        return TcpClientConnection.create(webClient,
-                                          resolvedTarget,
-                                          List.of(Http2Client.PROTOCOL_ID),
-                                          _ -> false,
-                                          this::removeClientConnection)
+    private ClientConnection connectAlternative(Http2ClientImpl http2Client, ResolvedClientTarget resolvedTarget) {
+        return http2Client.observe(TcpClientConnection.create(http2Client.webClient(),
+                                                               resolvedTarget,
+                                                               List.of(Http2Client.PROTOCOL_ID),
+                                                               _ -> false,
+                                                               this::removeClientConnection))
                 .connect();
     }
 
-    private ClientConnection connectClient(WebClient webClient,
+    private ClientConnection connectClient(Http2ClientImpl http2Client,
                                            ClientConnectionTarget requestTarget,
                                            Http2ClientRequestImpl request,
                                            ClientUri uri,
                                            List<String> alpn) {
         var address = request.address();
         if (address.isPresent() && address.get() instanceof UnixDomainSocketAddress) {
-            return UnixDomainSocketClientConnection.create(webClient,
-                                                          requestTarget,
-                                                          alpn,
-                                                          connection -> false,
-                                                          this::removeClientConnection)
+            return http2Client.observe(UnixDomainSocketClientConnection.create(http2Client.webClient(),
+                                                                               requestTarget,
+                                                                               alpn,
+                                                                               connection -> false,
+                                                                               this::removeClientConnection))
                     .connect();
         }
-        return TcpClientConnection.create(webClient,
-                                          requestTarget,
-                                          alpn,
-                                          connection -> false,
-                                          this::removeClientConnection)
+        return http2Client.observe(TcpClientConnection.create(http2Client.webClient(),
+                                                               requestTarget,
+                                                               alpn,
+                                                               connection -> false,
+                                                               this::removeClientConnection))
                 .connect();
     }
 

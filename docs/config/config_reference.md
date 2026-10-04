@@ -58,6 +58,15 @@
 </tr>
 <tr>
 <td>
+<a id="http-metrics"></a>
+<a href="io.helidon.webclient.metrics.WebClientTransportMetrics.md">
+<code>http-<wbr>metrics</code>
+</a>
+</td>
+<td>Configuration for http-metrics</td>
+</tr>
+<tr>
+<td>
 <a id="messaging"></a>
 <a href="io.helidon.messaging.MessagingGraph.md">
 <code>messaging</code>

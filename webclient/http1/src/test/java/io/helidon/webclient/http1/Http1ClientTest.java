@@ -334,7 +334,8 @@ class Http1ClientTest {
                                                                            "body".getBytes(StandardCharsets.US_ASCII)),
                                                                    MediaContext.create(),
                                                                    ClientUri.create(URI.create("http://localhost/test")),
-                                                                   new CompletableFuture<>());
+                                                                   new CompletableFuture<>(),
+                                                                   null);
 
         try (response) {
             assertThat(response.status(), is(Status.OK_200));

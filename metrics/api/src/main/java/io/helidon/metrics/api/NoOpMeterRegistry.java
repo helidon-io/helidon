@@ -96,10 +96,16 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
     }
 
     @Override
+    public boolean isMeterEnabled(String name) {
+        Objects.requireNonNull(name);
+        return false;
+    }
+
+    @Override
     public boolean isMeterEnabled(String name, Map<String, String> tags) {
         Objects.requireNonNull(name);
         Objects.requireNonNull(tags);
-        return true;
+        return false;
     }
 
     @Override
