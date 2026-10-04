@@ -2128,27 +2128,27 @@ class Http3WebServerIT {
                                                         "direction", "bidi",
                                                         "initiator", "remote");
                 boolean observed = waitFor(() -> counterMeters(meterRegistry,
-                                                               "http.connections.established",
+                                                               "helidon.http.connections.established",
                                                                connectionTags) > 0
-                                && counterMeters(meterRegistry, "http.handshakes", handshakeTags) > 0
-                                && counterMeters(meterRegistry, "http.streams.opened", streamTags) > 0,
+                                && counterMeters(meterRegistry, "helidon.http.handshakes", handshakeTags) > 0
+                                && counterMeters(meterRegistry, "helidon.http.streams.opened", streamTags) > 0,
                                            Duration.ofSeconds(10));
                 assertThat("HTTP/3 transport counter meters: connection="
-                                   + counterMeters(meterRegistry, "http.connections.established", connectionTags)
-                                   + ", handshake=" + counterMeters(meterRegistry, "http.handshakes", handshakeTags)
-                                   + ", stream=" + counterMeters(meterRegistry, "http.streams.opened", streamTags)
+                                   + counterMeters(meterRegistry, "helidon.http.connections.established", connectionTags)
+                                   + ", handshake=" + counterMeters(meterRegistry, "helidon.http.handshakes", handshakeTags)
+                                   + ", stream=" + counterMeters(meterRegistry, "helidon.http.streams.opened", streamTags)
                                    + ", meters=" + meterRegistry.meters().stream()
                                            .map(meter -> meter.id().name() + meter.id().tagsMap())
                                            .sorted()
                                            .toList(),
                            observed,
                            equalTo(true));
-                assertThat(counterMeters(meterRegistry, "http.connections.established", connectionTags), equalTo(1L));
-                assertThat(counterMeters(meterRegistry, "http.handshakes", handshakeTags), equalTo(1L));
-                assertThat(counterMeters(meterRegistry, "http.streams.opened", streamTags), equalTo(1L));
+                assertThat(counterMeters(meterRegistry, "helidon.http.connections.established", connectionTags), equalTo(1L));
+                assertThat(counterMeters(meterRegistry, "helidon.http.handshakes", handshakeTags), equalTo(1L));
+                assertThat(counterMeters(meterRegistry, "helidon.http.streams.opened", streamTags), equalTo(1L));
                 assertThat(meterRegistry.meters()
                                    .stream()
-                                   .filter(meter -> meter.id().name().equals("http.streams.opened"))
+                                   .filter(meter -> meter.id().name().equals("helidon.http.streams.opened"))
                                    .noneMatch(meter -> "uni".equals(meter.id().tagsMap().get("direction"))
                                            || "local".equals(meter.id().tagsMap().get("initiator"))),
                            equalTo(true));
@@ -2156,9 +2156,9 @@ class Http3WebServerIT {
             assertThat(waitFor(() -> meterRegistry.meters()
                                                .stream()
                                                .map(meter -> meter.id().name())
-                                               .noneMatch(name -> name.startsWith("http.connections.")
-                                                       || name.startsWith("http.handshakes")
-                                                       || name.startsWith("http.streams.")),
+                                               .noneMatch(name -> name.startsWith("helidon.http.connections.")
+                                                       || name.startsWith("helidon.http.handshakes")
+                                                       || name.startsWith("helidon.http.streams.")),
                                Duration.ofSeconds(10)),
                        equalTo(true));
         } finally {
