@@ -197,18 +197,15 @@ final class UriQueryImpl implements UriQuery {
         if (decodedQueryParams == null) {
             Map<String, List<String>> newQueryParams = new HashMap<>();
 
-            String remaining = query;
-            String next;
-            int and;
+            int start = 0;
             while (true) {
-                and = remaining.indexOf('&');
+                int and = query.indexOf('&', start);
                 if (and == -1) {
-                    addDecoded(newQueryParams, remaining);
+                    addDecoded(newQueryParams, query.substring(start));
                     break;
                 }
-                next = remaining.substring(0, and);
-                remaining = remaining.substring(and + 1);
-                addDecoded(newQueryParams, next);
+                addDecoded(newQueryParams, query.substring(start, and));
+                start = and + 1;
             }
 
             decodedQueryParams = newQueryParams;
@@ -230,18 +227,15 @@ final class UriQueryImpl implements UriQuery {
         if (rawQueryParams == null) {
             Map<String, List<String>> newQueryParams = new HashMap<>();
 
-            String remaining = query;
-            String next;
-            int and;
+            int start = 0;
             while (true) {
-                and = remaining.indexOf('&');
+                int and = query.indexOf('&', start);
                 if (and == -1) {
-                    addRaw(newQueryParams, remaining);
+                    addRaw(newQueryParams, query.substring(start));
                     break;
                 }
-                next = remaining.substring(0, and);
-                remaining = remaining.substring(and + 1);
-                addRaw(newQueryParams, next);
+                addRaw(newQueryParams, query.substring(start, and));
+                start = and + 1;
             }
 
             rawQueryParams = newQueryParams;

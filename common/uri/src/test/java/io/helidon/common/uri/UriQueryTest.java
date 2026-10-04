@@ -19,10 +19,13 @@ package io.helidon.common.uri;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.util.List;
+import java.util.Set;
 
 import io.helidon.common.mapper.OptionalValue;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.hamcrest.CoreMatchers.hasItems;
@@ -34,6 +37,9 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UriQueryTest {
+    private static final String SEGMENT_QUERY = "&a=1&&a&a=2&%61=3&a=4&flag&empty=&value=b=c"
+            + "&k%26%3D=v%26%3D&q=[A%20B+]&";
+
     @Test
     void sanityParse() {
         UriQuery uriQuery = UriQuery.create(URI.create("http://foo/bar?a=b&c=d&a=e"));
@@ -105,6 +111,121 @@ class UriQueryTest {
     void testEmptyQueryString() {
         UriQuery uriQuery = UriQuery.create("");
         assertThat("Empty check with empty string", uriQuery.isEmpty(), is(true));
+        assertThat(uriQuery.names(), is(Set.of()));
+    }
+
+    @ParameterizedTest(name = "raw values first: {0}")
+    @ValueSource(booleans = {true, false})
+    void readOnlyParsingPreservesSegments(boolean rawFirst) {
+        UriQuery query = UriQuery.create(SEGMENT_QUERY);
+        if (rawFirst) {
+            assertThat(query.getAllRaw("a"), is(List.of("1", "2", "4")));
+        } else {
+            assertThat(query.all("a"), is(List.of("1", "2", "3", "4")));
+        }
+
+        assertAll(
+                () -> assertThat(query.rawValue(), is(SEGMENT_QUERY)),
+                () -> assertThat(query.names(), is(Set.of("", "a", "flag", "empty", "value", "k&=", "q"))),
+                () -> assertThat("Decoded duplicate and alias order", query.all("a"), is(List.of("1", "2", "3", "4"))),
+                () -> assertThat("Raw duplicate order", query.getAllRaw("a"), is(List.of("1", "2", "4"))),
+                () -> assertThat("Raw alias values", query.getAllRaw("%61"), is(List.of("3"))),
+                () -> assertThat("Decoded empty segments", query.all(""), is(List.of())),
+                () -> assertThat("Raw empty segments", query.getAllRaw(""), is(List.of())),
+                () -> assertThat("Decoded flag", query.all("flag"), is(List.of())),
+                () -> assertThat("Raw flag", query.getAllRaw("flag"), is(List.of())),
+                () -> assertThat("Flag has no first value", query.first("flag").isEmpty(), is(true)),
+                () -> assertThat("Decoded explicit empty value", query.all("empty"), is(List.of(""))),
+                () -> assertThat("Raw explicit empty value", query.getAllRaw("empty"), is(List.of(""))),
+                () -> assertThat(query.first("empty").get(), is("")),
+                () -> assertThat(query.all("value"), is(List.of("b=c"))),
+                () -> assertThat(query.getAllRaw("value"), is(List.of("b=c"))),
+                () -> assertThat(query.all("k&="), is(List.of("v&="))),
+                () -> assertThat(query.getAllRaw("k%26%3D"), is(List.of("v%26%3D"))),
+                () -> assertThat(query.all("q"), is(List.of("[A B+]"))),
+                () -> assertThat(query.getAllRaw("q"), is(List.of("[A%20B+]"))));
+    }
+
+    @ParameterizedTest(name = "query: {0}")
+    @ValueSource(strings = {"&a=1", "a=1&&b=2", "a=1&", "&"})
+    void readOnlyParsingRetainsEmptySegments(String queryString) {
+        UriQuery query = UriQuery.create(queryString);
+
+        assertAll(
+                () -> assertThat("Decoded empty name", query.names(), hasItems("")),
+                () -> assertThat("Decoded empty parameter", query.all(""), is(List.of())),
+                () -> assertThat("Raw empty parameter", query.getAllRaw(""), is(List.of())),
+                () -> assertThat("Raw empty name", query.getRaw(""), is("")),
+                () -> assertThat(query.rawValue(), is(queryString)));
+        if (!queryString.equals("&")) {
+            assertAll(
+                    () -> assertThat("Decoded neighboring a", query.all("a"), is(List.of("1"))),
+                    () -> assertThat("Raw neighboring a", query.getAllRaw("a"), is(List.of("1"))));
+        }
+        if (queryString.equals("a=1&&b=2")) {
+            assertAll(
+                    () -> assertThat("Decoded neighboring b", query.all("b"), is(List.of("2"))),
+                    () -> assertThat("Raw neighboring b", query.getAllRaw("b"), is(List.of("2"))));
+        }
+    }
+
+    @Test
+    void writableParsingPreservesSegments() {
+        UriQueryWriteable query = writeableQuery(SEGMENT_QUERY);
+
+        assertAll(
+                () -> assertThat(query.names(), is(Set.of("", "a", "flag", "empty", "value", "k&=", "q"))),
+                () -> assertThat("Decoded duplicate and alias order",
+                                 query.all("a"),
+                                 is(List.of("1", "", "2", "3", "4"))),
+                () -> assertThat("Raw duplicate order", query.getAllRaw("a"), is(List.of("1", "", "2", "4"))),
+                () -> assertThat("Raw alias values", query.getAllRaw("%61"), is(List.of("3"))),
+                () -> assertThat("Decoded empty segments", query.all(""), is(List.of("", "", ""))),
+                () -> assertThat("Raw empty segments", query.getAllRaw(""), is(List.of("", "", ""))),
+                () -> assertThat("Decoded flag", query.all("flag"), is(List.of(""))),
+                () -> assertThat("Raw flag", query.getAllRaw("flag"), is(List.of(""))),
+                () -> assertThat(query.first("flag").get(), is("")),
+                () -> assertThat("Explicit empty value", query.all("empty"), is(List.of(""))),
+                () -> assertThat(query.all("value"), is(List.of("b=c"))),
+                () -> assertThat(query.getAllRaw("value"), is(List.of("b=c"))),
+                () -> assertThat(query.all("k&="), is(List.of("v&="))),
+                () -> assertThat(query.getAllRaw("k%26%3D"), is(List.of("v%26%3D"))),
+                () -> assertThat(query.all("q"), is(List.of("[A%20B+]"))),
+                () -> assertThat(query.getAllRaw("q"), is(List.of("[A%20B+]"))));
+    }
+
+    @Test
+    void writableEmptyQueryHasEmptyParameter() {
+        UriQueryWriteable query = writeableQuery("");
+
+        assertAll(
+                () -> assertThat(query.names(), is(Set.of(""))),
+                () -> assertThat(query.all(""), is(List.of(""))),
+                () -> assertThat(query.getAllRaw(""), is(List.of(""))),
+                () -> assertThat(query.first("").get(), is("")),
+                () -> assertThat(query.isEmpty(), is(false)));
+    }
+
+    @Test
+    void writableAppendPreservesValuesWithInitializedAliases() {
+        UriQueryWriteable query = writeableQuery("%61=original");
+        query.set("a", "existing");
+
+        query.fromQueryString("&%61=encoded&a=literal&&%61=last&flag&");
+
+        assertAll(
+                () -> assertThat(query.all("a"), is(List.of("existing", "encoded", "literal", "last"))),
+                () -> assertThat(query.getAllRaw("a"), is(List.of("existing", "literal"))),
+                () -> assertThat(query.getAllRaw("%61"), is(List.of("encoded", "last"))),
+                () -> assertThat(query.all(""), is(List.of("", "", ""))),
+                () -> assertThat(query.getAllRaw(""), is(List.of("", "", ""))),
+                () -> assertThat(query.all("flag"), is(List.of(""))));
+
+        query.set("a", "replacement");
+
+        assertThat(query.all("a"), is(List.of("replacement")));
+        assertThat(query.getAllRaw("a"), is(List.of("replacement")));
+        assertThat(query.rawValue(), not(containsString("%61")));
     }
 
     @Test

@@ -289,18 +289,15 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
 
     @Override
     public void fromQueryString(String queryString) {
-        String remaining = queryString;
-        String next;
-        int and;
+        int start = 0;
         while (true) {
-            and = remaining.indexOf('&');
+            int and = queryString.indexOf('&', start);
             if (and == -1) {
-                addRaw(remaining);
+                addRaw(queryString.substring(start));
                 break;
             }
-            next = remaining.substring(0, and);
-            remaining = remaining.substring(and + 1);
-            addRaw(next);
+            addRaw(queryString.substring(start, and));
+            start = and + 1;
         }
     }
 
