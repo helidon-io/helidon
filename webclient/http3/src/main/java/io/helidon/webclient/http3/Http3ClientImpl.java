@@ -720,11 +720,12 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
                 completions.add(CompletableFuture.failedFuture(failure));
             }
         }
+        CompletableFuture<Void> completion = observationCompletion;
         CompletableFuture.allOf(completions.toArray(CompletableFuture<?>[]::new)).whenComplete((_, failure) -> {
             if (failure == null) {
-                observationCompletion.complete(null);
+                completion.complete(null);
             } else {
-                observationCompletion.completeExceptionally(failure);
+                completion.completeExceptionally(failure);
             }
         });
     }
