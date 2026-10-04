@@ -39,7 +39,6 @@ import io.helidon.webclient.api.WebClientProtocolResponse;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.api.WebClientServiceResponseSupport;
-import io.helidon.webclient.api.WebClientTransportObserverSupport;
 import io.helidon.webclient.spi.WebClientService;
 
 import static io.helidon.http.HeaderNames.CONTENT_ENCODING;
@@ -290,7 +289,7 @@ class Http3CallEntityChain implements WebClientService.TransportChain {
                 .selection(currentSelection)
                 .receiveFrameListener(http3Client.receiveFrameListener())
                 .sendFrameListener(http3Client.sendFrameListener())
-                .transportObserver(WebClientTransportObserverSupport.observer(http3Client.webClient()))
+                .transportObserver(http3Client.transportObserver())
                 .build();
     }
 

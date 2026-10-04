@@ -852,8 +852,8 @@ information.
 
 ### HTTP Transport Metrics
 
-The metrics observer records physical WebServer TCP or Unix-domain connection
-lifecycles, TLS handshakes, and HTTP/1 and HTTP/2 request and response exchanges. These
+The metrics observer records physical WebServer TCP, Unix-domain, or QUIC connection
+lifecycles, TLS handshakes, and HTTP/1, HTTP/2, and HTTP/3 request and response exchanges. These
 meters use Helidon's Metrics API and the observer's meter registry. Helidon 27
 does not assign metric scopes; each meter is identified by its name and tags.
 Timer base units are seconds. The names below are registry names; an exporter
@@ -866,7 +866,7 @@ instrumentation.
 
 #### Protocol Coverage
 
-WebServer and WebClient publish HTTP/1 and HTTP/2 protocol selection and exchange events.
+WebServer and WebClient publish HTTP/1, HTTP/2, and HTTP/3 protocol selection and exchange events.
 Each HTTP/1 request and response exchange is one stream observation, including
 an HTTP upgrade request. An upgrade completes that exchange observation before
 the upgraded protocol takes over. WebSocket messages and frames are not stream
@@ -892,8 +892,13 @@ request then has an HTTP/2 stream observation. Connection gauges move to
 `http/2`, while the established-connection counter retains the first selected
 protocol. Server-push and protocol control streams are excluded. A successful
 TLS handshake alone does not increment `helidon.http.connections.established`;
-that counter requires a protocol selection event. QUIC and HTTP/3 do not yet
-publish these metrics.
+that counter requires a protocol selection event.
+
+HTTP/3 connections report `transport=quic`, `handshake=quic-tls`, and
+`protocol=http/3`. Each bidirectional HTTP/3 request stream is one exchange
+observation. QUIC transport control frames and HTTP/3 control and QPACK
+unidirectional streams are excluded. Client TCP fallback is observed by the
+selected HTTP/1 or HTTP/2 transport using the same configured metrics service.
 
 #### Meters and Tags
 
@@ -936,7 +941,7 @@ SNI names, exception text, or protocol error codes.
 Connection gauges start under `protocol=unknown` and move to the selected
 protocol when a publisher reports it. Stream observations retain the protocol
 selected when the exchange opened. WebServer exchange observations use
-`role=server`, `protocol=http/1.1` or `protocol=http/2`, `direction=bidi`, and
+`role=server`, `protocol=http/1.1`, `protocol=http/2`, or `protocol=http/3`, `direction=bidi`, and
 `initiator=remote`. WebClient uses the same protocol and direction values with
 `role=client` and `initiator=local`. A shared meter registry can therefore expose
 both sides of an exchange while keeping their observations distinct.

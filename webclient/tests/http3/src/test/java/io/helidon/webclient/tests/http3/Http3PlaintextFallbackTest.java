@@ -81,10 +81,9 @@ class Http3PlaintextFallbackTest {
             client.closeResource();
         }
 
-        assertThat(observer.requests(), is(1));
-        assertThat(observer.registrationsOpened(), is(1));
-        assertThat(observer.registrationsClosed(), is(1));
-        assertThat(observer.registrationCompletions(), is(1));
+        assertThat(observer.requests(), is(0));
+        assertThat(observer.lifecyclesStarted(), is(1));
+        assertThat(observer.lifecyclesStopped(), is(1));
     }
 
     @Test

@@ -23,7 +23,8 @@
  * Each gRPC call contributes an HTTP/2
  * exchange; individual gRPC messages are not separate stream observations. WebSocket upgrade requests contribute HTTP/1
  * exchange events, but WebSocket messages do not. Client observations use role {@code client} and initiator {@code local};
- * server observations use role {@code server} and initiator {@code remote}. QUIC and HTTP/3 publishers are not included.
+ * server observations use role {@code server} and initiator {@code remote}. The QUIC transport and HTTP/3 integrations
+ * publish QUIC-TLS handshake, HTTP/3 protocol selection, and request exchange events through the same contract.
  *
  * <p>The adapter emits the following meters, identified by name and tags without a metric scope.
  * Timer base units are seconds.

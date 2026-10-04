@@ -1063,8 +1063,10 @@ client:
       enabled: true
 ```
 
-This service records `helidon.http.*` meters with `role=client`. HTTP/1 and
-HTTP/2 exchanges use `direction=bidi` and `initiator=local`. gRPC contributes
+This service records `helidon.http.*` meters with `role=client`. HTTP/1, HTTP/2,
+and HTTP/3 exchanges use `direction=bidi` and `initiator=local`. HTTP/3 reports
+`transport=quic` and `handshake=quic-tls`; control and QPACK streams are excluded.
+gRPC contributes
 HTTP/2 exchanges; WebSocket contributes its HTTP upgrade exchange. Individual
 gRPC messages and WebSocket frames are not HTTP exchange observations.
 

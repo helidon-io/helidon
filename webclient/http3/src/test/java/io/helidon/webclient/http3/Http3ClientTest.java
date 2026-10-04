@@ -54,14 +54,14 @@ import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.api.WebClientProtocolResponse;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
-import io.helidon.webclient.api.WebClientTransportObserverSupport;
+import io.helidon.webclient.api.HttpTransportObserverSupport.ObserverLifecycle;
+import io.helidon.webclient.api.HttpTransportObserverSupport.ObserverProvider;
 import io.helidon.webclient.spi.ClientProtocolProvider;
 import io.helidon.webclient.spi.ClientProtocolProviderCacheLifecycle;
 import io.helidon.webclient.spi.HttpClientSpi;
 import io.helidon.webclient.spi.Protocol;
 import io.helidon.webclient.spi.ProtocolConfig;
 import io.helidon.webclient.spi.WebClientService;
-import io.helidon.webclient.spi.WebClientTransportObserverProvider;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -69,7 +69,6 @@ import org.mockito.ArgumentCaptor;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasItemInArray;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -83,7 +82,7 @@ import static org.mockito.Mockito.when;
 
 class Http3ClientTest {
     @Test
-    void directClientClosesOwnedTransportRegistrationExactlyOnce() {
+    void directClientClosesAcquiredTransportLifecycleExactlyOnce() {
         ObserverState state = new ObserverState(new Object());
         Http3Client client = Http3Client.builder()
                 .servicesDiscoverServices(false)
@@ -91,6 +90,8 @@ class Http3ClientTest {
                 .shareConnectionCache(false)
                 .build();
 
+        assertThat(state.opened.get(), equalTo(0));
+        ((Http3ClientImpl) client).connectionCache();
         assertThat(state.opened.get(), equalTo(1));
 
         client.closeResource();
@@ -109,6 +110,7 @@ class Http3ClientTest {
                 .addService(new ObserverService("observer", state))
                 .shareConnectionCache(false)
                 .build();
+        ((Http3ClientImpl) client).connectionCache();
         Http3ProtocolProvider provider = new Http3ProtocolProvider();
         AtomicReference<Throwable> ownerFailure = new AtomicReference<>();
         AtomicReference<Throwable> followerFailure = new AtomicReference<>();
@@ -144,8 +146,10 @@ class Http3ClientTest {
             assertThat(follower.getState(), equalTo(Thread.State.WAITING));
         } finally {
             closeAllowed.countDown();
-            owner.join();
-            follower.join();
+            owner.join(TimeUnit.SECONDS.toMillis(5));
+            follower.join(TimeUnit.SECONDS.toMillis(5));
+            assertThat(owner.isAlive(), equalTo(false));
+            assertThat(follower.isAlive(), equalTo(false));
         }
 
         assertThat(ownerFailure.get(), nullValue());
@@ -155,60 +159,168 @@ class Http3ClientTest {
     }
 
     @Test
-    void concurrentCloseCallersObserveSameAggregatedCleanupFailure() throws InterruptedException {
-        CountDownLatch closeAllowed = new CountDownLatch(1);
-        CompletionException primaryFailure =
-                new CompletionException("primary close failure", new IllegalStateException("primary cause"));
-        RuntimeException secondaryFailure = new RuntimeException("secondary close failure");
-        ObserverState primaryState = new ObserverState(new Object(), closeAllowed, primaryFailure);
-        ObserverState secondaryState = new ObserverState(new Object(), new CountDownLatch(0), secondaryFailure);
-        Http3Client client = Http3Client.builder()
+    void observerCleanupFailureIsReportedByAsyncClose() {
+        RuntimeException stopFailure = new IllegalStateException("observer stop failure");
+        ObserverState state = new ObserverState(new Object(), new CountDownLatch(0), stopFailure);
+        Http3ClientImpl client = (Http3ClientImpl) Http3Client.builder()
                 .servicesDiscoverServices(false)
-                .addService(new ObserverService("primary-observer", primaryState))
-                .addService(new ObserverService("secondary-observer", secondaryState))
+                .addService(new ObserverService("observer", state))
                 .shareConnectionCache(false)
                 .build();
-        AtomicReference<Throwable> ownerFailure = new AtomicReference<>();
-        AtomicReference<Throwable> followerFailure = new AtomicReference<>();
-        Thread owner = Thread.ofPlatform()
-                .unstarted(() -> {
-                    try {
-                        client.closeResource();
-                    } catch (Throwable failure) {
-                        ownerFailure.set(failure);
-                    }
-                });
-        Thread follower = Thread.ofPlatform()
-                .unstarted(() -> {
-                    try {
-                        client.closeResource();
-                    } catch (Throwable failure) {
-                        followerFailure.set(failure);
-                    }
-                });
+        client.connectionCache();
 
-        owner.start();
+        client.closeResource();
+
+        CompletionException failure = assertThrows(CompletionException.class,
+                                                   () -> client.closeResourceAsync().toCompletableFuture().join());
+        assertThat(failure.getCause(), sameInstance(stopFailure));
+        assertThat(new Http3ProtocolProvider().cacheReplacementReady(client), equalTo(true));
+        assertThat(state.closed.get(), equalTo(1));
+    }
+
+    @Test
+    void unusedObservedClientDoesNotResolveScopeOrStartLifecycle() {
+        ObserverState state = new ObserverState(new Object());
+        Http3Client client = Http3Client.builder()
+                .servicesDiscoverServices(false)
+                .addService(new ObserverService("observer", state))
+                .build();
+
+        client.get();
+        client.closeResourceAsync().toCompletableFuture().join();
+
+        assertThat(state.scopes.get(), equalTo(0));
+        assertThat(state.opened.get(), equalTo(0));
+        assertThat(state.closed.get(), equalTo(0));
+    }
+
+    @Test
+    void disabledProviderUsesUnobservedCacheWithoutResolvingScope() {
+        ObserverState state = new ObserverState(new Object());
+        state.enabled = false;
+        Http3ClientImpl client = (Http3ClientImpl) Http3Client.builder()
+                .servicesDiscoverServices(false)
+                .addService(new ObserverService("observer", state))
+                .shareConnectionCache(false)
+                .build();
         try {
-            assertThat(primaryState.closeStarted.await(5, TimeUnit.SECONDS), equalTo(true));
-            follower.start();
-            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-            while (follower.isAlive()
-                    && follower.getState() != Thread.State.WAITING
-                    && System.nanoTime() < deadline) {
-                Thread.onSpinWait();
-            }
-            assertThat(follower.getState(), equalTo(Thread.State.WAITING));
+            assertThat(client.connectionCache(), notNullValue());
+            assertThat(client.transportObserver(), sameInstance(HttpTransportObserver.noop()));
         } finally {
-            closeAllowed.countDown();
-            owner.join();
-            follower.join();
+            client.closeResource();
         }
 
-        assertThat(ownerFailure.get(), sameInstance(primaryFailure));
-        assertThat(followerFailure.get(), sameInstance(primaryFailure));
-        assertThat(primaryFailure.getSuppressed(), hasItemInArray(sameInstance(secondaryFailure)));
-        assertThat(primaryState.closed.get(), equalTo(1));
-        assertThat(secondaryState.closed.get(), equalTo(1));
+        assertThat(state.scopes.get(), equalTo(0));
+        assertThat(state.opened.get(), equalTo(0));
+        assertThat(state.closed.get(), equalTo(0));
+    }
+
+    @Test
+    void asyncCloseWaitsForObserverStopWithoutDelayingLocalReplacement() throws Exception {
+        ObserverState state = new ObserverState(new Object());
+        state.stopCompletion = new CompletableFuture<>();
+        Http3ClientImpl client = (Http3ClientImpl) Http3Client.builder()
+                .servicesDiscoverServices(false)
+                .addService(new ObserverService("observer", state))
+                .shareConnectionCache(false)
+                .build();
+        client.connectionCache();
+        try {
+            client.closeResource();
+
+            assertThat(new Http3ProtocolProvider().cacheReplacementReady(client), equalTo(true));
+            assertThat(client.closeResourceAsync().toCompletableFuture().isDone(), equalTo(false));
+            assertThat(state.closed.get(), equalTo(1));
+
+            state.stopCompletion.complete(null);
+            client.closeResourceAsync().toCompletableFuture().get(5, TimeUnit.SECONDS);
+        } finally {
+            state.stopCompletion.complete(null);
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void asyncCloseWaitsForOwnedWebClientCleanup() throws Exception {
+        WebClient webClient = mock(WebClient.class);
+        CompletableFuture<Void> ownerCompletion = new CompletableFuture<>();
+        when(webClient.closeResourceAsync()).thenReturn(ownerCompletion);
+        Http3ClientImpl client = new Http3ClientImpl(webClient, Http3Client.builder()
+                .servicesDiscoverServices(false)
+                .shareConnectionCache(false)
+                .buildPrototype(), true);
+        try {
+            CompletableFuture<Void> completion = client.closeResourceAsync().toCompletableFuture();
+
+            assertThat(completion.isDone(), equalTo(false));
+            verify(webClient).closeResource();
+            assertThat(new Http3ProtocolProvider().cacheReplacementReady(client), equalTo(true));
+
+            ownerCompletion.complete(null);
+            completion.get(5, TimeUnit.SECONDS);
+        } finally {
+            ownerCompletion.complete(null);
+            client.closeResource();
+        }
+    }
+
+    @Test
+    void sharedObservedCacheReleaseDoesNotWaitForOtherOwner() throws Exception {
+        ObserverState state = new ObserverState(new Object());
+        Http3ClientConfig config = Http3Client.builder()
+                .servicesDiscoverServices(false)
+                .addService(new ObserverService("observer", state))
+                .shareConnectionCache(true)
+                .buildPrototype();
+        Http3ClientImpl first = new Http3ClientImpl(mock(WebClient.class), config);
+        Http3ClientImpl second = new Http3ClientImpl(mock(WebClient.class), config);
+        try {
+            assertThat(first.connectionCache(), sameInstance(second.connectionCache()));
+            assertThat(state.opened.get(), equalTo(1));
+
+            first.closeResource();
+
+            assertThat(new Http3ProtocolProvider().cacheReplacementReady(first), equalTo(true));
+            CompletableFuture<Void> firstCompletion = first.closeResourceAsync().toCompletableFuture();
+            assertThat(firstCompletion.isDone(), equalTo(false));
+            assertThat(state.closed.get(), equalTo(0));
+            assertThat(second.get(), notNullValue());
+
+            second.closeResource();
+            firstCompletion.get(5, TimeUnit.SECONDS);
+            second.closeResourceAsync().toCompletableFuture().get(5, TimeUnit.SECONDS);
+            assertThat(state.closed.get(), equalTo(1));
+        } finally {
+            first.closeResource();
+            second.closeResource();
+        }
+    }
+
+    @Test
+    void observedSharedCachesWithDifferentScopesRemainIndependent() {
+        ObserverState firstState = new ObserverState(new Object());
+        ObserverState secondState = new ObserverState(new Object());
+        Http3ClientImpl first = new Http3ClientImpl(mock(WebClient.class), Http3Client.builder()
+                .servicesDiscoverServices(false)
+                .addService(new ObserverService("observer", firstState))
+                .shareConnectionCache(true)
+                .buildPrototype());
+        Http3ClientImpl second = new Http3ClientImpl(mock(WebClient.class), Http3Client.builder()
+                .servicesDiscoverServices(false)
+                .addService(new ObserverService("observer", secondState))
+                .shareConnectionCache(true)
+                .buildPrototype());
+        try {
+            assertThat(first.connectionCache(), not(sameInstance(second.connectionCache())));
+            first.closeResourceAsync().toCompletableFuture().join();
+            assertThat(firstState.closed.get(), equalTo(1));
+            assertThat(secondState.closed.get(), equalTo(0));
+            assertThat(second.get(), notNullValue());
+        } finally {
+            first.closeResource();
+            second.closeResource();
+        }
+        assertThat(secondState.closed.get(), equalTo(1));
     }
 
     @Test
@@ -281,49 +393,45 @@ class Http3ClientTest {
     }
 
     @Test
-    void borrowedClientCloseReleasesViewWithoutClosingParent() {
+    void fallbackRetainsObserverProvidersWithoutReplayingRequestServices() {
         ObserverState state = new ObserverState(new Object());
         WebClient parent = newWebClient(state);
+        Http3ClientImpl client = (Http3ClientImpl) parent.client(Http3Client.PROTOCOL);
         try {
-            Http3ClientImpl http3Client = (Http3ClientImpl) parent.client(Http3Client.PROTOCOL);
+            WebClient fallback = client.fallbackClient();
+            assertThat(fallback.prototype().services(), equalTo(List.of(state.service)));
+            assertThat(state.opened.get(), equalTo(0));
+            client.connectionCache();
 
-            WebClient fallback = http3Client.fallbackClient();
+            client.closeResource();
 
-            assertThat(state.opened.get(), equalTo(1));
-            assertThat(WebClientTransportObserverSupport.observerIdentity(fallback), sameInstance(state.identity));
-            assertThat(fallback.prototype().services().contains(state.service), equalTo(false));
-
-            http3Client.closeResource();
-
-            assertThat(state.closed.get(), equalTo(0));
-            assertThat(state.completionRequested.get(), equalTo(0));
-            assertThrows(IllegalStateException.class, http3Client::get);
+            assertThat(state.closed.get(), equalTo(1));
+            assertThrows(IllegalStateException.class, client::get);
+            assertThat(parent.get(), notNullValue());
         } finally {
+            client.closeResource();
             parent.closeResource();
         }
-
-        assertThat(state.closed.get(), equalTo(1));
-        assertThat(state.completionRequested.get(), equalTo(1));
     }
 
     @Test
-    void parentCloseDoesNotReplaceBorrowedClientClose() {
+    void parentCloseDoesNotReplaceProtocolClientClose() {
         ObserverState state = new ObserverState(new Object());
         WebClient parent = newWebClient(state);
-        Http3Client http3Client = parent.client(Http3Client.PROTOCOL);
+        Http3ClientImpl client = (Http3ClientImpl) parent.client(Http3Client.PROTOCOL);
+        try {
+            client.connectionCache();
+            parent.closeResource();
 
-        parent.closeResource();
+            assertThat(state.closed.get(), equalTo(0));
+            assertThat(client.get(), notNullValue());
+        } finally {
+            client.closeResource();
+            parent.closeResource();
+        }
 
+        assertThrows(IllegalStateException.class, client::get);
         assertThat(state.closed.get(), equalTo(1));
-        assertThat(state.completionRequested.get(), equalTo(1));
-        assertThat(http3Client.get(), notNullValue());
-
-        http3Client.closeResource();
-        http3Client.closeResource();
-
-        assertThrows(IllegalStateException.class, http3Client::get);
-        assertThat(state.closed.get(), equalTo(1));
-        assertThat(state.completionRequested.get(), equalTo(1));
     }
 
     @Test
@@ -672,12 +780,15 @@ class Http3ClientTest {
 
     private static final class ObserverState {
         private final Object identity;
+        private final AtomicInteger scopes = new AtomicInteger();
         private final AtomicInteger opened = new AtomicInteger();
         private final AtomicInteger closed = new AtomicInteger();
         private final AtomicInteger completionRequested = new AtomicInteger();
         private final CountDownLatch closeStarted = new CountDownLatch(1);
         private final CountDownLatch closeAllowed;
         private final RuntimeException closeFailure;
+        private boolean enabled = true;
+        private CompletableFuture<Void> stopCompletion = CompletableFuture.completedFuture(null);
         private ObserverService service;
 
         private ObserverState(Object identity) {
@@ -696,45 +807,49 @@ class Http3ClientTest {
     }
 
     private record ObserverService(String type, ObserverState state)
-            implements WebClientService, WebClientTransportObserverProvider {
+            implements WebClientService, ObserverProvider {
         @Override
         public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
             return chain.proceed(request);
         }
 
         @Override
-        public Object transportObserverIdentity() {
+        public boolean enabled() {
+            return state.enabled;
+        }
+
+        @Override
+        public Object scope() {
+            state.scopes.incrementAndGet();
             return state.identity;
         }
 
         @Override
-        public Registration openTransportObserver() {
+        public ObserverLifecycle createObserver() {
             state.opened.incrementAndGet();
-            return new Registration() {
+            return new ObserverLifecycle() {
                 @Override
-                public HttpTransportObserver observer() {
+                public HttpTransportObserver start() {
                     return (_, _, _) -> ConnectionObservation.noop();
                 }
 
                 @Override
-                public void close() {
+                public CompletionStage<Void> stop() {
+                    state.completionRequested.incrementAndGet();
                     state.closeStarted.countDown();
                     try {
-                        state.closeAllowed.await();
+                        if (!state.closeAllowed.await(5, TimeUnit.SECONDS)) {
+                            throw new IllegalStateException("Timed out waiting to close transport observer");
+                        }
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         throw new IllegalStateException("Interrupted while waiting to close transport observer", e);
                     }
                     state.closed.incrementAndGet();
                     if (state.closeFailure != null) {
-                        throw state.closeFailure;
+                        return CompletableFuture.failedFuture(state.closeFailure);
                     }
-                }
-
-                @Override
-                public CompletionStage<Void> completion() {
-                    state.completionRequested.incrementAndGet();
-                    return CompletableFuture.completedFuture(null);
+                    return state.stopCompletion;
                 }
             };
         }

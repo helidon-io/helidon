@@ -38,10 +38,11 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
+import io.helidon.webclient.api.HttpTransportObserverSupport.ObserverLifecycle;
+import io.helidon.webclient.api.HttpTransportObserverSupport.ObserverProvider;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
-import io.helidon.webclient.spi.WebClientTransportObserverProvider;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -248,17 +249,22 @@ public class Http3ObserverJmhBenchmark {
 
     private void awaitMeters() throws InterruptedException {
         long deadline = System.nanoTime() + TIMEOUT.toNanos();
-        while (registry.counter("http.connections.opened", CONNECTION_OPEN_TAGS).filter(meter -> meter.count() == 1).isEmpty()
-                || registry.counter("http.connections.established", CONNECTION_TAGS).filter(meter -> meter.count() == 1).isEmpty()
-                || registry.gauge("http.connections.active", CONNECTION_TAGS)
+        while (registry.counter("helidon.http.connections.opened", CONNECTION_OPEN_TAGS)
+                        .filter(meter -> meter.count() == 1).isEmpty()
+                || registry.counter("helidon.http.connections.established", CONNECTION_TAGS)
+                        .filter(meter -> meter.count() == 1).isEmpty()
+                || registry.gauge("helidon.http.connections.active", CONNECTION_TAGS)
                         .filter(meter -> meter.value().longValue() == 1).isEmpty()
-                || registry.counter("http.handshakes", HANDSHAKE_TAGS).filter(meter -> meter.count() == 1).isEmpty()
-                || registry.timer("http.handshakes.duration", HANDSHAKE_TAGS).filter(meter -> meter.count() == 1).isEmpty()
-                || registry.counter("http.streams.opened", STREAM_TAGS).filter(meter -> meter.count() == 2).isEmpty()
-                || registry.gauge("http.streams.active", STREAM_TAGS)
+                || registry.counter("helidon.http.handshakes", HANDSHAKE_TAGS).filter(meter -> meter.count() == 1).isEmpty()
+                || registry.timer("helidon.http.handshakes.duration", HANDSHAKE_TAGS)
+                        .filter(meter -> meter.count() == 1).isEmpty()
+                || registry.counter("helidon.http.streams.opened", STREAM_TAGS).filter(meter -> meter.count() == 2).isEmpty()
+                || registry.gauge("helidon.http.streams.active", STREAM_TAGS)
                         .filter(meter -> meter.value().longValue() == 0).isEmpty()
-                || registry.counter("http.streams.closed", CLOSED_STREAM_TAGS).filter(meter -> meter.count() == 2).isEmpty()
-                || registry.timer("http.streams.duration", CLOSED_STREAM_TAGS).filter(meter -> meter.count() == 2).isEmpty()) {
+                || registry.counter("helidon.http.streams.closed", CLOSED_STREAM_TAGS)
+                        .filter(meter -> meter.count() == 2).isEmpty()
+                || registry.timer("helidon.http.streams.duration", CLOSED_STREAM_TAGS)
+                        .filter(meter -> meter.count() == 2).isEmpty()) {
             if (Thread.currentThread().isInterrupted()) {
                 throw new InterruptedException("Interrupted waiting for HTTP/3 benchmark meters");
             }
@@ -288,27 +294,33 @@ public class Http3ObserverJmhBenchmark {
     }
 
     private record ObserverService(HttpTransportObserver observer)
-            implements WebClientService, WebClientTransportObserverProvider {
+            implements WebClientService, ObserverProvider {
         @Override
         public WebClientServiceResponse handle(Chain chain, WebClientServiceRequest request) {
             return chain.proceed(request);
         }
 
         @Override
-        public Registration openTransportObserver() {
+        public boolean enabled() {
+            return observer != HttpTransportObserver.noop();
+        }
+
+        @Override
+        public Object scope() {
+            return observer;
+        }
+
+        @Override
+        public ObserverLifecycle createObserver() {
             // The trial owns the optional metrics lease, including its asynchronous release barrier.
-            return new Registration() {
+            return new ObserverLifecycle() {
                 @Override
-                public HttpTransportObserver observer() {
+                public HttpTransportObserver start() {
                     return ObserverService.this.observer;
                 }
 
                 @Override
-                public void close() {
-                }
-
-                @Override
-                public CompletionStage<Void> completion() {
+                public CompletionStage<Void> stop() {
                     return CompletableFuture.completedFuture(null);
                 }
             };

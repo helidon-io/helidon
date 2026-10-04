@@ -323,7 +323,15 @@ public class Http2ClientImpl implements Http2Client, HttpClientSpi {
     @Override
     public CompletionStage<Void> closeResourceAsync() {
         closeResource();
-        return closeCompletion == null ? CompletableFuture.completedStage(null) : closeCompletion.minimalCompletionStage();
+        CompletionStage<Void> completion = closeCompletion == null
+                ? CompletableFuture.completedStage(null)
+                : closeCompletion.minimalCompletionStage();
+        if (ownsWebClient) {
+            return CompletableFuture.allOf(completion.toCompletableFuture(),
+                                           webClient.closeResourceAsync().toCompletableFuture())
+                    .minimalCompletionStage();
+        }
+        return completion;
     }
 
     WebClient webClient() {

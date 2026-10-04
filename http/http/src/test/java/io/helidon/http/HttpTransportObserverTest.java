@@ -21,7 +21,9 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -650,6 +652,123 @@ class HttpTransportObserverTest {
         assertThat(selections.get(), is(2));
         assertThrows(IllegalArgumentException.class, () -> connection.protocolSelected(" "));
         assertThrows(NullPointerException.class, () -> connection.protocolSelected(null));
+    }
+
+    @Test
+    void sequentialAdapterRejectsInvalidArgumentsBeforeInvokingDelegate() {
+        assertThrows(NullPointerException.class, () -> ConnectionObservation.sequential(null));
+        assertThat(ConnectionObservation.sequential(ConnectionObservation.noop()),
+                   sameInstance(ConnectionObservation.noop()));
+        AtomicInteger callbacks = new AtomicInteger();
+        ConnectionObservation connection = ConnectionObservation.sequential(new ConnectionObservation() {
+            @Override
+            public HandshakeObservation handshakeStarted() {
+                callbacks.incrementAndGet();
+                return _ -> callbacks.incrementAndGet();
+            }
+
+            @Override
+            public void protocolSelected(String protocol) {
+                callbacks.incrementAndGet();
+            }
+
+            @Override
+            public StreamObservation streamOpened(Direction direction, Initiator initiator) {
+                callbacks.incrementAndGet();
+                return _ -> callbacks.incrementAndGet();
+            }
+
+            @Override
+            public void close(ConnectionOutcome outcome) {
+                callbacks.incrementAndGet();
+            }
+        });
+        assertThat(ConnectionObservation.sequential(connection), sameInstance(connection));
+        HandshakeObservation handshake = connection.handshakeStarted();
+        StreamObservation stream = connection.streamOpened(BIDIRECTIONAL, REMOTE);
+
+        assertThrows(NullPointerException.class, () -> connection.protocolSelected(null));
+        assertThrows(IllegalArgumentException.class, () -> connection.protocolSelected(""));
+        assertThrows(IllegalArgumentException.class, () -> connection.protocolSelected(" \t"));
+        assertThrows(NullPointerException.class, () -> connection.streamOpened(null, REMOTE));
+        assertThrows(NullPointerException.class, () -> connection.streamOpened(BIDIRECTIONAL, null));
+        assertThrows(NullPointerException.class, () -> connection.close(null));
+        assertThrows(NullPointerException.class, () -> handshake.close(null));
+        assertThrows(NullPointerException.class, () -> stream.close(null));
+        assertThat("invalid lifecycle arguments do not reach delegate callbacks", callbacks.get(), is(2));
+    }
+
+    @Test
+    void sequentialAdapterSerializesChildAndConnectionCallbacks() throws Exception {
+        CountDownLatch streamCloseStarted = new CountDownLatch(1);
+        CountDownLatch completeStreamClose = new CountDownLatch(1);
+        CountDownLatch connectionCloseCalled = new CountDownLatch(1);
+        CountDownLatch connectionCloseStarted = new CountDownLatch(1);
+        AtomicInteger activeCallbacks = new AtomicInteger();
+        AtomicInteger maximumActiveCallbacks = new AtomicInteger();
+        ConnectionObservation delegate = new ConnectionObservation() {
+            @Override
+            public HandshakeObservation handshakeStarted() {
+                return HandshakeObservation.noop();
+            }
+
+            @Override
+            public void protocolSelected(String protocol) {
+            }
+
+            @Override
+            public StreamObservation streamOpened(Direction direction, Initiator initiator) {
+                return outcome -> {
+                    int active = activeCallbacks.incrementAndGet();
+                    maximumActiveCallbacks.accumulateAndGet(active, Math::max);
+                    streamCloseStarted.countDown();
+                    try {
+                        if (!completeStreamClose.await(5, TimeUnit.SECONDS)) {
+                            throw new IllegalStateException("Timed out waiting to complete stream close");
+                        }
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException("Interrupted while closing stream", e);
+                    } finally {
+                        activeCallbacks.decrementAndGet();
+                    }
+                };
+            }
+
+            @Override
+            public void close(ConnectionOutcome outcome) {
+                int active = activeCallbacks.incrementAndGet();
+                maximumActiveCallbacks.accumulateAndGet(active, Math::max);
+                connectionCloseStarted.countDown();
+                activeCallbacks.decrementAndGet();
+            }
+        };
+        ConnectionObservation connection = ConnectionObservation.sequential(delegate);
+        StreamObservation stream = connection.streamOpened(BIDIRECTIONAL, REMOTE);
+        boolean callbacksOverlapped;
+        var executor = Executors.newFixedThreadPool(2);
+        try {
+            CompletableFuture<Void> streamClose = CompletableFuture.runAsync(() -> stream.close(COMPLETED), executor);
+            assertThat(streamCloseStarted.await(5, TimeUnit.SECONDS), is(true));
+            CompletableFuture<Void> connectionClose = CompletableFuture.runAsync(() -> {
+                connectionCloseCalled.countDown();
+                connection.close(ConnectionOutcome.NORMAL);
+            }, executor);
+            assertThat(connectionCloseCalled.await(5, TimeUnit.SECONDS), is(true));
+            try {
+                callbacksOverlapped = connectionCloseStarted.await(200, TimeUnit.MILLISECONDS);
+            } finally {
+                completeStreamClose.countDown();
+            }
+            CompletableFuture.allOf(streamClose, connectionClose).get(5, TimeUnit.SECONDS);
+        } finally {
+            completeStreamClose.countDown();
+            executor.shutdownNow();
+            assertThat("Sequential lifecycle tasks terminated", executor.awaitTermination(5, TimeUnit.SECONDS), is(true));
+        }
+
+        assertThat(callbacksOverlapped, is(false));
+        assertThat(maximumActiveCallbacks.get(), is(1));
     }
 
     private static HttpTransportObserver recordingObserver(String name,

@@ -59,14 +59,21 @@ import static io.helidon.http.HttpTransportObserver.ConnectionOutcome.LOCAL_CLOS
 import static io.helidon.http.HttpTransportObserver.ConnectionOutcome.NORMAL;
 import static io.helidon.http.HttpTransportObserver.ConnectionOutcome.REMOTE_CLOSE;
 import static io.helidon.http.HttpTransportObserver.Direction.BIDIRECTIONAL;
+import static io.helidon.http.HttpTransportObserver.Direction.UNIDIRECTIONAL;
 import static io.helidon.http.HttpTransportObserver.Handshake.NONE;
+import static io.helidon.http.HttpTransportObserver.Handshake.QUIC_TLS;
 import static io.helidon.http.HttpTransportObserver.Handshake.TLS;
 import static io.helidon.http.HttpTransportObserver.HandshakeOutcome.SUCCESS;
+import static io.helidon.http.HttpTransportObserver.Initiator.LOCAL;
 import static io.helidon.http.HttpTransportObserver.Initiator.REMOTE;
 import static io.helidon.http.HttpTransportObserver.PROTOCOL_HTTP_1_1;
 import static io.helidon.http.HttpTransportObserver.PROTOCOL_HTTP_2;
+import static io.helidon.http.HttpTransportObserver.PROTOCOL_HTTP_3;
+import static io.helidon.http.HttpTransportObserver.Role.CLIENT;
 import static io.helidon.http.HttpTransportObserver.Role.SERVER;
 import static io.helidon.http.HttpTransportObserver.StreamOutcome.COMPLETED;
+import static io.helidon.http.HttpTransportObserver.StreamOutcome.RESET;
+import static io.helidon.http.HttpTransportObserver.TRANSPORT_QUIC;
 import static io.helidon.http.HttpTransportObserver.TRANSPORT_TCP;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -193,6 +200,48 @@ class TestHttpTransportMetrics {
             assertBoundedTags(registry);
         } finally {
             closeAndAwait(lease);
+            assertRegistryEmpty(registry);
+            registry.close();
+        }
+    }
+
+    @Test
+    void recordsQuicAndHttp3Vocabulary() throws Exception {
+        TestRegistry registry = newRegistry();
+        HttpTransportMetrics.Lease observer = HttpTransportMetrics.acquire(registry);
+        try {
+            ConnectionObservation connection = observer.connectionOpened(CLIENT, TRANSPORT_QUIC, QUIC_TLS);
+            connection.handshakeStarted().close(SUCCESS);
+            connection.protocolSelected(PROTOCOL_HTTP_3);
+            connection.streamOpened(UNIDIRECTIONAL, LOCAL).close(RESET);
+            connection.close(ConnectionOutcome.TIMEOUT);
+
+            synchronize(registry, observer);
+
+            assertThat(counter(registry,
+                               "helidon.http.handshakes",
+                               "role", "client",
+                               "transport", "quic",
+                               "handshake", "quic-tls",
+                               "outcome", "success").count(),
+                       is(1L));
+            assertThat(counter(registry,
+                               "helidon.http.streams.closed",
+                               "role", "client",
+                               "protocol", "http/3",
+                               "direction", "uni",
+                               "initiator", "local",
+                               "outcome", "reset").count(),
+                       is(1L));
+            assertThat(counter(registry,
+                               "helidon.http.connections.closed",
+                               "role", "client",
+                               "transport", "quic",
+                               "protocol", "http/3",
+                               "outcome", "timeout").count(),
+                       is(1L));
+        } finally {
+            closeAndAwait(observer);
             assertRegistryEmpty(registry);
             registry.close();
         }
