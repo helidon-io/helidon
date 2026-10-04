@@ -530,11 +530,24 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
     }
 
     void recordSuccess(Http3Discovery.Selection selection) {
-        connectionCache().discovery().recordSuccess(selection);
+        Http3ConnectionCache cache = observedCache == null ? connectionCache : acquiredCache;
+        if (cache != null) {
+            cache.discovery().recordSuccess(selection);
+        }
     }
 
     void recordFailure(Http3Discovery.Selection selection) {
-        connectionCache().discovery().recordFailure(selection);
+        Http3ConnectionCache cache = observedCache == null ? connectionCache : acquiredCache;
+        if (cache != null) {
+            cache.discovery().recordFailure(selection);
+        }
+    }
+
+    void recordMisdirected(Http3Discovery.Selection selection) {
+        Http3ConnectionCache cache = observedCache == null ? connectionCache : acquiredCache;
+        if (cache != null) {
+            cache.discovery().recordMisdirected(selection);
+        }
     }
 
     boolean altSvcNotificationsEnabled() {

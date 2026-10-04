@@ -105,17 +105,13 @@ class Http3CallEntityChainTest {
     @Test
     void invalidatesMisdirectedSelectionWithoutPublishingOrTeaching() {
         Http3ClientImpl http3Client = mock(Http3ClientImpl.class);
-        Http3ConnectionCache connectionCache = mock(Http3ConnectionCache.class);
-        Http3Discovery discovery = mock(Http3Discovery.class);
         Http3Discovery.Selection selection = selection(Http3Discovery.Target.alternative("alternative.example", 8443));
         Http3StreamedResponse response = mock(Http3StreamedResponse.class);
-        when(http3Client.connectionCache()).thenReturn(connectionCache);
-        when(connectionCache.discovery()).thenReturn(discovery);
         Http3CallEntityChain chain = chain(http3Client);
 
         chain.captureProtocolResponse(selection, response, Status.MISDIRECTED_REQUEST_421, altSvcHeaders());
 
-        verify(discovery).recordMisdirected(selection);
+        verify(http3Client).recordMisdirected(selection);
         verify(http3Client, never()).recordSuccess(any());
         verifyNoMoreInteractions(response);
         assertThat(chain.protocolResponse(mock(WebClientServiceResponse.class)).isEmpty(), is(true));

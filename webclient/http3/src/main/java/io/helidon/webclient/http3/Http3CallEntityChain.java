@@ -196,7 +196,7 @@ class Http3CallEntityChain implements WebClientService.TransportChain {
                                  Status status,
                                  ClientResponseHeaders headers) {
         if (status.code() == Status.MISDIRECTED_REQUEST_421_CODE) {
-            http3Client.connectionCache().discovery().recordMisdirected(currentSelection);
+            http3Client.recordMisdirected(currentSelection);
             return;
         }
         http3Client.recordSuccess(currentSelection);
