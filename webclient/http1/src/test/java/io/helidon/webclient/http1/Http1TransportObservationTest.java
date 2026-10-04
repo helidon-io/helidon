@@ -357,7 +357,7 @@ class Http1TransportObservationTest {
     }
 
     @Test
-    void bodyConsumptionCancelsUnreadTrailersAtRelease() throws Exception {
+    void bodyConsumptionCompletesTrailersBeforeRelease() throws Exception {
         var observer = new RecordingProvider();
         try (var server = new RawServer(1, socket -> {
             readHead(socket);
@@ -368,10 +368,10 @@ class Http1TransportObservationTest {
             Http1Client client = client(server, observer);
             try (var response = client.get().request()) {
                 assertThat(response.entity().as(String.class), is("body"));
-                // Existing entity consumption releases the connection before lazy trailers are read.
-                assertThat(observer.onlyConnection().outcomes(), is(List.of(StreamOutcome.CANCELLED)));
+                // Entity consumption reads the trailers before releasing the connection.
+                assertThat(observer.onlyConnection().outcomes(), is(List.of(StreamOutcome.COMPLETED)));
                 assertThat(response.trailers().get(HeaderNames.create("X-Result")).get(), is("done"));
-                assertThat(observer.onlyConnection().outcomes(), is(List.of(StreamOutcome.CANCELLED)));
+                assertThat(observer.onlyConnection().outcomes(), is(List.of(StreamOutcome.COMPLETED)));
             } finally {
                 client.closeResource();
             }
