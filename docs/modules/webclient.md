@@ -180,9 +180,11 @@ created directly using an `Http3Client` factory or builder is standalone: it
 creates and owns a backing `WebClient`. Always close the typed client to release
 its owned resources and backing client. The standalone shutdown examples below
 disable connection-cache sharing so shutdown also closes the client's private
-QUIC connections. With the default shared connection cache, connections and
-discovery state remain available to other clients and use the JVM-wide cache
-lifecycle.
+QUIC connections. Without enabled transport observation, the default shared
+connection cache keeps connections and discovery state available to other
+clients for the JVM-wide cache lifecycle. With transport observation enabled,
+compatible clients share an observed cache partition. Its connections and
+discovery state are closed when the last owner releases that partition.
 
 Create and close a standalone HTTP/3 client:
 
