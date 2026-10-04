@@ -26,6 +26,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -78,7 +81,6 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -769,83 +771,121 @@ class Http3ClientTest {
     private static void completeSharedExchangeAfterOwnerClose(Status status, RuntimeException originalFailure)
             throws Exception {
         ObserverState state = new ObserverState(new Object());
-        Http3ClientConfig config = Http3Client.builder()
-                .baseUri("https://origin.example")
-                .proxy(Proxy.noProxy())
-                .servicesDiscoverServices(false)
-                .addService(new ObserverService("observer", state))
-                .shareConnectionCache(true)
-                .altSvc(ClientAltSvcConfig.create())
-                .buildPrototype();
-        Http3ClientImpl first = new Http3ClientImpl(mock(WebClient.class), config);
-        Http3ClientImpl second = new Http3ClientImpl(mock(WebClient.class), config);
+        CountDownLatch resolutionStarted = new CountDownLatch(1);
+        CountDownLatch resolutionAllowed = new CountDownLatch(1);
+        var tasks = Executors.newVirtualThreadPerTaskExecutor();
+        boolean tasksTerminated;
         try {
-            Http3ConnectionCache cache = first.connectionCache();
-            assertThat(second.connectionCache(), sameInstance(cache));
-            Http3ClientRequestImpl request = (Http3ClientRequestImpl) first.get("/pending");
-            Http3Discovery.Selection direct = first.requestTarget(request, request.resolvedUri(), request.headers(), true)
-                    .orElseThrow();
-            WritableHeaders<?> alternativeHeaders = WritableHeaders.create();
-            alternativeHeaders.set(HeaderNames.ALT_SVC, "h3=\":8443\"");
-            cache.discovery().recordAltSvc(direct.key(), ClientResponseHeaders.create(alternativeHeaders));
-            CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
-            Http3CallEntityChain chain = new Http3CallEntityChain(first,
-                                                                 request,
-                                                                 true,
-                                                                 new AtomicReference<>(Http3Client.PROTOCOL_ID),
-                                                                 whenSent,
-                                                                 new CompletableFuture<>(),
-                                                                 Http3RequestBody.create(new byte[0]));
-            WebClientServiceRequest serviceRequest = mock(WebClientServiceRequest.class);
-            when(serviceRequest.method()).thenReturn(Method.GET);
-            when(serviceRequest.uri()).thenReturn(request.resolvedUri());
-            when(serviceRequest.headers()).thenReturn(request.headers());
-            when(serviceRequest.context()).thenReturn(Context.create());
-            RuntimeException attemptFailure = originalFailure == null ? null
-                    : Http3RequestFailureSupport.attemptFailure(
-                            Http3RequestFailureSupport.endpointUnavailable(originalFailure),
-                            Http3RequestFailureSupport.AttemptDisposition.POSSIBLY_PROCESSED,
-                            false);
-            Http3StreamedResponse response = mock(Http3StreamedResponse.class);
-            if (status != null) {
-                when(response.status()).thenReturn(status.code());
-                when(response.headers()).thenReturn(WritableHeaders.create());
-            }
-            try (var exchanges = mockConstruction(Http3ExchangeClient.class, (exchange, _) -> {
-                when(exchange.send(any(), any(), any(), any(), any())).thenAnswer(_ -> {
-                    first.closeResource();
-                    assertThat(state.closed.get(), equalTo(0));
-                    if (attemptFailure != null) {
-                        throw attemptFailure;
+            var builder = Http3Client.builder()
+                    .baseUri("https://origin.example")
+                    .proxy(Proxy.noProxy())
+                    .servicesDiscoverServices(false)
+                    .addService(new ObserverService("observer", state))
+                    .shareConnectionCache(true)
+                    .executor(tasks)
+                    .altSvc(ClientAltSvcConfig.create());
+            if (originalFailure != null) {
+                builder.dnsResolver((_, _) -> {
+                    resolutionStarted.countDown();
+                    try {
+                        if (!resolutionAllowed.await(5, TimeUnit.SECONDS)) {
+                            throw new IllegalStateException("Timed out waiting to fail DNS resolution");
+                        }
+                    } catch (InterruptedException interrupted) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException("Interrupted during DNS resolution", interrupted);
                     }
-                    return response;
+                    throw originalFailure;
                 });
-            })) {
-                if (attemptFailure == null) {
-                    WebClientServiceResponse result = chain.proceed(serviceRequest);
-                    assertThat(result.status(), equalTo(status));
-                    assertThat(result.connection(), sameInstance(response));
+            }
+            Http3ClientConfig config = builder.buildPrototype();
+            WebClient webClient = mock(WebClient.class);
+            when(webClient.executor()).thenReturn(tasks);
+            Http3ClientImpl first = new Http3ClientImpl(webClient, config);
+            Http3ClientImpl second = new Http3ClientImpl(webClient, config);
+            Future<WebClientServiceResponse> pending = null;
+            try {
+                Http3ConnectionCache cache = first.connectionCache();
+                assertThat(second.connectionCache(), sameInstance(cache));
+                Http3ClientRequestImpl request = (Http3ClientRequestImpl) first.get("/pending");
+                request.priorKnowledge(true);
+                Http3Discovery.Selection direct = first.requestTarget(request, request.resolvedUri(), request.headers(), true)
+                        .orElseThrow();
+                WritableHeaders<?> alternativeHeaders = WritableHeaders.create();
+                alternativeHeaders.set(HeaderNames.ALT_SVC, "h3=\":8443\"");
+                cache.discovery().recordAltSvc(direct.key(), ClientResponseHeaders.create(alternativeHeaders));
+                Http3Discovery.Selection selected = first.requestTarget(request, request.resolvedUri(), request.headers(), true)
+                        .orElseThrow();
+                assertThat(selected.target().alternative(), equalTo(true));
+                CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
+                Http3CallEntityChain chain = new Http3CallEntityChain(first,
+                                                                     request,
+                                                                     true,
+                                                                     new AtomicReference<>(Http3Client.PROTOCOL_ID),
+                                                                     whenSent,
+                                                                     new CompletableFuture<>(),
+                                                                     Http3RequestBody.create(new byte[0]));
+                if (originalFailure == null) {
+                    Http3StreamedResponse response = mock(Http3StreamedResponse.class);
+                    first.closeResource();
+
+                    chain.captureProtocolResponse(selected,
+                                                  response,
+                                                  status,
+                                                  ClientResponseHeaders.create(WritableHeaders.create()));
+
+                    verifyNoMoreInteractions(response);
+                    assertThat(chain.protocolResponse(mock(WebClientServiceResponse.class)).isEmpty(), equalTo(true));
                 } else {
-                    assertThat(assertThrows(IllegalStateException.class, () -> chain.proceed(serviceRequest)),
-                               sameInstance(attemptFailure));
-                    assertThat(attemptFailure.getCause(), sameInstance(originalFailure));
-                    CompletionException sentFailure = assertThrows(CompletionException.class, whenSent::join);
+                    WebClientServiceRequest serviceRequest = mock(WebClientServiceRequest.class);
+                    when(serviceRequest.method()).thenReturn(Method.GET);
+                    when(serviceRequest.uri()).thenReturn(request.resolvedUri());
+                    when(serviceRequest.headers()).thenReturn(request.headers());
+                    when(serviceRequest.context()).thenReturn(Context.create());
+                    var requestTask = tasks.submit(() -> chain.proceed(serviceRequest));
+                    pending = requestTask;
+                    try {
+                        assertThat(resolutionStarted.await(5, TimeUnit.SECONDS), equalTo(true));
+                        first.closeResource();
+                    } finally {
+                        resolutionAllowed.countDown();
+                    }
+
+                    ExecutionException failure = assertThrows(ExecutionException.class,
+                                                               () -> requestTask.get(5, TimeUnit.SECONDS));
+                    assertThat(Http3RequestFailureSupport.attemptCause(failure.getCause()), sameInstance(originalFailure));
+                    ExecutionException sentFailure = assertThrows(ExecutionException.class,
+                                                                   () -> whenSent.get(5, TimeUnit.SECONDS));
                     assertThat(sentFailure.getCause(), sameInstance(originalFailure));
                 }
-                assertThat(exchanges.constructed().size(), equalTo(1));
+                assertThat(state.closed.get(), equalTo(0));
+                assertThrows(IllegalStateException.class, first::get);
+                assertThrows(IllegalStateException.class, request::request);
+                assertThat(second.get(), notNullValue());
+                boolean alternativeAvailable = cache.discovery().automaticTarget(direct.key(), true, _ -> false).isPresent();
+                assertThat(alternativeAvailable, equalTo(status == Status.OK_200));
+                assertThat(first.closeResourceAsync().toCompletableFuture().isDone(), equalTo(false));
+            } finally {
+                resolutionAllowed.countDown();
+                if (pending != null) {
+                    pending.cancel(true);
+                }
+                first.closeResource();
+                second.closeResource();
             }
-            assertThrows(IllegalStateException.class, first::get);
-            assertThrows(IllegalStateException.class, request::request);
-            assertThat(second.get(), notNullValue());
-            boolean alternativeAvailable = cache.discovery().automaticTarget(direct.key(), true, _ -> false).isPresent();
-            assertThat(alternativeAvailable, equalTo(status == Status.OK_200));
-            assertThat(first.closeResourceAsync().toCompletableFuture().isDone(), equalTo(false));
-        } finally {
-            first.closeResource();
-            second.closeResource();
             first.closeResourceAsync().toCompletableFuture().get(5, TimeUnit.SECONDS);
+            assertThat(state.closed.get(), equalTo(1));
+        } finally {
+            resolutionAllowed.countDown();
+            tasks.shutdownNow();
+            try {
+                tasksTerminated = tasks.awaitTermination(5, TimeUnit.SECONDS);
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                tasksTerminated = false;
+            }
         }
-        assertThat(state.closed.get(), equalTo(1));
+        assertThat(tasksTerminated, equalTo(true));
     }
 
     private static FullClientRequest<?> fallbackRequest(Http3ClientRequestImpl request,
