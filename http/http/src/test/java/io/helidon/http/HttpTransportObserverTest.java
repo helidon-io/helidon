@@ -718,7 +718,7 @@ class HttpTransportObserverTest {
 
             @Override
             public StreamObservation streamOpened(Direction direction, Initiator initiator) {
-                return outcome -> {
+                return _ -> {
                     int active = activeCallbacks.incrementAndGet();
                     maximumActiveCallbacks.accumulateAndGet(active, Math::max);
                     streamCloseStarted.countDown();
