@@ -22,6 +22,7 @@ import java.io.UncheckedIOException;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -46,9 +47,15 @@ import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.WebClientServiceRequest;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
@@ -155,6 +162,60 @@ class Http1ExchangeTest {
             output.close();
         }, response -> assertThat(response.status().code(), is(413)));
         assertThat(called.get(), is(false));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void emptyRequestDoesNotAutomaticallyExpectContinue(boolean requestOverride) {
+        var connection = new Connection("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
+        var client = Http1Client.builder().sendExpectContinue(!requestOverride).build();
+        var request = client.post("http://localhost/test").connection(connection).header(HeaderNames.CONTENT_LENGTH, "0");
+        if (requestOverride) {
+            request.sendExpectContinue(true);
+        }
+        var uploaded = new AtomicBoolean();
+        request.exchange(output -> {
+            uploaded.set(true);
+            output.close();
+        }, response -> assertThat(response.status(), is(Status.OK_200)));
+
+        String wire = connection.request.toString(StandardCharsets.US_ASCII).toLowerCase(Locale.ROOT);
+        assertThat("Empty requests must not advertise 100-continue", wire, not(containsString("\r\nexpect:")));
+        assertThat(wire, containsString("\r\ncontent-length: 0\r\n"));
+        assertThat("The empty upload must complete without a continue wait", uploaded.get(), is(true));
+        assertThat(connection.releases.get(), is(1));
+        assertThat(connection.closes.get(), is(0));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"1,false", "-1,false", "0,true"})
+    void requestWithEntityStillExpectsContinue(int contentLength, boolean explicitChunked) {
+        var connection = new Connection("HTTP/1.1 100 Continue\r\n\r\nHTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
+        var request = request(connection).sendExpectContinue(true);
+        if (contentLength >= 0) {
+            request.header(HeaderNames.CONTENT_LENGTH, Integer.toString(contentLength));
+        }
+        if (explicitChunked) {
+            request.header(HeaderNames.TRANSFER_ENCODING, "chunked");
+        }
+        request.exchange(output -> {
+            try (output) {
+                output.write('*');
+            }
+        }, response -> assertThat(response.status(), is(Status.OK_200)));
+
+        String wire = connection.request.toString(StandardCharsets.US_ASCII).toLowerCase(Locale.ROOT);
+        assertThat(wire, containsString("\r\nexpect: 100-continue\r\n"));
+        if (contentLength < 0 || explicitChunked) {
+            assertThat(wire, containsString("\r\ntransfer-encoding: chunked\r\n"));
+            assertThat(wire, not(containsString("\r\ncontent-length:")));
+            assertThat(wire, endsWith("\r\n\r\n1\r\n*\r\n0\r\n\r\n"));
+        } else {
+            assertThat(wire, containsString("\r\ncontent-length: 1\r\n"));
+            assertThat(wire, endsWith("\r\n\r\n*"));
+        }
+        assertThat(connection.releases.get(), is(1));
+        assertThat(connection.closes.get(), is(0));
     }
 
     @Test

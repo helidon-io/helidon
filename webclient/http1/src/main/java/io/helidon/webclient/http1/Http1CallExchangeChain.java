@@ -97,6 +97,7 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
             headers.set(HeaderValues.TRANSFER_ENCODING_CHUNKED);
         }
         boolean expectContinue = connection.allowExpectContinue()
+                && (chunked || length > 0)
                 && originalRequest().sendExpectContinue().orElse(clientConfig().sendExpectContinue());
         if (expectContinue) {
             headers.set(HeaderValues.EXPECT_100);
