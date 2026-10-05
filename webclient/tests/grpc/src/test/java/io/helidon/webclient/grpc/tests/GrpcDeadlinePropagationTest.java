@@ -15,8 +15,12 @@
  */
 package io.helidon.webclient.grpc.tests;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.webclient.grpc.GrpcClient;
@@ -25,6 +29,7 @@ import io.helidon.webserver.grpc.GrpcRouting;
 
 import io.grpc.Context;
 import io.grpc.Deadline;
+import io.grpc.ForwardingServerCallListener;
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
@@ -44,6 +49,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Timeout(15)
 class GrpcDeadlinePropagationTest {
+    @Test
+    void workerCompletesUnaryCallWhileCallbackWaits() throws Exception {
+        workerCompletesUnaryCallWhileCallbackWaits(false);
+    }
+
+    @Test
+    void workerCompletesUnaryCallWhileCallbackWaitsWithDeadline() throws Exception {
+        workerCompletesUnaryCallWhileCallbackWaits(true);
+    }
+
     @Test
     void generatedStubHonorsDeadline() {
         var release = new CountDownLatch(1);
@@ -127,11 +142,126 @@ class GrpcDeadlinePropagationTest {
         }
     }
 
+    private static void workerCompletesUnaryCallWhileCallbackWaits(boolean withDeadline) throws Exception {
+        var release = new CompletableFuture<Void>();
+        var workerReturned = new CompletableFuture<Void>();
+        var listener = new CompletionInterceptor();
+        var workers = Executors.newVirtualThreadPerTaskExecutor();
+        var server = WebServer.builder()
+                .addRouting(GrpcRouting.builder()
+                                    .intercept(listener)
+                                    .unary(Strings.getDescriptor(), "StringService", "Upper",
+                                           (Strings.StringMessage request,
+                                            StreamObserver<Strings.StringMessage> response) -> {
+                                               workers.submit(() -> {
+                                                   try {
+                                                       response.onNext(request);
+                                                       response.onCompleted();
+                                                       workerReturned.complete(null);
+                                                   } catch (Throwable t) {
+                                                       workerReturned.completeExceptionally(t);
+                                                   }
+                                               });
+                                               // Cleanup can release the callback even when the worker is deadlocked.
+                                               CompletableFuture.anyOf(workerReturned, release).join();
+                                           }))
+                .build()
+                .start();
+        try {
+            var stub = StringServiceGrpc.newBlockingStub(client(server).channel());
+            if (withDeadline) {
+                stub = stub.withDeadlineAfter(10, TimeUnit.SECONDS);
+            }
+            var request = Strings.StringMessage.newBuilder().setText("worker completion").build();
+
+            assertThat(stub.upper(request), is(request));
+            // Trailers can arrive before onCompleted returns, so observe the worker and listener too.
+            workerReturned.get(3, TimeUnit.SECONDS);
+            listener.callbackReturned.get(3, TimeUnit.SECONDS);
+            listener.terminalReturned.get(3, TimeUnit.SECONDS);
+            assertThat("completion callback count", listener.completions.get(), is(1));
+            assertThat("cancellation callback count", listener.cancellations.get(), is(0));
+            assertThat("terminal callback overlaps application callback", listener.terminalOverlap.get(), is(false));
+        } finally {
+            release.complete(null);
+            workers.shutdown();
+            try {
+                assertThat("response worker stopped", workers.awaitTermination(3, TimeUnit.SECONDS), is(true));
+            } finally {
+                workers.shutdownNow();
+                server.stop();
+            }
+        }
+    }
+
     private static GrpcClient client(WebServer server) {
         return GrpcClient.builder()
                 .baseUri("http://localhost:" + server.port())
                 .tls(tls -> tls.enabled(false))
                 .build();
+    }
+
+    private static final class CompletionInterceptor implements ServerInterceptor {
+        private final CompletableFuture<Void> callbackReturned = new CompletableFuture<>();
+        private final CompletableFuture<Void> terminalReturned = new CompletableFuture<>();
+        private final AtomicBoolean callbackActive = new AtomicBoolean();
+        private final AtomicBoolean terminalOverlap = new AtomicBoolean();
+        private final AtomicInteger completions = new AtomicInteger();
+        private final AtomicInteger cancellations = new AtomicInteger();
+
+        @Override
+        public <ReqT, RespT> ServerCall.Listener<ReqT> interceptCall(ServerCall<ReqT, RespT> call,
+                                                                   Metadata headers,
+                                                                   ServerCallHandler<ReqT, RespT> next) {
+            return new ForwardingServerCallListener.SimpleForwardingServerCallListener<>(next.startCall(call, headers)) {
+                @Override
+                public void onMessage(ReqT message) {
+                    callbackActive.set(true);
+                    try {
+                        super.onMessage(message);
+                    } finally {
+                        callbackActive.set(false);
+                    }
+                }
+
+                @Override
+                public void onHalfClose() {
+                    callbackActive.set(true);
+                    try {
+                        super.onHalfClose();
+                    } finally {
+                        callbackActive.set(false);
+                        callbackReturned.complete(null);
+                    }
+                }
+
+                @Override
+                public void onComplete() {
+                    completions.incrementAndGet();
+                    if (callbackActive.get()) {
+                        terminalOverlap.set(true);
+                    }
+                    try {
+                        super.onComplete();
+                    } finally {
+                        terminalReturned.complete(null);
+                    }
+                }
+
+                @Override
+                public void onCancel() {
+                    cancellations.incrementAndGet();
+                    if (callbackActive.get()) {
+                        terminalOverlap.set(true);
+                    }
+                    try {
+                        super.onCancel();
+                    } finally {
+                        terminalReturned.complete(null);
+                    }
+                }
+            };
+        }
     }
 
     private static final class TimeoutInterceptor implements ServerInterceptor {

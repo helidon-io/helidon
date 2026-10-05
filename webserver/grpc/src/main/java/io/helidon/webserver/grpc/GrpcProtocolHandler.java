@@ -144,6 +144,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
     private volatile ServerCall.Listener<REQ> listener;
     private volatile Context.CancellableContext callContext;
+    private volatile boolean listenerNotificationReady;
     private boolean listenerNotified;
     private BufferData entityBytes;
     private BufferData readBufferData = BufferData.create(INITIAL_BUFFER_SIZE);
@@ -266,11 +267,10 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 if (!callClosed()) {
                     listener.onReady();
                     bytesReceived = 0L;
-                } else {
-                    notifyListener();
                 }
             } finally {
                 listenerLock.unlock();
+                notifyListener();
             }
             flushQueue();
         } catch (CloseConnectionException e) {
@@ -309,6 +309,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             callCancelled = true;
             Thread.startVirtualThread(() -> {
                 cancelContext(Status.CANCELLED.asRuntimeException());
+                listenerNotificationReady = true;
                 notifyListener();
             });
         }
@@ -387,6 +388,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                         drainQueue();
                     } finally {
                         listenerLock.unlock();
+                        notifyListener();
                     }
                     flushQueue();
 
@@ -407,6 +409,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     }
                 } finally {
                     listenerLock.unlock();
+                    notifyListener();
                 }
                 flushQueue();
                 currentStreamState.updateAndGet(
@@ -593,6 +596,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 drainQueue();
             } finally {
                 listenerLock.unlock();
+                notifyListener();
             }
             // Demand or data can arrive after the last check while this thread still owns
             // the lock. Recheck after releasing it so those requests cannot be stranded.
@@ -621,9 +625,13 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     }
 
     private void notifyListener() {
-        listenerLock.lock();
+        // An active callback can wait for the thread closing the call. Let that callback deliver
+        // the terminal notification after it returns instead of making close() wait for the lock.
+        if (!listenerNotificationReady || listenerLock.isHeldByCurrentThread() || !listenerLock.tryLock()) {
+            return;
+        }
         try {
-            if (listener == null || !callClosed() || listenerNotified) {
+            if (listener == null || listenerNotified) {
                 return;
             }
             listenerNotified = true;
@@ -866,6 +874,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 responseLock.unlock();
                 if (closed) {
                     cancelContext(null);
+                    listenerNotificationReady = true;
                     notifyListener();
                 }
             }

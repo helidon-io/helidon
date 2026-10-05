@@ -158,6 +158,34 @@ class GrpcProtocolHandlerTest {
 
     @Test
     @Timeout(20)
+    void testCloseFromWorkerWhileOnReadyIsActive() throws Exception {
+        closeFromWorkerWhileCallbackIsActive("ready", false);
+        closeFromWorkerWhileCallbackIsActive("ready", true);
+    }
+
+    @Test
+    @Timeout(20)
+    void testCloseFromWorkerWhileOnMessageIsActive() throws Exception {
+        closeFromWorkerWhileCallbackIsActive("message", false);
+        closeFromWorkerWhileCallbackIsActive("message", true);
+    }
+
+    @Test
+    @Timeout(20)
+    void testCloseFromWorkerWhileRequestedMessageIsActive() throws Exception {
+        closeFromWorkerWhileCallbackIsActive("requested message", false);
+        closeFromWorkerWhileCallbackIsActive("requested message", true);
+    }
+
+    @Test
+    @Timeout(20)
+    void testCloseFromWorkerWhileOnHalfCloseIsActive() throws Exception {
+        closeFromWorkerWhileCallbackIsActive("half-close", false);
+        closeFromWorkerWhileCallbackIsActive("half-close", true);
+    }
+
+    @Test
+    @Timeout(20)
     void testRequestedMessagesPrecedeHalfClose() throws Exception {
         requestedMessagesPrecedeHalfClose(false);
     }
@@ -916,6 +944,89 @@ class GrpcProtocolHandlerTest {
             } finally {
                 release.complete(null);
                 call.close(Status.OK, new Metadata());
+            }
+        }
+    }
+
+    private static void closeFromWorkerWhileCallbackIsActive(String callback, boolean withDeadline) throws Exception {
+        var callReference = new AtomicReference<ServerCall<String, String>>();
+        var closing = new CompletableFuture<CompletableFuture<Void>>();
+        var release = new CompletableFuture<Void>();
+        List<String> callbacks = new CopyOnWriteArrayList<>();
+        var writer = new RecordingWriter();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var handler = deadlineHandler(withDeadline ? "1H" : null, (call, metadata) -> {
+                callReference.set(call);
+                if (!callback.equals("requested message")) {
+                    call.request(1);
+                }
+                return new ServerCall.Listener<>() {
+                    @Override
+                    public void onReady() {
+                        if (callback.equals("ready")) {
+                            closeFromWorker();
+                        }
+                    }
+
+                    @Override
+                    public void onMessage(String message) {
+                        if (callback.equals("message") || callback.equals("requested message")) {
+                            closeFromWorker();
+                        }
+                    }
+
+                    @Override
+                    public void onHalfClose() {
+                        if (callback.equals("half-close")) {
+                            closeFromWorker();
+                        }
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        callbacks.add("complete");
+                    }
+
+                    @Override
+                    public void onCancel() {
+                        callbacks.add("cancel");
+                    }
+
+                    private void closeFromWorker() {
+                        callbacks.add("entered " + callback);
+                        var close = CompletableFuture.runAsync(() -> call.close(Status.OK, new Metadata()), executor);
+                        closing.complete(close);
+                        // Release also lets cleanup recover an implementation that deadlocks in close().
+                        CompletableFuture.anyOf(close, release).join();
+                        release.join();
+                        callbacks.add("returned " + callback);
+                    }
+                };
+            }, writer);
+            try {
+                var delivery = executor.submit(() -> {
+                    handler.init();
+                    if (callback.equals("requested message")) {
+                        sendStreamingRequest(handler, "request");
+                        callReference.get().request(1);
+                    } else if (!callback.equals("ready")) {
+                        sendRequest(handler);
+                    }
+                });
+                closing.get(5, TimeUnit.SECONDS).get(5, TimeUnit.SECONDS);
+                assertThat("close returns before the active callback returns",
+                           callbacks, is(List.of("entered " + callback)));
+                release.complete(null);
+                delivery.get(5, TimeUnit.SECONDS);
+
+                callReference.get().close(Status.OK, new Metadata());
+                handler.close();
+                assertThat("completion follows the active callback exactly once",
+                           callbacks, is(List.of("entered " + callback, "returned " + callback, "complete")));
+                assertThat("one set of trailers", writer.trailerWrites.get(), is(1));
+            } finally {
+                release.complete(null);
+                handler.close();
             }
         }
     }
