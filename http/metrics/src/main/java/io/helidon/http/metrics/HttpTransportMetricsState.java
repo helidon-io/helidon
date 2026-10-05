@@ -623,18 +623,18 @@ final class HttpTransportMetricsState {
                         .toList();
                 Meter meter = switch (id.type) {
                     case COUNTER -> registry.getOrCreate(metricsFactory.counterBuilder(id.name)
-                                                                 .scope(VENDOR)
+                                                                 .origin(HttpTransportMetrics.class.getName())
                                                                  .tags(tags)
                                                                  .description(id.description));
                     case GAUGE -> registry.getOrCreate(metricsFactory.gaugeBuilder(id.name,
                                                                                     Objects.requireNonNull(gaugeValue),
                                                                                     GaugeValue::get)
-                                                               .scope(VENDOR)
+                                                               .origin(HttpTransportMetrics.class.getName())
                                                                .tags(tags)
                                                                .description(id.description));
                     case TIMER -> {
                         Timer.Builder builder = metricsFactory.timerBuilder(id.name)
-                                .scope(VENDOR)
+                                .origin(HttpTransportMetrics.class.getName())
                                 .tags(tags)
                                 .baseUnit(TimeUnit.SECONDS)
                                 .description(id.description);
