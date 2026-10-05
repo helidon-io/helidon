@@ -1,0 +1,9 @@
+[
+    {
+        "module": "test.root",
+        "name": "Test Root",
+        "description": "Root description",
+        "path": ["Root"],
+        "flavor": ["SE"]
+    }
+]

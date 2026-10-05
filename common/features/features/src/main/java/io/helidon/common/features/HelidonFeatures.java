@@ -23,6 +23,7 @@ import java.util.EnumMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
@@ -103,6 +104,7 @@ public final class HelidonFeatures {
      * @param classLoader to look for features in
      */
     public static void nativeBuildTime(ClassLoader classLoader) {
+        Objects.requireNonNull(classLoader, "classLoader is null");
         scan(classLoader);
         for (FeatureMetadata feat : ALL_FEATURES) {
             if (feat.aot().isPresent()) {
@@ -355,7 +357,7 @@ public final class HelidonFeatures {
 
         FeatureMetadata feat = node.descriptor;
         if (feat == null) {
-            System.out.println("  ".repeat(level) + name);
+            LOGGER.log(Level.INFO, "  ".repeat(level) + name);
         } else {
             String prefix = " ".repeat(level * 2);
             // start on index 10 or a tab spaces after tree
@@ -383,7 +385,7 @@ public final class HelidonFeatures {
                 }
             }
 
-            System.out.println(
+            LOGGER.log(Level.INFO,
                     prefix
                             + name
                             + suffix
