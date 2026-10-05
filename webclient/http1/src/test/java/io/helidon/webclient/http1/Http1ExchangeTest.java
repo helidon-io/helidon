@@ -97,8 +97,9 @@ class Http1ExchangeTest {
             sent.set(request.whenSent().toCompletableFuture());
             return chain.proceed(request);
         }).build();
-        client.post("http://localhost/test").connection(connection).exchange(output -> output.close(),
-                                                                          response -> assertThat(response.status().code(), is(413)));
+        client.post("http://localhost/test")
+                .connection(connection)
+                .exchange(output -> output.close(), response -> assertThat(response.status().code(), is(413)));
         assertThat(sent.get().isCompletedExceptionally(), is(true));
     }
 
