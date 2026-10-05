@@ -239,7 +239,7 @@ class TestGauge {
                 @Override
                 public Meter.Id map(Meter.Id id) {
                     if (id.getName().equals("outer")) {
-                        io.micrometer.core.instrument.Gauge.builder("target", supplier, ignored -> 23)
+                        io.micrometer.core.instrument.Gauge.builder("target", supplier, _ -> 23)
                                 .strongReference(true)
                                 .register(nativeRegistry);
                         return id.withName("target");
@@ -270,7 +270,7 @@ class TestGauge {
                 @Override
                 public Meter.Id map(Meter.Id id) {
                     if (id.getName().equals("outer")) {
-                        io.micrometer.core.instrument.Gauge.builder("target", value, ignored -> 23)
+                        io.micrometer.core.instrument.Gauge.builder("target", value, _ -> 23)
                                 .strongReference(true)
                                 .register(nativeRegistry);
                         return id.withName("target");
@@ -318,7 +318,7 @@ class TestGauge {
         MeterRegistry registry = metricsFactory.createMeterRegistry(MetricsConfig.create());
         try {
             AtomicLong calls = new AtomicLong();
-            Gauge<Double> gauge = registry.getOrCreate(metricsFactory.gaugeBuilder("nullState", (Object) null, ignored -> {
+            Gauge<Double> gauge = registry.getOrCreate(metricsFactory.gaugeBuilder("nullState", (Object) null, _ -> {
                 calls.incrementAndGet();
                 return 7;
             }));

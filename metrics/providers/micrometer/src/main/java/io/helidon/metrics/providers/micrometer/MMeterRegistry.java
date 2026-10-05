@@ -912,6 +912,12 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         }
     }
 
+    private enum LifecycleState {
+        OPEN,
+        CLOSING,
+        CLOSED
+    }
+
     private static class GaugeTrackingRegistry extends CompositeMeterRegistry {
 
         private volatile MMeterRegistry owner;
@@ -930,12 +936,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             }
             return gauge;
         }
-    }
-
-    private enum LifecycleState {
-        OPEN,
-        CLOSING,
-        CLOSED
     }
 
     /**
