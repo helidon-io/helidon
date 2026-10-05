@@ -24,6 +24,7 @@ import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
@@ -852,6 +853,8 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
 
         private BufferData currentBuffer;
         private boolean finished;
+        private int chunkRemaining;
+        private boolean chunkTerminatorPending;
 
         ChunkedInputStream(HelidonSocket helidonSocket,
                            DataReader reader,
@@ -883,6 +886,10 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
 
         @Override
         public int read(byte[] b, int off, int len) {
+            Objects.checkFromIndexSize(off, len, b.length);
+            if (len == 0) {
+                return 0;
+            }
             if (finished) {
                 return -1;
             }
@@ -905,10 +912,38 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
                 // we did not read the previous buffer fully
                 return;
             }
-            // chunked encoding - I will just read each chunk fully into memory, as that is how the protocol is designed
-            int length;
             try {
-                length = readChunkSize(reader);
+                if (chunkRemaining == 0) {
+                    if (chunkTerminatorPending) {
+                        if (!reader.startsWithNewLine()) {
+                            throw new IllegalStateException("Invalid chunk terminator");
+                        }
+                        reader.skip(2);
+                        chunkTerminatorPending = false;
+                    }
+                    chunkRemaining = readChunkSize(reader);
+                    if (chunkRemaining == 0) {
+                        boolean trailersPending = !reader.startsWithNewLine();
+                        if (!trailersPending) {
+                            reader.skip(2);
+                        }
+                        if (transportObservation != null) {
+                            transportObservation.bodyComplete(trailersPending);
+                        }
+                        recvListener.data(helidonSocket, BufferData.empty());
+                        finished = true;
+                        currentBuffer = null;
+                        entityProcessedRunnable.run();
+                        return;
+                    }
+                }
+                // Deliver a bounded slice without waiting for the remainder of a wire chunk or its terminator.
+                reader.ensureAvailable();
+                int toRead = Math.min(chunkRemaining, Math.min(reader.available(), 8192));
+                currentBuffer = reader.readBuffer(toRead);
+                chunkRemaining -= toRead;
+                chunkTerminatorPending = chunkRemaining == 0;
+                recvListener.data(helidonSocket, currentBuffer);
             } catch (IllegalStateException e) {
                 if (transportObservation != null) {
                     transportObservation.fail(e);
@@ -916,30 +951,6 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
                 entityProcessedRunnable.run();
                 throw e;
             }
-            if (length == 0) {
-                boolean trailersPending = !reader.startsWithNewLine();
-                if (!trailersPending) {
-                    // No trailers, skip second CRLF
-                    reader.skip(2);
-                }
-
-                if (transportObservation != null) {
-                    transportObservation.bodyComplete(trailersPending);
-                }
-
-                recvListener.data(helidonSocket, BufferData.empty());
-                finished = true;
-                currentBuffer = null;
-                entityProcessedRunnable.run();
-                return;
-            }
-
-            BufferData chunk = reader.readBuffer(length);
-
-            recvListener.data(helidonSocket, chunk);
-
-            reader.skip(2); // trailing CRLF after each chunk
-            this.currentBuffer = chunk;
         }
     }
 }

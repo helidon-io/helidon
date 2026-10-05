@@ -578,6 +578,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
     }
 
     static class BlockingOutputStream extends OutputStream {
+        private static final int WRITE_SLICE_SIZE = 8192;
+
         private final ServerResponseHeaders headers;
         private final WritableHeaders<?> trailers;
         private final Supplier<Status> status;
@@ -670,12 +672,31 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
 
         @Override
         public void write(byte[] b) throws IOException {
-            write(BufferData.create(b));
+            write(b, 0, b.length);
         }
 
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
-            write(BufferData.create(b, off, len));
+            Objects.checkFromIndexSize(off, len, b.length);
+            // Reject the entire write before emitting any slice when it would exceed the declared length.
+            if (!closed && !headResponseSent && writeForbiddenStatus == null
+                    && !isChunked && contentLength != -1 && len > contentLength - bytesWritten) {
+                throw new IOException("Content length was set to " + contentLength
+                                              + ", but you are writing additional "
+                                              + (bytesWritten + len - contentLength) + " bytes");
+            }
+            if (len == 0) {
+                write(BufferData.empty());
+                return;
+            }
+            int remaining = len;
+            int offset = off;
+            while (remaining > 0) {
+                int length = Math.min(remaining, WRITE_SLICE_SIZE);
+                write(BufferData.create(b, offset, length));
+                offset += length;
+                remaining -= length;
+            }
         }
 
         /**
@@ -1034,23 +1055,22 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         }
 
         private void writeChunked(BufferData buffer) {
-            int available = buffer.available();
-            if (available == 0) {
-                return;
+            while (buffer.available() > 0) {
+                int length = Math.min(buffer.available(), WRITE_SLICE_SIZE);
+                byte[] hex = Integer.toHexString(length).getBytes(StandardCharsets.US_ASCII);
+
+                BufferData toWrite = BufferData.create(length + hex.length + 4);
+                toWrite.write(hex);
+                toWrite.write('\r');
+                toWrite.write('\n');
+                toWrite.write(buffer, length);
+                toWrite.write('\r');
+                toWrite.write('\n');
+
+                sendListener.data(ctx, toWrite);
+                responseBytesTotal += toWrite.available();
+                writeResponse(dataWriter, toWrite, "Failed to write chunked response data");
             }
-            byte[] hex = Integer.toHexString(available).getBytes(StandardCharsets.US_ASCII);
-
-            BufferData toWrite = BufferData.create(available + hex.length + 4); // \r\n after size, another after chunk
-            toWrite.write(hex);
-            toWrite.write('\r');
-            toWrite.write('\n');
-            toWrite.write(buffer);
-            toWrite.write('\r');
-            toWrite.write('\n');
-
-            sendListener.data(ctx, toWrite);
-            responseBytesTotal += toWrite.available();
-            writeResponse(dataWriter, toWrite, "Failed to write chunked response data");
         }
 
         private void checkContentLength(BufferData ignored) throws IOException {
@@ -1064,9 +1084,11 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         private void writeContent(BufferData buffer) throws IOException {
             bytesWritten += buffer.available();
             checkContentLength(buffer);
-            sendListener.data(ctx, buffer);
-            responseBytesTotal += buffer.available();
-            writeResponse(dataWriter, buffer, "Failed to write response content");
+            // The writer may queue data after this method returns. It must not retain the caller's reusable array.
+            BufferData ownedBuffer = buffer.copy();
+            sendListener.data(ctx, ownedBuffer);
+            responseBytesTotal += ownedBuffer.available();
+            writeResponse(dataWriter, ownedBuffer, "Failed to write response content");
         }
     }
 

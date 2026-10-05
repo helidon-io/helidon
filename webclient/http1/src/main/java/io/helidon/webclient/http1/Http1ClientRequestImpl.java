@@ -17,8 +17,11 @@
 package io.helidon.webclient.http1;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.UnixDomainSocketAddress;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
@@ -211,6 +214,45 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
                                                                       streamHandler);
 
         return invokeWithServices(callChain, whenSent, whenComplete);
+    }
+
+    @Override
+    public void exchange(OutputStreamHandler uploadHandler, ResponseHandler responseHandler) {
+        Objects.requireNonNull(uploadHandler);
+        Objects.requireNonNull(responseHandler);
+        CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
+        CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
+        var chain = new Http1CallExchangeChain(http1Client, this, whenSent, whenComplete, uploadHandler);
+        boolean success = false;
+        try {
+            prepareOutputStreamRequest();
+            try (Http1ClientResponse response = invokeWithServices(chain, whenSent, whenComplete)) {
+                try {
+                    responseHandler.handle(response);
+                    if (response.status().code() >= 300) {
+                        chain.cancelUpload();
+                    }
+                } catch (IOException | RuntimeException | Error e) {
+                    chain.abort(e);
+                    throw e;
+                }
+            }
+            chain.awaitUpload();
+            success = true;
+        } catch (IOException e) {
+            chain.abort(e);
+            throw new UncheckedIOException(e);
+        } catch (RuntimeException e) {
+            chain.abort(e);
+            chain.checkFailure();
+            throw e;
+        } catch (Error e) {
+            chain.abort(e);
+            throw e;
+        } finally {
+            chain.finish(success);
+            clearSelectedProxyRoute();
+        }
     }
 
     @Override

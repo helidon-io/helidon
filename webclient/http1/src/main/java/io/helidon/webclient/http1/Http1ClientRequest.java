@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package io.helidon.webclient.http1;
+
+import java.io.IOException;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.webclient.api.ClientRequest;
@@ -33,6 +35,40 @@ public interface Http1ClientRequest extends ClientRequest<Http1ClientRequest> {
 
     @Override
     Http1ClientResponse outputStream(OutputStreamHandler outputStreamConsumer);
+
+    /**
+     * Upload an entity while consuming its response concurrently.
+     * The upload handler runs on a virtual thread with the request context; the response handler runs on the calling
+     * thread. Both handlers must finish before this method returns. Consume the response entity inside its handler;
+     * neither the response nor its entity stream may be used after the handler returns.
+     * The upload handler must close its output stream and honor interruption when waiting outside transport I/O.
+     * A handler failure closes the connection and interrupts the upload handler.
+     * <p>
+     * Redirect responses are delivered to the response handler without replaying the upload, irrespective of
+     * {@link #followRedirects(boolean)}. Successful response headers do not stop an ongoing upload.
+     * After the response handler returns for a redirect or error response, any ongoing upload is interrupted and
+     * the connection is closed. The handler can consume the response entity before that cancellation.
+     * The request read timeout bounds intervals without transport progress while I/O is pending in either direction;
+     * time spent in application code with no pending transport I/O is excluded.
+     *
+     * @param uploadHandler handler producing the request entity
+     * @param responseHandler handler consuming the response
+     */
+    void exchange(OutputStreamHandler uploadHandler, ResponseHandler responseHandler);
+
+    /**
+     * Consumes a response during a concurrent upload.
+     */
+    @FunctionalInterface
+    interface ResponseHandler {
+        /**
+         * Consume the response before returning.
+         *
+         * @param response response to consume
+         * @throws IOException if consuming the response fails
+         */
+        void handle(Http1ClientResponse response) throws IOException;
+    }
 
     /**
      * Upgrade the current request to a different protocol.

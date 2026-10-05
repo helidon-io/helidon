@@ -24,6 +24,7 @@ import java.io.UncheckedIOException;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -58,6 +59,8 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.DirectHandlers;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -66,6 +69,7 @@ import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -83,6 +87,66 @@ class Http1ServerResponseTest {
     private static final List<Status> NO_ENTITY_STATUSES = List.of(Status.NO_CONTENT_204,
                                                                   Status.RESET_CONTENT_205,
                                                                   Status.NOT_MODIFIED_304);
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void queuedStreamingWritesOwnReusableCallerBuffer(boolean fixedLength) throws IOException {
+        DataWriter writer = mock(DataWriter.class);
+        var config = WebServer.builder().writeBufferSize(0).buildPrototype();
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create(), config);
+        if (fixedLength) {
+            response.contentLength(12);
+        }
+        OutputStream output = response.outputStream();
+        byte[] reusable = "abcdef".getBytes(StandardCharsets.US_ASCII);
+        output.write(reusable);
+        Arrays.fill(reusable, (byte) 'g');
+        output.write(reusable);
+        Arrays.fill(reusable, (byte) 'x');
+        response.commit();
+
+        // The mock retains queued buffers without consuming them until after the application reuses its array.
+        var queued = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(queued.capture());
+        assertThat(responseEntity(responseText(queued), fixedLength), is("abcdefgggggg"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void largeStreamingWritesQueueBoundedOwnedBuffers(boolean fixedLength) throws IOException {
+        DataWriter writer = mock(DataWriter.class);
+        var config = WebServer.builder().writeBufferSize(0).buildPrototype();
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create(), config);
+        String expected = "abcdefghij".repeat(2000);
+        if (fixedLength) {
+            response.contentLength(expected.length());
+        }
+        byte[] reusable = ("ignored-prefix" + expected + "ignored-suffix").getBytes(StandardCharsets.US_ASCII);
+        response.outputStream().write(reusable, "ignored-prefix".length(), expected.length());
+        Arrays.fill(reusable, (byte) 'x');
+        response.commit();
+
+        var queued = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(queued.capture());
+        for (BufferData buffer : queued.getAllValues()) {
+            assertThat("Each queued body slice must stay bounded, allowing for response headers or chunk framing",
+                       buffer.available(), lessThanOrEqualTo(8192 + 256));
+        }
+        assertThat(responseEntity(responseText(queued), fixedLength), is(expected));
+    }
+
+    @Test
+    void oversizedFixedLengthWriteIsRejectedBeforeAnySliceIsQueued() throws IOException {
+        DataWriter writer = mock(DataWriter.class);
+        var config = WebServer.builder().writeBufferSize(0).buildPrototype();
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create(), config);
+        response.contentLength(8192);
+        OutputStream output = response.outputStream();
+
+        IOException exception = assertThrows(IOException.class, () -> output.write(new byte[8193]));
+        assertThat(exception.getMessage(), containsString("additional 1 bytes"));
+        verifyZeroInteractions(writer);
+    }
 
     @Test
     void resetEntityPreservesPublicBeforeSendListeners() {
@@ -1079,6 +1143,27 @@ class Http1ServerResponseTest {
             responseText.append(new String(buffer.readBytes(), StandardCharsets.ISO_8859_1));
         }
         return responseText.toString();
+    }
+
+    private static String responseEntity(String wire, boolean fixedLength) {
+        int offset = wire.indexOf("\r\n\r\n") + 4;
+        if (fixedLength) {
+            return wire.substring(offset);
+        }
+        var entity = new StringBuilder();
+        while (true) {
+            int sizeEnd = wire.indexOf("\r\n", offset);
+            int length = Integer.parseInt(wire.substring(offset, sizeEnd), 16);
+            offset = sizeEnd + 2;
+            if (length == 0) {
+                assertThat(wire.substring(offset), is("\r\n"));
+                return entity.toString();
+            }
+            entity.append(wire, offset, offset + length);
+            offset += length;
+            assertThat(wire.substring(offset, offset + 2), is("\r\n"));
+            offset += 2;
+        }
     }
 
     private static void assertEntityStatusRejectedAfterDeferredEncoderFinalization(boolean closeOutput)
