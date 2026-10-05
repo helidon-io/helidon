@@ -472,6 +472,8 @@ public class Http2ClientConnection {
      * Closes this connection.
      */
     public void close() {
+        // Record the initiator before GOAWAY can cause the peer to close the transport.
+        transportOutcome(ConnectionOutcome.LOCAL_CLOSE);
         close(new IllegalStateException("HTTP/2 connection is closed"));
     }
 
@@ -725,6 +727,7 @@ public class Http2ClientConnection {
         if (!state.compareAndSet(State.RETIRING, State.RETIREMENT_GO_AWAY)) {
             return;
         }
+        transportOutcome(ConnectionOutcome.LOCAL_CLOSE);
         goAwayErrorCode.compareAndSet(null, Http2ErrorCode.NO_ERROR);
         try {
             writeGoAway(0, Http2ErrorCode.NO_ERROR, "Connection target retired");
