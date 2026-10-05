@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.LockSupport;
 
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
@@ -63,14 +64,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -105,13 +110,43 @@ class WebClientTelemetryProviderTest {
                     .create(METRICS_CONFIG, "telemetry", manager.registry());
             verifyNoMoreInteractions(openTelemetry);
 
-            service.handle(WebClientTelemetryProviderTest::response,
-                           request("http://localhost/metrics", Method.create("get")));
+            WebClientServiceRequest successRequest = request("http://localhost/metrics", Method.create("get"));
+            WebClientServiceResponse successResponse = response(successRequest);
+            WebClientServiceRequest errorRequest = request("http://localhost/missing");
+            WebClientServiceResponse errorResponse = response(errorRequest, Status.NOT_FOUND_404);
+            IllegalStateException failure = new IllegalStateException("Request failed");
 
+            long startTime = System.nanoTime();
+            assertThat(service.handle(_ -> {
+                delayRequest();
+                return successResponse;
+            }, successRequest), sameInstance(successResponse));
+            assertThat(service.handle(_ -> {
+                delayRequest();
+                return errorResponse;
+            }, errorRequest), sameInstance(errorResponse));
+            assertThat(assertThrows(IllegalStateException.class,
+                                    () -> service.handle(_ -> {
+                                        delayRequest();
+                                        throw failure;
+                                    }, request("http://localhost/failure"))),
+                       sameInstance(failure));
+            double elapsedSeconds = (System.nanoTime() - startTime) / 1_000_000_000.0;
+
+            ArgumentCaptor<Double> durations = ArgumentCaptor.forClass(Double.class);
             ArgumentCaptor<Attributes> attributes = ArgumentCaptor.forClass(Attributes.class);
             verify(meterProvider).get(OTEL_SERVICE);
-            verify(histogram).record(anyDouble(), attributes.capture());
-            assertThat(attributes.getValue().get(AttributeKey.stringKey("http.request.method")), is("_OTHER"));
+            verify(histogram, times(3)).record(durations.capture(), attributes.capture());
+            assertThat("Each request takes at least one millisecond within the measured interval, in seconds",
+                       durations.getAllValues(), everyItem(allOf(greaterThanOrEqualTo(0.001),
+                                                                 lessThanOrEqualTo(elapsedSeconds))));
+            assertThat(attributes.getAllValues().get(0).get(AttributeKey.stringKey("http.request.method")), is("_OTHER"));
+            assertThat(attributes.getAllValues().stream()
+                               .map(value -> value.get(AttributeKey.longKey("http.response.status.code")))
+                               .toList(), contains(200L, 404L, 0L));
+            assertThat(attributes.getAllValues().stream()
+                               .map(value -> value.get(AttributeKey.stringKey("error.type")))
+                               .toList(), contains("", "404", "IllegalStateException"));
         } finally {
             manager.shutdown();
         }
@@ -193,6 +228,13 @@ class WebClientTelemetryProviderTest {
         assertThat(tracer.spanNames(), empty());
     }
 
+    private static void delayRequest() {
+        long startTime = System.nanoTime();
+        do {
+            LockSupport.parkNanos(1_000_000);
+        } while (System.nanoTime() - startTime < 1_000_000);
+    }
+
     private static WebClientServiceRequest request(String uri) {
         return request(uri, Method.GET);
     }
@@ -202,12 +244,16 @@ class WebClientTelemetryProviderTest {
     }
 
     private static WebClientServiceResponse response(WebClientServiceRequest request) {
+        return response(request, Status.OK_200);
+    }
+
+    private static WebClientServiceResponse response(WebClientServiceRequest request, Status status) {
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
         WebClientServiceResponse response = WebClientServiceResponse.builder()
                 .connection(() -> {
                 })
                 .headers(ClientResponseHeaders.create(WritableHeaders.create()))
-                .status(Status.OK_200)
+                .status(status)
                 .whenComplete(whenComplete)
                 .serviceRequest(request)
                 .build();
