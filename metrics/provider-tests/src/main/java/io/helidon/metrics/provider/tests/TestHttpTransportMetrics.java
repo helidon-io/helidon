@@ -213,8 +213,8 @@ class TestHttpTransportMetrics {
             }
         });
         HttpTransportMetrics.Lease lease = HttpTransportMetrics.acquire(registry);
+        ConnectionObservation connection = lease.connectionOpened(SERVER, TRANSPORT_TCP, NONE);
         try {
-            ConnectionObservation connection = lease.connectionOpened(SERVER, TRANSPORT_TCP, NONE);
             connection.protocolSelected(PROTOCOL_HTTP_2);
             ProviderBarrier barrier = registry.blockNextRegistration();
             ConnectionObservation barrierConnection = lease.connectionOpened(SERVER, barrier.transport(), NONE);
@@ -249,6 +249,7 @@ class TestHttpTransportMetrics {
             assertThat("Connection timing spans the disabled stream lifecycle",
                        duration.totalTime(TimeUnit.NANOSECONDS), is(50D));
         } finally {
+            connection.close(NORMAL);
             closeAndAwait(lease);
             assertRegistryEmpty(registry);
             registry.close();
