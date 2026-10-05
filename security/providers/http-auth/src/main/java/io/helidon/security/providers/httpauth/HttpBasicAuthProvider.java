@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -230,8 +230,7 @@ public class HttpBasicAuthProvider extends SynchronousProvider implements Authen
                 .filter(header -> header.toLowerCase().startsWith(BASIC_PREFIX))
                 .findFirst()
                 .map(this::validateBasicAuth)
-                .orElseGet(() ->
-                        failOrAbstain("Authorization header does not contain basic authentication: " + authorizationHeader));
+                .orElseGet(() -> failOrAbstain("Authorization header does not contain basic authentication"));
     }
 
     private AuthenticationResponse validateBasicAuth(String basicAuthHeader) {
