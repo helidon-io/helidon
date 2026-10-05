@@ -65,6 +65,25 @@ class TestJsonFormatting {
     }
 
     @Test
+    void testNullGaugeDoesNotPreventOtherMetrics() {
+        MetricsConfig metricsConfig = MetricsConfig.create();
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(metricsConfig);
+        try {
+            meterRegistry.getOrCreate(metricsFactory.<Double>gaugeBuilder("null-sample", () -> null));
+            meterRegistry.getOrCreate(metricsFactory.gaugeBuilder("valid-sample", () -> 7.5D));
+
+            JsonObject jsonOutput = checkAndCast(JsonFormatter.builder(metricsConfig, meterRegistry).build().format());
+            assertThat("Null gauge sample is omitted", jsonOutput.containsKey("null-sample"), is(false));
+            assertThat("Valid gauge is still formatted",
+                       jsonOutput.numberValue("valid-sample").map(Number::doubleValue),
+                       OptionalMatcher.optionalValue(is(7.5D)));
+        } finally {
+            meterRegistry.close();
+        }
+    }
+
+    @Test
     void testRetrievingAll() {
         MetricsConfig metricsConfig = MetricsConfig.create();
 
