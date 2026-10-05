@@ -59,6 +59,8 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
     private volatile long lastProgress = System.nanoTime();
     private volatile boolean finished;
     private volatile boolean released;
+    private volatile boolean closeAfterUpload;
+    private boolean successfulResponse;
     private volatile boolean awaitingContinue;
     private volatile boolean uploadCancelled;
     private boolean uploadSkipped;
@@ -165,6 +167,7 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
             uploadSkipped = true;
             whenSent.completeExceptionally(new CancellationException("Server responded before accepting the request entity"));
         }
+        successfulResponse = head.status().code() >= 200 && head.status().code() < 300;
         captureProtocolResponse(connection, head.status(), head.headers());
         return createServiceResponse(client, request, exchangeConnection, head.status(), head.headers(),
                                      whenComplete(), transportObservation());
@@ -188,7 +191,7 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
         if (exchangeConnection == null) {
             closeConnection(failedConnection);
         } else {
-            exchangeConnection.closeResource();
+            closeConnection(exchangeConnection.delegate);
         }
     }
 
@@ -208,7 +211,7 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
     void abort(Throwable cause) {
         whenSent.completeExceptionally(cause);
         if (failure.compareAndSet(null, cause) && exchangeConnection != null) {
-            exchangeConnection.closeResource();
+            closeConnection(exchangeConnection.delegate);
         }
         if (uploader != null && uploader != Thread.currentThread()) {
             uploader.interrupt();
@@ -219,7 +222,7 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
         uploadCancelled = true;
         whenSent.completeExceptionally(new CancellationException("Upload cancelled after redirect or error response"));
         if (exchangeConnection != null) {
-            exchangeConnection.closeResource();
+            closeConnection(exchangeConnection.delegate);
         }
         if (uploader != null) {
             uploader.interrupt();
@@ -239,11 +242,11 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
             join(uploader);
         }
         if (exchangeConnection != null && !closed.get()) {
-            if (success && released && !uploadSkipped && failure.get() == null) {
+            if (success && released && !closeAfterUpload && !uploadSkipped && failure.get() == null) {
                 exchangeConnection.delegate.readTimeout(originalRequest().readTimeout());
                 exchangeConnection.delegate.releaseResource();
             } else {
-                exchangeConnection.closeResource();
+                closeConnection(exchangeConnection.delegate);
             }
         }
     }
@@ -428,7 +431,11 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
 
         @Override
         public void closeResource() {
-            closeConnection(delegate);
+            if (successfulResponse) {
+                closeAfterUpload = true;
+            } else {
+                closeConnection(delegate);
+            }
         }
     }
 }

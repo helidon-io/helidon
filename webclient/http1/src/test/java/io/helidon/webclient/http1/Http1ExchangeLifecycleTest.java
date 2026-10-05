@@ -40,15 +40,59 @@ import io.helidon.webclient.api.WebClient;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class Http1ExchangeLifecycleTest {
     @Test
+    void earlySuccessfulResponseCloseWaitsForPausedUpload() {
+        assertSuccessfulCloseWaitsForUpload("HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n", false);
+    }
+
+    @Test
+    void successfulResponseEntityEofWaitsForPausedUpload() {
+        assertSuccessfulCloseWaitsForUpload("HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 4\r\n\r\nbody", true);
+    }
+
+    @Test
+    void responseFailureClosesImmediatelyAfterDeferredSuccessfulDisposal() {
+        var uploadStarted = new CountDownLatch(1);
+        var physicallyClosed = new CountDownLatch(1);
+        var uploadFinished = new AtomicBoolean();
+        var closedDuringUpload = new AtomicBoolean();
+        var expected = new IOException("Response consumer failed");
+        var connection = new Connection("HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n", () -> {
+            closedDuringUpload.set(!uploadFinished.get());
+            physicallyClosed.countDown();
+        });
+        UncheckedIOException failure = assertThrows(UncheckedIOException.class, () ->
+                client(connection).post("http://localhost/test").exchange(output -> {
+                    uploadStarted.countDown();
+                    try {
+                        await(physicallyClosed);
+                        output.close();
+                    } finally {
+                        uploadFinished.set(true);
+                    }
+                }, response -> {
+                    await(uploadStarted);
+                    response.close();
+                    assertThat(connection.closes.get(), is(0));
+                    throw expected;
+                }));
+        assertThat(failure.getCause(), sameInstance(expected));
+        assertThat(closedDuringUpload.get(), is(true));
+        assertThat(uploadFinished.get(), is(true));
+        assertThat(connection.closes.get(), is(1));
+        assertThat(connection.releases.get(), is(0));
+    }
+
+    @Test
     void concurrentResponseClosersInvokeDelegateOnlyOnce() {
         var firstCloseEntered = new CountDownLatch(1);
         var allowClose = new CountDownLatch(1);
-        var connection = new Connection("HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: 0\r\n\r\n",
+        var connection = new Connection("HTTP/1.1 413 Content Too Large\r\nConnection: close\r\nContent-Length: 0\r\n\r\n",
                                         () -> {
                                             firstCloseEntered.countDown();
                                             await(allowClose);
@@ -112,6 +156,42 @@ class Http1ExchangeLifecycleTest {
         assertThat(connection.writerAcquisitions.get(), is(1));
         assertThat(connection.closes.get(), is(0));
         assertThat(connection.releases.get(), is(1));
+    }
+
+    private static void assertSuccessfulCloseWaitsForUpload(String rawResponse, boolean consumeEntity) {
+        var uploadStarted = new CountDownLatch(1);
+        var allowUpload = new CountDownLatch(1);
+        var uploadFinished = new AtomicBoolean();
+        var closedDuringUpload = new AtomicBoolean();
+        var connection = new Connection(rawResponse, () -> closedDuringUpload.set(!uploadFinished.get()));
+        client(connection).post("http://localhost/test").exchange(output -> {
+            uploadStarted.countDown();
+            await(allowUpload);
+            try (output) {
+                assertThat(connection.closes.get(), is(0));
+                output.write(42);
+            }
+            uploadFinished.set(true);
+        }, response -> {
+            await(uploadStarted);
+            try {
+                if (consumeEntity) {
+                    assertThat(response.entity().as(String.class), is("body"));
+                } else {
+                    response.close();
+                }
+                assertThat(connection.closes.get(), is(0));
+                assertThat(uploadFinished.get(), is(false));
+                // A subsequent release request must not make the close-marked connection reusable.
+                ((Http1ClientResponseImpl) response).connection().releaseResource();
+            } finally {
+                allowUpload.countDown();
+            }
+        });
+        assertThat(uploadFinished.get(), is(true));
+        assertThat(closedDuringUpload.get(), is(false));
+        assertThat(connection.closes.get(), is(1));
+        assertThat(connection.releases.get(), is(0));
     }
 
     private static Http1Client client(Connection connection) {
