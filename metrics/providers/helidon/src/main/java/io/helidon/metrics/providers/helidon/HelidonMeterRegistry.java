@@ -121,6 +121,11 @@ final class HelidonMeterRegistry implements MeterRegistry {
     }
 
     @Override
+    public boolean isMeterEnabled(String name) {
+        return metricsConfig.isMeterEnabled(name);
+    }
+
+    @Override
     public boolean isMeterEnabled(String name, Map<String, String> tags) {
         Objects.requireNonNull(name);
         Objects.requireNonNull(tags);
