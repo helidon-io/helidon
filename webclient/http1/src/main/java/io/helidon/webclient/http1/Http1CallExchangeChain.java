@@ -183,7 +183,7 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
                 uploader.join();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                abort(e);
+                abortOnCallerThread(e);
                 throw new IllegalStateException("Interrupted waiting for request upload", e);
             }
         }
@@ -213,18 +213,15 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
     }
 
     void abort(Throwable cause) {
-        whenSent.completeExceptionally(cause);
-        if (failure.compareAndSet(null, cause)) {
-            if (transportObservation() != null) {
-                transportObservation().fail(cause);
-            }
-            if (exchangeConnection != null) {
-                closeConnection(exchangeConnection.delegate);
-            }
-        }
-        if (uploader != null && uploader != Thread.currentThread()) {
-            uploader.interrupt();
-        }
+        Throwable actualCause = prepareAbort(cause);
+        whenSent.completeExceptionally(actualCause);
+    }
+
+    void abortOnCallerThread(Throwable cause) {
+        Throwable actualCause = prepareAbort(cause);
+        // Response processing belongs to the caller, including failure before a response was created.
+        whenComplete().completeExceptionally(actualCause);
+        whenSent.completeExceptionally(actualCause);
     }
 
     void cancelUpload() {
@@ -240,7 +237,7 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
 
     void finish(boolean success) {
         if (!success) {
-            abort(new IllegalStateException("HTTP/1 exchange did not complete"));
+            abortOnCallerThread(new IllegalStateException("HTTP/1 exchange did not complete"));
         }
         finished = true;
         if (watchdog != null) {
@@ -272,6 +269,21 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
         if (interrupted) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    private Throwable prepareAbort(Throwable cause) {
+        if (failure.compareAndSet(null, cause)) {
+            if (transportObservation() != null) {
+                transportObservation().fail(cause);
+            }
+            if (exchangeConnection != null) {
+                closeConnection(exchangeConnection.delegate);
+            }
+        }
+        if (uploader != null && uploader != Thread.currentThread()) {
+            uploader.interrupt();
+        }
+        return failure.get();
     }
 
     private void closeConnection(ClientConnection delegate) {

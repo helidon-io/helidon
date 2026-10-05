@@ -54,11 +54,17 @@ public interface Http1ClientRequest extends ClientRequest<Http1ClientRequest> {
      * WebClient service completion callbacks can also run concurrently. Non-async callbacks registered with
      * {@link io.helidon.webclient.api.WebClientServiceRequest#whenSent()} can run on the upload thread when sending
      * succeeds, or on the upload, calling, or timeout thread when sending fails. Callbacks registered after a stage
-     * completes can run on the registering thread. These callbacks can overlap service-chain execution, response
+     * completes can run on the registering thread. Non-async callbacks can also run on another thread awaiting
+     * the stage; do not assume callback thread affinity. These callbacks can overlap service-chain execution, response
      * handling, and {@link io.helidon.webclient.api.WebClientServiceRequest#whenComplete()} callbacks.
      * Use immutable snapshots or synchronization when sharing mutable request state, including headers, properties,
      * and request IDs. Propagating the request context shares its registered values; those values must be safe for
      * concurrent access when used by both handlers or service callbacks.
+     * <p>
+     * Compose completion stages or use a suitable async continuation when one callback depends on another stage.
+     * Do not block inside a service callback waiting for another completion stage or for this method to return:
+     * the callback can run inline on a thread needed to make that progress. Do not assume a fixed ordering between
+     * upload and response completion callbacks.
      * <p>
      * Redirect responses are delivered to the response handler without replaying the upload, irrespective of
      * {@link #followRedirects(boolean)}. Successful response headers do not stop an ongoing upload.

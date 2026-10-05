@@ -235,21 +235,21 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
                         chain.cancelUpload();
                     }
                 } catch (IOException | RuntimeException | Error e) {
-                    chain.abort(e);
+                    chain.abortOnCallerThread(e);
                     throw e;
                 }
             }
             chain.awaitUpload();
             success = true;
         } catch (IOException e) {
-            chain.abort(e);
+            chain.abortOnCallerThread(e);
             throw new UncheckedIOException(e);
         } catch (RuntimeException e) {
-            chain.abort(e);
+            chain.abortOnCallerThread(e);
             chain.checkFailure();
             throw e;
         } catch (Error e) {
-            chain.abort(e);
+            chain.abortOnCallerThread(e);
             throw e;
         } finally {
             chain.finish(success);

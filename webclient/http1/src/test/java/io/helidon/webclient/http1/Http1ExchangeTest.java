@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -45,6 +46,7 @@ import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.WebClientServiceRequest;
+import io.helidon.webclient.api.WebClientServiceResponse;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -59,6 +61,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class Http1ExchangeTest {
@@ -264,6 +267,114 @@ class Http1ExchangeTest {
         assertThat(connection.releases.get(), is(0));
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void abortTerminatesServiceFuturesWithoutBlockingTransport(boolean waitForResponseCompletion) throws Exception {
+        var reading = new CountDownLatch(1);
+        var closed = new CountDownLatch(1);
+        var uploadStarted = new CountDownLatch(1);
+        var releaseUpload = new CountDownLatch(1);
+        var callbackEntered = new CountDownLatch(1);
+        var callbackReturned = new CountDownLatch(1);
+        var completion = new AtomicReference<CompletableFuture<WebClientServiceResponse>>();
+        var completionFailure = new AtomicReference<Throwable>();
+        var sentFailure = new AtomicReference<Throwable>();
+        var callbackThread = new AtomicReference<Thread>();
+        var uploadThread = new AtomicReference<Thread>();
+        var exchangeFailure = new CompletableFuture<Throwable>();
+        var connection = new Connection(() -> {
+            reading.countDown();
+            try {
+                await(closed);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            throw new UncheckedIOException(new IOException("Response read unblocked by closure"));
+        }, closed::countDown);
+        var client = Http1Client.builder().sendExpectContinue(false).addService((chain, request) -> {
+            CompletableFuture<WebClientServiceResponse> responseCompleted = request.whenComplete().toCompletableFuture();
+            completion.set(responseCompleted);
+            responseCompleted.whenComplete((_, failure) -> completionFailure.set(failure));
+            request.whenSent().whenComplete((_, failure) -> {
+                sentFailure.set(failure);
+                callbackThread.set(Thread.currentThread());
+                callbackEntered.countDown();
+                try {
+                    if (waitForResponseCompletion) {
+                        try {
+                            responseCompleted.join();
+                        } catch (CompletionException _) {
+                            // A failed exchange must terminate the response stage exceptionally.
+                        }
+                    }
+                } finally {
+                    callbackReturned.countDown();
+                }
+            });
+            return chain.proceed(request);
+        }).build();
+        Thread caller = Thread.ofVirtual().name("exchange-abort-reproducer").start(() -> {
+            try {
+                client.post("http://localhost/test").connection(connection)
+                        .readTimeout(Duration.ofSeconds(1)).header(HeaderNames.CONTENT_LENGTH, "1")
+                        .exchange(output -> {
+                            uploadThread.set(Thread.currentThread());
+                            uploadStarted.countDown();
+                            await(releaseUpload);
+                            throw new IOException("Reproducer cleanup released upload");
+                        }, response -> {
+                            throw new AssertionError("The stalled peer must not provide a response");
+                        });
+                exchangeFailure.complete(new AssertionError("The stalled exchange unexpectedly succeeded"));
+            } catch (Throwable failure) {
+                exchangeFailure.complete(failure);
+            }
+        });
+        boolean callerFinished;
+        boolean transportClosed;
+        boolean responseCompleted;
+        boolean callbackFinished;
+        try {
+            await(reading);
+            await(uploadStarted);
+            await(callbackEntered);
+            callerFinished = caller.join(Duration.ofSeconds(2));
+            transportClosed = closed.getCount() == 0;
+            responseCompleted = completion.get().isCompletedExceptionally();
+            callbackFinished = callbackReturned.getCount() == 0;
+        } finally {
+            // Release a blocked callback before joining the exchange's watchdog and uploader.
+            if (completion.get() != null) {
+                completion.get().completeExceptionally(new IOException("Reproducer cleanup released callback"));
+            }
+            closed.countDown();
+            releaseUpload.countDown();
+            assertThat("Exchange caller terminated during cleanup", caller.join(Duration.ofSeconds(5)), is(true));
+            if (callbackThread.get() != null) {
+                assertThat("Callback thread terminated during cleanup",
+                           callbackThread.get().join(Duration.ofSeconds(5)), is(true));
+            }
+            if (uploadThread.get() != null) {
+                assertThat("Upload thread terminated during cleanup",
+                           uploadThread.get().join(Duration.ofSeconds(5)), is(true));
+            }
+        }
+        assertAll("Abort state before test cleanup; callback waits for response=" + waitForResponseCompletion,
+                  () -> assertThat("Abort closes the transport", transportClosed, is(true)),
+                  () -> assertThat("Abort terminates the response stage", responseCompleted, is(true)),
+                  () -> assertThat("The service callback finishes", callbackFinished, is(true)),
+                  () -> assertThat("The exchange caller finishes", callerFinished, is(true)),
+                  () -> assertThat("Watchdog supplied the original failure", sentFailure.get(),
+                                   instanceOf(SocketTimeoutException.class)),
+                  () -> assertThat("Response stage retains the winning failure", completionFailure.get(),
+                                   sameInstance(sentFailure.get())),
+                  () -> assertThat("Exchange failed after cleanup", exchangeFailure.join(),
+                                   instanceOf(UncheckedIOException.class)),
+                  () -> assertThat("Exchange retains the winning failure",
+                                   ((UncheckedIOException) exchangeFailure.join()).getCause(),
+                                   sameInstance(sentFailure.get())));
+    }
+
     @Test
     void healthyUploadCanOutlastResponseReadTimeout() {
         var uploaded = new CountDownLatch(1);
@@ -305,14 +416,34 @@ class Http1ExchangeTest {
         }
     }
 
-    @Test
-    void responseFailureInterruptsAndJoinsUpload() {
-        var connection = new Connection("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1, 2})
+    void responseFailureInterruptsAndJoinsUpload(int failureKind) {
+        var connection = new Connection("HTTP/1.1 200 OK\r\nContent-Length: 1\r\n\r\n*");
         var started = new CountDownLatch(1);
         var stopped = new AtomicBoolean();
-        var expected = new IOException("Response consumer failed");
-        UncheckedIOException failure = assertThrows(UncheckedIOException.class, () ->
-                request(connection).exchange(output -> {
+        Throwable expected = switch (failureKind) {
+            case 0 -> new IOException("Response consumer failed");
+            case 1 -> new IllegalStateException("Response consumer failed");
+            default -> new AssertionError("Response consumer failed");
+        };
+        var sentFailure = new AtomicReference<Throwable>();
+        var completionFailure = new AtomicReference<Throwable>();
+        var completionThread = new AtomicReference<Thread>();
+        Thread caller = Thread.currentThread();
+        var client = Http1Client.builder().sendExpectContinue(false).addService((chain, request) -> {
+            request.whenComplete().whenComplete((_, failure) -> {
+                completionFailure.set(failure);
+                completionThread.set(Thread.currentThread());
+            });
+            request.whenSent().whenComplete((_, failure) -> {
+                assertThat("Transport closes before notification", connection.closes.get(), is(1));
+                sentFailure.set(failure);
+            });
+            return chain.proceed(request);
+        }).build();
+        Throwable failure = assertThrows(Throwable.class, () ->
+                client.post("http://localhost/test").connection(connection).exchange(output -> {
                     started.countDown();
                     try {
                         await(new CountDownLatch(1));
@@ -321,12 +452,52 @@ class Http1ExchangeTest {
                     }
                 }, response -> {
                     await(started);
-                    throw expected;
+                    switch (failureKind) {
+                        case 0 -> throw (IOException) expected;
+                        case 1 -> throw (RuntimeException) expected;
+                        default -> throw (Error) expected;
+                    }
                 }));
-        assertThat(failure.getCause(), sameInstance(expected));
+        assertThat(failure instanceof UncheckedIOException ? failure.getCause() : failure, sameInstance(expected));
+        assertThat(sentFailure.get(), sameInstance(expected));
+        assertThat(completionFailure.get(), sameInstance(expected));
+        assertThat(completionThread.get(), sameInstance(caller));
         assertThat(stopped.get(), is(true));
         assertThat(connection.releases.get(), is(0));
         assertThat(connection.closes.get(), greaterThan(0));
+    }
+
+    @Test
+    void serviceFailureBeforeResponseTerminatesBothStagesOnCaller() {
+        var connection = new Connection("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
+        var expected = new IllegalStateException("Service rejected request before transport");
+        var sentFailure = new AtomicReference<Throwable>();
+        var completionFailure = new AtomicReference<Throwable>();
+        var completionThread = new AtomicReference<Thread>();
+        var uploadCalled = new AtomicBoolean();
+        Thread caller = Thread.currentThread();
+        var client = Http1Client.builder().sendExpectContinue(false).addService((chain, request) -> {
+            request.whenComplete().whenComplete((_, failure) -> {
+                completionFailure.set(failure);
+                completionThread.set(Thread.currentThread());
+            });
+            request.whenSent().whenComplete((_, failure) -> {
+                sentFailure.set(failure);
+            });
+            throw expected;
+        }).build();
+
+        var request = client.post("http://localhost/test").connection(connection);
+        var failure = assertThrows(IllegalStateException.class, () -> request.exchange(output -> uploadCalled.set(true),
+                response -> {
+                    throw new AssertionError("Rejected request must not deliver a response");
+                }));
+
+        assertThat(failure, sameInstance(expected));
+        assertThat(sentFailure.get(), sameInstance(expected));
+        assertThat(completionFailure.get(), sameInstance(expected));
+        assertThat(completionThread.get(), sameInstance(caller));
+        assertThat(uploadCalled.get(), is(false));
     }
 
     @Test
