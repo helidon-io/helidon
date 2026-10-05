@@ -349,6 +349,36 @@ class TestHelidonMeterConfiguration {
         }
     }
 
+    @Test
+    void nameOnlyEnablementUsesFirstMatchingFullNameRule() {
+        MetricsConfig config = configBuilder()
+                .addMeter(meter -> meter.namePattern(Pattern.compile("enabled")).enabled(true))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("enabled|disabled")).enabled(false))
+                .addMeter(meter -> meter.namePattern(Pattern.compile("disabled")).enabled(true))
+                .build();
+        try (var fixture = new Fixture(config)) {
+            assertThat("The first enabled rule wins", fixture.registry.isMeterEnabled("enabled"), is(true));
+            assertThat("The first disabled rule wins", fixture.registry.isMeterEnabled("disabled"), is(false));
+            assertThat("Rules match the entire name", fixture.registry.isMeterEnabled("prefix.disabled"), is(true));
+            assertThat("Unmatched names retain default enablement", fixture.registry.isMeterEnabled("unrelated"), is(true));
+            assertThrows(NullPointerException.class, () -> fixture.registry.isMeterEnabled(null));
+        }
+    }
+
+    @Test
+    void nameOnlyEnablementHonorsGlobalDisableBeforeMeterRules() {
+        MetricsConfig config = configBuilder().enabled(false)
+                .addMeter(meter -> meter.namePattern(Pattern.compile("enabled")).enabled(true))
+                .build();
+        try (var fixture = new Fixture(config)) {
+            assertThat("An enabled rule cannot override global disablement",
+                       fixture.registry.isMeterEnabled("enabled"), is(false));
+            assertThat("Global disablement includes unmatched names",
+                       fixture.registry.isMeterEnabled("unrelated"), is(false));
+            assertThrows(NullPointerException.class, () -> fixture.registry.isMeterEnabled(null));
+        }
+    }
+
     private static MetricsConfig.Builder configBuilder() {
         return MetricsConfig.builder().config(Config.empty()).warnOnMultipleRegistries(false);
     }

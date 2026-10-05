@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import io.helidon.http.HttpTransportObserver.ConnectionObservation;
 import io.helidon.http.HttpTransportObserver.ConnectionOutcome;
@@ -191,6 +192,62 @@ class TestHttpTransportMetrics {
                              "outcome", "remote-close").totalTime(TimeUnit.NANOSECONDS),
                        is(150.0));
             assertBoundedTags(registry);
+        } finally {
+            closeAndAwait(lease);
+            assertRegistryEmpty(registry);
+            registry.close();
+        }
+    }
+
+    @Test
+    void configuredDisabledStreamsSkipObservationsAndTimingWhileConnectionsRecord() throws Exception {
+        TestClock clock = new TestClock();
+        MetricsConfig config = MetricsConfig.builder()
+                .addMeter(meter -> meter.namePattern(Pattern.compile("helidon\\.http\\.streams\\..*")).enabled(false))
+                .build();
+        TestRegistry registry = new TestRegistry(metricsFactory().createMeterRegistry(clock, config));
+        AtomicInteger streamRegistrations = new AtomicInteger();
+        registry.onMeterAdded(meter -> {
+            if (meter.id().name().startsWith("helidon.http.streams.")) {
+                streamRegistrations.incrementAndGet();
+            }
+        });
+        HttpTransportMetrics.Lease lease = HttpTransportMetrics.acquire(registry);
+        try {
+            ConnectionObservation connection = lease.connectionOpened(SERVER, TRANSPORT_TCP, NONE);
+            connection.protocolSelected(PROTOCOL_HTTP_2);
+            ProviderBarrier barrier = registry.blockNextRegistration();
+            ConnectionObservation barrierConnection = lease.connectionOpened(SERVER, barrier.transport(), NONE);
+            try {
+                barrier.awaitEntered();
+                clock.advance(10);
+                long samplesBeforeStream = clock.samples.get();
+                StreamObservation stream = connection.streamOpened(BIDIRECTIONAL, REMOTE);
+                clock.advance(40);
+                stream.close(COMPLETED);
+
+                assertThat("Disabled streams return the shared no-op observation",
+                           stream, sameInstance(StreamObservation.noop()));
+                assertThat("Disabled stream open and close do not sample the clock",
+                           clock.samples.get(), is(samplesBeforeStream));
+            } finally {
+                barrierConnection.close(NORMAL);
+                barrier.release();
+            }
+            connection.close(NORMAL);
+            synchronize(registry, lease);
+
+            assertThat("No disabled stream meter is registered", streamRegistrations.get(), is(0));
+            assertThat("The registry contains no stream series",
+                       registry.meters(meter -> meter.id().name().startsWith("helidon.http.streams.")), empty());
+            assertThat("Connection metrics remain enabled",
+                       counter(registry, "helidon.http.connections.opened",
+                               "role", "server", "transport", "tcp", "handshake", "none").count(), is(1L));
+            Timer duration = timer(registry, "helidon.http.connections.duration",
+                                   "role", "server", "transport", "tcp", "protocol", "http/2", "outcome", "normal");
+            assertThat("Connection duration still records", duration.count(), is(1L));
+            assertThat("Connection timing spans the disabled stream lifecycle",
+                       duration.totalTime(TimeUnit.NANOSECONDS), is(50D));
         } finally {
             closeAndAwait(lease);
             assertRegistryEmpty(registry);
@@ -940,6 +997,7 @@ class TestHttpTransportMetrics {
 
     private static final class TestClock implements Clock {
         private final AtomicLong monotonicTime = new AtomicLong();
+        private final AtomicLong samples = new AtomicLong();
 
         @Override
         public long wallTime() {
@@ -948,6 +1006,7 @@ class TestHttpTransportMetrics {
 
         @Override
         public long monotonicTime() {
+            samples.incrementAndGet();
             return monotonicTime.get();
         }
 
