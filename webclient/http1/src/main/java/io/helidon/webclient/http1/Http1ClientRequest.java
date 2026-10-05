@@ -39,10 +39,16 @@ public interface Http1ClientRequest extends ClientRequest<Http1ClientRequest> {
     /**
      * Upload an entity while consuming its response concurrently.
      * The upload handler runs on a virtual thread with the request context; the response handler runs on the calling
-     * thread. Both handlers must finish before this method returns. Consume the response entity inside its handler;
-     * neither the response nor its entity stream may be used after the handler returns.
+     * thread. This method waits for the response handler and any started upload handler to finish before returning.
+     * Consume the response entity inside its handler; neither the response nor its entity stream may be used after
+     * the handler returns.
      * The upload handler must close its output stream and honor interruption when waiting outside transport I/O.
      * A handler failure closes the connection and interrupts the upload handler.
+     * <p>
+     * If a final response arrives during the initial {@code Expect: 100-continue} wait, the upload handler is not
+     * invoked, even if the final response is successful. The response handler still receives that response.
+     * Acquire upload-specific resources inside the upload handler, or manage their cleanup outside this method;
+     * cleanup must not depend on the upload handler being invoked.
      * <p>
      * WebClient service completion callbacks can also run concurrently. Non-async callbacks registered with
      * {@link io.helidon.webclient.api.WebClientServiceRequest#whenSent()} can run on the upload thread when sending

@@ -245,9 +245,9 @@ writing the request. Increasing socket buffers only postpones this problem.
 
 Use `Http1ClientRequest.exchange` for this interaction. It runs the upload
 handler on a virtual thread with the request context and invokes the response
-handler on the calling thread. The call completes when both handlers finish.
-The entity can be larger than available memory because neither handler needs
-to materialize it.
+handler on the calling thread. The call waits for the response handler and any
+started upload handler to finish. The entity can be larger than available
+memory because neither handler needs to materialize it.
 
 ```java
 Http1Client client = Http1Client.builder()
@@ -288,6 +288,12 @@ Follow these rules for streaming exchanges:
   are closed before `exchange` returns; do not retain them for later reading.
 - Close the upload stream in its handler. With a declared `Content-Length`,
   write exactly that many bytes. Otherwise, the client uses chunked encoding.
+- If a final response arrives during the initial `Expect: 100-continue` wait,
+  the upload handler is not invoked, even for a successful final response.
+  The response handler still receives that response. Acquire upload-specific
+  resources inside the upload handler, as in the file-copy example, or manage
+  their cleanup outside `exchange`; cleanup must not rely on the upload
+  handler being invoked.
 - Read and write in bounded pieces. Avoid `readAllBytes()` and conversion to
   `byte[]` or `String` for entities that might be large. HTTP/1 chunk boundaries
   do not determine application read boundaries.
