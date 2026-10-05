@@ -336,7 +336,7 @@ class HttpTransportMetricSelectionTest {
                     }
                     yield proxy;
                 }
-                case "scope", "description", "baseUnit", "percentiles" -> proxy;
+                case "origin", "description", "baseUnit", "percentiles" -> proxy;
                 case "supplier" -> value;
                 case "toString" -> name;
                 default -> throw new AssertionError("Unexpected meter builder method: " + method);
