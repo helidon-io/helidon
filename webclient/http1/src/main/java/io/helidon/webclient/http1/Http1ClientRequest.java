@@ -18,6 +18,7 @@ package io.helidon.webclient.http1;
 
 import java.io.IOException;
 
+import io.helidon.common.Functions;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.webclient.api.ClientRequest;
 
@@ -69,21 +70,8 @@ public interface Http1ClientRequest extends ClientRequest<Http1ClientRequest> {
      * @param uploadHandler handler producing the request entity
      * @param responseHandler handler consuming the response
      */
-    void exchange(OutputStreamHandler uploadHandler, ResponseHandler responseHandler);
-
-    /**
-     * Consumes a response during a concurrent upload.
-     */
-    @FunctionalInterface
-    interface ResponseHandler {
-        /**
-         * Consume the response before returning.
-         *
-         * @param response response to consume
-         * @throws IOException if consuming the response fails
-         */
-        void handle(Http1ClientResponse response) throws IOException;
-    }
+    void exchange(OutputStreamHandler uploadHandler,
+                  Functions.CheckedConsumer<Http1ClientResponse, IOException> responseHandler);
 
     /**
      * Upgrade the current request to a different protocol.

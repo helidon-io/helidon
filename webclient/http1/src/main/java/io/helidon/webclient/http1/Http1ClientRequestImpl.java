@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
+import io.helidon.common.Functions;
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.ClientRequestHeaders;
@@ -217,7 +218,8 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
     }
 
     @Override
-    public void exchange(OutputStreamHandler uploadHandler, ResponseHandler responseHandler) {
+    public void exchange(OutputStreamHandler uploadHandler,
+                         Functions.CheckedConsumer<Http1ClientResponse, IOException> responseHandler) {
         Objects.requireNonNull(uploadHandler);
         Objects.requireNonNull(responseHandler);
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
@@ -228,7 +230,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
             prepareOutputStreamRequest();
             try (Http1ClientResponse response = invokeWithServices(chain, whenSent, whenComplete)) {
                 try {
-                    responseHandler.handle(response);
+                    responseHandler.accept(response);
                     if (response.status().code() >= 300) {
                         chain.cancelUpload();
                     }
