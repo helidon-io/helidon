@@ -369,6 +369,8 @@ class JsonFormatter implements MeterRegistryFormatter {
                 builder.set(nameWithTags, v.longValue());
             } else if (number instanceof Short v) {
                 builder.set(nameWithTags, v);
+            } else {
+                builder.set(nameWithTags, number.doubleValue());
             }
         }
 

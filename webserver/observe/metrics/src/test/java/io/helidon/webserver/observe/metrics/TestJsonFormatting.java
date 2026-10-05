@@ -15,6 +15,7 @@
  */
 package io.helidon.webserver.observe.metrics;
 
+import java.io.Serial;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -45,6 +46,23 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TestJsonFormatting {
+
+    @Test
+    void testCustomNumberGauge() {
+        MetricsConfig metricsConfig = MetricsConfig.create();
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(metricsConfig);
+        try {
+            meterRegistry.getOrCreate(metricsFactory.gaugeBuilder("custom-number", () -> new CustomNumber(1.25)));
+
+            JsonObject jsonOutput = checkAndCast(JsonFormatter.builder(metricsConfig, meterRegistry).build().format());
+            assertThat("Custom numeric gauge retains its fractional value",
+                       jsonOutput.numberValue("custom-number").map(Number::doubleValue),
+                       OptionalMatcher.optionalValue(is(1.25D)));
+        } finally {
+            meterRegistry.close();
+        }
+    }
 
     @Test
     void testRetrievingAll() {
@@ -418,6 +436,37 @@ class TestJsonFormatting {
         assertThat("Result", metricsOutput, OptionalMatcher.optionalPresent());
         assertThat("Result", metricsOutput.get(), is(instanceOf(JsonObject.class)));
         return (JsonObject) metricsOutput.get();
+    }
+
+    private static final class CustomNumber extends Number {
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        private final double value;
+
+        private CustomNumber(double value) {
+            this.value = value;
+        }
+
+        @Override
+        public int intValue() {
+            return (int) value;
+        }
+
+        @Override
+        public long longValue() {
+            return (long) value;
+        }
+
+        @Override
+        public float floatValue() {
+            return (float) value;
+        }
+
+        @Override
+        public double doubleValue() {
+            return value;
+        }
     }
 
 }
