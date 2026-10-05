@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,6 +45,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class OutputStreamAndContentLengthTest {
+    private static final int RESPONSE_CHUNK_SIZE = 8192;
+
     private static byte[] bytes;
     private static byte[] smallBytes;
     private final WebClient client;
@@ -137,25 +139,18 @@ class OutputStreamAndContentLengthTest {
     }
 
     private static void chunked(ServerRequest req, ServerResponse res) throws IOException {
-        try (OutputStream out = res.outputStream(); InputStream in = req.content().inputStream()) {
-            in.transferTo(out);
-        }
-
+        echoRequest(req, res);
     }
 
     private static void goodContentLength(ServerRequest req, ServerResponse res) throws IOException {
         // should not be chunked, as we have a content length
         res.contentLength(bytes.length);
-        try (OutputStream out = res.outputStream(); InputStream in = req.content().inputStream()) {
-            in.transferTo(out);
-        }
+        echoRequest(req, res);
     }
 
     private static void outOfOrderContentLength(ServerRequest req, ServerResponse res) throws IOException {
         // should transfer all data and not fail
-        try (OutputStream out = res.outputStream(); InputStream in = req.content().inputStream()) {
-            in.transferTo(out);
-        }
+        echoRequest(req, res);
         try {
             res.contentLength(bytes.length);
             throw new InternalServerException("Content length cannot be set after stream was requested", new RuntimeException());
@@ -175,6 +170,21 @@ class OutputStreamAndContentLengthTest {
             throw new InternalServerException("Content length cannot be set after stream was requested", new RuntimeException());
         } catch (IllegalStateException ignored) {
             // this is expected
+        }
+    }
+
+    private static void echoRequest(ServerRequest req, ServerResponse res) throws IOException {
+        // The client finishes writing the request before reading the response. Buffer the request first
+        // so neither peer blocks writing while waiting for the other to drain its socket buffer.
+        byte[] body;
+        try (InputStream in = req.content().inputStream()) {
+            body = in.readAllBytes();
+        }
+        try (OutputStream out = res.outputStream()) {
+            // Preserve multiple writes so the response is not optimized into a single content-length chunk.
+            for (int offset = 0; offset < body.length; offset += RESPONSE_CHUNK_SIZE) {
+                out.write(body, offset, Math.min(RESPONSE_CHUNK_SIZE, body.length - offset));
+            }
         }
     }
 }
