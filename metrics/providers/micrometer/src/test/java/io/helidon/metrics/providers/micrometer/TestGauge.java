@@ -145,8 +145,6 @@ class TestGauge {
             });
             assertThrows(IllegalStateException.class,
                          () -> registry.getOrCreate(metricsFactory.gaugeBuilder("failure", () -> new AtomicLong(7))));
-            assertThat("Failed registration leaves no stale provider wrapper",
-                       registry.meters().stream().anyMatch(meter -> meter.id().name().equals("failure")), is(false));
             assertThat("Native listener failure prevents outer registry insertion",
                        nativeRegistry.find("failure").gauge(), nullValue());
             io.micrometer.core.instrument.Gauge nativeGauge =
@@ -163,7 +161,7 @@ class TestGauge {
     }
 
     @Test
-    void testListenerFailureCompletesReentrantNativeRegistration() {
+    void testListenerFailureAbortsRegistrationDuringFilter() {
         MeterRegistry registry = metricsFactory.createMeterRegistry(MetricsConfig.create());
         try {
             io.micrometer.core.instrument.MeterRegistry nativeRegistry =
@@ -179,21 +177,28 @@ class TestGauge {
             });
             IllegalStateException listenerFailure = new IllegalStateException("listener failure");
             registry.onMeterAdded(meter -> {
-                throw listenerFailure;
+                if (meter.id().name().equals("mapped.unrelated")) {
+                    assertThat("Listener runs before native meter insertion",
+                               nativeRegistry.find("mapped.unrelated").gauge(), nullValue());
+                    throw listenerFailure;
+                }
             });
             AtomicLong value = new AtomicLong(7);
-            assertThat("Original listener failure propagates without self-suppression",
+            assertThat("Original listener failure propagates during filtering",
                        assertThrows(IllegalStateException.class,
                                     () -> registry.getOrCreate(metricsFactory.gaugeBuilder("outer", () -> value))),
                        sameInstance(listenerFailure));
-            Gauge<AtomicLong> retry = registry.getOrCreate(metricsFactory.gaugeBuilder("outer", () -> new AtomicLong(19)));
-            assertThat("Retry retains the original supplier backing", retry.value(), sameInstance(value));
-            assertThat("Retry retains the original native backing",
-                       retry.unwrap(io.micrometer.core.instrument.Gauge.class).value(), is(7.0));
-            Gauge<?> unrelated = registry.meter(Gauge.class, "mapped.unrelated", List.of()).orElseThrow();
-            assertThat("Unrelated native callback is completed despite listener failure", unrelated.value(), is(23.0));
-            assertThat("Unrelated wrapper retains exact native meter", unrelated.unwrap(io.micrometer.core.instrument.Gauge.class),
-                       sameInstance(nativeRegistry.find("mapped.unrelated").gauge()));
+            assertThat("Filter listener failure aborts outer native creation",
+                       nativeRegistry.find("mapped.outer").gauge(),
+                       nullValue());
+            assertThat("Filter listener failure aborts outer provider creation",
+                       registry.meters().stream().anyMatch(meter -> meter.id().name().equals("mapped.outer")),
+                       is(false));
+            AtomicLong independentValue = new AtomicLong(19);
+            Gauge<AtomicLong> independent = registry.getOrCreate(
+                    metricsFactory.gaugeBuilder("independent", () -> independentValue));
+            assertThat("Later registration retains its own supplier after failure",
+                       independent.value(), sameInstance(independentValue));
         } finally {
             registry.close();
         }

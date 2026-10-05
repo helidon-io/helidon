@@ -629,8 +629,8 @@ final class HttpTransportMetricsState {
                         GaugeValue activeValue = Objects.requireNonNull(gaugeValue);
                         yield registry.getOrCreate(metricsFactory.gaugeBuilder(id.name, () -> activeValue)
                                                            .origin(HttpTransportMetrics.class.getName())
-                                                            .tags(tags)
-                                                            .description(id.description));
+                                                           .tags(tags)
+                                                           .description(id.description));
                     }
                     case TIMER -> {
                         Timer.Builder builder = metricsFactory.timerBuilder(id.name)
