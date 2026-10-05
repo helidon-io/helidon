@@ -109,15 +109,15 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
      */
     private final Map<Meter, MMeter> meters = new HashMap<>();
 
-    // Protected by the write lock. Registrations can nest when native filters or listeners register another meter.
-    private List<Meter> pendingMeterAdds;
-    private Map<Gauge, Object> pendingGaugeSources;
-
     private final Map<io.helidon.metrics.api.Meter.Id, MMeter<?>> metersById = new HashMap<>();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final Condition closeCompleted = lock.writeLock().newCondition();
     private LifecycleState lifecycleState = LifecycleState.OPEN;
     private volatile Thread closeThread;
+
+    // Protected by the write lock. Registrations can nest when native filters or listeners register another meter.
+    private List<Meter> pendingMeterAdds;
+    private Map<Gauge, Object> pendingGaugeSources;
 
     private MMeterRegistry(io.micrometer.core.instrument.MeterRegistry delegate,
                            MicrometerMetricsFactory metricsFactory,
