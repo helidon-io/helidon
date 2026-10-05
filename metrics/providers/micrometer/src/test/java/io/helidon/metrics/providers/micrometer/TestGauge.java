@@ -33,7 +33,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -141,10 +143,16 @@ class TestGauge {
             });
             assertThrows(IllegalStateException.class,
                          () -> registry.getOrCreate(metricsFactory.gaugeBuilder("failure", () -> new AtomicLong(7))));
+            assertThat("Failed registration leaves no stale provider wrapper",
+                       registry.meters().stream().anyMatch(meter -> meter.id().name().equals("failure")), is(false));
+            assertThat("Native listener failure prevents outer registry insertion",
+                       nativeRegistry.find("failure").gauge(), nullValue());
             io.micrometer.core.instrument.Gauge nativeGauge =
                     io.micrometer.core.instrument.Gauge.builder("failure", () -> 19).register(nativeRegistry);
             Gauge<?> wrapper = registry.meter(Gauge.class, "failure", List.of()).orElseThrow();
-            assertThat("Later native registration has its own backing", wrapper.value(), is(19.0));
+            // A composite publisher can retain the first native backing before the outer listener fails.
+            assertThat("Later native registration uses a native value wrapper", wrapper.value(), instanceOf(Double.class));
+            assertThat("Later native registration follows its actual backing", wrapper.value(), is(nativeGauge.value()));
             assertThat("Later native registration has its own identity",
                        wrapper.unwrap(io.micrometer.core.instrument.Gauge.class), sameInstance(nativeGauge));
         } finally {
