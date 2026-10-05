@@ -160,9 +160,6 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
                             }
                         } catch (Throwable e) {
                             if (!uploadCancelled) {
-                                if (transportObservation() != null) {
-                                    transportObservation().fail(e);
-                                }
                                 abort(e);
                             }
                         }
@@ -216,8 +213,13 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
 
     void abort(Throwable cause) {
         whenSent.completeExceptionally(cause);
-        if (failure.compareAndSet(null, cause) && exchangeConnection != null) {
-            closeConnection(exchangeConnection.delegate);
+        if (failure.compareAndSet(null, cause)) {
+            if (transportObservation() != null) {
+                transportObservation().fail(cause);
+            }
+            if (exchangeConnection != null) {
+                closeConnection(exchangeConnection.delegate);
+            }
         }
         if (uploader != null && uploader != Thread.currentThread()) {
             uploader.interrupt();

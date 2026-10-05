@@ -23,6 +23,7 @@ import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpTransportObserver;
@@ -64,6 +66,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -71,6 +74,60 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Timeout(20)
 class Http1TransportObservationTest {
+    @Test
+    void watchdogTimeoutIsObservedBeforeDependentConnectionAndUploadFailures() throws Exception {
+        var observer = new RecordingProvider();
+        var uploadStarted = new CountDownLatch(1);
+        var sentFailure = new AtomicReference<Throwable>();
+        var uploadFailure = new AtomicReference<IOException>();
+        var lateFailure = new IOException("Upload interrupted after watchdog timeout");
+        try (var server = new RawServer(1, socket -> {
+            readHead(socket);
+            assertThat(uploadStarted.await(5, TimeUnit.SECONDS), is(true));
+            // Keep the response read pending until the watchdog retires the connection.
+            assertThat(socket.getInputStream().read(), is(-1));
+        })) {
+            Http1Client client = Http1Client.builder()
+                    .baseUri("http://localhost:" + server.port())
+                    .readTimeout(Duration.ofSeconds(1))
+                    .shareConnectionCache(true)
+                    .addService(observer)
+                    .addService((chain, request) -> {
+                        request.whenSent().whenComplete((_, failure) -> sentFailure.set(failure));
+                        return chain.proceed(request);
+                    })
+                    .build();
+            try {
+                UncheckedIOException failure = assertThrows(UncheckedIOException.class, () ->
+                        client.post().sendExpectContinue(false).header(HeaderNames.CONTENT_LENGTH, "1").exchange(output -> {
+                            uploadStarted.countDown();
+                            try {
+                                if (!new CountDownLatch(1).await(5, TimeUnit.SECONDS)) {
+                                    throw new IOException("Upload was not interrupted by watchdog cancellation");
+                                }
+                            } catch (InterruptedException _) {
+                                Thread.currentThread().interrupt();
+                                uploadFailure.set(lateFailure);
+                                throw lateFailure;
+                            }
+                        }, response -> {
+                            throw new AssertionError("The stalled peer must not provide a response");
+                        }));
+                assertThat(failure.getCause(), instanceOf(SocketTimeoutException.class));
+                assertThat(failure.getCause().getMessage(), containsString("no transport progress"));
+                assertThat(sentFailure.get(), sameInstance(failure.getCause()));
+                assertThat(uploadFailure.get(), sameInstance(lateFailure));
+                assertThat(observer.onlyConnection().outcomes(), is(List.of(StreamOutcome.ERROR)));
+                assertThat(observer.onlyConnection().outcome, is(ConnectionOutcome.TIMEOUT));
+                observer.onlyConnection().assertClosed();
+            } finally {
+                client.closeResourceAsync().toCompletableFuture().get(10, TimeUnit.SECONDS);
+            }
+            server.await();
+        }
+        observer.onlyConnection().assertClosed();
+    }
+
     @ParameterizedTest
     @CsvSource({"0,false", "4,false", "0,true", "4,true"})
     void earlyDuplexResponseWaitsForUploadBeforeCompletingObservation(int length, boolean connectionClose) throws Exception {
