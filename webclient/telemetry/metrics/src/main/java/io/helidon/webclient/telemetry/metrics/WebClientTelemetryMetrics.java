@@ -105,7 +105,7 @@ public class WebClientTelemetryMetrics implements WebClientService {
                     .put(URL_TEMPLATE, clientRequest.uri().path().path())
                     .build();
 
-            outboundHttpRequestDuration.get().record(endTime - startTime, attributes);
+            outboundHttpRequestDuration.get().record((endTime - startTime) / 1_000_000_000.0, attributes);
         }
     }
 
