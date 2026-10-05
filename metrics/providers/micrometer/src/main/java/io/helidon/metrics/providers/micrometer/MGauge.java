@@ -102,6 +102,10 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
                 .from(gBuilder);
     }
 
+    static boolean hasNullRegistrationState(Object source) {
+        return source instanceof RegistrationSource<?> registrationSource && registrationSource.stateObject() == null;
+    }
+
     /**
      * Creates a new wrapper gauge around an existing Micrometer gauge, typically if the developer has registered a
      * gauge directly using the Micrometer API rather than through the Helidon adapter but we need to expose the gauge
@@ -129,8 +133,20 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
     abstract static class Builder<HB extends Builder<HB, N>, N extends Number>
             extends MMeter.Builder<io.micrometer.core.instrument.Gauge.Builder<?>, io.micrometer.core.instrument.Gauge, HB, MGauge<N>> implements io.helidon.metrics.api.Gauge.Builder<N> {
 
-        protected Builder(String name, io.micrometer.core.instrument.Gauge.Builder<?> delegate) {
-            super(name, delegate);
+        private final RegistrationSource<?> registrationSource;
+
+        protected <T> Builder(String name, T stateObject, ToDoubleFunction<T> fn) {
+            this(name, new RegistrationSource<>(stateObject, fn));
+        }
+
+        private Builder(String name, RegistrationSource<?> registrationSource) {
+            super(name, io.micrometer.core.instrument.Gauge.builder(name, registrationSource, RegistrationSource::value)
+                    .strongReference(true));
+            this.registrationSource = registrationSource;
+        }
+
+        boolean ownsRegistrationSource(Object source) {
+            return registrationSource == source;
         }
 
         @Override
@@ -141,11 +157,12 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
 
     static class SupplierBased<N extends Number> extends MGauge<N> {
 
-        private final Supplier<N> supplier;
+        private final RegistrationSource<Supplier<N>> registrationSource;
 
+        @SuppressWarnings("unchecked")
         private SupplierBased(Meter.Id id, io.micrometer.core.instrument.Gauge gauge, Builder<N> builder) {
             super(id, gauge);
-            this.supplier = builder.supplier;
+            this.registrationSource = (RegistrationSource<Supplier<N>>) ((MGauge.Builder<?, ?>) builder).registrationSource;
         }
 
         /**
@@ -163,7 +180,7 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
          */
         @Override
         public N value() {
-            return supplier.get();
+            return registrationSource.stateObject().get();
         }
 
         @Override
@@ -177,12 +194,12 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
             if (!super.equals(o)) {
                 return false;
             }
-            return Objects.equals(supplier, that.supplier);
+            return Objects.equals(registrationSource.stateObject(), that.registrationSource.stateObject());
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(super.hashCode(), supplier);
+            return Objects.hash(super.hashCode(), registrationSource.stateObject());
         }
 
         static class Builder<N extends Number> extends MGauge.Builder<Builder<N>, N>
@@ -191,7 +208,10 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
             private final Supplier<N> supplier;
 
             private Builder(String name, Supplier<N> supplier) {
-                super(name, io.micrometer.core.instrument.Gauge.builder(name, (Supplier<Number>) supplier));
+                super(name, supplier, source -> {
+                    Number value = source.get();
+                    return value == null ? Double.NaN : value.doubleValue();
+                });
                 this.supplier = supplier;
             }
 
@@ -233,18 +253,17 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
 
     static class FunctionBased<T> extends MGauge<Double> {
 
-        private final T stateObject;
-        private final ToDoubleFunction<T> fn;
+        private final RegistrationSource<T> registrationSource;
 
+        @SuppressWarnings("unchecked")
         private FunctionBased(Meter.Id id, io.micrometer.core.instrument.Gauge gauge, Builder<T> builder) {
             super(id, gauge);
-            stateObject = builder.stateObject;
-            fn = builder.fn;
+            registrationSource = (RegistrationSource<T>) ((MGauge.Builder<?, ?>) builder).registrationSource;
         }
 
         @Override
         public Double value() {
-            return fn.applyAsDouble(stateObject);
+            return registrationSource.value();
         }
 
         @Override
@@ -258,12 +277,13 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
             if (!super.equals(o)) {
                 return false;
             }
-            return Objects.equals(stateObject, that.stateObject) && Objects.equals(fn, that.fn);
+            return Objects.equals(registrationSource.stateObject(), that.registrationSource.stateObject())
+                    && Objects.equals(registrationSource.fn(), that.registrationSource.fn());
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(super.hashCode(), stateObject, fn);
+            return Objects.hash(super.hashCode(), registrationSource.stateObject(), registrationSource.fn());
         }
 
         static class Builder<T> extends MGauge.Builder<Builder<T>, Double>
@@ -273,10 +293,9 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
             private final ToDoubleFunction<T> fn;
 
             private Builder(String name, T stateObject, ToDoubleFunction<T> fn) {
-                super(name, io.micrometer.core.instrument.Gauge.builder(name, stateObject, fn));
+                super(name, stateObject, fn);
                 this.stateObject = stateObject;
                 this.fn = fn;
-                delegate().strongReference(true);
             }
 
             @Override
@@ -312,6 +331,13 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
             public Supplier<Double> supplier() {
                 return () -> fn.applyAsDouble(stateObject);
             }
+        }
+    }
+
+    private record RegistrationSource<T>(T stateObject, ToDoubleFunction<T> fn) {
+
+        double value() {
+            return fn.applyAsDouble(stateObject);
         }
     }
 }
