@@ -31,22 +31,22 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 class TestHelidonHistogramSnapshot {
     @Test
     void unsortedSamplesYieldExactMinimumQuartilesMedianAndMaximum() {
-        HistogramSnapshot snapshot = HelidonHistogramSnapshot.create(5, 25, 9,
-                                                                     new double[] {9, 1, 5, 3, 7},
-                                                                     new double[] {0, 0.25, 0.5, 0.75, 1},
-                                                                     new double[0], new long[0]);
+        var histogram = HelidonHistogram.create(new double[] {0, 0.25, 0.5, 0.75, 1}, new double[0]);
+        for (double sample : new double[] {9, 1, 5, 3, 7}) {
+            histogram.record(sample);
+        }
 
-        assertPercentiles(snapshot, List.of(0D, 0.25, 0.5, 0.75, 1D), List.of(1D, 3D, 5D, 7D, 9D));
+        assertPercentiles(histogram.snapshot(), List.of(0D, 0.25, 0.5, 0.75, 1D), List.of(1D, 3D, 5D, 7D, 9D));
     }
 
     @Test
     void percentilesBetweenRanksSelectObservedValuesWithoutInterpolation() {
-        HistogramSnapshot snapshot = HelidonHistogramSnapshot.create(4, 100, 40,
-                                                                     new double[] {40, 10, 30, 20},
-                                                                     new double[] {0, 0.25, Math.nextUp(0.25), 0.5, 0.625, 0.75, 1},
-                                                                     new double[0], new long[0]);
+        var histogram = HelidonHistogram.create(new double[] {0, 0.25, Math.nextUp(0.25), 0.5, 0.625, 0.75, 1}, new double[0]);
+        for (double sample : new double[] {40, 10, 30, 20}) {
+            histogram.record(sample);
+        }
 
-        assertPercentiles(snapshot, List.of(0D, 0.25, Math.nextUp(0.25), 0.5, 0.625, 0.75, 1D),
+        assertPercentiles(histogram.snapshot(), List.of(0D, 0.25, Math.nextUp(0.25), 0.5, 0.625, 0.75, 1D),
                           List.of(10D, 10D, 20D, 20D, 30D, 30D, 40D));
     }
 

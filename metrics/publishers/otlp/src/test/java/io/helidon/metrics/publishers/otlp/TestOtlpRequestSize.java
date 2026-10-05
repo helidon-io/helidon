@@ -156,12 +156,6 @@ class TestOtlpRequestSize {
         }
     }
 
-    private Object nextEvent() throws InterruptedException {
-        Object event = events.poll(5, TimeUnit.SECONDS);
-        assertThat("Publisher emitted a warning or collector received a request", event, notNullValue());
-        return event;
-    }
-
     private static byte[] received(Object event) {
         assertThat("Collector received an accepted export", event, instanceOf(byte[].class));
         return (byte[]) event;
@@ -196,6 +190,12 @@ class TestOtlpRequestSize {
         var point = dataPoints(metric, "sum").getFirst();
         assertThat(longValue(point, "asInt"), is(7L));
         assertThat("Meter attributes survive UTF-8 and escaping", attributes(point).get("label"), is(ESCAPED_TEXT));
+    }
+
+    private Object nextEvent() throws InterruptedException {
+        Object event = events.poll(5, TimeUnit.SECONDS);
+        assertThat("Publisher emitted a warning or collector received a request", event, notNullValue());
+        return event;
     }
 
     private final class Fixture implements AutoCloseable {

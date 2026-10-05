@@ -50,16 +50,6 @@ final class HelidonHistogramSnapshot implements HistogramSnapshot {
     static HelidonHistogramSnapshot create(long count,
                                            double total,
                                            double max,
-                                           double[] samples,
-                                           double[] percentiles,
-                                           double[] buckets,
-                                           long[] bucketCounts) {
-        return create(count, total, max, percentileValues(HelidonTypes.sorted(samples), percentiles), buckets, bucketCounts);
-    }
-
-    static HelidonHistogramSnapshot create(long count,
-                                           double total,
-                                           double max,
                                            List<ValueAtPercentile> percentileValues,
                                            double[] buckets,
                                            long[] bucketCounts) {

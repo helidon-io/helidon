@@ -78,6 +78,22 @@ final class HelidonPrometheusFormatter implements MeterRegistryFormatter {
         Objects.requireNonNull(nameSelection).forEach(name -> this.nameSelection.add(Objects.requireNonNull(name)));
     }
 
+    static String normalizeNameToPrometheus(String name) {
+        String result = NON_IDENTIFIER_PATTERN.matcher(name).replaceAll("_");
+        if (!result.isEmpty() && Character.isDigit(result.charAt(0))) {
+            result = "_" + result.substring(1);
+        }
+        return result;
+    }
+
+    static String normalizeLabelName(String name) {
+        String result = NON_LABEL_IDENTIFIER_PATTERN.matcher(normalizeNameToPrometheus(name)).replaceAll("_");
+        while (result.startsWith("__")) {
+            result = result.substring(1);
+        }
+        return result;
+    }
+
     @Override
     public Optional<Object> format() {
         StringBuilder output = new StringBuilder();
@@ -106,22 +122,6 @@ final class HelidonPrometheusFormatter implements MeterRegistryFormatter {
         return Optional.empty();
     }
 
-    static String normalizeNameToPrometheus(String name) {
-        String result = NON_IDENTIFIER_PATTERN.matcher(name).replaceAll("_");
-        if (!result.isEmpty() && Character.isDigit(result.charAt(0))) {
-            result = "_" + result.substring(1);
-        }
-        return result;
-    }
-
-    static String normalizeLabelName(String name) {
-        String result = NON_LABEL_IDENTIFIER_PATTERN.matcher(normalizeNameToPrometheus(name)).replaceAll("_");
-        while (result.startsWith("__")) {
-            result = result.substring(1);
-        }
-        return result;
-    }
-
     private static double gaugeValue(Gauge<?> gauge) {
         try {
             return gauge.value().doubleValue();
@@ -129,6 +129,38 @@ final class HelidonPrometheusFormatter implements MeterRegistryFormatter {
             // An unavailable user gauge must not suppress the remaining meters in the scrape.
             return Double.NaN;
         }
+    }
+
+    private static String describeMeter(Meter meter) {
+        return "'" + meter.id().name() + "' (type=" + meter.type()
+                + ", baseUnit=" + meter.baseUnit().orElse("<none>") + ")";
+    }
+
+    private static boolean hasMaxFamily(Meter meter) {
+        return meter instanceof Timer || meter instanceof DistributionSummary;
+    }
+
+    private static boolean hasBuckets(HistogramSnapshot snapshot) {
+        return snapshot.histogramCounts().iterator().hasNext();
+    }
+
+    private static void addTag(Map<String, String> labels, Tag tag, Set<String> reservedLabels) {
+        String key = normalizeLabelName(tag.key());
+        if (!reservedLabels.contains(key)) {
+            labels.putIfAbsent(key, tag.value());
+        }
+    }
+
+    private static String escape(String value) {
+        return value.replace("\\", "\\\\").replace("\n", "\\n").replace("\"", "\\\"");
+    }
+
+    private static String escapeHelp(String value) {
+        return value.replace("\\", "\\\\").replace("\n", "\\n").replace("\r", "\\n");
+    }
+
+    private static boolean matches(MediaType a, MediaType b) {
+        return a.type().equals(b.type()) && a.subtype().equals(b.subtype());
     }
 
     private boolean enabled(Meter meter) {
@@ -185,11 +217,6 @@ final class HelidonPrometheusFormatter implements MeterRegistryFormatter {
         }
     }
 
-    private static String describeMeter(Meter meter) {
-        return "'" + meter.id().name() + "' (type=" + meter.type()
-                + ", baseUnit=" + meter.baseUnit().orElse("<none>") + ")";
-    }
-
     private Map<String, String> descriptions(List<Meter> meters) {
         Map<String, String> result = new LinkedHashMap<>();
         meters.forEach(meter -> meter.description()
@@ -218,10 +245,6 @@ final class HelidonPrometheusFormatter implements MeterRegistryFormatter {
 
     private String primaryFamilyName(Meter meter) {
         return metadataNames(meter).get(0);
-    }
-
-    private static boolean hasMaxFamily(Meter meter) {
-        return meter instanceof Timer || meter instanceof DistributionSummary;
     }
 
     private String maxFamilyName(Meter meter) {
@@ -479,10 +502,6 @@ final class HelidonPrometheusFormatter implements MeterRegistryFormatter {
                 .append('\n');
     }
 
-    private static boolean hasBuckets(HistogramSnapshot snapshot) {
-        return snapshot.histogramCounts().iterator().hasNext();
-    }
-
     private String promName(Meter meter) {
         String name = normalizeNameToPrometheus(meter.id().name());
         if (meter instanceof Timer) {
@@ -525,24 +544,5 @@ final class HelidonPrometheusFormatter implements MeterRegistryFormatter {
                 .displayTags()
                 .forEach(tag -> addTag(labels, tag, reservedLabels));
         return labels;
-    }
-
-    private static void addTag(Map<String, String> labels, Tag tag, Set<String> reservedLabels) {
-        String key = normalizeLabelName(tag.key());
-        if (!reservedLabels.contains(key)) {
-            labels.putIfAbsent(key, tag.value());
-        }
-    }
-
-    private static String escape(String value) {
-        return value.replace("\\", "\\\\").replace("\n", "\\n").replace("\"", "\\\"");
-    }
-
-    private static String escapeHelp(String value) {
-        return value.replace("\\", "\\\\").replace("\n", "\\n").replace("\r", "\\n");
-    }
-
-    private static boolean matches(MediaType a, MediaType b) {
-        return a.type().equals(b.type()) && a.subtype().equals(b.subtype());
     }
 }

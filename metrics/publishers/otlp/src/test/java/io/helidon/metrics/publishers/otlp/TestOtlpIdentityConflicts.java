@@ -309,6 +309,12 @@ class TestOtlpIdentityConflicts {
         }
     }
 
+    private static String dataKind(JsonObject metric) {
+        List<String> kinds = List.of("sum", "gauge", "histogram").stream().filter(metric::containsKey).toList();
+        assertThat("Metric contains exactly one data kind: " + metric, kinds, hasSize(1));
+        return kinds.getFirst();
+    }
+
     private Counter counter(String name, String region, String unit) {
         return registry.getOrCreate(factory.counterBuilder(name)
                                             .baseUnit(unit)
@@ -327,11 +333,5 @@ class TestOtlpIdentityConflicts {
         for (String detail : details) {
             assertThat("Conflict diagnostic identifies " + detail, warning, containsString(detail));
         }
-    }
-
-    private static String dataKind(JsonObject metric) {
-        List<String> kinds = List.of("sum", "gauge", "histogram").stream().filter(metric::containsKey).toList();
-        assertThat("Metric contains exactly one data kind: " + metric, kinds, hasSize(1));
-        return kinds.getFirst();
     }
 }
