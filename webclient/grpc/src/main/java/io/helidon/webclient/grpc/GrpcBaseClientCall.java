@@ -744,9 +744,14 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         try {
             if (!closeNotified) {
                 closeNotified = true;
+                // Transport cancellation may have interrupted the reader delivering this callback.
+                boolean interrupted = Thread.interrupted();
                 try {
                     context.run(() -> responseListener.onClose(closeStatus, closeMetadata));
                 } finally {
+                    if (interrupted) {
+                        Thread.currentThread().interrupt();
+                    }
                     unblockUnaryExecutor();
                 }
             }

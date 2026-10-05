@@ -23,7 +23,12 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URI;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,9 +72,11 @@ import io.grpc.StatusRuntimeException;
 import io.grpc.stub.ClientCalls;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
@@ -390,7 +397,7 @@ class GrpcClientDeadlineTest {
 
     @ParameterizedTest
     @EnumSource(CancellationSource.class)
-    void cancellationClosesTransportWhileListenerIsBlocked(CancellationSource source) throws Exception {
+    void cancellationClosesTransportWhileListenerIsBlocked(CancellationSource source, @TempDir Path directory) throws Exception {
         var nanos = new AtomicLong();
         var deadline = Deadline.after(1, TimeUnit.SECONDS, new Deadline.Ticker() {
             @Override
@@ -407,6 +414,8 @@ class GrpcClientDeadlineTest {
         var status = new CompletableFuture<Status>();
         var closeCount = new AtomicInteger();
         List<String> callbacks = new CopyOnWriteArrayList<>();
+        Path terminalFile = directory.resolve("terminal-record");
+        byte[] terminalRecord = "terminal record\n".getBytes(StandardCharsets.UTF_8);
         try (var context = Context.current().withCancellation();
              var executor = Executors.newVirtualThreadPerTaskExecutor();
              var listening = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))) {
@@ -449,6 +458,17 @@ class GrpcClientDeadlineTest {
                     public void onClose(Status result, Metadata trailers) {
                         callbacks.add("onClose");
                         closeCount.incrementAndGet();
+                        try (var channel = FileChannel.open(terminalFile,
+                                                            StandardOpenOption.CREATE_NEW,
+                                                            StandardOpenOption.WRITE)) {
+                            var record = ByteBuffer.wrap(terminalRecord);
+                            while (record.hasRemaining()) {
+                                channel.write(record);
+                            }
+                        } catch (IOException e) {
+                            status.completeExceptionally(e);
+                            return;
+                        }
                         status.complete(result);
                     }
                 }, new Metadata());
@@ -474,6 +494,7 @@ class GrpcClientDeadlineTest {
                 Status.Code expected = source == CancellationSource.DEADLINE
                         ? Status.Code.DEADLINE_EXCEEDED : Status.Code.CANCELLED;
                 assertThat(status.get(5, TimeUnit.SECONDS).getCode(), is(expected));
+                assertThat("terminal callback can write its record", Files.readAllBytes(terminalFile), is(terminalRecord));
                 call.cancel("repeated cancellation", null);
                 context.cancel(null);
                 assertThat(closeCount.get(), is(1));
@@ -486,6 +507,40 @@ class GrpcClientDeadlineTest {
                 }
                 call.cancel("test cleanup", null);
             }
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void terminalCallbackPreservesCallerInterrupt(boolean failCallback) throws Exception {
+        var call = client(1).channel().newCall(descriptor(MethodDescriptor.MethodType.UNARY), CallOptions.DEFAULT);
+        call.cancel("cancelled before start", null);
+        var callbackFailure = new IllegalStateException("terminal callback failed");
+        var listener = new ClientCall.Listener<String>() {
+            @Override
+            public void onClose(Status status, Metadata trailers) {
+                assertThat("terminal callback starts without an interrupt", Thread.currentThread().isInterrupted(), is(false));
+                if (failCallback) {
+                    throw callbackFailure;
+                }
+            }
+        };
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var notified = executor.submit(() -> {
+                Thread.currentThread().interrupt();
+                try {
+                    if (failCallback) {
+                        assertThat(assertThrows(IllegalStateException.class, () -> call.start(listener, new Metadata())),
+                                   sameInstance(callbackFailure));
+                    } else {
+                        call.start(listener, new Metadata());
+                    }
+                    return Thread.currentThread().isInterrupted();
+                } finally {
+                    Thread.interrupted();
+                }
+            });
+            assertThat("the caller's interrupt is restored", notified.get(5, TimeUnit.SECONDS), is(true));
         }
     }
 
