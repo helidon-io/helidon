@@ -446,7 +446,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         return helidonMeter;
     }
 
-    <HM extends MMeter<M>, M extends Meter, B, HB extends MMeter.Builder<B, M, HB, HM>> void onMeterAdded(M addedMeter) {
+    void onMeterAdded(Meter addedMeter) {
 
         /*
         We are not guaranteed that one of our own update operations--which would already hold the write lock--is triggering
@@ -490,8 +490,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         }
     }
 
-    private <HM extends MMeter<M>, M extends Meter, B, HB extends MMeter.Builder<B, M, HB, HM>>
-    void recordMeterAdded(M addedMeter, MMeter.Builder<B, M, HB, HM> builder) {
+    private <M extends Meter> void recordMeterAdded(M addedMeter, MMeter.Builder<?, M, ?, ?> builder) {
         /*
         Use a builder only after native registration has returned this exact meter. Native filters can change
         the ID or register unrelated meters, so neither the original ID nor the current builder identifies a callback.
