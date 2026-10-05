@@ -126,7 +126,7 @@ class IdleInputStream extends InputStream {
         try {
             //Currently configured socket read timeout. This is intended to be restored after this method finishes.
             int toRestore = socket.getSoTimeout();
-            int idleTimeoutIterations = Math.ceilDiv(Math.max(1, toRestore), ITERATION_TIME_MILLIS);
+            int idleTimeoutIterations = Math.ceilDiv(toRestore, ITERATION_TIME_MILLIS);
             for (int i = 0; !cancelled; i++) {
                 try {
                     //We need to check the current socket timeout before each iteration.
@@ -145,7 +145,10 @@ class IdleInputStream extends InputStream {
                     }
                     break;
                 } catch (SocketTimeoutException e) {
-                    if (i + 1 >= idleTimeoutIterations) {
+                    if (cancelled) {
+                        break;
+                    }
+                    if (idleTimeoutIterations != 0 && i + 1 >= idleTimeoutIterations) {
                         throw e;
                     }
                 }

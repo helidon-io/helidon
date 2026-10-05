@@ -17,6 +17,7 @@
 package io.helidon.webclient.tests;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.time.Duration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -36,6 +37,7 @@ import io.helidon.webserver.WebServer;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -44,6 +46,77 @@ class DuplexExchangeTest {
     private static final int BUFFER_SIZE = 8192;
     private static final int ENTITY_SIZE = 16 * 1024 * 1024;
     private static final HeaderName CONNECTION_HEADER = HeaderNames.create("X-Connection");
+
+    @ParameterizedTest(name = "Read timeout={0} ms")
+    @ValueSource(longs = {0, 10_000})
+    @Timeout(15)
+    void reusesConnectionForDelayedUpload(long readTimeoutMillis) throws InterruptedException {
+        int entitySize = 128 * 1024;
+        var prefixReceived = new CountDownLatch(1);
+        var server = WebServer.builder()
+                .host("localhost")
+                .port(0)
+                .useNio(false)
+                .writeQueueLength(2)
+                .routing(rules -> rules
+                        .get("/connection", (req, res) -> res.send(req.socketId()))
+                        .post("/drain", (req, res) -> {
+                            res.header(CONNECTION_HEADER, req.socketId());
+                            try (var input = req.content().inputStream()) {
+                                long received = input.readNBytes(BUFFER_SIZE).length;
+                                prefixReceived.countDown();
+                                received += input.transferTo(OutputStream.nullOutputStream());
+                                res.send(Long.toString(received));
+                            }
+                        }))
+                .build()
+                .start();
+        var client = Http1Client.builder()
+                .baseUri("http://localhost:" + server.port())
+                .shareConnectionCache(false)
+                .proxy(Proxy.noProxy())
+                .readTimeout(Duration.ofMillis(readTimeoutMillis))
+                .build();
+        try {
+            String socketId;
+            try (var response = client.get("/connection").request()) {
+                socketId = response.as(String.class);
+            }
+            // Leave the cached connection idle across multiple socket-monitor polling intervals.
+            Thread.sleep(Duration.ofMillis(350));
+            client.post("/drain")
+                    .sendExpectContinue(false)
+                    .header(HeaderNames.CONTENT_LENGTH, Integer.toString(entitySize))
+                    .exchange(output -> {
+                        try (output) {
+                            byte[] buffer = new byte[BUFFER_SIZE];
+                            output.write(buffer);
+                            output.flush();
+                            try {
+                                assertThat("Server received the upload prefix",
+                                           prefixReceived.await(5, TimeUnit.SECONDS), is(true));
+                                // The server cannot respond until the producer supplies the remaining bytes.
+                                Thread.sleep(Duration.ofMillis(250));
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                throw new IOException("Interrupted during delayed upload", e);
+                            }
+                            for (int offset = BUFFER_SIZE; offset < entitySize; offset += BUFFER_SIZE) {
+                                output.write(buffer);
+                            }
+                        }
+                    }, response -> {
+                        assertThat(response.status(), is(Status.OK_200));
+                        assertThat("The idle connection was reused",
+                                   response.headers().get(CONNECTION_HEADER).get(), is(socketId));
+                        assertThat("The entire delayed upload was consumed",
+                                   response.as(String.class), is(Integer.toString(entitySize)));
+                    });
+        } finally {
+            client.closeResource();
+            server.stop();
+        }
+    }
 
     @ParameterizedTest(name = "TLS={0}, NIO={1}, content-length={2}, write queue={3}")
     @CsvSource({
