@@ -309,6 +309,17 @@ Follow these rules for streaming exchanges:
   the body. This is an idle timeout, not a limit on total exchange duration.
   `readContinueTimeout` still bounds the initial `100 Continue` wait.
 
+WebClient service implementations must also account for completion callbacks.
+Non-async callbacks registered with `WebClientServiceRequest.whenSent()` can
+run on the upload thread when sending succeeds, or on the upload, calling, or
+timeout thread when sending fails. A callback registered after its stage
+completes can run on the registering thread. These callbacks can overlap
+service-chain execution, response handling, and `whenComplete()` callbacks.
+Use immutable snapshots or synchronize access when sharing mutable request
+state, including headers, properties, and request IDs. The propagated request
+context shares its registered values; use immutable or thread-safe values when
+both handlers or service callbacks access them concurrently.
+
 This API is available on the protocol-specific `Http1Client`. The existing
 `outputStream` API invokes its upload handler before returning a response;
 use `exchange` when uploading and reading must overlap.
