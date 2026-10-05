@@ -38,6 +38,7 @@ import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.FunctionalCounter;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.MeterConfig;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
@@ -181,6 +182,7 @@ final class HelidonMeterRegistry implements MeterRegistry {
                 disabledMeters.put(id, result);
                 return (M) result;
             }
+            configureMeter(helidonBuilder);
             HelidonMeter meter = createMeter(id, helidonBuilder);
             meters.put(id, meter);
             addListeners.forEach(listener -> listener.accept(meter));
@@ -377,6 +379,31 @@ final class HelidonMeterRegistry implements MeterRegistry {
                 LOGGER.log(System.Logger.Level.WARNING, "Meter removal listener failed", e);
             }
         });
+    }
+
+    private void configureMeter(Meter.Builder<?, ?> builder) {
+        MeterConfig meterConfig = metricsConfig.meterConfig(builder.name()).orElse(null);
+        if (meterConfig == null || (meterConfig.percentiles().isEmpty()
+                && meterConfig.buckets().isEmpty()
+                && meterConfig.minimumExpectedValue().isEmpty()
+                && meterConfig.maximumExpectedValue().isEmpty())) {
+            return;
+        }
+        if (!(builder instanceof Timer.Builder timerBuilder)) {
+            throw new IllegalArgumentException("Timer statistics are configured for a meter which is not a timer: "
+                                                       + builder.name());
+        }
+        meterConfig.percentiles().ifPresent(percentiles ->
+                timerBuilder.percentiles(percentiles.stream().mapToDouble(Double::doubleValue).toArray()));
+        meterConfig.buckets().ifPresent(buckets -> timerBuilder.buckets(buckets.toArray(Duration[]::new)));
+        meterConfig.minimumExpectedValue().ifPresent(timerBuilder::minimumExpectedValue);
+        meterConfig.maximumExpectedValue().ifPresent(timerBuilder::maximumExpectedValue);
+        if ((meterConfig.minimumExpectedValue().isPresent() || meterConfig.maximumExpectedValue().isPresent())
+                && timerBuilder.minimumExpectedValue().isPresent() && timerBuilder.maximumExpectedValue().isPresent()
+                && timerBuilder.minimumExpectedValue().get().compareTo(timerBuilder.maximumExpectedValue().get()) > 0) {
+            throw new IllegalArgumentException("Timer minimum-expected-value must not exceed maximum-expected-value: "
+                                                       + builder.name());
+        }
     }
 
     private void completeClose() {
