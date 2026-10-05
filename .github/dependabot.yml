@@ -32,3 +32,66 @@ updates:
       - "dependencies"
     assignees:
       - "barchetta"
+  - package-ecosystem: "maven"
+    directory: "/dependencies"
+    target-branch: "helidon-27.x"
+    schedule:
+      interval: "daily"
+    allow:
+      - dependency-name: "com.fasterxml.jackson:jackson-bom"
+        update-types:
+          - "version-update:semver-patch"
+      - dependency-name: "org.yaml:snakeyaml"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+    labels:
+      - "build"
+      - "dependencies"
+      - "27.x"
+    assignees:
+      - "barchetta"
+  - package-ecosystem: "maven"
+    directory: "/dependencies"
+    target-branch: "helidon-4.x"
+    schedule:
+      interval: "daily"
+    allow:
+      - dependency-name: "com.fasterxml.jackson:jackson-bom"
+        update-types:
+          - "version-update:semver-patch"
+      - dependency-name: "io.netty:netty-bom"
+        update-types:
+          - "version-update:semver-patch"
+      - dependency-name: "org.yaml:snakeyaml"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+    labels:
+      - "build"
+      - "dependencies"
+      - "4.x"
+    assignees:
+      - "barchetta"
+  - package-ecosystem: "maven"
+    directory: "/dependencies"
+    target-branch: "helidon-3.x"
+    schedule:
+      interval: "daily"
+    allow:
+      - dependency-name: "com.fasterxml.jackson:jackson-bom"
+        update-types:
+          - "version-update:semver-patch"
+      - dependency-name: "io.netty:netty-bom"
+        update-types:
+          - "version-update:semver-patch"
+      - dependency-name: "org.yaml:snakeyaml"
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+    labels:
+      - "build"
+      - "dependencies"
+      - "3.x"
+    assignees:
+      - "barchetta"
