@@ -48,7 +48,9 @@ import io.helidon.metrics.api.Tag;
 import io.helidon.service.registry.Services;
 
 import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.config.MeterFilter;
 import io.micrometer.core.instrument.distribution.ValueAtPercentile;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -64,6 +66,7 @@ import static io.helidon.http.HttpTransportObserver.StreamOutcome.COMPLETED;
 import static io.helidon.http.HttpTransportObserver.TRANSPORT_TCP;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -212,6 +215,64 @@ class TestMicrometerHttpTransportMetrics {
     @Test
     void streamGaugeRecoversBackingAfterRegistrationThrows() throws Exception {
         assertGaugeRegistrationRecovery(true);
+    }
+
+    @Test
+    void connectionGaugeRecoversBackingAfterFilteredRegistrationThrows() throws Exception {
+        assertGaugeRegistrationRecovery(false, true);
+    }
+
+    @Test
+    void streamGaugeRecoversBackingAfterFilteredRegistrationThrows() throws Exception {
+        assertGaugeRegistrationRecovery(true, true);
+    }
+
+    @Test
+    void nativeTagFiltersPreserveActiveGaugesAndFinalCleanup() throws Exception {
+        MeterRegistry owningRegistry = createRegistry();
+        io.micrometer.core.instrument.MeterRegistry nativeRegistry =
+                owningRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
+        nativeRegistry.config().meterFilter(MeterFilter.commonTags(Tags.of("region", "review")));
+        try {
+            for (int cycle = 0; cycle < 2; cycle++) {
+                TestRegistry registry = new TestRegistry(owningRegistry);
+                HttpTransportMetrics.Lease lease = HttpTransportMetrics.acquire(registry);
+                ConnectionObservation connection = lease.connectionOpened(SERVER, TRANSPORT_TCP, NONE);
+                connection.protocolSelected(PROTOCOL_HTTP_1_1);
+                StreamObservation stream = connection.streamOpened(BIDIRECTIONAL, REMOTE);
+                try {
+                    synchronize(registry, lease).awaitIdle();
+                    Gauge connectionGauge = nativeRegistry.get("helidon.http.connections.active")
+                            .tags("role", "server", "protocol", "http/1.1", "transport", "tcp", "region", "review")
+                            .gauge();
+                    Gauge streamGauge = nativeRegistry.get("helidon.http.streams.active")
+                            .tags("role", "server", "protocol", "http/1.1", "direction", "bidi", "initiator", "remote",
+                                  "region", "review")
+                            .gauge();
+                    assertThat("Filtered connection gauge in cycle " + cycle, connectionGauge.value(), is(1.0));
+                    assertThat("Filtered stream gauge in cycle " + cycle, streamGauge.value(), is(1.0));
+
+                    stream.close(COMPLETED);
+                    connection.close(NORMAL);
+                    synchronize(registry, lease).awaitIdle();
+                    assertThat("Closed connection gauge in cycle " + cycle, connectionGauge.value(), is(0.0));
+                    assertThat("Closed stream gauge in cycle " + cycle, streamGauge.value(), is(0.0));
+                } finally {
+                    registry.releaseBarrier();
+                    stream.close(COMPLETED);
+                    connection.close(NORMAL);
+                    closeAndAwait(lease);
+                }
+                assertThat("Filtered connection gauges are removed after final release in cycle " + cycle,
+                           nativeRegistry.find("helidon.http.connections.active").gauges(),
+                           empty());
+                assertThat("Filtered stream gauges are removed after final release in cycle " + cycle,
+                           nativeRegistry.find("helidon.http.streams.active").gauges(),
+                           empty());
+            }
+        } finally {
+            owningRegistry.close();
+        }
     }
 
     @Test
@@ -491,7 +552,15 @@ class TestMicrometerHttpTransportMetrics {
     }
 
     private static void assertGaugeRegistrationRecovery(boolean streams) throws Exception {
+        assertGaugeRegistrationRecovery(streams, false);
+    }
+
+    private static void assertGaugeRegistrationRecovery(boolean streams, boolean nativeTags) throws Exception {
         MeterRegistry owningRegistry = createRegistry();
+        if (nativeTags) {
+            owningRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class)
+                    .config().meterFilter(MeterFilter.commonTags(Tags.of("region", "review")));
+        }
         TestRegistry firstRegistry = new TestRegistry(owningRegistry);
         TestRegistry secondRegistry = new TestRegistry(owningRegistry);
         String gaugeName = streams ? "helidon.http.streams.active" : "helidon.http.connections.active";

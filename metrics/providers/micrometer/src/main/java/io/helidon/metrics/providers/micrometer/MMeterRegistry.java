@@ -61,13 +61,14 @@ import io.micrometer.core.instrument.search.Search;
  * </p>
  * <p>
  * This code invokes the Micrometer builder's register method, passing this registry's delegate which is a Micrometer
- * meter registry. The Micrometer registry records the meter and then invokes a callback to us, passing the new Micrometer
- * meter. Based on the type of the new Micrometer meter we instantiate the correct type of Helidon meter as a wrapper around
- * the new new Micrometer meter. We then provisionally update some of our internal data structures as part of the callback.
+ * meter registry. The Micrometer registry invokes a callback to us, passing the new Micrometer meter, before recording it.
+ * During a Helidon registration we collect these callbacks until the native register method returns, so we can match the
+ * returned native meter to its builder even when native filters change its ID or register other meters.
  * </p>
  * <p>
- * After our callback returns to Micrometer and then Micrometer returns to us, we do some final touch-up to our data
- * structures as needed and return the new Helidon meter to the developer's code which invoked getOrCreate.
+ * After Micrometer returns to us, we wrap the native meters, update our internal data structures, notify our listeners,
+ * and return the Helidon meter to the developer's code which invoked getOrCreate. For registrations originating directly
+ * from Micrometer, we create the wrapper and notify listeners during the native callback.
  * </p>
  * <p>
  * This is a little convoluted, but this approach allows us to automatically create Helidon meters around every Micrometer
@@ -106,7 +107,8 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
      */
     private final Map<Meter, MMeter> meters = new HashMap<>();
 
-    private final Map<io.helidon.metrics.api.Meter.Id, MMeter.Builder<?, ?, ?, ?>> buildersByPromMeterId = new HashMap<>();
+    // Protected by the write lock. Registrations can nest when native filters or listeners register another meter.
+    private List<Meter> pendingMeterAdds;
 
     private final Map<io.helidon.metrics.api.Meter.Id, MMeter<?>> metersById = new HashMap<>();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
@@ -163,7 +165,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             onRemoveListeners.clear();
             meters.values().forEach(MMeter::markAsDeleted);
             meters.clear();
-            buildersByPromMeterId.clear();
             metersById.clear();
         } finally {
             lock.writeLock().unlock();
@@ -396,7 +397,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         lock.writeLock().lock();
 
         try {
-            buildersByPromMeterId.clear();
             meters.clear();
             onAddListeners.clear();
             onRemoveListeners.clear();
@@ -459,43 +459,11 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             if (lifecycleState != LifecycleState.OPEN) {
                 return;
             }
-            /*
-            If we originated this callback by invoking the delegate registry, then there should be a builder
-            waiting for us to use. If the meter was created in some other way, then there will be no builder and
-            we will create the MMeter from the meter passed to us by Micrometer..
-             */
-
-            io.helidon.metrics.api.Meter.Id neutralIdForAddedMeter = neutralIdWithoutSystemTags(addedMeter.getId());
-
-            /*
-             See if there is any "pending builder" that we already created in getOrCreate and use it to create this new meter.
-             */
-            MMeter<M> mMeter;
-
-            MMeter.Builder<B, M, HB, HM> builder =
-                    (MMeter.Builder<B, M, HB, HM>) buildersByPromMeterId.get(neutralIdForAddedMeter);
-
-            io.helidon.metrics.api.Meter.Id id;
-
-            if (builder == null) {
-                id = neutralIdForAddedMeter;
-                mMeter = MMeter.create(id, addedMeter);
-            } else {
-                id = builder.id();
-                mMeter = builder.build(id, addedMeter);
+            if (pendingMeterAdds != null) {
+                pendingMeterAdds.add(addedMeter);
+                return;
             }
-
-            recordNewMeter(id, mMeter, addedMeter);
-
-            /*
-             Signal to getOrCreate that in fact a new delegate meter was created (because we are in this method at all).
-             */
-            buildersByPromMeterId.remove(id);
-
-            onAddListeners.forEach(listener -> {
-                listener.accept(mMeter);
-            });
-
+            recordMeterAdded(addedMeter, null);
         } finally {
             lock.writeLock().unlock();
         }
@@ -520,6 +488,23 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         } finally {
             lock.writeLock().unlock();
         }
+    }
+
+    private <HM extends MMeter<M>, M extends Meter, B, HB extends MMeter.Builder<B, M, HB, HM>>
+    void recordMeterAdded(M addedMeter, MMeter.Builder<B, M, HB, HM> builder) {
+        /*
+        Use a builder only after native registration has returned this exact meter. Native filters can change
+        the ID or register unrelated meters, so neither the original ID nor the current builder identifies a callback.
+         */
+        io.helidon.metrics.api.Meter.Id neutralIdForAddedMeter = neutralIdWithoutSystemTags(addedMeter.getId());
+        MMeter<M> mMeter;
+        if (builder == null) {
+            mMeter = MMeter.create(neutralIdForAddedMeter, addedMeter);
+        } else {
+            mMeter = builder.build(neutralIdForAddedMeter, addedMeter);
+        }
+        recordNewMeter(neutralIdForAddedMeter, mMeter, addedMeter);
+        onAddListeners.forEach(listener -> listener.accept(mMeter));
     }
 
     private <HB extends io.helidon.metrics.api.Meter.Builder<HB, HM>,
@@ -634,20 +619,64 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             }
 
             displayTagPairs().forEach(mBuilder::delegateTag);
-            MMeter.Builder<?, ?, ?, ?> previousBuilderWithId = buildersByPromMeterId.put(id, mBuilder);
-            if (previousBuilderWithId != null) {
-                LOGGER.log(Level.WARNING,
-                           "Unexpected overwrite of existing pending builder " + previousBuilderWithId
-                           + " during creation of new meter " + mBuilder);
+            List<Meter> previousPendingAdds = pendingMeterAdds;
+            List<Meter> addedMeters = new ArrayList<>();
+            M meter;
+            pendingMeterAdds = addedMeters;
+            try {
+                meter = registration.apply(delegate());
+            } catch (RuntimeException | Error failure) {
+                pendingMeterAdds = previousPendingAdds;
+                // A filter or native listener might have registered another meter before this registration failed.
+                // Retain only callbacks whose exact native meters actually reached the native registry.
+                for (Meter added : addedMeters) {
+                    if (delegate.getMeters().stream().anyMatch(registered -> registered == added)) {
+                        try {
+                            recordMeterAdded(added, null);
+                        } catch (RuntimeException | Error listenerFailure) {
+                            if (failure != listenerFailure) {
+                                failure.addSuppressed(listenerFailure);
+                            }
+                        }
+                    }
+                }
+                throw failure;
+            } finally {
+                pendingMeterAdds = previousPendingAdds;
             }
-
-            M meter = registration.apply(delegate());
-
-            /*
-             Normally, the on-add listener will have removed the pending builder, but do so here again if the listener
-             did not run--if the meter already exists in the Micrometer meter registry, for example.
-             */
-            buildersByPromMeterId.remove(id);
+            checkOpen();
+            // Correlate the returned meter before an unrelated meter's listener can fail.
+            for (int i = 0; i < addedMeters.size(); i++) {
+                if (addedMeters.get(i) == meter) {
+                    if (i > 0) {
+                        addedMeters.remove(i);
+                        addedMeters.addFirst(meter);
+                    }
+                    break;
+                }
+            }
+            Throwable listenerFailure = null;
+            for (Meter added : addedMeters) {
+                if (lifecycleState != LifecycleState.OPEN) {
+                    break;
+                }
+                try {
+                    if (added == meter) {
+                        recordMeterAdded(meter, mBuilder);
+                    } else {
+                        recordMeterAdded(added, null);
+                    }
+                } catch (RuntimeException | Error failure) {
+                    if (listenerFailure == null) {
+                        listenerFailure = failure;
+                    } else if (listenerFailure != failure) {
+                        listenerFailure.addSuppressed(failure);
+                    }
+                }
+            }
+            if (listenerFailure != null) {
+                MMeterRegistry.<RuntimeException>rethrow(listenerFailure);
+            }
             checkOpen();
 
             HM result = (HM) meters.get(meter);
@@ -660,8 +689,9 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
                 LOGGER.log(Level.WARNING,
                            "Unexpected discovery of unknown previously-created meter; creating wrapper for " + meter.getId());
-                result = wrapMeter(id, meter);
-                recordNewMeter(id, result, meter);
+                io.helidon.metrics.api.Meter.Id nativeId = neutralIdWithoutSystemTags(meter.getId());
+                result = wrapMeter(nativeId, meter);
+                recordNewMeter(nativeId, result, meter);
             }
 
             return result;
