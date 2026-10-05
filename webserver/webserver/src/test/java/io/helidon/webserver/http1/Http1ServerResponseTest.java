@@ -60,6 +60,7 @@ import io.helidon.webserver.http.DirectHandlers;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
@@ -69,6 +70,7 @@ import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -78,7 +80,6 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
@@ -94,30 +95,33 @@ class Http1ServerResponseTest {
         DataWriter writer = mock(DataWriter.class);
         var config = WebServer.builder().writeBufferSize(0).buildPrototype();
         Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create(), config);
+        String expected = "abcdefghij".repeat(7000);
+        int offset = "ignored-prefix".length();
         if (fixedLength) {
-            response.contentLength(12);
+            response.contentLength(2 * expected.length());
         }
         OutputStream output = response.outputStream();
-        byte[] reusable = "abcdef".getBytes(StandardCharsets.US_ASCII);
-        output.write(reusable);
+        byte[] reusable = ("ignored-prefix" + expected + "ignored-suffix").getBytes(StandardCharsets.US_ASCII);
+        output.write(reusable, offset, expected.length());
         Arrays.fill(reusable, (byte) 'g');
-        output.write(reusable);
+        output.write(reusable, offset, expected.length());
         Arrays.fill(reusable, (byte) 'x');
         response.commit();
 
         // The mock retains queued buffers without consuming them until after the application reuses its array.
         var queued = ArgumentCaptor.forClass(BufferData.class);
         verify(writer, atLeastOnce()).write(queued.capture());
-        assertThat(responseEntity(responseText(queued), fixedLength), is("abcdefgggggg"));
+        assertThat(responseEntity(responseText(queued), fixedLength), is(expected + "g".repeat(expected.length())));
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void largeStreamingWritesQueueBoundedOwnedBuffers(boolean fixedLength) throws IOException {
+    @CsvSource({"false,65535", "false,65536", "false,65537", "false,131073",
+                "true,65535", "true,65536", "true,65537", "true,131073"})
+    void largeStreamingWritesQueueBoundedOwnedBuffers(boolean fixedLength, int entityLength) throws IOException {
         DataWriter writer = mock(DataWriter.class);
         var config = WebServer.builder().writeBufferSize(0).buildPrototype();
         Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create(), config);
-        String expected = "abcdefghij".repeat(2000);
+        String expected = "abcdefghij".repeat((entityLength + 9) / 10).substring(0, entityLength);
         if (fixedLength) {
             response.contentLength(expected.length());
         }
@@ -130,22 +134,68 @@ class Http1ServerResponseTest {
         verify(writer, atLeastOnce()).write(queued.capture());
         for (BufferData buffer : queued.getAllValues()) {
             assertThat("Each queued body slice must stay bounded, allowing for response headers or chunk framing",
-                       buffer.available(), lessThanOrEqualTo(8192 + 256));
+                       buffer.available(), lessThanOrEqualTo(65536 + 256));
         }
         assertThat(responseEntity(responseText(queued), fixedLength), is(expected));
     }
 
-    @Test
-    void oversizedFixedLengthWriteIsRejectedBeforeAnySliceIsQueued() throws IOException {
+    @ParameterizedTest
+    @ValueSource(ints = {8192, 65536})
+    void oversizedFixedLengthWriteIsRejectedBeforeAnySliceIsQueued(int contentLength) throws IOException {
         DataWriter writer = mock(DataWriter.class);
         var config = WebServer.builder().writeBufferSize(0).buildPrototype();
         Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create(), config);
-        response.contentLength(8192);
+        response.contentLength(contentLength);
         OutputStream output = response.outputStream();
 
-        IOException exception = assertThrows(IOException.class, () -> output.write(new byte[8193]));
+        IOException exception = assertThrows(IOException.class, () -> output.write(new byte[contentLength + 1]));
         assertThat(exception.getMessage(), containsString("additional 1 bytes"));
         verifyZeroInteractions(writer);
+    }
+
+    @Test
+    void initialChunkedWriteLargerThanEightKiBEmitsBodyBeforeAnotherWriteOrFlush() throws IOException {
+        DataWriter writer = mock(DataWriter.class);
+        var wire = new StringBuilder();
+        doAnswer(invocation -> {
+            BufferData buffer = invocation.getArgument(0);
+            wire.append(new String(buffer.readBytes(), StandardCharsets.ISO_8859_1));
+            return null;
+        }).when(writer).write(any(BufferData.class));
+        var config = WebServer.builder().writeBufferSize(0).buildPrototype();
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create(), config);
+        String expected = "a".repeat(8193);
+
+        response.outputStream().write(expected.getBytes(StandardCharsets.US_ASCII));
+
+        assertThat("First write did not send chunked response headers", wire.toString(),
+                   containsString("Transfer-Encoding: chunked\r\n"));
+        assertThat("First write buffered entity bytes until another write, flush, or commit",
+                   incompleteChunkedResponseEntity(wire.toString()), is(expected));
+
+        response.commit();
+        assertThat(responseEntity(wire.toString(), false), is(expected));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {1, 8192})
+    void smallInitialWriteRemainsBufferedAndOwnsCallerArray(int entityLength) throws IOException {
+        DataWriter writer = mock(DataWriter.class);
+        var config = WebServer.builder().writeBufferSize(0).buildPrototype();
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create(), config);
+        String expected = "a".repeat(entityLength);
+        byte[] reusable = expected.getBytes(StandardCharsets.US_ASCII);
+
+        response.outputStream().write(reusable);
+        verifyZeroInteractions(writer);
+        Arrays.fill(reusable, (byte) 'x');
+        response.commit();
+
+        var queued = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(queued.capture());
+        String wire = responseText(queued);
+        assertThat(wire, containsString("Transfer-Encoding: chunked\r\n"));
+        assertThat(responseEntity(wire, false), is(expected));
     }
 
     @Test
@@ -1159,11 +1209,29 @@ class Http1ServerResponseTest {
                 assertThat(wire.substring(offset), is("\r\n"));
                 return entity.toString();
             }
+            assertThat("Chunk entity exceeds the bounded transfer size", length, lessThanOrEqualTo(65536));
             entity.append(wire, offset, offset + length);
             offset += length;
             assertThat(wire.substring(offset, offset + 2), is("\r\n"));
             offset += 2;
         }
+    }
+
+    private static String incompleteChunkedResponseEntity(String wire) {
+        int offset = wire.indexOf("\r\n\r\n") + 4;
+        var entity = new StringBuilder();
+        while (offset < wire.length()) {
+            int sizeEnd = wire.indexOf("\r\n", offset);
+            int length = Integer.parseInt(wire.substring(offset, sizeEnd), 16);
+            assertThat("Response terminated before commit", length, greaterThan(0));
+            assertThat("Chunk entity exceeds the bounded transfer size", length, lessThanOrEqualTo(65536));
+            offset = sizeEnd + 2;
+            entity.append(wire, offset, offset + length);
+            offset += length;
+            assertThat(wire.substring(offset, offset + 2), is("\r\n"));
+            offset += 2;
+        }
+        return entity.toString();
     }
 
     private static void assertEntityStatusRejectedAfterDeferredEncoderFinalization(boolean closeOutput)

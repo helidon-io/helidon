@@ -578,7 +578,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
     }
 
     static class BlockingOutputStream extends OutputStream {
-        private static final int WRITE_SLICE_SIZE = 8192;
+        private static final int FIRST_BUFFER_SIZE = 8192;
+        private static final int WRITE_SLICE_SIZE = 64 * 1024;
 
         private final ServerResponseHeaders headers;
         private final WritableHeaders<?> trailers;
@@ -692,7 +693,9 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             int remaining = len;
             int offset = off;
             while (remaining > 0) {
-                int length = Math.min(remaining, WRITE_SLICE_SIZE);
+                // Keep initial chunk buffering small so the first large write starts streaming.
+                int sliceSize = isChunked && firstByte && firstBuffer == null ? FIRST_BUFFER_SIZE : WRITE_SLICE_SIZE;
+                int length = Math.min(remaining, sliceSize);
                 write(BufferData.create(b, offset, length));
                 offset += length;
                 remaining -= length;
