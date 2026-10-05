@@ -19,6 +19,7 @@ package io.helidon.webclient.http1;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -58,14 +59,216 @@ import io.helidon.webclient.spi.WebClientService;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Timeout(20)
 class Http1TransportObservationTest {
+    @ParameterizedTest
+    @CsvSource({"0,false", "4,false", "0,true", "4,true"})
+    void earlyDuplexResponseWaitsForUploadBeforeCompletingObservation(int length, boolean connectionClose) throws Exception {
+        var observer = new RecordingProvider();
+        var uploadStarted = new CountDownLatch(1);
+        var allowUpload = new CountDownLatch(1);
+        try (var server = new RawServer(1, socket -> {
+            readHead(socket);
+            write(socket, "HTTP/1.1 200 OK\r\nContent-Length: " + length + "\r\n"
+                    + (connectionClose ? "Connection: close\r\n" : "") + "\r\n" + (length == 0 ? "" : "body"));
+            assertThat(socket.getInputStream().read(), is(42));
+            assertThat(socket.getInputStream().read(), is(-1));
+        })) {
+            Http1Client client = client(server, observer);
+            try {
+                client.post().sendExpectContinue(false).header(HeaderNames.CONTENT_LENGTH, "1").exchange(output -> {
+                    uploadStarted.countDown();
+                    await(allowUpload);
+                    try (output) {
+                        output.write(42);
+                    }
+                }, response -> {
+                    await(uploadStarted);
+                    try {
+                        if (length != 0) {
+                            assertThat(response.entity().as(String.class), is("body"));
+                        }
+                        response.close();
+                        assertThat("Response completion and disposal keep the upload observation active",
+                                   observer.onlyConnection().outcomes(), is(List.of()));
+                        assertThat(observer.onlyConnection().closes.get(), is(0));
+                    } finally {
+                        allowUpload.countDown();
+                    }
+                });
+                assertThat(observer.onlyConnection().outcomes(), is(List.of(StreamOutcome.COMPLETED)));
+            } finally {
+                allowUpload.countDown();
+                client.closeResourceAsync().toCompletableFuture().get(10, TimeUnit.SECONDS);
+            }
+            server.await();
+        }
+        observer.onlyConnection().assertClosed();
+    }
+
+    @Test
+    void duplexUploadFinishesBeforeResponseWithoutCompletingObservation() throws Exception {
+        var observer = new RecordingProvider();
+        var uploadFramed = new CountDownLatch(1);
+        try (var server = new RawServer(1, socket -> {
+            readHead(socket);
+            assertThat(socket.getInputStream().read(), is(42));
+            assertThat(uploadFramed.await(5, TimeUnit.SECONDS), is(true));
+            write(socket, "HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\nbody");
+            assertThat(socket.getInputStream().read(), is(-1));
+        })) {
+            Http1Client client = client(server, observer);
+            try {
+                client.post().sendExpectContinue(false).header(HeaderNames.CONTENT_LENGTH, "1").exchange(output -> {
+                    try {
+                        try (output) {
+                            output.write(42);
+                        }
+                        assertThat("Request framing alone does not complete the response observation",
+                                   observer.onlyConnection().outcomes(), is(List.of()));
+                    } finally {
+                        uploadFramed.countDown();
+                    }
+                }, response -> assertThat(response.entity().as(String.class), is("body")));
+                assertThat(observer.onlyConnection().outcomes(), is(List.of(StreamOutcome.COMPLETED)));
+            } finally {
+                uploadFramed.countDown();
+                client.closeResourceAsync().toCompletableFuture().get(10, TimeUnit.SECONDS);
+            }
+            server.await();
+        }
+        observer.onlyConnection().assertClosed();
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 4})
+    void uploadFailureAfterEarlyResponseRemainsObservable(int length) throws Exception {
+        var observer = new RecordingProvider();
+        var allowFailure = new CountDownLatch(1);
+        var expected = new IOException("Upload failed after the response finished");
+        try (var server = new RawServer(1, socket -> {
+            readHead(socket);
+            write(socket, "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: " + length + "\r\n\r\n"
+                    + (length == 0 ? "" : "body"));
+            assertThat(socket.getInputStream().read(), is(-1));
+        })) {
+            Http1Client client = client(server, observer);
+            try {
+                var failure = assertThrows(UncheckedIOException.class, () ->
+                        client.post().sendExpectContinue(false).header(HeaderNames.CONTENT_LENGTH, "1").exchange(output -> {
+                            await(allowFailure);
+                            throw expected;
+                        }, response -> {
+                            try {
+                                if (length != 0) {
+                                    assertThat(response.entity().as(String.class), is("body"));
+                                }
+                                response.close();
+                                assertThat(observer.onlyConnection().outcomes(), is(List.of()));
+                                assertThat(observer.onlyConnection().closes.get(), is(0));
+                            } finally {
+                                allowFailure.countDown();
+                            }
+                        }));
+                assertThat(failure.getCause(), sameInstance(expected));
+                assertThat(observer.onlyConnection().outcomes(), is(List.of(StreamOutcome.ERROR)));
+                assertThat(observer.onlyConnection().outcome, is(ConnectionOutcome.ERROR));
+            } finally {
+                allowFailure.countDown();
+                client.closeResourceAsync().toCompletableFuture().get(10, TimeUnit.SECONDS);
+            }
+            server.await();
+        }
+        observer.onlyConnection().assertClosed();
+    }
+
+    @Test
+    void concurrentDuplexDirectionCompletionClosesObservationOnce() throws Exception {
+        var observer = new RecordingProvider();
+        try (var server = new RawServer(1, socket -> {
+            readHead(socket);
+            write(socket, "HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\nbody");
+            assertThat(socket.getInputStream().read(), is(-1));
+        })) {
+            Http1Client client = client(server, observer);
+            try (var response = (Http1ClientResponseImpl) client.get().request();
+                 var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+                Http1TransportObservation observation = response.transportObservation();
+                observation.startDuplex();
+                var ready = new CountDownLatch(2);
+                var start = new CountDownLatch(1);
+                try {
+                    var upload = executor.submit(() -> {
+                        ready.countDown();
+                        start.await();
+                        observation.uploadComplete();
+                        return null;
+                    });
+                    var download = executor.submit(() -> {
+                        ready.countDown();
+                        start.await();
+                        observation.complete();
+                        return null;
+                    });
+                    assertThat(ready.await(5, TimeUnit.SECONDS), is(true));
+                    start.countDown();
+                    upload.get(5, TimeUnit.SECONDS);
+                    download.get(5, TimeUnit.SECONDS);
+                    assertThat(observer.onlyConnection().outcomes(), is(List.of(StreamOutcome.COMPLETED)));
+                } finally {
+                    start.countDown();
+                }
+            } finally {
+                client.closeResourceAsync().toCompletableFuture().get(10, TimeUnit.SECONDS);
+            }
+            server.await();
+        }
+        observer.onlyConnection().assertClosed();
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void declinedDuplexUploadTerminatesObservationOnce(boolean expectContinue) throws Exception {
+        var observer = new RecordingProvider();
+        var uploadStarted = new CountDownLatch(1);
+        var uploadCalls = new AtomicInteger();
+        try (var server = new RawServer(1, socket -> {
+            readHead(socket);
+            write(socket, "HTTP/1.1 413 Content Too Large\r\nConnection: close\r\nContent-Length: 0\r\n\r\n");
+            assertThat(socket.getInputStream().read(), is(-1));
+        })) {
+            Http1Client client = client(server, observer);
+            try {
+                client.post().sendExpectContinue(expectContinue).header(HeaderNames.CONTENT_LENGTH, "1").exchange(output -> {
+                    uploadCalls.incrementAndGet();
+                    uploadStarted.countDown();
+                    await(new CountDownLatch(1));
+                }, response -> {
+                    if (!expectContinue) {
+                        await(uploadStarted);
+                    }
+                    assertThat(response.status().code(), is(413));
+                });
+                assertThat(uploadCalls.get(), is(expectContinue ? 0 : 1));
+                assertThat(observer.onlyConnection().outcomes(), is(List.of(StreamOutcome.CANCELLED)));
+            } finally {
+                client.closeResourceAsync().toCompletableFuture().get(10, TimeUnit.SECONDS);
+            }
+            server.await();
+        }
+        observer.onlyConnection().assertClosed();
+    }
+
     @Test
     void rejectedProxyConnectObservesThePhysicalConnectionWithoutAnApplicationStream() throws Exception {
         var observer = new RecordingProvider();
@@ -483,6 +686,17 @@ class Http1TransportObservationTest {
             server.await();
         }
         observer.onlyConnection().assertClosed();
+    }
+
+    private static void await(CountDownLatch permission) throws IOException {
+        try {
+            if (!permission.await(5, TimeUnit.SECONDS)) {
+                throw new IOException("Duplex observation coordination timed out");
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Duplex observation coordination interrupted", e);
+        }
     }
 
     private static void terminate(Http1TransportObservation observation, StreamOutcome outcome) {

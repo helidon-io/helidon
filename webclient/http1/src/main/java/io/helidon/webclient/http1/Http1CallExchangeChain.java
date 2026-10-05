@@ -87,6 +87,9 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
                                        DataReader reader,
                                        BufferData prologue) {
         exchangeConnection = new ExchangeConnection(connection, reader, writer);
+        if (transportObservation() != null) {
+            transportObservation().startDuplex();
+        }
         long length = headers.contentLength().orElse(-1);
         boolean chunked = length == -1 || headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED);
         if (chunked) {
@@ -157,6 +160,9 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
                             }
                         } catch (Throwable e) {
                             if (!uploadCancelled) {
+                                if (transportObservation() != null) {
+                                    transportObservation().fail(e);
+                                }
                                 abort(e);
                             }
                         }
@@ -365,6 +371,9 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
                     Http1CallExchangeChain.this.write(BufferData.create(TERMINATING_CHUNK));
                 }
                 closed = true;
+                if (transportObservation() != null) {
+                    transportObservation().uploadComplete();
+                }
                 whenSent.complete(request);
             }
         }
