@@ -176,6 +176,82 @@ class Http2ClientConnectionTest {
         assertThat(pendingHeaders.frames().length, is(8_192));
     }
 
+    @ParameterizedTest(name = "retire={0}, peerGoAway={1}")
+    @CsvSource({"false, false", "false, true", "true, false", "true, true"})
+    void localCloseRecordsOutcomeBeforePeerCloseDuringGoAwayWrite(boolean retire, boolean peerGoAway) throws Exception {
+        var physical = mock(ClientConnection.class, withSettings().extraInterfaces(ConnectionObservationContext.class));
+        var observationContext = (ConnectionObservationContext) physical;
+        when(observationContext.httpTransportObservation()).thenReturn(mock(ConnectionObservation.class));
+
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext(physical);
+             ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            assertThat("Initial SETTINGS ACK must complete before blocking GOAWAY",
+                       test.initialWriteNowCallsCompleted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
+                       is(true));
+            clearInvocations(test.dataWriter, physical);
+
+            MockedConnectionTestContext.BlockedWrite blockedGoAway = test.blockNextWriteNow();
+            var closing = executor.submit(retire ? connection::retire : connection::close);
+            try {
+                assertThat("Local GOAWAY write must be in progress before the peer closes",
+                           blockedGoAway.awaitEntered(), is(true));
+                if (peerGoAway) {
+                    test.offerInbound(new Http2GoAway(0, Http2ErrorCode.NO_ERROR, "peer acknowledged close")
+                                              .toFrameData(Http2Settings.create(), 0, Http2Flag.NoFlags.create()));
+                } else {
+                    test.closeInbound();
+                }
+                verify(observationContext, timeout(TEST_WAIT_TIMEOUT.toMillis()))
+                        .httpTransportOutcome(ConnectionOutcome.REMOTE_CLOSE);
+                test.assertConnectionClosed();
+            } finally {
+                blockedGoAway.release();
+            }
+            closing.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+
+            ArgumentCaptor<BufferData> goAway = ArgumentCaptor.forClass(BufferData.class);
+            InOrder closeOrder = inOrder(physical, test.dataWriter);
+            closeOrder.verify(observationContext).httpTransportOutcome(ConnectionOutcome.LOCAL_CLOSE);
+            closeOrder.verify(test.dataWriter).writeNow(goAway.capture());
+            closeOrder.verify(observationContext).httpTransportOutcome(ConnectionOutcome.REMOTE_CLOSE);
+            closeOrder.verify(physical).closeResource();
+            assertThat("The blocked outbound frame must be GOAWAY",
+                       Http2FrameHeader.create(goAway.getValue()).type(), is(Http2FrameType.GO_AWAY));
+        }
+    }
+
+    @ParameterizedTest(name = "peerGoAway={0}")
+    @CsvSource({"false", "true"})
+    void peerCloseRecordsRemoteOutcomeBeforePhysicalClose(boolean peerGoAway) throws Exception {
+        var physical = mock(ClientConnection.class, withSettings().extraInterfaces(ConnectionObservationContext.class));
+        var observationContext = (ConnectionObservationContext) physical;
+        when(observationContext.httpTransportObservation()).thenReturn(mock(ConnectionObservation.class));
+
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext(physical)) {
+            test.offerInbound(settingsFrame(10));
+            Http2ClientConnection connection = test.createConnection(false);
+            assertThat(test.initialWriteNowCallsCompleted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
+                       is(true));
+            clearInvocations(physical);
+
+            if (peerGoAway) {
+                test.offerInbound(new Http2GoAway(0, Http2ErrorCode.NO_ERROR, "peer initiated close")
+                                          .toFrameData(Http2Settings.create(), 0, Http2Flag.NoFlags.create()));
+            } else {
+                test.closeInbound();
+            }
+            test.assertConnectionClosed();
+            connection.close();
+
+            InOrder closeOrder = inOrder(physical);
+            closeOrder.verify(observationContext).httpTransportOutcome(ConnectionOutcome.REMOTE_CLOSE);
+            closeOrder.verify(physical).closeResource();
+            verify(observationContext, never()).httpTransportOutcome(ConnectionOutcome.LOCAL_CLOSE);
+        }
+    }
+
     private static Http2FrameData encodedHeaderFrame(int streamId,
                                                      Http2Headers headers,
                                                      Http2Headers.DynamicTable dynamicTable,
@@ -1397,82 +1473,6 @@ class Http2ClientConnectionTest {
             test.assertConnectionClosed();
             stream.close();
             connection.close();
-        }
-    }
-
-    @ParameterizedTest(name = "retire={0}, peerGoAway={1}")
-    @CsvSource({"false, false", "false, true", "true, false", "true, true"})
-    void localCloseRecordsOutcomeBeforePeerCloseDuringGoAwayWrite(boolean retire, boolean peerGoAway) throws Exception {
-        var physical = mock(ClientConnection.class, withSettings().extraInterfaces(ConnectionObservationContext.class));
-        var observationContext = (ConnectionObservationContext) physical;
-        when(observationContext.httpTransportObservation()).thenReturn(mock(ConnectionObservation.class));
-
-        try (MockedConnectionTestContext test = new MockedConnectionTestContext(physical);
-             ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            test.offerInbound(settingsFrame(10));
-            Http2ClientConnection connection = test.createConnection(false);
-            assertThat("Initial SETTINGS ACK must complete before blocking GOAWAY",
-                       test.initialWriteNowCallsCompleted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
-                       is(true));
-            clearInvocations(test.dataWriter, physical);
-
-            MockedConnectionTestContext.BlockedWrite blockedGoAway = test.blockNextWriteNow();
-            var closing = executor.submit(retire ? connection::retire : connection::close);
-            try {
-                assertThat("Local GOAWAY write must be in progress before the peer closes",
-                           blockedGoAway.awaitEntered(), is(true));
-                if (peerGoAway) {
-                    test.offerInbound(new Http2GoAway(0, Http2ErrorCode.NO_ERROR, "peer acknowledged close")
-                                              .toFrameData(Http2Settings.create(), 0, Http2Flag.NoFlags.create()));
-                } else {
-                    test.closeInbound();
-                }
-                verify(observationContext, timeout(TEST_WAIT_TIMEOUT.toMillis()))
-                        .httpTransportOutcome(ConnectionOutcome.REMOTE_CLOSE);
-                test.assertConnectionClosed();
-            } finally {
-                blockedGoAway.release();
-            }
-            closing.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
-
-            ArgumentCaptor<BufferData> goAway = ArgumentCaptor.forClass(BufferData.class);
-            InOrder closeOrder = inOrder(physical, test.dataWriter);
-            closeOrder.verify(observationContext).httpTransportOutcome(ConnectionOutcome.LOCAL_CLOSE);
-            closeOrder.verify(test.dataWriter).writeNow(goAway.capture());
-            closeOrder.verify(observationContext).httpTransportOutcome(ConnectionOutcome.REMOTE_CLOSE);
-            closeOrder.verify(physical).closeResource();
-            assertThat("The blocked outbound frame must be GOAWAY",
-                       Http2FrameHeader.create(goAway.getValue()).type(), is(Http2FrameType.GO_AWAY));
-        }
-    }
-
-    @ParameterizedTest(name = "peerGoAway={0}")
-    @CsvSource({"false", "true"})
-    void peerCloseRecordsRemoteOutcomeBeforePhysicalClose(boolean peerGoAway) throws Exception {
-        var physical = mock(ClientConnection.class, withSettings().extraInterfaces(ConnectionObservationContext.class));
-        var observationContext = (ConnectionObservationContext) physical;
-        when(observationContext.httpTransportObservation()).thenReturn(mock(ConnectionObservation.class));
-
-        try (MockedConnectionTestContext test = new MockedConnectionTestContext(physical)) {
-            test.offerInbound(settingsFrame(10));
-            Http2ClientConnection connection = test.createConnection(false);
-            assertThat(test.initialWriteNowCallsCompleted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
-                       is(true));
-            clearInvocations(physical);
-
-            if (peerGoAway) {
-                test.offerInbound(new Http2GoAway(0, Http2ErrorCode.NO_ERROR, "peer initiated close")
-                                          .toFrameData(Http2Settings.create(), 0, Http2Flag.NoFlags.create()));
-            } else {
-                test.closeInbound();
-            }
-            test.assertConnectionClosed();
-            connection.close();
-
-            InOrder closeOrder = inOrder(physical);
-            closeOrder.verify(observationContext).httpTransportOutcome(ConnectionOutcome.REMOTE_CLOSE);
-            closeOrder.verify(physical).closeResource();
-            verify(observationContext, never()).httpTransportOutcome(ConnectionOutcome.LOCAL_CLOSE);
         }
     }
 
