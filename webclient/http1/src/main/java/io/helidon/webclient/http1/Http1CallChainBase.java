@@ -286,13 +286,17 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
             }
             if (!explicitConnectionRequest) {
                 try {
-                    effectiveConnection.closeResource();
+                    closeConnectionOnFailure(effectiveConnection);
                 } catch (Throwable closeFailure) {
                     e.addSuppressed(closeFailure);
                 }
             }
             throw e;
         }
+    }
+
+    void closeConnectionOnFailure(ClientConnection failedConnection) {
+        failedConnection.closeResource();
     }
 
     @Override

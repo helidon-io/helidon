@@ -25,6 +25,7 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
@@ -53,11 +54,11 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
     private final ClientRequest.OutputStreamHandler uploadHandler;
     private final AtomicReference<Throwable> failure = new AtomicReference<>();
     private final AtomicInteger pendingIo = new AtomicInteger();
+    private final AtomicBoolean closed = new AtomicBoolean();
 
     private volatile long lastProgress = System.nanoTime();
     private volatile boolean finished;
     private volatile boolean released;
-    private volatile boolean closed;
     private volatile boolean awaitingContinue;
     private volatile boolean uploadCancelled;
     private boolean uploadSkipped;
@@ -83,7 +84,7 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
                                        DataWriter writer,
                                        DataReader reader,
                                        BufferData prologue) {
-        exchangeConnection = new ExchangeConnection(connection, reader);
+        exchangeConnection = new ExchangeConnection(connection, reader, writer);
         long length = headers.contentLength().orElse(-1);
         boolean chunked = length == -1 || headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED);
         if (chunked) {
@@ -182,6 +183,15 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
         checkFailure();
     }
 
+    @Override
+    void closeConnectionOnFailure(ClientConnection failedConnection) {
+        if (exchangeConnection == null) {
+            closeConnection(failedConnection);
+        } else {
+            exchangeConnection.closeResource();
+        }
+    }
+
     void checkFailure() {
         Throwable cause = failure.get();
         if (cause instanceof IOException e) {
@@ -228,7 +238,7 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
         if (uploader != null) {
             join(uploader);
         }
-        if (exchangeConnection != null && !closed) {
+        if (exchangeConnection != null && !closed.get()) {
             if (success && released && !uploadSkipped && failure.get() == null) {
                 exchangeConnection.delegate.readTimeout(originalRequest().readTimeout());
                 exchangeConnection.delegate.releaseResource();
@@ -249,6 +259,12 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
         }
         if (interrupted) {
             Thread.currentThread().interrupt();
+        }
+    }
+
+    private void closeConnection(ClientConnection delegate) {
+        if (closed.compareAndSet(false, true)) {
+            delegate.closeResource();
         }
     }
 
@@ -354,9 +370,13 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
     private final class ExchangeConnection implements ClientConnection {
         private final ClientConnection delegate;
         private final DataReader reader;
+        private final DataWriter writer;
+        private final HelidonSocket socket;
 
-        private ExchangeConnection(ClientConnection delegate, DataReader source) {
+        private ExchangeConnection(ClientConnection delegate, DataReader source, DataWriter writer) {
             this.delegate = delegate;
+            this.writer = writer;
+            this.socket = delegate.helidonSocket();
             this.reader = DataReader.create(() -> {
                 beginIo();
                 boolean progress = false;
@@ -378,7 +398,7 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
 
         @Override
         public DataWriter writer() {
-            return delegate.writer();
+            return writer;
         }
 
         @Override
@@ -388,7 +408,7 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
 
         @Override
         public HelidonSocket helidonSocket() {
-            return delegate.helidonSocket();
+            return socket;
         }
 
         @Override
@@ -408,8 +428,7 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
 
         @Override
         public void closeResource() {
-            closed = true;
-            delegate.closeResource();
+            closeConnection(delegate);
         }
     }
 }
