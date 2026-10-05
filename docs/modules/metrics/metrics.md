@@ -151,7 +151,7 @@ property defaults to `true`. Meters with no matching entry remain enabled and
 retain their existing settings, unless metrics is disabled globally.
 
 The `helidon.http.streams.duration` timer records count, total duration, mean,
-and windowed maximum without local percentiles by default. To enable local
+and maximum without local percentiles by default. To enable local
 percentiles for this timer:
 
 ```yaml [application.yaml]
@@ -164,7 +164,7 @@ metrics:
 An omitted `percentiles` property preserves the timer builder's settings.
 Other timers, including connection and handshake duration timers, retain
 Helidon's default percentiles. An explicit empty list disables local
-percentiles while retaining count, total duration, mean, and windowed maximum.
+percentiles while retaining count, total duration, mean, and maximum.
 A non-empty list selects percentile values between `0` and `1`, inclusive.
 Separately configured histogram buckets remain independent of local percentiles.
 
