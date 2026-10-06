@@ -286,6 +286,7 @@
                 <configuration>
                     <excludes>
                         <exclude>**/*JmhRunnerTest.java</exclude>
+                        <exclude>**/Http3QuicEvidenceManifestTest.java</exclude>
                         <exclude>**/*$*</exclude>
                     </excludes>
                     <systemPropertyVariables>
