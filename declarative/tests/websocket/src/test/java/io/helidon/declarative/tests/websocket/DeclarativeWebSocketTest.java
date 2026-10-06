@@ -160,7 +160,7 @@ public class DeclarativeWebSocketTest {
         try {
             endpoint.openedSession().get(5, TimeUnit.SECONDS);
             assertThat(endpoint.activeSessions(), is(1));
-            ws.sendText("123456789123456789", true).get(5, TimeUnit.SECONDS);
+            ws.sendText("x".repeat(129), true).get(5, TimeUnit.SECONDS);
 
             TestListener.TextResults results = listener.textResults();
             assertThat(results.statusCode(), is(WsCloseCodes.TOO_BIG));
