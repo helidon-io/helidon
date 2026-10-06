@@ -19,11 +19,13 @@ package io.helidon.metrics.providers.helidon;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -57,7 +59,7 @@ final class HelidonMeterRegistry implements MeterRegistry {
     private final List<Consumer<Meter>> removeListeners = new CopyOnWriteArrayList<>();
     private final ConcurrentMap<HelidonMeterId, HelidonMeter> meters = new ConcurrentHashMap<>();
     private final ConcurrentMap<HelidonMeterId, Meter> disabledMeters = new ConcurrentHashMap<>();
-    private final Set<Meter> deletedDisabledMeters = ConcurrentHashMap.newKeySet();
+    private final Set<Meter> deletedDisabledMeters = Collections.newSetFromMap(new WeakHashMap<>());
     private final List<HelidonMetricsPublisher.Session> publisherSessions = new ArrayList<>();
     private final Clock clock;
     private final MetricsConfig metricsConfig;
@@ -224,9 +226,14 @@ final class HelidonMeterRegistry implements MeterRegistry {
         Objects.requireNonNull(id);
         lock.writeLock().lock();
         try {
-            HelidonMeter removed = meters.remove(HelidonTypes.meterId(id.name(), id.tags()));
+            HelidonMeterId meterId = HelidonTypes.meterId(id.name(), id.tags());
+            HelidonMeter removed = meters.remove(meterId);
             if (removed == null) {
-                return Optional.empty();
+                Meter disabled = disabledMeters.remove(meterId);
+                if (disabled != null) {
+                    deletedDisabledMeters.add(disabled);
+                }
+                return Optional.ofNullable(disabled);
             }
             removed.markAsDeleted();
             notifyListenersOfRemove(removeListeners, removed);
@@ -247,7 +254,13 @@ final class HelidonMeterRegistry implements MeterRegistry {
         if (meter instanceof HelidonMeter helidonMeter) {
             return helidonMeter.isDeleted();
         }
-        return deletedDisabledMeters.contains(meter);
+        // WeakHashMap also expunges collected keys during lookup.
+        lock.writeLock().lock();
+        try {
+            return deletedDisabledMeters.contains(meter);
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     @Override

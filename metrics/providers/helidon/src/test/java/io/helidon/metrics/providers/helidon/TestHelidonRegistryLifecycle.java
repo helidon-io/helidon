@@ -37,6 +37,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.Counter;
@@ -384,6 +385,21 @@ class TestHelidonRegistryLifecycle {
         }
     }
 
+    @ParameterizedTest
+    @EnumSource(RemovalOperation.class)
+    void globallyDisabledGaugeRemovalAllowsNewSupplier(RemovalOperation operation) {
+        assertDisabledGaugeRemoval(MetricsConfig.builder().enabled(false).build(), operation);
+    }
+
+    @ParameterizedTest
+    @EnumSource(RemovalOperation.class)
+    void namePatternDisabledGaugeRemovalAllowsNewSupplier(RemovalOperation operation) {
+        assertDisabledGaugeRemoval(MetricsConfig.builder()
+                                           .addMeter(meter -> meter.namePattern(Pattern.compile("disabled\\..*"))
+                                                   .enabled(false))
+                                           .build(), operation);
+    }
+
     @Test
     void disabledMeterIsDeletedAfterRegistryClose() {
         HelidonMetricsFactory factory = HelidonMetricsFactory.create();
@@ -488,6 +504,71 @@ class TestHelidonRegistryLifecycle {
                      () -> registry.remove(new HelidonMeterId("counter", List.of()), null));
         assertThrows(NullPointerException.class,
                      () -> registry.remove("counter", List.of(), null));
+    }
+
+    private static void assertDisabledGaugeRemoval(MetricsConfig metricsConfig, RemovalOperation operation) {
+        HelidonMetricsFactory factory = HelidonMetricsFactory.create();
+        try {
+            MeterRegistry registry = factory.createMeterRegistry(metricsConfig);
+            MeterRegistry unrelatedRegistry = factory.createMeterRegistry(metricsConfig);
+            AtomicInteger adds = new AtomicInteger();
+            AtomicInteger removes = new AtomicInteger();
+            registry.onMeterAdded(_ -> adds.incrementAndGet());
+            registry.onMeterRemoved(_ -> removes.incrementAndGet());
+            Gauge.Builder<Integer> originalBuilder = factory.gaugeBuilder("disabled.removable", () -> 17)
+                    .addTag(factory.tagCreate("color", "red"));
+            Gauge.Builder<Integer> replacementBuilder = factory.gaugeBuilder("disabled.removable", () -> 29)
+                    .addTag(factory.tagCreate("color", "red"));
+            Gauge.Builder<Integer> otherTagsBuilder = factory.gaugeBuilder("disabled.removable", () -> 43)
+                    .addTag(factory.tagCreate("color", "blue"));
+            Gauge<Integer> original = registry.getOrCreate(originalBuilder);
+            Gauge<Integer> otherTags = registry.getOrCreate(otherTagsBuilder);
+            Gauge<Integer> unrelated = unrelatedRegistry.getOrCreate(originalBuilder);
+
+            assertAll("Before disabled gauge removal",
+                      () -> assertThat("Same ID retains the original gauge", registry.getOrCreate(replacementBuilder),
+                                       sameInstance(original)),
+                      () -> assertThat("Cached gauge retains the original supplier", original.value(), is(17)),
+                      () -> assertThat("Original gauge is live", registry.isDeleted(original), is(false)),
+                      () -> assertThat("Disabled gauges are not enumerated", registry.meters(), empty()),
+                      () -> assertThat("Disabled gauges do not notify add listeners", adds.get(), is(0)));
+
+            assertThat("Removal returns the original gauge", operation.remove(registry, original).orElse(null),
+                       sameInstance(original));
+            assertThat("Repeated removal is empty", operation.remove(registry, original), is(Optional.empty()));
+            Gauge<Integer> replacement = registry.getOrCreate(replacementBuilder);
+
+            assertAll("After disabled gauge removal",
+                      () -> assertThat("Removed gauge is deleted", registry.isDeleted(original), is(true)),
+                      () -> assertThat("Same ID creates a new gauge", replacement, not(sameInstance(original))),
+                      () -> assertThat("Replacement uses the new supplier", replacement.value(), is(29)),
+                      () -> assertThat("Replacement is live", registry.isDeleted(replacement), is(false)),
+                      () -> assertThat("Replacement is cached", registry.getOrCreate(originalBuilder),
+                                       sameInstance(replacement)),
+                      () -> assertThat("Other tags retain their cached gauge", registry.getOrCreate(otherTagsBuilder),
+                                       sameInstance(otherTags)),
+                      () -> assertThat("Other tags retain their supplier", otherTags.value(), is(43)),
+                      () -> assertThat("Other tags remain live", registry.isDeleted(otherTags), is(false)),
+                      () -> assertThat("Unrelated same-ID gauge is not deleted", registry.isDeleted(unrelated), is(false)),
+                      () -> assertThat("Unrelated registry retains its gauge",
+                                       unrelatedRegistry.getOrCreate(originalBuilder), sameInstance(unrelated)),
+                      () -> assertThat("Disabled gauges remain absent from enumeration", registry.meters(), empty()),
+                      () -> assertThat("Replacement does not notify add listeners", adds.get(), is(0)),
+                      () -> assertThat("Disabled removal does not notify remove listeners", removes.get(), is(0)));
+
+            registry.close();
+
+            assertAll("After registry close",
+                      () -> assertThat("Removed gauge remains deleted", registry.isDeleted(original), is(true)),
+                      () -> assertThat("Replacement is deleted", registry.isDeleted(replacement), is(true)),
+                      () -> assertThat("Other tagged gauge is deleted", registry.isDeleted(otherTags), is(true)),
+                      () -> assertThat("Unrelated same-ID gauge is not deleted", registry.isDeleted(unrelated), is(false)),
+                      () -> assertThat("Unrelated gauge remains live", unrelatedRegistry.isDeleted(unrelated), is(false)),
+                      () -> assertThat("Unrelated gauge retains the original supplier", unrelated.value(), is(17)),
+                      () -> assertThat("Closing disabled gauges does not notify remove listeners", removes.get(), is(0)));
+        } finally {
+            factory.close();
+        }
     }
 
     private static void assertFactoryCloseFromListenerCompletes(ListenerOperation operation,
@@ -661,6 +742,20 @@ class TestHelidonRegistryLifecycle {
 
         assertThat(registry.meters().size(), is(1));
         assertThat(adds.get(), is(1));
+    }
+
+    private enum RemovalOperation {
+        METER,
+        ID,
+        NAME_AND_TAGS;
+
+        private Optional<Meter> remove(MeterRegistry registry, Meter meter) {
+            return switch (this) {
+                case METER -> registry.remove(meter);
+                case ID -> registry.remove(meter.id());
+                case NAME_AND_TAGS -> registry.remove(meter.id().name(), meter.id().tags());
+            };
+        }
     }
 
     private enum ListenerOperation {
