@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -157,12 +157,27 @@ import org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
  * <tr>
  *     <td>query-param-use</td>
  *     <td>false</td>
- *     <td>Whether to expect JWT in a query parameter</td>
+ *     <td>Whether to expect JWT or encrypted token handoff in a query parameter</td>
  * </tr>
  * <tr>
  *     <td>query-param-name</td>
  *     <td>accessToken</td>
- *     <td>Name of a query parameter that contains the JWT token when parameter is used.</td>
+ *     <td>Name of a query parameter that contains the JWT token or encrypted handoff when parameter is used.</td>
+ * </tr>
+ * <tr>
+ *     <td>legacy-state-param</td>
+ *     <td>false</td>
+ *     <td>Whether to write and accept the legacy raw local redirect URI in OIDC state during rolling updates.</td>
+ * </tr>
+ * <tr>
+ *     <td>legacy-state-fallback</td>
+ *     <td>false</td>
+ *     <td>Whether to accept older unbound encrypted or raw local state after strict validation fails.</td>
+ * </tr>
+ * <tr>
+ *     <td>legacy-query-param-handoff</td>
+ *     <td>false</td>
+ *     <td>Whether to write a raw access token to the redirect query during rolling updates.</td>
  * </tr>
  * <tr>
  *     <td>header-use</td>
@@ -281,6 +296,9 @@ public final class OidcConfig {
     private final String cookieOptions;
     private final boolean useParam;
     private final String paramName;
+    private final boolean legacyStateParam;
+    private final boolean legacyStateFallback;
+    private final boolean legacyQueryParamHandoff;
 
     private final URI identityUri;
     private final WebTarget tokenEndpoint;
@@ -291,6 +309,7 @@ public final class OidcConfig {
     private final TokenHandler headerHandler;
     private final String authorizationEndpointUri;
     private final String clientId;
+    private final String clientSecret;
     private final JwkKeys signJwk;
     private final String baseScopes;
     private final boolean validateJwtWithJwk;
@@ -306,11 +325,15 @@ public final class OidcConfig {
 
     private OidcConfig(Builder builder) {
         this.clientId = builder.clientId;
+        this.clientSecret = builder.clientSecret;
         this.useCookie = builder.useCookie;
         this.cookieName = builder.cookieName;
         this.cookieValuePrefix = cookieName + "=";
         this.useParam = builder.useParam;
         this.paramName = builder.paramName;
+        this.legacyStateParam = builder.legacyStateParam;
+        this.legacyStateFallback = builder.legacyStateFallback;
+        this.legacyQueryParamHandoff = builder.legacyQueryParamHandoff;
         this.redirectUri = builder.redirectUri;
         this.useHeader = builder.useHeader;
         this.headerHandler = builder.headerHandler;
@@ -455,6 +478,46 @@ public final class OidcConfig {
      */
     public boolean useParam() {
         return useParam;
+    }
+
+    /**
+     * Whether legacy raw local redirect state is written and accepted.
+     *
+     * @return whether legacy state is enabled
+     * @see Builder#legacyStateParam(boolean)
+     */
+    public boolean legacyStateParam() {
+        return legacyStateParam;
+    }
+
+    /**
+     * Whether older unbound encrypted or raw local redirect state is accepted.
+     *
+     * @return whether legacy state fallback is enabled
+     * @see Builder#legacyStateFallback(boolean)
+     */
+    public boolean legacyStateFallback() {
+        return legacyStateFallback;
+    }
+
+    /**
+     * Whether raw access tokens are written to callback redirect query parameters.
+     *
+     * @return whether legacy query handoff is enabled
+     * @see Builder#legacyQueryParamHandoff(boolean)
+     */
+    public boolean legacyQueryParamHandoff() {
+        return legacyQueryParamHandoff;
+    }
+
+    /**
+     * Client secret used for token requests and encryption of OIDC redirect state and token handoff.
+     *
+     * @return configured client secret
+     * @see Builder#clientSecret(String)
+     */
+    public String clientSecret() {
+        return clientSecret;
     }
 
     /**
@@ -708,6 +771,9 @@ public final class OidcConfig {
 
         private boolean useParam = DEFAULT_PARAM_USE;
         private String paramName = DEFAULT_PARAM_NAME;
+        private boolean legacyStateParam;
+        private boolean legacyStateFallback;
+        private boolean legacyQueryParamHandoff;
 
         // optional properties
         private String proxyProtocol = DEFAULT_PROXY_PROTOCOL;
@@ -895,6 +961,9 @@ public final class OidcConfig {
             config.get("cookie-same-site").asString().ifPresent(this::cookieSameSite);
             config.get("query-param-use").asBoolean().ifPresent(this::useParam);
             config.get("query-param-name").asString().ifPresent(this::paramName);
+            config.get("legacy-state-param").asBoolean().ifPresent(this::legacyStateParam);
+            config.get("legacy-state-fallback").asBoolean().ifPresent(this::legacyStateFallback);
+            config.get("legacy-query-param-handoff").asBoolean().ifPresent(this::legacyQueryParamHandoff);
             config.get("header-use").asBoolean().ifPresent(this::useHeader);
             config.get("header-token").as(TokenHandler.class).ifPresent(this::headerTokenHandler);
 
@@ -1253,8 +1322,8 @@ public final class OidcConfig {
         }
 
         /**
-         * Whether to use a query parameter to send JWT token from application to this
-         * server.
+         * Whether to use a query parameter to receive a JWT token or encrypted handoff from application to this server.
+         * OIDC callback redirects use an encrypted handoff unless {@link #legacyQueryParamHandoff(boolean)} is enabled.
          *
          * @param useParam whether to use a query parameter (true) or not (false)
          * @return updated builder instance
@@ -1262,6 +1331,49 @@ public final class OidcConfig {
          */
         public Builder useParam(Boolean useParam) {
             this.useParam = useParam;
+            return this;
+        }
+
+        /**
+         * Whether to write and accept the legacy raw local redirect URI as OIDC state.
+         * This temporary rolling-update option allows older nodes to process redirects.
+         * Raw state is not authenticated or time-bound. Leave disabled for steady-state deployments
+         * and reset to {@code false} after all nodes are upgraded.
+         * Defaults to {@code false}.
+         *
+         * @param legacyStateParam whether to use legacy state
+         * @return updated builder instance
+         */
+        public Builder legacyStateParam(boolean legacyStateParam) {
+            this.legacyStateParam = legacyStateParam;
+            return this;
+        }
+
+        /**
+         * Whether to accept older unbound encrypted state, then a raw local redirect URI, when strict
+         * encrypted state validation fails. Use only during rolling updates and reset to {@code false}
+         * after older in-flight redirects expire. Raw state is not authenticated or time-bound.
+         * Defaults to {@code false}.
+         *
+         * @param legacyStateFallback whether to accept legacy state fallback
+         * @return updated builder instance
+         */
+        public Builder legacyStateFallback(boolean legacyStateFallback) {
+            this.legacyStateFallback = legacyStateFallback;
+            return this;
+        }
+
+        /**
+         * Whether to write the legacy raw access token into a query parameter after the OIDC callback.
+         * Use this only during rolling updates so older nodes can process the handoff. Leave disabled
+         * for steady-state deployments and reset to {@code false} after all nodes are upgraded.
+         * Defaults to {@code false}.
+         *
+         * @param legacyQueryParamHandoff whether to use the legacy query handoff
+         * @return updated builder instance
+         */
+        public Builder legacyQueryParamHandoff(boolean legacyQueryParamHandoff) {
+            this.legacyQueryParamHandoff = legacyQueryParamHandoff;
             return this;
         }
 

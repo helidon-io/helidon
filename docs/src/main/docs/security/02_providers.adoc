@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2026 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ The following providers are implemented:
 * <<ABAC (Attribute based access control) Authorization Provider,ABAC Authorization>>
 * Google Login Authentication Provider
     - please see security example: https://github.com/oracle/helidon/tree/master/examples/security/google-login
-* OIDC (Open ID Connect) Authentication provider - an OAuth extension for authentication
+* <<OIDC Authentication Provider,OIDC (Open ID Connect) Authentication provider>> - an OAuth extension for authentication
     - please see security example: https://github.com/oracle/helidon/tree/master/examples/security/idcs-login
 * IDCS Role Mapping Provider - a role mapper that can be used with any authentication provider, retrieves roles from IDCS
     - please see security example: https://github.com/oracle/helidon/tree/master/examples/security/idcs-login
@@ -564,6 +564,70 @@ outbound: [
 ]
 }
 ----
+
+=== OIDC Authentication Provider
+
+The OIDC provider uses the authorization-code flow. By default, the login redirect carries encrypted `state`
+containing the original local application URI, issue time, expiry, and a browser nonce. The callback validates this state
+and its nonce cookie before exchanging the authorization code. Missing, modified, expired, unbound, or non-local state
+is rejected. Login state expires after 300 seconds. The nonce cookie uses the configured callback path and `SameSite=Lax`
+so that the identity server can redirect the browser back to the application.
+
+Cookie-based token delivery remains enabled by default (`cookie-use: true`), while query-token mode remains disabled
+(`query-param-use: false`). When query mode is enabled, the callback normally writes a short-lived encrypted handoff,
+not the raw access token, under the configured `query-param-name` (default `accessToken`). The handoff uses the configured
+OIDC client secret for encryption; nodes sharing a login flow must use the same client secret.
+
+Encrypted query handoffs expire after 60 seconds, or a shorter positive `expires_in` supplied by the token endpoint.
+The expiry is not extended during authentication. Issued-at validation tolerates up to 60 seconds of forward clock skew.
+When token cookies are enabled, the handoff also requires a matching short-lived nonce cookie. Without that binding,
+the encrypted value is still a URL-carried credential and can be reused until expiry; it is not a one-time code.
+Prefer cookie-based browser login or an explicitly configured Authorization-header client flow.
+
+Query mode continues to accept incoming JWT query credentials for compatibility. The encrypted handoff is decoded before
+normal JWT signature, issuer, audience, expiry, and scope validation. Existing query-to-header integration is supported.
+
+[[oidc-cryptography-requirements]]
+==== OIDC Cryptography Requirements
+
+Encrypted login state and query handoff require a JVM cryptography policy permitting AES-256. Java 8u161 and newer
+normally enable unlimited-strength cryptography by default. Older Java 8 installations must have the appropriate
+https://www.oracle.com/java/technologies/javase-jce-all-downloads.html[JCE unlimited-strength policy] installed or enabled.
+Use a supported, up-to-date JDK and ensure that its effective cryptography policy permits AES-256.
+
+`OidcSupport` checks this requirement when it is created. `OidcProvider` checks it when `redirect` or `query-param-use`
+is enabled. A restricted JVM is rejected immediately with a configuration error, before serving login requests.
+Helidon does not change the JVM's cryptography policy or downgrade encryption. The legacy rolling-update switches do not
+remove this requirement. A provider used only for incoming header or token-cookie authentication, with both `redirect`
+and `query-param-use` disabled and without `OidcSupport`, does not need redirect encryption.
+
+==== OIDC Rolling Updates
+
+The following compatibility controls belong to the existing `oidc` provider configuration and all default to `false`:
+
+[cols="2,5"]
+|===
+|Configuration key |Effect when enabled
+
+|`legacy-state-param`
+|Write and accept the older raw local redirect URI as login state. This state is neither authenticated nor time-bound.
+
+|`legacy-state-fallback`
+|After strict state validation fails, accept older encrypted state without nonce binding, then a raw local redirect URI.
+Non-local redirect targets remain rejected.
+
+|`legacy-query-param-handoff`
+|When query mode is enabled, write the raw access token to the callback redirect query so that older nodes can read it.
+This restores the token-in-URL exposure and must not be enabled for steady-state deployments.
+|===
+
+Use these controls only for a controlled rolling update. Where old nodes require the previous wire formats, temporarily
+enable the corresponding legacy writes. After every node is upgraded, disable legacy writes and allow older in-flight
+redirects to expire before disabling any legacy-state fallback. Keep all three controls disabled for normal operation.
+
+The handoff setting does not disable login-state protection; the state controls and token-delivery controls are independent.
+Disabling query mode also disables query-token authentication, so applications relying exclusively on that transport must
+migrate to cookies or an explicitly enabled header transport.
 
 === ABAC (Attribute based access control) Authorization Provider
 

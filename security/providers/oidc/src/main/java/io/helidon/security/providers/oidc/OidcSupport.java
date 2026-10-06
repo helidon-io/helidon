@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 
 package io.helidon.security.providers.oidc;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -46,6 +49,7 @@ import io.helidon.webserver.Service;
 /**
  * OIDC integration requires web resources to be exposed through a web server.
  * This registers the endpoint to which OIDC redirects browser after successful login.
+ * Creating this support requires a JVM cryptography policy permitting AES-256.
  *
  * This incorporates the "response_type=code" approach.
  *
@@ -106,12 +110,26 @@ import io.helidon.webserver.Service;
  * <tr>
  *     <td>query-param-use</td>
  *     <td>false</td>
- *     <td>Whether to use query parameter to add to the request when redirecting to
- *              original URI</td></tr>
+ *     <td>Whether to add encrypted access token handoff to the query when redirecting to the original URI</td></tr>
  * <tr>
  *     <td>query-param-name</td>
  *     <td>accessToken</td>
- *     <td>Name of the query parameter to set (and expect)</td>
+ *     <td>Name of the query parameter to set with encrypted handoff (and expect)</td>
+ * </tr>
+ * <tr>
+ *     <td>legacy-state-param</td>
+ *     <td>false</td>
+ *     <td>Whether to write and accept the legacy raw local redirect URI in OIDC state during rolling updates.</td>
+ * </tr>
+ * <tr>
+ *     <td>legacy-state-fallback</td>
+ *     <td>false</td>
+ *     <td>Whether to accept older unbound encrypted or raw local state after strict validation fails.</td>
+ * </tr>
+ * <tr>
+ *     <td>legacy-query-param-handoff</td>
+ *     <td>false</td>
+ *     <td>Whether to write raw access tokens to callback redirect queries during rolling updates.</td>
  * </tr>
  * </table>
  */
@@ -119,12 +137,16 @@ public final class OidcSupport implements Service {
     private static final Logger LOGGER = Logger.getLogger(OidcSupport.class.getName());
     private static final String CODE_PARAM_NAME = "code";
     private static final String STATE_PARAM_NAME = "state";
-    private static final String DEFAULT_REDIRECT = "/index.html";
 
     private final OidcConfig oidcConfig;
 
     private OidcSupport(OidcConfig oidcConfig) {
+        OidcState.validateCryptoSupport();
         this.oidcConfig = oidcConfig;
+        if (oidcConfig.useParam() && !oidcConfig.useCookie() && !oidcConfig.legacyQueryParamHandoff()) {
+            LOGGER.warning("OIDC query parameter handoff is enabled without cookies. When possible, enable cookie-use "
+                                   + "to bind the handoff to the browser session.");
+        }
     }
 
     /**
@@ -158,12 +180,14 @@ public final class OidcSupport implements Service {
                         });
 
         String query = req.query();
+        String path = req.uri().getRawPath();
+        path = path == null || path.isEmpty() ? "/" : path;
         if ((null == query) || query.isEmpty()) {
             newHeaders.put(Security.HEADER_ORIG_URI,
-                           CollectionsHelper.listOf(req.uri().getPath()));
+                           CollectionsHelper.listOf(path));
         } else {
             newHeaders.put(Security.HEADER_ORIG_URI,
-                           CollectionsHelper.listOf(req.uri().getPath() + "?" + query));
+                           CollectionsHelper.listOf(path + "?" + query));
         }
 
         req.next();
@@ -178,6 +202,29 @@ public final class OidcSupport implements Service {
     }
 
     private void processCode(String code, ServerRequest req, ServerResponse res) {
+        Optional<String> stateNonce = req.headers().cookies()
+                .first(OidcState.loginStateNonceCookieName(oidcConfig.cookieName()));
+        Optional<String> originalUri = req.queryParams().first(STATE_PARAM_NAME)
+                .flatMap(state -> OptionalHelper.from(OidcState.loginRedirect(state, oidcConfig, stateNonce, true))
+                        .or(() -> oidcConfig.legacyStateFallback()
+                                ? OidcState.loginRedirect(state, oidcConfig, stateNonce, false)
+                                : Optional.empty())
+                        .or(() -> oidcConfig.legacyStateParam() || oidcConfig.legacyStateFallback()
+                                ? OidcState.localRedirectUri(state)
+                                : Optional.empty())
+                        .asOptional());
+        if (!originalUri.isPresent()) {
+            res.status(Http.Status.UNAUTHORIZED_401);
+            res.send("Not a valid authorization code");
+            return;
+        }
+        if (stateNonce.isPresent()) {
+            res.headers().add(Http.Header.SET_COOKIE,
+                              OidcState.loginStateNonceRemoveCookie(oidcConfig.cookieName(),
+                                                                   oidcConfig.redirectUri(),
+                                                                   oidcConfig.cookieOptions()));
+        }
+
         MultivaluedHashMap<String, String> formValues = new MultivaluedHashMap<>();
         formValues.putSingle("grant_type", "authorization_code");
         formValues.putSingle("code", code);
@@ -190,21 +237,28 @@ public final class OidcSupport implements Service {
         if (response.getStatusInfo().getFamily() == Response.Status.Family.SUCCESSFUL) {
             JsonObject jsonResponse = response.readEntity(JsonObject.class);
             String tokenValue = jsonResponse.getString("access_token");
-            //redirect to "state"
-            String state = req.queryParams().first(STATE_PARAM_NAME).orElse(DEFAULT_REDIRECT);
+            String state = originalUri.get();
+            Optional<String> queryNonce = oidcConfig.useParam() && oidcConfig.useCookie()
+                    && !oidcConfig.legacyQueryParamHandoff()
+                    ? Optional.of(UUID.randomUUID().toString())
+                    : Optional.empty();
             res.status(Http.Status.TEMPORARY_REDIRECT_307);
             if (oidcConfig.useParam()) {
-                if (state.contains("?")) {
-                    state = state + "&" + oidcConfig.paramName() + "=" + tokenValue;
-                } else {
-                    state = state + "?" + oidcConfig.paramName() + "=" + tokenValue;
-                }
+                String handoff = oidcConfig.legacyQueryParamHandoff()
+                        ? tokenValue
+                        : queryNonce.map(nonce -> OidcState.createQueryResult(tokenValue, jsonResponse, oidcConfig, nonce))
+                                .orElseGet(() -> OidcState.createQueryResult(tokenValue, jsonResponse, oidcConfig));
+                state = state + (state.contains("?") ? "&" : "?") + encode(oidcConfig.paramName()) + "=" + encode(handoff);
             }
 
             state = increaseRedirectCounter(state);
             res.headers().add(Http.Header.LOCATION, state);
 
             if (oidcConfig.useCookie()) {
+                queryNonce.ifPresent(nonce -> res.headers().add(Http.Header.SET_COOKIE,
+                                                               OidcState.queryResultNonceSetCookie(oidcConfig.cookieName(),
+                                                                                                   nonce,
+                                                                                                   oidcConfig.cookieOptions())));
                 res.headers()
                         .add("Set-Cookie", oidcConfig.cookieName() + "=" + tokenValue + oidcConfig.cookieOptions());
             }
@@ -292,6 +346,14 @@ public final class OidcSupport implements Service {
                 .findFirst()
                 .map(it -> it.get(providerName))
                 .orElseThrow(() -> new SecurityException("No configuration found for provider named: " + providerName));
+    }
+
+    private String encode(String value) {
+        try {
+            return URLEncoder.encode(value, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalStateException("UTF-8 must be supported", e);
+        }
     }
 
 }

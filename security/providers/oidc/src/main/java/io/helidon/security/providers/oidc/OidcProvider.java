@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,13 @@ package io.helidon.security.providers.oidc;
 
 import java.io.UnsupportedEncodingException;
 import java.lang.annotation.Annotation;
+import java.net.URI;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -77,6 +81,8 @@ import io.helidon.security.util.TokenHandler;
 
 /**
  * Open ID Connect authentication provider.
+ * Redirect and query parameter support require a JVM cryptography policy permitting AES-256.
+ * This requirement is checked when the provider is created if either feature is enabled.
  *
  * IDCS specific notes:
  * <ul>
@@ -90,6 +96,7 @@ import io.helidon.security.util.TokenHandler;
  */
 public final class OidcProvider extends SynchronousProvider implements AuthenticationProvider, OutboundSecurityProvider {
     private static final Logger LOGGER = Logger.getLogger(OidcProvider.class.getName());
+    private static final String DEFAULT_REDIRECT = "/index.html";
 
     private final OidcConfig oidcConfig;
     private final TokenHandler paramHeaderHandler;
@@ -102,6 +109,9 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
 
     private OidcProvider(Builder builder, OidcOutboundConfig oidcOutboundConfig) {
         this.oidcConfig = builder.oidcConfig;
+        if (oidcConfig.shouldRedirect() || oidcConfig.useParam()) {
+            OidcState.validateCryptoSupport();
+        }
         this.propagate = builder.propagate;
         this.useJwtGroups = builder.useJwtGroups;
         this.outboundConfig = oidcOutboundConfig;
@@ -218,7 +228,7 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
 
             if (oidcConfig.useParam()) {
                 token = OptionalHelper.from(token)
-                        .or(() -> paramHeaderHandler.extractToken(providerRequest.env().headers()))
+                        .or(() -> queryParamAccessToken(providerRequest))
                         .asOptional();
 
                 if (!token.isPresent()) {
@@ -249,6 +259,10 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
     }
 
     private Optional<String> findCookie(Map<String, List<String>> headers) {
+        return findCookie(headers, oidcConfig.cookieName());
+    }
+
+    private Optional<String> findCookie(Map<String, List<String>> headers, String cookieName) {
         List<String> cookies = headers.get("Cookie");
         if ((null == cookies) || cookies.isEmpty()) {
             return Optional.empty();
@@ -259,13 +273,70 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
             String[] cookieValues = cookie.split(";");
             for (String cookieValue : cookieValues) {
                 String trimmed = cookieValue.trim();
-                if (trimmed.startsWith(oidcConfig.cookieValuePrefix())) {
-                    return Optional.of(trimmed.substring(oidcConfig.cookieValuePrefix().length()));
+                String prefix = cookieName + "=";
+                if (trimmed.startsWith(prefix)) {
+                    return Optional.of(trimmed.substring(prefix.length()));
                 }
             }
         }
 
         return Optional.empty();
+    }
+
+    private Optional<String> queryParamAccessToken(ProviderRequest request) {
+        Map<String, List<String>> headers = request.env().headers();
+        Optional<String> mappedToken = paramHeaderHandler.extractToken(headers);
+        if (mappedToken.isPresent() && !OidcState.isQueryResult(mappedToken.get())) {
+            // Preserve the existing query-to-header integration for raw tokens.
+            return mappedToken;
+        }
+        List<String> values = queryParamValues(request.env().targetUri());
+        Optional<String> encrypted = mappedToken;
+        for (int i = values.size() - 1; i >= 0; i--) {
+            if (OidcState.isQueryResult(values.get(i))) {
+                encrypted = Optional.of(values.get(i));
+                break;
+            }
+        }
+        if (encrypted.isPresent()) {
+            boolean requireNonce = oidcConfig.useCookie() && !oidcConfig.legacyQueryParamHandoff();
+            Optional<String> nonce = oidcConfig.useCookie()
+                    ? findCookie(headers, OidcState.queryResultNonceCookieName(oidcConfig.cookieName()))
+                    : Optional.empty();
+            if (!requireNonce || nonce.isPresent()) {
+                Optional<String> token = OidcState.queryResultAccessToken(encrypted.get(), oidcConfig, nonce, requireNonce);
+                if (token.isPresent()) {
+                    return token;
+                }
+            }
+        }
+        if (oidcConfig.legacyQueryParamHandoff()) {
+            for (int i = values.size() - 1; i >= 0; i--) {
+                if (!OidcState.isQueryResult(values.get(i))) {
+                    return Optional.of(values.get(i));
+                }
+            }
+            return Optional.empty();
+        }
+        return values.stream().filter(value -> !OidcState.isQueryResult(value)).findFirst();
+    }
+
+    private List<String> queryParamValues(URI targetUri) {
+        if (targetUri == null || targetUri.getRawQuery() == null) {
+            return Collections.emptyList();
+        }
+        List<String> result = new ArrayList<>();
+        try {
+            for (String part : targetUri.getRawQuery().split("&")) {
+                String[] pair = part.split("=", 2);
+                if (URLDecoder.decode(pair[0], "UTF-8").equals(oidcConfig.paramName())) {
+                    result.add(pair.length == 2 ? URLDecoder.decode(pair[1], "UTF-8") : "");
+                }
+            }
+        } catch (UnsupportedEncodingException e) {
+            throw new SecurityException("UTF-8 must be supported for security to work", e);
+        }
+        return result;
     }
 
     private Set<String> expectedScopes(ProviderRequest request) {
@@ -301,8 +372,8 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
                                                  String description) {
         if (oidcConfig.shouldRedirect()) {
             // make sure we do not exceed redirect limit
-            String state = origUri(providerRequest);
-            int redirectAttempt = redirectAttempt(state);
+            String originalUri = origUri(providerRequest);
+            int redirectAttempt = redirectAttempt(originalUri);
             if (redirectAttempt >= oidcConfig.maxRedirects()) {
                 return errorResponseNoRedirect(code, description, status);
             }
@@ -325,6 +396,12 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
             String authorizationEndpoint = oidcConfig.authorizationEndpointUri();
 
             String nonce = UUID.randomUUID().toString();
+            Optional<String> stateNonce = oidcConfig.legacyStateParam()
+                    ? Optional.empty()
+                    : Optional.of(UUID.randomUUID().toString());
+            String state = stateNonce
+                    .map(value -> OidcState.createLoginState(originalUri, oidcConfig, value))
+                    .orElse(originalUri);
             StringBuilder queryString = new StringBuilder("?");
             queryString.append("client_id=").append(oidcConfig.clientId()).append("&");
             queryString.append("response_type=code&");
@@ -334,13 +411,18 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
             queryString.append("state=").append(encodeState(state));
 
             // must redirect
-            return AuthenticationResponse
+            AuthenticationResponse.Builder response = AuthenticationResponse
                     .builder()
                     .status(SecurityResponse.SecurityStatus.FAILURE_FINISH)
                     .statusCode(Http.Status.TEMPORARY_REDIRECT_307.code())
                     .description("Redirecting to identity server: " + description)
-                    .responseHeader("Location", authorizationEndpoint + queryString)
-                    .build();
+                    .responseHeader("Location", authorizationEndpoint + queryString);
+            stateNonce.ifPresent(value -> response.responseHeader(Http.Header.SET_COOKIE,
+                                                                   OidcState.loginStateNonceSetCookie(oidcConfig.cookieName(),
+                                                                                                    value,
+                                                                                                    oidcConfig.redirectUri(),
+                                                                                                    oidcConfig.cookieOptions())));
+            return response.build();
         } else {
             return errorResponseNoRedirect(code, description, status);
         }
@@ -384,11 +466,22 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
         List<String> origUri = providerRequest.env().headers()
                 .getOrDefault(Security.HEADER_ORIG_URI, CollectionsHelper.listOf());
 
-        if (origUri.isEmpty()) {
-            origUri = CollectionsHelper.listOf(providerRequest.env().targetUri().getPath());
+        if (!origUri.isEmpty()) {
+            Optional<String> localUri = OidcState.localRedirectUri(origUri.get(0));
+            if (localUri.isPresent()) {
+                return localUri.get();
+            }
         }
 
-        return origUri.get(0);
+        URI targetUri = providerRequest.env().targetUri();
+        String query = targetUri.getRawQuery();
+        String path = targetUri.getRawPath();
+        path = path == null || path.isEmpty() ? "/" : path;
+        if (query == null || query.isEmpty()) {
+            return OidcState.localRedirectUri(path).orElse(DEFAULT_REDIRECT);
+        } else {
+            return OidcState.localRedirectUri(path + "?" + query).orElse(DEFAULT_REDIRECT);
+        }
     }
 
     private String encodeState(String state) {
@@ -706,4 +799,3 @@ public final class OidcProvider extends SynchronousProvider implements Authentic
         }
     }
 }
-
