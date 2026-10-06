@@ -16,11 +16,13 @@
 
 package io.helidon.tests.benchmark;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Portable parent/child/grandchild process used to validate controlled-build cleanup.
@@ -55,7 +57,18 @@ public final class Http3QuicEvidenceProcessFixture {
             new CountDownLatch(1).await();
         }
         case "grandchild" -> new CountDownLatch(1).await();
-        case "orchestrator" -> {
+        case "orchestrator", "launch-orchestrator" -> {
+            if (role.equals("launch-orchestrator")) {
+                Runtime.getRuntime().addShutdownHook(Thread.ofPlatform()
+                        .name("http3-quic-evidence-fixture-shutdown-marker")
+                        .unstarted(() -> {
+                            try {
+                                Files.writeString(pidDirectory.resolve("shutdown.started"), "shutdown\n");
+                            } catch (IOException failure) {
+                                throw new IllegalStateException("Could not mark fixture shutdown", failure);
+                            }
+                        }));
+            }
             Thread.ofPlatform()
                     .daemon()
                     .name("http3-quic-evidence-fixture-shutdown")
@@ -75,7 +88,27 @@ public final class Http3QuicEvidenceProcessFixture {
                     command(pidDirectory, "root"),
                     "controlled-build shutdown fixture",
                     60,
-                    1);
+                    1,
+                    processBuilder -> {
+                        Process process = processBuilder.start();
+                        if (role.equals("launch-orchestrator")) {
+                            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
+                            Path release = pidDirectory.resolve("launch.release");
+                            while (!Files.exists(release) && System.nanoTime() < deadline) {
+                                try {
+                                    Thread.sleep(10);
+                                } catch (InterruptedException _) {
+                                    Thread.currentThread().interrupt();
+                                    break;
+                                }
+                            }
+                            if (!Files.exists(release)) {
+                                process.destroyForcibly();
+                                throw new IOException("Fixture process launch was not released");
+                            }
+                        }
+                        return process;
+                    });
         }
         default -> throw new IllegalArgumentException("Unknown process-tree fixture role: " + role);
         }

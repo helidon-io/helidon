@@ -35,6 +35,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
@@ -88,6 +90,195 @@ class Http3QuicEvidenceManifestTest {
                 Files.deleteIfExists(temporary);
             }
         }
+    }
+
+    static MavenRun runMaven(Path repositoryRoot,
+                             List<String> command,
+                             String phase,
+                             long timeoutSeconds,
+                             int activeProcessorCount) throws Exception {
+        return runMaven(repositoryRoot, command, phase, timeoutSeconds, activeProcessorCount, ProcessBuilder::start);
+    }
+
+    static MavenRun runMaven(Path repositoryRoot,
+                             List<String> command,
+                             String phase,
+                             long timeoutSeconds,
+                             int activeProcessorCount,
+                             ProcessLauncher launcher) throws Exception {
+        ProcessBuilder processBuilder = new ProcessBuilder(command)
+                .directory(repositoryRoot.toFile())
+                .redirectErrorStream(true);
+        configureProcessEnvironment(processBuilder, activeProcessorCount);
+        ReentrantLock launchLock = new ReentrantLock();
+        AtomicReference<Process> launchedProcess = new AtomicReference<>();
+        Set<ProcessHandle> observedHandles = ConcurrentHashMap.newKeySet();
+        Thread shutdownHook = Thread.ofPlatform()
+                .name("http3-quic-evidence-maven-shutdown")
+                .unstarted(() -> {
+                    launchLock.lock();
+                    try {
+                        Process process = launchedProcess.get();
+                        if (process != null) {
+                            terminateProcessTree(process, observedHandles, phase);
+                        }
+                    } catch (RuntimeException | Error failure) {
+                        System.err.println("Could not terminate controlled Maven during JVM shutdown: "
+                                                   + failure.getMessage());
+                    } finally {
+                        launchLock.unlock();
+                    }
+                });
+        Process process;
+        // Shutdown must wait for start() to return: it may spawn children before returning their Process.
+        launchLock.lock();
+        try {
+            Runtime.getRuntime().addShutdownHook(shutdownHook);
+            try {
+                process = launcher.start(processBuilder);
+                launchedProcess.set(process);
+                observedHandles.add(process.toHandle());
+            } catch (Exception | Error failure) {
+                try {
+                    Runtime.getRuntime().removeShutdownHook(shutdownHook);
+                } catch (IllegalStateException shutdownInProgress) {
+                    failure.addSuppressed(shutdownInProgress);
+                }
+                throw failure;
+            }
+        } finally {
+            launchLock.unlock();
+        }
+        CompletableFuture<String> outputComplete = new CompletableFuture<>();
+        Thread outputThread = Thread.ofVirtual()
+                .name("http3-quic-evidence-maven-output")
+                .start(() -> {
+                    StringBuilder output = new StringBuilder();
+                    try (BufferedReader reader = process.inputReader(StandardCharsets.UTF_8)) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            System.out.println(line);
+                            output.append(line).append('\n');
+                        }
+                        outputComplete.complete(output.toString());
+                    } catch (Exception | Error failure) {
+                        outputComplete.completeExceptionally(failure);
+                    }
+                });
+        MavenRun result = null;
+        Throwable failure = null;
+        boolean interrupted = false;
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
+        try {
+            while (process.isAlive()) {
+                observedHandles.addAll(process.descendants().toList());
+                long remaining = deadline - System.nanoTime();
+                if (remaining <= 0) {
+                    throw new IllegalStateException("Timed out during " + phase);
+                }
+                process.waitFor(
+                        Math.min(remaining, TimeUnit.MILLISECONDS.toNanos(PROCESS_POLL_MILLIS)),
+                        TimeUnit.NANOSECONDS);
+            }
+            observedHandles.addAll(process.descendants().toList());
+            String output;
+            try {
+                output = outputComplete.get(PROCESS_CLEANUP_SECONDS, TimeUnit.SECONDS);
+            } catch (ExecutionException e) {
+                throw new IllegalStateException("Could not read Maven output during " + phase, e.getCause());
+            } catch (TimeoutException e) {
+                throw new MavenProcessSurvivedException(
+                        "Maven output remained open after " + phase,
+                        e);
+            }
+            if (observedHandles.stream().anyMatch(ProcessHandle::isAlive)) {
+                throw new MavenProcessSurvivedException(
+                        "Maven descendants survived successful " + phase);
+            }
+            if (process.exitValue() != 0) {
+                throw new IllegalStateException("Maven failed during " + phase
+                                                        + " with exit " + process.exitValue());
+            }
+            result = new MavenRun(output);
+        } catch (Throwable caught) {
+            failure = caught;
+            interrupted = caught instanceof InterruptedException;
+        }
+
+        if (failure != null
+                || process.isAlive()
+                || observedHandles.stream().anyMatch(ProcessHandle::isAlive)) {
+            try {
+                terminateProcessTree(process, observedHandles, phase);
+            } catch (RuntimeException | Error cleanupFailure) {
+                var survived = cleanupFailure instanceof MavenProcessSurvivedException survivedFailure
+                        ? survivedFailure
+                        : new MavenProcessSurvivedException(
+                                "Could not clean up Maven process tree during " + phase,
+                                cleanupFailure);
+                if (failure != null) {
+                    survived.addSuppressed(failure);
+                }
+                failure = survived;
+            }
+        }
+
+        try {
+            process.getOutputStream().close();
+        } catch (IOException _) {
+            // Best-effort close after process completion.
+        }
+        if (outputThread.isAlive()) {
+            try {
+                process.getInputStream().close();
+            } catch (IOException _) {
+                // Best-effort close before bounded reader join.
+            }
+            outputThread.interrupt();
+            long outputDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(PROCESS_CLEANUP_SECONDS);
+            while (outputThread.isAlive() && System.nanoTime() < outputDeadline) {
+                try {
+                    outputThread.join(PROCESS_POLL_MILLIS);
+                } catch (InterruptedException _) {
+                    interrupted = true;
+                }
+            }
+            if (outputThread.isAlive()) {
+                var readerFailure = new MavenProcessSurvivedException(
+                        "Maven output reader survived cleanup during " + phase);
+                if (failure != null) {
+                    readerFailure.addSuppressed(failure);
+                }
+                failure = readerFailure;
+            }
+        }
+
+        try {
+            if (!Runtime.getRuntime().removeShutdownHook(shutdownHook)) {
+                throw new IllegalStateException("Controlled Maven shutdown hook was not registered");
+            }
+        } catch (IllegalStateException shutdownInProgress) {
+            if (failure == null) {
+                failure = shutdownInProgress;
+            } else {
+                failure.addSuppressed(shutdownInProgress);
+            }
+        }
+
+        interrupted |= Thread.interrupted();
+        if (interrupted) {
+            Thread.currentThread().interrupt();
+        }
+        if (failure instanceof Exception exception) {
+            throw exception;
+        }
+        if (failure instanceof Error error) {
+            throw error;
+        }
+        if (failure != null) {
+            throw new IllegalStateException("Unexpected controlled Maven failure", failure);
+        }
+        return result;
     }
 
     @Test
@@ -326,170 +517,6 @@ class Http3QuicEvidenceManifestTest {
                        System.getProperty("os.name").startsWith("Windows") ? "mvn.cmd" : "mvn");
     }
 
-    static MavenRun runMaven(Path repositoryRoot,
-                             List<String> command,
-                             String phase,
-                             long timeoutSeconds,
-                             int activeProcessorCount) throws Exception {
-        ProcessBuilder processBuilder = new ProcessBuilder(command)
-                .directory(repositoryRoot.toFile())
-                .redirectErrorStream(true);
-        configureProcessEnvironment(processBuilder, activeProcessorCount);
-        Process process = processBuilder.start();
-        Set<ProcessHandle> observedHandles = ConcurrentHashMap.newKeySet();
-        observedHandles.add(process.toHandle());
-        Thread shutdownHook = Thread.ofPlatform()
-                .name("http3-quic-evidence-maven-shutdown")
-                .unstarted(() -> {
-                    try {
-                        terminateProcessTree(process, observedHandles, phase);
-                    } catch (RuntimeException | Error failure) {
-                        System.err.println("Could not terminate controlled Maven during JVM shutdown: "
-                                                   + failure.getMessage());
-                    }
-                });
-        try {
-            Runtime.getRuntime().addShutdownHook(shutdownHook);
-        } catch (RuntimeException | Error failure) {
-            try {
-                terminateProcessTree(process, observedHandles, phase);
-            } catch (RuntimeException | Error cleanupFailure) {
-                failure.addSuppressed(cleanupFailure);
-            }
-            throw failure;
-        }
-        CompletableFuture<String> outputComplete = new CompletableFuture<>();
-        Thread outputThread = Thread.ofVirtual()
-                .name("http3-quic-evidence-maven-output")
-                .start(() -> {
-                    StringBuilder output = new StringBuilder();
-                    try (BufferedReader reader = process.inputReader(StandardCharsets.UTF_8)) {
-                        String line;
-                        while ((line = reader.readLine()) != null) {
-                            System.out.println(line);
-                            output.append(line).append('\n');
-                        }
-                        outputComplete.complete(output.toString());
-                    } catch (Exception | Error failure) {
-                        outputComplete.completeExceptionally(failure);
-                    }
-                });
-        MavenRun result = null;
-        Throwable failure = null;
-        boolean interrupted = false;
-        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
-        try {
-            while (process.isAlive()) {
-                observedHandles.addAll(process.descendants().toList());
-                long remaining = deadline - System.nanoTime();
-                if (remaining <= 0) {
-                    throw new IllegalStateException("Timed out during " + phase);
-                }
-                process.waitFor(
-                        Math.min(remaining, TimeUnit.MILLISECONDS.toNanos(PROCESS_POLL_MILLIS)),
-                        TimeUnit.NANOSECONDS);
-            }
-            observedHandles.addAll(process.descendants().toList());
-            String output;
-            try {
-                output = outputComplete.get(PROCESS_CLEANUP_SECONDS, TimeUnit.SECONDS);
-            } catch (ExecutionException e) {
-                throw new IllegalStateException("Could not read Maven output during " + phase, e.getCause());
-            } catch (TimeoutException e) {
-                throw new MavenProcessSurvivedException(
-                        "Maven output remained open after " + phase,
-                        e);
-            }
-            if (observedHandles.stream().anyMatch(ProcessHandle::isAlive)) {
-                throw new MavenProcessSurvivedException(
-                        "Maven descendants survived successful " + phase);
-            }
-            if (process.exitValue() != 0) {
-                throw new IllegalStateException("Maven failed during " + phase
-                                                        + " with exit " + process.exitValue());
-            }
-            result = new MavenRun(output);
-        } catch (Throwable caught) {
-            failure = caught;
-            interrupted = caught instanceof InterruptedException;
-        }
-
-        if (failure != null
-                || process.isAlive()
-                || observedHandles.stream().anyMatch(ProcessHandle::isAlive)) {
-            try {
-                terminateProcessTree(process, observedHandles, phase);
-            } catch (RuntimeException | Error cleanupFailure) {
-                var survived = cleanupFailure instanceof MavenProcessSurvivedException survivedFailure
-                        ? survivedFailure
-                        : new MavenProcessSurvivedException(
-                                "Could not clean up Maven process tree during " + phase,
-                                cleanupFailure);
-                if (failure != null) {
-                    survived.addSuppressed(failure);
-                }
-                failure = survived;
-            }
-        }
-
-        try {
-            process.getOutputStream().close();
-        } catch (IOException _) {
-            // Best-effort close after process completion.
-        }
-        if (outputThread.isAlive()) {
-            try {
-                process.getInputStream().close();
-            } catch (IOException _) {
-                // Best-effort close before bounded reader join.
-            }
-            outputThread.interrupt();
-            long outputDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(PROCESS_CLEANUP_SECONDS);
-            while (outputThread.isAlive() && System.nanoTime() < outputDeadline) {
-                try {
-                    outputThread.join(PROCESS_POLL_MILLIS);
-                } catch (InterruptedException _) {
-                    interrupted = true;
-                }
-            }
-            if (outputThread.isAlive()) {
-                var readerFailure = new MavenProcessSurvivedException(
-                        "Maven output reader survived cleanup during " + phase);
-                if (failure != null) {
-                    readerFailure.addSuppressed(failure);
-                }
-                failure = readerFailure;
-            }
-        }
-
-        try {
-            if (!Runtime.getRuntime().removeShutdownHook(shutdownHook)) {
-                throw new IllegalStateException("Controlled Maven shutdown hook was not registered");
-            }
-        } catch (IllegalStateException shutdownInProgress) {
-            if (failure == null) {
-                failure = shutdownInProgress;
-            } else {
-                failure.addSuppressed(shutdownInProgress);
-            }
-        }
-
-        interrupted |= Thread.interrupted();
-        if (interrupted) {
-            Thread.currentThread().interrupt();
-        }
-        if (failure instanceof Exception exception) {
-            throw exception;
-        }
-        if (failure instanceof Error error) {
-            throw error;
-        }
-        if (failure != null) {
-            throw new IllegalStateException("Unexpected controlled Maven failure", failure);
-        }
-        return result;
-    }
-
     static void configureProcessEnvironment(ProcessBuilder processBuilder,
                                             int activeProcessorCount) {
         if (activeProcessorCount < MINIMUM_ACTIVE_PROCESSOR_COUNT
@@ -618,6 +645,11 @@ class Http3QuicEvidenceManifestTest {
             }
         }
         return result;
+    }
+
+    @FunctionalInterface
+    interface ProcessLauncher {
+        Process start(ProcessBuilder processBuilder) throws IOException;
     }
 
     record MavenRun(String output) {
