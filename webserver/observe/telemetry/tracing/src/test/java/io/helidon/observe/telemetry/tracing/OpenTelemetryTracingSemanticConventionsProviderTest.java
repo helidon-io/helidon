@@ -19,7 +19,10 @@ package io.helidon.observe.telemetry.tracing;
 import java.lang.reflect.Proxy;
 import java.net.InetSocketAddress;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -29,22 +32,72 @@ import io.helidon.common.uri.UriQuery;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.Status;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
 import io.helidon.tracing.config.SpanTracingConfig;
+import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 import io.helidon.webserver.http.RoutingRequest;
+import io.helidon.webserver.http.RoutingResponse;
 import io.helidon.webserver.observe.tracing.TracingSemanticConventions;
 
+import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.common.CompletableResultCode;
+import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.opentelemetry.sdk.trace.data.SpanData;
+import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
+import io.opentelemetry.sdk.trace.export.SpanExporter;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 class OpenTelemetryTracingSemanticConventionsProviderTest {
+
+    @Test
+    void exportsNumericAttributesForSuccessfulResponse() {
+        assertResponseAttributes(Status.OK_200);
+    }
+
+    @Test
+    void exportsNumericAttributesForClientErrorResponse() {
+        assertResponseAttributes(Status.NOT_FOUND_404);
+    }
+
+    @Test
+    void exportsNumericAttributesForServerErrorResponse() {
+        assertResponseAttributes(Status.SERVICE_UNAVAILABLE_503);
+    }
+
+    @Test
+    void exportsNumericPortAndPreservesExceptionAttributes() {
+        var failure = new IllegalStateException("Request failed");
+        var span = exportSpan(Status.SERVICE_UNAVAILABLE_503, failure);
+
+        assertAll(
+                () -> assertThat("Server port", span.getAttributes().get(AttributeKey.longKey("server.port")), is(8080L)),
+                () -> assertThat("String server port", span.getAttributes().get(AttributeKey.stringKey("server.port")),
+                                 nullValue()),
+                () -> assertThat("Unavailable response status",
+                                 span.getAttributes().get(AttributeKey.longKey("http.response.status_code")), nullValue()),
+                () -> assertThat("String response status",
+                                 span.getAttributes().get(AttributeKey.stringKey("http.response.status_code")), nullValue()),
+                () -> assertThat("Error type", span.getAttributes().get(AttributeKey.stringKey("error.type")),
+                                 is(IllegalStateException.class.getName())),
+                () -> assertThat("Span status", span.getStatus().getStatusCode(), is(StatusCode.ERROR)),
+                () -> assertThat("Exception events", span.getEvents(), hasSize(1)),
+                () -> assertThat("Exception event", span.getEvents().getFirst().getName(), is("exception")));
+    }
 
     @Test
     void beforeStartOmitsDeprecatedMicroProfileTelemetryHostTags() {
@@ -56,10 +109,10 @@ class OpenTelemetryTracingSemanticConventionsProviderTest {
         conventions.spanName();
         conventions.beforeStart(spanBuilder);
 
+        assertThat("Server port", spanBuilder.tags().get("server.port"), is(8080));
         assertThat("Span tags", spanBuilder.tags(), allOf(
                 hasEntry("http.request.method", "GET"),
                 hasEntry("server.address", "helidon.example"),
-                hasEntry("server.port", "8080"),
                 not(hasKey("http.request.method_original")),
                 not(hasKey("net.host.name")),
                 not(hasKey("net.host.port"))));
@@ -107,6 +160,7 @@ class OpenTelemetryTracingSemanticConventionsProviderTest {
                 case "query" -> UriQuery.empty();
                 case "headers" -> headers;
                 case "localPeer" -> peerInfo;
+                case "matchingPattern" -> Optional.of("/greet");
                 default -> throw new UnsupportedOperationException(method.getName());
                 });
     }
@@ -138,6 +192,75 @@ class OpenTelemetryTracingSemanticConventionsProviderTest {
                 return Optional.empty();
             }
         };
+    }
+
+    private static void assertResponseAttributes(Status status) {
+        var span = exportSpan(status, null);
+        var attributes = span.getAttributes();
+
+        assertAll(
+                () -> assertThat("Span kind", span.getKind(), is(SpanKind.SERVER)),
+                () -> assertThat("Server port", attributes.get(AttributeKey.longKey("server.port")), is(8080L)),
+                () -> assertThat("HTTP status", attributes.get(AttributeKey.longKey("http.response.status_code")),
+                                 is((long) status.code())),
+                () -> assertThat("String server port", attributes.get(AttributeKey.stringKey("server.port")), nullValue()),
+                () -> assertThat("String HTTP status", attributes.get(AttributeKey.stringKey("http.response.status_code")),
+                                 nullValue()),
+                () -> assertThat("Request method", attributes.get(AttributeKey.stringKey("http.request.method")), is("GET")),
+                () -> assertThat("Server address", attributes.get(AttributeKey.stringKey("server.address")),
+                                 is("helidon.example")),
+                () -> assertThat("Route", attributes.get(AttributeKey.stringKey("http.route")), is("/greet")),
+                () -> assertThat("Error type", attributes.get(AttributeKey.stringKey("error.type")), nullValue()));
+    }
+
+    private static SpanData exportSpan(Status status, Exception failure) {
+        var exporter = new RecordingSpanExporter();
+        try (var tracerProvider = SdkTracerProvider.builder()
+                .addSpanProcessor(SimpleSpanProcessor.create(exporter))
+                .build()) {
+            var telemetry = OpenTelemetrySdk.builder().setTracerProvider(tracerProvider).build();
+            var tracer = HelidonOpenTelemetry.create(telemetry, telemetry.getTracer("semantic-conventions-test"), Map.of());
+            var response = (RoutingResponse) Proxy.newProxyInstance(
+                    OpenTelemetryTracingSemanticConventionsProviderTest.class.getClassLoader(),
+                    new Class<?>[] {RoutingResponse.class},
+                    (_, method, _) -> switch (method.getName()) {
+                    case "status" -> status;
+                    default -> throw new UnsupportedOperationException(method.getName());
+                    });
+            var conventions = new OpenTelemetryTracingSemanticConventionsProvider()
+                    .create(SpanTracingConfig.ENABLED, "", request(), response);
+            var span = tracer.spanBuilder(conventions.spanName()).update(conventions::beforeStart).start();
+            if (failure == null) {
+                conventions.beforeEnd(span);
+                span.end();
+            } else {
+                conventions.beforeEnd(span, failure);
+                span.end(failure);
+            }
+
+            assertThat("Exported spans", exporter.spans, hasSize(1));
+            return exporter.spans.getFirst();
+        }
+    }
+
+    private static final class RecordingSpanExporter implements SpanExporter {
+        private final List<SpanData> spans = new ArrayList<>();
+
+        @Override
+        public CompletableResultCode export(Collection<SpanData> spans) {
+            this.spans.addAll(spans);
+            return CompletableResultCode.ofSuccess();
+        }
+
+        @Override
+        public CompletableResultCode flush() {
+            return CompletableResultCode.ofSuccess();
+        }
+
+        @Override
+        public CompletableResultCode shutdown() {
+            return CompletableResultCode.ofSuccess();
+        }
     }
 
     private static final class RecordingSpanBuilder implements Span.Builder<RecordingSpanBuilder> {
