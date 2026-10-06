@@ -42,15 +42,23 @@ interface HttpConfigBlueprint {
     }
 
     /**
-     * Configure the maximum size allowed for an entity that can be explicitly
-     * buffered by the application by calling {@code io.helidon.http.media.ReadableEntity.buffer()}.
+     * Configure the maximum size of a decoded entity materialized in memory, including
+     * {@code byte[]}, strings, forms, JSON, and explicit
+     * {@code io.helidon.http.media.ReadableEntity.buffer()} calls. This is a limit on
+     * input bytes, not on the size of the resulting object graph. Direct streaming
+     * reads are not limited by this setting.
+     * <p>
+     * Defaults to {@code 1 MiB} (1,048,576 bytes).
+     * Applications that previously materialized larger
+     * entities must explicitly increase this setting. Server-side
+     * {@code max-payload-size} remains an independent limit, including for streams.
      *
-     * @return maximum size for a buffered entity
+     * @return maximum size for an entity materialized in memory
      */
     @Option.Configured
-    @Option.Default("64 KB")
+    @Option.Default("1 MiB")
     default Size maxBufferedEntitySize() {
-        return Size.create(64, Size.Unit.KB);
+        return Size.create(1, Size.Unit.MIB);
     }
 
     /**

@@ -25,6 +25,11 @@ import io.helidon.http.media.ReadableEntity;
 
 /**
  * A single part of a multipart message.
+ * When read from an HTTP entity, each materializing conversion inherits that entity's
+ * {@code max-buffered-entity-size} limit independently. The limit counts decoded input bytes
+ * consumed by the conversion, not the combined size of all parts or the resulting object's heap usage.
+ * Direct {@link #inputStream()} access and media readers that declare streaming behavior remain
+ * unrestricted by this limit. A configured request {@code max-payload-size} still applies to the entire payload.
  */
 @Api.Stable
 public interface ReadablePart extends ReadableEntity {

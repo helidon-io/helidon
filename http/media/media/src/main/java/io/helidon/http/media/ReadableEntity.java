@@ -27,6 +27,11 @@ import io.helidon.common.GenericType;
 /**
  * Readable HTTP entity.
  * This may be server request entity, or client response entity.
+ * Materializing conversions are limited by the HTTP protocol's
+ * {@code max-buffered-entity-size} (decoded input bytes, not heap usage).
+ * {@link #inputStream()} and media readers that declare streaming behavior are
+ * exempt. Server-side {@code max-payload-size} applies independently to both
+ * streamed and materialized decoded request bodies when configured.
  */
 @Api.Stable
 public interface ReadableEntity {
@@ -34,6 +39,7 @@ public interface ReadableEntity {
      * Input stream to read bytes of the entity.
      * Cannot be combined with methods {@link #as(Class)} or {@link #as(io.helidon.common.GenericType)}
      * If there is no entity, returns input stream on empty byte array.
+     * This stream is not limited by {@code max-buffered-entity-size}.
      *
      * @return input stream to entity bytes
      */
@@ -43,8 +49,13 @@ public interface ReadableEntity {
      * If called before {@link #inputStream()}, it will buffer the entity and support
      * multiple calls to {@link #inputStream()} after that. Normally, {@link #inputStream()}
      * can only be called at most once.
+     * On a server request, this buffers decoded bytes and applies both the
+     * protocol's {@code max-buffered-entity-size} and the configured
+     * {@code max-payload-size} before allowing the entity to be read again.
+     *
      * @throws java.lang.IllegalStateException if called after {@link #inputStream()} or
-     *          if max entity buffered length limit was exceeded
+     *          if the buffer size limit was exceeded outside a server request
+     * @throws io.helidon.http.HttpException if a server request exceeds either size limit
      * @throws java.lang.UnsupportedOperationException if not supported
      */
     default void buffer() {
@@ -59,7 +70,9 @@ public interface ReadableEntity {
      * @param <T>  type of the entity
      * @return entity correctly typed
      * @throws IllegalArgumentException        in case the entity type is not supported
-     * @throws java.lang.IllegalStateException in case there is no entity
+     * @throws java.lang.IllegalStateException if there is no entity or the materialized entity size limit
+     *                                        is exceeded outside a server request
+     * @throws io.helidon.http.HttpException   if a server request exceeds its materialized entity size limit
      * @throws java.io.UncheckedIOException    in case I/O fails
      */
     default <T> T as(Class<T> type) {
@@ -73,8 +86,10 @@ public interface ReadableEntity {
      * @param type class of the entity
      * @param <T>  type of the entity
      * @return entity correctly typed, or an empty optional if entity is not present
-     * @throws IllegalArgumentException     in case the entity type is not supported
-     * @throws java.io.UncheckedIOException in case I/O fails
+     * @throws IllegalArgumentException        in case the entity type is not supported
+     * @throws java.lang.IllegalStateException if the materialized entity size limit is exceeded outside a server request
+     * @throws io.helidon.http.HttpException   if a server request exceeds its materialized entity size limit
+     * @throws java.io.UncheckedIOException    in case I/O fails
      */
     default <T> Optional<T> asOptional(Class<T> type) {
         return asOptional(GenericType.create(type));
@@ -88,7 +103,9 @@ public interface ReadableEntity {
      * @param <T>  type of the entity
      * @return entity correctly typed
      * @throws IllegalArgumentException        in case the entity type is not supported
-     * @throws java.lang.IllegalStateException in case there is no entity
+     * @throws java.lang.IllegalStateException if there is no entity or the materialized entity size limit
+     *                                        is exceeded outside a server request
+     * @throws io.helidon.http.HttpException   if a server request exceeds its materialized entity size limit
      * @throws java.io.UncheckedIOException    in case I/O fails
      */
     <T> T as(GenericType<T> type);
@@ -100,8 +117,10 @@ public interface ReadableEntity {
      * @param type generic type of the entity
      * @param <T>  type of the entity
      * @return entity correctly typed, or an empty optional if entity is not present
-     * @throws IllegalArgumentException     in case the entity type is not supported
-     * @throws java.io.UncheckedIOException in case I/O fails
+     * @throws IllegalArgumentException        in case the entity type is not supported
+     * @throws java.lang.IllegalStateException if the materialized entity size limit is exceeded outside a server request
+     * @throws io.helidon.http.HttpException   if a server request exceeds its materialized entity size limit
+     * @throws java.io.UncheckedIOException    in case I/O fails
      */
     <T> Optional<T> asOptional(GenericType<T> type);
 

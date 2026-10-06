@@ -32,6 +32,7 @@ import java.util.function.Function;
 import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.http.Headers;
 
 /**
  * Base for readable entities.
@@ -50,6 +51,7 @@ public abstract class ReadableEntityBase implements ReadableEntity {
     private final AtomicBoolean entityRequested = new AtomicBoolean();
     private final Consumer<Boolean> entityRequestedCallback;
     private RequestingInputStream inputStream;
+    private EntityReaderContext readerContext;
 
     private byte[] bufferedEntity;
     private final long maxBufferedEntitySize;
@@ -111,15 +113,15 @@ public abstract class ReadableEntityBase implements ReadableEntity {
     @Override
     public void buffer() {
         if (bufferedEntity == null) {
-            try (InputStream is = createInputStream()) {
+            try (InputStream is = inputStream()) {
                 try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
                     byte[] buffer = new byte[BUFFER_SIZE];
                     int read;
-                    int entityLength = 0;
+                    long entityLength = 0;
                     while ((read = is.read(buffer)) != -1) {
                         entityLength += read;
                         if (entityLength > maxBufferedEntitySize) {
-                            throw new IllegalStateException("Maximum buffered entity length exceeded");
+                            throw bufferedEntityLimitExceeded();
                         }
                         bos.write(buffer, 0, read);
                     }
@@ -183,20 +185,15 @@ public abstract class ReadableEntityBase implements ReadableEntity {
         if (!entityRequested.getAndSet(true)) {
             entityRequestedCallback.accept(true);
         }
-        InputStream theStream;
         if (inputStream == null) {
-            theStream = inputStream();
-        } else {
-            theStream = inputStream;
-        }
-        try (theStream) {
-            byte[] buffer = new byte[2048];
-            while (theStream.read(buffer) > 0) {
-                // ignore
+            InputStream stream = inputStream();
+            consumeStream(stream);
+            if (inputStream == null || stream == inputStream || consumed()) {
+                return;
             }
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            // A decoder can finish before the transport, which must still reach EOF.
         }
+        consumeStream(inputStream);
     }
 
     @Override
@@ -232,7 +229,7 @@ public abstract class ReadableEntityBase implements ReadableEntity {
      * @return all bytes of the entity
      */
     protected byte[] readAllBytes(long exactLength) {
-        try (InputStream stream = inputStream()) {
+        try (InputStream stream = materializedInputStream()) {
             if (inputStream != null) {
                 // Decoder cleanup must not request more transport data after a failed conversion.
                 inputStream.skipReadOnClose = true;
@@ -299,12 +296,205 @@ public abstract class ReadableEntityBase implements ReadableEntity {
     }
 
     /**
-     * Max entity length of a bufferable entity.
+     * Maximum entity length for materializing reads and explicit buffering.
      *
-     * @return max entity length for buffering
+     * @return maximum number of input bytes to materialize
      */
     protected long maxBufferedEntitySize() {
         return maxBufferedEntitySize;
+    }
+
+    /**
+     * Whether an entity has been buffered and can be read again. An entity
+     * implementation that decodes its input stream must not decode this buffer again.
+     *
+     * @return whether a buffered entity is available
+     */
+    protected boolean bufferedEntityAvailable() {
+        return bufferedEntity != null;
+    }
+
+    /**
+     * Exception to throw when explicit buffering exceeds its configured size.
+     *
+     * @return exception for a buffered entity that exceeds the limit
+     */
+    protected RuntimeException bufferedEntityLimitExceeded() {
+        return new IllegalStateException("Maximum buffered entity length exceeded");
+    }
+
+    /**
+     * Exception to throw when a materializing reader exceeds its configured size limit.
+     * Server request implementations override this to produce an HTTP error response.
+     *
+     * @return exception for a materialized entity that exceeds the limit
+     */
+    protected RuntimeException materializedEntityLimitExceeded() {
+        return new IllegalStateException("Maximum materialized entity size exceeded");
+    }
+
+    /**
+     * Read a server request with the selected media reader, enforcing the materialization limit.
+     * If a reader wraps or suppresses a materialization-limit failure, the original limit failure is thrown.
+     * Streaming readers retain responsibility for stream ownership as described by {@link EntityReader#streaming()}.
+     *
+     * @param reader the selected media reader
+     * @param type type of the entity
+     * @param headers request headers
+     * @param <T> type of the entity
+     * @return entity value
+     */
+    protected <T> T readEntity(EntityReader<T> reader, GenericType<T> type, Headers headers) {
+        return readerContext().read(reader, type, inputStream(), headers);
+    }
+
+    /**
+     * Read a client response with the selected media reader, enforcing the materialization limit.
+     * If a reader wraps or suppresses a materialization-limit failure, the original limit failure is thrown.
+     * Streaming readers retain responsibility for stream ownership as described by {@link EntityReader#streaming()}.
+     *
+     * @param reader the selected media reader
+     * @param type type of the entity
+     * @param requestHeaders request headers
+     * @param responseHeaders response headers
+     * @param <T> type of the entity
+     * @return entity value
+     */
+    protected <T> T readEntity(EntityReader<T> reader,
+                             GenericType<T> type,
+                             Headers requestHeaders,
+                             Headers responseHeaders) {
+        return readerContext().read(reader, type, inputStream(), requestHeaders, responseHeaders);
+    }
+
+    private static void consumeStream(InputStream stream) {
+        try (stream) {
+            if (stream.read() == -1) {
+                return;
+            }
+            byte[] buffer = new byte[2048];
+            while (stream.read(buffer) > 0) {
+                // ignore
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private <T> T readEntity(EntityReader<T> reader,
+                            GenericType<T> type,
+                            InputStream stream,
+                            Headers requestHeaders,
+                            Headers responseHeaders,
+                            boolean clientResponse) {
+        Objects.requireNonNull(reader);
+        Objects.requireNonNull(type);
+        Objects.requireNonNull(stream);
+        Objects.requireNonNull(requestHeaders);
+        Objects.requireNonNull(responseHeaders);
+        MaterializedInputStream limited = reader.streaming() ? null
+                : new MaterializedInputStream(this, stream, maxBufferedEntitySize);
+        InputStream readerStream = limited == null ? stream : limited;
+        T result;
+        try {
+            result = clientResponse ? reader.read(type, readerStream, requestHeaders, responseHeaders, readerContext())
+                    : reader.read(type, readerStream, requestHeaders, readerContext());
+        } catch (RuntimeException e) {
+            if (limited != null && limited.limitExceeded != null) {
+                throw limited.limitExceeded;
+            }
+            throw e;
+        }
+        if (limited != null && limited.limitExceeded != null) {
+            throw limited.limitExceeded;
+        }
+        return result;
+    }
+
+    private EntityReaderContext readerContext() {
+        if (readerContext == null) {
+            readerContext = new ReaderContext();
+        }
+        return readerContext;
+    }
+
+    private InputStream materializedInputStream() {
+        return new MaterializedInputStream(this, inputStream(), maxBufferedEntitySize);
+    }
+
+    private InputStream createInputStream() {
+        if (consumed.compareAndSet(false, true)) {
+            if (!entityRequested.getAndSet(true)) {
+                entityRequestedCallback.accept(false);
+            }
+
+            this.inputStream = new RequestingInputStream(readEntityFunction, entityProcessedRunnable);
+            return inputStream;
+        } else {
+            throw new IllegalStateException("Entity has already been requested. Entity cannot be requested multiple times");
+        }
+    }
+
+    private static final class MaterializedInputStream extends InputStream {
+        private final ReadableEntityBase entity;
+        private final InputStream delegate;
+        private final long maxSize;
+        private long read;
+        private RuntimeException limitExceeded;
+
+        private MaterializedInputStream(ReadableEntityBase entity, InputStream delegate, long maxSize) {
+            this.entity = entity;
+            this.delegate = delegate;
+            this.maxSize = maxSize;
+        }
+
+        @Override
+        public int read() throws IOException {
+            int value = delegate.read();
+            if (value != -1) {
+                count(1);
+            }
+            return value;
+        }
+
+        @Override
+        public int read(byte[] bytes, int offset, int length) throws IOException {
+            int count = delegate.read(bytes, offset, length);
+            if (count > 0) {
+                count(count);
+            }
+            return count;
+        }
+
+        @Override
+        public long skip(long length) throws IOException {
+            long skipped = delegate.skip(length);
+            if (skipped > 0) {
+                count(skipped);
+            }
+            return skipped;
+        }
+
+        @Override
+        public int available() throws IOException {
+            return delegate.available();
+        }
+
+        @Override
+        public void close() throws IOException {
+            delegate.close();
+        }
+
+        private void count(long bytes) {
+            if (limitExceeded != null) {
+                throw limitExceeded;
+            }
+            if (bytes > maxSize - read) {
+                limitExceeded = entity.materializedEntityLimitExceeded();
+                throw limitExceeded;
+            }
+            read += bytes;
+        }
     }
 
     private static class EntityProcessedRunnable implements Runnable {
@@ -320,19 +510,6 @@ public abstract class ReadableEntityBase implements ReadableEntity {
         public void run() {
             finishedReading.set(true);
             original.run();
-        }
-    }
-
-    private InputStream createInputStream() {
-        if (consumed.compareAndSet(false, true)) {
-            if (!entityRequested.getAndSet(true)) {
-                entityRequestedCallback.accept(false);
-            }
-
-            this.inputStream = new RequestingInputStream(readEntityFunction, entityProcessedRunnable);
-            return inputStream;
-        } else {
-            throw new IllegalStateException("Entity has already been requested. Entity cannot be requested multiple times");
         }
     }
 
@@ -433,6 +610,22 @@ public abstract class ReadableEntityBase implements ReadableEntity {
         @Override
         public boolean hasEntity() {
             return false;
+        }
+    }
+
+    private final class ReaderContext implements EntityReaderContext {
+        @Override
+        public <T> T read(EntityReader<T> reader, GenericType<T> type, InputStream stream, Headers headers) {
+            return readEntity(reader, type, stream, headers, headers, false);
+        }
+
+        @Override
+        public <T> T read(EntityReader<T> reader,
+                          GenericType<T> type,
+                          InputStream stream,
+                          Headers requestHeaders,
+                          Headers responseHeaders) {
+            return readEntity(reader, type, stream, requestHeaders, responseHeaders, true);
         }
     }
 }

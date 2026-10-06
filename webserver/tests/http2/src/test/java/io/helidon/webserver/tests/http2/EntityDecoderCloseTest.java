@@ -190,7 +190,7 @@ class EntityDecoderCloseTest {
                                                       ServerRequestHeaders.create(),
                                                       MediaContext.create(),
                                                       maxPayloadSize,
-                                                      1)
+                                                      PAYLOAD.length)
                     : ServerRequestEntity.create(_ -> { },
                                                  input -> input,
                                                  decoding,
@@ -199,7 +199,7 @@ class EntityDecoderCloseTest {
                                                  ServerRequestHeaders.create(),
                                                  MediaContext.create(),
                                                  maxPayloadSize,
-                                                 1);
+                                                 PAYLOAD.length);
         }
 
         void assertDecoderClosed() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,12 @@
 package io.helidon.http.media.multipart;
 
 import java.io.InputStream;
+import java.util.Objects;
 
 import io.helidon.common.GenericType;
 import io.helidon.http.Headers;
 import io.helidon.http.media.EntityReader;
+import io.helidon.http.media.EntityReaderContext;
 import io.helidon.http.media.MediaContext;
 
 class MultiPartReader implements EntityReader<MultiPart> {
@@ -30,6 +32,11 @@ class MultiPartReader implements EntityReader<MultiPart> {
     MultiPartReader(MediaContext context, String boundary) {
         this.context = context;
         this.boundary = boundary;
+    }
+
+    @Override
+    public boolean streaming() {
+        return true;
     }
 
     @Override
@@ -43,5 +50,31 @@ class MultiPartReader implements EntityReader<MultiPart> {
                           Headers requestHeaders,
                           Headers responseHeaders) {
         return new MultiPartImpl(context, boundary, stream);
+    }
+
+    @Override
+    public MultiPart read(GenericType<MultiPart> type,
+                          InputStream stream,
+                          Headers headers,
+                          EntityReaderContext readerContext) {
+        Objects.requireNonNull(type);
+        Objects.requireNonNull(stream);
+        Objects.requireNonNull(headers);
+        Objects.requireNonNull(readerContext);
+        return new MultiPartImpl(context, boundary, stream, readerContext);
+    }
+
+    @Override
+    public MultiPart read(GenericType<MultiPart> type,
+                          InputStream stream,
+                          Headers requestHeaders,
+                          Headers responseHeaders,
+                          EntityReaderContext readerContext) {
+        Objects.requireNonNull(type);
+        Objects.requireNonNull(stream);
+        Objects.requireNonNull(requestHeaders);
+        Objects.requireNonNull(responseHeaders);
+        Objects.requireNonNull(readerContext);
+        return new MultiPartImpl(context, boundary, stream, readerContext);
     }
 }

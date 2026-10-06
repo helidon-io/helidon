@@ -25,9 +25,16 @@ import io.helidon.common.GenericType;
  * Multi part message is an iterator of parts. The iterator can be traversed one time only,
  * as the data is read during processing (so we do not create parts in memory).
  * This type can be used with {@code ReadableEntity#as(Class)}.
+ * The built-in multipart reader transfers ownership of its input stream to the returned message and closes
+ * it when iteration completes. Use try-with-resources when processing can stop before the last part.
+ * Closing the message closes its retained input stream without iterating the remaining parts itself.
+ * The stream's close behavior still applies: closing a nested multipart message drains the enclosing part
+ * through its boundary, which can read additional input, and leaves the outer message available for further iteration.
+ * Transport-specific request or response cleanup still applies. Closing an individual part's input stream
+ * likewise finishes only that part and leaves its message available for further iteration.
  */
 @Api.Stable
-public abstract class MultiPart implements Iterator<ReadablePart> {
+public abstract class MultiPart implements Iterator<ReadablePart>, AutoCloseable {
     /**
      * Generic type of {@link MultiPart}.
      */
@@ -37,5 +44,22 @@ public abstract class MultiPart implements Iterator<ReadablePart> {
      * This class is empty, this constructor does nothing.
      */
     public MultiPart() {
+    }
+
+    /**
+     * Release resources owned by this multipart message.
+     * The built-in reader's message closes its retained input stream without iterating the remaining parts itself.
+     * Closing a nested multipart message drains its enclosing part through the part boundary;
+     * this can read additional input and leaves the outer message available for further iteration.
+     * Afterwards {@link #hasNext()} returns {@code false} and {@link #next()} throws
+     * {@link java.util.NoSuchElementException}. Repeated calls have no effect, including after a close failure.
+     *
+     * The default implementation does nothing to preserve compatibility with existing subclasses.
+     * Subclasses that own resources must override this method to release them and stop iteration.
+     *
+     * @throws java.io.UncheckedIOException if closing the built-in reader's input stream fails
+     */
+    @Override
+    public void close() {
     }
 }
