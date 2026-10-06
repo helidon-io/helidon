@@ -248,13 +248,13 @@ class MetricsProviderJmhRunnerTest {
     }
 
     private record Score(double score, double error) {
-        private double relativeError() {
-            return error / score * 100D;
-        }
-
         @Override
         public String toString() {
             return score + " +/- " + error;
+        }
+
+        private double relativeError() {
+            return error / score * 100D;
         }
     }
 }

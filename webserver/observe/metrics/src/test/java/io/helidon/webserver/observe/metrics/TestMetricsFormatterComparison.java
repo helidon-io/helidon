@@ -729,6 +729,19 @@ class TestMetricsFormatterComparison {
             textFormatter = provider(MeterRegistryFormatterProvider.class, prefix + "PrometheusFormatterProvider");
         }
 
+        @Override
+        public void close() {
+            try {
+                registry.close();
+            } finally {
+                try {
+                    factory.close();
+                } finally {
+                    services.shutdown();
+                }
+            }
+        }
+
         private void populate(Histogram histogram, boolean recorded, boolean percentiles) {
             for (String region : List.of("west", "east")) {
                 List<Tag> tags = List.of(factory.tagCreate("region", region), factory.tagCreate("label", LABEL_VALUE));
@@ -875,19 +888,6 @@ class TestMetricsFormatterComparison {
             Object result = formatterProvider.formatter(context.build(), registry).orElseThrow().format().orElseThrow();
             assertThat("Formatter result", result, notNullValue());
             return result;
-        }
-
-        @Override
-        public void close() {
-            try {
-                registry.close();
-            } finally {
-                try {
-                    factory.close();
-                } finally {
-                    services.shutdown();
-                }
-            }
         }
     }
 }
