@@ -17,9 +17,7 @@
 package io.helidon.service.codegen;
 
 import java.util.Collection;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenUtil;
@@ -68,7 +66,6 @@ public class EventObserverExtensionProvider implements RegistryCodegenExtensionP
 
     private static final class EventObserverExtension implements RegistryCodegenExtension {
         private static final TypeName GENERATOR = TypeName.create(EventObserverExtensionProvider.EventObserverExtension.class);
-        private static final Map<ClassNameCacheKey, Map<Set<Annotation>, TypeName>> CACHE = new ConcurrentHashMap<>();
 
         @Override
         public void process(RegistryRoundContext roundContext) {
@@ -78,22 +75,20 @@ public class EventObserverExtensionProvider implements RegistryCodegenExtensionP
             process(roundContext, elements, "Async");
         }
 
-        private static TypeName registration(TypeName serviceType, TypeName eventObject, Set<Annotation> qualifiers) {
-            ResolvedType event = ResolvedType.create(eventObject);
-
-            var map = CACHE.computeIfAbsent(new ClassNameCacheKey(serviceType, event), k -> new ConcurrentHashMap<>());
-            return map.computeIfAbsent(qualifiers, it -> {
-                String className = serviceType.classNameWithEnclosingNames().replace('.', '_')
-                        + "__Observer";
-                var builder = TypeName.builder()
-                        .packageName(serviceType.packageName());
-                if (map.isEmpty()) {
-                    return builder.className(className)
-                            .build();
-                }
-                return builder.className(className + "_" + map.size())
-                        .build();
-            });
+        private static TypeName registration(TypeInfo owningType, TypedElementInfo element, String suffix) {
+            TypeName serviceType = owningType.typeName();
+            String signature = element.signature().toString();
+            // Rank complete method signatures within the owner, independent of processing order and compiler lifetime.
+            long index = owningType.elementInfo().stream()
+                    .filter(it -> it.kind() == ElementKind.METHOD)
+                    .filter(it -> it.hasAnnotation(EVENT_OBSERVER) || it.hasAnnotation(EVENT_OBSERVER_ASYNC))
+                    .map(it -> it.signature().toString())
+                    .filter(it -> it.compareTo(signature) < 0)
+                    .count();
+            return TypeName.builder()
+                    .packageName(serviceType.packageName())
+                    .className(serviceType.classNameWithEnclosingNames().replace('.', '_') + "__Observer" + suffix + "_" + index)
+                    .build();
         }
 
         private void process(RegistryRoundContext roundContext, Collection<TypedElementInfo> elements, String suffix) {
@@ -133,7 +128,7 @@ public class EventObserverExtensionProvider implements RegistryCodegenExtensionP
                                                   TypeName eventObject,
                                                   String suffix) {
             TypeName serviceTypeName = owningType.typeName();
-            TypeName generatedType = registration(serviceTypeName, eventObject, qualifiers);
+            TypeName generatedType = registration(owningType, element, suffix);
 
             ClassModel.Builder classModel = ClassModel.builder()
                     .copyright(CodegenUtil.copyright(GENERATOR,
@@ -189,7 +184,9 @@ public class EventObserverExtensionProvider implements RegistryCodegenExtensionP
                     .addParameter(eventManager -> eventManager
                             .type(EVENT_MANAGER)
                             .name("manager"))
-                    .addContent("manager.register")
+                    .addContent("manager.<")
+                    .addContent(eventObject.boxed())
+                    .addContent(">register")
                     .addContent(suffix)
                     .addContent("(EVENT_OBJECT, eventObserver::")
                     .addContent(element.elementName())
@@ -197,9 +194,6 @@ public class EventObserverExtensionProvider implements RegistryCodegenExtensionP
             );
 
             roundContext.addGeneratedType(generatedType, classModel, serviceTypeName, owningType);
-        }
-
-        private record ClassNameCacheKey(TypeName serviceType, ResolvedType eventType) {
         }
     }
 }
