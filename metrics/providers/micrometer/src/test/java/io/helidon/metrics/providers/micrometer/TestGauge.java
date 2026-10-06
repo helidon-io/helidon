@@ -15,18 +15,31 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
+import java.util.stream.StreamSupport;
 
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.service.registry.Services;
 
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.core.instrument.config.MeterFilter;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TestGauge {
 
@@ -52,5 +65,326 @@ class TestGauge {
         assertThat("Initial value", mGauge.value(), is((double) initialValue));
         value.addAndGet(incr);
         assertThat("Updated value", mGauge.value(), is((double) initialValue + incr));
+    }
+
+    @Test
+    void testAddedTagSupplierAndRemoval() {
+        checkFilteredSupplierAndRemoval(IdRewrite.ADD_TAG);
+    }
+
+    @Test
+    void testRemovedTagSupplierAndRemoval() {
+        checkFilteredSupplierAndRemoval(IdRewrite.REMOVE_TAG);
+    }
+
+    @Test
+    void testRenamedSupplierAndRemoval() {
+        checkFilteredSupplierAndRemoval(IdRewrite.RENAME);
+    }
+
+    @Test
+    void testFilteredDeduplicationPreservesBacking() {
+        MeterRegistry registry = metricsFactory.createMeterRegistry(MetricsConfig.create());
+        try {
+            registry.unwrap(io.micrometer.core.instrument.MeterRegistry.class).config()
+                    .meterFilter(MeterFilter.ignoreTags("source"));
+            AtomicLong original = new AtomicLong(7);
+            Gauge<AtomicLong> first = registry.getOrCreate(metricsFactory.gaugeBuilder("collapsed", () -> original)
+                                                                 .addTag(metricsFactory.tagCreate("source", "first")));
+            Gauge<AtomicLong> second = registry.getOrCreate(metricsFactory.gaugeBuilder("collapsed", () -> new AtomicLong(19))
+                                                                  .addTag(metricsFactory.tagCreate("source", "second")));
+            assertThat("Native deduplication retains wrapper", second, sameInstance(first));
+            assertThat("Native deduplication retains original supplier", second.value(), sameInstance(original));
+            assertThat("Native backing remains original", second.unwrap(io.micrometer.core.instrument.Gauge.class).value(),
+                       is(7.0));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testReentrantNativeRegistrationDoesNotUsePendingSupplier() {
+        MeterRegistry registry = metricsFactory.createMeterRegistry(MetricsConfig.create());
+        try {
+            io.micrometer.core.instrument.MeterRegistry nativeRegistry =
+                    registry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
+            AtomicBoolean registering = new AtomicBoolean();
+            nativeRegistry.config().meterFilter(new MeterFilter() {
+                @Override
+                public Meter.Id map(Meter.Id id) {
+                    if (id.getName().equals("outer") && registering.compareAndSet(false, true)) {
+                        io.micrometer.core.instrument.Gauge.builder("unrelated", () -> 23).register(nativeRegistry);
+                        registry.getOrCreate(metricsFactory.gaugeBuilder("nested", () -> new AtomicLong(11)));
+                    }
+                    return id.withName("mapped." + id.getName());
+                }
+            });
+            AtomicLong value = new AtomicLong(7);
+            Gauge<AtomicLong> outer = registry.getOrCreate(metricsFactory.gaugeBuilder("outer", () -> value));
+            assertThat("Outer supplier retained", outer.value(), sameInstance(value));
+            assertThat("Unrelated native registration keeps its own value",
+                       registry.meter(Gauge.class, "mapped.unrelated", List.of()).orElseThrow().value(), is(23.0));
+            assertThat("Nested Helidon registration keeps its supplier type",
+                       registry.meter(Gauge.class, "mapped.nested", List.of()).orElseThrow().value().longValue(), is(11L));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testRegistrationFailureDoesNotRetainPendingSupplier() {
+        MeterRegistry registry = metricsFactory.createMeterRegistry(MetricsConfig.create());
+        try {
+            io.micrometer.core.instrument.MeterRegistry nativeRegistry =
+                    registry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
+            AtomicBoolean fail = new AtomicBoolean(true);
+            nativeRegistry.config().onMeterAdded(meter -> {
+                if (meter.getId().getName().equals("failure") && fail.getAndSet(false)) {
+                    throw new IllegalStateException("registration failure");
+                }
+            });
+            assertThrows(IllegalStateException.class,
+                         () -> registry.getOrCreate(metricsFactory.gaugeBuilder("failure", () -> new AtomicLong(7))));
+            assertThat("Native listener failure prevents outer registry insertion",
+                       nativeRegistry.find("failure").gauge(), nullValue());
+            io.micrometer.core.instrument.Gauge nativeGauge =
+                    io.micrometer.core.instrument.Gauge.builder("failure", () -> 19).register(nativeRegistry);
+            Gauge<?> wrapper = registry.meter(Gauge.class, "failure", List.of()).orElseThrow();
+            // A composite publisher can retain the first native backing before the outer listener fails.
+            assertThat("Later native registration uses a native value wrapper", wrapper.value(), instanceOf(Double.class));
+            assertThat("Later native registration follows its actual backing", wrapper.value(), is(nativeGauge.value()));
+            assertThat("Later native registration has its own identity",
+                       wrapper.unwrap(io.micrometer.core.instrument.Gauge.class), sameInstance(nativeGauge));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testListenerFailureAbortsRegistrationDuringFilter() {
+        MeterRegistry registry = metricsFactory.createMeterRegistry(MetricsConfig.create());
+        try {
+            io.micrometer.core.instrument.MeterRegistry nativeRegistry =
+                    registry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
+            nativeRegistry.config().meterFilter(new MeterFilter() {
+                @Override
+                public Meter.Id map(Meter.Id id) {
+                    if (id.getName().equals("outer")) {
+                        io.micrometer.core.instrument.Gauge.builder("unrelated", () -> 23).register(nativeRegistry);
+                    }
+                    return id.withName("mapped." + id.getName());
+                }
+            });
+            IllegalStateException listenerFailure = new IllegalStateException("listener failure");
+            registry.onMeterAdded(meter -> {
+                if (meter.id().name().equals("mapped.unrelated")) {
+                    assertThat("Listener runs before native meter insertion",
+                               nativeRegistry.find("mapped.unrelated").gauge(), nullValue());
+                    throw listenerFailure;
+                }
+            });
+            AtomicLong value = new AtomicLong(7);
+            assertThat("Original listener failure propagates during filtering",
+                       assertThrows(IllegalStateException.class,
+                                    () -> registry.getOrCreate(metricsFactory.gaugeBuilder("outer", () -> value))),
+                       sameInstance(listenerFailure));
+            assertThat("Filter listener failure aborts outer native creation",
+                       nativeRegistry.find("mapped.outer").gauge(),
+                       nullValue());
+            assertThat("Filter listener failure aborts outer provider creation",
+                       registry.meters().stream().anyMatch(meter -> meter.id().name().equals("mapped.outer")),
+                       is(false));
+            AtomicLong independentValue = new AtomicLong(19);
+            Gauge<AtomicLong> independent = registry.getOrCreate(
+                    metricsFactory.gaugeBuilder("independent", () -> independentValue));
+            assertThat("Later registration retains its own supplier after failure",
+                       independent.value(), sameInstance(independentValue));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testFilterRegistrationWithSameMappedIdPreservesNativeBacking() {
+        MeterRegistry registry = metricsFactory.createMeterRegistry(MetricsConfig.create());
+        try {
+            io.micrometer.core.instrument.MeterRegistry nativeRegistry =
+                    registry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
+            nativeRegistry.config().meterFilter(new MeterFilter() {
+                @Override
+                public Meter.Id map(Meter.Id id) {
+                    if (id.getName().equals("outer")) {
+                        io.micrometer.core.instrument.Gauge.builder("target", () -> 23).register(nativeRegistry);
+                        return id.withName("target");
+                    }
+                    return id;
+                }
+            });
+            AtomicLong value = new AtomicLong(7);
+            Gauge<?> wrapper = registry.getOrCreate(metricsFactory.gaugeBuilder("outer", () -> value));
+            io.micrometer.core.instrument.Gauge nativeGauge = nativeRegistry.find("target").gauge();
+            assertThat("Filter-created native gauge retains its backing", nativeGauge.value(), is(23.0));
+            assertThat("Wrapper follows filter-created native backing", wrapper.value().doubleValue(), is(23.0));
+            assertThat("Wrapper retains exact filter-created native gauge",
+                       wrapper.unwrap(io.micrometer.core.instrument.Gauge.class), sameInstance(nativeGauge));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testFilterReusingPublicSupplierPreservesNativeBacking() {
+        MeterRegistry registry = metricsFactory.createMeterRegistry(MetricsConfig.create());
+        try {
+            io.micrometer.core.instrument.MeterRegistry nativeRegistry =
+                    registry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
+            AtomicLong value = new AtomicLong(7);
+            Supplier<AtomicLong> supplier = () -> value;
+            nativeRegistry.config().meterFilter(new MeterFilter() {
+                @Override
+                public Meter.Id map(Meter.Id id) {
+                    if (id.getName().equals("outer")) {
+                        io.micrometer.core.instrument.Gauge.builder("target", supplier, _ -> 23)
+                                .strongReference(true)
+                                .register(nativeRegistry);
+                        return id.withName("target");
+                    }
+                    return id;
+                }
+            });
+            Gauge.Builder<AtomicLong> builder = metricsFactory.gaugeBuilder("outer", supplier);
+            assertThat("Public supplier remains the original supplier", builder.supplier(), sameInstance(supplier));
+            Gauge<?> wrapper = registry.getOrCreate(builder);
+            assertThat("Reusing public supplier cannot claim unrelated native creation", wrapper.value().doubleValue(), is(23.0));
+            assertThat("Wrapper retains native identity when supplier object is reused",
+                       wrapper.unwrap(io.micrometer.core.instrument.Gauge.class),
+                       sameInstance(nativeRegistry.find("target").gauge()));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testFunctionGaugeFilterReusingStatePreservesNativeBacking() {
+        MeterRegistry registry = metricsFactory.createMeterRegistry(MetricsConfig.create());
+        try {
+            io.micrometer.core.instrument.MeterRegistry nativeRegistry =
+                    registry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
+            AtomicLong value = new AtomicLong(7);
+            nativeRegistry.config().meterFilter(new MeterFilter() {
+                @Override
+                public Meter.Id map(Meter.Id id) {
+                    if (id.getName().equals("outer")) {
+                        io.micrometer.core.instrument.Gauge.builder("target", value, _ -> 23)
+                                .strongReference(true)
+                                .register(nativeRegistry);
+                        return id.withName("target");
+                    }
+                    return id;
+                }
+            });
+            Gauge<Double> wrapper = registry.getOrCreate(metricsFactory.gaugeBuilder("outer", value, AtomicLong::doubleValue));
+            assertThat("Function gauge follows actual native function", wrapper.value(), is(23.0));
+            assertThat("Function gauge preserves actual native identity", wrapper.unwrap(io.micrometer.core.instrument.Gauge.class),
+                       sameInstance(nativeRegistry.find("target").gauge()));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testFilteredFunctionGaugeWithoutPublishers() {
+        MeterRegistry registry = metricsFactory.createMeterRegistry(MetricsConfig.create());
+        try {
+            CompositeMeterRegistry nativeRegistry = registry.unwrap(CompositeMeterRegistry.class);
+            List.copyOf(nativeRegistry.getRegistries()).forEach(publisher -> {
+                nativeRegistry.remove(publisher);
+                publisher.close();
+            });
+            assertThat("Function gauge fixture has no publishers", nativeRegistry.getRegistries().isEmpty(), is(true));
+            nativeRegistry.config().meterFilter(MeterFilter.commonTags(Tags.of("filtered", "value")));
+            AtomicLong value = new AtomicLong(7);
+            Gauge.Builder<Double> builder = metricsFactory.gaugeBuilder("function", value, AtomicLong::doubleValue);
+            assertThat("Original function supplier remains available", builder.supplier().get(), is(7.0));
+            Gauge<Double> gauge = registry.getOrCreate(builder);
+            assertThat("Filtered function uses original state without a publisher", gauge.value(), is(7.0));
+            value.set(13);
+            assertThat("Filtered function tracks state changes without a publisher", gauge.value(), is(13.0));
+            assertThat("Filtered function exposes the native tag", gauge.id().tagsMap().get("filtered"), is("value"));
+            assertThat("Filtered function removes its actual native identity", registry.remove(gauge).orElseThrow(),
+                       sameInstance(gauge));
+        } finally {
+            registry.close();
+        }
+    }
+
+    @Test
+    void testFunctionGaugeWithNullStatePreservesNativeBehavior() {
+        MeterRegistry registry = metricsFactory.createMeterRegistry(MetricsConfig.create());
+        try {
+            AtomicLong calls = new AtomicLong();
+            Gauge<Double> gauge = registry.getOrCreate(metricsFactory.gaugeBuilder("nullState", (Object) null, _ -> {
+                calls.incrementAndGet();
+                return 7;
+            }));
+            CompositeMeterRegistry nativeRegistry = registry.unwrap(CompositeMeterRegistry.class);
+            assertThat("Registration does not invoke a null-state function", calls.get(), is(0L));
+            assertThat("Native composite preserves null-state no-op behavior",
+                       gauge.unwrap(io.micrometer.core.instrument.Gauge.class).value(), is(0.0));
+            assertThat("Native null-state sampling does not invoke the function", calls.get(), is(0L));
+            assertThat("Native null-state gauge creates no publisher children",
+                       nativeRegistry.getRegistries().stream().anyMatch(publisher -> publisher.find("nullState").gauge() != null),
+                       is(false));
+            assertThat("Helidon retains original function behavior for null state", gauge.value(), is(7.0));
+            assertThat("Helidon sampling invokes the function once", calls.get(), is(1L));
+        } finally {
+            registry.close();
+        }
+    }
+
+    private void checkFilteredSupplierAndRemoval(IdRewrite rewrite) {
+        MeterRegistry registry = metricsFactory.createMeterRegistry(MetricsConfig.create());
+        try {
+            io.micrometer.core.instrument.MeterRegistry nativeRegistry =
+                    registry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
+            nativeRegistry.config().meterFilter(rewrite.filter());
+            AtomicLong value = new AtomicLong(7);
+            Gauge<AtomicLong> gauge = registry.getOrCreate(metricsFactory.gaugeBuilder("filtered", () -> value)
+                                                                 .addTag(metricsFactory.tagCreate("original", "value")));
+            assertThat("Supplier value survives native ID mapping", gauge.value(), sameInstance(value));
+            io.micrometer.core.instrument.Gauge nativeGauge = gauge.unwrap(io.micrometer.core.instrument.Gauge.class);
+            assertThat("Wrapper exposes actual native name", gauge.id().name(), is(nativeGauge.getId().getName()));
+            assertThat("Wrapper exposes actual native tags", StreamSupport.stream(gauge.id().tags().spliterator(), false)
+                               .map(tag -> tag.key() + "=" + tag.value()).sorted().toList(),
+                       is(nativeGauge.getId().getTags().stream()
+                                  .map(tag -> tag.getKey() + "=" + tag.getValue()).sorted().toList()));
+            value.set(13);
+            assertThat("Native gauge shares supplier backing", nativeGauge.value(), is(13.0));
+            assertThat("Filtered gauge can be removed by its identity", registry.remove(gauge).orElseThrow(),
+                       sameInstance(gauge));
+            assertThat("Native gauge is removed", nativeRegistry.getMeters().contains(nativeGauge), is(false));
+            assertThat("Provider gauge is deleted", registry.isDeleted(gauge), is(true));
+        } finally {
+            registry.close();
+        }
+    }
+
+    private enum IdRewrite {
+        ADD_TAG,
+        REMOVE_TAG,
+        RENAME;
+
+        MeterFilter filter() {
+            return switch (this) {
+            case ADD_TAG -> MeterFilter.commonTags(Tags.of("filtered", "value"));
+            case REMOVE_TAG -> MeterFilter.ignoreTags("original");
+            case RENAME -> new MeterFilter() {
+                @Override
+                public Meter.Id map(Meter.Id id) {
+                    return id.withName("mapped." + id.getName());
+                }
+            };
+            };
+        }
     }
 }

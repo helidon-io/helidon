@@ -30,6 +30,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.ToDoubleFunction;
 
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.FunctionalCounter;
@@ -61,13 +62,14 @@ import io.micrometer.core.instrument.search.Search;
  * </p>
  * <p>
  * This code invokes the Micrometer builder's register method, passing this registry's delegate which is a Micrometer
- * meter registry. The Micrometer registry records the meter and then invokes a callback to us, passing the new Micrometer
- * meter. Based on the type of the new Micrometer meter we instantiate the correct type of Helidon meter as a wrapper around
- * the new new Micrometer meter. We then provisionally update some of our internal data structures as part of the callback.
+ * meter registry. The Micrometer registry invokes a callback to us, passing the new Micrometer meter, before recording it.
+ * We immediately wrap the native meter and notify our listeners during that callback. For Helidon gauges, the native
+ * creation hook first matches the builder's private source to the exact gauge, even when filters change its ID or register
+ * other meters.
  * </p>
  * <p>
- * After our callback returns to Micrometer and then Micrometer returns to us, we do some final touch-up to our data
- * structures as needed and return the new Helidon meter to the developer's code which invoked getOrCreate.
+ * After Micrometer returns to us, we do any final touch-up needed and return the Helidon meter to the developer's code
+ * which invoked getOrCreate.
  * </p>
  * <p>
  * This is a little convoluted, but this approach allows us to automatically create Helidon meters around every Micrometer
@@ -113,6 +115,9 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     private final Condition closeCompleted = lock.writeLock().newCondition();
     private LifecycleState lifecycleState = LifecycleState.OPEN;
     private volatile Thread closeThread;
+
+    // Protected by the write lock. Registrations can nest when native filters or listeners register another meter.
+    private GaugeRegistration gaugeRegistration;
 
     private MMeterRegistry(io.micrometer.core.instrument.MeterRegistry delegate,
                            MicrometerMetricsFactory metricsFactory,
@@ -446,7 +451,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         return helidonMeter;
     }
 
-    <HM extends MMeter<M>, M extends Meter, B, HB extends MMeter.Builder<B, M, HB, HM>> void onMeterAdded(M addedMeter) {
+    void onMeterAdded(Meter addedMeter) {
 
         /*
         We are not guaranteed that one of our own update operations--which would already hold the write lock--is triggering
@@ -459,43 +464,15 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             if (lifecycleState != LifecycleState.OPEN) {
                 return;
             }
-            /*
-            If we originated this callback by invoking the delegate registry, then there should be a builder
-            waiting for us to use. If the meter was created in some other way, then there will be no builder and
-            we will create the MMeter from the meter passed to us by Micrometer..
-             */
-
-            io.helidon.metrics.api.Meter.Id neutralIdForAddedMeter = neutralIdWithoutSystemTags(addedMeter.getId());
-
-            /*
-             See if there is any "pending builder" that we already created in getOrCreate and use it to create this new meter.
-             */
-            MMeter<M> mMeter;
-
-            MMeter.Builder<B, M, HB, HM> builder =
-                    (MMeter.Builder<B, M, HB, HM>) buildersByPromMeterId.get(neutralIdForAddedMeter);
-
-            io.helidon.metrics.api.Meter.Id id;
-
-            if (builder == null) {
-                id = neutralIdForAddedMeter;
-                mMeter = MMeter.create(id, addedMeter);
+            if (addedMeter instanceof Gauge gauge) {
+                MGauge.Builder<?, ?> builder = gaugeRegistration != null && gaugeRegistration.gauge == gauge
+                        ? gaugeRegistration.builder : null;
+                recordMeterAdded(gauge, builder);
             } else {
-                id = builder.id();
-                mMeter = builder.build(id, addedMeter);
+                MMeter.Builder<?, Meter, ?, ?> builder = (MMeter.Builder<?, Meter, ?, ?>)
+                        buildersByPromMeterId.remove(neutralIdWithoutSystemTags(addedMeter.getId()));
+                recordMeterAdded(addedMeter, builder);
             }
-
-            recordNewMeter(id, mMeter, addedMeter);
-
-            /*
-             Signal to getOrCreate that in fact a new delegate meter was created (because we are in this method at all).
-             */
-            buildersByPromMeterId.remove(id);
-
-            onAddListeners.forEach(listener -> {
-                listener.accept(mMeter);
-            });
-
         } finally {
             lock.writeLock().unlock();
         }
@@ -520,6 +497,32 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         } finally {
             lock.writeLock().unlock();
         }
+    }
+
+    private void onGaugeCreated(Gauge gauge, Object source) {
+        // Foreign native registrations must not acquire our lock while holding the native registry's lock.
+        if (lock.isWriteLockedByCurrentThread() && gaugeRegistration != null
+                && gaugeRegistration.builder.ownsRegistrationSource(source)) {
+            gaugeRegistration.gauge = gauge;
+        }
+    }
+
+    private <M extends Meter> void recordMeterAdded(M addedMeter, MMeter.Builder<?, M, ?, ?> builder) {
+        /*
+        Gauge builders require the exact native gauge created from their private source, because a filter can insert a
+        different gauge with the same eventual native ID. Other meters retain their existing builder ID correlation.
+         */
+        io.helidon.metrics.api.Meter.Id neutralIdForAddedMeter = neutralIdWithoutSystemTags(addedMeter.getId());
+        io.helidon.metrics.api.Meter.Id id = builder != null && !(addedMeter instanceof Gauge)
+                ? builder.id() : neutralIdForAddedMeter;
+        MMeter<M> mMeter;
+        if (builder == null) {
+            mMeter = MMeter.create(id, addedMeter);
+        } else {
+            mMeter = builder.build(id, addedMeter);
+        }
+        recordNewMeter(id, mMeter, addedMeter);
+        onAddListeners.forEach(listener -> listener.accept(mMeter));
     }
 
     private <HB extends io.helidon.metrics.api.Meter.Builder<HB, HM>,
@@ -634,20 +637,26 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             }
 
             displayTagPairs().forEach(mBuilder::delegateTag);
-            MMeter.Builder<?, ?, ?, ?> previousBuilderWithId = buildersByPromMeterId.put(id, mBuilder);
-            if (previousBuilderWithId != null) {
-                LOGGER.log(Level.WARNING,
-                           "Unexpected overwrite of existing pending builder " + previousBuilderWithId
-                           + " during creation of new meter " + mBuilder);
+            GaugeRegistration previousGaugeRegistration = gaugeRegistration;
+            gaugeRegistration = mBuilder instanceof MGauge.Builder<?, ?> gaugeBuilder
+                    ? new GaugeRegistration(gaugeBuilder) : null;
+            if (gaugeRegistration == null) {
+                MMeter.Builder<?, ?, ?, ?> previousBuilderWithId = buildersByPromMeterId.put(id, mBuilder);
+                if (previousBuilderWithId != null) {
+                    LOGGER.log(Level.WARNING,
+                               "Unexpected overwrite of existing pending builder " + previousBuilderWithId
+                                       + " during creation of new meter " + mBuilder);
+                }
             }
-
-            M meter = registration.apply(delegate());
-
-            /*
-             Normally, the on-add listener will have removed the pending builder, but do so here again if the listener
-             did not run--if the meter already exists in the Micrometer meter registry, for example.
-             */
-            buildersByPromMeterId.remove(id);
+            M meter;
+            try {
+                meter = registration.apply(delegate());
+            } finally {
+                gaugeRegistration = previousGaugeRegistration;
+                if (!(mBuilder instanceof MGauge.Builder<?, ?>)) {
+                    buildersByPromMeterId.remove(id);
+                }
+            }
             checkOpen();
 
             HM result = (HM) meters.get(meter);
@@ -660,8 +669,9 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
                 LOGGER.log(Level.WARNING,
                            "Unexpected discovery of unknown previously-created meter; creating wrapper for " + meter.getId());
-                result = wrapMeter(id, meter);
-                recordNewMeter(id, result, meter);
+                io.helidon.metrics.api.Meter.Id nativeId = neutralIdWithoutSystemTags(meter.getId());
+                result = wrapMeter(nativeId, meter);
+                recordNewMeter(nativeId, result, meter);
             }
 
             return result;
@@ -838,9 +848,9 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         }
 
         MMeterRegistry buildRegistry() {
-            CompositeMeterRegistry delegate = clock
-                    .map(value -> new CompositeMeterRegistry(ClockWrapper.create(value)))
-                    .orElseGet(CompositeMeterRegistry::new);
+            GaugeTrackingRegistry delegate = new GaugeTrackingRegistry(clock
+                    .<io.micrometer.core.instrument.Clock>map(ClockWrapper::create)
+                    .orElse(io.micrometer.core.instrument.Clock.SYSTEM));
             MMeterRegistry result = null;
             try {
                 metricsFactory.prepareMeterRegistries(metricsConfig).forEach(delegate::add);
@@ -849,6 +859,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                                                                 metricsConfig,
                                                                 clock.orElse(MClock.create(delegate.config().clock())));
                 result = newRegistry;
+                delegate.owner = newRegistry;
 
                 onAddListener.ifPresent(newRegistry::onMeterAdded);
                 onRemoveListener.ifPresent(newRegistry::onMeterRemoved);
@@ -869,6 +880,36 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         OPEN,
         CLOSING,
         CLOSED
+    }
+
+    private static class GaugeRegistration {
+
+        private final MGauge.Builder<?, ?> builder;
+        private Gauge gauge;
+
+        private GaugeRegistration(MGauge.Builder<?, ?> builder) {
+            this.builder = builder;
+        }
+    }
+
+    private static class GaugeTrackingRegistry extends CompositeMeterRegistry {
+
+        private volatile MMeterRegistry owner;
+
+        private GaugeTrackingRegistry(io.micrometer.core.instrument.Clock clock) {
+            super(clock);
+        }
+
+        @Override
+        protected <T> Gauge newGauge(Meter.Id id, T stateObject, ToDoubleFunction<T> fn) {
+            // Keep Micrometer's null-state behavior while correlating creation using the original private source.
+            Gauge gauge = super.newGauge(id, MGauge.hasNullRegistrationState(stateObject) ? null : stateObject, fn);
+            MMeterRegistry registry = owner;
+            if (registry != null) {
+                registry.onGaugeCreated(gauge, stateObject);
+            }
+            return gauge;
+        }
     }
 
     /**

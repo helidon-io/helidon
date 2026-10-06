@@ -259,7 +259,9 @@ class HttpTransportMetricSelectionTest {
                 case "timerBuilder" -> builder(Timer.Builder.class, (String) args[0], () -> 0.0);
                 case "gaugeBuilder" -> builder(Gauge.Builder.class,
                                                (String) args[0],
-                                               () -> ((ToDoubleFunction<Object>) args[2]).applyAsDouble(args[1]));
+                                               args.length == 2
+                                                       ? (Supplier<? extends Number>) args[1]
+                                                       : () -> ((ToDoubleFunction<Object>) args[2]).applyAsDouble(args[1]));
                 case "tagCreate" -> new TestTag((String) args[0], (String) args[1]);
                 case "toString" -> "selection test factory";
                 default -> throw new AssertionError("Unexpected metrics factory method: " + method);
@@ -362,6 +364,7 @@ class HttpTransportMetricSelectionTest {
             };
             meter = proxy(type, (proxy, method, args) -> switch (method.getName()) {
                 case "unwrap" -> ((Class<?>) args[0]).cast(proxy);
+                case "value" -> value.get();
                 case "increment" -> {
                     updates.incrementAndGet();
                     yield null;

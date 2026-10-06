@@ -16,6 +16,7 @@
 
 package io.helidon.http.metrics;
 
+import java.io.Serial;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.lang.ref.ReferenceQueue;
@@ -56,6 +57,7 @@ import io.helidon.http.HttpTransportObserver.StreamObservation;
 import io.helidon.http.HttpTransportObserver.StreamOutcome;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
@@ -344,31 +346,30 @@ final class HttpTransportMetricsState {
             completeAsync(completions);
         }
 
-        private GaugeValue gauge(Epoch selectedEpoch, MetricId id) {
-            GaugeValue existing = selectedEpoch.gauges.get(id);
-            if (existing != null) {
-                return existing;
-            }
-            return selectedEpoch.gauges.getOrCreate(id, () -> {
-                BoundedCache<MetricId, GaugeValue> inherited = selectedEpoch.inheritedGauges;
-                GaugeValue value = inherited == null ? null : inherited.get(id);
-                return value == null ? new GaugeValue() : value;
-            });
-        }
-
-        private void bind(Epoch selectedEpoch, Recorder recorder, MetricId id, Meter meter) {
+        private MeterBinding bind(Epoch selectedEpoch, Recorder recorder, MeterSlot slot, Meter meter) {
+            MetricId id = slot.id;
             Object meterIdentity = nativeIdentity(meter, "meter");
             selectedEpoch.expungeCollectedMeters();
             IdentityReference lookup = new IdentityReference(meterIdentity);
             MeterBinding binding = selectedEpoch.bindings.get(lookup);
             if (binding == null) {
+                GaugeValue gaugeValue = null;
+                if (slot.sharedGauge != null) {
+                    // An earlier registration can create the gauge and then fail before binding it.
+                    // Recover the backing retained by that gauge, which may differ from this slot's candidate.
+                    if (!(((Gauge<?>) meter).value() instanceof GaugeValue registeredValue)) {
+                        throw new IllegalStateException("An HTTP transport gauge has an unsupported backing value");
+                    }
+                    gaugeValue = registeredValue;
+                }
                 IdentityReference retained = new IdentityReference(meterIdentity, selectedEpoch.collectedMeters);
-                binding = new MeterBinding(retained, id);
+                binding = new MeterBinding(retained, id, gaugeValue);
                 selectedEpoch.bindings.put(retained, binding);
             } else if (!binding.id.equals(id)) {
                 throw new IllegalStateException("A native meter is bound to more than one HTTP transport meter ID");
             }
             binding.add(recorder.registry, meter);
+            return binding;
         }
 
         private void failure(String event, RuntimeException failure) {
@@ -391,7 +392,7 @@ final class HttpTransportMetricsState {
                     return;
                 }
                 retiredEpoch = epoch;
-                epoch = retiredEpoch.nextEpoch();
+                epoch = new Epoch();
                 retiredRecorders = List.copyOf(recorders.values());
                 recorders.clear();
             } finally {
@@ -399,8 +400,7 @@ final class HttpTransportMetricsState {
             }
 
             List<MeterBinding> failedBindings = retiredEpoch.cleanup(this);
-            failedBindings.forEach(binding -> epoch.retain(binding, retiredEpoch.gauges.get(binding.id)));
-            epoch.inheritedGauges = null;
+            failedBindings.forEach(epoch::retain);
             retiredRecorders.forEach(Recorder::clear);
             List<CompletableFuture<Void>> completions = new ArrayList<>();
             retiredRecorders.forEach(recorder -> {
@@ -488,11 +488,10 @@ final class HttpTransportMetricsState {
             if (!enabled(id.name)) {
                 return null;
             }
-            GaugeValue sharedGauge = state.gauge(epoch, id);
-            if (sharedGauge == null) {
+            if (epoch.gaugeIds.getOrCreate(id, () -> Boolean.TRUE) == null) {
                 return null;
             }
-            MeterSlot slot = meters.getOrCreate(id, () -> new MeterSlot(id, sharedGauge));
+            MeterSlot slot = meters.getOrCreate(id, () -> new MeterSlot(id, new GaugeValue()));
             if (slot == null) {
                 return null;
             }
@@ -626,12 +625,13 @@ final class HttpTransportMetricsState {
                                                                  .origin(HttpTransportMetrics.class.getName())
                                                                  .tags(tags)
                                                                  .description(id.description));
-                    case GAUGE -> registry.getOrCreate(metricsFactory.gaugeBuilder(id.name,
-                                                                                    Objects.requireNonNull(gaugeValue),
-                                                                                    GaugeValue::get)
-                                                               .origin(HttpTransportMetrics.class.getName())
-                                                               .tags(tags)
-                                                               .description(id.description));
+                    case GAUGE -> {
+                        GaugeValue activeValue = Objects.requireNonNull(gaugeValue);
+                        yield registry.getOrCreate(metricsFactory.gaugeBuilder(id.name, () -> activeValue)
+                                                           .origin(HttpTransportMetrics.class.getName())
+                                                           .tags(tags)
+                                                           .description(id.description));
+                    }
                     case TIMER -> {
                         Timer.Builder builder = metricsFactory.timerBuilder(id.name)
                                 .origin(HttpTransportMetrics.class.getName())
@@ -645,10 +645,12 @@ final class HttpTransportMetricsState {
                     }
                     default -> throw new IllegalArgumentException("Unsupported HTTP transport meter type " + id.type);
                 };
-                state.bind(epoch, this, id, meter);
+                MeterBinding binding = state.bind(epoch, this, slot, meter);
                 if (gaugeValue != null) {
                     // Only selected wrappers contribute, including observations completed before selection.
-                    gaugeValue.contributions.add(slot.gaugeValue);
+                    // Wrappers may add tags, so share backing only after resolving the native gauge identity.
+                    slot.sharedGauge = binding.gaugeValue;
+                    binding.gaugeValue.contributions.add(slot.gaugeValue);
                 }
                 resolved = Optional.of(meter);
             }
@@ -1136,16 +1138,8 @@ final class HttpTransportMetricsState {
     private static final class Epoch {
         private final ReferenceQueue<Object> collectedMeters = new ReferenceQueue<>();
         private final Map<IdentityReference, MeterBinding> bindings = new HashMap<>();
-        private final BoundedCache<MetricId, GaugeValue> gauges = new BoundedCache<>();
+        private final BoundedCache<MetricId, Boolean> gaugeIds = new BoundedCache<>();
         private final AtomicBoolean failureReported = new AtomicBoolean();
-        private volatile BoundedCache<MetricId, GaugeValue> inheritedGauges;
-
-        private Epoch nextEpoch() {
-            var next = new Epoch();
-            // Reacquisition must use the backing values of native gauges until their removal has completed.
-            next.inheritedGauges = gauges;
-            return next;
-        }
 
         private List<MeterBinding> cleanup(NativeRegistryState state) {
             expungeCollectedMeters();
@@ -1183,11 +1177,11 @@ final class HttpTransportMetricsState {
             return failed;
         }
 
-        private void retain(MeterBinding binding, GaugeValue gaugeValue) {
+        private void retain(MeterBinding binding) {
             if (binding.identity.get() != null) {
                 bindings.put(binding.identity, binding);
-                if (gaugeValue != null) {
-                    gauges.getOrCreate(binding.id, () -> gaugeValue);
+                if (binding.gaugeValue != null) {
+                    gaugeIds.getOrCreate(binding.id, () -> Boolean.TRUE);
                 }
             }
         }
@@ -1201,8 +1195,7 @@ final class HttpTransportMetricsState {
 
         private void clear() {
             bindings.clear();
-            gauges.clear();
-            inheritedGauges = null;
+            gaugeIds.clear();
         }
     }
 
@@ -1406,10 +1399,6 @@ final class HttpTransportMetricsState {
             return candidate;
         }
 
-        private V get(K key) {
-            return values.get(key);
-        }
-
         private void clear() {
             values.clear();
             size.set(0);
@@ -1421,15 +1410,39 @@ final class HttpTransportMetricsState {
         }
     }
 
-    private static final class GaugeValue {
+    private static final class GaugeValue extends Number {
+        @Serial
+        private static final long serialVersionUID = 1L;
+
         private final Set<AtomicLong> contributions = ConcurrentHashMap.newKeySet();
 
-        private long get() {
+        @Override
+        public int intValue() {
+            return (int) longValue();
+        }
+
+        @Override
+        public long longValue() {
             long value = 0;
             for (AtomicLong contribution : contributions) {
                 value += contribution.get();
             }
             return value;
+        }
+
+        @Override
+        public float floatValue() {
+            return longValue();
+        }
+
+        @Override
+        public double doubleValue() {
+            return longValue();
+        }
+
+        @Override
+        public String toString() {
+            return Long.toString(longValue());
         }
     }
 
@@ -1498,7 +1511,7 @@ final class HttpTransportMetricsState {
         private final AtomicBoolean registrationQueued = new AtomicBoolean();
         private final MetricId id;
         private final AtomicLong gaugeValue;
-        private final GaugeValue sharedGauge;
+        private volatile GaugeValue sharedGauge;
         private volatile Optional<Meter> resolved;
 
         private MeterSlot(MetricId id, GaugeValue sharedGauge) {
@@ -1512,10 +1525,12 @@ final class HttpTransportMetricsState {
         private final IdentityReference identity;
         private final MetricId id;
         private final List<MeterRegistration> registrations = new ArrayList<>();
+        private final GaugeValue gaugeValue;
 
-        private MeterBinding(IdentityReference identity, MetricId id) {
+        private MeterBinding(IdentityReference identity, MetricId id, GaugeValue gaugeValue) {
             this.identity = identity;
             this.id = id;
+            this.gaugeValue = gaugeValue;
         }
 
         private void add(MeterRegistry registry, Meter meter) {

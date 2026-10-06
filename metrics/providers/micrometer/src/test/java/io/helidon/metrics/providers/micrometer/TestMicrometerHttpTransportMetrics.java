@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -35,6 +36,7 @@ import java.util.regex.Pattern;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.http.HttpTransportObserver.ConnectionObservation;
+import io.helidon.http.HttpTransportObserver.StreamObservation;
 import io.helidon.http.metrics.HttpTransportMetrics;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.Counter;
@@ -46,7 +48,9 @@ import io.helidon.metrics.api.Tag;
 import io.helidon.service.registry.Services;
 
 import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.config.MeterFilter;
 import io.micrometer.core.instrument.distribution.ValueAtPercentile;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -62,6 +66,7 @@ import static io.helidon.http.HttpTransportObserver.StreamOutcome.COMPLETED;
 import static io.helidon.http.HttpTransportObserver.TRANSPORT_TCP;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -85,6 +90,8 @@ class TestMicrometerHttpTransportMetrics {
         HttpTransportMetrics.Lease second = HttpTransportMetrics.acquire(secondRegistry);
         ConnectionObservation firstConnection = null;
         ConnectionObservation secondConnection = null;
+        StreamObservation firstStream = null;
+        StreamObservation secondStream = null;
         try {
             Object nativeIdentity = owningRegistry.unwrap(Object.class);
             assertThat(firstRegistry.unwrap(Object.class), sameInstance(nativeIdentity));
@@ -92,8 +99,10 @@ class TestMicrometerHttpTransportMetrics {
 
             firstConnection = first.connectionOpened(SERVER, TRANSPORT_TCP, NONE);
             firstConnection.protocolSelected(PROTOCOL_HTTP_1_1);
+            firstStream = firstConnection.streamOpened(BIDIRECTIONAL, REMOTE);
             secondConnection = second.connectionOpened(SERVER, TRANSPORT_TCP, NONE);
             secondConnection.protocolSelected(PROTOCOL_HTTP_1_1);
+            secondStream = secondConnection.streamOpened(BIDIRECTIONAL, REMOTE);
             synchronize(firstRegistry, first);
 
             Counter helidonCounter = owningRegistry.counter("helidon.http.connections.opened", openedTags()).orElseThrow();
@@ -111,7 +120,10 @@ class TestMicrometerHttpTransportMetrics {
                                .gauge()
                                .value(),
                        is(2.0));
+            assertGauge(micrometerRegistry, "helidon.http.streams.active", 2,
+                        "role", "server", "protocol", "http/1.1", "direction", "bidi", "initiator", "remote");
 
+            firstStream.close(COMPLETED);
             firstConnection.close(NORMAL);
             synchronize(secondRegistry, second);
             assertThat(micrometerRegistry.find("helidon.http.connections.active")
@@ -119,6 +131,8 @@ class TestMicrometerHttpTransportMetrics {
                                .gauge()
                                .value(),
                        is(1.0));
+            assertGauge(micrometerRegistry, "helidon.http.streams.active", 1,
+                        "role", "server", "protocol", "http/1.1", "direction", "bidi", "initiator", "remote");
 
             first.close();
             assertThat(first.completion().toCompletableFuture().isDone(), is(false));
@@ -127,6 +141,7 @@ class TestMicrometerHttpTransportMetrics {
                                .counter(),
                        sameInstance(micrometerCounter));
 
+            secondStream.close(COMPLETED);
             secondConnection.close(NORMAL);
             second.close();
             awaitCompletion(first);
@@ -140,11 +155,21 @@ class TestMicrometerHttpTransportMetrics {
                                .tags("role", "server", "transport", "tcp", "protocol", "http/1.1")
                                .gauge(),
                        nullValue());
+            assertThat(micrometerRegistry.find("helidon.http.streams.active")
+                               .tags("role", "server", "protocol", "http/1.1", "direction", "bidi", "initiator", "remote")
+                               .gauge(),
+                       nullValue());
             assertThat(firstRegistry.closeCount(), is(0));
             assertThat(secondRegistry.closeCount(), is(0));
         } finally {
             firstRegistry.releaseBarrier();
             secondRegistry.releaseBarrier();
+            if (firstStream != null) {
+                firstStream.close(COMPLETED);
+            }
+            if (secondStream != null) {
+                secondStream.close(COMPLETED);
+            }
             if (firstConnection != null) {
                 firstConnection.close(NORMAL);
             }
@@ -153,8 +178,99 @@ class TestMicrometerHttpTransportMetrics {
             }
             first.close();
             second.close();
-            awaitCompletion(first);
-            awaitCompletion(second);
+            try {
+                awaitCompletion(first);
+                awaitCompletion(second);
+            } finally {
+                owningRegistry.close();
+            }
+        }
+    }
+
+    @Test
+    void differentlyTaggedWrappersKeepConnectionGaugesIsolated() throws Exception {
+        assertDifferentlyTaggedGauges(false);
+    }
+
+    @Test
+    void differentlyTaggedWrappersKeepStreamGaugesIsolated() throws Exception {
+        assertDifferentlyTaggedGauges(true);
+    }
+
+    @Test
+    void differentlyTaggedGaugesAreRemovedAndReacquiredAfterFinalRelease() throws Exception {
+        assertTaggedGaugeReacquisition(false);
+    }
+
+    @Test
+    void differentlyTaggedGaugesAreReacquiredAfterRemovalFailure() throws Exception {
+        assertTaggedGaugeReacquisition(true);
+    }
+
+    @Test
+    void connectionGaugeRecoversBackingAfterRegistrationThrows() throws Exception {
+        assertGaugeRegistrationRecovery(false);
+    }
+
+    @Test
+    void streamGaugeRecoversBackingAfterRegistrationThrows() throws Exception {
+        assertGaugeRegistrationRecovery(true);
+    }
+
+    @Test
+    void connectionGaugeRecoversBackingAfterFilteredRegistrationThrows() throws Exception {
+        assertGaugeRegistrationRecovery(false, true);
+    }
+
+    @Test
+    void streamGaugeRecoversBackingAfterFilteredRegistrationThrows() throws Exception {
+        assertGaugeRegistrationRecovery(true, true);
+    }
+
+    @Test
+    void nativeTagFiltersPreserveActiveGaugesAndFinalCleanup() throws Exception {
+        MeterRegistry owningRegistry = createRegistry();
+        io.micrometer.core.instrument.MeterRegistry nativeRegistry =
+                owningRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
+        nativeRegistry.config().meterFilter(MeterFilter.commonTags(Tags.of("region", "review")));
+        try {
+            for (int cycle = 0; cycle < 2; cycle++) {
+                TestRegistry registry = new TestRegistry(owningRegistry);
+                HttpTransportMetrics.Lease lease = HttpTransportMetrics.acquire(registry);
+                ConnectionObservation connection = lease.connectionOpened(SERVER, TRANSPORT_TCP, NONE);
+                connection.protocolSelected(PROTOCOL_HTTP_1_1);
+                StreamObservation stream = connection.streamOpened(BIDIRECTIONAL, REMOTE);
+                try {
+                    synchronize(registry, lease).awaitIdle();
+                    Gauge connectionGauge = nativeRegistry.get("helidon.http.connections.active")
+                            .tags("role", "server", "protocol", "http/1.1", "transport", "tcp", "region", "review")
+                            .gauge();
+                    Gauge streamGauge = nativeRegistry.get("helidon.http.streams.active")
+                            .tags("role", "server", "protocol", "http/1.1", "direction", "bidi", "initiator", "remote",
+                                  "region", "review")
+                            .gauge();
+                    assertThat("Filtered connection gauge in cycle " + cycle, connectionGauge.value(), is(1.0));
+                    assertThat("Filtered stream gauge in cycle " + cycle, streamGauge.value(), is(1.0));
+
+                    stream.close(COMPLETED);
+                    connection.close(NORMAL);
+                    synchronize(registry, lease).awaitIdle();
+                    assertThat("Closed connection gauge in cycle " + cycle, connectionGauge.value(), is(0.0));
+                    assertThat("Closed stream gauge in cycle " + cycle, streamGauge.value(), is(0.0));
+                } finally {
+                    registry.releaseBarrier();
+                    stream.close(COMPLETED);
+                    connection.close(NORMAL);
+                    closeAndAwait(lease);
+                }
+                assertThat("Filtered connection gauges are removed after final release in cycle " + cycle,
+                           nativeRegistry.find("helidon.http.connections.active").gauges(),
+                           empty());
+                assertThat("Filtered stream gauges are removed after final release in cycle " + cycle,
+                           nativeRegistry.find("helidon.http.streams.active").gauges(),
+                           empty());
+            }
+        } finally {
             owningRegistry.close();
         }
     }
@@ -435,6 +551,308 @@ class TestMicrometerHttpTransportMetrics {
         assertStreamDurationStatistics(config, List.of(0.5, 0.99));
     }
 
+    private static void assertGaugeRegistrationRecovery(boolean streams) throws Exception {
+        assertGaugeRegistrationRecovery(streams, false);
+    }
+
+    private static void assertGaugeRegistrationRecovery(boolean streams, boolean nativeTags) throws Exception {
+        MeterRegistry owningRegistry = createRegistry();
+        if (nativeTags) {
+            owningRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class)
+                    .config().meterFilter(MeterFilter.commonTags(Tags.of("region", "review")));
+        }
+        TestRegistry firstRegistry = new TestRegistry(owningRegistry);
+        TestRegistry secondRegistry = new TestRegistry(owningRegistry);
+        String gaugeName = streams ? "helidon.http.streams.active" : "helidon.http.connections.active";
+        firstRegistry.failGaugeRegistrationName.set(gaugeName);
+        HttpTransportMetrics.Lease first = HttpTransportMetrics.acquire(firstRegistry);
+        HttpTransportMetrics.Lease second = HttpTransportMetrics.acquire(secondRegistry);
+        List<ConnectionObservation> connections = new ArrayList<>();
+        List<StreamObservation> openedStreams = new ArrayList<>();
+        try {
+            assertThat("Wrappers share the native registry", firstRegistry.unwrap(Object.class),
+                       sameInstance(secondRegistry.unwrap(Object.class)));
+            ConnectionObservation firstConnection = first.connectionOpened(SERVER, TRANSPORT_TCP, NONE);
+            connections.add(firstConnection);
+            firstConnection.protocolSelected(PROTOCOL_HTTP_1_1);
+            if (streams) {
+                openedStreams.add(firstConnection.streamOpened(BIDIRECTIONAL, REMOTE));
+            }
+            synchronize(secondRegistry, second).awaitIdle();
+            assertThat("Failure after native gauge registration was injected",
+                       firstRegistry.failedGaugeRegistrations.get(), is(1));
+            io.micrometer.core.instrument.MeterRegistry nativeRegistry =
+                    owningRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
+            Gauge gauge = streams
+                    ? nativeRegistry.get(gaugeName)
+                            .tags("role", "server", "protocol", "http/1.1", "direction", "bidi", "initiator", "remote").gauge()
+                    : nativeRegistry.get(gaugeName)
+                            .tags("role", "server", "transport", "tcp", "protocol", "http/1.1").gauge();
+            assertThat("Failed registration does not contribute", gauge.value(), is(0.0));
+
+            ConnectionObservation secondConnection = second.connectionOpened(SERVER, TRANSPORT_TCP, NONE);
+            connections.add(secondConnection);
+            secondConnection.protocolSelected(PROTOCOL_HTTP_1_1);
+            if (streams) {
+                openedStreams.add(secondConnection.streamOpened(BIDIRECTIONAL, REMOTE));
+            }
+            synchronize(secondRegistry, second).awaitIdle();
+            assertThat("Successful wrapper contributes through the native gauge's existing backing", gauge.value(), is(1.0));
+
+            if (!streams) {
+                ConnectionObservation retryConnection = first.connectionOpened(SERVER, TRANSPORT_TCP, NONE);
+                connections.add(retryConnection);
+                retryConnection.protocolSelected(PROTOCOL_HTTP_1_1);
+                synchronize(secondRegistry, second).awaitIdle();
+                assertThat("Retry attaches the failed wrapper's outstanding observations", gauge.value(), is(3.0));
+                retryConnection.close(NORMAL);
+                synchronize(secondRegistry, second).awaitIdle();
+                assertThat("Closing the retry removes one contribution", gauge.value(), is(2.0));
+            }
+            if (streams) {
+                openedStreams.getFirst().close(COMPLETED);
+            }
+            firstConnection.close(NORMAL);
+            synchronize(secondRegistry, second).awaitIdle();
+            assertThat("Closing the first wrapper preserves the second", gauge.value(), is(1.0));
+            if (streams) {
+                openedStreams.get(1).close(COMPLETED);
+            }
+            secondConnection.close(NORMAL);
+            synchronize(secondRegistry, second).awaitIdle();
+            assertThat("All observations closed", gauge.value(), is(0.0));
+            first.close();
+            second.close();
+            awaitCompletion(first);
+            awaitCompletion(second);
+            assertThat("Native gauge removed after final release", nativeRegistry.find(gaugeName).gauge(), nullValue());
+        } finally {
+            firstRegistry.releaseBarrier();
+            secondRegistry.releaseBarrier();
+            firstRegistry.failGaugeRegistrationName.set(null);
+            openedStreams.forEach(stream -> stream.close(COMPLETED));
+            connections.forEach(connection -> connection.close(NORMAL));
+            first.close();
+            second.close();
+            try {
+                awaitCompletion(first);
+                awaitCompletion(second);
+            } finally {
+                owningRegistry.close();
+            }
+        }
+    }
+
+    private static void assertTaggedGaugeReacquisition(boolean removalFails) throws Exception {
+        MeterRegistry owningRegistry = createRegistry();
+        TestRegistry firstRegistry = new TestRegistry(owningRegistry, "first");
+        TestRegistry secondRegistry = new TestRegistry(owningRegistry, "second");
+        HttpTransportMetrics.Lease first = HttpTransportMetrics.acquire(firstRegistry);
+        HttpTransportMetrics.Lease second = HttpTransportMetrics.acquire(secondRegistry);
+        ConnectionObservation firstConnection = null;
+        ConnectionObservation secondConnection = null;
+        StreamObservation firstStream = null;
+        StreamObservation secondStream = null;
+        try {
+            io.micrometer.core.instrument.MeterRegistry nativeRegistry =
+                    owningRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
+            firstConnection = first.connectionOpened(SERVER, TRANSPORT_TCP, NONE);
+            firstConnection.protocolSelected(PROTOCOL_HTTP_1_1);
+            firstConnection.streamOpened(BIDIRECTIONAL, REMOTE).close(COMPLETED);
+            secondConnection = second.connectionOpened(SERVER, TRANSPORT_TCP, NONE);
+            secondConnection.protocolSelected(PROTOCOL_HTTP_1_1);
+            secondConnection.streamOpened(BIDIRECTIONAL, REMOTE).close(COMPLETED);
+            synchronize(firstRegistry, first);
+            Gauge previousFirst = activeGauge(nativeRegistry, "first", false);
+            Gauge previousSecond = activeGauge(nativeRegistry, "second", false);
+            Gauge previousFirstStream = activeGauge(nativeRegistry, "first", true);
+            Gauge previousSecondStream = activeGauge(nativeRegistry, "second", true);
+
+            firstConnection.close(NORMAL);
+            secondConnection.close(NORMAL);
+            firstRegistry.failGaugeRemoval.set(removalFails);
+            secondRegistry.failGaugeRemoval.set(removalFails);
+            first.close();
+            second.close();
+            awaitCompletion(first);
+            awaitCompletion(second);
+            if (removalFails) {
+                assertThat("First connection gauge retained", activeGauge(nativeRegistry, "first", false),
+                           sameInstance(previousFirst));
+                assertThat("Second connection gauge retained", activeGauge(nativeRegistry, "second", false),
+                           sameInstance(previousSecond));
+                assertThat("First stream gauge retained", activeGauge(nativeRegistry, "first", true),
+                           sameInstance(previousFirstStream));
+                assertThat("Second stream gauge retained", activeGauge(nativeRegistry, "second", true),
+                           sameInstance(previousSecondStream));
+            } else {
+                assertTaggedGaugesRemoved(nativeRegistry);
+            }
+            firstRegistry.failGaugeRemoval.set(false);
+            secondRegistry.failGaugeRemoval.set(false);
+
+            first = HttpTransportMetrics.acquire(firstRegistry);
+            second = HttpTransportMetrics.acquire(secondRegistry);
+            firstConnection = first.connectionOpened(SERVER, TRANSPORT_TCP, NONE);
+            firstConnection.protocolSelected(PROTOCOL_HTTP_1_1);
+            firstStream = firstConnection.streamOpened(BIDIRECTIONAL, REMOTE);
+            secondConnection = second.connectionOpened(SERVER, TRANSPORT_TCP, NONE);
+            secondConnection.protocolSelected(PROTOCOL_HTTP_1_1);
+            secondStream = secondConnection.streamOpened(BIDIRECTIONAL, REMOTE);
+            synchronize(firstRegistry, first);
+            if (removalFails) {
+                assertThat("Reacquired first connection gauge", activeGauge(nativeRegistry, "first", false),
+                           sameInstance(previousFirst));
+                assertThat("Reacquired second connection gauge", activeGauge(nativeRegistry, "second", false),
+                           sameInstance(previousSecond));
+                assertThat("Reacquired first stream gauge", activeGauge(nativeRegistry, "first", true),
+                           sameInstance(previousFirstStream));
+                assertThat("Reacquired second stream gauge", activeGauge(nativeRegistry, "second", true),
+                           sameInstance(previousSecondStream));
+            } else {
+                assertThat("Reacquired first connection gauge", activeGauge(nativeRegistry, "first", false),
+                           not(sameInstance(previousFirst)));
+                assertThat("Reacquired second connection gauge", activeGauge(nativeRegistry, "second", false),
+                           not(sameInstance(previousSecond)));
+                assertThat("Reacquired first stream gauge", activeGauge(nativeRegistry, "first", true),
+                           not(sameInstance(previousFirstStream)));
+                assertThat("Reacquired second stream gauge", activeGauge(nativeRegistry, "second", true),
+                           not(sameInstance(previousSecondStream)));
+            }
+            for (String owner : List.of("first", "second")) {
+                assertThat("Reacquired connection count for " + owner, activeGauge(nativeRegistry, owner, false).value(), is(1.0));
+                assertThat("Reacquired stream count for " + owner, activeGauge(nativeRegistry, owner, true).value(), is(1.0));
+            }
+            firstStream.close(COMPLETED);
+            firstConnection.close(NORMAL);
+            synchronize(secondRegistry, second);
+            assertThat("Closed first reacquired connection", activeGauge(nativeRegistry, "first", false).value(), is(0.0));
+            assertThat("Second reacquired connection remains active", activeGauge(nativeRegistry, "second", false).value(), is(1.0));
+            assertThat("Closed first reacquired stream", activeGauge(nativeRegistry, "first", true).value(), is(0.0));
+            assertThat("Second reacquired stream remains active", activeGauge(nativeRegistry, "second", true).value(), is(1.0));
+            secondStream.close(COMPLETED);
+            secondConnection.close(NORMAL);
+            first.close();
+            second.close();
+            awaitCompletion(first);
+            awaitCompletion(second);
+            assertTaggedGaugesRemoved(nativeRegistry);
+        } finally {
+            firstRegistry.releaseBarrier();
+            secondRegistry.releaseBarrier();
+            firstRegistry.failGaugeRemoval.set(false);
+            secondRegistry.failGaugeRemoval.set(false);
+            if (firstStream != null) {
+                firstStream.close(COMPLETED);
+            }
+            if (secondStream != null) {
+                secondStream.close(COMPLETED);
+            }
+            if (firstConnection != null) {
+                firstConnection.close(NORMAL);
+            }
+            if (secondConnection != null) {
+                secondConnection.close(NORMAL);
+            }
+            first.close();
+            second.close();
+            try {
+                awaitCompletion(first);
+                awaitCompletion(second);
+            } finally {
+                owningRegistry.close();
+            }
+        }
+    }
+
+    private static void assertTaggedGaugesRemoved(io.micrometer.core.instrument.MeterRegistry registry) {
+        for (String owner : List.of("first", "second")) {
+            assertThat("Connection gauge removed for " + owner,
+                       registry.find("helidon.http.connections.active").tag("owner", owner).gauge(),
+                       nullValue());
+            assertThat("Stream gauge removed for " + owner,
+                       registry.find("helidon.http.streams.active").tag("owner", owner).gauge(),
+                       nullValue());
+        }
+    }
+
+    private static void assertDifferentlyTaggedGauges(boolean streams) throws Exception {
+        MeterRegistry owningRegistry = createRegistry();
+        TestRegistry firstRegistry = new TestRegistry(owningRegistry, "first");
+        TestRegistry secondRegistry = new TestRegistry(owningRegistry, "second");
+        HttpTransportMetrics.Lease first = HttpTransportMetrics.acquire(firstRegistry);
+        HttpTransportMetrics.Lease second = HttpTransportMetrics.acquire(secondRegistry);
+        ConnectionObservation firstConnection = null;
+        ConnectionObservation secondConnection = null;
+        StreamObservation firstStream = null;
+        StreamObservation secondStream = null;
+        try {
+            assertThat("Wrappers share their native registry",
+                       firstRegistry.unwrap(Object.class), sameInstance(secondRegistry.unwrap(Object.class)));
+            firstConnection = first.connectionOpened(SERVER, TRANSPORT_TCP, NONE);
+            firstConnection.protocolSelected(PROTOCOL_HTTP_1_1);
+            firstStream = firstConnection.streamOpened(BIDIRECTIONAL, REMOTE);
+            secondConnection = second.connectionOpened(SERVER, TRANSPORT_TCP, NONE);
+            secondConnection.protocolSelected(PROTOCOL_HTTP_1_1);
+            secondStream = secondConnection.streamOpened(BIDIRECTIONAL, REMOTE);
+            synchronize(firstRegistry, first);
+
+            io.micrometer.core.instrument.MeterRegistry nativeRegistry =
+                    owningRegistry.unwrap(io.micrometer.core.instrument.MeterRegistry.class);
+            Gauge firstGauge = activeGauge(nativeRegistry, "first", streams);
+            Gauge secondGauge = activeGauge(nativeRegistry, "second", streams);
+            assertThat("Different tags create distinct native gauges", firstGauge, not(sameInstance(secondGauge)));
+            assertThat("First wrapper's active count", firstGauge.value(), is(1.0));
+            assertThat("Second wrapper's active count", secondGauge.value(), is(1.0));
+
+            firstStream.close(COMPLETED);
+            firstConnection.close(NORMAL);
+            synchronize(secondRegistry, second);
+            assertThat("Closing first observation clears only its gauge", firstGauge.value(), is(0.0));
+            assertThat("Second observation remains active", secondGauge.value(), is(1.0));
+
+            secondStream.close(COMPLETED);
+            secondConnection.close(NORMAL);
+            synchronize(secondRegistry, second);
+            assertThat("First gauge remains empty", firstGauge.value(), is(0.0));
+            assertThat("Closing second observation clears its gauge", secondGauge.value(), is(0.0));
+        } finally {
+            firstRegistry.releaseBarrier();
+            secondRegistry.releaseBarrier();
+            if (firstStream != null) {
+                firstStream.close(COMPLETED);
+            }
+            if (secondStream != null) {
+                secondStream.close(COMPLETED);
+            }
+            if (firstConnection != null) {
+                firstConnection.close(NORMAL);
+            }
+            if (secondConnection != null) {
+                secondConnection.close(NORMAL);
+            }
+            first.close();
+            second.close();
+            try {
+                awaitCompletion(first);
+                awaitCompletion(second);
+            } finally {
+                owningRegistry.close();
+            }
+        }
+    }
+
+    private static Gauge activeGauge(io.micrometer.core.instrument.MeterRegistry registry, String owner, boolean streams) {
+        if (streams) {
+            return registry.get("helidon.http.streams.active")
+                    .tags("role", "server", "protocol", "http/1.1", "direction", "bidi", "initiator", "remote", "owner", owner)
+                    .gauge();
+        }
+        return registry.get("helidon.http.connections.active")
+                .tags("role", "server", "transport", "tcp", "protocol", "http/1.1", "owner", owner)
+                .gauge();
+    }
+
     private static void assertTagFilteredWrappers(boolean rejectedFirst) throws Exception {
         MeterRegistry owningRegistry = createRegistry();
         TestRegistry enabledRegistry = new TestRegistry(owningRegistry);
@@ -670,6 +1088,10 @@ class TestMicrometerHttpTransportMetrics {
         private final MeterRegistry delegate;
         private final Predicate<String> enabledMeters;
         private final Predicate<Map<String, String>> enabledTags;
+        private final List<Tag> additionalTags;
+        private final AtomicBoolean failGaugeRemoval = new AtomicBoolean();
+        private final AtomicReference<String> failGaugeRegistrationName = new AtomicReference<>();
+        private final AtomicInteger failedGaugeRegistrations = new AtomicInteger();
         private final AtomicInteger barrierSequence = new AtomicInteger();
         private final AtomicReference<ProviderBarrier> providerBarrier = new AtomicReference<>();
         private final AtomicInteger closeCount = new AtomicInteger();
@@ -682,12 +1104,25 @@ class TestMicrometerHttpTransportMetrics {
             this(delegate, enabledMeters, _ -> true);
         }
 
+        private TestRegistry(MeterRegistry delegate, String owner) {
+            this(delegate, _ -> true, _ -> true,
+                 List.of(TestMicrometerHttpTransportMetrics.metricsFactory().tagCreate("owner", owner)));
+        }
+
         private TestRegistry(MeterRegistry delegate,
                              Predicate<String> enabledMeters,
                              Predicate<Map<String, String>> enabledTags) {
+            this(delegate, enabledMeters, enabledTags, List.of());
+        }
+
+        private TestRegistry(MeterRegistry delegate,
+                             Predicate<String> enabledMeters,
+                             Predicate<Map<String, String>> enabledTags,
+                             List<Tag> additionalTags) {
             this.delegate = delegate;
             this.enabledMeters = enabledMeters;
             this.enabledTags = enabledTags;
+            this.additionalTags = additionalTags;
         }
 
         private ProviderBarrier blockNextRegistration() {
@@ -764,7 +1199,16 @@ class TestMicrometerHttpTransportMetrics {
                     && providerBarrier.compareAndSet(barrier, null)) {
                 barrier.enter();
             }
-            return delegate.getOrCreate(builder);
+            additionalTags.forEach(builder::addTag);
+            M meter = delegate.getOrCreate(builder);
+            String failedGaugeName = failGaugeRegistrationName.get();
+            if (PROTOCOL_HTTP_1_1.equals(builder.tags().get("protocol"))
+                    && builder.name().equals(failedGaugeName)
+                    && failGaugeRegistrationName.compareAndSet(failedGaugeName, null)) {
+                failedGaugeRegistrations.incrementAndGet();
+                throw new IllegalStateException("Simulated failure after native gauge registration");
+            }
+            return meter;
         }
 
         @Override
@@ -774,6 +1218,11 @@ class TestMicrometerHttpTransportMetrics {
 
         @Override
         public Optional<Meter> remove(Meter meter) {
+            if (failGaugeRemoval.get()
+                    && (meter.id().name().equals("helidon.http.connections.active")
+                    || meter.id().name().equals("helidon.http.streams.active"))) {
+                throw new IllegalStateException("Simulated active gauge removal failure");
+            }
             return delegate.remove(meter);
         }
 
