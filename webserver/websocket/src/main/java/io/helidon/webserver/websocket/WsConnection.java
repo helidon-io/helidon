@@ -401,7 +401,19 @@ public class WsConnection implements ServerConnection, WsSession {
         } catch (DataReader.InsufficientDataAvailableException e) {
             throw new CloseConnectionException("Socket closed by the other side", e);
         } catch (WsCloseException e) {
-            close(e.closeCode(), e.getMessage());
+            readingNetwork = false;
+            // Reserve the parser's close before notifying, so a callback cannot replace its code or reason.
+            boolean sendClose = closeSent.compareAndSet(false, true);
+            try {
+                // Rejected frames cannot be processed further. Cleanup must also run when request admission is exhausted.
+                if (closeNotified.compareAndSet(false, true)) {
+                    listener.onClose(this, e.closeCode(), e.getMessage());
+                }
+            } finally {
+                if (sendClose) {
+                    sendClose(e.closeCode(), e.getMessage());
+                }
+            }
             throw new CloseConnectionException("WebSocket failed to read client frame", e);
         }
     }
