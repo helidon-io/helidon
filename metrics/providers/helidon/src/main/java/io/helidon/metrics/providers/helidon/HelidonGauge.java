@@ -70,7 +70,7 @@ abstract class HelidonGauge<N extends Number> extends HelidonMeter implements Ga
 
         @Override
         public N value() {
-            return Objects.requireNonNull(supplier.get());
+            return supplier.get();
         }
 
         private static final class Builder<N extends Number> extends HelidonGauge.Builder<N> {

@@ -219,6 +219,24 @@ class TestHelidonRegistryLifecycle {
     }
 
     @Test
+    void gaugeSamplesCanBecomeAvailableAndUnavailable() {
+        HelidonMetricsFactory factory = HelidonMetricsFactory.create();
+        try {
+            MeterRegistry registry = factory.createMeterRegistry(MetricsConfig.create());
+            AtomicReference<Long> sample = new AtomicReference<>();
+            Gauge<Long> gauge = registry.getOrCreate(factory.gaugeBuilder("nullable.gauge", sample::get));
+
+            assertThat("Initially unavailable gauge sample", gauge.value(), nullValue());
+            sample.set(17L);
+            assertThat("Gauge samples the newly available value", gauge.value(), is(17L));
+            sample.set(null);
+            assertThat("Gauge sample can become unavailable again", gauge.value(), nullValue());
+        } finally {
+            factory.close();
+        }
+    }
+
+    @Test
     void rejectsNullApiValues() throws Exception {
         HelidonMetricsFactory factory = HelidonMetricsFactory.create();
         DistributionStatisticsConfig.Builder builder = factory.distributionStatisticsConfigBuilder();
@@ -300,11 +318,9 @@ class TestHelidonRegistryLifecycle {
         assertThrows(NullPointerException.class, () -> registry.isDeleted(null));
         FunctionalCounter functionalCounter = registry.getOrCreate(
                 factory.functionalCounterBuilder("null.functional.return", new Object(), _ -> null));
-        Gauge<Long> gauge = registry.getOrCreate(factory.gaugeBuilder("null.gauge.return", () -> null));
         Timer timer = registry.getOrCreate(factory.timerBuilder("null.timer.return"));
 
         assertThrows(NullPointerException.class, functionalCounter::count);
-        assertThrows(NullPointerException.class, gauge::value);
         assertThat(timer.record((Supplier<Object>) () -> null), nullValue());
         assertThat(timer.record((Callable<Object>) () -> null), nullValue());
         assertThrows(NullPointerException.class, () -> factory.timerStart().stop(null));
