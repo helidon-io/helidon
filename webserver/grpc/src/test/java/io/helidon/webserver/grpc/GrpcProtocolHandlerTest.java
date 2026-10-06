@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -43,6 +44,7 @@ import io.helidon.grpc.core.WeightedBag;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.http2.ConnectionFlowControl;
 import io.helidon.http.http2.FlowControl;
 import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Flag;
@@ -53,6 +55,7 @@ import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2RstStream;
 import io.helidon.http.http2.Http2StreamState;
 import io.helidon.http.http2.Http2StreamWriter;
+import io.helidon.http.http2.StreamFlowControl;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
@@ -452,11 +455,13 @@ class GrpcProtocolHandlerTest {
     }
 
     @Test
-    void testTransportCloseInterruptsOwnedWriterWithoutSendingTrailers() throws Exception {
+    void testTransportCloseDoesNotInterruptSocketWriter() throws Exception {
         var writing = new CountDownLatch(1);
         var releaseWrite = new CountDownLatch(1);
         var listenerCancelled = new CompletableFuture<Context>();
         var callerInterrupted = new CompletableFuture<Boolean>();
+        var writerInterrupted = new CompletableFuture<Boolean>();
+        var contextCancelled = new CompletableFuture<Context>();
         RecordingWriter writer = new RecordingWriter() {
             @Override
             public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
@@ -465,10 +470,13 @@ class GrpcProtocolHandlerTest {
                     releaseWrite.await();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
+                } finally {
+                    writerInterrupted.complete(Thread.currentThread().isInterrupted());
                 }
             }
         };
         var handler = deadlineHandler("1H", (call, metadata) -> {
+            Context.current().addListener(contextCancelled::complete, Runnable::run);
             call.request(1);
             return new ServerCall.Listener<>() {
                 @Override
@@ -489,6 +497,8 @@ class GrpcProtocolHandlerTest {
             try {
                 assertThat(writing.await(5, TimeUnit.SECONDS), is(true));
                 handler.close();
+                contextCancelled.get(5, TimeUnit.SECONDS);
+                releaseWrite.countDown();
                 request.get(5, TimeUnit.SECONDS);
                 assertThat(listenerCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
             } finally {
@@ -496,6 +506,8 @@ class GrpcProtocolHandlerTest {
             }
         }
         assertThat(callerInterrupted.get(5, TimeUnit.SECONDS), is(false));
+        assertThat("transport closure must not interrupt a shared socket write",
+                   writerInterrupted.get(5, TimeUnit.SECONDS), is(false));
         assertThat(writer.trailerWrites.get(), is(0));
     }
 
@@ -535,11 +547,13 @@ class GrpcProtocolHandlerTest {
     }
 
     @Test
-    void testDeadlineInterruptsOwnedWriterBeforeSendingTrailers() throws Exception {
+    void testDeadlineFinishesSocketWriteBeforeSendingTrailers() throws Exception {
         var writing = new CountDownLatch(1);
         var releaseWrite = new CountDownLatch(1);
         var writerExited = new CompletableFuture<Void>();
         var callerInterrupted = new CompletableFuture<Boolean>();
+        var writerInterrupted = new CompletableFuture<Boolean>();
+        var contextCancelled = new CompletableFuture<Context>();
         RecordingWriter writer = new RecordingWriter() {
             @Override
             public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
@@ -549,6 +563,7 @@ class GrpcProtocolHandlerTest {
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 } finally {
+                    writerInterrupted.complete(Thread.currentThread().isInterrupted());
                     writerExited.complete(null);
                 }
             }
@@ -561,6 +576,7 @@ class GrpcProtocolHandlerTest {
             }
         };
         var handler = deadlineHandler("1S", (call, metadata) -> {
+            Context.current().addListener(contextCancelled::complete, Runnable::run);
             call.request(1);
             return new ServerCall.Listener<>() {
                 @Override
@@ -575,6 +591,8 @@ class GrpcProtocolHandlerTest {
             var request = executor.submit(() -> sendRequest(handler));
             try {
                 assertThat(writing.await(5, TimeUnit.SECONDS), is(true));
+                contextCancelled.get(5, TimeUnit.SECONDS);
+                releaseWrite.countDown();
                 assertThat(writer.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
                                    .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
             } finally {
@@ -583,7 +601,19 @@ class GrpcProtocolHandlerTest {
             request.get(5, TimeUnit.SECONDS);
         }
         assertThat(callerInterrupted.get(5, TimeUnit.SECONDS), is(false));
+        assertThat("deadline must not interrupt a shared socket write",
+                   writerInterrupted.get(5, TimeUnit.SECONDS), is(false));
         assertThat(writer.trailerWrites.get(), is(1));
+    }
+
+    @Test
+    void testDeadlineCancelsStreamFlowControlWait() throws Exception {
+        assertDeadlineCancelsFlowControlWait(false);
+    }
+
+    @Test
+    void testDeadlineCancelsConnectionFlowControlWait() throws Exception {
+        assertDeadlineCancelsFlowControlWait(true);
     }
 
     @Test
@@ -1219,6 +1249,14 @@ class GrpcProtocolHandlerTest {
                                                                        ServerCallHandler<String, String> callHandler,
                                                                        Http2StreamWriter writer,
                                                                        MethodDescriptor<String, String> descriptor) {
+        return deadlineHandler(timeout, callHandler, writer, descriptor, null);
+    }
+
+    private static GrpcProtocolHandler<String, String> deadlineHandler(String timeout,
+                                                                       ServerCallHandler<String, String> callHandler,
+                                                                       Http2StreamWriter writer,
+                                                                       MethodDescriptor<String, String> descriptor,
+                                                                       StreamFlowControl flowControl) {
         WritableHeaders<?> headers = WritableHeaders.create();
         if (timeout != null) {
             headers.add(HeaderNames.create("grpc-timeout"), timeout);
@@ -1227,12 +1265,69 @@ class GrpcProtocolHandlerTest {
                                          Http2Headers.create(headers),
                                          writer,
                                          1,
-                                         null,
+                                         flowControl,
                                          Http2StreamState.OPEN,
                                          GrpcRouteHandler.methodDefinition(ServerMethodDefinition.create(descriptor, callHandler),
                                                                           null,
                                                                           WeightedBag.create()),
                                          GrpcConfig.create());
+    }
+
+    private static void assertDeadlineCancelsFlowControlWait(boolean connectionWindow) throws Exception {
+        var waiting = new CountDownLatch(1);
+        var writerInterrupted = new CompletableFuture<Boolean>();
+        var callerInterrupted = new CompletableFuture<Boolean>();
+        var connection = ConnectionFlowControl.serverBuilder((streamId, update) -> { })
+                .blockTimeout(Duration.ofMinutes(1))
+                .build();
+        var flowControl = connection.createStreamFlowControl(1, 65535, 16384);
+        if (connectionWindow) {
+            connection.outbound().decrementWindowSize(65535);
+        } else {
+            flowControl.outbound().resetStreamWindowSize(0);
+        }
+        RecordingWriter writer = new RecordingWriter() {
+            @Override
+            public void writeData(Http2FrameData frame, FlowControl.Outbound outbound) {
+                assertThat("outbound window is exhausted", outbound.getRemainingWindowSize(), is(0));
+                waiting.countDown();
+                try {
+                    outbound.blockTillUpdate();
+                    throw new AssertionError("cancelled flow-control wait must not resume DATA writes");
+                } finally {
+                    writerInterrupted.complete(Thread.currentThread().isInterrupted());
+                }
+            }
+        };
+        var handler = deadlineHandler("1S", (call, metadata) -> {
+            call.request(1);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onMessage(String message) {
+                    call.sendMessage("response");
+                    callerInterrupted.complete(Thread.currentThread().isInterrupted());
+                }
+            };
+        }, writer, stringMethodDescriptor(), flowControl);
+        handler.init();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var request = executor.submit(() -> sendRequest(handler));
+            try {
+                assertThat("writer reached exhausted flow control", waiting.await(5, TimeUnit.SECONDS), is(true));
+                assertThat(writer.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
+                                   .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
+                request.get(5, TimeUnit.SECONDS);
+            } finally {
+                // Also release the real flow-control wait if an assertion fails before cancellation.
+                connection.incrementOutboundConnectionWindowSize(65535);
+                flowControl.outbound().incrementStreamWindowSize(65535);
+                handler.close();
+            }
+        }
+        assertThat("cancellation interrupt is consumed before leaving flow control",
+                   writerInterrupted.get(5, TimeUnit.SECONDS), is(false));
+        assertThat("application caller is not interrupted", callerInterrupted.get(5, TimeUnit.SECONDS), is(false));
+        assertThat("one terminal status", writer.trailerWrites.get(), is(1));
     }
 
     private static void sendRequest(GrpcProtocolHandler<String, String> handler) {

@@ -139,7 +139,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private final AtomicReference<CallState> callState = new AtomicReference<>(CallState.OPEN);
     private final ReentrantLock responseLock = new ReentrantLock();
     private final ReentrantLock listenerLock = new ReentrantLock();
-    private final AtomicReference<FutureTask<Void>> pendingWrite = new AtomicReference<>();
+    private final AtomicReference<CancellableOutbound> pendingWrite = new AtomicReference<>();
     private final AtomicReference<Http2StreamState> currentStreamState = new AtomicReference<>();
 
     private volatile ServerCall.Listener<REQ> listener;
@@ -231,9 +231,9 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 return;
             }
             callContext.addListener(cancelled -> {
-                FutureTask<Void> write = pendingWrite.get();
+                CancellableOutbound write = pendingWrite.get();
                 if (write != null) {
-                    write.cancel(true);
+                    write.cancel();
                 }
                 if (!callClosed()) {
                     Thread.startVirtualThread(() -> serverCall.close(Contexts.statusFromCancelled(cancelled), new Metadata()));
@@ -515,12 +515,13 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             streamWriter.writeData(frameData, outboundFlowControl());
             return;
         }
-        // Flow control can block a write. Use an owned thread so cancellation never interrupts an application thread.
+        // Only flow-control waits may be interrupted: interrupting socket I/O closes the shared connection.
         var finished = new CountDownLatch(1);
+        var outbound = new CancellableOutbound(outboundFlowControl());
         Context grpcContext = Context.current();
         var helidonContext = io.helidon.common.context.Contexts.context();
         var write = new FutureTask<Void>(() -> {
-            Runnable action = () -> grpcContext.run(() -> streamWriter.writeData(frameData, outboundFlowControl()));
+            Runnable action = () -> grpcContext.run(() -> streamWriter.writeData(frameData, outbound));
             if (helidonContext.isPresent()) {
                 io.helidon.common.context.Contexts.runInContext(helidonContext.get(), action);
             } else {
@@ -528,9 +529,9 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             }
             return null;
         });
-        pendingWrite.set(write);
+        pendingWrite.set(outbound);
         if (callContext.isCancelled() || callClosed()) {
-            write.cancel(true);
+            outbound.cancel();
         }
         Thread.startVirtualThread(() -> {
             try {
@@ -542,13 +543,15 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         boolean interrupted = false;
         try {
             write.get();
-        } catch (CancellationException ignored) {
-            // The deadline handler sends the final status after the writer exits.
         } catch (InterruptedException e) {
             interrupted = true;
-            write.cancel(true);
+            outbound.cancel();
             throw new ServerConnectionException("Interrupted while writing grpc response data", e);
         } catch (ExecutionException e) {
+            if (e.getCause() instanceof CancellationException) {
+                // The deadline handler sends the final status after the writer exits.
+                return;
+            }
             if (e.getCause() instanceof RuntimeException cause) {
                 throw cause;
             }
@@ -557,17 +560,17 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             }
             throw new ServerConnectionException("Failed to write grpc response data", e.getCause());
         } finally {
-            // Future cancellation alone does not mean the writer has stopped. Keep trailers behind its last DATA frame.
+            // Complete an in-progress DATA frame before trailers, even if the caller was interrupted.
             while (true) {
                 try {
                     finished.await();
                     break;
                 } catch (InterruptedException e) {
                     interrupted = true;
-                    write.cancel(true);
+                    outbound.cancel();
                 }
             }
-            pendingWrite.compareAndSet(write, null);
+            pendingWrite.compareAndSet(outbound, null);
             if (interrupted) {
                 Thread.currentThread().interrupt();
             }
@@ -694,6 +697,97 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                                  Timer callDuration,
                                  DistributionSummary sentMessageSize,
                                  DistributionSummary recvMessageSize) { }
+
+    private static final class CancellableOutbound implements FlowControl.Outbound {
+        private final FlowControl.Outbound delegate;
+        private final ReentrantLock waitLock = new ReentrantLock();
+
+        private volatile boolean cancelled;
+        private Thread waitingThread;
+
+        private CancellableOutbound(FlowControl.Outbound delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void decrementWindowSize(int decrement) {
+            delegate.decrementWindowSize(decrement);
+        }
+
+        @Override
+        public void resetStreamWindowSize(int size) {
+            delegate.resetStreamWindowSize(size);
+        }
+
+        @Override
+        public int getRemainingWindowSize() {
+            return delegate.getRemainingWindowSize();
+        }
+
+        @Override
+        public long incrementStreamWindowSize(int increment) {
+            return delegate.incrementStreamWindowSize(increment);
+        }
+
+        @Override
+        public Http2FrameData[] cut(Http2FrameData frame) {
+            if (cancelled) {
+                throw new CancellationException();
+            }
+            return delegate.cut(frame);
+        }
+
+        @Override
+        public void blockTillUpdate() {
+            waitLock.lock();
+            try {
+                if (cancelled) {
+                    throw new CancellationException();
+                }
+                waitingThread = Thread.currentThread();
+            } finally {
+                waitLock.unlock();
+            }
+            try {
+                delegate.blockTillUpdate();
+            } catch (RuntimeException e) {
+                if (!cancelled) {
+                    throw e;
+                }
+            } finally {
+                waitLock.lock();
+                try {
+                    waitingThread = null;
+                    if (cancelled) {
+                        // Retire the waiter and consume its cancellation interrupt before any socket write.
+                        Thread.interrupted();
+                    }
+                } finally {
+                    waitLock.unlock();
+                }
+            }
+            if (cancelled) {
+                throw new CancellationException();
+            }
+        }
+
+        @Override
+        public int maxFrameSize() {
+            return delegate.maxFrameSize();
+        }
+
+        private void cancel() {
+            waitLock.lock();
+            try {
+                cancelled = true;
+                if (waitingThread != null) {
+                    waitingThread.interrupt();
+                }
+            } finally {
+                waitLock.unlock();
+            }
+        }
+    }
 
     /**
      * An input stream that can return its length. gRPC parsers can use this extra
