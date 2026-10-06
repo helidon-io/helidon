@@ -546,11 +546,20 @@ class BenchmarkSourceIdentityTest {
 
     @Test
     void controlledMavenShutdownHookTerminatesCompleteProcessTree() throws Exception {
+        assertShutdownTerminatesProcessTree(temporaryDirectory, "orchestrator");
+    }
+
+    @Test
+    void controlledMavenShutdownDuringLaunchTerminatesCompleteProcessTree() throws Exception {
+        assertShutdownTerminatesProcessTree(temporaryDirectory, "launch-orchestrator");
+    }
+
+    private static void assertShutdownTerminatesProcessTree(Path temporaryDirectory, String role) throws Exception {
         assumeProcessTreeInspection();
         Path pidDirectory = Files.createDirectory(temporaryDirectory.resolve("shutdown-processes"));
         Path processLog = pidDirectory.resolve("orchestrator.log");
         ProcessBuilder processBuilder =
-                new ProcessBuilder(Http3QuicEvidenceProcessFixture.command(pidDirectory, "orchestrator"))
+                new ProcessBuilder(Http3QuicEvidenceProcessFixture.command(pidDirectory, role))
                         .directory(temporaryDirectory.toFile())
                         .redirectErrorStream(true)
                         .redirectOutput(processLog.toFile());
@@ -563,6 +572,17 @@ class BenchmarkSourceIdentityTest {
         try {
             awaitProcessTree(pidDirectory);
             Files.writeString(pidDirectory.resolve("exit.request"), "exit\n");
+            if (role.equals("launch-orchestrator")) {
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+                Path shutdownStarted = pidDirectory.resolve("shutdown.started");
+                while (!Files.isRegularFile(shutdownStarted) && System.nanoTime() < deadline) {
+                    Thread.sleep(10);
+                }
+                assertThat("Fixture shutdown did not begin during process launch; inspect " + processLog,
+                           Files.isRegularFile(shutdownStarted),
+                           is(true));
+                Files.writeString(pidDirectory.resolve("launch.release"), "release\n");
+            }
             assertThat("Controlled-build shutdown fixture did not exit; inspect " + processLog,
                        orchestrator.waitFor(15, TimeUnit.SECONDS),
                        is(true));
@@ -571,6 +591,12 @@ class BenchmarkSourceIdentityTest {
         } finally {
             if (orchestrator.isAlive()) {
                 orchestrator.destroyForcibly();
+            }
+            for (String processRole : List.of("grandchild", "child", "root")) {
+                Path pidFile = pidDirectory.resolve(processRole + ".pid");
+                if (Files.isRegularFile(pidFile)) {
+                    ProcessHandle.of(Long.parseLong(Files.readString(pidFile))).ifPresent(ProcessHandle::destroyForcibly);
+                }
             }
         }
     }
