@@ -46,7 +46,7 @@ final class ConfigObserverConfigDefaults {
     static final String SAFE_KEY_SERVER_SOCKET_PORT = "server[.]sockets[.][^.]+[.]port";
     static final String SAFE_KEY_OBSERVE_ENABLED = "server[.]features[.]observe[.]enabled";
     static final String SAFE_KEY_OBSERVE_ENDPOINT = "server[.]features[.]observe[.]endpoint";
-    static final String SAFE_KEY_OBSERVE_SOCKETS = "server[.]features[.]observe[.]sockets";
+    static final String SAFE_KEY_OBSERVE_SOCKETS = "server[.]features[.]observe[.]sockets([.][0-9]+)?";
     static final String SAFE_KEY_OBSERVE_WEIGHT = "server[.]features[.]observe[.]weight";
     static final String SAFE_KEY_OBSERVER_ENABLED = "server[.]features[.]observe[.]observers[.][^.]+[.]enabled";
     static final String SAFE_KEY_OBSERVER_ENDPOINT = "server[.]features[.]observe[.]observers[.][^.]+[.]endpoint";

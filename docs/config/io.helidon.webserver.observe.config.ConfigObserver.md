@@ -37,9 +37,9 @@ Configuration of Config Observer
 <code>List&lt;<wbr>String&gt;</code>
 </td>
 <td>
-<code>server[.<wbr>]host,<wbr> server[.<wbr>]port,<wbr> server[.<wbr>]sockets[.<wbr>][^.<wbr>]+[.<wbr>]host,<wbr> server[.<wbr>]sockets[.<wbr>][^.<wbr>]+[.<wbr>]port,<wbr> server[.<wbr>]features[.<wbr>]observe[.<wbr>]enabled,<wbr> server[.<wbr>]features[.<wbr>]observe[.<wbr>]endpoint,<wbr> server[.<wbr>]features[.<wbr>]observe[.<wbr>]sockets,<wbr> server[.<wbr>]features[.<wbr>]observe[.<wbr>]weight,<wbr> server[.<wbr>]features[.<wbr>]observe[.<wbr>]observers[.<wbr>][^.<wbr>]+[.<wbr>]enabled,<wbr> server[.<wbr>]features[.<wbr>]observe[.<wbr>]observers[.<wbr>][^.<wbr>]+[.<wbr>]endpoint,<wbr> server[.<wbr>]features[.<wbr>]observe[.<wbr>]observers[.<wbr>][^.<wbr>]+[.<wbr>]name</code>
+<code>server[.<wbr>]host,<wbr> server[.<wbr>]port,<wbr> server[.<wbr>]sockets[.<wbr>][^.<wbr>]+[.<wbr>]host,<wbr> server[.<wbr>]sockets[.<wbr>][^.<wbr>]+[.<wbr>]port,<wbr> server[.<wbr>]features[.<wbr>]observe[.<wbr>]enabled,<wbr> server[.<wbr>]features[.<wbr>]observe[.<wbr>]endpoint,<wbr> server[.<wbr>]features[.<wbr>]observe[.<wbr>]sockets(<wbr>[.][0-<wbr>9]+)?<wbr>, server[.<wbr>]features[.<wbr>]observe[.<wbr>]weight,<wbr> server[.<wbr>]features[.<wbr>]observe[.<wbr>]observers[.<wbr>][^.<wbr>]+[.<wbr>]enabled,<wbr> server[.<wbr>]features[.<wbr>]observe[.<wbr>]observers[.<wbr>][^.<wbr>]+[.<wbr>]endpoint,<wbr> server[.<wbr>]features[.<wbr>]observe[.<wbr>]observers[.<wbr>][^.<wbr>]+[.<wbr>]name</code>
 </td>
-<td>Safe key patterns (regular expressions) to include in output</td>
+<td>Safe key patterns (regular expressions) matched against escaped configuration keys to include in output, with dots within node names represented as <code>~1</code></td>
 </tr>
 <tr>
 <td>
@@ -74,7 +74,7 @@ Configuration of Config Observer
 <td>
 <code>.*password.<wbr>*, .<wbr>*passphrase.<wbr>*, .<wbr>*pwd.<wbr>*, .<wbr>*secret.<wbr>*, .<wbr>*credential.<wbr>*, .<wbr>*token.<wbr>*, .<wbr>*api[-<wbr>_.]?<wbr>key.<wbr>*, .<wbr>*access[-<wbr>_.]?<wbr>key.<wbr>*, .<wbr>*private[-<wbr>_.]?<wbr>key.<wbr>*, .<wbr>*connection[-<wbr>_.]?<wbr>url.<wbr>*</code>
 </td>
-<td>Secret patterns (regular expressions) to exclude from output</td>
+<td>Secret patterns (regular expressions) matched against unescaped configuration keys to exclude from output</td>
 </tr>
 <tr>
 <td>

@@ -75,7 +75,7 @@ class ConfigService implements HttpService {
 
         Config valueConfig = config.get().get(name);
         if (valueConfig.hasValue()) {
-            String key = Config.Key.unescapeName(name);
+            String key = valueConfig.key().toString();
             var json = JsonObject.builder()
                     .set("name", name);
 
@@ -91,14 +91,14 @@ class ConfigService implements HttpService {
         Config root = config.get();
 
         if (root.isLeaf()) {
-            String key = Config.Key.unescapeName(root.key().toString());
-            json.set(key, value(key, () -> root.asString().get()));
+            String key = root.key().toString();
+            json.set(Config.Key.unescapeName(key), value(key, () -> root.asString().get()));
         } else {
             root.traverse()
                     .filter(Config::hasValue)
                     .forEach(node -> {
-                        String key = Config.Key.unescapeName(node.key().toString());
-                        json.set(key, value(key, () -> node.asString().get()));
+                        String key = node.key().toString();
+                        json.set(Config.Key.unescapeName(key), value(key, () -> node.asString().get()));
                     });
         }
 
@@ -120,8 +120,9 @@ class ConfigService implements HttpService {
     }
 
     private boolean shouldObfuscate(String key) {
+        String unescapedKey = Config.Key.unescapeName(key);
         for (Pattern pattern : secretPatterns) {
-            if (pattern.matcher(key).matches()) {
+            if (pattern.matcher(unescapedKey).matches()) {
                 return true;
             }
         }

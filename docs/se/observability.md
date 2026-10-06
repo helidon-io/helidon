@@ -146,6 +146,12 @@ patterns are always obfuscated. Set `unsafe-values` to `true` to restore the
 previous behavior and include all values except those matching `secrets`
 patterns.
 
+`safe-keys` patterns match escaped configuration keys, preserving the difference
+between a path separator and a dot within a single key name. For example,
+`server[.]host` matches the `host` child of `server`, while `server~1host` matches
+a single key named `server.host`. In contrast, `secrets` patterns match unescaped
+key names and take precedence over `safe-keys` patterns.
+
 #### Health Observability
 
 Health observability allows reading application readiness to serve requests,
