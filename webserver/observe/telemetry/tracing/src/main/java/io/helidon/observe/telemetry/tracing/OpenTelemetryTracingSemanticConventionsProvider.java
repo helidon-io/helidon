@@ -104,7 +104,7 @@ class OpenTelemetryTracingSemanticConventionsProvider implements TracingSemantic
                     .tag(HTTP_REQUEST_METHOD, methodText)
                     .tag(URL_PATH, uriInfo.path().path())
                     .tag(URL_SCHEME, uriInfo.scheme())
-                    .tag(SERVER_PORT, Integer.toString(request.localPeer().port()));
+                    .tag(SERVER_PORT, request.localPeer().port());
             if (originalMethodText != null) {
                 spanBuilder.tag(HTTP_REQUEST_METHOD_ORIGINAL, originalMethodText);
             }
@@ -125,7 +125,7 @@ class OpenTelemetryTracingSemanticConventionsProvider implements TracingSemantic
         @Override
         public void beforeEnd(Span span) {
             commonBeforeEnd(span);
-            span.tag(HTTP_RESPONSE_STATUS_CODE, Integer.toString(response.status().code()));
+            span.tag(HTTP_RESPONSE_STATUS_CODE, response.status().code());
         }
 
         @Override
