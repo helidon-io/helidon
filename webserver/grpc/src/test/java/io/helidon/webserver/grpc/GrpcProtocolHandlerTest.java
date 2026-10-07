@@ -572,8 +572,8 @@ class GrpcProtocolHandlerTest {
     }
 
     @Test
-    void testOversizedMessageClosesTransportAndNotifiesServiceOnce() throws Exception {
-        var cancelled = new CompletableFuture<Context>();
+    void testOversizedMessageCompletesResourceExhaustedAndNotifiesServiceOnce() throws Exception {
+        var completed = new CompletableFuture<Context>();
         var cancellations = new AtomicInteger();
         var completions = new AtomicInteger();
         var writer = new RecordingWriter();
@@ -581,13 +581,13 @@ class GrpcProtocolHandlerTest {
             @Override
             public void onCancel() {
                 cancellations.incrementAndGet();
-                call.close(Status.CANCELLED, new Metadata());
-                cancelled.complete(Context.current());
             }
 
             @Override
             public void onComplete() {
                 completions.incrementAndGet();
+                call.close(Status.RESOURCE_EXHAUSTED, new Metadata());
+                completed.complete(Context.current());
             }
         }, writer);
         handler.init();
@@ -599,10 +599,10 @@ class GrpcProtocolHandlerTest {
                                              Http2Flag.DataFlags.create(0), 1), data);
 
         assertThat(writer.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
-                           .get(GrpcStatus.STATUS_NAME).asString().get(), is("1"));
-        assertThat(cancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
-        assertThat(cancellations.get(), is(1));
-        assertThat(completions.get(), is(0));
+                           .get(GrpcStatus.STATUS_NAME).asString().get(), is("8"));
+        assertThat(completed.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
+        assertThat(cancellations.get(), is(0));
+        assertThat(completions.get(), is(1));
         assertThat(writer.trailerWrites.get(), is(1));
     }
 

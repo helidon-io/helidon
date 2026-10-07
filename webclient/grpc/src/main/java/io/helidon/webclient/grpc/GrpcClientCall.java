@@ -264,7 +264,8 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
     private void startHeartbeat() {
         Duration period = heartbeatPeriod();
-        if (clientStream() == null || isClosed() || period.compareTo(Duration.ZERO) <= 0 || !heartbeatStarted.compareAndSet(false, true)) {
+        if (clientStream() == null || isClosed() || period.compareTo(Duration.ZERO) <= 0
+                || !heartbeatStarted.compareAndSet(false, true)) {
             return;
         }
         socket().log(LOGGER, DEBUG, "[Heartbeat] started with period " + period);
