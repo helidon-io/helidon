@@ -32,11 +32,14 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.ContentDecoder;
@@ -63,9 +66,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class StaticContentEncodingTest {
     private static final String CUSTOM_INTERNAL_ERROR = "custom-internal-error";
     private static final String CUSTOM_NOT_ACCEPTABLE = "custom-not-acceptable";
+    private static final String SHORTER_REPLACEMENT_RESOURCE = "shorter-replacement-http1.txt";
 
     @TempDir
     static Path tempDir;
+
+    private static volatile CountDownLatch sidecarRequestComplete = new CountDownLatch(1);
 
     private final Http1Client client;
 
@@ -111,7 +117,17 @@ class StaticContentEncodingTest {
         Files.writeString(tempDir.resolve("resource.txt.br"), "Brotli content");
         Files.writeString(nested.resolve("resource.txt"), "Nested content");
 
-        builder.any("/filtered-path/*", (request, response) -> {
+        builder.addFilter((chain, request, _) -> {
+                    if (request.prologue().method().equals(Method.GET)
+                            && request.prologue().uriPath().path().equals("/path/" + SHORTER_REPLACEMENT_RESOURCE)) {
+                        CountDownLatch requestComplete = sidecarRequestComplete;
+                        chain.proceed();
+                        requestComplete.countDown();
+                    } else {
+                        chain.proceed();
+                    }
+                })
+                .any("/filtered-path/*", (request, response) -> {
                     response.streamFilter(network -> prefixingOutputStream(network, "filtered:"));
                     response.next();
                 })
@@ -155,8 +171,9 @@ class StaticContentEncodingTest {
     }
 
     @Test
-    void cachedShorterSidecarReplacementDoesNotReuseStaleMetadata() throws IOException {
-        String resourceName = "shorter-replacement-http1.txt";
+    void cachedShorterSidecarReplacementDoesNotReuseStaleMetadata() throws IOException, InterruptedException {
+        sidecarRequestComplete = new CountDownLatch(1);
+        String resourceName = SHORTER_REPLACEMENT_RESOURCE;
         String identity = "Identity content";
         String original = "Original Brotli content";
         String replacement = "New br";
@@ -177,6 +194,9 @@ class StaticContentEncodingTest {
             assertThat(response.as(String.class), is(original));
         }
 
+        // Reading the complete response can precede server-side file closure, which prevents replacement on Windows.
+        assertThat("Original sidecar request completed before replacing its file",
+                   sidecarRequestComplete.await(10, TimeUnit.SECONDS), is(true));
         replaceFile(sidecar, replacement);
 
         try (Http1ClientResponse response = client.head("/path/" + resourceName)
