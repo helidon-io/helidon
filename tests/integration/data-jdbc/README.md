@@ -165,6 +165,29 @@ mvn -f tests/integration/data-jdbc/pom.xml -pl h2 -am verify
 mvn -f tests/integration/data-jdbc/pom.xml -pl mixed-provider -am clean package
 ```
 
+## Oracle generated repository diagnostics
+
+`OracleGeneratedRepositoryTest` collects diagnostics for successful and failed
+runs under `target/failsafe-reports/oracle-generated-repository/`, in a unique
+directory per execution. The existing CI artifact upload includes this path.
+
+One separate SYSDBA connection records effective database parameters and samples
+process/session/transaction current and maximum utilization, test sessions
+and process counts every 500 ms and after each test. Startup, failure and end
+reports capture the image/container/CI identity, listener services/status,
+PID/memory limits and events, and available listener/alert/container logs.
+Exception types, SQLState and vendor codes are recorded without full messages.
+
+Account for the additional observer session when comparing runs. Diagnostic
+queries have two-second timeouts, container commands have an eight-second
+timeout, with a fifteen-second final collection wait. Collection errors and
+deadlines indicate incomplete evidence. The suite continues to use its
+existing direct connections and concurrency settings.
+
+Run `mvn -f tests/integration/data-jdbc/declarative/oracle/pom.xml verify` with
+Docker to collect live evidence. On completion, check that the Oracle tests executed 
+rather than skipped before using the results to investigate `ORA-12516`.
+
 ## Test design notes
 
 - Prefer portable contracts in `common/src/main/java` and small database leaves

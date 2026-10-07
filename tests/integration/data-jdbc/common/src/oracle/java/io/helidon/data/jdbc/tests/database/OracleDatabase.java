@@ -41,7 +41,7 @@ public final class OracleDatabase {
     public static final String GENERATED_KEY_COLUMN_PROPERTY = "helidon.data.jdbc.tests.generated-key-column";
 
     private static final DockerImageName IMAGE = DockerImageName.parse(
-            "container-registry.oracle.com/database/free:latest-lite");
+            "container-registry.oracle.com/database/free:23.26.3.0-lite");
     private static final Map<String, Config> CONFIG_BY_CONTAINER = new ConcurrentHashMap<>();
     private static final AtomicInteger SCHEMA_COUNTER = new AtomicInteger();
     private static final String PASSWORD = "oracle123";
