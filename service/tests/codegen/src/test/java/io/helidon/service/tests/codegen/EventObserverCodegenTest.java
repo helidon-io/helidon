@@ -19,12 +19,15 @@ package io.helidon.service.tests.codegen;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.io.Writer;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.IntUnaryOperator;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -37,7 +40,11 @@ import io.helidon.codegen.testing.TestCompiler;
 import io.helidon.common.Generated;
 import io.helidon.common.GenericType;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.ResolvedType;
+import io.helidon.service.registry.EventManager;
+import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistryManager;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -128,6 +135,23 @@ class EventObserverCodegenTest {
     }
 
     @Test
+    void testAsyncOnlyObserversRetainLegacyFilenames(@TempDir Path directory) throws IOException {
+        var result = compiler(directory.resolve("compile-1"), listener("Listener", List.of(
+                "@Event.AsyncObserver @Service.Named(\"red\") void first(String event) {}",
+                "@Event.AsyncObserver @Service.Named(\"blue\") void second(String event) {}")))
+                .build()
+                .compile();
+
+        Map<String, String> generated = registrations(result);
+        assertThat("Async-only registrations must replace the previous primary registration classes",
+                   generated.keySet(), containsInAnyOrder("Listener__Observer.java", "Listener__Observer_1.java"));
+        assertThat(generated.get("Listener__Observer.java"),
+                   containsString("manager.registerAsync(EVENT_OBJECT, eventObserver::first, QUALIFIERS);"));
+        assertThat(generated.get("Listener__Observer_1.java"),
+                   containsString("manager.registerAsync(EVENT_OBJECT, eventObserver::second, QUALIFIERS);"));
+    }
+
+    @Test
     void testOverloadWithUnannotatedMethod(@TempDir Path directory) throws IOException {
         var result = compiler(directory.resolve("compile-1"), listener("Listener", List.of(
                 "@Event.Observer void observe(String event) {}",
@@ -164,6 +188,30 @@ class EventObserverCodegenTest {
         assertThat(registrations(result).values(), hasSize(1));
     }
 
+    @Test
+    void testRecompileWithLegacyRegistrations(@TempDir Path directory) throws IOException, ClassNotFoundException {
+        Path retainedOutput = directory.resolve("retained-output");
+        var legacy = compiler(retainedOutput, countingListener(false))
+                .addSource("Listener__Observer.java", legacyRegistration("Listener__Observer", "first", "red"))
+                .addSource("Listener__Observer_1.java", legacyRegistration("Listener__Observer_1", "second", "blue"))
+                .build()
+                .compile();
+        assertThat(String.join("\n", legacy.diagnostics()), legacy.success(), is(true));
+
+        // Keep the previous classes and service metadata, as an incremental compilation does.
+        var recompiled = compiler(retainedOutput, countingListener(true))
+                .build()
+                .compile();
+        assertThat(String.join("\n", recompiled.diagnostics()), recompiled.success(), is(true));
+
+        var clean = compiler(directory.resolve("clean-output"), countingListener(true))
+                .build()
+                .compile();
+        assertThat(String.join("\n", clean.diagnostics()), clean.success(), is(true));
+        assertSingleDelivery(clean.classOutput());
+        assertSingleDelivery(recompiled.classOutput());
+    }
+
     private static TestCompiler.Builder compiler(Path directory, String source) {
         return TestCompiler.builder()
                 .currentRelease()
@@ -185,6 +233,92 @@ class EventObserverCodegenTest {
                     %s
                 }
                 """.formatted(name, String.join("\n", methods));
+    }
+
+    private static String countingListener(boolean annotated) {
+        return """
+                package com.example;
+
+                import java.util.concurrent.atomic.AtomicIntegerArray;
+                import java.util.function.IntUnaryOperator;
+
+                import io.helidon.service.registry.Event;
+                import io.helidon.service.registry.Service;
+
+                @Service.Singleton
+                public class Listener implements IntUnaryOperator {
+                    private final AtomicIntegerArray counts = new AtomicIntegerArray(2);
+
+                    %s
+                    @Service.Named("red")
+                    void first(String event) {
+                        counts.incrementAndGet(0);
+                    }
+
+                    %s
+                    @Service.Named("blue")
+                    void second(String event) {
+                        counts.incrementAndGet(1);
+                    }
+
+                    @Override
+                    public int applyAsInt(int index) {
+                        return counts.get(index);
+                    }
+                }
+                """.formatted(annotated ? "@Event.Observer" : "", annotated ? "@Event.Observer" : "");
+    }
+
+    private static String legacyRegistration(String name, String method, String qualifier) {
+        return """
+                package com.example;
+
+                import java.util.Set;
+
+                import io.helidon.common.types.ResolvedType;
+                import io.helidon.service.registry.EventManager;
+                import io.helidon.service.registry.GeneratedService;
+                import io.helidon.service.registry.Qualifier;
+                import io.helidon.service.registry.Service;
+
+                @Service.Singleton
+                class %s implements GeneratedService.EventObserverRegistration {
+                    private final Listener listener;
+
+                    @Service.Inject
+                    %s(Listener listener) {
+                        this.listener = listener;
+                    }
+
+                    @Override
+                    public void register(EventManager manager) {
+                        manager.register(ResolvedType.create(String.class), listener::%s,
+                                         Set.of(Qualifier.createNamed("%s")));
+                    }
+                }
+                """.formatted(name, name, method, qualifier);
+    }
+
+    private static void assertSingleDelivery(Path classes) throws IOException, ClassNotFoundException {
+        Thread thread = Thread.currentThread();
+        ClassLoader previous = thread.getContextClassLoader();
+        try (var loader = new URLClassLoader(new URL[] {classes.toUri().toURL()}, previous)) {
+            thread.setContextClassLoader(loader);
+            ServiceRegistryManager manager = ServiceRegistryManager.create();
+            try {
+                var registry = manager.registry();
+                IntUnaryOperator listener = (IntUnaryOperator) registry.get(loader.loadClass("com.example.Listener"));
+                EventManager events = registry.get(EventManager.class);
+                events.emit(ResolvedType.create(String.class), "red-event", Set.of(Qualifier.createNamed("red")));
+                events.emit(ResolvedType.create(String.class), "blue-event", Set.of(Qualifier.createNamed("blue")));
+                assertThat("Red event deliveries from " + classes, listener.applyAsInt(0), is(1));
+                assertThat("Blue event deliveries from " + classes, listener.applyAsInt(1), is(1));
+            } finally {
+                manager.shutdown();
+            }
+        } finally {
+            thread.setContextClassLoader(previous);
+        }
     }
 
     private static Map<String, String> registrations(TestCompiler.Result result) throws IOException {

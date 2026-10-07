@@ -88,9 +88,16 @@ public class EventObserverExtensionProvider implements RegistryCodegenExtensionP
                     .map(it -> it.signature().toString())
                     .filter(it -> it.compareTo(signature) < 0)
                     .count();
+            // Replace legacy primary descriptors when recompiling into retained output directories.
+            String className = serviceType.classNameWithEnclosingNames().replace('.', '_') + "__Observer";
+            if (!suffix.isEmpty() && element.hasAnnotation(EVENT_OBSERVER)) {
+                className += suffix + "_" + index;
+            } else if (index != 0) {
+                className += "_" + index;
+            }
             return TypeName.builder()
                     .packageName(serviceType.packageName())
-                    .className(serviceType.classNameWithEnclosingNames().replace('.', '_') + "__Observer" + suffix + "_" + index)
+                    .className(className)
                     .build();
         }
 
