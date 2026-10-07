@@ -129,6 +129,43 @@ class Http1TransportObservationTest {
     }
 
     @ParameterizedTest
+    @CsvSource({"false,false", "false,true", "true,false", "true,true"})
+    void emptyUploadDistinguishesServerCloseFromClientShutdown(boolean duplex, boolean connectionClose) throws Exception {
+        var observer = new RecordingProvider();
+        try (var server = new RawServer(1, socket -> {
+            assertThat(readHead(socket), containsString("Content-Length: 0\r\n"));
+            write(socket, "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n"
+                    + (connectionClose ? "Connection: close\r\n" : "") + "\r\n");
+            // Leave physical close to the client so EOF cannot change the observed close reason.
+            assertThat(socket.getInputStream().read(), is(-1));
+        })) {
+            Http1Client client = client(server, observer);
+            try {
+                var request = client.post().sendExpectContinue(false).header(HeaderNames.CONTENT_LENGTH, "0");
+                if (duplex) {
+                    request.exchange(output -> output.close(), response -> {
+                        assertThat(response.status(), is(Status.OK_200));
+                        assertThat(response.entity().hasEntity(), is(false));
+                    });
+                } else {
+                    try (var response = request.outputStream(output -> output.close())) {
+                        assertThat(response.status(), is(Status.OK_200));
+                        assertThat(response.entity().hasEntity(), is(false));
+                    }
+                }
+                assertThat(observer.onlyConnection().outcomes(), is(List.of(StreamOutcome.COMPLETED)));
+            } finally {
+                client.closeResourceAsync().toCompletableFuture().get(10, TimeUnit.SECONDS);
+            }
+            server.await();
+        }
+        assertThat("Server Connection: close is remote close; client shutdown is local close",
+                   observer.onlyConnection().outcome,
+                   is(connectionClose ? ConnectionOutcome.REMOTE_CLOSE : ConnectionOutcome.LOCAL_CLOSE));
+        observer.onlyConnection().assertClosed();
+    }
+
+    @ParameterizedTest
     @CsvSource({"0,false", "4,false", "0,true", "4,true"})
     void earlyDuplexResponseWaitsForUploadBeforeCompletingObservation(int length, boolean connectionClose) throws Exception {
         var observer = new RecordingProvider();
@@ -170,6 +207,9 @@ class Http1TransportObservationTest {
             }
             server.await();
         }
+        assertThat("Server Connection: close is remote close; client shutdown is local close",
+                   observer.onlyConnection().outcome,
+                   is(connectionClose ? ConnectionOutcome.REMOTE_CLOSE : ConnectionOutcome.LOCAL_CLOSE));
         observer.onlyConnection().assertClosed();
     }
 

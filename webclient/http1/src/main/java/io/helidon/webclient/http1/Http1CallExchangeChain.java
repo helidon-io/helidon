@@ -38,9 +38,14 @@ import io.helidon.common.socket.HelidonSocket;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.HttpTransportObserver;
+import io.helidon.http.HttpTransportObserver.ConnectionObservation;
+import io.helidon.http.HttpTransportObserver.ConnectionOutcome;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientRequest;
+import io.helidon.webclient.api.HttpTransportObserverSupport;
+import io.helidon.webclient.api.HttpTransportObserverSupport.ConnectionObservationContext;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 
@@ -394,7 +399,7 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
         }
     }
 
-    private final class ExchangeConnection implements ClientConnection {
+    private final class ExchangeConnection implements ClientConnection, ConnectionObservationContext {
         private final ClientConnection delegate;
         private final DataReader reader;
         private final DataWriter writer;
@@ -416,6 +421,21 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
                     endIo(progress);
                 }
             });
+        }
+
+        @Override
+        public void httpTransportObserver(HttpTransportObserver observer) {
+            HttpTransportObserverSupport.observe(delegate, observer);
+        }
+
+        @Override
+        public ConnectionObservation httpTransportObservation() {
+            return HttpTransportObserverSupport.connection(delegate);
+        }
+
+        @Override
+        public void httpTransportOutcome(ConnectionOutcome outcome) {
+            HttpTransportObserverSupport.connectionOutcome(delegate, outcome);
         }
 
         @Override
