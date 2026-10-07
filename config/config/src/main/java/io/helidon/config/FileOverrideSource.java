@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,10 @@ import io.helidon.config.spi.WatchableSource;
  * {@link OverrideSource} implementation that loads override definitions from a file on a filesystem.
  *
  * @see FileOverrideSource.Builder
+ * @deprecated Since 28.0.0, config overrides are deprecated for removal. See {@link OverrideSource} for migration
+ * guidance and the usage feedback request. No removal release or timing has been decided.
  */
+@Deprecated(since = "28.0.0", forRemoval = true)
 public final class FileOverrideSource extends AbstractSource
         implements OverrideSource, PollableSource<byte[]>, WatchableSource<Path> {
 
@@ -124,7 +127,11 @@ public final class FileOverrideSource extends AbstractSource
      * <li>{@code path} - configuration file path;</li>
      * <li>{@code mandatory} - is existence of configuration resource mandatory (by default) or is {@code optional}?</li>
      * </ul>
+     *
+     * @deprecated Since 28.0.0, config overrides are deprecated for removal. See {@link OverrideSource} for migration
+     * guidance and the usage feedback request. No removal release or timing has been decided.
      */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     public static final class Builder extends AbstractSourceBuilder<Builder, Path>
             implements PollableSource.Builder<Builder>,
                        WatchableSource.Builder<Builder, Path>,

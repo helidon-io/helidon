@@ -1363,7 +1363,11 @@ public interface Config {
          *
          * @param overridingSource a source with overriding key patterns and assigned values
          * @return an updated builder instance
+         * @deprecated Since 28.0.0, config overrides are deprecated for removal. See {@link OverrideSource} for migration
+         * guidance and the usage feedback request. Existing behavior is preserved; no removal release or timing has
+         * been decided.
          */
+        @Deprecated(since = "28.0.0", forRemoval = true)
         Builder overrides(Supplier<? extends OverrideSource> overridingSource);
 
         /**
@@ -1719,7 +1723,9 @@ public interface Config {
          * <tr>
          *     <td>override-source</td>
          *     <td>none</td>
-         *     <td>Configure an override source. Same as config source configuration (see below)</td>
+         *     <td>Configure an override source. Deprecated since 28.0.0; behavior is preserved and no removal release or
+         *         timing has been decided. See {@link OverrideSource} for migration guidance and the usage feedback request.
+         *         Same as config source configuration (see below).</td>
          *     <td>{@link #overrides(java.util.function.Supplier)}</td>
          * </tr>
          * <tr>

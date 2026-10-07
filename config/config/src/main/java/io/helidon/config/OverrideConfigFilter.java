@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,10 @@
 
 package io.helidon.config;
 
+import java.lang.System.Logger.Level;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -26,8 +28,17 @@ import io.helidon.config.spi.ConfigFilter;
 
 /**
  * A config filter that replaces values with a new ones of keys that matching with {@link Pattern}.
+ *
+ * @deprecated since 28.0.0, for removal. If you use config overrides, please report your usage in
+ *             <a href="https://github.com/helidon-io/helidon/issues/10415">issue 10415</a>.
+ *             Removal timing has not been decided. See {@link io.helidon.config.spi.OverrideSource}
+ *             for migration considerations.
  */
+@Deprecated(since = "28.0.0", forRemoval = true)
 public class OverrideConfigFilter implements ConfigFilter {
+
+    private static final System.Logger LOGGER = System.getLogger(OverrideConfigFilter.class.getName());
+    private static final AtomicBoolean DEPRECATION_LOGGED = new AtomicBoolean();
 
     private final Supplier<List<Map.Entry<Predicate<Config.Key>, String>>> overrideValuesSupplier;
 
@@ -46,6 +57,12 @@ public class OverrideConfigFilter implements ConfigFilter {
         if (overrideValues != null) {
             for (Map.Entry<Predicate<Config.Key>, String> entry : overrideValues) {
                 if (entry.getKey().test(key)) {
+                    if (!DEPRECATION_LOGGED.get() && DEPRECATION_LOGGED.compareAndSet(false, true)) {
+                        LOGGER.log(Level.WARNING,
+                                   "Helidon Config overrides are deprecated for removal. If you use this feature, "
+                                           + "please report your usage at https://github.com/helidon-io/helidon/issues/10415. "
+                                           + "Removal timing has not been decided.");
+                    }
                     return entry.getValue();
                 }
             }

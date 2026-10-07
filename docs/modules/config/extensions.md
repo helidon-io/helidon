@@ -23,7 +23,7 @@ Configuration SPI:
   corresponding internal config data structures.
 - `OverrideSource` - Provides key/value pairs which override config values
   loaded from any `ConfigSource`, given the key and *ignoring* the original
-  value.
+  value. Deprecated since 28.0.0 and marked for removal.
 - `ConfigFilter` - Transforms config `String` values returned from any
   value-type `Config` node, given the key *and* the original value.
 - `ConfigMapperProvider` - Provides one or more `ConfigMapper`s each of which
@@ -49,7 +49,7 @@ Service providers:
 - `ChangeWatcherProvider` - support for named change watchers, configurable
   through profiles
 - `OverrideSourceProvider` - support for named override sources, configurable
-  through profiles
+  through profiles. Deprecated since 28.0.0 and marked for removal.
 - `PollingStrategyProvider` - support for named polling strategies, configurable
   through profiles
 - `RetryPolicyProvider` - support for retry policies, configurable through
@@ -224,9 +224,16 @@ my.module.MyConfigParser
 
 ## OverrideSource SPI
 
-When the application retrieves a configuration value the config system first
-uses the relevant config sources and filters. It then applies any *overrides*
-the application has provided. Each override has:
+The overrides SPI, its factories and implementations, and
+`Config.Builder.overrides(...)` are deprecated since 28.0.0 and marked for
+removal. Existing implementations and the `override-source` meta-configuration
+entry continue to work. No removal version has been decided. See
+[Migrating from Overrides](advanced-configuration.md#migrating-from-overrides)
+for alternatives and their semantic differences.
+
+When the application retrieves a configuration value, the config system applies
+overrides to the value from its config sources **before** ordinary filters,
+including value-reference resolution. Each override has:
 
 - a `Predicate<Config.Key>` (a boolean-valued function that operates on the
   config key), and
@@ -238,10 +245,17 @@ To furnish overrides to the config system, implement the
 those implementations to the config builder’s [`overrides`][overrides] method.
 The config system will apply the overrides returned from each `OverrideSource`
 to each config key requested from a `Config` that is based on that
-`Config.Builder`.
+`Config.Builder`. It uses the first matching entry and cannot create nodes
+absent from the config sources.
 
 To support custom override sources in config profiles, also implement the
 [`OverrideSourceProvider`][overridesourcepr] service loader SPI
+
+For new extensions, prefer `ConfigSource` and `ConfigSourceProvider` for ordinary
+source precedence, or `ConfigFilter` for application-defined value
+transformations. Migrating an existing custom override source requires checking
+wildcard matching, existing-node restrictions, filter ordering, and change
+detection; these alternatives do not automatically preserve override semantics.
 
 ![spi OverrideSource](../../images/config/spi-OverrideSource.png)
 

@@ -29,7 +29,6 @@ import java.util.function.Supplier;
 import io.helidon.config.spi.ChangeEventType;
 import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.OverrideSource;
-import io.helidon.config.spi.OverrideSource.OverrideData;
 import io.helidon.config.spi.PollableSource;
 import io.helidon.config.spi.PollingStrategy;
 import io.helidon.config.spi.WatchableSource;
@@ -161,7 +160,7 @@ class OverrideSourceRuntime {
                 throw new ConfigException("Attempting to load a single override source multiple times. This is a bug");
             }
 
-            Optional<OverrideData> loadedData = source.retryPolicy()
+            Optional<OverrideSource.OverrideData> loadedData = source.retryPolicy()
                     .map(policy -> policy.execute(reloader))
                     .orElseGet(reloader);
 
@@ -170,7 +169,7 @@ class OverrideSourceRuntime {
             }
 
             // initial data do not trigger a change notification
-            lastData.set(loadedData.map(OverrideData::data).orElseGet(List::of));
+            lastData.set(loadedData.map(OverrideSource.OverrideData::data).orElseGet(List::of));
 
             dataLoaded = true;
         }
@@ -181,9 +180,9 @@ class OverrideSourceRuntime {
     }
 
     private static void setData(AtomicReference<List<Map.Entry<Predicate<Config.Key>, String>>> lastData,
-                                Optional<OverrideData> data,
+                                Optional<OverrideSource.OverrideData> data,
                                 AtomicReference<Runnable> changeListener) {
-        lastData.set(data.map(OverrideData::data).orElseGet(List::of));
+        lastData.set(data.map(OverrideSource.OverrideData::data).orElseGet(List::of));
 
         Runnable runnable = changeListener.get();
         if (null == runnable) {
@@ -235,7 +234,7 @@ class OverrideSourceRuntime {
     private static final class PollingStrategyListener implements PollingStrategy.Polled {
 
         private final AtomicReference<List<Map.Entry<Predicate<Config.Key>, String>>> lastData;
-        private final Supplier<Optional<OverrideData>> reloader;
+        private final Supplier<Optional<OverrideSource.OverrideData>> reloader;
         private final OverrideSource source;
         private final PollableSource<Object> pollable;
         private final AtomicReference<Object> lastStamp;
@@ -262,7 +261,7 @@ class OverrideSourceRuntime {
 
             synchronized (pollable) {
                 if ((null == lastStampValue) || pollable.isModified(lastStampValue)) {
-                    Optional<OverrideData> overrideData = reloader.get();
+                    Optional<OverrideSource.OverrideData> overrideData = reloader.get();
                     if (overrideData.isEmpty()) {
                         if (source.optional()) {
                             // this is a valid change
@@ -329,7 +328,7 @@ class OverrideSourceRuntime {
         @Override
         public void accept(ChangeWatcher.ChangeEvent<Object> change) {
             try {
-                Optional<OverrideData> overrideData = reloader.get();
+                Optional<OverrideSource.OverrideData> overrideData = reloader.get();
                 if (overrideData.isEmpty()) {
                     if (source.optional()) {
                         // this is a valid change
@@ -351,7 +350,7 @@ class OverrideSourceRuntime {
         }
     }
 
-    private static final class OverrideReloader implements Supplier<Optional<OverrideData>> {
+    private static final class OverrideReloader implements Supplier<Optional<OverrideSource.OverrideData>> {
         private final AtomicReference<Object> lastStamp;
         private final OverrideSource overrideSource;
 
@@ -362,7 +361,7 @@ class OverrideSourceRuntime {
         }
 
         @Override
-        public Optional<OverrideData> get() {
+        public Optional<OverrideSource.OverrideData> get() {
             synchronized (overrideSource) {
                 return overrideSource.load()
                         .map(content -> {

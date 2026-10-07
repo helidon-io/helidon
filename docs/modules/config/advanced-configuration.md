@@ -521,10 +521,10 @@ it before returning the value, according to *filters*, *overrides*, and
 use, and you can add your own as described in the sections which describe
 [filters][filters] and [overrides](extensions.md#overridesource-spi).
 
-Your application can add filters and overrides explicitly to a config builder
-and the config system by default uses the Java service loader mechanism to
-locate all available filters and overrides and add them automatically to all
-config builders (unless your code disables that behavior for a given builder).
+Your application can add filters and overrides explicitly to a config builder.
+The config system also discovers filters using Java service loader by default.
+Override source providers support sources selected explicitly in
+meta-configuration; discovering a provider does not enable overrides by itself.
 
 ### Filters
 
@@ -539,17 +539,29 @@ See the [`ConfigFilter`][configfilter] Javadoc for more information.
 
 ### Overrides
 
+The overrides feature is deprecated since Helidon 28.0.0, and its APIs and SPI
+are marked for removal. The feature remains available and retains its existing
+behavior. A removal version has not been decided. When an override first
+matches a configuration key, Helidon logs a deprecation warning once per
+runtime. Merely configuring overrides without applying a matching entry does
+not emit the warning; it contains no configuration keys or values.
+
+If you use overrides, share your use case and migration requirements in
+[issue #10415](https://github.com/helidon-io/helidon/issues/10415). Absence of
+usage feedback does not establish that the feature has no users.
+
 The overrides feature allows you to create an external document containing
 key/value pairs which replace the value otherwise returned for the name, and
 then add that document as an override source to a config builder.
 
 There are some key differences between overrides and filters.
 
-- Because overrides are loaded from sources those sources can change while your
-  application runs and so the overrides they that prescribe can change.
+- Override sources can support change detection so their replacement values
+  can change while your application runs.
 - The override document can use wildcards in key expressions.
-- Overrides can affect only keys that already exist in the original source;
-  filters can supply values even if the key is absent from the config source.
+
+Both overrides and ordinary filters transform values of existing nodes; neither
+creates missing nodes. Ordinary config sources can add nodes.
 
 Each override entry consists of a Java properties-format definition. The key is
 an expression (which can use wildcards) to match config keys read from the
@@ -560,9 +572,33 @@ in the overrides sources. Once the config system finds an override entry in
 which the key expression matches the configuration key, the system returns that
 entry’s value for the key being processed.
 
-See the
+See the [`OverrideSource` Javadoc](extensions.md#overridesource-spi) for more
+detail.
 
-`OverrideSource` Javadoc for more detail.
+#### Migrating from Overrides
+
+For replacement values with known, exact keys, use an ordinary config source
+with higher precedence, such as `ConfigSources.create(Map<String, String>)`
+placed before a file source in `Config.Builder.sources(...)`. Check the complete
+source order, including system properties and environment variables if enabled.
+Unlike overrides, a higher-priority source can add nodes; it does not interpret
+keys such as `*.host` as wildcard rules.
+
+For example, an override rule `*.host=deployment-host` replaces values only for
+existing matching nodes, with the first matching rule winning. To migrate using
+ordinary sources, identify the concrete keys, such as `database.host` and
+`service.host`, and supply those exact keys in the higher-priority source.
+Review how newly added or removed keys should behave instead of assuming the
+source reproduces the wildcard rule.
+
+For wildcard or predicate-based transformations, an application can implement
+the ordinary [`ConfigFilter` SPI][configfilter]. This requires application code;
+it is not a drop-in replacement for an override source. Overrides run before
+ordinary filters, including value-reference resolution. Verify filter
+registration and ordering, `${...}` references in replacement values, caching,
+and change notifications for your application. An ordinary filter does not
+automatically acquire an override source's polling or watching behavior. Keep
+using overrides until a migration preserves the behavior you require.
 
 ### Tokens
 

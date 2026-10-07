@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,7 +45,11 @@ public interface ConfigContent {
 
     /**
      * A content of an {@link io.helidon.config.spi.OverrideSource}.
+     *
+     * @deprecated Since 28.0.0, config overrides are deprecated for removal. See {@link OverrideSource} for migration
+     * guidance and the usage feedback request. No removal release or timing has been decided.
      */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     interface OverrideContent extends ConfigContent {
         /**
          * A fluent API builder for {@link io.helidon.config.spi.ConfigContent.OverrideContent}.
@@ -64,8 +68,12 @@ public interface ConfigContent {
         OverrideSource.OverrideData data();
 
         /**
-         * Fluent API builder for {@link io.helidon.config.spi.ConfigContent}.
+         * Fluent API builder for {@link io.helidon.config.spi.ConfigContent.OverrideContent}.
+         *
+         * @deprecated Since 28.0.0, config overrides are deprecated for removal. See {@link OverrideSource} for migration
+         * guidance and the usage feedback request. No removal release or timing has been decided.
          */
+        @Deprecated(since = "28.0.0", forRemoval = true)
         class Builder extends ConfigContent.Builder<Builder> implements io.helidon.common.Builder<Builder, OverrideContent> {
             // override data
             private OverrideSource.OverrideData data;

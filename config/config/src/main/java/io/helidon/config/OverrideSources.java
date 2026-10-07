@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,10 @@ import io.helidon.config.spi.OverrideSource;
  * Class provides access to built-in {@link io.helidon.config.spi.OverrideSource} implementations.
  *
  * @see io.helidon.config.spi.OverrideSource
+ * @deprecated Since 28.0.0, config overrides are deprecated for removal. See {@link OverrideSource} for migration
+ * guidance and the usage feedback request. No removal release or timing has been decided.
  */
+@Deprecated(since = "28.0.0", forRemoval = true)
 public final class OverrideSources {
 
     private OverrideSources() {
