@@ -68,6 +68,7 @@ server:
   # Careful with this! Can be dangerous if you turn these off.
   protocols:
     "http_1_1":
+      max-buffered-entity-size: 1 MiB # Decoded bytes materialized by entity readers; default 1 MiB
       validate-request-headers: true|false
       validate-response-headers: true|false
       validate-path: true|false
@@ -77,6 +78,40 @@ server:
         log-safe-headers: [content-type, content-length]
 ```
 <!--@mdc :: -->
+
+`max-buffered-entity-size` also applies to HTTP/2 protocol configuration and
+WebClient responses. It limits decoded input bytes for byte arrays, strings,
+forms, JSON trees/binding, and other materializing media readers, including
+application-defined readers by default. It is not an exact heap quota: the
+resulting objects may use more memory. Direct `InputStream` access and
+streaming multipart reads are unaffected; streaming media readers can declare
+that they do not materialize the entity. Materializing a multipart part, such
+as with `part.as(String.class)`, applies the limit independently to that part,
+including nested multipart parts. The combined size of separately read parts
+may exceed this limit. On the server, an explicit
+`ReadableEntity.buffer()` call also retains decoded bytes under this budget.
+The separate server-wide
+`max-payload-size` still applies to decoded streaming and materialized requests
+and defaults to unlimited (`-1`).
+
+Use `MultiPart` with try-with-resources when processing can stop before the
+last part. Closing the multipart entity closes its retained input stream
+without iterating the remaining parts itself. The stream's close behavior
+still applies: closing a nested multipart entity drains its enclosing part
+through the part boundary, which can read additional input, and leaves the
+outer multipart entity available for further iteration. Closing an individual
+part's stream likewise finishes only that part. Transport-specific request or
+response cleanup still applies.
+
+Compatibility note: the previous default of `max-buffered-entity-size` was
+`64 KB` and covered only explicit `ReadableEntity.buffer()` calls. The new
+`1 MiB` default (1,048,576 bytes) allows
+larger explicit buffers but rejects ordinary in-memory
+entity conversions above that limit. Buffered compressed requests now store
+decoded rather than encoded bytes and enforce both configured limits on the
+buffer-only path. If an existing application intentionally
+materializes larger bodies, set `max-buffered-entity-size` on each affected
+HTTP protocol (or client protocol) to an appropriate value.
 
 [webserver-config]: ../../se/webserver/webserver.md#configuration-options
 [webserver-socket]: ../../config/io.helidon.common.socket.SocketOptions.md

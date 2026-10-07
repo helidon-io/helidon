@@ -21,6 +21,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -238,7 +239,20 @@ class MediaContextImpl implements MediaContext {
         }
 
         @Override
+        public boolean streaming() {
+            return delegate.streaming();
+        }
+
+        @Override
         public Object read(GenericType type, InputStream stream, Headers headers) {
+            if (streaming()) {
+                try {
+                    return delegate.read(type, stream, headers);
+                } catch (RuntimeException | Error e) {
+                    closeOnFailure(stream, e);
+                    throw e;
+                }
+            }
             try (stream) {
                 return delegate.read(type, stream, headers);
             } catch (IOException e) {
@@ -251,10 +265,71 @@ class MediaContextImpl implements MediaContext {
                            InputStream stream,
                            Headers requestHeaders,
                            Headers responseHeaders) {
+            if (streaming()) {
+                try {
+                    return delegate.read(type, stream, requestHeaders, responseHeaders);
+                } catch (RuntimeException | Error e) {
+                    closeOnFailure(stream, e);
+                    throw e;
+                }
+            }
             try (stream) {
                 return delegate.read(type, stream, requestHeaders, responseHeaders);
             } catch (IOException e) {
                 throw new UncheckedIOException("Failed to read client response", e);
+            }
+        }
+
+        @Override
+        public Object read(GenericType type, InputStream stream, Headers headers, EntityReaderContext context) {
+            return read(type, stream, headers, headers, context, false);
+        }
+
+        @Override
+        public Object read(GenericType type,
+                           InputStream stream,
+                           Headers requestHeaders,
+                           Headers responseHeaders,
+                           EntityReaderContext context) {
+            return read(type, stream, requestHeaders, responseHeaders, context, true);
+        }
+
+        private static void closeOnFailure(InputStream stream, Throwable failure) {
+            try {
+                stream.close();
+            } catch (IOException | RuntimeException | Error e) {
+                failure.addSuppressed(e);
+            }
+        }
+
+        private Object read(GenericType type,
+                            InputStream stream,
+                            Headers requestHeaders,
+                            Headers responseHeaders,
+                            EntityReaderContext context,
+                            boolean clientResponse) {
+            Objects.requireNonNull(type);
+            Objects.requireNonNull(stream);
+            Objects.requireNonNull(requestHeaders);
+            Objects.requireNonNull(responseHeaders);
+            Objects.requireNonNull(context);
+            if (streaming()) {
+                try {
+                    return clientResponse ? delegate.read(type, stream, requestHeaders, responseHeaders, context)
+                            : delegate.read(type, stream, requestHeaders, context);
+                } catch (RuntimeException | Error e) {
+                    closeOnFailure(stream, e);
+                    throw e;
+                }
+            }
+            try (stream) {
+                return clientResponse ? delegate.read(type, stream, requestHeaders, responseHeaders, context)
+                        : delegate.read(type, stream, requestHeaders, context);
+            } catch (IOException e) {
+                throw new UncheckedIOException(clientResponse
+                                                       ? "Failed to read client response"
+                                                       : "Failed to read server request",
+                                               e);
             }
         }
     }

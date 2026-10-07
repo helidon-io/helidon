@@ -23,10 +23,13 @@ import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.media.EntityReader;
+import io.helidon.http.media.EntityReaderContext;
 import io.helidon.http.media.MediaContext;
 
 class ReadablePartNoLength extends ReadablePartAbstract {
     private final MediaContext context;
+    private final EntityReaderContext readerContext;
     private final DataReader dataReader;
     private final String boundary;
     private final String endBoundary;
@@ -38,9 +41,11 @@ class ReadablePartNoLength extends ReadablePartAbstract {
                          DataReader dataReader,
                          int index,
                          String boundary,
-                         String endBoundary) {
+                         String endBoundary,
+                         EntityReaderContext readerContext) {
         super(headers, index);
         this.context = context;
+        this.readerContext = readerContext;
         this.dataReader = dataReader;
         this.boundary = boundary;
         this.endBoundary = endBoundary;
@@ -57,8 +62,11 @@ class ReadablePartNoLength extends ReadablePartAbstract {
 
     @Override
     public <T> T as(GenericType<T> type) {
-        return context.reader(type, partHeaders())
-                .read(type, inputStream(), partHeaders());
+        EntityReader<T> reader = context.reader(type, partHeaders());
+        if (readerContext == null) {
+            return reader.read(type, inputStream(), partHeaders());
+        }
+        return readerContext.read(reader, type, inputStream(), partHeaders());
     }
 
     @Override

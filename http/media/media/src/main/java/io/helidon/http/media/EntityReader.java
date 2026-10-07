@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.http.media;
 
 import java.io.InputStream;
+import java.util.Objects;
 
 import io.helidon.common.GenericType;
 import io.helidon.http.Headers;
@@ -28,7 +29,25 @@ import io.helidon.http.Headers;
  */
 public interface EntityReader<T> {
     /**
-     * Read server request entity and close the stream.
+     * Whether this reader processes the entity incrementally without materializing it in memory.
+     * This includes copying the supplied stream to a file or another sink during the read call,
+     * as well as returning a lazy entity that consumes the stream after the read call returns.
+     * Streaming readers are not subject to {@code max-buffered-entity-size}; independently
+     * configured payload limits still apply. The default is {@code false}, including for custom readers.
+     *
+     * A reader that consumes the stream during the read call must close it before returning.
+     * A reader that returns a lazy entity must transfer responsibility for closing the stream
+     * to that entity and keep the stream usable until consumption is complete.
+     *
+     * @return {@code true} if the entity is processed without materializing it in memory
+     */
+    default boolean streaming() {
+        return false;
+    }
+
+    /**
+     * Read server request entity and close the stream when consumption is complete.
+     * A streaming reader may transfer stream ownership to a lazy entity as described by {@link #streaming()}.
      *
      * @param type    type of entity
      * @param stream  stream to read from
@@ -38,7 +57,8 @@ public interface EntityReader<T> {
     T read(GenericType<T> type, InputStream stream, Headers headers);
 
     /**
-     * Read client response entity and close the stream.
+     * Read client response entity and close the stream when consumption is complete.
+     * A streaming reader may transfer stream ownership to a lazy entity as described by {@link #streaming()}.
      *
      * @param type            type of entity
      * @param stream          stream to read from
@@ -50,4 +70,50 @@ public interface EntityReader<T> {
            InputStream stream,
            Headers requestHeaders,
            Headers responseHeaders);
+
+    /**
+     * Read a server request entity with its policy for nested entity conversions.
+     * Readers that return nested entities can retain {@code context} and use it for each nested conversion.
+     * The supplied stream already has the appropriate limits applied; the context is for nested streams.
+     * The default implementation delegates to {@link #read(GenericType, InputStream, Headers)}.
+     *
+     * @param type entity type
+     * @param stream stream to read
+     * @param headers request headers
+     * @param context reading policy inherited by nested entities
+     * @return converted entity
+     */
+    default T read(GenericType<T> type, InputStream stream, Headers headers, EntityReaderContext context) {
+        Objects.requireNonNull(type);
+        Objects.requireNonNull(stream);
+        Objects.requireNonNull(headers);
+        Objects.requireNonNull(context);
+        return read(type, stream, headers);
+    }
+
+    /**
+     * Read a client response entity with its policy for nested entity conversions.
+     * Readers that return nested entities can retain {@code context} and use it for each nested conversion.
+     * The supplied stream already has the appropriate limits applied; the context is for nested streams.
+     * The default implementation delegates to {@link #read(GenericType, InputStream, Headers, Headers)}.
+     *
+     * @param type entity type
+     * @param stream stream to read
+     * @param requestHeaders request headers
+     * @param responseHeaders response headers
+     * @param context reading policy inherited by nested entities
+     * @return converted entity
+     */
+    default T read(GenericType<T> type,
+                   InputStream stream,
+                   Headers requestHeaders,
+                   Headers responseHeaders,
+                   EntityReaderContext context) {
+        Objects.requireNonNull(type);
+        Objects.requireNonNull(stream);
+        Objects.requireNonNull(requestHeaders);
+        Objects.requireNonNull(responseHeaders);
+        Objects.requireNonNull(context);
+        return read(type, stream, requestHeaders, responseHeaders);
+    }
 }
