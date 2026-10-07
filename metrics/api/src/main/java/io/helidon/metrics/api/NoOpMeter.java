@@ -489,7 +489,7 @@ class NoOpMeter implements Meter, NoOpWrapper {
             return new Gauge<>(builder) {
                 @Override
                 public N value() {
-                    return supplier.get();
+                    return Objects.requireNonNull(supplier.get(), "Gauge supplier must return a non-null value");
                 }
             };
         }
@@ -549,7 +549,7 @@ class NoOpMeter implements Meter, NoOpWrapper {
                     return new Gauge<>(this) {
                         @Override
                         public N value() {
-                            return supplier.get();
+                            return Objects.requireNonNull(supplier.get(), "Gauge supplier must return a non-null value");
                         }
                     };
                 }

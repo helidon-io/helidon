@@ -274,7 +274,7 @@ public interface MetricsFactory {
      * Creates a builder for a {@link io.helidon.metrics.api.Gauge} based on a supplier of a subtype of {@link Number}.
      *
      * @param name     gauge name
-     * @param supplier supplier for an instance of the specified subtype of {@code Number}
+     * @param supplier supplier for a non-null instance of the specified subtype of {@code Number}
      * @param <N>      subtype of {@code Number} which the supplier providers
      * @return new builder
      */

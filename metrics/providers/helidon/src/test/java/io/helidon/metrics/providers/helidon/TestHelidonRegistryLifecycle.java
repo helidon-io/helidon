@@ -219,18 +219,20 @@ class TestHelidonRegistryLifecycle {
     }
 
     @Test
-    void gaugeSamplesCanBecomeAvailableAndUnavailable() {
+    void gaugeRejectsNullSamplesAndRecovers() {
         HelidonMetricsFactory factory = HelidonMetricsFactory.create();
         try {
             MeterRegistry registry = factory.createMeterRegistry(MetricsConfig.create());
             AtomicReference<Long> sample = new AtomicReference<>();
-            Gauge<Long> gauge = registry.getOrCreate(factory.gaugeBuilder("nullable.gauge", sample::get));
+            Gauge<Long> gauge = registry.getOrCreate(factory.gaugeBuilder("non.null.gauge", sample::get));
 
-            assertThat("Initially unavailable gauge sample", gauge.value(), nullValue());
+            assertThrows(NullPointerException.class, gauge::value);
             sample.set(17L);
             assertThat("Gauge samples the newly available value", gauge.value(), is(17L));
             sample.set(null);
-            assertThat("Gauge sample can become unavailable again", gauge.value(), nullValue());
+            assertThrows(NullPointerException.class, gauge::value);
+            sample.set(29L);
+            assertThat("Gauge samples recover after a rejected null value", gauge.value(), is(29L));
         } finally {
             factory.close();
         }

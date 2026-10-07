@@ -21,19 +21,23 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class NoOpMeterTest {
 
@@ -132,6 +136,32 @@ class NoOpMeterTest {
         assertThat("Supplier gauge remains live", supplierGauge.value(), is(43));
         assertThat("Function gauge remains live", functionGauge.value(), is(43D));
         assertThat("Each subsequent read samples once", calls.get(), is(4));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void supplierGaugesRejectNullSamples(boolean converted) {
+        var factory = new NoOpMetricsFactory();
+        var sample = new AtomicReference<Long>();
+        var calls = new AtomicInteger();
+        var builder = NoOpMeter.Gauge.builder("non-null-gauge", () -> {
+            calls.incrementAndGet();
+            return sample.get();
+        });
+        Gauge<?> gauge = converted ? (Gauge<?>) factory.noOpMeter(builder) : builder.build();
+
+        assertThat("Construction must not sample the gauge", calls.get(), is(0));
+        assertThrows(NullPointerException.class, gauge::value);
+        assertThat("A rejected sample invokes the supplier once", calls.get(), is(1));
+        Long first = 9_007_199_254_740_993L;
+        sample.set(first);
+        assertThat("Sampling preserves the supplied Long instance", gauge.value(), sameInstance(first));
+        sample.set(null);
+        assertThrows(NullPointerException.class, gauge::value);
+        Long recovered = 9_007_199_254_740_994L;
+        sample.set(recovered);
+        assertThat("The gauge recovers after an invalid sample", gauge.value(), sameInstance(recovered));
+        assertThat("Each read invokes the supplier once", calls.get(), is(4));
     }
 
     @Test
