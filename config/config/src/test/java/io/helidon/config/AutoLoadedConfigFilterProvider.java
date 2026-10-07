@@ -30,7 +30,7 @@ public class AutoLoadedConfigFilterProvider implements ConfigFilterProvider {
     @Override
     public ConfigFilterFactory create(Config initialConfig) {
         var generations = new AtomicInteger();
-        return config -> {
+        return _ -> {
             int generation = generations.incrementAndGet();
             return (key, value) -> {
                 if (VALUE_KEY.equals(key.toString())) {
@@ -48,7 +48,7 @@ public class AutoLoadedConfigFilterProvider implements ConfigFilterProvider {
     public static class HighPriority implements ConfigFilterProvider {
         @Override
         public ConfigFilterFactory create(Config initialConfig) {
-            return config -> (key, value) -> PRIORITY_KEY.equals(key.toString()) ? value + ":high" : value;
+            return _ -> (key, value) -> PRIORITY_KEY.equals(key.toString()) ? value + ":high" : value;
         }
     }
 
@@ -56,7 +56,7 @@ public class AutoLoadedConfigFilterProvider implements ConfigFilterProvider {
     public static class LowPriority implements ConfigFilterProvider {
         @Override
         public ConfigFilterFactory create(Config initialConfig) {
-            return config -> (key, value) -> PRIORITY_KEY.equals(key.toString()) ? value + ":low" : value;
+            return _ -> (key, value) -> PRIORITY_KEY.equals(key.toString()) ? value + ":low" : value;
         }
     }
 }

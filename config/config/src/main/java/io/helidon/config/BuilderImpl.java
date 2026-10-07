@@ -55,6 +55,8 @@ import io.helidon.service.registry.ServiceRegistry;
 class BuilderImpl implements Config.Builder {
     private static final System.Logger LOGGER = System.getLogger(Config.Builder.class.getName());
 
+    private final List<ConfigFilterProvider> runtimeFilterProviders = new ArrayList<>();
+
     /*
      * Config sources
      */
@@ -81,7 +83,6 @@ class BuilderImpl implements Config.Builder {
      * Config filters
      */
     private final List<Function<Config, ConfigFilter>> filterProviders;
-    private final List<ConfigFilterProvider> runtimeFilterProviders = new ArrayList<>();
     private boolean hasFixedFilters;
     private boolean filterServicesEnabled;
 

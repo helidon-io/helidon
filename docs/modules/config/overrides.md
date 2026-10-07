@@ -239,9 +239,10 @@ The legacy core overrides APIs and SPI are marked `forRemoval=true` since
 Helidon 28.0.0 in favor of this optional filter module. They remain available
 with their existing behavior during migration; no removal version has been
 decided. Using these APIs produces Java compiler removal warnings, which can
-affect builds that treat warnings as errors. Core also logs a deprecation warning
-once per runtime when a legacy rule first matches, without configuration keys
-or values in the warning.
+affect builds that treat warnings as errors. Core logs a deprecation warning
+when a legacy rule first matches. Config instances using the same loaded Config
+classes share this warning (typically once per JVM). The warning contains no
+configuration keys or values.
 
 The filter preserves wildcard replacement of existing values and supports
 updates from independently monitored definition sources. Migration still

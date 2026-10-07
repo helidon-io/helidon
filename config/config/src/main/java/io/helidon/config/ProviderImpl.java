@@ -407,7 +407,7 @@ class ProviderImpl implements Config.Context {
             while (!stopped && reloadPending.getAndSet(false)) {
                 try {
                     rebuild(configSource.latest(), false);
-                } catch (RuntimeException e) {
+                } catch (RuntimeException _) {
                     LOGGER.log(Level.WARNING, "Cannot reload configuration after a config filter change; "
                             + "the previous configuration remains available.");
                 }

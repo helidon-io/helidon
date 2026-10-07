@@ -67,7 +67,7 @@ class FilterProviderLoadingTest {
         Config config = builder(Map.of(AutoLoadedConfigFilterProvider.PRIORITY_KEY, "original"))
                 .addFilter((key, value) -> AutoLoadedConfigFilterProvider.PRIORITY_KEY.equals(key.toString())
                         ? value + ":legacy" : value)
-                .addFilterProvider(initial -> raw -> (key, value) ->
+                .addFilterProvider(_ -> _ -> (key, value) ->
                         AutoLoadedConfigFilterProvider.PRIORITY_KEY.equals(key.toString()) ? value + ":explicit" : value)
                 .build();
         try {
@@ -113,9 +113,9 @@ class FilterProviderLoadingTest {
     @Test
     void managedProviderUsesRegistryProvidersWithoutJavaDiscovery() {
         var factories = new AtomicInteger();
-        ConfigFilterProvider filterProvider = initial -> {
+        ConfigFilterProvider filterProvider = _ -> {
             factories.incrementAndGet();
-            return raw -> (key, value) -> AutoLoadedConfigFilterProvider.VALUE_KEY.equals(key.toString())
+            return _ -> (key, value) -> AutoLoadedConfigFilterProvider.VALUE_KEY.equals(key.toString())
                     ? value + ":registry" : value;
         };
         ConfigProvider provider = new ConfigProvider(Optional::empty,
@@ -138,7 +138,7 @@ class FilterProviderLoadingTest {
 
     @Test
     void serviceRegistryInjectsFilterProvidersIntoManagedConfig() {
-        ConfigFilterProvider provider = initial -> raw -> (key, value) ->
+        ConfigFilterProvider provider = _ -> _ -> (key, value) ->
                 AutoLoadedConfigFilterProvider.VALUE_KEY.equals(key.toString()) ? value + ":registry" : value;
         ConfigSource source = ConfigSources.create(Map.of(AutoLoadedConfigFilterProvider.VALUE_KEY, "original")).build();
         ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
