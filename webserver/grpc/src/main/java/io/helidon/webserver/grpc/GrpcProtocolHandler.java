@@ -1133,6 +1133,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         @Override
         public void close(Status status, Metadata trailers) {
             boolean closed = false;
+            boolean completionFinalized = false;
             responseLock.lock();
             try {
                 boolean cancelled = callContext != null && callContext.isCancelled();
@@ -1168,14 +1169,16 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     callCancelled = true;
                     callState.set(CallState.CANCELLED);
                 } finally {
+                    callState.compareAndSet(CallState.COMPLETING, CallState.COMPLETED);
+                    completionFinalized = true;
                     updateStreamState(closeState);
                 }
-                if (!callCancelled && status.isOk() && methodMetrics != null) {
+                if (callState.get() == CallState.COMPLETED && status.isOk() && methodMetrics != null) {
                     methodMetrics.sentMessageSize.record(bytesSent);
                     methodMetrics.callDuration.record(Duration.ofMillis(System.currentTimeMillis() - startMillis));
                 }
             } finally {
-                if (closed) {
+                if (closed && !completionFinalized) {
                     callState.compareAndSet(CallState.COMPLETING, CallState.COMPLETED);
                 }
                 responseLock.unlock();
