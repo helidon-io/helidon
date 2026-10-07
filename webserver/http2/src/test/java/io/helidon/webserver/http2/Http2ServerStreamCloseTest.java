@@ -79,7 +79,7 @@ class Http2ServerStreamCloseTest {
         var release = new CountDownLatch(1);
         var handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
         when(handler.streamState()).thenReturn(Http2StreamState.OPEN);
-        doAnswer(invocation -> {
+        doAnswer(_ -> {
             entered.countDown();
             awaitIgnoringInterrupts(release);
             return null;
@@ -88,7 +88,7 @@ class Http2ServerStreamCloseTest {
         stream.prologue(HttpPrologue.create("HTTP/2.0", "HTTP", "2.0", Method.POST, "/service/method", false));
         stream.headers(headers(), false);
         var failure = new AtomicReference<Throwable>();
-        var thread = Thread.ofVirtual().uncaughtExceptionHandler((t, e) -> failure.set(e)).start(stream);
+        var thread = Thread.ofVirtual().uncaughtExceptionHandler((_, e) -> failure.set(e)).start(stream);
         try {
             assertThat("handler initialization started", entered.await(5, TimeUnit.SECONDS), is(true));
             stream.abortConnection();
@@ -112,8 +112,7 @@ class Http2ServerStreamCloseTest {
         var entered = new CountDownLatch(1);
         var release = new CountDownLatch(1);
         var handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
-        Http2SubProtocolSelector selector = (context, prologue, headers, writer, streamId, serverSettings,
-                                             clientSettings, flowControl, streamState, router) -> {
+        Http2SubProtocolSelector selector = (_, _, _, _, _, _, _, _, _, _) -> {
             entered.countDown();
             awaitIgnoringInterrupts(release);
             return new SubProtocolResult(true, handler);
@@ -122,7 +121,7 @@ class Http2ServerStreamCloseTest {
         stream.prologue(HttpPrologue.create("HTTP/2.0", "HTTP", "2.0", Method.POST, "/service/method", false));
         stream.headers(headers(), false);
         var failure = new AtomicReference<Throwable>();
-        var thread = Thread.ofVirtual().uncaughtExceptionHandler((t, e) -> failure.set(e)).start(stream);
+        var thread = Thread.ofVirtual().uncaughtExceptionHandler((_, e) -> failure.set(e)).start(stream);
         try {
             assertThat("handler selection started", entered.await(5, TimeUnit.SECONDS), is(true));
             stream.abortConnection();
@@ -146,7 +145,7 @@ class Http2ServerStreamCloseTest {
         var entered = new CountDownLatch(1);
         var handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
         when(handler.streamState()).thenReturn(Http2StreamState.OPEN);
-        doAnswer(invocation -> {
+        doAnswer(_ -> {
             entered.countDown();
             return null;
         }).when(handler).init();
@@ -155,7 +154,7 @@ class Http2ServerStreamCloseTest {
         stream.prologue(HttpPrologue.create("HTTP/2.0", "HTTP", "2.0", Method.POST, "/service/method", false));
         stream.headers(headers(), false);
         var failure = new AtomicReference<Throwable>();
-        var thread = Thread.ofVirtual().uncaughtExceptionHandler((t, e) -> failure.set(e)).start(stream);
+        var thread = Thread.ofVirtual().uncaughtExceptionHandler((_, e) -> failure.set(e)).start(stream);
         try {
             assertThat("handler initialization started", entered.await(5, TimeUnit.SECONDS), is(true));
             stream.abortConnection();
@@ -177,16 +176,7 @@ class Http2ServerStreamCloseTest {
 
     private static Http2ServerStream stream(Http2SubProtocolSelector.SubProtocolHandler handler,
                                             Http2StreamWriter writer) {
-        Http2SubProtocolSelector selector = (connectionContext,
-                                             prologue,
-                                             headers,
-                                             streamWriter,
-                                             streamId,
-                                             serverSettings,
-                                             clientSettings,
-                                             streamFlowControl,
-                                             currentStreamState,
-                                             router) -> new SubProtocolResult(true, handler);
+        Http2SubProtocolSelector selector = (_, _, _, _, _, _, _, _, _, _) -> new SubProtocolResult(true, handler);
         return stream(selector, writer);
     }
 
@@ -199,7 +189,7 @@ class Http2ServerStreamCloseTest {
         when(ctx.router()).thenReturn(Router.empty());
         when(ctx.socketId()).thenReturn("socket");
         when(ctx.childSocketId()).thenReturn("child");
-        ConnectionFlowControl flowControl = ConnectionFlowControl.serverBuilder((streamId, update) -> { }).build();
+        ConnectionFlowControl flowControl = ConnectionFlowControl.serverBuilder((_, _) -> { }).build();
         return new Http2ServerStream(ctx,
                                      new Http2ConnectionStreams(),
                                      new Http2StreamAdmissionGate(),
@@ -232,7 +222,7 @@ class Http2ServerStreamCloseTest {
                 try {
                     assertThat("callback released", latch.await(10, TimeUnit.SECONDS), is(true));
                     return;
-                } catch (InterruptedException e) {
+                } catch (InterruptedException _) {
                     interrupted = true;
                 }
             }

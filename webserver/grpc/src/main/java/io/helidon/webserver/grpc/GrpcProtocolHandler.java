@@ -201,7 +201,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 long timeoutNanos;
                 try {
                     timeoutNanos = GrpcHeadersUtil.decodeTimeout(httpHeaders.get(GRPC_TIMEOUT).asString().get());
-                } catch (IllegalArgumentException e) {
+                } catch (IllegalArgumentException _) {
                     serverCall.close(Status.INVALID_ARGUMENT.withDescription("Invalid grpc-timeout header"), new Metadata());
                     return;
                 }
@@ -619,7 +619,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 try {
                     finished.await();
                     break;
-                } catch (InterruptedException e) {
+                } catch (InterruptedException _) {
                     interrupted = true;
                     outbound.cancel();
                 }

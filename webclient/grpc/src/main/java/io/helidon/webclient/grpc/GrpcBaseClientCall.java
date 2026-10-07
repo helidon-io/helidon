@@ -846,7 +846,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                 TimeUnit.NANOSECONDS.sleep(remaining);
             }
             close(Status.DEADLINE_EXCEEDED.withDescription("Call deadline exceeded"));
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
         }
     }

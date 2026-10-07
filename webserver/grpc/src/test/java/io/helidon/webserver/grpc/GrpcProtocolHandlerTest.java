@@ -154,7 +154,7 @@ class GrpcProtocolHandlerTest {
         var writer = new RecordingWriter();
         var callReference = new AtomicReference<ServerCall<String, String>>();
         Context previous = Context.current();
-        var handler = deadlineHandler("1H", (call, metadata) -> {
+        var handler = deadlineHandler("1H", (call, _) -> {
             callReference.set(call);
             contexts.add(Context.current());
             call.request(1);
@@ -281,7 +281,7 @@ class GrpcProtocolHandlerTest {
         var cancellations = new AtomicInteger();
         var completions = new AtomicInteger();
         var writer = new RecordingWriter();
-        var handler = deadlineHandler("1S", (call, metadata) -> {
+        var handler = deadlineHandler("1S", (call, _) -> {
             callReference.set(call);
             call.request(1);
             return new ServerCall.Listener<>() {
@@ -333,7 +333,7 @@ class GrpcProtocolHandlerTest {
     void testExpiredDeadlineDoesNotStartService() throws Exception {
         var calls = new AtomicInteger();
         var writer = new RecordingWriter();
-        var handler = deadlineHandler("0n", (call, metadata) -> {
+        var handler = deadlineHandler("0n", (_, _) -> {
             calls.incrementAndGet();
             return new ServerCall.Listener<>() { };
         }, writer);
@@ -352,7 +352,7 @@ class GrpcProtocolHandlerTest {
         var cancelled = new CompletableFuture<Context>();
         var ready = new AtomicInteger();
         var writer = new RecordingWriter();
-        var handler = deadlineHandler("1S", (call, metadata) -> {
+        var handler = deadlineHandler("1S", (_, _) -> {
             entered.countDown();
             await(release);
             return new ServerCall.Listener<>() {
@@ -387,7 +387,7 @@ class GrpcProtocolHandlerTest {
     void testMalformedDeadlineRejectsCall() throws Exception {
         var calls = new AtomicInteger();
         var writer = new RecordingWriter();
-        var handler = deadlineHandler("1s", (call, metadata) -> {
+        var handler = deadlineHandler("1s", (_, _) -> {
             calls.incrementAndGet();
             return new ServerCall.Listener<>() { };
         }, writer);
@@ -404,7 +404,7 @@ class GrpcProtocolHandlerTest {
         var cancellations = new AtomicInteger();
         var cancelled = new CompletableFuture<Context>();
         var writer = new RecordingWriter();
-        var handler = deadlineHandler(null, (call, metadata) -> {
+        var handler = deadlineHandler(null, (_, _) -> {
             contextReference.set(Context.current());
             return new ServerCall.Listener<>() {
                 @Override
@@ -429,7 +429,7 @@ class GrpcProtocolHandlerTest {
     void testTransportCloseBeforeInitializationDoesNotStartService() {
         var calls = new AtomicInteger();
         var writer = new RecordingWriter();
-        var handler = deadlineHandler("1H", (call, metadata) -> {
+        var handler = deadlineHandler("1H", (_, _) -> {
             calls.incrementAndGet();
             return new ServerCall.Listener<>() { };
         }, writer);
@@ -452,7 +452,7 @@ class GrpcProtocolHandlerTest {
         var cancellations = new AtomicInteger();
         var ready = new AtomicInteger();
         var writer = new RecordingWriter();
-        var handler = deadlineHandler("1H", (call, metadata) -> {
+        var handler = deadlineHandler("1H", (_, _) -> {
             Context.current().addListener(contextCancelled::complete, Runnable::run);
             entered.countDown();
             await(release);
@@ -493,7 +493,7 @@ class GrpcProtocolHandlerTest {
         var cancellations = new AtomicInteger();
         var completions = new AtomicInteger();
         var writer = new RecordingWriter();
-        var handler = deadlineHandler("1H", (call, metadata) -> {
+        var handler = deadlineHandler("1H", (call, _) -> {
             call.close(Status.OK, new Metadata());
             return new ServerCall.Listener<>() {
                 @Override
@@ -542,14 +542,14 @@ class GrpcProtocolHandlerTest {
                 writing.countDown();
                 try {
                     releaseWrite.await();
-                } catch (InterruptedException e) {
+                } catch (InterruptedException _) {
                     Thread.currentThread().interrupt();
                 } finally {
                     writerInterrupted.complete(Thread.currentThread().isInterrupted());
                 }
             }
         };
-        var handler = deadlineHandler("1H", (call, metadata) -> {
+        var handler = deadlineHandler("1H", (call, _) -> {
             Context.current().addListener(contextCancelled::complete, Runnable::run);
             call.request(1);
             return new ServerCall.Listener<>() {
@@ -591,7 +591,7 @@ class GrpcProtocolHandlerTest {
         var cancellations = new AtomicInteger();
         var completions = new AtomicInteger();
         var writer = new RecordingWriter();
-        var handler = deadlineHandler(null, (call, metadata) -> new ServerCall.Listener<>() {
+        var handler = deadlineHandler(null, (call, _) -> new ServerCall.Listener<>() {
             @Override
             public void onCancel() {
                 cancellations.incrementAndGet();
@@ -634,7 +634,7 @@ class GrpcProtocolHandlerTest {
                 writing.countDown();
                 try {
                     releaseWrite.await();
-                } catch (InterruptedException e) {
+                } catch (InterruptedException _) {
                     Thread.currentThread().interrupt();
                 } finally {
                     writerInterrupted.complete(Thread.currentThread().isInterrupted());
@@ -649,7 +649,7 @@ class GrpcProtocolHandlerTest {
                 return super.writeHeaders(headers, streamId, flags, flowControl);
             }
         };
-        var handler = deadlineHandler("1S", (call, metadata) -> {
+        var handler = deadlineHandler("1S", (call, _) -> {
             Context.current().addListener(contextCancelled::complete, Runnable::run);
             call.request(1);
             return new ServerCall.Listener<>() {
@@ -695,8 +695,8 @@ class GrpcProtocolHandlerTest {
         var release = new CountDownLatch(1);
         var entered = new CountDownLatch(1);
         var firstWriter = new RecordingWriter();
-        var first = deadlineHandler("1S", (call, metadata) -> {
-            Context.current().addListener(context -> {
+        var first = deadlineHandler("1S", (_, _) -> {
+            Context.current().addListener(_ -> {
                 entered.countDown();
                 await(release);
             }, Runnable::run);
@@ -706,7 +706,7 @@ class GrpcProtocolHandlerTest {
             first.init();
             assertThat(entered.await(5, TimeUnit.SECONDS), is(true));
             var secondWriter = new RecordingWriter();
-            var second = deadlineHandler("1S", (call, metadata) -> new ServerCall.Listener<>() { }, secondWriter);
+            var second = deadlineHandler("1S", (_, _) -> new ServerCall.Listener<>() { }, secondWriter);
             second.init();
 
             assertThat(secondWriter.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
@@ -1506,7 +1506,7 @@ class GrpcProtocolHandlerTest {
         var secondReceived = new CompletableFuture<Void>();
         List<String> callbacks = new CopyOnWriteArrayList<>();
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            var handler = deadlineHandler(withDeadline ? "1H" : null, (call, metadata) -> {
+            var handler = deadlineHandler(withDeadline ? "1H" : null, (call, _) -> {
                 callReference.set(call);
                 return new ServerCall.Listener<>() {
                     @Override
@@ -1659,7 +1659,7 @@ class GrpcProtocolHandlerTest {
         List<String> callbacks = new CopyOnWriteArrayList<>();
         var writer = new RecordingWriter();
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            var handler = deadlineHandler(withDeadline ? "1H" : null, (call, metadata) -> {
+            var handler = deadlineHandler(withDeadline ? "1H" : null, (call, _) -> {
                 callReference.set(call);
                 if (!callback.equals("requested message")) {
                     call.request(1);
@@ -1742,7 +1742,7 @@ class GrpcProtocolHandlerTest {
         var writer = new RecordingWriter();
         List<String> callbacks = new CopyOnWriteArrayList<>();
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            var handler = deadlineHandler(withDeadline ? "1H" : null, (call, metadata) -> {
+            var handler = deadlineHandler(withDeadline ? "1H" : null, (call, _) -> {
                 callReference.set(call);
                 return new ServerCall.Listener<>() {
                     @Override
@@ -1822,7 +1822,7 @@ class GrpcProtocolHandlerTest {
                 })
                 .build();
         var writer = new RecordingWriter();
-        var handler = deadlineHandler(withDeadline ? "1H" : null, (call, metadata) -> {
+        var handler = deadlineHandler(withDeadline ? "1H" : null, (call, _) -> {
             callReference.set(call);
             return new ServerCall.Listener<>() {
                 @Override
@@ -1917,7 +1917,7 @@ class GrpcProtocolHandlerTest {
         var waiting = new CountDownLatch(1);
         var writerInterrupted = new CompletableFuture<Boolean>();
         var callerInterrupted = new CompletableFuture<Boolean>();
-        var connection = ConnectionFlowControl.serverBuilder((streamId, update) -> { })
+        var connection = ConnectionFlowControl.serverBuilder((_, _) -> { })
                 .blockTimeout(Duration.ofMinutes(1))
                 .build();
         var flowControl = connection.createStreamFlowControl(1, 65535, 16384);
@@ -1939,7 +1939,7 @@ class GrpcProtocolHandlerTest {
                 }
             }
         };
-        var handler = deadlineHandler("1S", (call, metadata) -> {
+        var handler = deadlineHandler("1S", (call, _) -> {
             call.request(1);
             return new ServerCall.Listener<>() {
                 @Override

@@ -93,7 +93,7 @@ class GrpcClientDeadlineTest {
     @CsvSource({"CALL_DEADLINE, true", "CALL_DEADLINE, false", "GRPC_CONTEXT, true", "GRPC_CONTEXT, false",
                 "DIRECT, true", "DIRECT, false"})
     void preservesContextsWhenStartingTransport(StartupMode mode, boolean withHelidonContext) throws Exception {
-        WebServer server = server(HttpRouting.builder().post("/test.Deadline/Call", (req, res) -> {
+        WebServer server = server(HttpRouting.builder().post("/test.Deadline/Call", (_, res) -> {
             byte[] message = "response".getBytes(StandardCharsets.UTF_8);
             BufferData data = BufferData.create(5 + message.length);
             data.writeInt8(0);
@@ -213,7 +213,7 @@ class GrpcClientDeadlineTest {
                 names = {"UNARY", "CLIENT_STREAMING", "SERVER_STREAMING", "BIDI_STREAMING"})
     void deadlineExpiresBeforeAnyRequestMessage(MethodDescriptor.MethodType type) throws Exception {
         var release = new CountDownLatch(1);
-        WebServer server = server(HttpRouting.builder().post("/test.Deadline/Call", (req, res) -> {
+        WebServer server = server(HttpRouting.builder().post("/test.Deadline/Call", (_, res) -> {
             release.await(10, TimeUnit.SECONDS);
             res.send();
         }));
@@ -235,7 +235,7 @@ class GrpcClientDeadlineTest {
     @Test
     void unaryDeadlineInterruptsWaitingForResponse() {
         var release = new CountDownLatch(1);
-        WebServer server = server(HttpRouting.builder().post("/test.Deadline/Call", (req, res) -> {
+        WebServer server = server(HttpRouting.builder().post("/test.Deadline/Call", (_, res) -> {
             release.await(10, TimeUnit.SECONDS);
             res.send();
         }));
@@ -256,7 +256,7 @@ class GrpcClientDeadlineTest {
 
     @Test
     void preservesServerDeadlineStatusWithoutResponseMessage() {
-        WebServer server = server(HttpRouting.builder().post("/test.Deadline/Call", (req, res) -> {
+        WebServer server = server(HttpRouting.builder().post("/test.Deadline/Call", (_, res) -> {
             res.header(HeaderValues.create(HeaderNames.create("grpc-status"), "4"));
             res.send();
         }));
@@ -374,7 +374,7 @@ class GrpcClientDeadlineTest {
     @EnumSource(value = MethodDescriptor.MethodType.class, names = {"UNARY", "BIDI_STREAMING"})
     void explicitCancellationClosesOnlyOnce(MethodDescriptor.MethodType type) throws Exception {
         var release = new CountDownLatch(1);
-        WebServer server = server(HttpRouting.builder().post("/test.Deadline/Call", (req, res) -> {
+        WebServer server = server(HttpRouting.builder().post("/test.Deadline/Call", (_, res) -> {
             release.await(10, TimeUnit.SECONDS);
             res.send();
         }));
@@ -575,7 +575,7 @@ class GrpcClientDeadlineTest {
     @Test
     void contextDeadlineExpiresAfterCallCreation() throws Exception {
         var release = new CountDownLatch(1);
-        WebServer server = server(HttpRouting.builder().post("/test.Deadline/Call", (req, res) -> {
+        WebServer server = server(HttpRouting.builder().post("/test.Deadline/Call", (_, res) -> {
             release.await(10, TimeUnit.SECONDS);
             res.send();
         }));
