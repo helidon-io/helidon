@@ -1017,10 +1017,9 @@ record MyBlueProducer(@Blue Event.Emitter<String> emitter) {
 
 ### Qualified Event Observers
 
-To consume a qualified event, observer method must be annotated with the correct
-qualifier(s). If we want to consume the same messages which are produced by the
-producer in the example above, our observer needs to be annotated with the same
-qualifier. In this case it is `@Blue`.
+To consume a qualified event, the event type and qualifiers must match. To consume
+the messages produced by the producer in the example above, our observer method
+must accept `String` and be annotated with `@Blue`.
 
 Qualified event observer:
 
@@ -1030,7 +1029,7 @@ class MyBlueObserver {
 
     @Event.Observer
     @Blue
-    void event(MyEvent event) {
+    void event(String event) {
         //Do something with the event
     }
 }
