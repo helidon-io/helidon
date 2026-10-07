@@ -150,6 +150,32 @@ public class DeclarativeWebSocketTest {
         endpoint.reset();
     }
 
+    @Test
+    public void testFrameLimitNotifiesEndpointAndReleasesSession() throws Exception {
+        endpoint.reset();
+        TestListener listener = new TestListener();
+        WebSocket ws = client.newWebSocketBuilder()
+                .buildAsync(URI.create("ws://localhost:" + port + "/websocket/echo/test/1"), listener)
+                .get(5, TimeUnit.SECONDS);
+        try {
+            endpoint.openedSession().get(5, TimeUnit.SECONDS);
+            assertThat(endpoint.activeSessions(), is(1));
+            ws.sendText("x".repeat(129), true).get(5, TimeUnit.SECONDS);
+
+            TestListener.TextResults results = listener.textResults();
+            assertThat(results.statusCode(), is(WsCloseCodes.TOO_BIG));
+            assertThat(results.reason(), is("Payload too large"));
+            assertThat(results.received(), empty());
+            assertThat(endpoint.lastClose(), is(new EchoEndpoint.Close("Payload too large", WsCloseCodes.TOO_BIG)));
+            assertThat(endpoint.lastError(), nullValue());
+            assertThat(endpoint.closeCount(), is(1));
+            assertThat(endpoint.activeSessions(), is(0));
+        } finally {
+            ws.abort();
+            endpoint.reset();
+        }
+    }
+
     private static class TestListener implements java.net.http.WebSocket.Listener {
 
         final List<String> received = new LinkedList<>();

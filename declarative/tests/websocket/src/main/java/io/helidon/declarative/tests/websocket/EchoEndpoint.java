@@ -17,6 +17,10 @@
 package io.helidon.declarative.tests.websocket;
 
 import java.io.InputStream;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.buffers.BufferData;
@@ -32,12 +36,17 @@ import io.helidon.websocket.WsSession;
 @Http.Path("/websocket/echo/{user}/{shard}")
 @Service.Singleton
 class EchoEndpoint {
+    private final Set<WsSession> activeSessions = ConcurrentHashMap.newKeySet();
+    private final AtomicInteger closeCount = new AtomicInteger();
     private final AtomicReference<String> lastUser = new AtomicReference<>();
     private final AtomicReference<Close> lastClose = new AtomicReference<>();
     private final AtomicReference<Throwable> lastError = new AtomicReference<>();
     private final AtomicReference<HttpPrologue> lastHttpPrologue = new AtomicReference<>();
+    private volatile CompletableFuture<WsSession> openedSession = new CompletableFuture<>();
 
     void reset() {
+        closeCount.set(0);
+        openedSession = new CompletableFuture<>();
         lastUser.set(null);
         lastClose.set(null);
         lastError.set(null);
@@ -46,7 +55,9 @@ class EchoEndpoint {
 
     @WebSocket.OnOpen
     void onOpen(WsSession session, @Http.PathParam("user") String user) {
+        activeSessions.add(session);
         lastUser.set(user);
+        openedSession.complete(session);
     }
 
     @WebSocket.OnMessage
@@ -74,8 +85,22 @@ class EchoEndpoint {
     }
 
     @WebSocket.OnClose
-    void onClose(String reason, int closeCode) {
+    void onClose(WsSession session, String reason, int closeCode) {
+        activeSessions.remove(session);
+        closeCount.incrementAndGet();
         lastClose.set(new Close(reason, closeCode));
+    }
+
+    int activeSessions() {
+        return activeSessions.size();
+    }
+
+    CompletableFuture<WsSession> openedSession() {
+        return openedSession;
+    }
+
+    int closeCount() {
+        return closeCount.get();
     }
 
     @WebSocket.OnHttpUpgrade
