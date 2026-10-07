@@ -107,6 +107,63 @@ class EventObserverCodegenTest {
                            .findFirst().orElseThrow(), containsString("LaterListener eventObserver"));
     }
 
+    @Test
+    void testGenericObserverMethods(@TempDir Path directory) throws IOException {
+        var result = compiler(directory.resolve("compile-1"), listener("Listener", List.of(
+                "@Event.Observer <T> void observe(T event) {}",
+                "void observe(Integer event) {}",
+                "@Event.AsyncObserver <T> void observeAsync(T event) {}")))
+                .build()
+                .compile();
+
+        Map<String, String> generated = registrations(result);
+        assertThat(generated.values(), hasSize(2));
+        assertThat(generated.values().stream()
+                           .flatMap(source -> source.lines())
+                           .filter(line -> line.contains("manager.") && line.contains("register"))
+                           .map(String::strip)
+                           .toList(),
+                   containsInAnyOrder("manager.register(EVENT_OBJECT, eventObserver::observe, QUALIFIERS);",
+                                      "manager.registerAsync(EVENT_OBJECT, eventObserver::observeAsync, QUALIFIERS);"));
+    }
+
+    @Test
+    void testOverloadWithUnannotatedMethod(@TempDir Path directory) throws IOException {
+        var result = compiler(directory.resolve("compile-1"), listener("Listener", List.of(
+                "@Event.Observer void observe(String event) {}",
+                "void observe(Integer event) {}")))
+                .build()
+                .compile();
+
+        assertThat(registrations(result).values(), hasSize(1));
+    }
+
+    @Test
+    void testOverloadWithInheritedMethod(@TempDir Path directory) throws IOException {
+        var result = compiler(directory.resolve("compile-1"), """
+                package com.example;
+
+                import io.helidon.service.registry.Event;
+                import io.helidon.service.registry.Service;
+
+                @Service.Singleton
+                class Listener extends Parent {
+                    @Event.Observer void observe(String event) {}
+                }
+                """)
+                .addSource("Parent.java", """
+                        package com.example;
+
+                        class Parent {
+                            void observe(Integer event) {}
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(registrations(result).values(), hasSize(1));
+    }
+
     private static TestCompiler.Builder compiler(Path directory, String source) {
         return TestCompiler.builder()
                 .currentRelease()

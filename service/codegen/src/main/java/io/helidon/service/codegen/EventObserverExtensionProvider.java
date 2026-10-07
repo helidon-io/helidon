@@ -16,11 +16,14 @@
 
 package io.helidon.service.codegen;
 
+import java.util.ArrayDeque;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Set;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenUtil;
+import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
@@ -89,6 +92,37 @@ public class EventObserverExtensionProvider implements RegistryCodegenExtensionP
                     .packageName(serviceType.packageName())
                     .className(serviceType.classNameWithEnclosingNames().replace('.', '_') + "__Observer" + suffix + "_" + index)
                     .build();
+        }
+
+        private static boolean overloaded(TypeInfo owningType, TypedElementInfo element) {
+            var remaining = new ArrayDeque<TypeInfo>();
+            Set<TypeName> visited = new HashSet<>();
+            remaining.add(owningType);
+            while (!remaining.isEmpty()) {
+                TypeInfo type = remaining.removeFirst();
+                if (!visited.add(type.typeName().genericTypeName())) {
+                    continue;
+                }
+                boolean inherited = !type.typeName().equals(owningType.typeName());
+                boolean samePackage = type.typeName().packageName().equals(owningType.typeName().packageName());
+                boolean hasOverload = type.elementInfo().stream()
+                        .filter(it -> it.kind() == ElementKind.METHOD)
+                        .filter(it -> it.elementName().equals(element.elementName()))
+                        .filter(it -> !it.signature().equals(element.signature()))
+                        .filter(it -> it.accessModifier() != AccessModifier.PRIVATE)
+                        .filter(it -> samePackage || it.accessModifier() == AccessModifier.PUBLIC)
+                        .filter(it -> !inherited
+                                || type.kind() != ElementKind.INTERFACE
+                                || !ElementInfoPredicates.isStatic(it))
+                        .findAny()
+                        .isPresent();
+                if (hasOverload) {
+                    return true;
+                }
+                type.superTypeInfo().ifPresent(remaining::addLast);
+                remaining.addAll(type.interfaceTypeInfo());
+            }
+            return false;
         }
 
         private void process(RegistryRoundContext roundContext, Collection<TypedElementInfo> elements, String suffix) {
@@ -176,22 +210,27 @@ public class EventObserverExtensionProvider implements RegistryCodegenExtensionP
                     .addContentLine("this.eventObserver = eventObserver;"));
 
             // and the register method to register it
-            classModel.addMethod(register -> register
-                    .addAnnotation(Annotations.OVERRIDE)
-                    .accessModifier(AccessModifier.PUBLIC)
-                    .returnType(TypeNames.PRIMITIVE_VOID)
-                    .name("register")
-                    .addParameter(eventManager -> eventManager
-                            .type(EVENT_MANAGER)
-                            .name("manager"))
-                    .addContent("manager.<")
-                    .addContent(eventObject.boxed())
-                    .addContent(">register")
-                    .addContent(suffix)
-                    .addContent("(EVENT_OBJECT, eventObserver::")
-                    .addContent(element.elementName())
-                    .addContentLine(", QUALIFIERS);")
-            );
+            classModel.addMethod(register -> {
+                register.addAnnotation(Annotations.OVERRIDE)
+                        .accessModifier(AccessModifier.PUBLIC)
+                        .returnType(TypeNames.PRIMITIVE_VOID)
+                        .name("register")
+                        .addParameter(eventManager -> eventManager
+                                .type(EVENT_MANAGER)
+                                .name("manager"))
+                        .addContent("manager.");
+                // Method-local type variables are not declared in the registration class; retain their inferred call.
+                if (element.typeParameters().isEmpty() && overloaded(owningType, element)) {
+                    register.addContent("<")
+                            .addContent(eventObject.boxed())
+                            .addContent(">");
+                }
+                register.addContent("register")
+                        .addContent(suffix)
+                        .addContent("(EVENT_OBJECT, eventObserver::")
+                        .addContent(element.elementName())
+                        .addContentLine(", QUALIFIERS);");
+            });
 
             roundContext.addGeneratedType(generatedType, classModel, serviceTypeName, owningType);
         }
