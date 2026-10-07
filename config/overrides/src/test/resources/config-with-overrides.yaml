@@ -16,6 +16,6 @@
 
 # Overrides used for the main config file
 overrides.expressions:
-  "prod.abcdef.logging.level": "FINEST"
-  "prod.*.logging.level": "WARNING"
-  "test.*.logging.level": "FINE"
+  "environments.prod.orders.batch-size": "150"
+  "environments.prod.*.batch-size": "200"
+  "environments.test.*.batch-size": "25"

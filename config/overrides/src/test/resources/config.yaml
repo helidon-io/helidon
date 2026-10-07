@@ -14,18 +14,15 @@
 # limitations under the License.
 #
 
-prod:
-  abcdef:
-    logging:
-      level: ERROR
-
-    app:
-      greeting:  Ahoy
-      page-size: 42
-  efgh:
-    logging:
-      level: ERROR
-test:
-  abcdef:
-    logging:
-      level: ERROR
+environments:
+  prod:
+    orders:
+      batch-size: 100
+      app:
+        welcome-message: Welcome
+        page-size: 42
+    payments:
+      batch-size: 75
+  test:
+    orders:
+      batch-size: 50

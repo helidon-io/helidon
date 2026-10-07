@@ -25,6 +25,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -49,12 +50,63 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OverrideReloadTest {
+    @Test
+    void completedDefinitionPollPublishesRulesBeforeReturning() throws Exception {
+        var source = new MutableSource(Map.of("services.*.endpoint", "https://initial.example/api"));
+        var provider = OverrideConfigFilter.builder().addConfigSource(source).buildProvider();
+        ConfigFilterFactory factory = provider.create(Config.empty());
+        ConfigFilter original = factory.create(Config.empty());
+        var callbackEntered = new CountDownLatch(1);
+        var releaseCallback = new CountDownLatch(1);
+        var notifications = new AtomicInteger();
+        try {
+            assertThat(factory.startChangeSupport(() -> {
+                if (notifications.incrementAndGet() == 1) {
+                    // Starting change support reconciles the initial snapshot before the source changes.
+                    return;
+                }
+                callbackEntered.countDown();
+                try {
+                    assertThat("The definition callback must be released",
+                               releaseCallback.await(10, TimeUnit.SECONDS), is(true));
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Interrupted while publishing definition changes", e);
+                }
+            }), is(true));
+            assertThat("Startup reconciliation publishes the initial snapshot", notifications.get(), is(1));
+
+            source.values(Map.of("services.*.endpoint", "https://updated.example/api"));
+            try (var executor = Executors.newSingleThreadExecutor()) {
+                Future<?> polling = executor.submit(source::poll);
+                try {
+                    assertThat("The definition change callback must begin",
+                               callbackEntered.await(10, TimeUnit.SECONDS), is(true));
+                    assertThrows(TimeoutException.class, () -> polling.get(100, TimeUnit.MILLISECONDS));
+                } finally {
+                    releaseCallback.countDown();
+                    polling.get(10, TimeUnit.SECONDS);
+                }
+            }
+
+            var key = Config.Key.create("services.orders.endpoint");
+            ConfigFilter updated = factory.create(Config.empty());
+            assertThat(updated.apply(key, "https://primary.example/orders"), is("https://updated.example/api"));
+            assertThat(original.apply(key, "https://primary.example/orders"), is("https://initial.example/api"));
+            assertThat("A completed poll publishes one definition change", notifications.get(), is(2));
+        } finally {
+            releaseCallback.countDown();
+            factory.stopChangeSupport();
+        }
+    }
+
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void definitionChangesReloadTargetAndPreserveOldSnapshots(boolean caching) throws Exception {
-        var source = new MutableSource(Map.of("service.*.level", "first"));
+        var source = new MutableSource(Map.of("services.*.endpoint", "https://initial.example/api"));
         Config.Builder builder = targetBuilder(source);
         if (!caching) {
             builder.disableCaching();
@@ -63,14 +115,14 @@ class OverrideReloadTest {
         var changes = new LinkedBlockingQueue<Config>();
         target.onChange(changes::add);
         try {
-            assertThat(target.get("service.alpha.level").asString().get(), is("first"));
-            source.values(Map.of("service.*.level", "second"));
+            assertThat(target.get("services.orders.endpoint").asString().get(), is("https://initial.example/api"));
+            source.values(Map.of("services.*.endpoint", "https://updated.example/api"));
             source.poll();
-            Config updated = awaitValue(changes, "second");
-            assertThat(updated.get("service.beta.level").asString().get(), is("second"));
-            assertThat(target.get("service.alpha.level").asString().get(), is("first"));
+            Config updated = awaitValue(changes, "https://updated.example/api");
+            assertThat(updated.get("services.payments.endpoint").asString().get(), is("https://updated.example/api"));
+            assertThat(target.get("services.orders.endpoint").asString().get(), is("https://initial.example/api"));
             assertThat("Unread old nodes retain their generation's rules",
-                       target.get("service.beta.level").asString().get(), is("first"));
+                       target.get("services.payments.endpoint").asString().get(), is("https://initial.example/api"));
             assertThat("Rebuilding does not initialize definition monitoring again", source.starts.get(), is(1));
         } finally {
             target.context().stopChangeSupport();
@@ -79,7 +131,7 @@ class OverrideReloadTest {
 
     @Test
     void startupReconcilesChangesBeforeCallbackRegistration() throws Exception {
-        var source = new MutableSource(Map.of("service.*.level", "first"));
+        var source = new MutableSource(Map.of("services.*.endpoint", "https://initial.example/api"));
         var reconciled = new CountDownLatch(1);
         var provider = OverrideConfigFilter.builder().addConfigSource(source).buildProvider();
         Config target = baseBuilder().disableCaching().addSource(ConfigSources.create(targetValues()))
@@ -89,7 +141,8 @@ class OverrideReloadTest {
                         @Override
                         public ConfigFilter create(Config raw) {
                             ConfigFilter filter = factory.create(raw);
-                            if (filter.apply(Config.Key.create("service.alpha.level"), "original").equals("second")) {
+                            if (filter.apply(Config.Key.create("services.orders.endpoint"), "https://primary.example/api")
+                                    .equals("https://updated.example/api")) {
                                 reconciled.countDown();
                             }
                             return filter;
@@ -97,7 +150,7 @@ class OverrideReloadTest {
 
                         @Override
                         public boolean startChangeSupport(Runnable callback) {
-                            source.values(Map.of("service.*.level", "second"));
+                            source.values(Map.of("services.*.endpoint", "https://updated.example/api"));
                             source.poll();
                             return factory.startChangeSupport(callback);
                         }
@@ -109,9 +162,11 @@ class OverrideReloadTest {
                     };
                 }).build();
         try {
-            assertThat("Startup reconciliation rebuilds automatically", reconciled.await(10, TimeUnit.SECONDS), is(true));
-            assertThat(target.context().reload().get("service.alpha.level").asString().get(), is("second"));
-            assertThat(target.get("service.beta.level").asString().get(), is("first"));
+            assertThat("Startup reconciliation rebuilds automatically", reconciled.await(10, TimeUnit.SECONDS),
+                       is(true));
+            assertThat(target.context().reload().get("services.orders.endpoint").asString().get(),
+                       is("https://updated.example/api"));
+            assertThat(target.get("services.payments.endpoint").asString().get(), is("https://initial.example/api"));
         } finally {
             target.context().stopChangeSupport();
         }
@@ -121,7 +176,7 @@ class OverrideReloadTest {
     void sharedProviderCreatesIndependentDefinitionSourcesForEachRuntime() throws Exception {
         var created = new ArrayList<MutableSource>();
         var provider = OverrideConfigFilter.builder().addConfigSource(() -> {
-            var source = new MutableSource(Map.of("service.*.level", "first"));
+            var source = new MutableSource(Map.of("services.*.endpoint", "https://initial.example/api"));
             created.add(source);
             return source;
         }).buildProvider();
@@ -135,17 +190,19 @@ class OverrideReloadTest {
         second.onChange(secondChanges::add);
         try {
             assertThat(created.size(), is(2));
-            created.getFirst().values(Map.of("service.*.level", "updated-first"));
+            created.getFirst().values(Map.of("services.*.endpoint", "https://canary.example/api"));
             created.getFirst().poll();
-            awaitValue(changes, "updated-first");
-            assertThat(second.context().last().get("service.alpha.level").asString().get(), is("first"));
+            awaitValue(changes, "https://canary.example/api");
+            assertThat(second.context().last().get("services.orders.endpoint").asString().get(),
+                       is("https://initial.example/api"));
             first.context().stopChangeSupport();
             assertThat(created.getFirst().stops.get(), is(1));
             assertThat("Stopping one runtime leaves the other monitor alive", created.getLast().stops.get(), is(0));
-            created.getLast().values(Map.of("service.*.level", "updated-second"));
+            created.getLast().values(Map.of("services.*.endpoint", "https://stable.example/api"));
             created.getLast().poll();
-            awaitValue(secondChanges, "updated-second");
-            assertThat(second.context().reload().get("service.alpha.level").asString().get(), is("updated-second"));
+            awaitValue(secondChanges, "https://stable.example/api");
+            assertThat(second.context().reload().get("services.orders.endpoint").asString().get(),
+                       is("https://stable.example/api"));
         } finally {
             first.context().stopChangeSupport();
             second.context().stopChangeSupport();
@@ -154,7 +211,7 @@ class OverrideReloadTest {
 
     @Test
     void concurrentRuleUpdatesConvergeToLatestSnapshot() throws Exception {
-        var source = new MutableSource(Map.of("service.*.level", "first"));
+        var source = new MutableSource(Map.of("services.*.endpoint", "https://initial.example/api"));
         Config target = targetBuilder(source).build();
         var changes = new LinkedBlockingQueue<Config>();
         target.onChange(changes::add);
@@ -162,12 +219,12 @@ class OverrideReloadTest {
             var start = new CountDownLatch(1);
             var tasks = new ArrayList<Future<?>>();
             for (int i = 0; i < 12; i++) {
-                String value = "intermediate-" + i;
+                String value = "https://rollout-" + i + ".example/api";
                 tasks.add(executor.submit(() -> {
                     if (!start.await(10, TimeUnit.SECONDS)) {
                         throw new IllegalStateException("Concurrent updates did not start");
                     }
-                    source.values(Map.of("service.*.level", value));
+                    source.values(Map.of("services.*.endpoint", value));
                     source.poll();
                     return null;
                 }));
@@ -176,10 +233,12 @@ class OverrideReloadTest {
             for (var task : tasks) {
                 task.get(10, TimeUnit.SECONDS);
             }
-            source.values(Map.of("service.*.level", "last"));
+            source.values(Map.of("services.*.endpoint", "https://completed.example/api"));
             source.poll();
-            assertThat(awaitValue(changes, "last").get("service.beta.level").asString().get(), is("last"));
-            assertThat(target.get("service.beta.level").asString().get(), is("first"));
+            assertThat(awaitValue(changes, "https://completed.example/api")
+                               .get("services.payments.endpoint").asString().get(),
+                       is("https://completed.example/api"));
+            assertThat(target.get("services.payments.endpoint").asString().get(), is("https://initial.example/api"));
             assertThat(source.starts.get(), is(1));
         } finally {
             target.context().stopChangeSupport();
@@ -188,19 +247,19 @@ class OverrideReloadTest {
 
     @Test
     void stopKeepsManualReloadUsableWithLastKnownRulesWithoutRestartingMonitors() throws Exception {
-        var source = new MutableSource(Map.of("service.*.level", "first"));
+        var source = new MutableSource(Map.of("services.*.endpoint", "https://initial.example/api"));
         Config target = targetBuilder(source).build();
         var changes = new LinkedBlockingQueue<Config>();
         target.onChange(changes::add);
         try {
-            source.values(Map.of("service.*.level", "known-before-stop"));
+            source.values(Map.of("services.*.endpoint", "https://active.example/api"));
             source.poll();
-            awaitValue(changes, "known-before-stop");
+            awaitValue(changes, "https://active.example/api");
             target.context().stopChangeSupport();
-            source.values(Map.of("service.*.level", "unobserved-after-stop"));
+            source.values(Map.of("services.*.endpoint", "https://pending.example/api"));
             Config updated = target.context().reload();
-            assertThat(updated.get("service.alpha.level").asString().get(), is("known-before-stop"));
-            assertThat(target.get("service.beta.level").asString().get(), is("first"));
+            assertThat(updated.get("services.orders.endpoint").asString().get(), is("https://active.example/api"));
+            assertThat(target.get("services.payments.endpoint").asString().get(), is("https://initial.example/api"));
             assertThat(source.starts.get(), is(1));
             assertThat(source.stops.get(), is(1));
         } finally {
@@ -210,20 +269,25 @@ class OverrideReloadTest {
 
     @Test
     void initialInlineSettingsRemainFixedAcrossTargetReloads() throws Exception {
-        var targetSource = new MutableSource(Map.of("service.alpha.level", "original",
-                                                   "overrides.expressions.service.alpha.level", "first"));
-        Config target = baseBuilder().addSource(targetSource).addFilterProvider(new OverrideConfigFilterProvider()).build();
+        var targetSource = new MutableSource(Map.of("services.orders.endpoint", "https://primary.example/api",
+                                                   "overrides.expressions.services.orders.endpoint",
+                                                   "https://initial.example/api"));
+        Config target = baseBuilder().addSource(targetSource)
+                .addFilterProvider(new OverrideConfigFilterProvider()).build();
         var changes = new LinkedBlockingQueue<Config>();
         target.onChange(changes::add);
         try {
-            targetSource.values(Map.of("service.alpha.level", "changed-original",
-                                       "overrides.expressions.service.alpha.level", "second"));
+            targetSource.values(Map.of("services.orders.endpoint", "https://alternate.example/orders",
+                                       "overrides.expressions.services.orders.endpoint",
+                                       "https://updated.example/api"));
             targetSource.poll();
             Config changed = changes.poll(10, TimeUnit.SECONDS);
             assertThat("Target-source changes must be observed", changed, notNullValue());
-            assertThat(changed.get("overrides.expressions.service.alpha.level").asString().get(), is("second"));
-            assertThat(target.context().reload().get("service.alpha.level").asString().get(), is("first"));
-            assertThat(target.get("service.alpha.level").asString().get(), is("first"));
+            assertThat(changed.get("overrides.expressions.services.orders.endpoint").asString().get(),
+                       is("https://updated.example/api"));
+            assertThat(target.context().reload().get("services.orders.endpoint").asString().get(),
+                       is("https://initial.example/api"));
+            assertThat(target.get("services.orders.endpoint").asString().get(), is("https://initial.example/api"));
         } finally {
             target.context().stopChangeSupport();
         }
@@ -231,16 +295,16 @@ class OverrideReloadTest {
 
     @Test
     void missingAndUnchangedRulesDoNotCreateNodesOrChangeEvents() {
-        var source = new MutableSource(Map.of("missing.*.level", "first"));
+        var source = new MutableSource(Map.of("disabled-services.*.endpoint", "https://initial.example/api"));
         Config target = targetBuilder(source).build();
         var notifications = new AtomicInteger();
         target.onChange(_ -> notifications.incrementAndGet());
         try {
-            source.values(Map.of("missing.*.level", "second"));
+            source.values(Map.of("disabled-services.*.endpoint", "https://updated.example/api"));
             source.poll();
             Config rebuilt = target.context().reload();
-            assertThat(rebuilt.get("missing.gamma.level").exists(), is(false));
-            assertThat(rebuilt.get("service.alpha.level").asString().get(), is("original-alpha"));
+            assertThat(rebuilt.get("disabled-services.shipping.endpoint").exists(), is(false));
+            assertThat(rebuilt.get("services.orders.endpoint").asString().get(), is("https://primary.example/orders"));
             assertThat(notifications.get(), is(0));
             source.poll();
             target.context().reload();
@@ -252,7 +316,7 @@ class OverrideReloadTest {
 
     @Test
     void invalidRulesPreserveLastTargetAndValidRulesRecover() throws Exception {
-        var source = new MutableSource(Map.of("service.*.level", "first"));
+        var source = new MutableSource(Map.of("services.*.endpoint", "https://initial.example/api"));
         Config target = targetBuilder(source).build();
         var changes = new LinkedBlockingQueue<Config>();
         target.onChange(changes::add);
@@ -278,19 +342,23 @@ class OverrideReloadTest {
         logger.addHandler(handler);
         logger.setLevel(Level.ALL);
         try {
-            source.values(Map.of("[", "private-replacement-value"));
+            source.values(Map.of("services.[.endpoint", "https://private.example/api"));
             source.poll();
             LogRecord warning = warnings.poll(10, TimeUnit.SECONDS);
             assertThat("Invalid rules must produce an observable failure", warning, notNullValue());
             assertThat(warning.getLevel(), is(Level.WARNING));
             assertThat(warning.getMessage(),
-                       is("Cannot reload configuration after a config filter change; the previous configuration remains available."));
+                       is("Cannot reload configuration after a config filter change; "
+                                  + "the previous configuration remains available."));
             assertThat("Failure diagnostics must not expose exception details", warning.getThrown(), nullValue());
-            assertThat(target.context().last().get("service.alpha.level").asString().get(), is("first"));
-            source.values(Map.of("service.*.level", "recovered"));
+            assertThat(target.context().last().get("services.orders.endpoint").asString().get(),
+                       is("https://initial.example/api"));
+            source.values(Map.of("services.*.endpoint", "https://recovered.example/api"));
             source.poll();
-            assertThat(awaitValue(changes, "recovered").get("service.beta.level").asString().get(), is("recovered"));
-            assertThat(target.get("service.beta.level").asString().get(), is("first"));
+            assertThat(awaitValue(changes, "https://recovered.example/api")
+                               .get("services.payments.endpoint").asString().get(),
+                       is("https://recovered.example/api"));
+            assertThat(target.get("services.payments.endpoint").asString().get(), is("https://initial.example/api"));
         } finally {
             logger.removeHandler(handler);
             logger.setLevel(previousLevel);
@@ -303,7 +371,7 @@ class OverrideReloadTest {
         while (true) {
             Config changed = changes.poll(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
             assertThat("Expected target change to " + value, changed, notNullValue());
-            if (changed.get("service.alpha.level").asString().get().equals(value)) {
+            if (changed.get("services.orders.endpoint").asString().get().equals(value)) {
                 return changed;
             }
         }
@@ -320,7 +388,8 @@ class OverrideReloadTest {
     }
 
     private static Map<String, String> targetValues() {
-        return Map.of("service.alpha.level", "original-alpha", "service.beta.level", "original-beta");
+        return Map.of("services.orders.endpoint", "https://primary.example/orders",
+                      "services.payments.endpoint", "https://primary.example/payments");
     }
 
     private static final class MutableSource implements NodeConfigSource, PollableSource<Map<String, String>> {

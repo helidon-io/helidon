@@ -33,67 +33,72 @@ class OverrideConfigFilterTest {
     @Test
     void testBuilderReuseCapturesIndependentRules() {
         var builder = OverrideConfigFilter.builder()
-                .putOverrideExpression("service.*.level", "first");
+                .putOverrideExpression("services.*.endpoint", "https://canary.example/orders");
         var first = builder.build();
-        var second = builder.putOverrideExpression("service.*.level", "second").build();
-        var key = Config.Key.create("service.alpha.level");
+        var second = builder.putOverrideExpression("services.*.endpoint", "https://stable.example/orders").build();
+        var key = Config.Key.create("services.orders.endpoint");
 
-        assertThat(first.apply(key, "original"), is("first"));
-        assertThat(second.apply(key, "original"), is("second"));
-        assertThat(first.prototype().overrideExpressions().get("service.*.level"), is("first"));
-        assertThat(second.prototype().overrideExpressions().get("service.*.level"), is("second"));
+        assertThat(first.apply(key, "https://primary.example/orders"), is("https://canary.example/orders"));
+        assertThat(second.apply(key, "https://primary.example/orders"), is("https://stable.example/orders"));
+        assertThat(first.prototype().overrideExpressions().get("services.*.endpoint"),
+                   is("https://canary.example/orders"));
+        assertThat(second.prototype().overrideExpressions().get("services.*.endpoint"),
+                   is("https://stable.example/orders"));
     }
 
     @Test
     void testReplacementValueResolutionAndWildcardBoundary() {
         var filter = OverrideConfigFilter.builder()
-                .putOverrideExpression("service.*.level", "${replacement}")
+                .putOverrideExpression("services.*.endpoint", "${services.failover-endpoint}")
                 .build();
         Config config = Config.builder()
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .disableFilterServices()
                 .addFilter(filter)
-                .addSource(ConfigSources.create(Map.of("replacement", "resolved",
-                                                      "service.alpha.level", "original",
-                                                      "service.my-pod.level", "hyphenated")))
+                .addSource(ConfigSources.create(Map.of("services.failover-endpoint", "https://failover.example/orders",
+                                                      "services.orders.endpoint", "https://primary.example/orders",
+                                                      "services.order-worker.endpoint",
+                                                      "https://worker.example/orders")))
                 .build();
 
-        assertThat(config.get("service.alpha.level").asString().get(), is("resolved"));
-        assertThat(config.get("service.my-pod.level").asString().get(), is("hyphenated"));
+        assertThat(config.get("services.orders.endpoint").asString().get(), is("https://failover.example/orders"));
+        assertThat(config.get("services.order-worker.endpoint").asString().get(), is("https://worker.example/orders"));
     }
 
     @Test
     void testNoConfig() {
         Config config = Config.just(ConfigSources.classpath("/config.yaml"));
 
-        assertThat(config.get("prod.abcdef.logging.level").asString().get(), is("ERROR"));
-        assertThat(config.get("prod.efgh.logging.level").asString().get(), is("ERROR"));
-        assertThat(config.get("test.abcdef.logging.level").asString().get(), is("ERROR"));
+        assertThat(config.get("environments.prod.orders.batch-size").asString().get(), is("100"));
+        assertThat(config.get("environments.prod.payments.batch-size").asString().get(), is("75"));
+        assertThat(config.get("environments.test.orders.batch-size").asString().get(), is("50"));
     }
 
     @Test
     void testSourceReplacementValueUsesTargetResolution() {
         var filter = OverrideConfigFilter.builder()
-                .addConfigSource(ConfigSources.create(Map.of("service.level", "${replacement}")).build())
+                .addConfigSource(ConfigSources.create(Map.of("services.orders.endpoint", "${services.failover-endpoint}"))
+                                         .build())
                 .build();
         Config config = Config.builder()
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .disableFilterServices()
                 .addFilter(filter)
-                .addSource(ConfigSources.create(Map.of("service.level", "original", "replacement", "resolved")))
+                .addSource(ConfigSources.create(Map.of("services.orders.endpoint", "https://primary.example/orders",
+                                                      "services.failover-endpoint", "https://failover.example/orders")))
                 .build();
 
-        assertThat(config.get("service.level").asString().get(), is("resolved"));
+        assertThat(config.get("services.orders.endpoint").asString().get(), is("https://failover.example/orders"));
     }
 
     @Test
     void testDocConfigPrototype() {
         var filter = OverrideConfigFilter.builder()
-                .putOverrideExpression("prod.abcdef.logging.level", "FINEST")
-                .putOverrideExpression("prod.*.logging.level", "WARNING")
-                .putOverrideExpression("test.*.logging.level", "FINE")
+                .putOverrideExpression("environments.prod.orders.batch-size", "150")
+                .putOverrideExpression("environments.prod.*.batch-size", "200")
+                .putOverrideExpression("environments.test.*.batch-size", "25")
                 .build();
 
         Config config = Config.builder()
@@ -104,9 +109,9 @@ class OverrideConfigFilterTest {
                 .addSource(ConfigSources.classpath("/config.yaml"))
                 .build();
 
-        assertThat(config.get("prod.abcdef.logging.level").asString().get(), is("FINEST"));
-        assertThat(config.get("prod.efgh.logging.level").asString().get(), is("WARNING"));
-        assertThat(config.get("test.abcdef.logging.level").asString().get(), is("FINE"));
+        assertThat(config.get("environments.prod.orders.batch-size").asString().get(), is("150"));
+        assertThat(config.get("environments.prod.payments.batch-size").asString().get(), is("200"));
+        assertThat(config.get("environments.test.orders.batch-size").asString().get(), is("25"));
     }
 
     @Test
@@ -123,9 +128,9 @@ class OverrideConfigFilterTest {
                 .addSource(ConfigSources.classpath("/config.yaml"))
                 .build();
 
-        assertThat(config.get("prod.abcdef.logging.level").asString().get(), is("FINEST"));
-        assertThat(config.get("prod.efgh.logging.level").asString().get(), is("WARNING"));
-        assertThat(config.get("test.abcdef.logging.level").asString().get(), is("FINE"));
+        assertThat(config.get("environments.prod.orders.batch-size").asString().get(), is("150"));
+        assertThat(config.get("environments.prod.payments.batch-size").asString().get(), is("200"));
+        assertThat(config.get("environments.test.orders.batch-size").asString().get(), is("25"));
     }
 
     @Test
@@ -138,7 +143,7 @@ class OverrideConfigFilterTest {
                                             .disableFilterServices()
                                             .build());
 
-        assertThat(filter.prototype().overrideExpressions().get("prod.*.logging.level"), is("WARNING"));
+        assertThat(filter.prototype().overrideExpressions().get("environments.prod.*.batch-size"), is("200"));
 
         Config config = Config.builder()
                 .disableEnvironmentVariablesSource()
@@ -148,9 +153,9 @@ class OverrideConfigFilterTest {
                 .addSource(ConfigSources.classpath("/config.yaml"))
                 .build();
 
-        assertThat(config.get("prod.abcdef.logging.level").asString().get(), is("FINEST"));
-        assertThat(config.get("prod.efgh.logging.level").asString().get(), is("WARNING"));
-        assertThat(config.get("test.abcdef.logging.level").asString().get(), is("FINE"));
+        assertThat(config.get("environments.prod.orders.batch-size").asString().get(), is("150"));
+        assertThat(config.get("environments.prod.payments.batch-size").asString().get(), is("200"));
+        assertThat(config.get("environments.test.orders.batch-size").asString().get(), is("25"));
     }
 
     @Test
@@ -162,9 +167,9 @@ class OverrideConfigFilterTest {
                 .addSource(ConfigSources.classpath("/config-with-overrides.yaml"))
                 .build();
 
-        assertThat(config.get("prod.abcdef.logging.level").asString().get(), is("FINEST"));
-        assertThat(config.get("prod.efgh.logging.level").asString().get(), is("WARNING"));
-        assertThat(config.get("test.abcdef.logging.level").asString().get(), is("FINE"));
+        assertThat(config.get("environments.prod.orders.batch-size").asString().get(), is("150"));
+        assertThat(config.get("environments.prod.payments.batch-size").asString().get(), is("200"));
+        assertThat(config.get("environments.test.orders.batch-size").asString().get(), is("25"));
     }
 
     @Test
@@ -173,12 +178,13 @@ class OverrideConfigFilterTest {
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
                 .addSource(ConfigSources.create(Map.of("overrides.sources.0.type", "classpath",
-                                                      "overrides.sources.0.properties.resource", "overrides.properties")))
+                                                      "overrides.sources.0.properties.resource",
+                                                      "overrides.properties")))
                 .addSource(ConfigSources.classpath("/config.yaml"))
                 .build();
         try {
-            assertThat(config.get("prod.abcdef.logging.level").asString().get(), is("FINEST"));
-            assertThat(config.get("prod.efgh.logging.level").asString().get(), is("WARNING"));
+            assertThat(config.get("environments.prod.orders.batch-size").asString().get(), is("150"));
+            assertThat(config.get("environments.prod.payments.batch-size").asString().get(), is("200"));
         } finally {
             config.context().stopChangeSupport();
         }
@@ -187,14 +193,17 @@ class OverrideConfigFilterTest {
     @Test
     void testAutomaticReplacementUsesTargetValueResolution() {
         Config config = Config.builder().disableEnvironmentVariablesSource().disableSystemPropertiesSource()
-                .addSource(ConfigSources.create(Map.of("overrides.expressions.service.*.level", "${replacement}",
-                                                      "replacement", "resolved",
-                                                      "service.alpha.level", "original",
-                                                      "service.my-pod.level", "hyphenated")))
+                .addSource(ConfigSources.create(Map.of("overrides.expressions.services.*.endpoint",
+                                                      "${services.failover-endpoint}",
+                                                      "services.failover-endpoint", "https://failover.example/orders",
+                                                      "services.orders.endpoint", "https://primary.example/orders",
+                                                      "services.order-worker.endpoint",
+                                                      "https://worker.example/orders")))
                 .build();
         try {
-            assertThat(config.get("service.alpha.level").asString().get(), is("resolved"));
-            assertThat(config.get("service.my-pod.level").asString().get(), is("hyphenated"));
+            assertThat(config.get("services.orders.endpoint").asString().get(), is("https://failover.example/orders"));
+            assertThat(config.get("services.order-worker.endpoint").asString().get(),
+                       is("https://worker.example/orders"));
         } finally {
             config.context().stopChangeSupport();
         }
@@ -209,16 +218,20 @@ class OverrideConfigFilterTest {
             assertThat(registry.get(ConfigFilterProvider.class), sameInstance(provider));
             Config first = Config.builder().disableEnvironmentVariablesSource().disableSystemPropertiesSource()
                     .disableFilterServices().disableCaching().addFilterProvider(provider)
-                    .addSource(ConfigSources.create(Map.of("service.level", "original",
-                                                          "overrides.expressions.service.level", "first"))).build();
+                    .addSource(ConfigSources.create(Map.of("services.orders.endpoint", "https://primary.example/orders",
+                                                          "overrides.expressions.services.orders.endpoint",
+                                                          "https://canary.example/orders"))).build();
             Config second = Config.builder().disableEnvironmentVariablesSource().disableSystemPropertiesSource()
                     .disableFilterServices().disableCaching().addFilterProvider(provider)
-                    .addSource(ConfigSources.create(Map.of("service.level", "original",
-                                                          "overrides.expressions.service.level", "second"))).build();
+                    .addSource(ConfigSources.create(Map.of("services.orders.endpoint", "https://primary.example/orders",
+                                                          "overrides.expressions.services.orders.endpoint",
+                                                          "https://stable.example/orders"))).build();
             try {
-                assertThat(first.get("service.level").asString().get(), is("first"));
-                assertThat(second.get("service.level").asString().get(), is("second"));
-                assertThat(first.context().reload().get("service.level").asString().get(), is("first"));
+                assertThat(first.get("services.orders.endpoint").asString().get(), is("https://canary.example/orders"));
+                assertThat(second.get("services.orders.endpoint").asString().get(),
+                           is("https://stable.example/orders"));
+                assertThat(first.context().reload().get("services.orders.endpoint").asString().get(),
+                           is("https://canary.example/orders"));
             } finally {
                 first.context().stopChangeSupport();
                 second.context().stopChangeSupport();

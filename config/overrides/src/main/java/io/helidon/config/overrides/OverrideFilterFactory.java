@@ -51,7 +51,9 @@ final class OverrideFilterFactory implements ConfigFilterFactory {
         if (sources.isEmpty()) {
             definitions = Config.empty();
         } else {
+            // Publish definitions before the source callback returns; target reload requests remain asynchronous.
             var builder = Config.builder()
+                    .changesExecutor(Runnable::run)
                     .disableEnvironmentVariablesSource()
                     .disableSystemPropertiesSource()
                     .disableFilterServices()
