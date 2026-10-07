@@ -235,8 +235,10 @@ without changing your source code.
 
 Source precedence is separate from the legacy **overrides feature**, which
 replaces values of existing nodes using ordered wildcard or predicate rules.
-That feature is deprecated since 28.0.0 and marked for removal; it remains
-available, and no removal version has been decided. See
+The legacy core APIs are deprecated since 28.0.0 and marked for removal in favor
+of an optional overrides filter module. Overrides functionality is being
+replaced, not discontinued. The legacy feature remains available, and no removal
+version has been decided. See
 [Migrating from Overrides](advanced-configuration.md#migrating-from-overrides)
 before replacing an override source with an ordinary configuration source.
 

@@ -21,26 +21,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.config.Config;
 import io.helidon.config.spi.ConfigFilter;
-import io.helidon.config.spi.ConfigSource;
+import io.helidon.config.spi.ConfigFilterProvider;
 
 /**
  * An immutable configuration filter that replaces existing values whose keys match configured wildcard expressions
  * or regular expressions. The first matching rule wins. Filters do not add missing configuration nodes.
  * <p>
- * Register a fixed filter using {@link Config.Builder#addFilter(ConfigFilter)}. To obtain new rules for each target
- * configuration generation, register a factory from {@link #fromConfig()} or {@link #fromConfig(Config)} instead.
+ * The optional module discovers an {@link OverrideConfigFilterProvider} automatically. For manual setup, register
+ * {@code builder().buildProvider()} using {@link Config.Builder#addFilterProvider(io.helidon.config.spi.ConfigFilterProvider)}.
+ * The provider owns separate definition sources for each configuration runtime and creates an immutable filter for
+ * every generation. {@link #builder()} also supports constructing a fixed filter directly.
  */
 public final class OverrideConfigFilter implements ConfigFilter, RuntimeType.Api<OverrideConfig> {
     /**
-     * Configuration key read from the target configuration by {@link #fromConfig()}.
-     * Explicit definition configurations supplied to {@link #create(Config)} or {@link #fromConfig(Config)} contain
-     * the expressions directly, without this prefix.
+     * Configuration key containing inline wildcard expressions for the automatically discovered provider.
+     * Explicit definition configurations supplied to {@link #create(Config)} contain the expressions directly,
+     * without this prefix.
      */
     public static final String CONFIG_KEY = "overrides.expressions";
 
@@ -57,7 +58,7 @@ public final class OverrideConfigFilter implements ConfigFilter, RuntimeType.Api
      * Programmatic regular expression patterns precede programmatic wildcard expressions, followed by expressions loaded
      * from sources. Sources are loaded once; background change support started for this private configuration is stopped
      * after its values have been captured.
-     * For independently changing definitions, use {@link #fromConfig(Config)} and {@link #connect(Config, Config)}.
+     * For independently changing definitions, register {@code builder().buildProvider()} instead.
      *
      * @param config filter configuration
      * @return immutable filter
@@ -77,8 +78,8 @@ public final class OverrideConfigFilter implements ConfigFilter, RuntimeType.Api
                 .disableSystemPropertiesSource()
                 .disableValueResolving()
                 .disableFilterServices();
-        for (ConfigSource source : config.configSources()) {
-            definitionsBuilder.addSource(source);
+        for (var source : config.configSources()) {
+            definitionsBuilder.addSource(Objects.requireNonNull(source.get()));
         }
         Config definitions = definitionsBuilder.build();
         try {
@@ -107,7 +108,7 @@ public final class OverrideConfigFilter implements ConfigFilter, RuntimeType.Api
      * @param consumer builder customization
      * @return immutable filter
      */
-    public static OverrideConfigFilter create(Consumer<OverrideConfig.Builder> consumer) {
+    public static OverrideConfigFilter create(Consumer<Builder> consumer) {
         Objects.requireNonNull(consumer);
         return builder().update(consumer).build();
     }
@@ -117,50 +118,17 @@ public final class OverrideConfigFilter implements ConfigFilter, RuntimeType.Api
      *
      * @return filter configuration builder
      */
-    public static OverrideConfig.Builder builder() {
-        return OverrideConfig.builder();
+    public static Builder builder() {
+        return new Builder();
     }
 
-    /**
-     * Create a filter factory that reads {@value #CONFIG_KEY} from each target configuration generation.
-     * Register the returned factory with {@link Config.Builder#addFilter(Function)} so target reloads capture new rules.
-     *
-     * @return factory producing an immutable filter for each target generation
-     */
-    public static Function<Config, ConfigFilter> fromConfig() {
-        return target -> create(target.get(CONFIG_KEY));
-    }
-
-    /**
-     * Create a filter factory that captures the latest independently managed definition configuration whenever
-     * the target configuration is rebuilt. Registration alone does not cause target reloads when definitions change;
-     * use {@link #connect(Config, Config)} to connect those notifications.
-     * The caller retains ownership of change support on the definition configuration.
-     *
-     * @param definitions configuration containing wildcard expressions mapped to replacement values
-     * @return factory producing an immutable filter from the latest definition snapshot
-     */
-    public static Function<Config, ConfigFilter> fromConfig(Config definitions) {
-        Objects.requireNonNull(definitions);
-        return _ -> create(definitions.context().last());
-    }
-
-    /**
-     * Connect definition changes to target configuration reloads. The target must use a filter factory returned by
-     * {@link #fromConfig(Config)} for the same definition configuration. Connection starts an asynchronous reconciliation
-     * to capture changes that occurred while the target was being built.
-     * Close the returned handle when this connection is no longer needed; neither configuration's caller-owned change
-     * support is stopped by closing the connection. A reload already admitted when closing may finish afterward.
-     * Definition and target configurations must be independent trees; direct or indirect dependency cycles are unsupported.
-     *
-     * @param definitions independently changing definition configuration
-     * @param target target configuration using these definitions
-     * @return closeable notification connection
-     */
-    public static ChangeSupport connect(Config definitions, Config target) {
-        Objects.requireNonNull(definitions);
-        Objects.requireNonNull(target);
-        return OverrideChangeSupport.create(definitions, target);
+    static OverrideConfigFilter snapshot(OverrideConfig config, Config definitions) {
+        List<OverrideEntry> entries = new ArrayList<>();
+        config.overridePatterns().forEach((pattern, value) -> entries.add(new OverrideEntry(pattern, value)));
+        config.overrideExpressions().forEach((expression, value) -> entries.add(new OverrideEntry(
+                OverrideConfigSupport.expressionToPattern(expression), value)));
+        entries.addAll(entriesFromConfig(definitions));
+        return new OverrideConfigFilter(config, entries);
     }
 
     @Override
@@ -189,15 +157,36 @@ public final class OverrideConfigFilter implements ConfigFilter, RuntimeType.Api
     }
 
     /**
-     * A connection between definition changes and target configuration reloads.
+     * Builder for immutable filters or providers with independent definition machinery for each configuration runtime.
+     * All settings are supplied by the generated {@link OverrideConfig} builder base.
      */
-    public interface ChangeSupport extends AutoCloseable {
-        /**
-         * Stop forwarding changes and release this connection's resources.
-         * A reload already admitted may finish after this method returns.
-         */
+    public static final class Builder extends OverrideConfig.BuilderBase<Builder, OverrideConfig>
+            implements io.helidon.common.Builder<Builder, OverrideConfigFilter> {
+        private Builder() {
+        }
+
         @Override
-        void close();
+        public OverrideConfig buildPrototype() {
+            return OverrideConfig.builder().from(this).build();
+        }
+
+        @Override
+        public OverrideConfigFilter build() {
+            return OverrideConfigFilter.create(buildPrototype());
+        }
+
+        /**
+         * Build a provider which creates separate definition machinery for each configuration runtime. Inline rules
+         * are captured now; source suppliers are called once for each runtime and must return independent sources and
+         * monitoring resources. Register the provider with
+         * {@link io.helidon.config.Config.Builder#addFilterProvider(io.helidon.config.spi.ConfigFilterProvider)}.
+         *
+         * @return provider of per-runtime factories and immutable generation filters
+         */
+        public ConfigFilterProvider buildProvider() {
+            OverrideConfig config = buildPrototype();
+            return _ -> OverrideFilterFactory.create(config);
+        }
     }
 
     private record OverrideEntry(Pattern pattern, String value) {

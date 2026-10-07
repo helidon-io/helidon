@@ -522,7 +522,7 @@ use, and you can add your own as described in the sections which describe
 [filters][filters] and [overrides](extensions.md#overridesource-spi).
 
 Your application can add filters and overrides explicitly to a config builder.
-The config system also discovers filters using Java service loader by default.
+The config system also discovers filters and filter providers using Java service loader by default.
 Override source providers support sources selected explicitly in
 meta-configuration; discovering a provider does not enable overrides by itself.
 
@@ -537,11 +537,29 @@ substitution described below.
 
 See the [`ConfigFilter`][configfilter] Javadoc for more information.
 
+For a filter requiring configuration or changing rules, implement
+`ConfigFilterProvider`. Its `create(Config)` method receives an unfiltered view
+of the initial configuration and returns a `ConfigFilterFactory` dedicated to
+that Config runtime. The factory creates a new immutable filter from the
+current unfiltered configuration for every generation, including reloads.
+The provider itself can be shared across independent Config instances; its
+factories and their monitoring resources must remain independent.
+
+Existing directly registered or discovered `ConfigFilter` instances retain
+their behavior: reloads reuse the instance and invoke `init(Config)` again.
+That method is deprecated since 28.0.0 and marked for removal; use a provider
+to construct a configured immutable filter instead. When automatic reloads are
+active, or a manual reload occurs, Helidon warns once if a direct filter is
+present because reusing stateful filters may produce inconsistent generations.
+Stateless direct filters do not inherently have this problem.
+
 ### Overrides
 
-The overrides feature is deprecated since Helidon 28.0.0, and its APIs and SPI
-are marked for removal. The feature remains available and retains its existing
-behavior. A removal version has not been decided. When an override first
+The legacy core overrides APIs and SPI are deprecated since Helidon 28.0.0 and
+marked for removal in favor of the optional [overrides filter module](overrides.md).
+Overrides functionality is being replaced, not discontinued. The legacy feature
+remains available and retains its existing behavior. A removal version has not
+been decided. When a legacy override first
 matches a configuration key, Helidon logs a deprecation warning once per
 runtime. Merely configuring overrides without applying a matching entry does
 not emit the warning; it contains no configuration keys or values.
@@ -558,11 +576,9 @@ The overrides feature allows you to create an external document containing
 key/value pairs which replace the value otherwise returned for the name, and
 then add that document as an override source to a config builder.
 
-There are some key differences between overrides and filters.
-
-- Override sources can support change detection so their replacement values
-  can change while your application runs.
-- The override document can use wildcards in key expressions.
+Legacy overrides provide wildcard matching and change detection for definition
+sources. The optional overrides filter module also supports these capabilities
+using a per-runtime filter factory.
 
 Both overrides and ordinary filters transform values of existing nodes; neither
 creates missing nodes. Ordinary config sources can add nodes.
@@ -596,10 +612,12 @@ Review how newly added or removed keys should behave instead of assuming the
 source reproduces the wildcard rule.
 
 For wildcard or regular-expression rules, the optional
-[`helidon-config-overrides` module](overrides.md) provides immutable filters
-registered explicitly with the target configuration. A filter factory and
-closeable connection can propagate changes from an independently managed
-definition configuration to target reloads without changes to core Config.
+[`helidon-config-overrides` module](overrides.md) provides an automatically
+discovered filter provider, with builder configuration available for manual
+registration. A separate factory owns the definition sources and their change
+support for each Config runtime, creating an immutable rule snapshot for each
+generation. Definition source locations and monitoring settings are read once
+from the initial configuration; their contents can change while the runtime runs.
 This is a migration option, not a blanket drop-in replacement: legacy overrides
 run before ordinary filters, including value-reference resolution. Verify rule
 priority, filter registration and ordering, key-token expansion, `${...}`

@@ -20,10 +20,13 @@ import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.config.spi.ConfigFilterProvider;
+import io.helidon.service.registry.ServiceRegistryManager;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class OverrideConfigFilterTest {
@@ -155,8 +158,6 @@ class OverrideConfigFilterTest {
         Config config = Config.builder()
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
-                .disableFilterServices()
-                .addFilter(OverrideConfigFilter.fromConfig())
                 .addSource(ConfigSources.classpath("/config.yaml"))
                 .addSource(ConfigSources.classpath("/config-with-overrides.yaml"))
                 .build();
@@ -164,5 +165,66 @@ class OverrideConfigFilterTest {
         assertThat(config.get("prod.abcdef.logging.level").asString().get(), is("FINEST"));
         assertThat(config.get("prod.efgh.logging.level").asString().get(), is("WARNING"));
         assertThat(config.get("test.abcdef.logging.level").asString().get(), is("FINE"));
+    }
+
+    @Test
+    void testAutomaticSourceDescriptors() {
+        Config config = Config.builder()
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .addSource(ConfigSources.create(Map.of("overrides.sources.0.type", "classpath",
+                                                      "overrides.sources.0.properties.resource", "overrides.properties")))
+                .addSource(ConfigSources.classpath("/config.yaml"))
+                .build();
+        try {
+            assertThat(config.get("prod.abcdef.logging.level").asString().get(), is("FINEST"));
+            assertThat(config.get("prod.efgh.logging.level").asString().get(), is("WARNING"));
+        } finally {
+            config.context().stopChangeSupport();
+        }
+    }
+
+    @Test
+    void testAutomaticReplacementUsesTargetValueResolution() {
+        Config config = Config.builder().disableEnvironmentVariablesSource().disableSystemPropertiesSource()
+                .addSource(ConfigSources.create(Map.of("overrides.expressions.service.*.level", "${replacement}",
+                                                      "replacement", "resolved",
+                                                      "service.alpha.level", "original",
+                                                      "service.my-pod.level", "hyphenated")))
+                .build();
+        try {
+            assertThat(config.get("service.alpha.level").asString().get(), is("resolved"));
+            assertThat(config.get("service.my-pod.level").asString().get(), is("hyphenated"));
+        } finally {
+            config.context().stopChangeSupport();
+        }
+    }
+
+    @Test
+    void testRegistrySingletonProviderHasIndependentRuntimeSettings() {
+        var manager = ServiceRegistryManager.create();
+        try {
+            var registry = manager.registry();
+            var provider = registry.get(ConfigFilterProvider.class);
+            assertThat(registry.get(ConfigFilterProvider.class), sameInstance(provider));
+            Config first = Config.builder().disableEnvironmentVariablesSource().disableSystemPropertiesSource()
+                    .disableFilterServices().disableCaching().addFilterProvider(provider)
+                    .addSource(ConfigSources.create(Map.of("service.level", "original",
+                                                          "overrides.expressions.service.level", "first"))).build();
+            Config second = Config.builder().disableEnvironmentVariablesSource().disableSystemPropertiesSource()
+                    .disableFilterServices().disableCaching().addFilterProvider(provider)
+                    .addSource(ConfigSources.create(Map.of("service.level", "original",
+                                                          "overrides.expressions.service.level", "second"))).build();
+            try {
+                assertThat(first.get("service.level").asString().get(), is("first"));
+                assertThat(second.get("service.level").asString().get(), is("second"));
+                assertThat(first.context().reload().get("service.level").asString().get(), is("first"));
+            } finally {
+                first.context().stopChangeSupport();
+                second.context().stopChangeSupport();
+            }
+        } finally {
+            manager.shutdown();
+        }
     }
 }

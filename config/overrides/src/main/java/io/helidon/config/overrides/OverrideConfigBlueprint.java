@@ -18,6 +18,7 @@ package io.helidon.config.overrides;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
 import io.helidon.builder.api.Option;
@@ -29,7 +30,7 @@ import io.helidon.config.spi.ConfigSource;
  */
 @Prototype.Blueprint
 @Prototype.CustomMethods(OverrideConfigSupport.class)
-interface OverrideConfigBlueprint extends Prototype.Factory<OverrideConfigFilter> {
+interface OverrideConfigBlueprint {
     /**
      * Explicit config override settings.
      *
@@ -49,13 +50,13 @@ interface OverrideConfigBlueprint extends Prototype.Factory<OverrideConfigFilter
     Map<String, String> overrideExpressions();
 
     /**
-     * Config sources loaded once when constructing a fixed filter. The config source content is expected to be a map of
-     * expressions (using * as a replacement for any word) to values. Background change support started for this private
-     * configuration is stopped after loading. For dynamically changing definitions use
-     * {@link OverrideConfigFilter#fromConfig(io.helidon.config.Config)} with a caller-owned configuration instead.
+     * Suppliers of definition sources whose content maps wildcard expressions to replacement values. A provider calls
+     * each supplier once for every independently built configuration runtime. Suppliers must return fresh source instances,
+     * including their polling and watching resources, when a provider is reused across runtimes. A fixed filter loads
+     * the sources once and stops background change support after capturing their values.
      *
      * @return config sources to use to obtain the configuration of overrides
      */
     @Option.Singular
-    List<ConfigSource> configSources();
+    List<Supplier<? extends ConfigSource>> configSources();
 }

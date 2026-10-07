@@ -34,6 +34,8 @@ import java.util.logging.Logger;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.spi.ConfigContent;
+import io.helidon.config.spi.ConfigFilter;
+import io.helidon.config.spi.ConfigFilterFactory;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.NodeConfigSource;
 import io.helidon.config.spi.PollableSource;
@@ -51,82 +53,112 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class OverrideReloadTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void connectedRulesReloadTargetAndPreserveOldSnapshots(boolean caching) throws Exception {
+    void definitionChangesReloadTargetAndPreserveOldSnapshots(boolean caching) throws Exception {
         var source = new MutableSource(Map.of("service.*.level", "first"));
-        Config definitions = baseBuilder().addSource(source).build();
-        Config.Builder builder = baseBuilder()
-                .addSource(ConfigSources.create(targetValues()))
-                .addFilter(OverrideConfigFilter.fromConfig(definitions));
+        Config.Builder builder = targetBuilder(source);
         if (!caching) {
             builder.disableCaching();
         }
         Config target = builder.build();
         var changes = new LinkedBlockingQueue<Config>();
         target.onChange(changes::add);
-        try (var support = OverrideConfigFilter.connect(definitions, target)) {
+        try {
             assertThat(target.get("service.alpha.level").asString().get(), is("first"));
             source.values(Map.of("service.*.level", "second"));
             source.poll();
             Config updated = awaitValue(changes, "second");
             assertThat(updated.get("service.beta.level").asString().get(), is("second"));
-            assertThat(target.context().last().get("service.alpha.level").asString().get(), is("second"));
             assertThat(target.get("service.alpha.level").asString().get(), is("first"));
-            assertThat("even an unread key on the old snapshot keeps its original rules",
+            assertThat("Unread old nodes retain their generation's rules",
                        target.get("service.beta.level").asString().get(), is("first"));
+            assertThat("Rebuilding does not initialize definition monitoring again", source.starts.get(), is(1));
+        } finally {
+            target.context().stopChangeSupport();
         }
     }
 
     @Test
-    void connectReconcilesChangeBetweenConstructionAndRegistration() throws Exception {
+    void startupReconcilesChangesBeforeCallbackRegistration() throws Exception {
         var source = new MutableSource(Map.of("service.*.level", "first"));
-        Config definitions = baseBuilder().addSource(source).build();
-        Config target = baseBuilder().disableCaching()
-                .addSource(ConfigSources.create(targetValues()))
-                .addFilter(OverrideConfigFilter.fromConfig(definitions))
-                .build();
-        var changes = new LinkedBlockingQueue<Config>();
-        target.onChange(changes::add);
-        definitions.onChange(_ -> { });
-        source.values(Map.of("service.*.level", "second", "missing.*.level", "unused"));
-        source.poll();
-        try (var support = OverrideConfigFilter.connect(definitions, target)) {
-            Config updated = awaitValue(changes, "second");
-            assertThat(updated.get("missing.gamma.level").exists(), is(false));
-            assertThat(target.get("service.alpha.level").asString().get(), is("first"));
+        var reconciled = new CountDownLatch(1);
+        var provider = OverrideConfigFilter.builder().addConfigSource(source).buildProvider();
+        Config target = baseBuilder().disableCaching().addSource(ConfigSources.create(targetValues()))
+                .addFilterProvider(initial -> {
+                    ConfigFilterFactory factory = provider.create(initial);
+                    return new ConfigFilterFactory() {
+                        @Override
+                        public ConfigFilter create(Config raw) {
+                            ConfigFilter filter = factory.create(raw);
+                            if (filter.apply(Config.Key.create("service.alpha.level"), "original").equals("second")) {
+                                reconciled.countDown();
+                            }
+                            return filter;
+                        }
+
+                        @Override
+                        public boolean startChangeSupport(Runnable callback) {
+                            source.values(Map.of("service.*.level", "second"));
+                            source.poll();
+                            return factory.startChangeSupport(callback);
+                        }
+
+                        @Override
+                        public void stopChangeSupport() {
+                            factory.stopChangeSupport();
+                        }
+                    };
+                }).build();
+        try {
+            assertThat("Startup reconciliation rebuilds automatically", reconciled.await(10, TimeUnit.SECONDS), is(true));
+            assertThat(target.context().reload().get("service.alpha.level").asString().get(), is("second"));
+            assertThat(target.get("service.beta.level").asString().get(), is("first"));
+        } finally {
+            target.context().stopChangeSupport();
         }
     }
 
     @Test
-    void inlineRegistrationIsIsolatedAcrossTargetRuntimes() {
-        var filter = OverrideConfigFilter.fromConfig();
-        Config first = baseBuilder().disableCaching()
-                .addSource(ConfigSources.create(Map.of("service.level", "original",
-                                                      "overrides.expressions.service.level", "first")))
-                .addFilter(filter)
-                .build();
-        assertThat(first.get("service.level").asString().get(), is("first"));
-
-        Config second = baseBuilder().disableCaching()
-                .addSource(ConfigSources.create(Map.of("service.level", "original",
-                                                      "overrides.expressions.service.level", "second")))
-                .addFilter(filter)
-                .build();
-
-        assertThat(second.get("service.level").asString().get(), is("second"));
-        assertThat("sharing the registration must not cross target runtime boundaries",
-                   first.get("service.level").asString().get(), is("first"));
+    void sharedProviderCreatesIndependentDefinitionSourcesForEachRuntime() throws Exception {
+        var created = new ArrayList<MutableSource>();
+        var provider = OverrideConfigFilter.builder().addConfigSource(() -> {
+            var source = new MutableSource(Map.of("service.*.level", "first"));
+            created.add(source);
+            return source;
+        }).buildProvider();
+        Config first = baseBuilder().disableCaching().addSource(ConfigSources.create(targetValues()))
+                .addFilterProvider(provider).build();
+        Config second = baseBuilder().disableCaching().addSource(ConfigSources.create(targetValues()))
+                .addFilterProvider(provider).build();
+        var changes = new LinkedBlockingQueue<Config>();
+        var secondChanges = new LinkedBlockingQueue<Config>();
+        first.onChange(changes::add);
+        second.onChange(secondChanges::add);
+        try {
+            assertThat(created.size(), is(2));
+            created.getFirst().values(Map.of("service.*.level", "updated-first"));
+            created.getFirst().poll();
+            awaitValue(changes, "updated-first");
+            assertThat(second.context().last().get("service.alpha.level").asString().get(), is("first"));
+            first.context().stopChangeSupport();
+            assertThat(created.getFirst().stops.get(), is(1));
+            assertThat("Stopping one runtime leaves the other monitor alive", created.getLast().stops.get(), is(0));
+            created.getLast().values(Map.of("service.*.level", "updated-second"));
+            created.getLast().poll();
+            awaitValue(secondChanges, "updated-second");
+            assertThat(second.context().reload().get("service.alpha.level").asString().get(), is("updated-second"));
+        } finally {
+            first.context().stopChangeSupport();
+            second.context().stopChangeSupport();
+        }
     }
 
     @Test
     void concurrentRuleUpdatesConvergeToLatestSnapshot() throws Exception {
         var source = new MutableSource(Map.of("service.*.level", "first"));
-        Config definitions = baseBuilder().addSource(source).build();
-        Config target = baseBuilder().addSource(ConfigSources.create(targetValues()))
-                .addFilter(OverrideConfigFilter.fromConfig(definitions)).build();
+        Config target = targetBuilder(source).build();
         var changes = new LinkedBlockingQueue<Config>();
         target.onChange(changes::add);
-        try (var support = OverrideConfigFilter.connect(definitions, target);
-             var executor = Executors.newFixedThreadPool(4)) {
+        try (var executor = Executors.newFixedThreadPool(4)) {
             var start = new CountDownLatch(1);
             var tasks = new ArrayList<Future<?>>();
             for (int i = 0; i < 12; i++) {
@@ -147,84 +179,92 @@ class OverrideReloadTest {
             source.values(Map.of("service.*.level", "last"));
             source.poll();
             assertThat(awaitValue(changes, "last").get("service.beta.level").asString().get(), is("last"));
-            assertThat(target.context().last().get("service.alpha.level").asString().get(), is("last"));
             assertThat(target.get("service.beta.level").asString().get(), is("first"));
-        }
-    }
-
-    @Test
-    void closingBridgeLeavesBorrowedDefinitionsUsable() throws Exception {
-        var source = new MutableSource(Map.of("service.*.level", "first"));
-        Config definitions = baseBuilder().addSource(source).build();
-        Config target = baseBuilder().addSource(ConfigSources.create(targetValues()))
-                .addFilter(OverrideConfigFilter.fromConfig(definitions)).build();
-        var changes = new LinkedBlockingQueue<Config>();
-        var releaseNotification = new CountDownLatch(1);
-        target.onChange(config -> {
-            changes.add(config);
-            try {
-                if (!releaseNotification.await(10, TimeUnit.SECONDS)) {
-                    throw new IllegalStateException("Close test did not release its target callback");
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new IllegalStateException("Target callback interrupted", e);
-            }
-        });
-        var definitionChanges = new AtomicInteger();
-        definitions.onChange(_ -> definitionChanges.incrementAndGet());
-        var support = OverrideConfigFilter.connect(definitions, target);
-        try {
-            source.values(Map.of("service.*.level", "second"));
-            source.poll();
-            awaitValue(changes, "second");
-            // An admitted reload is paused in its callback. Closing must not wait for that reload.
-            support.close();
-            source.values(Map.of("service.*.level", "third"));
-            source.poll();
+            assertThat(source.starts.get(), is(1));
         } finally {
-            releaseNotification.countDown();
-            support.close();
+            target.context().stopChangeSupport();
         }
-        assertThat(definitionChanges.get(), is(2));
-        assertThat(definitions.context().last().get("service.*.level").asString().get(), is("third"));
-        assertThat(target.context().last().get("service.alpha.level").asString().get(), is("second"));
     }
 
     @Test
-    void rulesForMissingNodesDoNotCreateValuesOrChangeEvents() {
+    void stopKeepsManualReloadUsableWithLastKnownRulesWithoutRestartingMonitors() throws Exception {
+        var source = new MutableSource(Map.of("service.*.level", "first"));
+        Config target = targetBuilder(source).build();
+        var changes = new LinkedBlockingQueue<Config>();
+        target.onChange(changes::add);
+        try {
+            source.values(Map.of("service.*.level", "known-before-stop"));
+            source.poll();
+            awaitValue(changes, "known-before-stop");
+            target.context().stopChangeSupport();
+            source.values(Map.of("service.*.level", "unobserved-after-stop"));
+            Config updated = target.context().reload();
+            assertThat(updated.get("service.alpha.level").asString().get(), is("known-before-stop"));
+            assertThat(target.get("service.beta.level").asString().get(), is("first"));
+            assertThat(source.starts.get(), is(1));
+            assertThat(source.stops.get(), is(1));
+        } finally {
+            target.context().stopChangeSupport();
+        }
+    }
+
+    @Test
+    void initialInlineSettingsRemainFixedAcrossTargetReloads() throws Exception {
+        var targetSource = new MutableSource(Map.of("service.alpha.level", "original",
+                                                   "overrides.expressions.service.alpha.level", "first"));
+        Config target = baseBuilder().addSource(targetSource).addFilterProvider(new OverrideConfigFilterProvider()).build();
+        var changes = new LinkedBlockingQueue<Config>();
+        target.onChange(changes::add);
+        try {
+            targetSource.values(Map.of("service.alpha.level", "changed-original",
+                                       "overrides.expressions.service.alpha.level", "second"));
+            targetSource.poll();
+            Config changed = changes.poll(10, TimeUnit.SECONDS);
+            assertThat("Target-source changes must be observed", changed, notNullValue());
+            assertThat(changed.get("overrides.expressions.service.alpha.level").asString().get(), is("second"));
+            assertThat(target.context().reload().get("service.alpha.level").asString().get(), is("first"));
+            assertThat(target.get("service.alpha.level").asString().get(), is("first"));
+        } finally {
+            target.context().stopChangeSupport();
+        }
+    }
+
+    @Test
+    void missingAndUnchangedRulesDoNotCreateNodesOrChangeEvents() {
         var source = new MutableSource(Map.of("missing.*.level", "first"));
-        Config definitions = baseBuilder().addSource(source).build();
-        Config target = baseBuilder().addSource(ConfigSources.create(targetValues()))
-                .addFilter(OverrideConfigFilter.fromConfig(definitions)).build();
+        Config target = targetBuilder(source).build();
         var notifications = new AtomicInteger();
         target.onChange(_ -> notifications.incrementAndGet());
-        try (var support = OverrideConfigFilter.connect(definitions, target)) {
+        try {
             source.values(Map.of("missing.*.level", "second"));
             source.poll();
-            // Also rebuild synchronously, so this assertion does not depend on the bridge's scheduling.
             Config rebuilt = target.context().reload();
             assertThat(rebuilt.get("missing.gamma.level").exists(), is(false));
             assertThat(rebuilt.get("service.alpha.level").asString().get(), is("original-alpha"));
             assertThat(notifications.get(), is(0));
+            source.poll();
+            target.context().reload();
+            assertThat(notifications.get(), is(0));
+        } finally {
+            target.context().stopChangeSupport();
         }
     }
 
     @Test
-    void invalidRulesLeaveLastTargetUsableAndLaterValidRulesRecover() throws Exception {
+    void invalidRulesPreserveLastTargetAndValidRulesRecover() throws Exception {
         var source = new MutableSource(Map.of("service.*.level", "first"));
-        Config definitions = baseBuilder().addSource(source).build();
-        Config target = baseBuilder().addSource(ConfigSources.create(targetValues()))
-                .addFilter(OverrideConfigFilter.fromConfig(definitions)).build();
+        Config target = targetBuilder(source).build();
         var changes = new LinkedBlockingQueue<Config>();
         target.onChange(changes::add);
         var warnings = new LinkedBlockingQueue<LogRecord>();
-        Logger logger = Logger.getLogger("io.helidon.config.overrides.OverrideChangeSupport");
+        Logger logger = Logger.getLogger("io.helidon.config.ConfigFactory");
         Level previousLevel = logger.getLevel();
         Handler handler = new Handler() {
             @Override
             public void publish(LogRecord record) {
-                warnings.add(record);
+                if (record.getLevel().intValue() >= Level.WARNING.intValue()) {
+                    warnings.add(record);
+                }
             }
 
             @Override
@@ -237,16 +277,16 @@ class OverrideReloadTest {
         };
         logger.addHandler(handler);
         logger.setLevel(Level.ALL);
-        try (var support = OverrideConfigFilter.connect(definitions, target)) {
+        try {
             source.values(Map.of("[", "private-replacement-value"));
             source.poll();
             LogRecord warning = warnings.poll(10, TimeUnit.SECONDS);
-            assertThat("Invalid rules must produce a bounded observable failure", warning, notNullValue());
+            assertThat("Invalid rules must produce an observable failure", warning, notNullValue());
             assertThat(warning.getLevel(), is(Level.WARNING));
-            assertThat(warning.getMessage(), is("Could not reload configuration after overrides changed"));
+            assertThat(warning.getMessage(),
+                       is("Cannot reload configuration after a config filter change; the previous configuration remains available."));
             assertThat("Failure diagnostics must not expose exception details", warning.getThrown(), nullValue());
             assertThat(target.context().last().get("service.alpha.level").asString().get(), is("first"));
-
             source.values(Map.of("service.*.level", "recovered"));
             source.poll();
             assertThat(awaitValue(changes, "recovered").get("service.beta.level").asString().get(), is("recovered"));
@@ -254,14 +294,14 @@ class OverrideReloadTest {
         } finally {
             logger.removeHandler(handler);
             logger.setLevel(previousLevel);
+            target.context().stopChangeSupport();
         }
     }
 
     private static Config awaitValue(LinkedBlockingQueue<Config> changes, String value) throws InterruptedException {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
         while (true) {
-            long remaining = Math.max(0, deadline - System.nanoTime());
-            Config changed = changes.poll(remaining, TimeUnit.NANOSECONDS);
+            Config changed = changes.poll(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
             assertThat("Expected target change to " + value, changed, notNullValue());
             if (changed.get("service.alpha.level").asString().get().equals(value)) {
                 return changed;
@@ -269,12 +309,14 @@ class OverrideReloadTest {
         }
     }
 
+    private static Config.Builder targetBuilder(MutableSource source) {
+        return baseBuilder().addSource(ConfigSources.create(targetValues()))
+                .addFilterProvider(OverrideConfigFilter.builder().addConfigSource(source).buildProvider());
+    }
+
     private static Config.Builder baseBuilder() {
-        return Config.builder()
-                .disableEnvironmentVariablesSource()
-                .disableSystemPropertiesSource()
-                .disableFilterServices()
-                .changesExecutor(Runnable::run);
+        return Config.builder().disableEnvironmentVariablesSource().disableSystemPropertiesSource()
+                .disableFilterServices().changesExecutor(Runnable::run);
     }
 
     private static Map<String, String> targetValues() {
@@ -282,8 +324,23 @@ class OverrideReloadTest {
     }
 
     private static final class MutableSource implements NodeConfigSource, PollableSource<Map<String, String>> {
+        private final AtomicInteger starts = new AtomicInteger();
+        private final AtomicInteger stops = new AtomicInteger();
+        private final PollingStrategy strategy = new PollingStrategy() {
+            @Override
+            public void start(Polled callback) {
+                starts.incrementAndGet();
+                polled = callback;
+            }
+
+            @Override
+            public void stop() {
+                stops.incrementAndGet();
+                polled = null;
+            }
+        };
         private volatile Map<String, String> values;
-        private PollingStrategy.Polled polled;
+        private volatile PollingStrategy.Polled polled;
 
         private MutableSource(Map<String, String> values) {
             values(values);
@@ -294,10 +351,11 @@ class OverrideReloadTest {
         }
 
         void poll() {
-            if (polled == null) {
+            PollingStrategy.Polled callback = polled;
+            if (callback == null) {
                 throw new IllegalStateException("Change support has not started");
             }
-            polled.poll(Instant.now());
+            callback.poll(Instant.now());
         }
 
         @Override
@@ -307,7 +365,7 @@ class OverrideReloadTest {
 
         @Override
         public Optional<PollingStrategy> pollingStrategy() {
-            return Optional.of(callback -> polled = callback);
+            return Optional.of(strategy);
         }
 
         @Override
