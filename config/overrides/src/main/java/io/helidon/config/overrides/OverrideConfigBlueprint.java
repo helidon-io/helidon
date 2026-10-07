@@ -34,7 +34,7 @@ interface OverrideConfigBlueprint {
     /**
      * Explicit config override settings.
      *
-     * @return a map of a pattern (regular expression) to a value, i.e. {@code prod\.\w+\.logging\.level=ERROR}
+     * @return a map of a pattern (regular expression) to a value, i.e. {@code environments\.\w+\.batch-size=200}
      */
     @Option.Singular
     Map<Pattern, String> overridePatterns();
@@ -44,7 +44,7 @@ interface OverrideConfigBlueprint {
      * Dots are escaped and other regular expression metacharacters retain their meaning, matching the legacy conversion.
      * For example, a wildcard does not match a hyphenated segment.
      *
-     * @return a map of an expression to a value, i.e. {@code prod.*.logging.level=ERROR}
+     * @return a map of an expression to a value, i.e. {@code environments.*.batch-size=200}
      */
     @Option.Singular
     Map<String, String> overrideExpressions();

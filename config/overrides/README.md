@@ -15,18 +15,32 @@ automatic monitoring with `config.context().stopChangeSupport()`; manual reload
 remains available afterwards. Reload rebuilds from the source data already
 known to Config; it does not force stopped file sources to reread their files.
 
+For example, an application's `application.properties` defines two environments:
+
+```properties
+environments.test.batch-size = 50
+environments.prod.batch-size = 100
+```
+
 For manual setup, use the builder and register a provider:
 
 ```java
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+import io.helidon.config.overrides.OverrideConfigFilter;
+
 Config config = Config.builder()
         .disableFilterServices()
         .addSource(ConfigSources.file("application.properties"))
         .addFilterProvider(OverrideConfigFilter.builder()
-                .putOverrideExpression("prod.primary.logging.level", "FINEST")
-                .putOverrideExpression("prod.*.logging.level", "WARNING")
+                .putOverrideExpression("environments.prod.batch-size", "150")
+                .putOverrideExpression("environments.*.batch-size", "200")
                 .buildProvider())
         .build();
 ```
+
+The specific rule sets the production batch size to `150`; the wildcard sets
+the test batch size to `200`. Rules only replace existing values.
 
 Use fresh-source suppliers with `addConfigSource(...)` when configuring dynamic
 definitions manually. The provider can then create independent monitoring

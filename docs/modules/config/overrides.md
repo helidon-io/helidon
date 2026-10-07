@@ -24,13 +24,26 @@ or `OverrideSource`, follow [Migrating from Config Overrides](#migrating-from-co
 
 ## Automatic Configuration
 
-For example, `application.properties` can contain:
+Suppose an application defines a batch size for its test and production
+environments. Keep the concrete application keys in `application.properties`
+and point the filter at a separate override definition file:
 
-```properties
-overrides.expressions.prod.*.logging.level = WARNING
-prod.primary.logging.level = INFO
-prod.secondary.logging.level = INFO
+```properties [application.properties]
+environments.test.batch-size = 50
+environments.prod.batch-size = 100
+overrides.sources.0.type = file
+overrides.sources.0.properties.path = overrides.properties
 ```
+
+Put the wildcard rule in `overrides.properties`:
+
+```properties [overrides.properties]
+environments.*.batch-size = 200
+```
+
+The application file selects the definition source using ordinary Config keys.
+The separate file holds expressions that the overrides filter interprets as
+matching rules. Ordinary configuration sources do not expand wildcard keys.
 
 Build the target as usual:
 
@@ -41,10 +54,18 @@ import io.helidon.config.ConfigSources;
 Config target = Config.builder()
         .addSource(ConfigSources.file("application.properties"))
         .build();
+
+assert target.get("environments.test.batch-size").asInt().get() == 200;
+assert target.get("environments.prod.batch-size").asInt().get() == 200;
 ```
 
-Both logging levels are now `WARNING`. A matching key must already exist:
-the filter does not add another service or logging-level node.
+| Application key | Source value | Value with the override |
+| --- | --- | --- |
+| `environments.test.batch-size` | `50` | `200` |
+| `environments.prod.batch-size` | `100` | `200` |
+
+A matching key must already exist. The rule does not create
+`environments.staging.batch-size` when that environment is absent.
 
 The provider reads its configuration once from the initial unfiltered Config
 view. Inline rules, definition source locations, and polling or watching settings
@@ -68,20 +89,18 @@ overrides:
           type: regular
           properties:
             interval: PT2S
-prod:
-  primary:
-    logging:
-      level: INFO
-  secondary:
-    logging:
-      level: INFO
+environments:
+  test:
+    batch-size: 50
+  prod:
+    batch-size: 100
 ```
 
 The definition file contains expressions directly, without an
 `overrides.expressions` prefix:
 
 ```properties
-prod.*.logging.level = WARNING
+environments.*.batch-size = 200
 ```
 
 Each independently built Config runtime has its own factory, definition
@@ -130,7 +149,7 @@ Config target = Config.builder()
         .disableFilterServices()
         .addSource(ConfigSources.file("application.properties"))
         .addFilterProvider(OverrideConfigFilter.builder()
-                .putOverrideExpression("prod.primary.logging.level", "FINEST")
+                .putOverrideExpression("environments.prod.batch-size", "150")
                 .addConfigSource(() -> ConfigSources.file("overrides.properties")
                         .pollingStrategy(PollingStrategies.regular(Duration.ofSeconds(2)))
                         .build())
@@ -148,8 +167,8 @@ produce inconsistent state; an immutable fixed filter remains safe to reuse.
 
 The first matching rule wins. Matching is case-sensitive and covers the whole
 configuration key. The wildcard `*` becomes `\w+`, matching one or more word
-characters; a dot is escaped. For example, `prod.*.logging.level` matches
-`prod.primary.logging.level`, but not `prod.my-pod.logging.level`. Other regular
+characters; a dot is escaped. For example, `environments.*.batch-size` matches
+`environments.prod.batch-size`, but not `environments.pre-prod.batch-size`. Other regular
 expression metacharacters retain their meaning, so these expressions are not a
 general glob language. Use `putOverridePattern(Pattern, String)` for explicit
 Java regular expressions.
@@ -184,8 +203,8 @@ requires checking rule order, file parsing, and any custom source or predicate.
 ### Replace the Legacy Registration
 
 Add the `helidon-config-overrides` dependency shown above. For automatic setup,
-put rules under `overrides.expressions` or source descriptors under
-`overrides.sources` in the application's configuration, as shown in
+put wildcard rules in a separate definition file and configure its descriptor
+under `overrides.sources` in the application's configuration, as shown in
 [Automatic Configuration](#automatic-configuration) and
 [Independently Changing Definitions](#independently-changing-definitions).
 Remove the corresponding legacy `.overrides(...)` registration.
@@ -291,12 +310,13 @@ expressions non-overlapping, or use ordered builder calls:
 import io.helidon.config.overrides.OverrideConfigFilter;
 
 var provider = OverrideConfigFilter.builder()
-        .putOverrideExpression("prod.primary.logging.level", "FINEST")
-        .putOverrideExpression("prod.*.logging.level", "WARNING")
+        .putOverrideExpression("environments.prod.batch-size", "150")
+        .putOverrideExpression("environments.*.batch-size", "200")
         .buildProvider();
 ```
 
-Here the specific expression wins for `prod.primary.logging.level`. Explicit
+Here the specific expression sets the production batch size to `150`, while
+the wildcard sets the test batch size to `200`. Explicit
 regular-expression patterns take priority over wildcard expressions, and
 builder rules precede source-loaded rules. The [wildcard rules](#rule-matching)
 retain their existing boundaries: for example, `*` does not match a hyphen.
