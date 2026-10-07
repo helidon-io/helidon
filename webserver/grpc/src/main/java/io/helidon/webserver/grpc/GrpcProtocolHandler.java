@@ -1178,10 +1178,10 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     methodMetrics.callDuration.record(Duration.ofMillis(System.currentTimeMillis() - startMillis));
                 }
             } finally {
+                responseLock.unlock();
                 if (closed && !completionFinalized) {
                     callState.compareAndSet(CallState.COMPLETING, CallState.COMPLETED);
                 }
-                responseLock.unlock();
                 if (closed) {
                     cancelContext(null);
                     scheduleTerminal(callState.get() == CallState.CANCELLED
