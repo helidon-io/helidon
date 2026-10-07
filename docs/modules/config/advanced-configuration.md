@@ -595,14 +595,18 @@ ordinary sources, identify the concrete keys, such as `database.host` and
 Review how newly added or removed keys should behave instead of assuming the
 source reproduces the wildcard rule.
 
-For wildcard or predicate-based transformations, an application can implement
-the ordinary [`ConfigFilter` SPI][configfilter]. This requires application code;
-it is not a drop-in replacement for an override source. Overrides run before
-ordinary filters, including value-reference resolution. Verify filter
-registration and ordering, `${...}` references in replacement values, caching,
-and change notifications for your application. An ordinary filter does not
-automatically acquire an override source's polling or watching behavior. Keep
-using overrides until a migration preserves the behavior you require.
+For wildcard or regular-expression rules, the optional
+[`helidon-config-overrides` module](overrides.md) provides immutable filters
+registered explicitly with the target configuration. A filter factory and
+closeable connection can propagate changes from an independently managed
+definition configuration to target reloads without changes to core Config.
+This is a migration option, not a blanket drop-in replacement: legacy overrides
+run before ordinary filters, including value-reference resolution. Verify rule
+priority, filter registration and ordering, key-token expansion, `${...}`
+references in replacement values, caching, and change notifications for your
+application. Arbitrary predicate rules can still require an application-specific
+[`ConfigFilter` SPI][configfilter] implementation. Keep using legacy overrides
+until a migration preserves the behavior you require.
 
 ### Tokens
 
