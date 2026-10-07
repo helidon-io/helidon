@@ -515,16 +515,14 @@ assert config.get(Key.escapeName("oracle.com")).name().equals("oracle.com"); // 
 
 ## Filters, Overrides, and Token Substitution
 
-When your application retrieves a config value, the config system can transform
-it before returning the value, according to *filters*, *overrides*, and
-*tokens*. The config system provides some built-in instances of these you can
-use, and you can add your own as described in the sections which describe
-[filters][filters] and [overrides](extensions.md#overridesource-spi).
+When your application retrieves a config value, filters can transform it before
+returning it. The built-in value-resolving filter substitutes token references;
+the optional [overrides filter](overrides.md) replaces existing values using
+wildcard or regular-expression rules.
 
-Your application can add filters and overrides explicitly to a config builder.
-The config system also discovers filters and filter providers using Java service loader by default.
-Override source providers support sources selected explicitly in
-meta-configuration; discovering a provider does not enable overrides by itself.
+Your application can register filters and filter providers explicitly with a
+config builder. The config system also discovers them using Java service loader
+or the service registry. See [ConfigFilter SPI][filters] for custom filters.
 
 ### Filters
 
@@ -555,76 +553,24 @@ Stateless direct filters do not inherently have this problem.
 
 ### Overrides
 
-The legacy core overrides APIs and SPI are deprecated since Helidon 28.0.0 and
-marked for removal in favor of the optional [overrides filter module](overrides.md).
-Overrides functionality is being replaced, not discontinued. The legacy feature
-remains available and retains its existing behavior. A removal version has not
-been decided. When a legacy override first
-matches a configuration key, Helidon logs a deprecation warning once per
-runtime. Merely configuring overrides without applying a matching entry does
-not emit the warning; it contains no configuration keys or values.
+Use the optional [Config Overrides Filter](overrides.md) to replace values
+whose keys match wildcard expressions or Java regular expressions. Add the
+module dependency and configure its automatically discovered provider, or use
+the builder for explicit registration. Definition sources can be monitored for
+changes, which rebuild the target configuration while preserving old snapshots.
 
-Using an API marked `forRemoval=true` produces a Java compiler removal warning.
-Builds that treat warnings as errors may need to address that warning while
-planning migration. The annotation does not specify a removal release or date.
-
-If you use overrides, share your use case and migration requirements in
-[issue #10415](https://github.com/helidon-io/helidon/issues/10415). Absence of
-usage feedback does not establish that the feature has no users.
-
-The overrides feature allows you to create an external document containing
-key/value pairs which replace the value otherwise returned for the name, and
-then add that document as an override source to a config builder.
-
-Legacy overrides provide wildcard matching and change detection for definition
-sources. The optional overrides filter module also supports these capabilities
-using a per-runtime filter factory.
-
-Both overrides and ordinary filters transform values of existing nodes; neither
-creates missing nodes. Ordinary config sources can add nodes.
-
-Each override entry consists of a Java properties-format definition. The key is
-an expression (which can use wildcards) to match config keys read from the
-current config sources, and the override value is the new value for any key
-matching the key expression from that entry. Order is important. The config
-system tests every key expression/value pair one by one in the order they appear
-in the overrides sources. Once the config system finds an override entry in
-which the key expression matches the configuration key, the system returns that
-entry’s value for the key being processed.
-
-See the [`OverrideSource` Javadoc](extensions.md#overridesource-spi) for more
-detail.
+The filter transforms existing values; it does not create missing nodes.
+Ordinary source precedence can introduce nodes and does not interpret wildcard
+keys. See the filter guide for configuration, matching rules, and reload behavior.
 
 #### Migrating from Overrides
 
-For replacement values with known, exact keys, use an ordinary config source
-with higher precedence, such as `ConfigSources.create(Map<String, String>)`
-placed before a file source in `Config.Builder.sources(...)`. Check the complete
-source order, including system properties and environment variables if enabled.
-Unlike overrides, a higher-priority source can add nodes; it does not interpret
-keys such as `*.host` as wildcard rules.
-
-For example, an override rule `*.host=deployment-host` replaces values only for
-existing matching nodes, with the first matching rule winning. To migrate using
-ordinary sources, identify the concrete keys, such as `database.host` and
-`service.host`, and supply those exact keys in the higher-priority source.
-Review how newly added or removed keys should behave instead of assuming the
-source reproduces the wildcard rule.
-
-For wildcard or regular-expression rules, the optional
-[`helidon-config-overrides` module](overrides.md) provides an automatically
-discovered filter provider, with builder configuration available for manual
-registration. A separate factory owns the definition sources and their change
-support for each Config runtime, creating an immutable rule snapshot for each
-generation. Definition source locations and monitoring settings are read once
-from the initial configuration; their contents can change while the runtime runs.
-This is a migration option, not a blanket drop-in replacement: legacy overrides
-run before ordinary filters, including value-reference resolution. Verify rule
-priority, filter registration and ordering, key-token expansion, `${...}`
-references in replacement values, caching, and change notifications for your
-application. Arbitrary predicate rules can still require an application-specific
-[`ConfigFilter` SPI][configfilter] implementation. Keep using legacy overrides
-until a migration preserves the behavior you require.
+The legacy `Config.Builder.overrides(...)` API and `OverrideSource` SPI are
+deprecated for removal since 28.0.0; existing behavior remains available and
+no removal version has been decided. Follow
+[Migrating from Config Overrides](overrides.md#migrating-from-config-overrides)
+for before/after examples, meta-configuration changes, rule-order differences,
+and preservation of reload behavior.
 
 ### Tokens
 
@@ -632,28 +578,32 @@ A token reference is a key token starting with `$`, optionally enclosed between
 `{` and `}`, i.e. `$ref` or `${ref}`. Even a key composed of more than one token
 can be referenced in another key, i.e. `${env.ref}`.
 
-As an example use case, you can use token references to declare the default
-values (see `resolving-tokens.yaml` below), while the references may be resolved
-in another config source, which identifies a current environment (see `env.yaml`
-examples below). You can then use the same overrides for different environments,
-say `test` and `prod`. The configuration in each environment is then overridden
-with a different values using wildcards (see `overrides.properties` below).
+For example, use one source to select the environment:
 
-Initialize `Config` with Override Definition from `overrides.properties` file:
-
-<!--@mdc ::code-callout -->
-```java
-Config config = Config.builder()
-    .overrides(OverrideSources.file("conf/overrides.properties")) // <1>
-    .sources(file("conf/env.yaml"), // <2>
-         classpath("resolving-tokens.yaml")) // <3>
-    .build();
+```properties [environment.properties]
+env = prod
 ```
-1. Loads *overrides* from the specified file.
-2. A deployment-specific environment configuration file.
-3. A default configuration containing token references that are resolved using
-   the environment-specific override.
-<!--@mdc :: -->
+
+Reference it from another source's keys and values:
+
+```properties [defaults.properties]
+${env}.greeting = Hello ${env}
+```
+
+```java
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+
+Config config = Config.builder()
+        .sources(ConfigSources.file("environment.properties"),
+                 ConfigSources.file("defaults.properties"))
+        .build();
+
+assert config.get("prod.greeting").asString().get().equals("Hello prod");
+```
+
+Key tokens are resolved before value filtering. If you also use the overrides
+filter, its expressions match the resolved key, such as `prod.greeting`.
 
 You can disable key and value token replacement separately as the following
 example shows.
@@ -728,31 +678,26 @@ for actually reloading the source.
 Your application can invoke the system watcher builder’s `executor` method to
 tell the builder to use a different `Executor`.
 
-Customize config and override sources executors:
+Customize change-watcher executors for two config sources:
 
 <!--@mdc ::code-callout -->
 ```java
 ScheduledExecutorService executor =
     Executors.newScheduledThreadPool(2); // <1>
 
-Config config = Config.builder()
-    .overrides(OverrideSources
-       .file("conf/overrides.properties")
-       .changeWatcher(FileSystemWatcher.builder()
-          .executor(executor) // <2>
-          .build()))
-    .sources(file("conf/env.yaml")
-    .changeWatcher(FileSystemWatcher.builder()
-        .executor(executor) // <3>
-        .build()))
-    .build();
+Config config = Config.create(
+        file("conf/deployment.properties")
+                .changeWatcher(FileSystemWatcher.builder()
+                        .executor(executor) // <2>
+                        .build()),
+        file("conf/application.properties")
+                .changeWatcher(FileSystemWatcher.builder()
+                        .executor(executor) // <3>
+                        .build()));
 ```
 1. Prepares a thread pool executor to be shared by selected sources.
-2. Tells the builder that the resulting overrides source should use the
-   specified `Executor` for notifying interested parties of changes and for
-   reloading the override source.
-3. Uses the same `Executor` and event buffer size for the config source as for
-   the override source above.
+2. Uses the specified executor for the deployment file's change watcher.
+3. Uses the same executor for the application file's change watcher.
 <!--@mdc :: -->
 
 ### Retry Policy Custom Executor

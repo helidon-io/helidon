@@ -19,21 +19,14 @@ this provider.
 </dependency>
 ```
 
-The legacy core overrides APIs and SPI are marked `forRemoval=true` since
-Helidon 28.0.0 in favor of this optional filter module. Overrides functionality
-is being replaced, not discontinued. Legacy overrides remain available with
-unchanged behavior during staged migration; no removal release or timing has
-been decided. Core logs a secret-free warning once per runtime when a legacy
-rule first matches. Share migration requirements in
-[issue #10415](https://github.com/helidon-io/helidon/issues/10415); lack of feedback
-does not establish that the feature has no users.
+If your application uses `Config.Builder.overrides(...)`, `OverrideSources`,
+or `OverrideSource`, follow [Migrating from Config Overrides](#migrating-from-config-overrides).
 
 ## Automatic Configuration
 
 For example, `application.properties` can contain:
 
 ```properties
-overrides.expressions.prod.primary.logging.level = FINEST
 overrides.expressions.prod.*.logging.level = WARNING
 prod.primary.logging.level = INFO
 prod.secondary.logging.level = INFO
@@ -49,6 +42,9 @@ Config target = Config.builder()
         .addSource(ConfigSources.file("application.properties"))
         .build();
 ```
+
+Both logging levels are now `WARNING`. A matching key must already exist:
+the filter does not add another service or logging-level node.
 
 The provider reads its configuration once from the initial unfiltered Config
 view. Inline rules, definition source locations, and polling or watching settings
@@ -85,7 +81,6 @@ The definition file contains expressions directly, without an
 `overrides.expressions` prefix:
 
 ```properties
-prod.primary.logging.level = FINEST
 prod.*.logging.level = WARNING
 ```
 
@@ -149,7 +144,7 @@ Such a directly registered filter is reused across reloads. Config warns once
 when direct filters coexist with reloads because mutable direct filters may
 produce inconsistent state; an immutable fixed filter remains safe to reuse.
 
-## Rule Matching and Migration
+## Rule Matching
 
 The first matching rule wins. Matching is case-sensitive and covers the whole
 configuration key. The wildcard `*` becomes `\w+`, matching one or more word
@@ -162,21 +157,180 @@ Java regular expressions.
 Rules replace values only on existing nodes; they do not add missing nodes.
 Explicit builder patterns precede wildcard expressions even if calls to the
 two methods are interleaved. Programmatic rules precede definition source rules.
-Definitions loaded as configuration maps do not necessarily preserve the line
-order of a legacy overrides document. Avoid overlapping rules or verify their
-priority before migrating.
+Rules loaded from configuration maps do not have a guaranteed document order.
+Use non-overlapping expressions in definition files and inline configuration.
+When priority between overlapping rules matters, register them in order using
+the builder, as described in the migration guide below.
 
 Provider-created filters run before the default value-resolving filter, so
 `${...}` references in replacement values can resolve against target values.
-Legacy overrides use a separate stage before ordinary filters. Verify ordering
-with other custom filters, key-token expansion, list keys, rule priority,
-caching, and change notifications in your application; this module is not a
-blanket drop-in replacement for every legacy source or predicate.
+They run after legacy overrides if both mechanisms are configured. Remove the
+legacy registration when migrating the same rules so they are not applied twice.
+
+## Migrating from Config Overrides
+
+The legacy core overrides APIs and SPI are marked `forRemoval=true` since
+Helidon 28.0.0 in favor of this optional filter module. They remain available
+with their existing behavior during migration; no removal version has been
+decided. Using these APIs produces Java compiler removal warnings, which can
+affect builds that treat warnings as errors. Core also logs a deprecation warning
+once per runtime when a legacy rule first matches, without configuration keys
+or values in the warning.
+
+The filter preserves wildcard replacement of existing values and supports
+updates from independently monitored definition sources. Migration still
+requires checking rule order, file parsing, and any custom source or predicate.
+
+### Replace the Legacy Registration
+
+Add the `helidon-config-overrides` dependency shown above. For automatic setup,
+put rules under `overrides.expressions` or source descriptors under
+`overrides.sources` in the application's configuration, as shown in
+[Automatic Configuration](#automatic-configuration) and
+[Independently Changing Definitions](#independently-changing-definitions).
+Remove the corresponding legacy `.overrides(...)` registration.
+
+For code that configures an external definition file explicitly, replace this
+legacy registration:
+
+```java
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+import io.helidon.config.OverrideSources;
+
+Config target = Config.builder()
+        .addSource(ConfigSources.file("application.properties"))
+        .overrides(OverrideSources.file("overrides.properties"))
+        .build();
+```
+
+with a filter provider built using the same file:
+
+```java
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+import io.helidon.config.overrides.OverrideConfigFilter;
+
+Config target = Config.builder()
+        .disableFilterServices()
+        .addSource(ConfigSources.file("application.properties"))
+        .addFilterProvider(OverrideConfigFilter.builder()
+                .addConfigSource(() -> ConfigSources.file("overrides.properties").build())
+                .buildProvider())
+        .build();
+```
+
+This example disables automatic filter discovery to use only the explicit
+registration. If your application relies on other discovered filters, keep
+discovery enabled and avoid configuring the same override rules through both
+the automatically discovered provider and the explicit provider.
+
+Other common registrations map as follows:
+
+| Legacy registration | Filter configuration |
+| --- | --- |
+| `OverrideSources.classpath(resource)` or `OverrideSources.url(url)` | Supply the corresponding `ConfigSources.classpath(resource)` or `ConfigSources.url(url)` through `addConfigSource(...)`. |
+| `OverrideSources.create(map)` | Add entries with `putOverrideExpression(expression, value)`, then call `buildProvider()`. Preserve intentional priority when iterating the map. |
+| `OverrideSources.empty()` | Omit the override rules or provider registration. |
+| Custom `OverrideSource` or predicate entries | Provide a `ConfigSource` of expression/value definitions, or implement a `ConfigFilterProvider` for behavior that cannot be expressed as these rules. There is no automatic adapter for arbitrary predicates. |
+
+### Move Meta-configuration into Application Configuration
+
+The legacy `override-source` entry belongs to Config's meta-configuration.
+The new provider reads `overrides.sources` from the **initial application
+configuration**. Renaming the entry in the meta-configuration is not sufficient.
+
+For example, replace this legacy meta-configuration entry:
+
+```yaml
+override-source:
+  type: file
+  properties:
+    path: overrides.properties
+```
+
+with this entry in the application configuration:
+
+```yaml
+overrides:
+  sources:
+    - type: file
+      properties:
+        path: overrides.properties
+```
+
+Keep the meta-configuration's application sources. Move any polling, watching,
+optional-source, or retry settings into the new source descriptor, using the
+ordinary Config source format. Alternatively, register the provider explicitly
+as above. Source descriptors and inline rules are captured once when the target
+runtime is built; changes to the contents of monitored definition sources are
+handled separately.
+
+### Check Definition Parsing and Rule Priority
+
+External definition files contain expressions directly, without the
+`overrides.expressions` prefix. The replacement reads them through ordinary
+Config sources and parsers. Legacy file sources always parsed Java Properties;
+the replacement chooses a parser by media type. Use a `.properties` file for
+properties content, or specify its media type explicitly. A YAML definition
+source needs YAML content and the YAML parser dependency.
+
+The replacement also constructs a configuration tree. A legacy flat document
+could contain both `service=one` and `service.level=two`; a properties Config
+source rejects these because `service` cannot be both a value and an object.
+Move such rules to the filter builder instead of loading them as a definition
+Config. Check escaping and duplicate keys when reusing a legacy file.
+
+Legacy override documents preserve the order of their entries and use the first
+matching rule. The filter also uses the first match, but loading a document into
+a Config map does not guarantee that its original order survives. Do not rely
+on placing a specific rule before a broad rule in a properties file. Make the
+expressions non-overlapping, or use ordered builder calls:
+
+```java
+import io.helidon.config.overrides.OverrideConfigFilter;
+
+var provider = OverrideConfigFilter.builder()
+        .putOverrideExpression("prod.primary.logging.level", "FINEST")
+        .putOverrideExpression("prod.*.logging.level", "WARNING")
+        .buildProvider();
+```
+
+Here the specific expression wins for `prod.primary.logging.level`. Explicit
+regular-expression patterns take priority over wildcard expressions, and
+builder rules precede source-loaded rules. The [wildcard rules](#rule-matching)
+retain their existing boundaries: for example, `*` does not match a hyphen.
+
+### Preserve Reload Behavior
+
+If the legacy source used polling or watching, configure that support on the
+new definition source as well; adding a file source alone does not enable it.
+See the [automatic](#independently-changing-definitions) and
+[builder](#manual-configuration) examples above.
+
+As with legacy overrides, a definition update rebuilds the target configuration
+and notifies listeners when effective values change. Old Config snapshots keep
+their captured rules. The filter provider schedules rebuilds asynchronously and
+may coalesce rapid changes; do not depend on receiving each intermediate file
+version. Continue using `onChange(...)` or `context().last()` to obtain updated
+Config snapshots. Stopping the target's change support also stops definition
+monitoring.
+
+Before switching, verify results with overlapping rules, key-token expansion,
+list keys, `${...}` replacement values, and other custom filters. Legacy
+overrides run before provider filters; provider filters run before ordinary
+filters, including value resolution. Keep using legacy overrides for any
+behavior your migration does not yet preserve. Share missing capabilities in
+[issue #10415](https://github.com/helidon-io/helidon/issues/10415).
+
+### When Ordinary Source Precedence Is Enough
 
 Ordinary source precedence is a different migration option for known exact
 keys. A higher-priority source can add nodes and does not interpret `*.host`
 as a wildcard rule. Enumerate concrete keys and decide how newly added keys
 should behave before replacing wildcard rules with ordinary sources.
 
-Arbitrary predicate rules may require an application-specific filter provider.
-Keep using legacy overrides until migration preserves the behavior you require.
+For example, replace `*.host=deployment-host` with concrete entries such as
+`database.host` and `service.host` only if you intend to maintain that list and
+accept ordinary sources' ability to create those nodes. Check the complete
+source order, including system properties and environment variables.

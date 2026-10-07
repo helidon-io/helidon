@@ -21,9 +21,6 @@ Configuration SPI:
   represents the loaded and parsed configuration.
 - `ConfigParser` - Translates configuration content in a given format into the
   corresponding internal config data structures.
-- `OverrideSource` - Provides key/value pairs which override config values
-  loaded from any `ConfigSource`, given the key and *ignoring* the original
-  value. Deprecated since 28.0.0 and marked for removal.
 - `ConfigFilter` - Transforms config `String` values returned from any
   value-type `Config` node, given the key *and* the original value.
 - `ConfigFilterProvider` - Creates a per-runtime `ConfigFilterFactory`, which
@@ -52,8 +49,6 @@ Service providers:
   through profiles
 - `ChangeWatcherProvider` - support for named change watchers, configurable
   through profiles
-- `OverrideSourceProvider` - support for named override sources, configurable
-  through profiles. Deprecated since 28.0.0 and marked for removal.
 - `PollingStrategyProvider` - support for named polling strategies, configurable
   through profiles
 - `RetryPolicyProvider` - support for retry policies, configurable through
@@ -71,8 +66,8 @@ You can configure a custom extension in two ways:
 
 ### Manual Configuration with Builder
 
-The following example shows configuration of all possible extensions with
-`Config` (all custom extension have a name prefix `My`):
+The following example configures custom extensions with `Config` (custom
+extensions have a name prefix `My`):
 
 ```java
 Config config = Config.builder()
@@ -83,7 +78,7 @@ Config config = Config.builder()
                            .retryPolicy(MyRetryPolicy.create()))
         .addSource(MySource.create())
         .addFilter(MyFilter.create())
-        .overrides(MyOverrides.create())
+        .addFilterProvider(MyFilterProvider.create())
         .build();
 ```
 
@@ -236,41 +231,15 @@ removal in favor of the optional [overrides filter module](overrides.md).
 Overrides functionality is being replaced, not discontinued. Existing
 implementations and the `override-source` meta-configuration entry continue to
 work. No removal version has been decided. See
-[Migrating from Overrides](advanced-configuration.md#migrating-from-overrides)
-for alternatives and their semantic differences.
+[Migrating from Config Overrides](overrides.md#migrating-from-config-overrides)
+for replacement registrations and their semantic differences.
 
-When the application retrieves a configuration value, the config system applies
-overrides to the value from its config sources **before** ordinary filters,
-including value-reference resolution. Each override has:
-
-- a `Predicate<Config.Key>` (a boolean-valued function that operates on the
-  config key), and
-- a replacement, *overriding*, `String` value the config system should use if
-  the predicate evaluates to true.
-
-To furnish overrides to the config system, implement the
-[`OverrideSource`][overridesource] SPI one or more times and pass instances of
-those implementations to the config builder’s [`overrides`][overrides] method.
-The config system will apply the overrides returned from each `OverrideSource`
-to each config key requested from a `Config` that is based on that
-`Config.Builder`. It uses the first matching entry and cannot create nodes
-absent from the config sources.
-
-To support custom override sources in config profiles, also implement the
-[`OverrideSourceProvider`][overridesourcepr] service loader SPI
-
-For new extensions, prefer `ConfigSource` and `ConfigSourceProvider` for ordinary
-source precedence, or `ConfigFilter` for application-defined value
-transformations. Migrating an existing custom override source requires checking
-wildcard matching, existing-node restrictions, filter ordering, and change
-detection; these alternatives do not automatically preserve override semantics.
-
-![spi OverrideSource](../../images/config/spi-OverrideSource.png)
-
-Figure 5. OverrideSource SPI
-
-Note that override sources can also implement `PollableSource`, and
-`WatchableSource` to add change support.
+For custom sources of override expressions, implement `ConfigSource` and
+configure it as a definition source for the filter. For arbitrary predicates
+or transformations, implement [ConfigFilterProvider](#configfilter-spi).
+Keep monitoring resources in the per-runtime factory and capture immutable
+rules in each filter. Ordinary source precedence is another option for concrete
+keys, but it can introduce nodes and does not reproduce wildcard matching.
 
 ## ConfigFilter SPI
 
@@ -353,7 +322,7 @@ unfiltered construction view.
 
 ![spi ConfigFilter](../../images/config/spi-ConfigFilter.png)
 
-Figure 6. ConfigFilter SPI
+Figure 5. ConfigFilter SPI
 
 ## ConfigMapperProvider SPI
 
@@ -414,7 +383,7 @@ Mapper providers accept `@Weight`. See [About Priority](#about-priority).
 
 ![spi ConfigMapperProvider](../../images/config/spi-ConfigMapperProvider.png)
 
-Figure 7. ConfigMapperProvider SPI
+Figure 6. ConfigMapperProvider SPI
 
 A mapper provider can specify [`@Weight`][weight]. If no weight is explicitly
 assigned, the value of `100` is assumed.
@@ -458,7 +427,7 @@ instead.
 
 ![spi PollingStrategy](../../images/config/spi-PollingStrategy.png)
 
-Figure 8. PollingStrategy SPI
+Figure 7. PollingStrategy SPI
 
 To support polling strategies that can be configured in config profile, also
 implement the `PollingStrategyProvider` Java service loader SPI.
@@ -482,14 +451,14 @@ appropriate type of change watchers).
 
 ![spi ChangeWatcher](../../images/config/spi-ChangeWatcher.png)
 
-Figure 9. ChangeWatcher SPI
+Figure 8. ChangeWatcher SPI
 
 To support change watchers that can be configured in config profile, also
 implement the `ChangeWatcherProvider` Java service loader SPI.
 
 ## RetryPolicy SPI
 
-The builder for each `ConfigSource` and `OverrideSource` accepts a
+The builder for each `ConfigSource` accepts a
 [`RetryPolicy`][retrypolicy] governing if and how the source should deal with
 failures loading the underlying data.
 
@@ -518,7 +487,7 @@ retries.
 
 ![spi RetryPolicy](../../images/config/spi-RetryPolicy.png)
 
-Figure 10. RetryPolicy SPI
+Figure 9. RetryPolicy SPI
 
 The application can try to cancel the overall execution of a `RetryPolicy` by
 invoking the `RetryPolicy#cancel(boolean mayInterruptIfRunning)` method. Ideally
@@ -536,9 +505,6 @@ loader SPI `RetryPolicyProvider`.
 [configsources]: https://helidon.io/docs/core/v28/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html
 [configsource]: https://helidon.io/docs/core/v28/apidocs/io.helidon.config/io/helidon/config/spi/ConfigSource.html
 [configparser]: https://helidon.io/docs/core/v28/apidocs/io.helidon.config/io/helidon/config/spi/ConfigParser.html
-[overridesource]: https://helidon.io/docs/core/v28/apidocs/io.helidon.config/io/helidon/config/spi/OverrideSource.html
-[overrides]: https://helidon.io/docs/core/v28/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#overrides(java.util.function.Supplier)
-[overridesourcepr]: https://helidon.io/docs/core/v28/apidocs/io.helidon.config/io/helidon/config/spi/OverrideSourceProvider.html
 [configfilter]: https://helidon.io/docs/core/v28/apidocs/io.helidon.config/io/helidon/config/spi/ConfigFilter.html
 [addfilter-method]: https://helidon.io/docs/core/v28/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html
 [disablefilterser]: https://helidon.io/docs/core/v28/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#disableFilterServices()

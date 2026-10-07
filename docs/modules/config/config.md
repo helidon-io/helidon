@@ -233,14 +233,12 @@ system properties, environment variables, or through files available on each
 environment (be it a physical machine, a Kubernetes pod, or a docker image)
 without changing your source code.
 
-Source precedence is separate from the legacy **overrides feature**, which
-replaces values of existing nodes using ordered wildcard or predicate rules.
-The legacy core APIs are deprecated since 28.0.0 and marked for removal in favor
-of an optional overrides filter module. Overrides functionality is being
-replaced, not discontinued. The legacy feature remains available, and no removal
-version has been decided. See
-[Migrating from Overrides](advanced-configuration.md#migrating-from-overrides)
-before replacing an override source with an ordinary configuration source.
+Source precedence differs from the optional [Config Overrides Filter](overrides.md).
+That filter uses wildcard or regular-expression rules to replace values on
+existing nodes; it does not add missing nodes. Ordinary sources can add nodes
+and do not interpret wildcard keys. Applications using the deprecated core
+overrides API should follow
+[Migrating from Config Overrides](overrides.md#migrating-from-config-overrides).
 
 ### Config Filters
 
