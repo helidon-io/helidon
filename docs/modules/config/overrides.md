@@ -233,6 +233,18 @@ Provider-created filters run before the default value-resolving filter, so
 They run after legacy overrides if both mechanisms are configured. Remove the
 legacy registration when migrating the same rules so they are not applied twice.
 
+Overrides apply after source merging. A rule supplied by a lower-priority source
+can therefore replace a value supplied by a higher-priority source. Source
+priority selects the merged `overrides` settings; it does not limit which
+existing values those rules can replace.
+
+Trust every source that can supply `overrides` settings, and every referenced
+definition source, to replace all matching values. If application configuration
+includes sources without that authority, disable automatic filter discovery
+with `disableFilterServices()` and register an `OverrideConfigFilterProvider`
+configured explicitly from trusted settings. This also disables discovery of
+other filters, which must then be registered explicitly if needed.
+
 ## Migrating from Config Overrides
 
 The legacy core overrides APIs and SPI are marked `forRemoval=true` since

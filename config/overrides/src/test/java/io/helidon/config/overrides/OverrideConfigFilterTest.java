@@ -101,6 +101,35 @@ class OverrideConfigFilterTest {
     }
 
     @Test
+    void testDiscoveredOverridesApplyAfterSourceMerging() {
+        var deployment = ConfigSources.create(Map.of("environments.prod.orders.batch-size", "100",
+                                                    "environments.prod.payments.batch-size", "75"));
+        var defaults = ConfigSources.create(Map.of("environments.prod.orders.batch-size", "50",
+                                                  "environments.prod.payments.batch-size", "25",
+                                                  "overrides.expressions.environments.prod.orders.batch-size", "200"));
+        Config unfiltered = Config.builder(deployment, defaults)
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .disableFilterServices()
+                .build();
+        Config filtered = Config.builder(deployment, defaults)
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .build();
+        try {
+            assertThat("ordinary source precedence selects the deployment value",
+                       unfiltered.get("environments.prod.orders.batch-size").asInt().get(), is(100));
+            assertThat("a discovered override from the later source replaces the merged value",
+                       filtered.get("environments.prod.orders.batch-size").asInt().get(), is(200));
+            assertThat("unmatched values retain ordinary source precedence",
+                       filtered.get("environments.prod.payments.batch-size").asInt().get(), is(75));
+        } finally {
+            filtered.context().stopChangeSupport();
+            unfiltered.context().stopChangeSupport();
+        }
+    }
+
+    @Test
     void testProgrammaticPatternsPreserveFlagsAndFirstMatchPriority() {
         var provider = OverrideConfigFilterProvider.builder()
                 .addOverridePattern(rule -> rule.pattern(Pattern.compile("services\\.orders\\.endpoint",
