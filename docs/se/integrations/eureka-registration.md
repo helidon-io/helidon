@@ -97,12 +97,14 @@ description of the permitted configuration.
 
 ## Logging
 
-This feature is deliberately designed to be *unobtrusive*. Unobtrusive means
-that if everything is working properly Eureka Server service instance
-registration will simply happen, quietly, behind the scenes, automatically. If
-something goes wrong, service instance registration will not interrupt the
-running microservice. Therefore, the information this feature logs can be
-important.
+This feature attempts initial registration when the WebServer starts, before
+starting lease renewal. If the Eureka Server refuses the connection, the feature
+logs a warning and the WebServer starts; the renewal loop can attempt
+registration later. An unsuccessful HTTP response also allows startup to
+continue when the feature can process its body. Other exceptions during initial
+registration, such as an unsupported response media type, can propagate from
+`WebServer.start()`. The server listener has already started when this happens.
+Check the feature's logs when registration does not succeed.
 
 Like all other Helidon components, this feature uses Java logging. Its loggers
 begin with the `io.helidon.integrations.eureka` prefix, and log debug, warning
