@@ -1489,6 +1489,16 @@ class GrpcProtocolHandlerTest {
         assertThat(grpcConnectionContext.get().sniMatchedHost(), is(Optional.of("*.example.com")));
     }
 
+    private static void sendRequest(GrpcProtocolHandler<String, String> handler) {
+        byte[] message = "request".getBytes(StandardCharsets.UTF_8);
+        BufferData data = BufferData.create(5 + message.length);
+        data.write(0);
+        data.writeUnsignedInt32(message.length);
+        data.write(message);
+        handler.data(Http2FrameHeader.create(data.available(), Http2FrameTypes.DATA,
+                                             Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM), 1), data);
+    }
+
     private void requestFromWorkerWhileOnMessageIsActive(boolean queuedMessages, boolean withDeadline) throws Exception {
         var callReference = new AtomicReference<ServerCall<String, String>>();
         var requested = new CompletableFuture<CompletableFuture<Void>>();
@@ -1960,16 +1970,6 @@ class GrpcProtocolHandlerTest {
         assertThat("one terminal status", writer.trailerWrites.get(), is(1));
     }
 
-    private static void sendRequest(GrpcProtocolHandler<String, String> handler) {
-        byte[] message = "request".getBytes(StandardCharsets.UTF_8);
-        BufferData data = BufferData.create(5 + message.length);
-        data.write(0);
-        data.writeUnsignedInt32(message.length);
-        data.write(message);
-        handler.data(Http2FrameHeader.create(data.available(), Http2FrameTypes.DATA,
-                                             Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM), 1), data);
-    }
-
     private static void sendStreamingRequest(GrpcProtocolHandler<String, String> handler, String message) {
         sendStreamingRequest(handler, message, false);
     }
@@ -2320,6 +2320,37 @@ class GrpcProtocolHandlerTest {
         );
     }
 
+    private static class RecordingWriter implements Http2StreamWriter {
+        private final CompletableFuture<Http2Headers> trailers = new CompletableFuture<>();
+        private final AtomicInteger trailerWrites = new AtomicInteger();
+        private final AtomicInteger dataWrites = new AtomicInteger();
+
+        @Override
+        public void write(Http2FrameData frame) {
+        }
+
+        @Override
+        public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
+            dataWrites.incrementAndGet();
+        }
+
+        @Override
+        public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags,
+                                FlowControl.Outbound flowControl) {
+            if (flags.endOfStream()) {
+                trailerWrites.incrementAndGet();
+                trailers.complete(headers);
+            }
+            return 0;
+        }
+
+        @Override
+        public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags,
+                                Http2FrameData dataFrame, FlowControl.Outbound flowControl) {
+            throw new UnsupportedOperationException("Unused");
+        }
+    }
+
     @Nested
     class BufferDataInputStreamTest {
 
@@ -2438,37 +2469,6 @@ class GrpcProtocolHandlerTest {
 
         private GrpcProtocolHandler.BufferDataInputStream stream(byte[] content) {
             return new GrpcProtocolHandler.BufferDataInputStream(BufferData.create(content));
-        }
-    }
-
-    private static class RecordingWriter implements Http2StreamWriter {
-        private final CompletableFuture<Http2Headers> trailers = new CompletableFuture<>();
-        private final AtomicInteger trailerWrites = new AtomicInteger();
-        private final AtomicInteger dataWrites = new AtomicInteger();
-
-        @Override
-        public void write(Http2FrameData frame) {
-        }
-
-        @Override
-        public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
-            dataWrites.incrementAndGet();
-        }
-
-        @Override
-        public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags,
-                                FlowControl.Outbound flowControl) {
-            if (flags.endOfStream()) {
-                trailerWrites.incrementAndGet();
-                trailers.complete(headers);
-            }
-            return 0;
-        }
-
-        @Override
-        public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags,
-                                Http2FrameData dataFrame, FlowControl.Outbound flowControl) {
-            throw new UnsupportedOperationException("Unused");
         }
     }
 

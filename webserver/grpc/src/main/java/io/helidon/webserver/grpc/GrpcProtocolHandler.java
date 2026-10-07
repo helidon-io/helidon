@@ -305,6 +305,11 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         }
     }
 
+    @Override
+    public void close() {
+        close(false);
+    }
+
     private void updateStreamState(Http2StreamState next) {
         Http2StreamState state = currentStreamState.updateAndGet(current -> nextStreamState(current, next));
         Runnable listener = null;
@@ -333,11 +338,6 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     @Override
     public void rstStream(Http2RstStream rstStream) {
         close(true);
-    }
-
-    @Override
-    public void close() {
-        close(false);
     }
 
     @Override
@@ -631,20 +631,6 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         }
     }
 
-    private void close(boolean peerReset) {
-        updateStreamState(CLOSED);
-        // Normal END_STREAM cleanup may close the sub-protocol while terminal headers are still being written.
-        // Only a peer reset can cancel that terminal publication.
-        if (callState.compareAndSet(CallState.OPEN, CallState.CANCELLED)
-                || (peerReset && callState.compareAndSet(CallState.COMPLETING, CallState.CANCELLED))) {
-            callCancelled = true;
-            Thread.startVirtualThread(() -> {
-                cancelContext(Status.CANCELLED.asRuntimeException());
-                scheduleTerminal(ListenerTerminal.CANCEL);
-            });
-        }
-    }
-
     private boolean callClosed() {
         return callState.get() != CallState.OPEN;
     }
@@ -810,6 +796,20 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
     ServerCall<REQ, RES> createServerCall() {
         return new GrpcServerCall();
+    }
+
+    private void close(boolean peerReset) {
+        updateStreamState(CLOSED);
+        // Normal END_STREAM cleanup may close the sub-protocol while terminal headers are still being written.
+        // Only a peer reset can cancel that terminal publication.
+        if (callState.compareAndSet(CallState.OPEN, CallState.CANCELLED)
+                || (peerReset && callState.compareAndSet(CallState.COMPLETING, CallState.CANCELLED))) {
+            callCancelled = true;
+            Thread.startVirtualThread(() -> {
+                cancelContext(Status.CANCELLED.asRuntimeException());
+                scheduleTerminal(ListenerTerminal.CANCEL);
+            });
+        }
     }
 
     /**

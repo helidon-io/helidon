@@ -262,6 +262,31 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
         }
     }
 
+    @Override
+    void closeStreamingThreads() {
+        closed.set(true);
+        sendingQueue.clear();
+        queuedBytes.set(0);
+        // The worker performing cleanup must remain able to write the final HTTP/2 frames.
+        if (readStreamThread != Thread.currentThread()) {
+            cancelFuture(readStreamFuture);
+        }
+        writerLock.lock();
+        try {
+            if (writeStreamThread != Thread.currentThread()) {
+                cancelFuture(writeStreamFuture);
+            }
+        } finally {
+            writerLock.unlock();
+        }
+        heartbeatLock.lock();
+        try {
+            cancelFuture(heartbeatFuture);
+        } finally {
+            heartbeatLock.unlock();
+        }
+    }
+
     private void startHeartbeat() {
         Duration period = heartbeatPeriod();
         if (clientStream() == null || isClosed() || period.compareTo(Duration.ZERO) <= 0
@@ -407,31 +432,6 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                 queuedBytes.set(0);
             }
             socket().log(LOGGER, DEBUG, "[Writing task] exiting");
-        }
-    }
-
-    @Override
-    void closeStreamingThreads() {
-        closed.set(true);
-        sendingQueue.clear();
-        queuedBytes.set(0);
-        // The worker performing cleanup must remain able to write the final HTTP/2 frames.
-        if (readStreamThread != Thread.currentThread()) {
-            cancelFuture(readStreamFuture);
-        }
-        writerLock.lock();
-        try {
-            if (writeStreamThread != Thread.currentThread()) {
-                cancelFuture(writeStreamFuture);
-            }
-        } finally {
-            writerLock.unlock();
-        }
-        heartbeatLock.lock();
-        try {
-            cancelFuture(heartbeatFuture);
-        } finally {
-            heartbeatLock.unlock();
         }
     }
 
