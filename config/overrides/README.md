@@ -27,15 +27,15 @@ For manual setup, use the builder and register a provider:
 ```java
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.config.overrides.OverrideConfigFilter;
+import io.helidon.config.overrides.OverrideConfigFilterProvider;
 
 Config config = Config.builder()
         .disableFilterServices()
         .addSource(ConfigSources.file("application.properties"))
-        .addFilterProvider(OverrideConfigFilter.builder()
+        .addFilterProvider(OverrideConfigFilterProvider.builder()
                 .putOverrideExpression("environments.prod.batch-size", "150")
                 .putOverrideExpression("environments.*.batch-size", "200")
-                .buildProvider())
+                .build())
         .build();
 ```
 
@@ -44,18 +44,26 @@ the test batch size to `200`. Rules only replace existing values.
 
 Use fresh-source suppliers with `addConfigSource(...)` when configuring dynamic
 definitions manually. The provider can then create independent monitoring
-resources for multiple Config runtimes. `buildProvider()` captures inline rules
+resources for multiple Config runtimes. The provider builder's `build()` captures inline rules
 and supplier references; each supplier is called once per runtime and must
 return an independent source and its monitoring strategy. A supplier returning
-the same stateful source can still share monitoring state. The builder's
-`.build()` instead creates a fixed immutable filter for `addFilter(...)`.
+the same stateful source can still share monitoring state. Inline-only rules use
+the same provider API; its factory creates fresh immutable internal filters.
+
+Use `.config(application.get("overrides"))` to configure the provider builder
+from the `overrides` component. It accepts an `expressions` map, an ordered
+`patterns` list of rules with required `pattern` and `value` settings, and source
+descriptors under `sources`; each runtime resolves its own definition sources.
+Add regex rules programmatically with
+`.addOverridePattern(rule -> rule.pattern(Pattern.compile(expression)).value(value))`.
 
 The first matching rule wins, with explicit regular-expression patterns before
 wildcard expressions and programmatic rules before definition source rules.
 Wildcard `*` matches one or more regex word characters, dots are escaped, and
 other regex metacharacters retain their meaning. Rules cannot create missing
-nodes. Configuration map traversal need not preserve the order of lines in a
-legacy overrides document; verify overlapping rule priority.
+nodes. The configured regex list preserves rule order. Expression maps and
+definition source maps need not preserve the order of lines in a legacy overrides
+document; verify overlapping rule priority.
 
 Provider-created filters run before default value-reference resolution. Verify
 custom filter ordering, key-token expansion, list keys, caching and change

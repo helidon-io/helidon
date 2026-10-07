@@ -16,6 +16,9 @@
 
 package io.helidon.config.overrides;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.FileTime;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Map;
@@ -43,6 +46,7 @@ import io.helidon.config.spi.PollableSource;
 import io.helidon.config.spi.PollingStrategy;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -56,7 +60,7 @@ class OverrideReloadTest {
     @Test
     void completedDefinitionPollPublishesRulesBeforeReturning() throws Exception {
         var source = new MutableSource(Map.of("services.*.endpoint", "https://initial.example/api"));
-        var provider = OverrideConfigFilter.builder().addConfigSource(source).buildProvider();
+        var provider = OverrideConfigFilterProvider.builder().addConfigSource(source).build();
         ConfigFilterFactory factory = provider.create(Config.empty());
         ConfigFilter original = factory.create(Config.empty());
         var callbackEntered = new CountDownLatch(1);
@@ -133,7 +137,7 @@ class OverrideReloadTest {
     void startupReconcilesChangesBeforeCallbackRegistration() throws Exception {
         var source = new MutableSource(Map.of("services.*.endpoint", "https://initial.example/api"));
         var reconciled = new CountDownLatch(1);
-        var provider = OverrideConfigFilter.builder().addConfigSource(source).buildProvider();
+        var provider = OverrideConfigFilterProvider.builder().addConfigSource(source).build();
         Config target = baseBuilder().disableCaching().addSource(ConfigSources.create(targetValues()))
                 .addFilterProvider(initial -> {
                     ConfigFilterFactory factory = provider.create(initial);
@@ -141,7 +145,8 @@ class OverrideReloadTest {
                         @Override
                         public ConfigFilter create(Config raw) {
                             ConfigFilter filter = factory.create(raw);
-                            if (filter.apply(Config.Key.create("services.orders.endpoint"), "https://primary.example/api")
+                            if (filter.apply(Config.Key.create("services.orders.endpoint"),
+                                             "https://primary.example/api")
                                     .equals("https://updated.example/api")) {
                                 reconciled.countDown();
                             }
@@ -175,11 +180,11 @@ class OverrideReloadTest {
     @Test
     void sharedProviderCreatesIndependentDefinitionSourcesForEachRuntime() throws Exception {
         var created = new ArrayList<MutableSource>();
-        var provider = OverrideConfigFilter.builder().addConfigSource(() -> {
+        var provider = OverrideConfigFilterProvider.builder().addConfigSource(() -> {
             var source = new MutableSource(Map.of("services.*.endpoint", "https://initial.example/api"));
             created.add(source);
             return source;
-        }).buildProvider();
+        }).build();
         Config first = baseBuilder().disableCaching().addSource(ConfigSources.create(targetValues()))
                 .addFilterProvider(provider).build();
         Config second = baseBuilder().disableCaching().addSource(ConfigSources.create(targetValues()))
@@ -206,6 +211,53 @@ class OverrideReloadTest {
         } finally {
             first.context().stopChangeSupport();
             second.context().stopChangeSupport();
+        }
+    }
+
+    @Test
+    void configuredProviderCreatesIndependentDescriptorMonitors(@TempDir Path directory) throws Exception {
+        Path definitions = directory.resolve("service-overrides.properties");
+        Instant initialModification = Instant.parse("2026-01-01T00:00:00Z");
+        Files.writeString(definitions, "services.*.endpoint=https://initial.example/api\n");
+        Files.setLastModifiedTime(definitions, FileTime.from(initialModification));
+        Config settings = baseBuilder().addSource(ConfigSources.create(Map.of(
+                "overrides.sources.0.type", "file",
+                "overrides.sources.0.properties.path", definitions.toString(),
+                "overrides.sources.0.properties.polling-strategy.type", "regular",
+                "overrides.sources.0.properties.polling-strategy.properties.interval", "PT0.05S"))).build();
+        var provider = OverrideConfigFilterProvider.builder().config(settings.get("overrides")).build();
+        Config first = baseBuilder().addSource(ConfigSources.create(targetValues()))
+                .addFilterProvider(provider).build();
+        Config second = null;
+        try {
+            second = baseBuilder().addSource(ConfigSources.create(targetValues())).addFilterProvider(provider).build();
+            var firstChanges = new LinkedBlockingQueue<Config>();
+            var secondChanges = new LinkedBlockingQueue<Config>();
+            first.onChange(firstChanges::add);
+            second.onChange(secondChanges::add);
+            assertThat(first.get("services.orders.endpoint").asString().get(), is("https://initial.example/api"));
+            assertThat(second.get("services.orders.endpoint").asString().get(), is("https://initial.example/api"));
+
+            Files.writeString(definitions, "services.*.endpoint=https://updated.example/api\n");
+            Files.setLastModifiedTime(definitions, FileTime.from(initialModification.plusSeconds(2)));
+            awaitValue(firstChanges, "https://updated.example/api");
+            awaitValue(secondChanges, "https://updated.example/api");
+            first.context().stopChangeSupport();
+
+            Files.writeString(definitions, "services.*.endpoint=https://active.example/api\n");
+            Files.setLastModifiedTime(definitions, FileTime.from(initialModification.plusSeconds(4)));
+            Config updatedSecond = awaitValue(secondChanges, "https://active.example/api");
+            assertThat(updatedSecond.get("services.payments.endpoint").asString().get(),
+                       is("https://active.example/api"));
+            assertThat(first.context().reload().get("services.orders.endpoint").asString().get(),
+                       is("https://updated.example/api"));
+            assertThat(first.get("services.payments.endpoint").asString().get(), is("https://initial.example/api"));
+        } finally {
+            first.context().stopChangeSupport();
+            if (second != null) {
+                second.context().stopChangeSupport();
+            }
+            settings.context().stopChangeSupport();
         }
     }
 
@@ -273,7 +325,7 @@ class OverrideReloadTest {
                                                    "overrides.expressions.services.orders.endpoint",
                                                    "https://initial.example/api"));
         Config target = baseBuilder().addSource(targetSource)
-                .addFilterProvider(new OverrideConfigFilterProvider()).build();
+                .addFilterProvider(new OverrideConfigFilterService()).build();
         var changes = new LinkedBlockingQueue<Config>();
         target.onChange(changes::add);
         try {
@@ -379,7 +431,7 @@ class OverrideReloadTest {
 
     private static Config.Builder targetBuilder(MutableSource source) {
         return baseBuilder().addSource(ConfigSources.create(targetValues()))
-                .addFilterProvider(OverrideConfigFilter.builder().addConfigSource(source).buildProvider());
+                .addFilterProvider(OverrideConfigFilterProvider.builder().addConfigSource(source).build());
     }
 
     private static Config.Builder baseBuilder() {

@@ -17,6 +17,6 @@
 /**
  * Support for wildcard expressions to override configuration keys.
  *
- * @see io.helidon.config.overrides.OverrideConfigFilter
+ * @see io.helidon.config.overrides.OverrideConfigFilterProvider
  */
 package io.helidon.config.overrides;

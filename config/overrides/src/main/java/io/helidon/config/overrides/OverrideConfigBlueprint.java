@@ -19,44 +19,61 @@ package io.helidon.config.overrides;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.config.Config;
 import io.helidon.config.spi.ConfigSource;
 
 /**
- * Configuration of the override filter.
+ * Configuration of an override filter provider.
  */
 @Prototype.Blueprint
-@Prototype.CustomMethods(OverrideConfigSupport.class)
-interface OverrideConfigBlueprint {
+@Prototype.Configured("overrides")
+interface OverrideConfigBlueprint extends Prototype.Factory<OverrideConfigFilterProvider> {
     /**
-     * Explicit config override settings.
+     * Ordered regular expression rules. The first matching rule wins, and patterns take precedence over wildcard
+     * expressions. Empty by default.
      *
-     * @return a map of a pattern (regular expression) to a value, i.e. {@code environments\.\w+\.batch-size=200}
+     * @return regular expression rules
      */
     @Option.Singular
-    Map<Pattern, String> overridePatterns();
+    @Option.Configured("patterns")
+    List<OverridePatternConfig> overridePatterns();
 
     /**
      * Explicit config override settings, using expressions with {@code *} to match one or more word characters.
      * Dots are escaped and other regular expression metacharacters retain their meaning, matching the legacy conversion.
      * For example, a wildcard does not match a hyphenated segment.
+     * Empty by default.
      *
      * @return a map of an expression to a value, i.e. {@code environments.*.batch-size=200}
      */
     @Option.Singular
+    @Option.Configured("expressions")
     Map<String, String> overrideExpressions();
 
     /**
      * Suppliers of definition sources whose content maps wildcard expressions to replacement values. A provider calls
      * each supplier once for every independently built configuration runtime. Suppliers must return fresh source instances,
-     * including their polling and watching resources, when a provider is reused across runtimes. A fixed filter loads
-     * the sources once and stops background change support after capturing their values.
+     * including their polling and watching resources, when a provider is reused across runtimes. Empty by default.
+     * Configuration-based sources are supplied through {@link #sourceDescriptors()}.
      *
      * @return config sources to use to obtain the configuration of overrides
      */
     @Option.Singular
     List<Supplier<? extends ConfigSource>> configSources();
+
+    /**
+     * Standard Config source descriptors for files containing override expressions. Each descriptor contains
+     * {@code type} and {@code properties}, as accepted by {@link io.helidon.config.MetaConfig#configSource(Config)}.
+     * Descriptors are captured when the provider is built and resolved separately for each configuration runtime,
+     * after programmatic source suppliers. Their locations and monitoring settings remain fixed for that runtime;
+     * the loaded definition contents may change. Empty by default.
+     *
+     * @return definition source descriptors
+     */
+    @Option.Singular
+    @Option.Configured("sources")
+    List<Config> sourceDescriptors();
 }

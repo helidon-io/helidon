@@ -94,6 +94,15 @@
 </tr>
 <tr>
 <td>
+<a id="overrides"></a>
+<a href="io.helidon.config.overrides.OverrideConfigFilterProvider.md">
+<code>overrides</code>
+</a>
+</td>
+<td>Configuration for overrides</td>
+</tr>
+<tr>
+<td>
 <a id="security"></a>
 <a href="io.helidon.security.Security.md">
 <code>security</code>

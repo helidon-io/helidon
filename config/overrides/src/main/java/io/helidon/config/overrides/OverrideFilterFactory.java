@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.config.Config;
+import io.helidon.config.MetaConfig;
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigFilterFactory;
 import io.helidon.config.spi.ConfigSource;
@@ -47,6 +48,7 @@ final class OverrideFilterFactory implements ConfigFilterFactory {
     static OverrideFilterFactory create(OverrideConfig config) {
         var sources = new ArrayList<ConfigSource>();
         config.configSources().forEach(supplier -> sources.add(Objects.requireNonNull(supplier.get())));
+        config.sourceDescriptors().forEach(descriptor -> sources.addAll(MetaConfig.configSource(descriptor)));
         Config definitions;
         if (sources.isEmpty()) {
             definitions = Config.empty();
@@ -76,7 +78,7 @@ final class OverrideFilterFactory implements ConfigFilterFactory {
         // Capture the latest known definitions without restarting monitoring or reopening source configuration.
         // After stop, a manual target reload can still use this last known snapshot.
         Config snapshot = definitions.context().last();
-        return OverrideConfigFilter.snapshot(config, snapshot);
+        return new OverrideConfigFilter(config, snapshot);
     }
 
     @Override

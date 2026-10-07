@@ -16,12 +16,7 @@
 
 package io.helidon.config.overrides;
 
-import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Pattern;
-
-import io.helidon.builder.api.Prototype;
-import io.helidon.config.Config;
 
 final class OverrideConfigSupport {
     private OverrideConfigSupport() {
@@ -29,18 +24,5 @@ final class OverrideConfigSupport {
 
     static Pattern expressionToPattern(String expression) {
         return Pattern.compile(expression.replace("*", "\\w+").replace(".", "\\."));
-    }
-
-    /**
-     * Add wildcard expressions from the supplied definition configuration snapshot.
-     * Existing expressions with the same key are replaced; other programmatic rules are retained.
-     *
-     * @param builder builder to configure
-     * @param config configuration containing expressions directly, without the target configuration prefix
-     */
-    @Prototype.BuilderMethod
-    static void config(OverrideConfig.BuilderBase<?, ?> builder, Config config) {
-        Objects.requireNonNull(config);
-        config.detach().asMap().orElseGet(Map::of).forEach(builder::putOverrideExpression);
     }
 }

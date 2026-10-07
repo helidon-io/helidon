@@ -22,8 +22,9 @@ module io.helidon.config.overrides {
     requires io.helidon.common;
     requires transitive io.helidon.config;
     requires io.helidon.service.registry;
+    requires static io.helidon.config.metadata;
 
     exports io.helidon.config.overrides;
 
-    provides io.helidon.config.spi.ConfigFilterProvider with io.helidon.config.overrides.OverrideConfigFilterProvider;
+    provides io.helidon.config.spi.ConfigFilterProvider with io.helidon.config.overrides.OverrideConfigFilterService;
 }

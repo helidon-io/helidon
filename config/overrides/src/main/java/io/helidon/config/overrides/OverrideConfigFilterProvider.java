@@ -17,40 +17,74 @@
 package io.helidon.config.overrides;
 
 import java.util.Objects;
+import java.util.function.Consumer;
 
+import io.helidon.builder.api.RuntimeType;
 import io.helidon.config.Config;
-import io.helidon.config.MetaConfig;
 import io.helidon.config.spi.ConfigFilterFactory;
 import io.helidon.config.spi.ConfigFilterProvider;
-import io.helidon.service.registry.Service;
 
 /**
- * Automatically discovered provider of immutable overrides filters. This service has no per-runtime state and can be
- * shared. Each call to {@link #create(Config)} captures {@code overrides.expressions} and creates independent sources
- * from the standard source descriptors under {@code overrides.sources}. Those settings remain fixed for that runtime;
- * the contents of its definition sources can change.
+ * Provider of immutable override filters, configured using a generated builder. The provider retains its immutable
+ * configuration and can be shared. Each call to {@link #create(Config)} creates independent definition sources and
+ * monitoring resources, shared only by the filter generations of that configuration runtime.
  * <p>
- * For programmatic setup use {@code OverrideConfigFilter.builder().buildProvider()} and register that provider with
- * {@link io.helidon.config.Config.Builder#addFilterProvider(io.helidon.config.spi.ConfigFilterProvider)}.
+ * For programmatic setup, register {@code builder().build()} with
+ * {@link io.helidon.config.Config.Builder#addFilterProvider(io.helidon.config.spi.ConfigFilterProvider)}. The builder's
+ * {@code config(Config)} method accepts the component node containing {@code expressions}, {@code patterns}, and
+ * {@code sources}. Automatic discovery reads that node from {@code overrides} in the initial application configuration.
  */
-@Service.Singleton
-public final class OverrideConfigFilterProvider implements ConfigFilterProvider {
-    /**
-     * Constructor for Java service loading and the service registry.
-     */
-    public OverrideConfigFilterProvider() {
+public final class OverrideConfigFilterProvider implements ConfigFilterProvider, RuntimeType.Api<OverrideConfig> {
+    private final OverrideConfig config;
+
+    private OverrideConfigFilterProvider(OverrideConfig config) {
+        this.config = config;
     }
 
+    /**
+     * Create a provider from its immutable configuration.
+     *
+     * @param config provider configuration
+     * @return provider
+     */
+    public static OverrideConfigFilterProvider create(OverrideConfig config) {
+        return new OverrideConfigFilterProvider(Objects.requireNonNull(config));
+    }
+
+    /**
+     * Create a provider by customizing its generated builder.
+     *
+     * @param consumer builder customization
+     * @return provider
+     */
+    public static OverrideConfigFilterProvider create(Consumer<OverrideConfig.Builder> consumer) {
+        return builder().update(Objects.requireNonNull(consumer)).build();
+    }
+
+    /**
+     * Create a builder for an override filter provider.
+     *
+     * @return provider builder
+     */
+    public static OverrideConfig.Builder builder() {
+        return OverrideConfig.builder();
+    }
+
+    /**
+     * Create the definition machinery for one configuration runtime. Settings come from this provider's prototype;
+     * they are not reread from the supplied target configuration.
+     *
+     * @param initialConfig initial unfiltered target configuration
+     * @return per-runtime factory creating immutable filters
+     */
     @Override
     public ConfigFilterFactory create(Config initialConfig) {
         Objects.requireNonNull(initialConfig);
-        var builder = OverrideConfigFilter.builder().config(initialConfig.get(OverrideConfigFilter.CONFIG_KEY));
-        // Resolve descriptors separately for every runtime, rather than sharing source and monitoring instances.
-        initialConfig.get("overrides.sources")
-                .asNodeList()
-                .ifPresent(sources -> sources.forEach(descriptor ->
-                                                              MetaConfig.configSource(descriptor)
-                                                                      .forEach(builder::addConfigSource)));
-        return OverrideFilterFactory.create(builder.buildPrototype());
+        return OverrideFilterFactory.create(config);
+    }
+
+    @Override
+    public OverrideConfig prototype() {
+        return config;
     }
 }

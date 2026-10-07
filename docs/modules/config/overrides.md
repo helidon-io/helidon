@@ -129,7 +129,7 @@ Manual provider registration is available through the builder. Supply fresh
 definition sources so the same provider can safely configure independent Config
 runtimes.
 
-`buildProvider()` captures the builder's inline rules and suppliers at that
+`OverrideConfigFilterProvider.builder().build()` captures the builder's inline rules and suppliers at that
 call. Each supplier is invoked once for each new Config runtime and must return
 an independently usable source, including its polling or watching strategy.
 Returning the same stateful source instance from multiple invocations can still
@@ -143,25 +143,56 @@ import java.time.Duration;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.config.PollingStrategies;
-import io.helidon.config.overrides.OverrideConfigFilter;
+import io.helidon.config.overrides.OverrideConfigFilterProvider;
 
 Config target = Config.builder()
         .disableFilterServices()
         .addSource(ConfigSources.file("application.properties"))
-        .addFilterProvider(OverrideConfigFilter.builder()
+        .addFilterProvider(OverrideConfigFilterProvider.builder()
                 .putOverrideExpression("environments.prod.batch-size", "150")
                 .addConfigSource(() -> ConfigSources.file("overrides.properties")
                         .pollingStrategy(PollingStrategies.regular(Duration.ofSeconds(2)))
                         .build())
-                .buildProvider())
+                .build())
         .build();
 ```
 
-For fixed rules without definition monitoring, `OverrideConfigFilter.builder()`
-also supports `.build()` to produce an immutable filter for `addFilter(...)`.
-Such a directly registered filter is reused across reloads. Config warns once
-when direct filters coexist with reloads because mutable direct filters may
-produce inconsistent state; an immutable fixed filter remains safe to reuse.
+Use the same provider builder for inline-only rules, omitting definition
+sources. Filters are internal implementation objects: the per-runtime factory
+creates a fresh immutable filter for every generation.
+
+The builder also accepts a configuration component through `.config(component)`.
+Pass the `overrides` node, rather than the entire application configuration:
+
+```java
+import io.helidon.config.Config;
+import io.helidon.config.overrides.OverrideConfigFilterProvider;
+
+Config application = Config.create();
+var provider = OverrideConfigFilterProvider.builder()
+        .config(application.get("overrides"))
+        .build();
+```
+
+The component supports `expressions` (wildcard expression/value map), `patterns`
+(an ordered list of regular-expression rules, each with required `pattern` and
+`value` settings), and `sources` (ordinary source descriptors).
+Source descriptors are resolved separately when the provider creates a factory
+for each runtime; programmatic source suppliers follow the same lifetime.
+
+For example, regex rule priority can be specified explicitly in configuration:
+
+```yaml
+overrides:
+  patterns:
+    - pattern: 'environments\.prod\.batch-size'
+      value: '150'
+    - pattern: 'environments\.[^.]+\.batch-size'
+      value: '200'
+```
+
+The production rule is tested first, then the broader rule. The list preserves
+this order, unlike the expression maps described below.
 
 ## Rule Matching
 
@@ -170,13 +201,29 @@ configuration key. The wildcard `*` becomes `\w+`, matching one or more word
 characters; a dot is escaped. For example, `environments.*.batch-size` matches
 `environments.prod.batch-size`, but not `environments.pre-prod.batch-size`. Other regular
 expression metacharacters retain their meaning, so these expressions are not a
-general glob language. Use `putOverridePattern(Pattern, String)` for explicit
-Java regular expressions.
+general glob language. Use an ordered regex rule list for explicit Java regular
+expressions, or add rules through the provider builder:
+
+```java
+import java.util.regex.Pattern;
+
+import io.helidon.config.overrides.OverrideConfigFilterProvider;
+
+var provider = OverrideConfigFilterProvider.builder()
+        .addOverridePattern(rule -> rule
+                .pattern(Pattern.compile("environments\\.prod\\.batch-size"))
+                .value("150"))
+        .addOverridePattern(rule -> rule
+                .pattern(Pattern.compile("environments\\.[^.]+\\.batch-size"))
+                .value("200"))
+        .build();
+```
 
 Rules replace values only on existing nodes; they do not add missing nodes.
-Explicit builder patterns precede wildcard expressions even if calls to the
+Explicit patterns precede wildcard expressions even if calls to the
 two methods are interleaved. Programmatic rules precede definition source rules.
-Rules loaded from configuration maps do not have a guaranteed document order.
+The configured regex list preserves its rule order. Expression maps and rules
+loaded from definition source maps do not have a guaranteed document order.
 Use non-overlapping expressions in definition files and inline configuration.
 When priority between overlapping rules matters, register them in order using
 the builder, as described in the migration guide below.
@@ -228,14 +275,14 @@ with a filter provider built using the same file:
 ```java
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.config.overrides.OverrideConfigFilter;
+import io.helidon.config.overrides.OverrideConfigFilterProvider;
 
 Config target = Config.builder()
         .disableFilterServices()
         .addSource(ConfigSources.file("application.properties"))
-        .addFilterProvider(OverrideConfigFilter.builder()
+        .addFilterProvider(OverrideConfigFilterProvider.builder()
                 .addConfigSource(() -> ConfigSources.file("overrides.properties").build())
-                .buildProvider())
+                .build())
         .build();
 ```
 
@@ -249,7 +296,7 @@ Other common registrations map as follows:
 | Legacy registration | Filter configuration |
 | --- | --- |
 | `OverrideSources.classpath(resource)` or `OverrideSources.url(url)` | Supply the corresponding `ConfigSources.classpath(resource)` or `ConfigSources.url(url)` through `addConfigSource(...)`. |
-| `OverrideSources.create(map)` | Add entries with `putOverrideExpression(expression, value)`, then call `buildProvider()`. Preserve intentional priority when iterating the map. |
+| `OverrideSources.create(map)` | Add entries to the provider builder with `putOverrideExpression(expression, value)`, then call `build()`. Preserve intentional priority when iterating the map. |
 | `OverrideSources.empty()` | Omit the override rules or provider registration. |
 | Custom `OverrideSource` or predicate entries | Provide a `ConfigSource` of expression/value definitions, or implement a `ConfigFilterProvider` for behavior that cannot be expressed as these rules. There is no automatic adapter for arbitrary predicates. |
 
@@ -307,12 +354,12 @@ on placing a specific rule before a broad rule in a properties file. Make the
 expressions non-overlapping, or use ordered builder calls:
 
 ```java
-import io.helidon.config.overrides.OverrideConfigFilter;
+import io.helidon.config.overrides.OverrideConfigFilterProvider;
 
-var provider = OverrideConfigFilter.builder()
+var provider = OverrideConfigFilterProvider.builder()
         .putOverrideExpression("environments.prod.batch-size", "150")
         .putOverrideExpression("environments.*.batch-size", "200")
-        .buildProvider();
+        .build();
 ```
 
 Here the specific expression sets the production batch size to `150`, while
