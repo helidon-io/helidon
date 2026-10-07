@@ -415,8 +415,7 @@ final class EurekaRegistrationHttpFeature implements HttpFeature {
                 return false;
             }
         } catch (UncheckedIOException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof ConnectException) {
+            if (e.getCause() instanceof ConnectException) {
                 if (LOGGER.isLoggable(WARNING)) {
                     LOGGER.log(WARNING,
                                "Eureka Server ("
