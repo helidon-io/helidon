@@ -470,12 +470,18 @@ configuration. For a non-configured option, the discovered implementations are
 the option values themselves.
 
 `Option.Provider.discoverServices` defaults to `true`. For a configured option,
-providers are always discovered so they can create explicitly configured
+providers are discovered so they can create explicitly configured
 entries. Setting this property to `false` only prevents providers from
 contributing values without matching configuration. Configuration can override
 the annotation default using the sibling key
 `<option-config-key>-discover-services`. For a non-configured option, `false`
 prevents discovered implementations from being added automatically.
+
+`Option.Provider.enabledBy` can name a zero-argument boolean builder getter,
+such as `enabled`. When that getter returns `false`, provider discovery and
+configured-provider validation are skipped. Explicitly supplied values are
+retained, and normal prototype validation still applies. The default empty
+name enables provider resolution unconditionally.
 
 Configured provider options have two independent settings:
 

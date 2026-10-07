@@ -672,6 +672,7 @@ final class FactoryOption {
                     .configForm(annotation.enumValue("configForm", Option.Provider.ConfigForm.class)
                                         .orElse(Option.Provider.ConfigForm.AUTO))
                     .discoverServices(annotation.booleanValue("discoverServices").orElse(true))
+                    .enabledBy(annotation.stringValue("enabledBy").orElse(""))
             );
         }
     }

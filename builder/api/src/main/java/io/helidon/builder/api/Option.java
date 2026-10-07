@@ -212,6 +212,17 @@ public final class Option {
         boolean discoverServices() default true;
 
         /**
+         * Name of a zero-argument boolean builder getter that enables provider resolution.
+         * When the getter returns {@code false}, configured provider validation and provider discovery are skipped.
+         * Explicitly supplied option values are retained, and normal prototype validation still applies.
+         * The getter is evaluated when building the prototype, including programmatic configuration overrides.
+         * An empty name enables provider resolution unconditionally.
+         *
+         * @return boolean builder getter name, or an empty string
+         */
+        String enabledBy() default "";
+
+        /**
          * Values that constitute the identity of each configured provider instance.
          * <p>
          * Identity is independent of {@link #configForm() configuration syntax}. It defines which values distinguish

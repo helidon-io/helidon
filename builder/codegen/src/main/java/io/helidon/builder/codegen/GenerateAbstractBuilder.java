@@ -554,6 +554,10 @@ final class GenerateAbstractBuilder {
                     OptionProvider optionProvider = option.provider().get();
                     TypeName providerContainerType = providerContainerType(option.declaredType());
 
+                    if (!optionProvider.enabledBy().isEmpty()) {
+                        preBuildBuilder.addContentLine("if (" + optionProvider.enabledBy() + "()) {");
+                    }
+
                     if (optionConfigured && (providerContainerType.isList() || providerContainerType.isSet())) {
                         OptionConfigured configuredOption = option.configured().orElseThrow();
                         preBuildBuilder.addContent(CONFIG_BUILDER_SUPPORT)
@@ -580,6 +584,10 @@ final class GenerateAbstractBuilder {
                                                        optionHandler,
                                                        optionConfigured,
                                                        optionProvider);
+                    }
+
+                    if (!optionProvider.enabledBy().isEmpty()) {
+                        preBuildBuilder.addContentLine("}");
                     }
 
                 } else if (option.registryService()) {
