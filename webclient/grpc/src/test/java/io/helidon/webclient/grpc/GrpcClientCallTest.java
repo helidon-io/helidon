@@ -242,7 +242,7 @@ class GrpcClientCallTest {
                 assertThat(received.get(5, TimeUnit.SECONDS), is("response"));
                 reset.complete(null);
 
-                assertThat(status.get(5, TimeUnit.SECONDS).getCode(), is(Status.Code.UNKNOWN));
+                assertThat(status.get(5, TimeUnit.SECONDS).getCode(), is(Status.Code.CANCELLED));
                 assertThat("cleanup does not interrupt the listener thread", closeInterrupted.get(), is(false));
                 List<Http2FrameType> frames = peer.get(5, TimeUnit.SECONDS);
                 if (failGoAway) {

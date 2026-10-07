@@ -610,18 +610,6 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         return bytesRcvd;
     }
 
-    /**
-     * Retrieves the next URI either from the supplier or directly from config. If
-     * a supplier is provided, it will take precedence.
-     *
-     * @return the next {@link ClientUri}
-     * @throws java.util.NoSuchElementException if supplier has been exhausted
-     */
-    private ClientUri nextClientUri() {
-        return clientUriSupplier == null ? grpcClient.prototype().baseUri().orElseThrow()
-                : clientUriSupplier.next();
-    }
-
     void handleStreamTimeout(StreamTimeoutException e) {
         if (abortPollTimeExpired()) {
             socket().log(LOGGER, ERROR, "[Reading thread] HTTP/2 stream timeout, aborting");
@@ -904,7 +892,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         deframer.endOfStream();
     }
 
-    private record MethodMetrics(Counter callStarted,
+    record MethodMetrics(Counter callStarted,
                                    Timer callDuration,
                                    DistributionSummary sentMessageSize,
                                    DistributionSummary recvMessageSize) { }
