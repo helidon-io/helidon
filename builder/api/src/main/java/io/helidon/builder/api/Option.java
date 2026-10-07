@@ -194,8 +194,9 @@ public final class Option {
         /**
          * Whether service discovery may add option values that do not have corresponding configuration.
          * <p>
-         * For a configured provider option, provider implementations are always discovered so they can create entries
-         * that are present in configuration. A value of {@code false} only prevents those providers from adding
+         * For a configured provider option, provider implementations are discovered when provider resolution is enabled
+         * by {@link #enabledBy()}, so they can create entries that are present in configuration. A value of {@code false}
+         * only prevents those providers from adding
          * unconfigured default values; it does not disable the discovery needed to create configured entries. For a
          * non-configured provider option, {@code false} prevents discovered implementations from being added as option
          * values.
