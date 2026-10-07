@@ -99,7 +99,7 @@ public interface ConfigFilter {
      * @param config {@code Config} instance under construction
      * @deprecated for removal; configuration-dependent filters must use {@link ConfigFilterProvider} instead.
      *         Providers avoid reusing mutable filter instances across configuration runtimes and reload generations,
-     *         and allow fully initialized, immutable filters. Removal timing remains undecided.
+     *         and allow fully initialized, immutable filters
      */
     @Deprecated(since = "28.0.0", forRemoval = true)
     default void init(Config config) {

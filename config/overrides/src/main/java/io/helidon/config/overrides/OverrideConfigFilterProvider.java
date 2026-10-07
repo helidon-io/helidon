@@ -46,8 +46,11 @@ public final class OverrideConfigFilterProvider implements ConfigFilterProvider 
         Objects.requireNonNull(initialConfig);
         var builder = OverrideConfigFilter.builder().config(initialConfig.get(OverrideConfigFilter.CONFIG_KEY));
         // Resolve descriptors separately for every runtime, rather than sharing source and monitoring instances.
-        initialConfig.get("overrides.sources").asNodeList().ifPresent(sources -> sources.forEach(descriptor ->
-                MetaConfig.configSource(descriptor).forEach(builder::addConfigSource)));
+        initialConfig.get("overrides.sources")
+                .asNodeList()
+                .ifPresent(sources -> sources.forEach(descriptor ->
+                                                              MetaConfig.configSource(descriptor)
+                                                                      .forEach(builder::addConfigSource)));
         return OverrideFilterFactory.create(builder.buildPrototype());
     }
 }
