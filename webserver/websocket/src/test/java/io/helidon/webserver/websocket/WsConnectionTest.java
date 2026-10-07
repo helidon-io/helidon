@@ -17,7 +17,6 @@
 package io.helidon.webserver.websocket;
 
 import java.io.UncheckedIOException;
-import java.lang.reflect.Field;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -116,27 +115,39 @@ class WsConnectionTest {
 
         AtomicReference<Throwable> sendFailure = new AtomicReference<>();
         Thread sendThread = new Thread(() -> invoke(() -> connection.send("hello", true), sendFailure), "ws-send");
-        sendThread.start();
-        dataWriter.awaitFirstWrite();
-
+        CountDownLatch closeReturned = new CountDownLatch(1);
+        ThrowingRunnable close = () -> {
+            connection.close(WsCloseCodes.NORMAL_CLOSE, "done");
+            closeReturned.countDown();
+        };
         AtomicReference<Throwable> closeFailure = new AtomicReference<>();
-        Thread closeThread = new Thread(() -> invoke(() -> connection.close(WsCloseCodes.NORMAL_CLOSE, "done"), closeFailure),
-                                        "ws-close");
-        closeThread.start();
+        Thread closeThread = new Thread(() -> invoke(close, closeFailure), "ws-close");
+        AtomicReference<Throwable> duplicateCloseFailure = new AtomicReference<>();
+        Thread duplicateCloseThread = new Thread(() -> invoke(close, duplicateCloseFailure), "ws-close-duplicate");
 
-        assertThat("close flag was not published while send lock was held",
-                   awaitCloseSent(connection),
-                   is(true));
-
-        dataWriter.releaseFirstWrite();
-        sendThread.join(TimeUnit.SECONDS.toMillis(TEST_TIMEOUT_SECONDS));
-        closeThread.join(TimeUnit.SECONDS.toMillis(TEST_TIMEOUT_SECONDS));
+        boolean closedBeforeRelease;
+        try {
+            sendThread.start();
+            dataWriter.awaitFirstWrite();
+            closeThread.start();
+            duplicateCloseThread.start();
+            // One close waits for the send lock; the duplicate must return while that lock is still held.
+            closedBeforeRelease = closeReturned.await(TEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+        } finally {
+            dataWriter.releaseFirstWrite();
+            sendThread.join(TimeUnit.SECONDS.toMillis(TEST_TIMEOUT_SECONDS));
+            closeThread.join(TimeUnit.SECONDS.toMillis(TEST_TIMEOUT_SECONDS));
+            duplicateCloseThread.join(TimeUnit.SECONDS.toMillis(TEST_TIMEOUT_SECONDS));
+        }
 
         assertAll(
+                () -> assertThat("duplicate close did not return while send lock was held", closedBeforeRelease, is(true)),
                 () -> assertThat("send thread failed", sendFailure.get(), is(nullValue())),
                 () -> assertThat("close thread failed", closeFailure.get(), is(nullValue())),
+                () -> assertThat("duplicate close thread failed", duplicateCloseFailure.get(), is(nullValue())),
                 () -> assertThat("send thread did not finish", sendThread.isAlive(), is(false)),
-                () -> assertThat("close thread did not finish", closeThread.isAlive(), is(false))
+                () -> assertThat("close thread did not finish", closeThread.isAlive(), is(false)),
+                () -> assertThat("duplicate close thread did not finish", duplicateCloseThread.isAlive(), is(false))
         );
     }
 
@@ -471,22 +482,6 @@ class WsConnectionTest {
                 .when(socket)
                 .write(any(BufferData.class));
         return SocketWriter.create(executor, socket, 2, true);
-    }
-
-    private static boolean awaitCloseSent(WsConnection connection) throws ReflectiveOperationException, InterruptedException {
-        Field field = WsConnection.class.getDeclaredField("closeSent");
-        field.setAccessible(true);
-        AtomicBoolean closeSent = (AtomicBoolean) field.get(connection);
-
-        long timeoutNanos = TimeUnit.SECONDS.toNanos(TEST_TIMEOUT_SECONDS);
-        long deadline = System.nanoTime() + timeoutNanos;
-        while (System.nanoTime() < deadline) {
-            if (closeSent.get()) {
-                return true;
-            }
-            TimeUnit.MILLISECONDS.sleep(10);
-        }
-        return closeSent.get();
     }
 
     private static void invoke(ThrowingRunnable action, AtomicReference<Throwable> failure) {
