@@ -70,7 +70,7 @@ class GrpcDisconnectTest {
         var finished = new CompletableFuture<Void>();
         String largeResponse = "x".repeat(8 * 1024 * 1024);
         var service = ServerServiceDefinition.builder("test.Disconnect")
-                .addMethod(descriptor("Large"), (call, metadata) -> {
+                .addMethod(descriptor("Large"), (call, _) -> {
                     Context.current().addListener(cancelled::complete, Runnable::run);
                     return new ServerCall.Listener<>() {
                         @Override
@@ -86,7 +86,7 @@ class GrpcDisconnectTest {
                         }
                     };
                 })
-                .addMethod(descriptor("Small"), (call, metadata) -> new ServerCall.Listener<>() {
+                .addMethod(descriptor("Small"), (call, _) -> new ServerCall.Listener<>() {
                     @Override
                     public void onHalfClose() {
                         // The sibling responds only once the other RPC has expired.
@@ -191,7 +191,7 @@ class GrpcDisconnectTest {
         var cancellations = new AtomicInteger();
         var completions = new AtomicInteger();
         var service = ServerServiceDefinition.builder("test.Disconnect")
-                .addMethod(descriptor("Call"), (call, metadata) -> {
+                .addMethod(descriptor("Call"), (_, _) -> {
                     Context.current().addListener(contextCancelled::complete, Runnable::run);
                     return new ServerCall.Listener<>() {
                         @Override

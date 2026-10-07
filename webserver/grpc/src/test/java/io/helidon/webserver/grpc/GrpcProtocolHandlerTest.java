@@ -1499,6 +1499,29 @@ class GrpcProtocolHandlerTest {
                                              Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM), 1), data);
     }
 
+    private static void sendStreamingRequest(GrpcProtocolHandler<String, String> handler, String message) {
+        sendStreamingRequest(handler, message, false);
+    }
+
+    private static void sendStreamingRequest(GrpcProtocolHandler<String, String> handler, String message, boolean endOfStream) {
+        byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
+        BufferData data = BufferData.create(5 + bytes.length);
+        data.write(0);
+        data.writeUnsignedInt32(bytes.length);
+        data.write(bytes);
+        handler.data(Http2FrameHeader.create(data.available(), Http2FrameTypes.DATA,
+                                             Http2Flag.DataFlags.create(endOfStream ? Http2Flag.END_OF_STREAM : 0), 1), data);
+    }
+
+    private static void await(CountDownLatch latch) {
+        try {
+            assertThat("callback released", latch.await(10, TimeUnit.SECONDS), is(true));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError(e);
+        }
+    }
+
     private void requestFromWorkerWhileOnMessageIsActive(boolean queuedMessages, boolean withDeadline) throws Exception {
         var callReference = new AtomicReference<ServerCall<String, String>>();
         var requested = new CompletableFuture<CompletableFuture<Void>>();
@@ -1968,29 +1991,6 @@ class GrpcProtocolHandlerTest {
                    writerInterrupted.get(5, TimeUnit.SECONDS), is(false));
         assertThat("application caller is not interrupted", callerInterrupted.get(5, TimeUnit.SECONDS), is(false));
         assertThat("one terminal status", writer.trailerWrites.get(), is(1));
-    }
-
-    private static void sendStreamingRequest(GrpcProtocolHandler<String, String> handler, String message) {
-        sendStreamingRequest(handler, message, false);
-    }
-
-    private static void sendStreamingRequest(GrpcProtocolHandler<String, String> handler, String message, boolean endOfStream) {
-        byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
-        BufferData data = BufferData.create(5 + bytes.length);
-        data.write(0);
-        data.writeUnsignedInt32(bytes.length);
-        data.write(bytes);
-        handler.data(Http2FrameHeader.create(data.available(), Http2FrameTypes.DATA,
-                                             Http2Flag.DataFlags.create(endOfStream ? Http2Flag.END_OF_STREAM : 0), 1), data);
-    }
-
-    private static void await(CountDownLatch latch) {
-        try {
-            assertThat("callback released", latch.await(10, TimeUnit.SECONDS), is(true));
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new AssertionError(e);
-        }
     }
 
     private static GrpcRouteHandler<String, String> route(ServerCall.Listener<String> listener) {
