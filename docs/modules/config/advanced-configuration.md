@@ -546,6 +546,10 @@ matches a configuration key, Helidon logs a deprecation warning once per
 runtime. Merely configuring overrides without applying a matching entry does
 not emit the warning; it contains no configuration keys or values.
 
+Using an API marked `forRemoval=true` produces a Java compiler removal warning.
+Builds that treat warnings as errors may need to address that warning while
+planning migration. The annotation does not specify a removal release or date.
+
 If you use overrides, share your use case and migration requirements in
 [issue #10415](https://github.com/helidon-io/helidon/issues/10415). Absence of
 usage feedback does not establish that the feature has no users.
