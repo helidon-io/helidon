@@ -45,7 +45,6 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.FlowControl;
-import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2FrameHeader;
 import io.helidon.http.http2.Http2FrameTypes;
@@ -80,7 +79,6 @@ import io.grpc.KnownLength;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.ServerCall;
-import io.grpc.ServerCallHandler;
 import io.grpc.Status;
 
 import static io.helidon.http.HeaderNames.CONTENT_TYPE;
