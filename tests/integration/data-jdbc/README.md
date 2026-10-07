@@ -184,6 +184,11 @@ timeout, with a fifteen-second final collection wait. Collection errors and
 deadlines indicate incomplete evidence. The suite continues to use its
 existing direct connections and concurrency settings.
 
+Only this suite retries physical connection opening on Oracle error `12516`,
+with three total attempts and waits of 250 ms and 500 ms. Other errors propagate
+immediately. The first refusal produces `container-connection-refused.log`, and
+all refusals and recoveries are recorded even when the test ultimately passes.
+
 Run `mvn -f tests/integration/data-jdbc/declarative/oracle/pom.xml verify` with
 Docker to collect live evidence. On completion, check that the Oracle tests executed 
 rather than skipped before using the results to investigate `ORA-12516`.

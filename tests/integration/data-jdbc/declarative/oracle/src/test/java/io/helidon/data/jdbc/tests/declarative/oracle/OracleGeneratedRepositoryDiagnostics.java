@@ -99,6 +99,7 @@ final class OracleGeneratedRepositoryDiagnostics
     private volatile String test = "suite-start";
     private volatile boolean closing;
     private int failures;
+    private boolean refusalCaptured;
 
     OracleGeneratedRepositoryDiagnostics(GenericContainer<?> container) {
         this(Path.of("target/failsafe-reports/oracle-generated-repository"),
@@ -134,6 +135,7 @@ final class OracleGeneratedRepositoryDiagnostics
     void start() {
         closing = false;
         failures = 0;
+        refusalCaptured = false;
         directory = root.resolve("OracleGeneratedRepositoryTest-" + ProcessHandle.current().pid() + '-' + UUID.randomUUID());
         executor = Executors.newSingleThreadScheduledExecutor(Thread.ofPlatform().daemon(true)
                 .name("oracle-generated-repository-diagnostics").factory());
@@ -159,6 +161,21 @@ final class OracleGeneratedRepositoryDiagnostics
         }), 5);
         periodic = executor.scheduleWithFixedDelay(() -> sample(test), 500, 500, TimeUnit.MILLISECONDS);
         executor.submit(() -> capture("suite-start"));
+    }
+
+    void connectionAttempt(int attempt, SQLException failure) {
+        boolean refused = failure != null;
+        String event = test + " connection-attempt=" + attempt + " thread=" + Thread.currentThread().threadId()
+                + " occurredAt=" + Instant.now()
+                + (refused ? " sqlState=" + failure.getSQLState() + " vendorCode=" + failure.getErrorCode() : " recovered");
+        executor.submit(() -> {
+            note(event);
+            if (refused && !refusalCaptured) {
+                refusalCaptured = true;
+                sample("connection-refused");
+                capture("connection-refused");
+            }
+        });
     }
 
     void finishTest(String name, Throwable failure) {
