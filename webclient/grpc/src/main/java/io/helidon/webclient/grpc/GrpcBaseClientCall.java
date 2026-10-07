@@ -24,10 +24,14 @@ import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.tls.Tls;
 import io.helidon.grpc.core.GrpcHeadersUtil;
@@ -67,12 +71,15 @@ import io.helidon.webclient.http2.StreamTimeoutException;
 
 import io.grpc.CallOptions;
 import io.grpc.ClientCall;
+import io.grpc.Context;
+import io.grpc.Deadline;
 import io.grpc.InternalStatus;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 
+import static io.grpc.Contexts.statusFromCancelled;
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
 import static java.lang.System.Logger.Level.TRACE;
@@ -100,10 +107,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     static final BufferData EMPTY_BUFFER_DATA = BufferData.empty();
     static final int DATA_PREFIX_LENGTH = 5;
 
-    record MethodMetrics(Counter callStarted,
-                                   Timer callDuration,
-                                   DistributionSummary sentMessageSize,
-                                   DistributionSummary recvMessageSize) { }
+    private static final HeaderName TIMEOUT_NAME = HeaderNames.create("grpc-timeout");
 
     private final GrpcClientImpl grpcClient;
     private final GrpcChannel grpcChannel;
@@ -116,16 +120,32 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private final ClientUriSupplier clientUriSupplier;
     private final GrpcClientConfig grpcConfig;
     private final GrpcDeframer deframer;
+    private final Context context;
+    private final Deadline deadline;
+    private final ReentrantLock lifecycleLock = new ReentrantLock();
+    private final ReentrantLock listenerLock = new ReentrantLock();
+    private final Context.CancellationListener cancellationListener =
+            cancelled -> close(statusFromCancelled(cancelled));
 
     private final MethodDescriptor.Marshaller<ReqT> requestMarshaller;
     private final MethodDescriptor.Marshaller<ResT> responseMarshaller;
 
+    private volatile ClientConnection transportConnection;
     private volatile Http2ClientConnection connection;
     private volatile GrpcClientStream clientStream;
     private volatile Listener<ResT> responseListener;
     private volatile HelidonSocket socket;
     private volatile MethodMetrics methodMetrics;
     private volatile long startMillis;
+    private volatile Status closeStatus;
+    private volatile Thread deadlineThread;
+    private volatile Thread startThread;
+    private volatile CompletableFuture<Void> transportReady;
+    private volatile boolean initialHeadersWritten;
+
+    private Metadata closeMetadata;
+    private boolean closeNotified;
+    private volatile boolean closeComplete;
 
     private AtomicLong bytesSent;
     private AtomicLong bytesRcvd;
@@ -137,6 +157,11 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         this.grpcChannel = grpcChannel;
         this.methodDescriptor = methodDescriptor;
         this.callOptions = callOptions;
+        this.context = Context.current();
+        Deadline contextDeadline = context.getDeadline();
+        Deadline callDeadline = callOptions.getDeadline();
+        this.deadline = contextDeadline == null ? callDeadline
+                : callDeadline == null ? contextDeadline : contextDeadline.minimum(callDeadline);
         this.requestMarshaller = methodDescriptor.getRequestMarshaller();
         this.responseMarshaller = methodDescriptor.getResponseMarshaller();
         this.initBufferSize = grpcClient.prototype().protocolConfig().initBufferSize();
@@ -147,69 +172,6 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         Integer maxInboundMessageSize = callOptions.getMaxInboundMessageSize();
         this.deframer = new GrpcDeframer(initBufferSize,
                                          maxInboundMessageSize == null ? Integer.MAX_VALUE : maxInboundMessageSize);
-    }
-
-    @Override
-    public void start(Listener<ResT> responseListener, Metadata metadata) {
-        LOGGER.log(DEBUG, "start called");
-
-        this.responseListener = responseListener;
-
-        // init metrics
-        if (grpcConfig.enableMetrics()) {
-            initMetrics();
-            bytesSent = new AtomicLong(0L);
-            bytesRcvd = new AtomicLong(0L);
-            startMillis = System.currentTimeMillis();
-            methodMetrics.callStarted.increment();
-        }
-
-        // obtain HTTP2 connection
-        ClientUri clientUri = nextClientUri();
-        String authority = authority(clientUri);
-        ClientConnection clientConnection = clientConnection(clientUri, authority);
-        socket = clientConnection.helidonSocket();
-        Http2ClientImpl http2Client = (Http2ClientImpl) grpcClient.http2Client();
-        connection = Http2ClientConnection.create(http2Client, clientConnection, true);
-
-        // note that settings from connection may not be initialized at this time
-        // given that Http2ClientConnection.create() above runs asynchronously
-        Http2Settings http2Settings = http2Settings(grpcClient.http2Client()
-                                                            .prototype()
-                                                            .protocolConfig());
-
-        // create HTTP2 stream from connection
-        clientStream = new GrpcClientStream(
-                connection,
-                http2Settings,
-                socket,                                 // SocketContext
-                new Http2StreamConfig() {
-                    @Override
-                    public boolean priorKnowledge() {
-                        return true;
-                    }
-
-                    @Override
-                    public int priority() {
-                        return 0;
-                    }
-
-                    @Override
-                    public Duration readTimeout() {
-                        GrpcClientConfig config = grpcClient.prototype();
-                        return config.readTimeout().orElse(config.protocolConfig().pollWaitTime());
-                    }
-                },
-                http2Client.prototype(),
-                connection.streamIdSequence(),
-                http2Client);
-
-        // start streaming threads
-        startStreamingThreads();
-
-        // send HEADERS frame
-        WritableHeaders<?> headers = setupHeaders(metadata, authority, methodDescriptor.getFullMethodName());
-        clientStream.writeHeaders(Http2Headers.create(headers), false);
     }
 
     static WritableHeaders<?> setupHeaders(Metadata metadata, String authority, String methodName) {
@@ -225,7 +187,207 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         return headers;
     }
 
+    @Override
+    public void start(Listener<ResT> responseListener, Metadata metadata) {
+        LOGGER.log(DEBUG, "start called");
+
+        // init metrics
+        if (grpcConfig.enableMetrics()) {
+            initMetrics();
+            bytesSent = new AtomicLong(0L);
+            bytesRcvd = new AtomicLong(0L);
+            startMillis = System.currentTimeMillis();
+            methodMetrics.callStarted.increment();
+        }
+
+        lifecycleLock.lock();
+        try {
+            if (this.responseListener != null) {
+                throw new IllegalStateException("Call already started");
+            }
+            this.responseListener = Objects.requireNonNull(responseListener);
+        } finally {
+            lifecycleLock.unlock();
+        }
+        if (isClosed()) {
+            notifyClose();
+            return;
+        }
+
+        context.addListener(cancellationListener, Runnable::run);
+        if (isClosed()) {
+            // Cancellation can race with listener registration.
+            context.removeListener(cancellationListener);
+            return;
+        }
+        if (deadline != null && deadline.isExpired()) {
+            close(Status.DEADLINE_EXCEEDED.withDescription("Call deadline exceeded"));
+            return;
+        }
+
+        if (deadline == null && context == Context.ROOT) {
+            startTransport(metadata);
+            return;
+        }
+
+        // An owned virtual thread allows cancellation to interrupt connection setup without
+        // interrupting the caller's thread. Calls without a deadline or context retain the direct path.
+        var helidonContext = Contexts.context();
+        var ready = new CompletableFuture<Void>();
+        lifecycleLock.lock();
+        try {
+            if (isClosed()) {
+                return;
+            }
+            transportReady = ready;
+            if (deadline != null) {
+                deadlineThread = Thread.ofVirtual().name("grpc-client-deadline").unstarted(this::awaitDeadline);
+                deadlineThread.start();
+            }
+            startThread = Thread.ofVirtual().name("grpc-client-start").unstarted(context.wrap(() -> {
+                try {
+                    if (helidonContext.isPresent()) {
+                        Contexts.runInContext(helidonContext.get(), () -> startTransport(metadata));
+                    } else {
+                        startTransport(metadata);
+                    }
+                } finally {
+                    ready.complete(null);
+                }
+            }));
+            startThread.start();
+        } finally {
+            lifecycleLock.unlock();
+        }
+        ready.join();
+    }
+
+    @Override
+    public void cancel(String message, Throwable cause) {
+        close(Status.CANCELLED.withDescription(message).withCause(cause));
+    }
+
     abstract void startStreamingThreads();
+
+    abstract void closeStreamingThreads();
+
+    protected final boolean isClosed() {
+        return closeStatus != null;
+    }
+
+    protected final void onMessage(ResT response) {
+        listenerLock.lock();
+        try {
+            if (!isClosed()) {
+                context.run(() -> responseListener.onMessage(response));
+            }
+        } finally {
+            listenerLock.unlock();
+            notifyClose();
+        }
+    }
+
+    protected final void onReady() {
+        listenerLock.lock();
+        try {
+            if (!isClosed()) {
+                context.run(responseListener::onReady);
+            }
+        } finally {
+            listenerLock.unlock();
+            notifyClose();
+        }
+    }
+
+    protected final void close(Status status) {
+        close(status, EMPTY_METADATA);
+    }
+
+    protected final void closeResponse(Status status) {
+        closeResponse(status, EMPTY_METADATA);
+    }
+
+    final void closeResponse(Status status, Metadata metadata) {
+        if (status.getCode() == Status.Code.CANCELLED && deadline != null && deadline.isExpired()) {
+            status = Status.DEADLINE_EXCEEDED.withCause(status.getCause());
+        }
+        close(status, metadata);
+    }
+
+    protected final void close(Status status, Metadata metadata) {
+        lifecycleLock.lock();
+        try {
+            if (isClosed()) {
+                return;
+            }
+            closeStatus = status;
+            closeMetadata = metadata;
+        } finally {
+            lifecycleLock.unlock();
+        }
+
+        context.removeListener(cancellationListener);
+        Thread timer = deadlineThread;
+        if (timer != null && timer != Thread.currentThread()) {
+            timer.interrupt();
+        }
+        Thread starter = startThread;
+        if (starter != null && starter != Thread.currentThread()) {
+            starter.interrupt();
+        }
+        boolean abortTransport = status.getCode() == Status.Code.CANCELLED
+                || status.getCode() == Status.Code.DEADLINE_EXCEEDED;
+        if (abortTransport) {
+            // Each call owns its connection. Abort the raw socket before cleanup can wait for
+            // an HTTP/2 writer blocked by the peer, including a TLS write or a stream reset.
+            closeTransport();
+        }
+        try {
+            closeStreamingThreads();
+            GrpcClientStream stream = clientStream;
+            if (stream != null) {
+                try {
+                    // HTTP/2 marks the stream open before writing its initial HEADERS. Until that
+                    // write completes, cancel by closing the dedicated connection instead of resetting
+                    // a stream the peer has not seen yet (or whose id has not been assigned).
+                    if (initialHeadersWritten && !abortTransport) {
+                        stream.cancel();
+                    }
+                } finally {
+                    stream.close();
+                }
+            }
+        } catch (Throwable t) {
+            LOGGER.log(DEBUG, "Failed to close gRPC stream", t);
+        } finally {
+            try {
+                Http2ClientConnection currentConnection = connection;
+                if (currentConnection != null) {
+                    currentConnection.close();
+                }
+                if (enableMetrics() && bytesSent != null && bytesRcvd != null && status.isOk()) {
+                    methodMetrics.callDuration().record(Duration.ofMillis(System.currentTimeMillis() - startMillis));
+                    methodMetrics.recvMessageSize().record(bytesRcvd.get());
+                    methodMetrics.sentMessageSize().record(bytesSent.get());
+                }
+            } catch (Throwable t) {
+                LOGGER.log(DEBUG, "Failed to close gRPC connection", t);
+            } finally {
+                // A failed graceful shutdown, including an interrupted GOAWAY write, must not
+                // leave the dedicated raw connection open after the terminal callback.
+                closeTransport();
+                closeComplete = true;
+                try {
+                    notifyClose();
+                } finally {
+                    CompletableFuture<Void> ready = transportReady;
+                    if (ready != null) {
+                        ready.complete(null);
+                    }
+                }
+            }
+        }
+    }
 
     /**
      * Read a single gRPC frame, possibly assembled from multiple HTTP/2 frames.
@@ -520,6 +682,200 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         });
     }
 
+    private void startTransport(Metadata metadata) {
+        try {
+            if (!isClosed()) {
+                initializeTransport(metadata);
+            }
+        } catch (Throwable t) {
+            close(Status.fromThrowable(t));
+        }
+    }
+
+    private void initializeTransport(Metadata metadata) {
+
+        // obtain HTTP2 connection
+        ClientUri clientUri = nextClientUri();
+        String authority = authority(clientUri);
+        ClientConnection clientConnection = clientConnection(clientUri, authority);
+        lifecycleLock.lock();
+        try {
+            if (!isClosed()) {
+                transportConnection = clientConnection;
+            }
+        } finally {
+            lifecycleLock.unlock();
+        }
+        if (transportConnection != clientConnection) {
+            clientConnection.closeResource();
+            return;
+        }
+        socket = clientConnection.helidonSocket();
+        Http2ClientImpl http2Client = (Http2ClientImpl) grpcClient.http2Client();
+        Http2ClientConnection newConnection;
+        try {
+            newConnection = Http2ClientConnection.create(http2Client, clientConnection, true);
+        } catch (Throwable t) {
+            clientConnection.closeResource();
+            throw t;
+        }
+        lifecycleLock.lock();
+        try {
+            if (!isClosed()) {
+                connection = newConnection;
+            }
+        } finally {
+            lifecycleLock.unlock();
+        }
+        if (connection != newConnection) {
+            newConnection.close();
+            return;
+        }
+
+        // note that settings from connection may not be initialized at this time
+        // given that Http2ClientConnection.create() above runs asynchronously
+        Http2Settings http2Settings = http2Settings(grpcClient.http2Client()
+                                                            .prototype()
+                                                            .protocolConfig());
+
+        // create HTTP2 stream from connection
+        GrpcClientStream newStream = new GrpcClientStream(
+                connection,
+                http2Settings,
+                socket,                                 // SocketContext
+                new Http2StreamConfig() {
+                    @Override
+                    public boolean priorKnowledge() {
+                        return true;
+                    }
+
+                    @Override
+                    public int priority() {
+                        return 0;
+                    }
+
+                    @Override
+                    public Duration readTimeout() {
+                        GrpcClientConfig config = grpcClient.prototype();
+                        return config.readTimeout().orElse(config.protocolConfig().pollWaitTime());
+                    }
+                },
+                http2Client.prototype(),
+                connection.streamIdSequence(),
+                http2Client);
+        lifecycleLock.lock();
+        try {
+            if (!isClosed()) {
+                clientStream = newStream;
+            }
+        } finally {
+            lifecycleLock.unlock();
+        }
+        if (clientStream != newStream) {
+            newStream.close();
+            return;
+        }
+
+        // send HEADERS frame
+        WritableHeaders<?> headers = setupHeaders(metadata, authority, methodDescriptor.getFullMethodName());
+        headers.remove(TIMEOUT_NAME);
+        if (deadline != null) {
+            long remaining = deadline.timeRemaining(TimeUnit.NANOSECONDS);
+            if (remaining <= 0) {
+                close(Status.DEADLINE_EXCEEDED.withDescription("Call deadline exceeded"));
+                return;
+            }
+            headers.set(TIMEOUT_NAME, GrpcHeadersUtil.encodeTimeout(remaining));
+        }
+        if (isClosed()) {
+            return;
+        }
+        clientStream.writeHeaders(Http2Headers.create(headers), false);
+        initialHeadersWritten = true;
+        if (isClosed()) {
+            // A concurrent close always closes the registered stream and connection, including
+            // when it wins after the HEADERS write but before initialHeadersWritten is published.
+            return;
+        }
+
+        // Start workers only after the stream has its request headers and stream id.
+        try {
+            startStreamingThreads();
+        } finally {
+            if (isClosed()) {
+                closeStreamingThreads();
+                newStream.close();
+            }
+        }
+    }
+
+    private void closeTransport() {
+        try {
+            ClientConnection currentTransport = transportConnection;
+            if (currentTransport != null) {
+                currentTransport.closeResource();
+            }
+        } catch (Throwable t) {
+            LOGGER.log(DEBUG, "Failed to close gRPC transport", t);
+        }
+    }
+
+    private void notifyClose() {
+        if (!closeComplete || responseListener == null) {
+            return;
+        }
+        // Cancellation must not wait for an application callback. That callback delivers the
+        // terminal notification on return, including when it cancels the call itself.
+        if (listenerLock.isHeldByCurrentThread() || !listenerLock.tryLock()) {
+            return;
+        }
+        try {
+            if (!closeNotified) {
+                closeNotified = true;
+                // Transport cancellation may have interrupted the reader delivering this callback.
+                boolean interrupted = Thread.interrupted();
+                try {
+                    context.run(() -> responseListener.onClose(closeStatus, closeMetadata));
+                } finally {
+                    if (interrupted) {
+                        Thread.currentThread().interrupt();
+                    }
+                    unblockUnaryExecutor();
+                }
+            }
+        } finally {
+            listenerLock.unlock();
+        }
+    }
+
+    private void awaitDeadline() {
+        try {
+            long remaining;
+            while (!isClosed() && (remaining = deadline.timeRemaining(TimeUnit.NANOSECONDS)) > 0) {
+                TimeUnit.NANOSECONDS.sleep(remaining);
+            }
+            close(Status.DEADLINE_EXCEEDED.withDescription("Call deadline exceeded"));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    /**
+     * Retrieves the next URI either from the supplier or directly from config. If
+     * a supplier is provided, it will take precedence.
+     *
+     * @return the next {@link ClientUri}
+     * @throws java.util.NoSuchElementException if supplier has been exhausted
+     */
+    private ClientUri nextClientUri() {
+        return clientUriSupplier == null ? grpcClient.prototype().baseUri().orElseThrow()
+                : clientUriSupplier.next();
+    }
+
+    private boolean responseEnded() {
+        return !isRemoteOpen() || clientStream().trailers().isDone();
+    }
+
     private void endOfStream() {
         var trailersFuture = clientStream().trailers();
         if (trailersFuture.isDone() && !trailersFuture.isCompletedExceptionally()) {
@@ -547,6 +903,11 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         }
         deframer.endOfStream();
     }
+
+    private record MethodMetrics(Counter callStarted,
+                                   Timer callDuration,
+                                   DistributionSummary sentMessageSize,
+                                   DistributionSummary recvMessageSize) { }
 
     private static final class MessageInputStream extends InputStream {
         private final BufferData data;

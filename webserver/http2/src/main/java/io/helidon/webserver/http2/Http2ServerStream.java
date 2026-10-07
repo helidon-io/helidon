@@ -116,6 +116,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
     private final Http2StreamAdmissionGate streamAdmissionGate;
     private final HttpRouting routing;
     private final AtomicReference<WriteState> writeState = new AtomicReference<>(WriteState.INIT);
+    private final AtomicBoolean subProtocolClosed = new AtomicBoolean();
     private final ReentrantLock resetCompletionLock = new ReentrantLock();
     private final ReentrantLock runnerLock = new ReentrantLock();
     private boolean wasLastDataFrame = false;
@@ -334,6 +335,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             runner.interrupt();
         }
         resetSubProtocol(handler, new Http2RstStream(Http2ErrorCode.CANCEL));
+        closeSubProtocol(handler);
         inboundData.abortAndDrain();
     }
 
@@ -731,6 +733,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                 }
                 throw e;
             } finally {
+                closeSubProtocol(subProtocolHandler);
                 runnerLock.lock();
                 try {
                     runnerThread = null;
@@ -1615,6 +1618,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         }
         resetSubProtocol(selectedSubProtocol, pendingReset);
         if (closed) {
+            closeSubProtocol(selectedSubProtocol);
             return;
         }
         selectedSubProtocol.onStreamClosed(() -> {
@@ -1666,6 +1670,16 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                     inboundData.complete(frame,
                                          () -> incrementInboundStreamWindowSize(frame.flowControlLength()));
                 }
+            }
+        }
+    }
+
+    private void closeSubProtocol(Http2SubProtocolSelector.SubProtocolHandler handler) {
+        if (handler != null && subProtocolClosed.compareAndSet(false, true)) {
+            try {
+                handler.close();
+            } catch (Throwable e) {
+                LOGGER.log(System.Logger.Level.WARNING, "Failed to close HTTP/2 sub-protocol handler", e);
             }
         }
     }

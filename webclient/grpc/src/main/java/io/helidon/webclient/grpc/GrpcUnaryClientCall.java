@@ -16,12 +16,11 @@
 
 package io.helidon.webclient.grpc;
 
-import java.time.Duration;
-
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Header;
 import io.helidon.http.Headers;
 import io.helidon.http.http2.Http2Headers;
+import io.helidon.webclient.http2.StreamTimeoutException;
 
 import io.grpc.CallOptions;
 import io.grpc.Metadata;
@@ -42,7 +41,6 @@ import static java.lang.System.Logger.Level.DEBUG;
 class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     private static final System.Logger LOGGER = System.getLogger(GrpcUnaryClientCall.class.getName());
 
-    private volatile boolean closeCalled;
     private volatile boolean requestSent;
     private volatile boolean responseReceived;
     private volatile Http2Headers responseHeaders;
@@ -55,30 +53,32 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
     @Override
     public void request(int numMessages) {
-        socket().log(LOGGER, DEBUG, "request called %d", numMessages);
+        LOGGER.log(DEBUG, "request called {0}", numMessages);
         if (numMessages < 1) {
             close(Status.INVALID_ARGUMENT);
         }
     }
 
     @Override
-    public void cancel(String message, Throwable cause) {
-        if (clientStream() == null) {
+    public void halfClose() {
+        if (isClosed()) {
             return;
         }
-        socket().log(LOGGER, DEBUG, "cancel called %s", message);
-        close(Status.CANCELLED);
-    }
-
-    @Override
-    public void halfClose() {
-        socket().log(LOGGER, DEBUG, "halfClose called");
+        LOGGER.log(DEBUG, "halfClose called");
         if (responseReceived) {
+            var trailers = clientStream().trailers();
+            if (trailers.isDone() && !trailers.isCompletedExceptionally()) {
+                Headers headers = trailers.join();
+                if (headers.contains(STATUS_NAME)) {
+                    closeResponse(Status.fromCodeValue(headers.get(STATUS_NAME).getInt()));
+                    return;
+                }
+            }
             if (responseHeaders != null) {
                 Headers headers = responseHeaders.httpHeaders();
                 if (headers.contains(STATUS_NAME)) {
                     Header status = headers.get(STATUS_NAME);
-                    close(Status.fromCodeValue(status.getInt()));
+                    closeResponse(Status.fromCodeValue(status.getInt()));
                     return;
                 }
             }
@@ -90,6 +90,32 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
     @Override
     public void sendMessage(ReqT message) {
+        if (isClosed()) {
+            return;
+        }
+        try {
+            sendRequest(message);
+        } catch (StreamTimeoutException e) {
+            close(Status.DEADLINE_EXCEEDED.withCause(e));
+        } catch (StatusRuntimeException e) {
+            Metadata trailers = e.getTrailers();
+            close(e.getStatus(), trailers == null ? EMPTY_METADATA : trailers);
+        } catch (Throwable e) {
+            close(Status.fromThrowable(e));
+        }
+    }
+
+    @Override
+    protected void startStreamingThreads() {
+        // no-op
+    }
+
+    @Override
+    protected void closeStreamingThreads() {
+        // no-op
+    }
+
+    private void sendRequest(ReqT message) {
         // should only be called once
         if (requestSent) {
             close(Status.FAILED_PRECONDITION);
@@ -112,8 +138,9 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
         // read response headers, or trailers if an error occurred
         responseHeaders = clientStream().readHeaders();
+        responseReceived = true;
 
-        while (isRemoteOpen() || hasUnreadData()) {
+        while (!isClosed() && (isRemoteOpen() || hasUnreadData())) {
             // trailers or eos received?
             if (clientStream().trailers().isDone() || !clientStream().hasEntity()) {
                 socket().log(LOGGER, DEBUG, "[Reading thread] trailers or eos received");
@@ -141,39 +168,10 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                     bytesRcvd().addAndGet(bufferData.available() - DATA_PREFIX_LENGTH);
                 }
 
-                responseListener().onMessage(toResponse(bufferData));
+                onMessage(toResponse(bufferData));
                 responseReceived = true;
             }
         }
     }
 
-    @Override
-    protected void startStreamingThreads() {
-        // no-op
-    }
-
-    private void close(Status status) {
-        close(status, EMPTY_METADATA);
-    }
-
-    private void close(Status status, Metadata metadata) {
-        if (!closeCalled) {
-            socket().log(LOGGER, DEBUG, "closing client call");
-            responseListener().onClose(status, metadata);
-            clientStream().cancel();
-            connection().close();
-
-            // update metrics
-            if (enableMetrics() && status == Status.OK) {
-                MethodMetrics methodMetrics = methodMetrics();
-                methodMetrics.callDuration().record(
-                        Duration.ofMillis(System.currentTimeMillis() - startMillis()));
-                methodMetrics.recvMessageSize().record(bytesRcvd().get());
-                methodMetrics.sentMessageSize().record(bytesSent().get());
-            }
-
-            unblockUnaryExecutor();
-            closeCalled = true;
-        }
-    }
 }

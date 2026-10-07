@@ -72,7 +72,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class GrpcBaseClientCallTest {
 
     @Test
-    void unaryCancelWithoutConnection() {
+    void unaryCancelWithoutConnection() throws Exception {
         GrpcClient client = grpcClient();
         IllegalStateException connectFailure = new IllegalStateException("connect failed");
         var call = new GrpcUnaryClientCall<String, String>((GrpcChannel) client.channel(),
@@ -83,9 +83,16 @@ class GrpcBaseClientCallTest {
             }
         };
 
-        assertThat(assertThrows(IllegalStateException.class,
-                                () -> call.start(new ClientCall.Listener<>() { }, new Metadata())),
-                   sameInstance(connectFailure));
+        CompletableFuture<Status> closed = new CompletableFuture<>();
+        call.start(new ClientCall.Listener<>() {
+            @Override
+            public void onClose(Status status, Metadata trailers) {
+                closed.complete(status);
+            }
+        }, new Metadata());
+        Status status = closed.get(10, TimeUnit.SECONDS);
+        assertThat(status.getCode(), is(Status.Code.UNKNOWN));
+        assertThat(status.getCause(), sameInstance(connectFailure));
         call.cancel("after failed start", connectFailure);
 
         var unstartedCall = new GrpcUnaryClientCall<String, String>((GrpcChannel) client.channel(),
@@ -94,7 +101,7 @@ class GrpcBaseClientCallTest {
     }
 
     @Test
-    void streamingCancelWithoutConnection() {
+    void streamingCancelWithoutConnection() throws Exception {
         GrpcClient client = grpcClient();
         IllegalStateException connectFailure = new IllegalStateException("connect failed");
         var call = new GrpcClientCall<String, String>((GrpcChannel) client.channel(),
@@ -106,9 +113,16 @@ class GrpcBaseClientCallTest {
             }
         };
 
-        assertThat(assertThrows(IllegalStateException.class,
-                                () -> call.start(new ClientCall.Listener<>() { }, new Metadata())),
-                   sameInstance(connectFailure));
+        CompletableFuture<Status> closed = new CompletableFuture<>();
+        call.start(new ClientCall.Listener<>() {
+            @Override
+            public void onClose(Status status, Metadata trailers) {
+                closed.complete(status);
+            }
+        }, new Metadata());
+        Status status = closed.get(10, TimeUnit.SECONDS);
+        assertThat(status.getCode(), is(Status.Code.UNKNOWN));
+        assertThat(status.getCause(), sameInstance(connectFailure));
         call.cancel("after failed start", connectFailure);
 
         var unstartedCall = new GrpcClientCall<String, String>((GrpcChannel) client.channel(),

@@ -131,6 +131,27 @@ service.split(msg3, new StreamObserver<Strings.StringMessage>() {
 });
 ```
 
+### Deadlines
+
+Set a deadline on a generated stub to limit the duration of a call:
+
+```java
+Strings.StringMessage response = service.withDeadlineAfter(5, TimeUnit.SECONDS)
+        .upper(newMessage("hello"));
+```
+
+The client sends the remaining time in the `grpc-timeout` header and completes
+the call with `DEADLINE_EXCEEDED` if the deadline expires. Deadlines apply to
+unary and streaming calls, including streams waiting for request messages.
+Explicitly cancelling a call completes it with `CANCELLED`.
+
+Calls also inherit the deadline from the gRPC `Context` in which they are
+created. When both the context and the call specify a deadline, the earlier one
+applies. This allows a server handler to pass its remaining deadline to an
+outbound call automatically. When moving work to another executor, propagate
+the gRPC context using `Context.current().wrap(...)` or
+`Context.current().fixedContextExecutor(...)`.
+
 ### Service Descriptors
 
 Service descriptors are an alternative to using generated stubs and the `protoc`

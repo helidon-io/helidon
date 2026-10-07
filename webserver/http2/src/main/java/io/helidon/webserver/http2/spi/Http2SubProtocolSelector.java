@@ -78,6 +78,18 @@ public interface Http2SubProtocolSelector {
         void init();
 
         /**
+         * Release resources when the stream handler exits or its connection closes, including after normal completion.
+         * Called at most once for this stream, on either the HTTP/2 connection thread or the stream thread.
+         * This may happen before or concurrently with {@link #init()} or other callbacks.
+         * Implementations must tolerate an already completed or cancelled operation and must not block the calling thread
+         * or write further frames.
+         *
+         * The default implementation does nothing.
+         */
+        default void close() {
+        }
+
+        /**
          * Current stream state.
          *
          * @return stream state
