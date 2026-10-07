@@ -18,6 +18,7 @@ package io.helidon.data.jdbc.tests.declarative.oracle;
 import io.helidon.data.jdbc.tests.contract.AbstractGeneratedRepositoryContract;
 import io.helidon.data.jdbc.tests.support.TestConfigFactory;
 
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -29,6 +30,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 class OracleGeneratedRepositoryTest extends AbstractGeneratedRepositoryContract {
     @Container
     static final GenericContainer<?> ORACLE = OracleDeclarativeTestSupport.ORACLE;
+
+    // Testcontainers starts before this field extension and stops after it.
+    @RegisterExtension
+    static final OracleGeneratedRepositoryDiagnostics DIAGNOSTICS = new OracleGeneratedRepositoryDiagnostics(ORACLE);
 
     @Override
     protected void beforeStartApplication() {
