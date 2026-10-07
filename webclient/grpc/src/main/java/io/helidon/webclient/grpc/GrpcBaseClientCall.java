@@ -88,11 +88,6 @@ import static java.lang.System.Logger.Level.TRACE;
  * Base class for gRPC client calls.
  */
 abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
-    private static final System.Logger LOGGER = System.getLogger(GrpcBaseClientCall.class.getName());
-    private static final Tls CLEARTEXT_TLS = Tls.builder()
-            .enabled(false)
-            .build();
-
     static final Metadata EMPTY_METADATA = new Metadata();
     static final Header GRPC_ACCEPT_ENCODING = HeaderValues.createCached(HeaderNames.ACCEPT_ENCODING, "gzip");
     static final Header GRPC_CONTENT_TYPE = HeaderValues.createCached(HeaderNames.CONTENT_TYPE, "application/grpc");
@@ -106,6 +101,11 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     static final BufferData PING_FRAME = BufferData.create("PING");
     static final BufferData EMPTY_BUFFER_DATA = BufferData.empty();
     static final int DATA_PREFIX_LENGTH = 5;
+
+    private static final System.Logger LOGGER = System.getLogger(GrpcBaseClientCall.class.getName());
+    private static final Tls CLEARTEXT_TLS = Tls.builder()
+            .enabled(false)
+            .build();
 
     private static final HeaderName TIMEOUT_NAME = HeaderNames.create("grpc-timeout");
 
@@ -394,7 +394,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
      *
      * @return data for gRPC frame or {@code null}
      */
-    BufferData readGrpcFrame() {
+    protected BufferData readGrpcFrame() {
         BufferData data = unreadData;
         unreadData = null;
         while (true) {
@@ -523,20 +523,6 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         return unreadData != null && unreadData.available() > 0;
     }
 
-    private String authority(ClientUri clientUri) {
-        String authority = callOptions.getAuthority();
-        if (authority != null) {
-            return authority;
-        }
-        return clientUri.authority();
-    }
-
-    private static ClientRequestHeaders authorityHeaders(String authority) {
-        WritableHeaders<?> headers = WritableHeaders.create();
-        headers.set(HeaderValues.create(HeaderNames.HOST, authority));
-        return ClientRequestHeaders.create(headers);
-    }
-
     boolean isRemoteOpen() {
         return clientStream().streamState() != Http2StreamState.HALF_CLOSED_REMOTE
                 && clientStream().streamState() != Http2StreamState.CLOSED;
@@ -621,17 +607,6 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         socket().log(LOGGER, TRACE, "[Reading thread] HTTP/2 stream timeout, retrying");
     }
 
-    private Http2Settings http2Settings(Http2ClientProtocolConfig config) {
-        Http2Settings.Builder b = Http2Settings.builder();
-        if (config.maxHeaderListSize() > 0) {
-            b.add(Http2Setting.MAX_HEADER_LIST_SIZE, config.maxHeaderListSize());
-        }
-        return b.add(Http2Setting.INITIAL_WINDOW_SIZE, (long) config.initialWindowSize())
-                .add(Http2Setting.MAX_FRAME_SIZE, (long) config.maxFrameSize())
-                .add(Http2Setting.ENABLE_PUSH, false)
-                .build();
-    }
-
     void initMetrics() {
         String baseUri = grpcChannel.baseUri().toString();
         String methodName = methodDescriptor.getFullMethodName();
@@ -671,6 +646,31 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
             return new MethodMetrics(callStarted, callDuration, sentMessageSize, recvMessageSize);
         });
+    }
+
+    private static ClientRequestHeaders authorityHeaders(String authority) {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.set(HeaderValues.create(HeaderNames.HOST, authority));
+        return ClientRequestHeaders.create(headers);
+    }
+
+    private String authority(ClientUri clientUri) {
+        String authority = callOptions.getAuthority();
+        if (authority != null) {
+            return authority;
+        }
+        return clientUri.authority();
+    }
+
+    private Http2Settings http2Settings(Http2ClientProtocolConfig config) {
+        Http2Settings.Builder b = Http2Settings.builder();
+        if (config.maxHeaderListSize() > 0) {
+            b.add(Http2Setting.MAX_HEADER_LIST_SIZE, config.maxHeaderListSize());
+        }
+        return b.add(Http2Setting.INITIAL_WINDOW_SIZE, (long) config.initialWindowSize())
+                .add(Http2Setting.MAX_FRAME_SIZE, (long) config.maxFrameSize())
+                .add(Http2Setting.ENABLE_PUSH, false)
+                .build();
     }
 
     private void startTransport(Metadata metadata) {
