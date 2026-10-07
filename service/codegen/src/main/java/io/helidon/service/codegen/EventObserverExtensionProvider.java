@@ -153,6 +153,10 @@ public class EventObserverExtensionProvider implements RegistryCodegenExtensionP
                 }
                 TypedElementInfo parameter = element.parameterArguments().getFirst();
                 TypeName eventObject = parameter.typeName();
+                if (eventObject.vararg()) {
+                    throw new CodegenException("Event observer methods cannot declare a varargs parameter",
+                                               element.originatingElementValue());
+                }
                 Set<Annotation> qualifiers = Qualifiers.qualifiers(element);
                 TypeInfo owningType = element.enclosingType()
                         .flatMap(roundContext::typeInfo)

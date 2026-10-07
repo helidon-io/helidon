@@ -135,6 +135,37 @@ class EventObserverCodegenTest {
     }
 
     @Test
+    void testVarargsObserverRejected(@TempDir Path directory) {
+        var synchronous = compiler(directory.resolve("synchronous"), listener("Listener", List.of(
+                "@Event.Observer void observe(String... events) {}",
+                "void observe(Object event) {}")))
+                .build()
+                .compile();
+        var asynchronous = compiler(directory.resolve("asynchronous"), listener("Listener", List.of(
+                "@Event.AsyncObserver void observe(String... events) {}")))
+                .build()
+                .compile();
+
+        assertThat(synchronous.success(), is(false));
+        assertThat(String.join("\n", synchronous.diagnostics()),
+                   containsString("Event observer methods cannot declare a varargs parameter"));
+        assertThat(asynchronous.success(), is(false));
+        assertThat(String.join("\n", asynchronous.diagnostics()),
+                   containsString("Event observer methods cannot declare a varargs parameter"));
+    }
+
+    @Test
+    void testArrayObserverAccepted(@TempDir Path directory) {
+        var result = compiler(directory.resolve("array"), listener("Listener", List.of(
+                "@Event.Observer void observe(String[] events) {}",
+                "void observe(Object event) {}")))
+                .build()
+                .compile();
+
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
+    }
+
+    @Test
     void testAsyncOnlyObserversRetainLegacyFilenames(@TempDir Path directory) throws IOException {
         var result = compiler(directory.resolve("compile-1"), listener("Listener", List.of(
                 "@Event.AsyncObserver @Service.Named(\"red\") void first(String event) {}",
