@@ -99,7 +99,7 @@ final class HelidonPrometheusFormatter implements MeterRegistryFormatter {
         StringBuilder output = new StringBuilder();
         Set<String> emittedMetadata = new HashSet<>();
         List<Meter> meters = selectedMeters();
-        validateNames(meters);
+        validateIdentities(meters);
         Map<String, String> descriptions = descriptions(meters);
         meters.stream()
                 .sorted((a, b) -> primaryFamilyName(a).compareTo(primaryFamilyName(b)))
@@ -144,10 +144,21 @@ final class HelidonPrometheusFormatter implements MeterRegistryFormatter {
         return snapshot.histogramCounts().iterator().hasNext();
     }
 
-    private static void addTag(Map<String, String> labels, Tag tag, Set<String> reservedLabels) {
+    private static void addTag(Meter meter,
+                               Map<String, Tag> labels,
+                               Tag tag,
+                               Set<String> reservedLabels,
+                               boolean rejectCollisions) {
         String key = normalizeLabelName(tag.key());
-        if (!reservedLabels.contains(key)) {
-            labels.putIfAbsent(key, tag.value());
+        if (reservedLabels.contains(key)) {
+            throw new IllegalArgumentException("Prometheus label '" + tag.key() + "' normalizes to reserved label '"
+                                                       + key + "' for " + describeMeter(meter));
+        }
+        Tag previous = labels.putIfAbsent(key, tag);
+        if (rejectCollisions && previous != null) {
+            throw new IllegalArgumentException("Prometheus label collision: '" + previous.key() + "' and '"
+                                                       + tag.key() + "' normalize to '" + key + "' for "
+                                                       + describeMeter(meter));
         }
     }
 
@@ -181,16 +192,18 @@ final class HelidonPrometheusFormatter implements MeterRegistryFormatter {
         if (tagSelections.isEmpty()) {
             return true;
         }
-        Map<String, String> labels = labels(meter, NO_RESERVED_LABELS);
+        // Selection does not export labels; validate collisions only in the selected meters.
+        Map<String, Tag> labels = labels(meter, NO_RESERVED_LABELS, false);
         return tagSelections.entrySet().stream()
                 .allMatch(selection -> {
-                    String value = labels.get(normalizeLabelName(selection.getKey()));
-                    return value != null && selection.getValue().contains(value);
+                    Tag tag = labels.get(normalizeLabelName(selection.getKey()));
+                    return tag != null && selection.getValue().contains(tag.value());
                 });
     }
 
-    private void validateNames(List<Meter> meters) {
+    private void validateIdentities(List<Meter> meters) {
         Map<String, Meter> owners = new HashMap<>();
+        Map<SeriesId, Meter> seriesOwners = new HashMap<>();
         for (Meter meter : meters) {
             String name = promName(meter);
             List<String> names = switch (meter.type()) {
@@ -213,6 +226,16 @@ final class HelidonPrometheusFormatter implements MeterRegistryFormatter {
                                                                + "' is produced by both " + describeMeter(owner)
                                                                + " and " + describeMeter(meter));
                 }
+            }
+            Map<String, String> labelValues = new HashMap<>();
+            labels(meter, NO_RESERVED_LABELS, true).forEach((key, tag) -> labelValues.put(key, tag.value()));
+            SeriesId seriesId = new SeriesId(name, Map.copyOf(labelValues));
+            Meter owner = seriesOwners.putIfAbsent(seriesId, meter);
+            if (owner != null) {
+                throw new IllegalArgumentException("Prometheus series collision: '" + name + "' with labels "
+                                                           + seriesId.labels() + " is produced by both " + describeMeter(owner)
+                                                           + " with tags " + owner.id().tagsMap() + " and " + describeMeter(meter)
+                                                           + " with tags " + meter.id().tagsMap());
             }
         }
     }
@@ -521,28 +544,31 @@ final class HelidonPrometheusFormatter implements MeterRegistryFormatter {
     }
 
     private String tags(Meter meter, Map<String, String> extraTags, Set<String> reservedLabels) {
-        Map<String, String> labels = labels(meter, reservedLabels);
-        extraTags.forEach((key, value) -> labels.put(normalizeLabelName(key), value));
+        Map<String, Tag> labels = labels(meter, reservedLabels, true);
+        extraTags.forEach((key, value) -> labels.put(normalizeLabelName(key), new HelidonTag(key, value)));
         if (labels.isEmpty()) {
             return "";
         }
         StringBuilder result = new StringBuilder("{");
-        labels.forEach((key, value) -> result.append(key)
+        labels.forEach((key, tag) -> result.append(key)
                 .append("=\"")
-                .append(escape(value))
+                .append(escape(tag.value()))
                 .append("\","));
         result.setCharAt(result.length() - 1, '}');
         return result.toString();
     }
 
-    private Map<String, String> labels(Meter meter, Set<String> reservedLabels) {
-        Map<String, String> labels = new LinkedHashMap<>();
+    private Map<String, Tag> labels(Meter meter, Set<String> reservedLabels, boolean rejectCollisions) {
+        Map<String, Tag> labels = new LinkedHashMap<>();
         systemTagsManager
                 .withoutSystemTags(meter.id().tags())
-                .forEach(tag -> addTag(labels, tag, reservedLabels));
+                .forEach(tag -> addTag(meter, labels, tag, reservedLabels, rejectCollisions));
         systemTagsManager
                 .displayTags()
-                .forEach(tag -> addTag(labels, tag, reservedLabels));
+                .forEach(tag -> addTag(meter, labels, tag, reservedLabels, rejectCollisions));
         return labels;
+    }
+
+    private record SeriesId(String name, Map<String, String> labels) {
     }
 }

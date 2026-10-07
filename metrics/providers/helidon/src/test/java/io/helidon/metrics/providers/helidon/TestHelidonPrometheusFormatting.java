@@ -40,6 +40,9 @@ import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.Timer;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
@@ -361,8 +364,6 @@ class TestHelidonPrometheusFormatting {
             MeterRegistry registry = factory.createMeterRegistry(metricsConfig);
             registry.getOrCreate(factory.timerBuilder("selected.timer")
                                          .addTag(new HelidonTag("http.path", labelValue))
-                                         .addTag(new HelidonTag("le", "user-bucket"))
-                                         .addTag(new HelidonTag("quantile", "user-quantile"))
                                          .percentiles(0.5)
                                          .buckets(Duration.ofSeconds(1)))
                     .record(250, TimeUnit.MILLISECONDS);
@@ -370,9 +371,7 @@ class TestHelidonPrometheusFormatting {
                                                                    factory.distributionStatisticsConfigBuilder()
                                                                            .percentiles(0.5)
                                                                            .buckets(2D))
-                                         .addTag(new HelidonTag("http.path", labelValue))
-                                         .addTag(new HelidonTag("le", "user-bucket"))
-                                         .addTag(new HelidonTag("quantile", "user-quantile")))
+                                         .addTag(new HelidonTag("http.path", labelValue)))
                     .record(1.25);
             registry.getOrCreate(factory.timerBuilder("selected.timer")
                                          .addTag(new HelidonTag("http.path", "excluded"))
@@ -393,7 +392,7 @@ class TestHelidonPrometheusFormatting {
 
             String labels = "http_path=\"quote\\\"\\\\\\n\",app=\"test\"";
             assertThat(output, allOf(not(containsString("excluded")), not(containsString("other"))));
-            assertThat("Combined families remove both reserved labels from every sample",
+            assertThat("Combined families preserve user labels and add generated labels",
                        output.lines().filter(line -> !line.startsWith("#") && !line.contains("_max")).toList(),
                        is(List.of("selected_summary{" + labels + ",quantile=\"0.5\"} 1.25",
                                   "selected_summary_bucket{" + labels + ",le=\"2.0\"} 1",
@@ -458,14 +457,12 @@ class TestHelidonPrometheusFormatting {
 
         Timer timer = registry.getOrCreate(factory.timerBuilder("reserved.labels")
                                                    .addTag(new HelidonTag("http:method", "GET"))
-                                                   .addTag(new HelidonTag("le", "user"))
                                                    .buckets(Duration.ofMillis(10)));
         timer.record(1, TimeUnit.MILLISECONDS);
         DistributionSummary summary = registry.getOrCreate(
                 factory.distributionSummaryBuilder("empty.summary",
                                                    factory.distributionStatisticsConfigBuilder()
-                                                           .percentiles(0.5))
-                        .addTag(new HelidonTag("quantile", "user")));
+                                                           .percentiles(0.5)));
 
         String output = format(metricsConfig, registry);
 
@@ -569,6 +566,224 @@ class TestHelidonPrometheusFormatting {
     @Test
     void openMetricsPreservesDistinctLabelValues() {
         assertDistinctLabelValues(MediaTypes.APPLICATION_OPENMETRICS_TEXT);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false,false", "false,true", "true,false", "true,true"})
+    void rejectsNormalizedLabelKeys(boolean openMetrics, boolean systemTag) {
+        MetricsConfig config = MetricsConfig.builder()
+                .tags(systemTag ? List.of(new HelidonTag("a_b", "same")) : List.of())
+                .build();
+        HelidonMetricsFactory factory = HelidonMetricsFactory.create();
+        try {
+            MeterRegistry registry = factory.createMeterRegistry(config);
+            var builder = factory.counterBuilder("label.collision").addTag(new HelidonTag("a-b", "same"));
+            if (!systemTag) {
+                builder.addTag(new HelidonTag("a_b", "same"));
+            }
+            registry.getOrCreate(builder);
+            FormatterContext context = FormatterContext.builder()
+                    .mediaType(openMetrics ? MediaTypes.APPLICATION_OPENMETRICS_TEXT : MediaTypes.TEXT_PLAIN)
+                    .metricsConfig(config)
+                    .build();
+            var formatter = new HelidonPrometheusFormatterProvider().formatter(context, registry).orElseThrow();
+
+            var error = assertThrows(IllegalArgumentException.class, formatter::format);
+            assertThat(error.getMessage(), allOf(containsString("label.collision"),
+                                                containsString("a-b"), containsString("a_b")));
+        } finally {
+            factory.close();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void rejectsDuplicateNormalizedSeries(boolean openMetrics) {
+        MetricsConfig config = MetricsConfig.create();
+        HelidonMetricsFactory factory = HelidonMetricsFactory.create();
+        try {
+            MeterRegistry registry = factory.createMeterRegistry(config);
+            // The normalized label maps have different insertion order, but the same exported identity.
+            registry.getOrCreate(factory.counterBuilder("requests").addTag(new HelidonTag("a-b", "same"))
+                                         .addTag(new HelidonTag("a0", "other"))).increment();
+            registry.getOrCreate(factory.counterBuilder("requests").addTag(new HelidonTag("a_b", "same"))
+                                         .addTag(new HelidonTag("a0", "other"))).increment(2);
+            FormatterContext context = FormatterContext.builder()
+                    .mediaType(openMetrics ? MediaTypes.APPLICATION_OPENMETRICS_TEXT : MediaTypes.TEXT_PLAIN)
+                    .metricsConfig(config)
+                    .build();
+            var formatter = new HelidonPrometheusFormatterProvider().formatter(context, registry).orElseThrow();
+
+            var error = assertThrows(IllegalArgumentException.class, formatter::format);
+            assertThat(error.getMessage(), allOf(containsString("series"), containsString("requests"),
+                                                containsString("a-b"), containsString("a_b")));
+        } finally {
+            factory.close();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void preservesDistinctNormalizedSeries(boolean openMetrics) {
+        MetricsConfig config = MetricsConfig.create();
+        HelidonMetricsFactory factory = HelidonMetricsFactory.create();
+        try {
+            MeterRegistry registry = factory.createMeterRegistry(config);
+            registry.getOrCreate(factory.counterBuilder("requests").addTag(new HelidonTag("a-b", "first"))).increment();
+            registry.getOrCreate(factory.counterBuilder("requests").addTag(new HelidonTag("a_b", "second"))).increment(2);
+            FormatterContext context = FormatterContext.builder()
+                    .mediaType(openMetrics ? MediaTypes.APPLICATION_OPENMETRICS_TEXT : MediaTypes.TEXT_PLAIN)
+                    .metricsConfig(config)
+                    .build();
+            var formatter = new HelidonPrometheusFormatterProvider().formatter(context, registry).orElseThrow();
+            assertThat((String) formatter.format().orElseThrow(),
+                       allOf(containsString("requests_total{a_b=\"first\"} 1.0"),
+                             containsString("requests_total{a_b=\"second\"} 2.0")));
+        } finally {
+            factory.close();
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false,false", "false,true", "true,false", "true,true"})
+    void rejectsReservedHistogramLabel(boolean openMetrics, boolean timer) {
+        MetricsConfig config = MetricsConfig.create();
+        HelidonMetricsFactory factory = HelidonMetricsFactory.create();
+        try {
+            MeterRegistry registry = factory.createMeterRegistry(config);
+            if (timer) {
+                registry.getOrCreate(factory.timerBuilder("reserved.label")
+                                             .addTag(new HelidonTag("le", "user"))
+                                             .buckets(Duration.ofSeconds(1)));
+            } else {
+                registry.getOrCreate(factory.distributionSummaryBuilder("reserved.label",
+                                                                       factory.distributionStatisticsConfigBuilder()
+                                                                               .buckets(1D))
+                                             .addTag(new HelidonTag("le", "user")));
+            }
+            FormatterContext context = FormatterContext.builder()
+                    .mediaType(openMetrics ? MediaTypes.APPLICATION_OPENMETRICS_TEXT : MediaTypes.TEXT_PLAIN)
+                    .metricsConfig(config)
+                    .build();
+            var formatter = new HelidonPrometheusFormatterProvider().formatter(context, registry).orElseThrow();
+
+            var error = assertThrows(IllegalArgumentException.class, formatter::format);
+            assertThat(error.getMessage(), allOf(containsString("reserved.label"), containsString("le"),
+                                                containsString("reserved")));
+        } finally {
+            factory.close();
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false,false", "false,true", "true,false", "true,true"})
+    void rejectsReservedSummaryLabel(boolean openMetrics, boolean timer) {
+        MetricsConfig config = MetricsConfig.create();
+        HelidonMetricsFactory factory = HelidonMetricsFactory.create();
+        try {
+            MeterRegistry registry = factory.createMeterRegistry(config);
+            if (timer) {
+                registry.getOrCreate(factory.timerBuilder("reserved.label")
+                                             .addTag(new HelidonTag("quantile", "user"))
+                                             .percentiles(0.5));
+            } else {
+                registry.getOrCreate(factory.distributionSummaryBuilder("reserved.label",
+                                                                       factory.distributionStatisticsConfigBuilder()
+                                                                               .percentiles(0.5))
+                                             .addTag(new HelidonTag("quantile", "user")));
+            }
+            FormatterContext context = FormatterContext.builder()
+                    .mediaType(openMetrics ? MediaTypes.APPLICATION_OPENMETRICS_TEXT : MediaTypes.TEXT_PLAIN)
+                    .metricsConfig(config)
+                    .build();
+            var formatter = new HelidonPrometheusFormatterProvider().formatter(context, registry).orElseThrow();
+
+            var error = assertThrows(IllegalArgumentException.class, formatter::format);
+            assertThat(error.getMessage(), allOf(containsString("reserved.label"), containsString("quantile"),
+                                                containsString("reserved")));
+        } finally {
+            factory.close();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void histogramQuantileHintReservesLabelsOnlyForPrometheus(boolean openMetrics) {
+        MetricsConfig config = MetricsConfig.create();
+        HelidonMetricsFactory factory = HelidonMetricsFactory.create();
+        try {
+            MeterRegistry registry = factory.createMeterRegistry(config);
+            registry.getOrCreate(factory.timerBuilder("hinted.timer").buckets(Duration.ofSeconds(1))
+                                         .percentiles(0.5).addTag(new HelidonTag("quantile", "user")));
+            FormatterContext context = FormatterContext.builder()
+                    .mediaType(openMetrics ? MediaTypes.APPLICATION_OPENMETRICS_TEXT : MediaTypes.TEXT_PLAIN)
+                    .metricsConfig(config)
+                    .includeHistogramQuantiles(true)
+                    .build();
+            var formatter = new HelidonPrometheusFormatterProvider().formatter(context, registry).orElseThrow();
+
+            if (openMetrics) {
+                assertThat((String) formatter.format().orElseThrow(),
+                           containsString("hinted_timer_seconds_bucket{quantile=\"user\",le=\"1.0\"}"));
+            } else {
+                var error = assertThrows(IllegalArgumentException.class, formatter::format);
+                assertThat(error.getMessage(), allOf(containsString("hinted.timer"), containsString("quantile")));
+            }
+        } finally {
+            factory.close();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void collisionsInExcludedMetersDoNotBreakSelection(boolean openMetrics) {
+        MetricsConfig config = MetricsConfig.create();
+        HelidonMetricsFactory factory = HelidonMetricsFactory.create();
+        try {
+            MeterRegistry registry = factory.createMeterRegistry(config);
+            registry.getOrCreate(factory.counterBuilder("excluded")
+                                         .addTag(new HelidonTag("a-b", "first"))
+                                         .addTag(new HelidonTag("a_b", "second"))
+                                         .addTag(new HelidonTag("color", "red")));
+            registry.getOrCreate(factory.counterBuilder("selected")
+                                         .addTag(new HelidonTag("color", "blue"))).increment(3);
+            for (boolean byName : List.of(false, true)) {
+                FormatterContext context = FormatterContext.builder()
+                        .mediaType(openMetrics ? MediaTypes.APPLICATION_OPENMETRICS_TEXT : MediaTypes.TEXT_PLAIN)
+                        .metricsConfig(config)
+                        .nameSelection(byName ? List.of("selected") : List.of())
+                        .tagSelections(byName ? Map.of() : Map.of("color", List.of("blue")))
+                        .build();
+                var formatter = new HelidonPrometheusFormatterProvider().formatter(context, registry).orElseThrow();
+                assertThat((String) formatter.format().orElseThrow(),
+                           allOf(containsString("selected_total{color=\"blue\"} 3.0"), not(containsString("excluded"))));
+            }
+        } finally {
+            factory.close();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void preservesSystemTagPrecedenceAndOrdinaryReservedLabels(boolean openMetrics) {
+        MetricsConfig config = MetricsConfig.builder().tags(List.of(new HelidonTag("app", "system"))).build();
+        HelidonMetricsFactory factory = HelidonMetricsFactory.create();
+        try {
+            MeterRegistry registry = factory.createMeterRegistry(config);
+            registry.getOrCreate(factory.counterBuilder("ordinary")
+                                         .addTag(new HelidonTag("app", "user"))
+                                         .addTag(new HelidonTag("le", "user"))
+                                         .addTag(new HelidonTag("quantile", "user"))).increment();
+            FormatterContext context = FormatterContext.builder()
+                    .mediaType(openMetrics ? MediaTypes.APPLICATION_OPENMETRICS_TEXT : MediaTypes.TEXT_PLAIN)
+                    .metricsConfig(config)
+                    .build();
+            var formatter = new HelidonPrometheusFormatterProvider().formatter(context, registry).orElseThrow();
+            assertThat((String) formatter.format().orElseThrow(),
+                       containsString("ordinary_total{le=\"user\",quantile=\"user\",app=\"system\"} 1.0"));
+        } finally {
+            factory.close();
+        }
     }
 
     @Test
