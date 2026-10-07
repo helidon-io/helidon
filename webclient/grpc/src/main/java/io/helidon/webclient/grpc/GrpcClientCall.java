@@ -243,7 +243,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                 close(e.getStatus(), trailers == null ? EMPTY_METADATA : trailers);
             } catch (Http2Exception e) {
                 socket().log(LOGGER, ERROR, e.getMessage(), e);
-                close(resetStatus(e.code()).withDescription(e.getMessage()).withCause(e));
+                closeResponse(resetStatus(e.code()).withDescription(e.getMessage()).withCause(e));
             } catch (Throwable e) {
                 socket().log(LOGGER, ERROR, e.getMessage(), e);
                 close(Status.UNKNOWN.withDescription(e.getMessage()).withCause(e));

@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.buffers.BufferData;
@@ -49,6 +50,7 @@ import io.helidon.webclient.api.ClientUri;
 
 import io.grpc.CallOptions;
 import io.grpc.ClientCall;
+import io.grpc.Deadline;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
@@ -86,6 +88,21 @@ class GrpcClientCallTest {
     @Test
     void peerCancelAbortsConnectionWithoutInterruptingListener() throws Exception {
         peerResetClosesConnection(false, Http2ErrorCode.CANCEL);
+    }
+
+    @Test
+    void peerCancelAfterDeadlineExpiryReportsDeadlineExceeded() throws Exception {
+        peerResetClosesConnection(false, Http2ErrorCode.CANCEL, true, true);
+    }
+
+    @Test
+    void peerCancelBeforeDeadlineExpiryReportsCancelled() throws Exception {
+        peerResetClosesConnection(false, Http2ErrorCode.CANCEL, true, false);
+    }
+
+    @Test
+    void peerInternalResetAfterDeadlineExpiryRetainsInternalStatus() throws Exception {
+        peerResetClosesConnection(false, Http2ErrorCode.INTERNAL, true, true);
     }
 
     private static void nonPositiveDemandDoesNotCloseCall(int demand) throws Exception {
@@ -172,6 +189,13 @@ class GrpcClientCallTest {
     }
 
     private static void peerResetClosesConnection(boolean failGoAway, Http2ErrorCode resetCode) throws Exception {
+        peerResetClosesConnection(failGoAway, resetCode, false, false);
+    }
+
+    private static void peerResetClosesConnection(boolean failGoAway,
+                                                Http2ErrorCode resetCode,
+                                                boolean withDeadline,
+                                                boolean expireDeadline) throws Exception {
         var accepted = new CompletableFuture<Socket>();
         var reset = new CompletableFuture<Void>();
         var received = new CompletableFuture<String>();
@@ -179,6 +203,21 @@ class GrpcClientCallTest {
         var closeCount = new AtomicInteger();
         var closeInterrupted = new AtomicBoolean();
         var failingConnection = new AtomicReference<FailingGoAwayConnection>();
+        var nanos = new AtomicLong();
+        var timerRead = new CompletableFuture<Void>();
+        var deadline = Deadline.after(1, TimeUnit.MINUTES, new Deadline.Ticker() {
+            @Override
+            public long nanoTime() {
+                long now = nanos.get();
+                if (Thread.currentThread().getName().equals("grpc-client-deadline")) {
+                    // Capture the unexpired clock value before letting the test advance it. The timer
+                    // then sleeps for a real minute, so only the peer reset can select the terminal status.
+                    timerRead.complete(null);
+                }
+                return now;
+            }
+        });
+        CallOptions options = withDeadline ? CallOptions.DEFAULT.withDeadline(deadline) : CallOptions.DEFAULT;
         try (var executor = Executors.newVirtualThreadPerTaskExecutor();
              var listening = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))) {
             listening.setSoTimeout(5000);
@@ -218,7 +257,7 @@ class GrpcClientCallTest {
                     .build();
             ClientCall<String, String> call;
             if (failGoAway) {
-                call = new GrpcClientCall<>((GrpcChannel) client.channel(), descriptor(), CallOptions.DEFAULT) {
+                call = new GrpcClientCall<>((GrpcChannel) client.channel(), descriptor(), options) {
                     @Override
                     protected ClientConnection clientConnection(ClientUri uri, String authority) {
                         var connection = new FailingGoAwayConnection(super.clientConnection(uri, authority));
@@ -227,7 +266,7 @@ class GrpcClientCallTest {
                     }
                 };
             } else {
-                call = client.channel().newCall(descriptor(), CallOptions.DEFAULT);
+                call = client.channel().newCall(descriptor(), options);
             }
             try {
                 call.start(new ClientCall.Listener<>() {
@@ -245,10 +284,19 @@ class GrpcClientCallTest {
                 }, new Metadata());
                 call.request(1);
                 assertThat(received.get(5, TimeUnit.SECONDS), is("response"));
+                if (withDeadline) {
+                    timerRead.get(5, TimeUnit.SECONDS);
+                    if (expireDeadline) {
+                        nanos.set(TimeUnit.MINUTES.toNanos(2));
+                    }
+                    assertThat("the reset selects terminal status before the deadline timer", status.isDone(), is(false));
+                }
                 reset.complete(null);
 
                 assertThat(status.get(5, TimeUnit.SECONDS).getCode(),
-                           is(resetCode == Http2ErrorCode.CANCEL ? Status.Code.CANCELLED : Status.Code.INTERNAL));
+                           is(resetCode == Http2ErrorCode.CANCEL
+                                      ? expireDeadline ? Status.Code.DEADLINE_EXCEEDED : Status.Code.CANCELLED
+                                      : Status.Code.INTERNAL));
                 assertThat("cleanup does not interrupt the listener thread", closeInterrupted.get(), is(false));
                 List<Http2FrameType> frames = peer.get(5, TimeUnit.SECONDS);
                 if (failGoAway) {
