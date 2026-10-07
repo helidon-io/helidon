@@ -20,6 +20,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * A component is a single "layer" of the application that can trace.
@@ -150,6 +152,7 @@ public abstract class ComponentTracingConfig extends Traceable {
     /**
      * Fluent API builder for {@link ComponentTracingConfig}.
      */
+    @Configured(description = "Tracing configuration of a component")
     public static final class Builder implements io.helidon.common.Builder<Builder, ComponentTracingConfig> {
         private final Map<String, SpanTracingConfig> tracedSpans = new HashMap<>();
         private Optional<Boolean> enabled = Optional.empty();
@@ -204,6 +207,7 @@ public abstract class ComponentTracingConfig extends Traceable {
          * @param span configuration of a traced span
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "spans", kind = ConfiguredOption.Kind.LIST)
         public Builder addSpan(SpanTracingConfig span) {
             this.tracedSpans.put(span.name(), span);
             return this;
@@ -215,6 +219,7 @@ public abstract class ComponentTracingConfig extends Traceable {
          * @param enabled if disabled, all spans and logs will be disabled
          * @return updated builder instance
          */
+        @ConfiguredOption("true")
         public Builder enabled(boolean enabled) {
             this.enabled = Optional.of(enabled);
             return this;

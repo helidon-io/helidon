@@ -18,6 +18,8 @@ package io.helidon.tracing.config;
 import java.util.Optional;
 
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Configuration of a single log event in a traced span.
@@ -81,6 +83,9 @@ public abstract class SpanLogTracingConfig extends Traceable {
     /**
      * A fluent API builder for {@link SpanLogTracingConfig}.
      */
+    @Configured(description = "Configuration of a log event in a traced span",
+                options = @ConfiguredOption(key = "name", type = String.class, required = true,
+                                            description = "Name of the span log event to configure"))
     public static final class Builder implements io.helidon.common.Builder<Builder, SpanLogTracingConfig> {
         private final String name;
         private Optional<Boolean> enabled = Optional.empty();
@@ -106,6 +111,7 @@ public abstract class SpanLogTracingConfig extends Traceable {
          * @param enabled if disabled, this span and all logs will be disabled
          * @return updated builder instance
          */
+        @ConfiguredOption("true")
         public Builder enabled(boolean enabled) {
             this.enabled = Optional.of(enabled);
             return this;

@@ -19,6 +19,20 @@ Configuration of Tracing observer
 <tbody>
 <tr>
 <td>
+<a id="components"></a>
+<a href="io.helidon.tracing.config.ComponentTracingConfig.md">
+<code>components</code>
+</a>
+</td>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Component<wbr>Tracing<wbr>Config&gt;</code>
+</td>
+<td>
+</td>
+<td>Tracing configuration of components, keyed by component name</td>
+</tr>
+<tr>
+<td>
 <code>wait-<wbr>tracing-<wbr>enabled</code>
 </td>
 <td>
@@ -62,7 +76,7 @@ Configuration of Tracing observer
 <td>
 <code>true</code>
 </td>
-<td>Whether this observer is enabled</td>
+<td>Whether overall tracing is enabled</td>
 </tr>
 </tbody>
 </table>

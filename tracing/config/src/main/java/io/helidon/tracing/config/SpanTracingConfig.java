@@ -20,6 +20,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
+import io.helidon.config.metadata.ConfiguredOption;
 
 /**
  * Configuration of a single traced span.
@@ -155,6 +157,9 @@ public abstract class SpanTracingConfig extends Traceable {
     /**
      * A fluent API builder for {@link SpanTracingConfig}.
      */
+    @Configured(description = "Configuration of a traced span",
+                options = @ConfiguredOption(key = "name", type = String.class, required = true,
+                                            description = "Name of the span to configure"))
     public static final class Builder implements io.helidon.common.Builder<Builder, SpanTracingConfig> {
         private final Map<String, SpanLogTracingConfig> spanLogMap = new HashMap<>();
         private final String name;
@@ -198,6 +203,7 @@ public abstract class SpanTracingConfig extends Traceable {
          * @param enabled if disabled, this span and all logs will be disabled
          * @return updated builder instance
          */
+        @ConfiguredOption("true")
         public Builder enabled(boolean enabled) {
             this.enabled = Optional.of(enabled);
             return this;
@@ -209,6 +215,7 @@ public abstract class SpanTracingConfig extends Traceable {
          * @param newName new name to use when reporting this span
          * @return updated builder instance
          */
+        @ConfiguredOption
         public Builder newName(String newName) {
             this.newName = newName;
             return this;
@@ -220,6 +227,7 @@ public abstract class SpanTracingConfig extends Traceable {
          * @param spanLogTracingConfig configuration of the traced span log
          * @return updated builder instance
          */
+        @ConfiguredOption(key = "logs", kind = ConfiguredOption.Kind.LIST)
         public Builder addSpanLog(SpanLogTracingConfig spanLogTracingConfig) {
             this.spanLogMap.put(spanLogTracingConfig.name(), spanLogTracingConfig);
             return this;
