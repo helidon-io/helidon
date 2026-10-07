@@ -75,12 +75,17 @@ class GrpcClientCallTest {
 
     @Test
     void peerResetClosesConnectionWithoutInterruptingListener() throws Exception {
-        peerResetClosesConnection(false);
+        peerResetClosesConnection(false, Http2ErrorCode.INTERNAL);
     }
 
     @Test
     void peerResetClosesTransportWhenGoAwayWriteFails() throws Exception {
-        peerResetClosesConnection(true);
+        peerResetClosesConnection(true, Http2ErrorCode.INTERNAL);
+    }
+
+    @Test
+    void peerCancelAbortsConnectionWithoutInterruptingListener() throws Exception {
+        peerResetClosesConnection(false, Http2ErrorCode.CANCEL);
     }
 
     private static void nonPositiveDemandDoesNotCloseCall(int demand) throws Exception {
@@ -166,7 +171,7 @@ class GrpcClientCallTest {
         }
     }
 
-    private static void peerResetClosesConnection(boolean failGoAway) throws Exception {
+    private static void peerResetClosesConnection(boolean failGoAway, Http2ErrorCode resetCode) throws Exception {
         var accepted = new CompletableFuture<Socket>();
         var reset = new CompletableFuture<Void>();
         var received = new CompletableFuture<String>();
@@ -187,7 +192,7 @@ class GrpcClientCallTest {
                     Http2FrameHeader.create(4, Http2FrameTypes.RST_STREAM, Http2Flag.NoFlags.create(), streamId)
                             .write().writeTo(output);
                     BufferData errorCode = BufferData.create(4);
-                    errorCode.writeInt32(Http2ErrorCode.CANCEL.code());
+                    errorCode.writeInt32(resetCode.code());
                     errorCode.writeTo(output);
                     output.flush();
 
@@ -242,12 +247,15 @@ class GrpcClientCallTest {
                 assertThat(received.get(5, TimeUnit.SECONDS), is("response"));
                 reset.complete(null);
 
-                assertThat(status.get(5, TimeUnit.SECONDS).getCode(), is(Status.Code.CANCELLED));
+                assertThat(status.get(5, TimeUnit.SECONDS).getCode(),
+                           is(resetCode == Http2ErrorCode.CANCEL ? Status.Code.CANCELLED : Status.Code.INTERNAL));
                 assertThat("cleanup does not interrupt the listener thread", closeInterrupted.get(), is(false));
                 List<Http2FrameType> frames = peer.get(5, TimeUnit.SECONDS);
                 if (failGoAway) {
                     assertThat("the graceful close write failed", failingConnection.get().failedWrites.get(), is(1));
                     assertThat(frames, not(hasItem(Http2FrameType.GO_AWAY)));
+                } else if (resetCode == Http2ErrorCode.CANCEL) {
+                    assertThat("peer cancellation aborts before graceful GOAWAY", frames, not(hasItem(Http2FrameType.GO_AWAY)));
                 } else {
                     assertThat("graceful close writes GOAWAY before EOF", frames, hasItem(Http2FrameType.GO_AWAY));
                 }

@@ -403,6 +403,9 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                 try {
                     frameData = clientStream().readOne(pollWaitTime());
                 } catch (StreamTimeoutException e) {
+                    if (deframer.hasPartialFrame() && responseEnded()) {
+                        endOfStream();
+                    }
                     handleStreamTimeout(e);
                     if (!deframer.hasPartialFrame()) {
                         return null;
@@ -413,7 +416,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                     if (!deframer.hasPartialFrame()) {
                         return null;
                     }
-                    if (!isRemoteOpen()) {
+                    if (responseEnded()) {
                         endOfStream();
                     }
                     continue;
@@ -428,7 +431,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                 }
                 return frame;
             }
-            if (deframer.hasPartialFrame() && !isRemoteOpen()) {
+            if (deframer.hasPartialFrame() && responseEnded()) {
                 endOfStream();
             }
             data = null;
