@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http2;
 
+import java.io.FilterInputStream;
 import java.io.InputStream;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
@@ -23,7 +24,10 @@ import java.util.function.UnaryOperator;
 import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.http.HttpException;
 import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.Status;
+import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.ReadableEntity;
 import io.helidon.http.media.ReadableEntityBase;
@@ -141,13 +145,33 @@ public final class Http2ServerRequestEntity extends ReadableEntityBase implement
 
     @Override
     public InputStream inputStream() {
-        var decoded = decoder.apply(super.inputStream());
+        InputStream stream = super.inputStream();
+        if (bufferedEntityAvailable()) {
+            return stream;
+        }
+        var transportStream = new FilterInputStream(stream) {
+            @Override
+            public void close() {
+                // The HTTP transport owns raw cleanup; closing the raw stream can request more body bytes.
+            }
+        };
+        var decoded = decoder.apply(transportStream);
         return streamFilter.apply(DecodedLimiter.limit(decoded, maxPayloadSize));
     }
 
     @Override
+    protected RuntimeException bufferedEntityLimitExceeded() {
+        return new HttpException("Maximum buffered entity length exceeded", Status.REQUEST_ENTITY_TOO_LARGE_413, false);
+    }
+
+    @Override
+    protected RuntimeException materializedEntityLimitExceeded() {
+        return new HttpException("Maximum materialized entity size exceeded", Status.REQUEST_ENTITY_TOO_LARGE_413, false);
+    }
+
+    @Override
     protected <T> T entityAs(GenericType<T> type) {
-        return mediaContext.reader(type, requestHeaders)
-                .read(type, inputStream(), requestHeaders);
+        EntityReader<T> reader = mediaContext.reader(type, requestHeaders);
+        return readEntity(reader, type, requestHeaders);
     }
 }

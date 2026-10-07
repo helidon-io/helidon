@@ -22,6 +22,7 @@ import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.ReadableEntity;
 import io.helidon.http.media.ReadableEntityBase;
@@ -87,8 +88,7 @@ public final class ClientResponseEntity extends ReadableEntityBase implements Re
 
     @Override
     protected <T> T entityAs(GenericType<T> type) {
-        return mediaContext.reader(type, requestHeaders, responseHeaders)
-                .read(type, inputStream(), requestHeaders, responseHeaders);
+        EntityReader<T> reader = mediaContext.reader(type, requestHeaders, responseHeaders);
+        return readEntity(reader, type, requestHeaders, responseHeaders);
     }
 }
-

@@ -135,9 +135,9 @@ HTTP/2 server configuration
 <code>Size</code>
 </td>
 <td>
-<code>64 KB</code>
+<code>1 Mi<wbr>B</code>
 </td>
-<td>Configure the maximum size allowed for an entity that can be explicitly buffered by the application by calling <code>io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>Readable<wbr>Entity.<wbr>buffer(<wbr>)</code></td>
+<td>Configure the maximum size of a decoded entity materialized in memory, including <code>byte[]</code>, strings, forms, JSON, and explicit <code>io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>Readable<wbr>Entity.<wbr>buffer(<wbr>)</code> calls</td>
 </tr>
 <tr>
 <td>

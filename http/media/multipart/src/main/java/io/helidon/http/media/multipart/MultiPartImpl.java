@@ -27,6 +27,7 @@ import io.helidon.http.Http1HeadersParser;
 import io.helidon.http.HttpException;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.media.EntityReaderContext;
 import io.helidon.http.media.MediaContext;
 
 class MultiPartImpl extends MultiPart {
@@ -35,13 +36,22 @@ class MultiPartImpl extends MultiPart {
     private final int maxNewLine;
     private final DataReader dataReader;
     private final MediaContext context;
+    private final EntityReaderContext readerContext;
+    private final InputStream stream;
     private ReadablePartAbstract next;
     private ReadablePartAbstract inProgress;
     private boolean finished;
+    private boolean streamClosed;
     private int index;
 
     MultiPartImpl(MediaContext context, String boundary, InputStream stream) {
+        this(context, boundary, stream, null);
+    }
+
+    MultiPartImpl(MediaContext context, String boundary, InputStream stream, EntityReaderContext readerContext) {
         this.context = context;
+        this.readerContext = readerContext;
+        this.stream = stream;
         this.boundary = "--" + boundary;
         this.endBoundary = "--" + boundary + "--";
         this.maxNewLine = this.boundary.length() + 6;
@@ -50,11 +60,17 @@ class MultiPartImpl extends MultiPart {
             try {
                 int r = stream.read(readBuffer);
                 if (r == -1) {
+                    closeStream();
                     return null;
                 }
                 return Arrays.copyOf(readBuffer, r);
             } catch (IOException e) {
-                throw new UncheckedIOException(e);
+                var failure = new UncheckedIOException(e);
+                finishOnFailure(failure);
+                throw failure;
+            } catch (RuntimeException | Error e) {
+                finishOnFailure(e);
+                throw e;
             }
         }, true);
     }
@@ -64,6 +80,39 @@ class MultiPartImpl extends MultiPart {
         if (finished) {
             return false;
         }
+        try {
+            return readNext();
+        } catch (IOException e) {
+            var failure = new UncheckedIOException(e);
+            finishOnFailure(failure);
+            throw failure;
+        } catch (RuntimeException | Error e) {
+            finishOnFailure(e);
+            throw e;
+        }
+    }
+
+    @Override
+    public ReadablePart next() {
+        if (hasNext()) {
+            inProgress = next;
+            next = null;
+            return inProgress;
+        } else {
+            throw new NoSuchElementException("No more parts");
+        }
+    }
+
+    @Override
+    public void close() {
+        try {
+            finish();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to close multipart message", e);
+        }
+    }
+
+    private boolean readNext() throws IOException {
         if (next != null) {
             return true;
         }
@@ -77,6 +126,7 @@ class MultiPartImpl extends MultiPart {
         }
         int newLine = dataReader.findNewLine(maxNewLine);
         if (newLine == maxNewLine) {
+            finish();
             return false;
         }
 
@@ -87,22 +137,32 @@ class MultiPartImpl extends MultiPart {
             }
             dataReader.skip(2); // skip the new line after boundary
             WritableHeaders<?> headers = Http1HeadersParser.readHeaders(dataReader, 1024, true);
-            next = new ReadablePartNoLength(context, headers, dataReader, index++, boundary, endBoundary);
+            next = new ReadablePartNoLength(context, headers, dataReader, index++, boundary, endBoundary, readerContext);
             return true;
-        } else if (probablyBoundary.equals(endBoundary)) {
-            finished = true;
         }
+        finish();
         return false;
     }
 
-    @Override
-    public ReadablePart next() {
-        if (hasNext()) {
-            inProgress = next;
-            next = null;
-            return inProgress;
-        } else {
-            throw new NoSuchElementException("No more parts");
+    private void finish() throws IOException {
+        finished = true;
+        next = null;
+        inProgress = null;
+        closeStream();
+    }
+
+    private void closeStream() throws IOException {
+        if (!streamClosed) {
+            streamClosed = true;
+            stream.close();
+        }
+    }
+
+    private void finishOnFailure(Throwable failure) {
+        try {
+            finish();
+        } catch (IOException | RuntimeException | Error e) {
+            failure.addSuppressed(e);
         }
     }
 }
