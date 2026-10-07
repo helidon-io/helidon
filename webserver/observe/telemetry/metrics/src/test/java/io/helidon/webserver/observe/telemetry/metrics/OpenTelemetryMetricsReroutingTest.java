@@ -21,6 +21,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.config.Config;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig;
@@ -83,7 +85,13 @@ class OpenTelemetryMetricsReroutingTest {
                 .addPaths(List.of(AutoHttpMetricsPathConfig.builder().path("/excluded*").enabled(false).build()))
                 .build();
         var metricsFilter = OpenTelemetryMetricsHttpSemanticConventions.MetricsRecordingFilter.create(histogram, config);
+        var serverConfig = Config.just("""
+                features:
+                  observe:
+                    observers-discover-services: false
+                """, MediaTypes.APPLICATION_YAML);
         var server = WebServer.builder()
+                .config(serverConfig)
                 .port(0)
                 .routing(routing -> routing
                         .addFilter((chain, request, response) -> {
