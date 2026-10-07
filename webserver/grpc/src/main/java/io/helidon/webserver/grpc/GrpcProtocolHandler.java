@@ -25,10 +25,18 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
@@ -40,7 +48,6 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.FlowControl;
-import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2FrameHeader;
 import io.helidon.http.http2.Http2FrameTypes;
@@ -65,6 +72,8 @@ import io.grpc.Attributes;
 import io.grpc.Codec;
 import io.grpc.Compressor;
 import io.grpc.CompressorRegistry;
+import io.grpc.Context;
+import io.grpc.Contexts;
 import io.grpc.Decompressor;
 import io.grpc.DecompressorRegistry;
 import io.grpc.Grpc;
@@ -72,7 +81,6 @@ import io.grpc.KnownLength;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.ServerCall;
-import io.grpc.ServerCallHandler;
 import io.grpc.Status;
 
 import static io.helidon.http.HeaderNames.CONTENT_TYPE;
@@ -90,6 +98,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
     private static final HeaderName GRPC_ENCODING = HeaderNames.create("grpc-encoding");
     private static final HeaderName GRPC_ACCEPT_ENCODING = HeaderNames.create("grpc-accept-encoding");
+    private static final HeaderName GRPC_TIMEOUT = HeaderNames.create("grpc-timeout");
     private static final Header GRPC_CONTENT_TYPE = HeaderValues.createCached(CONTENT_TYPE, "application/grpc");
     private static final Header GRPC_ENCODING_IDENTITY = HeaderValues.createCached(GRPC_ENCODING, "identity");
 
@@ -100,15 +109,23 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
     private static final Tag OK_TAG = Tag.create("grpc.status", "OK");
 
-    private record MethodMetrics(Counter callStarted,
-                                 Timer callDuration,
-                                 DistributionSummary sentMessageSize,
-                                 DistributionSummary recvMessageSize) { }
-
     private static final LazyValue<Map<String, MethodMetrics>> METHOD_METRICS = LazyValue.create(ConcurrentHashMap::new);
 
     private static final int GRPC_HEADER_SIZE = 5;
     private static final int INITIAL_BUFFER_SIZE = 16 * 1024;
+
+    private static final ScheduledThreadPoolExecutor DEADLINE_EXECUTOR = new ScheduledThreadPoolExecutor(1,
+            Thread.ofPlatform().daemon().name("grpc-server-deadline", 0).factory()) {
+        @Override
+        public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
+            // Context cancellation can invoke application listeners. Keep them off the shared timer thread.
+            return super.schedule(() -> Thread.startVirtualThread(command), delay, unit);
+        }
+    };
+
+    static {
+        DEADLINE_EXECUTOR.setRemoveOnCancelPolicy(true);
+    }
 
     private final ConnectionContext connectionContext;
     private final Http2Headers headers;
@@ -119,8 +136,16 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private final LinkedBlockingQueue<REQ> listenerQueue = new LinkedBlockingQueue<>();
     private final StreamFlowControl flowControl;
     private final GrpcConfig grpcConfig;
+    private final AtomicReference<CallState> callState = new AtomicReference<>(CallState.OPEN);
+    private final ReentrantLock responseLock = new ReentrantLock();
+    private final ReentrantLock listenerLock = new ReentrantLock();
+    private final AtomicReference<CancellableOutbound> pendingWrite = new AtomicReference<>();
+    private final AtomicReference<Http2StreamState> currentStreamState = new AtomicReference<>();
 
     private volatile ServerCall.Listener<REQ> listener;
+    private volatile Context.CancellableContext callContext;
+    private volatile boolean listenerNotificationReady;
+    private boolean listenerNotified;
     private BufferData entityBytes;
     private BufferData readBufferData = BufferData.create(INITIAL_BUFFER_SIZE);
     private BufferData unreadBufferData;
@@ -134,7 +159,6 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private long startMillis;
 
     private volatile boolean callCancelled;
-    private final AtomicReference<Http2StreamState> currentStreamState = new AtomicReference<>();
 
     GrpcProtocolHandler(ConnectionContext connectionContext,
                         Http2Headers headers,
@@ -154,14 +178,77 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         this.grpcConfig = grpcConfig;
     }
 
+    /**
+     * Ensures that if moving to a HALF_CLOSE state we can reach the CLOSED state
+     * if already on the other HALF_CLOSE state. Reaching CLOSED state is necessary
+     * for {@link io.helidon.webserver.http2.Http2ConnectionStreams} to remove
+     * streams from its map.
+     *
+     * @param desiredStreamState desired new state
+     * @return actual next state
+     */
+    static Http2StreamState nextStreamState(Http2StreamState currentStreamState,
+                                            Http2StreamState desiredStreamState) {
+        if (currentStreamState == Http2StreamState.CLOSED) {
+            return Http2StreamState.CLOSED;
+        }
+        return switch (desiredStreamState) {
+            case HALF_CLOSED_LOCAL -> currentStreamState == Http2StreamState.HALF_CLOSED_REMOTE
+                    ? Http2StreamState.CLOSED
+                    : Http2StreamState.HALF_CLOSED_LOCAL;
+            case HALF_CLOSED_REMOTE -> currentStreamState == Http2StreamState.HALF_CLOSED_LOCAL
+                    ? Http2StreamState.CLOSED
+                    : Http2StreamState.HALF_CLOSED_REMOTE;
+            default -> desiredStreamState;
+        };
+    }
+
     @Override
     public void init() {
         try {
+            if (callClosed()) {
+                return;
+            }
             ServerCall<REQ, RES> serverCall = createServerCall();
             Headers httpHeaders = headers.httpHeaders();
 
+            Context context = Context.current()
+                    .withValue(ServerContextKeys.CONNECTION_CONTEXT, new GrpcConnectionContextImpl(connectionContext));
+            if (httpHeaders.contains(GRPC_TIMEOUT)) {
+                long timeoutNanos;
+                try {
+                    timeoutNanos = GrpcHeadersUtil.decodeTimeout(httpHeaders.get(GRPC_TIMEOUT).asString().get());
+                } catch (IllegalArgumentException e) {
+                    serverCall.close(Status.INVALID_ARGUMENT.withDescription("Invalid grpc-timeout header"), new Metadata());
+                    return;
+                }
+                callContext = context.withDeadlineAfter(timeoutNanos, TimeUnit.NANOSECONDS, DEADLINE_EXECUTOR);
+            } else {
+                callContext = context.withCancellation();
+            }
+            if (callClosed()) {
+                cancelContext(Status.CANCELLED.asRuntimeException());
+                return;
+            }
+            callContext.addListener(cancelled -> {
+                CancellableOutbound write = pendingWrite.get();
+                if (write != null) {
+                    write.cancel();
+                }
+                if (!callClosed()) {
+                    Thread.startVirtualThread(() -> serverCall.close(Contexts.statusFromCancelled(cancelled), new Metadata()));
+                }
+            }, Runnable::run);
+            if (callContext.isCancelled()) {
+                serverCall.close(Contexts.statusFromCancelled(callContext), new Metadata());
+                return;
+            }
+
             // setup compression
             initCompression(serverCall, httpHeaders);
+            if (callClosed()) {
+                return;
+            }
 
             // init metrics
             if (grpcConfig.enableMetrics()) {
@@ -170,21 +257,27 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 methodMetrics.callStarted.increment();
             }
 
-            // Include the GrpcConnectionContext in the gRPC Context so that the gRPC customer
-            // handler can access the peer info and proxy protocol data.
-            var grpcContextImpl = new GrpcConnectionContextImpl(connectionContext);
-            io.grpc.Context.current()
-                .withValue(ServerContextKeys.CONNECTION_CONTEXT, grpcContextImpl)
-                .run(() -> {
-                    // initiate server call
-                    ServerCallHandler<REQ, RES> callHandler = route.callHandler();
-                    listener = callHandler.startCall(serverCall, GrpcHeadersUtil.toMetadata(headers));
+            listenerLock.lock();
+            try {
+                if (!callClosed()) {
+                    // Preserve the call context for startCall and every subsequent listener callback.
+                    listener = Contexts.interceptCall(callContext, serverCall, GrpcHeadersUtil.toMetadata(headers),
+                                                      route.callHandler());
+                }
+                if (!callClosed()) {
                     listener.onReady();
                     bytesReceived = 0L;
-                });
+                }
+            } finally {
+                listenerLock.unlock();
+                notifyListener();
+            }
+            flushQueue();
         } catch (CloseConnectionException e) {
+            cancelContext(e);
             throw e;
         } catch (Throwable e) {
+            cancelContext(e);
             if (isPeerCancellation(e)) {
                 throw new ServerConnectionException("gRPC call cancelled by remote peer", e);
             }
@@ -206,12 +299,20 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
      */
     @Override
     public void rstStream(Http2RstStream rstStream) {
-        callCancelled = (rstStream.errorCode() == Http2ErrorCode.CANCEL);
-        if (listener != null) {
-            listener.onCancel();
+        close();
+    }
+
+    @Override
+    public void close() {
+        currentStreamState.updateAndGet(current -> nextStreamState(current, CLOSED));
+        if (callState.compareAndSet(CallState.OPEN, CallState.CANCELLED)) {
+            callCancelled = true;
+            Thread.startVirtualThread(() -> {
+                cancelContext(Status.CANCELLED.asRuntimeException());
+                listenerNotificationReady = true;
+                notifyListener();
+            });
         }
-        currentStreamState.updateAndGet(
-                current -> nextStreamState(current, Http2StreamState.CLOSED));
     }
 
     @Override
@@ -281,6 +382,14 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     REQ request = route.method().parseRequest(entityCompressed ? decompressor.decompress(is) : is);
                     entityCompressed = false;
                     listenerQueue.add(request);
+                    // Backpressure incoming DATA while another thread owns the callback.
+                    listenerLock.lock();
+                    try {
+                        drainQueue();
+                    } finally {
+                        listenerLock.unlock();
+                        notifyListener();
+                    }
                     flushQueue();
 
                     // reset entityBytes
@@ -290,7 +399,19 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
             // if EOS then half close remote
             if (header.flags(Http2FrameTypes.DATA).endOfStream()) {
-                listener.onHalfClose();
+                listenerLock.lock();
+                try {
+                    // A competing queue drain may have deferred delivery. Keep requested messages
+                    // ahead of half-close while holding the same callback lock.
+                    drainQueue();
+                    if (!callClosed()) {
+                        listener.onHalfClose();
+                    }
+                } finally {
+                    listenerLock.unlock();
+                    notifyListener();
+                }
+                flushQueue();
                 currentStreamState.updateAndGet(
                         current -> nextStreamState(current, Http2StreamState.HALF_CLOSED_REMOTE));
                 // update metrics
@@ -299,12 +420,15 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 }
             }
         } catch (CloseConnectionException e) {
+            cancelContext(e);
             throw e;
         } catch (Exception e) {
             if (isPeerCancellation(e)) {
+                cancelContext(e);
                 throw new ServerConnectionException("gRPC call cancelled by remote peer", e);
             }
-            listener.onCancel();
+            callCancelled = true;
+            cancelContext(e);
             LOGGER.log(ERROR, "Failed to process grpc request, data bytes: " + data.available(), e);
         }
     }
@@ -366,8 +490,16 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         return identityCompressor;
     }
 
+    ServerCall<REQ, RES> createServerCall() {
+        return new GrpcServerCall();
+    }
+
     private boolean isPeerCancellation(Throwable throwable) {
         return callCancelled && Status.fromThrowable(throwable).getCode() == Status.Code.CANCELLED;
+    }
+
+    private boolean callClosed() {
+        return callState.get() != CallState.OPEN;
     }
 
     private void writeHeaders(Http2Headers http2Headers, HeaderFlags flags) {
@@ -379,7 +511,70 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     }
 
     private void writeData(Http2FrameData frameData) {
-        streamWriter.writeData(frameData, outboundFlowControl());
+        if (callContext == null || callContext.getDeadline() == null) {
+            streamWriter.writeData(frameData, outboundFlowControl());
+            return;
+        }
+        // Only flow-control waits may be interrupted: interrupting socket I/O closes the shared connection.
+        var finished = new CountDownLatch(1);
+        var outbound = new CancellableOutbound(outboundFlowControl());
+        Context grpcContext = Context.current();
+        var helidonContext = io.helidon.common.context.Contexts.context();
+        var write = new FutureTask<Void>(() -> {
+            Runnable action = () -> grpcContext.run(() -> streamWriter.writeData(frameData, outbound));
+            if (helidonContext.isPresent()) {
+                io.helidon.common.context.Contexts.runInContext(helidonContext.get(), action);
+            } else {
+                action.run();
+            }
+            return null;
+        });
+        pendingWrite.set(outbound);
+        if (callContext.isCancelled() || callClosed()) {
+            outbound.cancel();
+        }
+        Thread.startVirtualThread(() -> {
+            try {
+                write.run();
+            } finally {
+                finished.countDown();
+            }
+        });
+        boolean interrupted = false;
+        try {
+            write.get();
+        } catch (InterruptedException e) {
+            interrupted = true;
+            outbound.cancel();
+            throw new ServerConnectionException("Interrupted while writing grpc response data", e);
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof CancellationException) {
+                // The deadline handler sends the final status after the writer exits.
+                return;
+            }
+            if (e.getCause() instanceof RuntimeException cause) {
+                throw cause;
+            }
+            if (e.getCause() instanceof Error cause) {
+                throw cause;
+            }
+            throw new ServerConnectionException("Failed to write grpc response data", e.getCause());
+        } finally {
+            // Complete an in-progress DATA frame before trailers, even if the caller was interrupted.
+            while (true) {
+                try {
+                    finished.await();
+                    break;
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                    outbound.cancel();
+                }
+            }
+            pendingWrite.compareAndSet(outbound, null);
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     private FlowControl.Outbound outboundFlowControl() {
@@ -391,187 +586,66 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     }
 
     private void flushQueue() {
+        if (listenerLock.isHeldByCurrentThread()) {
+            return;
+        }
+        do {
+            // A callback may wait for another thread to replenish demand. Let the active
+            // callback drain that demand on return instead of making request() wait for it.
+            if (!listenerLock.tryLock()) {
+                return;
+            }
+            try {
+                drainQueue();
+            } finally {
+                listenerLock.unlock();
+                notifyListener();
+            }
+            // Demand or data can arrive after the last check while this thread still owns
+            // the lock. Recheck after releasing it so those requests cannot be stranded.
+        } while (!callClosed() && listener != null && numMessages.get() > 0 && !listenerQueue.isEmpty());
+    }
+
+    private void drainQueue() {
         if (listener != null) {
-            while (!listenerQueue.isEmpty() && numMessages.getAndDecrement() > 0) {
-                listener.onMessage(listenerQueue.poll());
+            while (!callClosed() && numMessages.get() > 0) {
+                REQ request = listenerQueue.poll();
+                if (request == null) {
+                    break;
+                }
+                numMessages.decrementAndGet();
+                listener.onMessage(request);
             }
         }
     }
 
-    /**
-     * Ensures that if moving to a HALF_CLOSE state we can reach the CLOSED state
-     * if already on the other HALF_CLOSE state. Reaching CLOSED state is necessary
-     * for {@link io.helidon.webserver.http2.Http2ConnectionStreams} to remove
-     * streams from its map.
-     *
-     * @param desiredStreamState desired new state
-     * @return actual next state
-     */
-    static Http2StreamState nextStreamState(Http2StreamState currentStreamState,
-                                            Http2StreamState desiredStreamState) {
-        if (currentStreamState == Http2StreamState.CLOSED) {
-            return Http2StreamState.CLOSED;
+    private void cancelContext(Throwable cause) {
+        Context.CancellableContext context = callContext;
+        if (context != null) {
+            context.cancel(cause);
         }
-        return switch (desiredStreamState) {
-            case HALF_CLOSED_LOCAL -> currentStreamState == Http2StreamState.HALF_CLOSED_REMOTE
-                    ? Http2StreamState.CLOSED
-                    : Http2StreamState.HALF_CLOSED_LOCAL;
-            case HALF_CLOSED_REMOTE -> currentStreamState == Http2StreamState.HALF_CLOSED_LOCAL
-                    ? Http2StreamState.CLOSED
-                    : Http2StreamState.HALF_CLOSED_REMOTE;
-            default -> desiredStreamState;
-        };
+        listenerQueue.clear();
     }
 
-    ServerCall<REQ, RES> createServerCall() {
-        return new ServerCall<REQ, RES>() {
-
-            private long bytesSent;
-            private boolean headersSent;
-            private BufferData writeBufferData = BufferData.growing(INITIAL_BUFFER_SIZE);
-
-            @Override
-            public void request(int numMessages) {
-                addNumMessages(numMessages);
-                flushQueue();
+    private void notifyListener() {
+        // An active callback can wait for the thread closing the call. Let that callback deliver
+        // the terminal notification after it returns instead of making close() wait for the lock.
+        if (!listenerNotificationReady || listenerLock.isHeldByCurrentThread() || !listenerLock.tryLock()) {
+            return;
+        }
+        try {
+            if (listener == null || listenerNotified) {
+                return;
             }
-
-            @Override
-            public void sendHeaders(Metadata headers) {
-                // prepare response headers
-                WritableHeaders<?> writable = WritableHeaders.create();
-                GrpcHeadersUtil.updateHeaders(writable, headers);
-                writable.set(GRPC_CONTENT_TYPE);
-
-                // set encoding header based on negotiation
-                if (compressor == null) {
-                    writable.set(GRPC_ENCODING_IDENTITY);
-                } else {
-                    writable.set(HeaderValues.createCached(GRPC_ENCODING, compressor.getMessageEncoding()));
-                }
-
-                // write headers frame
-                Http2Headers http2Headers = Http2Headers.create(writable);
-                http2Headers.status(io.helidon.http.Status.OK_200);
-                writeHeaders(http2Headers, HeaderFlags.create(END_OF_HEADERS));
-                headersSent = true;
+            listenerNotified = true;
+            if (callState.get() == CallState.CANCELLED) {
+                listener.onCancel();
+            } else {
+                listener.onComplete();
             }
-
-            @Override
-            public void sendMessage(RES message) {
-                try (InputStream inputStream = route.method().streamResponse(message)) {
-                    // prepare buffer for writing
-                    BufferData bufferData;
-                    if (identityCompressor && inputStream instanceof KnownLength knownLength) {
-                        int bytesLength = knownLength.available();
-                        bufferData = allocateWriteBuffer(GRPC_HEADER_SIZE + bytesLength);
-                        bufferData.write(0);        // 0 for identity compressor
-                        bufferData.writeUnsignedInt32(bytesLength);
-                        bufferData.readFrom(inputStream);
-                    } else {
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        if (identityCompressor) {
-                            inputStream.transferTo(baos);
-                        } else {
-                            try (OutputStream os = compressor.compress(baos)) {
-                                inputStream.transferTo(os);
-                            }
-                        }
-                        byte[] bytes = baos.toByteArray();
-                        bufferData = allocateWriteBuffer(GRPC_HEADER_SIZE + bytes.length);
-                        bufferData.write(identityCompressor ? 0 : 1);
-                        bufferData.writeUnsignedInt32(bytes.length);
-                        bufferData.write(bytes);
-                    }
-
-                    // create data frame, EOS sent in close with trailers
-                    int writeLength = bufferData.available();
-                    Http2FrameHeader header = Http2FrameHeader.create(writeLength,
-                                                                      Http2FrameTypes.DATA,
-                                                                      DATA_FLAGS_ZERO,
-                                                                      streamId);
-
-                    // write data frame
-                    writeData(new Http2FrameData(header, bufferData));
-                    bytesSent += writeLength;
-                } catch (UncheckedIOException e) {
-                    throw new ServerConnectionException("Failed to write grpc response data", e);
-                } catch (IOException e) {
-                    listener.onCancel();
-                    LOGGER.log(ERROR, "Failed to respond to grpc request: " + route.method(), e);
-                }
-            }
-
-            @Override
-            public void close(Status status, Metadata trailers) {
-                // Security interceptors can reject the call before startCall returns a listener.
-                Http2StreamState closeState = listener == null ? CLOSED : HALF_CLOSED_LOCAL;
-                WritableHeaders<?> writable = WritableHeaders.create();
-                if (!headersSent) {
-                    writable.set(GRPC_CONTENT_TYPE);
-                }
-                GrpcHeadersUtil.updateHeaders(writable, trailers);
-                int statusValue = callCancelled ? Status.CANCELLED.getCode().value() : status.getCode().value();
-                writable.set(HeaderValues.create(GrpcStatus.STATUS_NAME, statusValue));
-                String description = status.getDescription();
-                if (description != null) {
-                    writable.set(HeaderValues.create(GrpcStatus.MESSAGE_NAME, description));
-                }
-
-                // write headers frame with trailers and EOS
-                Http2Headers http2Headers = Http2Headers.create(writable);
-                if (!headersSent) {
-                    http2Headers.status(io.helidon.http.Status.OK_200);
-                }
-                try {
-                    writeHeaders(http2Headers, HeaderFlags.create(END_OF_HEADERS | END_OF_STREAM));
-                } catch (CloseConnectionException e) {
-                    callCancelled = true;
-                    currentStreamState.updateAndGet(current -> nextStreamState(current, closeState));
-                    return;
-                }
-                currentStreamState.updateAndGet(current -> nextStreamState(current, closeState));
-
-                // inform listener of completion
-                if (!callCancelled && listener != null) {
-                    listener.onComplete();
-                }
-
-                // update metrics
-                if (status.isOk() && grpcConfig.enableMetrics()) {
-                    methodMetrics.sentMessageSize.record(bytesSent);
-                    methodMetrics.callDuration.record(
-                            Duration.ofMillis(System.currentTimeMillis() - startMillis));
-                }
-            }
-
-            @Override
-            public boolean isCancelled() {
-                return callCancelled || currentStreamState.get() == Http2StreamState.CLOSED;
-            }
-
-            @Override
-            public Attributes getAttributes() {
-                // gRPC security reads peer addresses from the standard gRPC transport attributes.
-                return Attributes.newBuilder()
-                        .set(Grpc.TRANSPORT_ATTR_REMOTE_ADDR, connectionContext.remotePeer().address())
-                        .set(Grpc.TRANSPORT_ATTR_LOCAL_ADDR, connectionContext.localPeer().address()).build();
-            }
-
-            @Override
-            public MethodDescriptor<REQ, RES> getMethodDescriptor() {
-                return route.method();
-            }
-
-            private BufferData allocateWriteBuffer(int length) {
-                writeBufferData.reset();
-                int capacity = writeBufferData.capacity();
-                if (length > capacity) {
-                    writeBufferData = BufferData.create(length);
-                }
-                return writeBufferData;
-            }
-        };
+        } finally {
+            listenerLock.unlock();
+        }
     }
 
     /**
@@ -613,6 +687,108 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         });
     }
 
+    private enum CallState {
+        OPEN,
+        COMPLETED,
+        CANCELLED
+    }
+
+    private record MethodMetrics(Counter callStarted,
+                                 Timer callDuration,
+                                 DistributionSummary sentMessageSize,
+                                 DistributionSummary recvMessageSize) { }
+
+    private static final class CancellableOutbound implements FlowControl.Outbound {
+        private final FlowControl.Outbound delegate;
+        private final ReentrantLock waitLock = new ReentrantLock();
+
+        private volatile boolean cancelled;
+        private Thread waitingThread;
+
+        private CancellableOutbound(FlowControl.Outbound delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void decrementWindowSize(int decrement) {
+            delegate.decrementWindowSize(decrement);
+        }
+
+        @Override
+        public void resetStreamWindowSize(int size) {
+            delegate.resetStreamWindowSize(size);
+        }
+
+        @Override
+        public int getRemainingWindowSize() {
+            return delegate.getRemainingWindowSize();
+        }
+
+        @Override
+        public long incrementStreamWindowSize(int increment) {
+            return delegate.incrementStreamWindowSize(increment);
+        }
+
+        @Override
+        public Http2FrameData[] cut(Http2FrameData frame) {
+            if (cancelled) {
+                throw new CancellationException();
+            }
+            return delegate.cut(frame);
+        }
+
+        @Override
+        public void blockTillUpdate() {
+            waitLock.lock();
+            try {
+                if (cancelled) {
+                    throw new CancellationException();
+                }
+                waitingThread = Thread.currentThread();
+            } finally {
+                waitLock.unlock();
+            }
+            try {
+                delegate.blockTillUpdate();
+            } catch (RuntimeException e) {
+                if (!cancelled) {
+                    throw e;
+                }
+            } finally {
+                waitLock.lock();
+                try {
+                    waitingThread = null;
+                    if (cancelled) {
+                        // Retire the waiter and consume its cancellation interrupt before any socket write.
+                        Thread.interrupted();
+                    }
+                } finally {
+                    waitLock.unlock();
+                }
+            }
+            if (cancelled) {
+                throw new CancellationException();
+            }
+        }
+
+        @Override
+        public int maxFrameSize() {
+            return delegate.maxFrameSize();
+        }
+
+        private void cancel() {
+            waitLock.lock();
+            try {
+                cancelled = true;
+                if (waitingThread != null) {
+                    waitingThread.interrupt();
+                }
+            } finally {
+                waitLock.unlock();
+            }
+        }
+    }
+
     /**
      * An input stream that can return its length. gRPC parsers can use this extra
      * knowledge for optimizations. It can also copy a byte array directly on a
@@ -646,6 +822,183 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         @Override
         public int available() {
             return bufferData.available();
+        }
+    }
+    private final class GrpcServerCall extends ServerCall<REQ, RES> {
+
+        private long bytesSent;
+        private boolean headersSent;
+        private BufferData writeBufferData = BufferData.growing(INITIAL_BUFFER_SIZE);
+
+        @Override
+        public void request(int numMessages) {
+            addNumMessages(numMessages);
+            flushQueue();
+        }
+
+        @Override
+        public void sendHeaders(Metadata headers) {
+            responseLock.lock();
+            try {
+                if (callClosed()) {
+                    return;
+                }
+                // prepare response headers
+                WritableHeaders<?> writable = WritableHeaders.create();
+                GrpcHeadersUtil.updateHeaders(writable, headers);
+                writable.set(GRPC_CONTENT_TYPE);
+
+                // set encoding header based on negotiation
+                if (compressor == null) {
+                    writable.set(GRPC_ENCODING_IDENTITY);
+                } else {
+                    writable.set(HeaderValues.createCached(GRPC_ENCODING, compressor.getMessageEncoding()));
+                }
+
+                // write headers frame
+                Http2Headers http2Headers = Http2Headers.create(writable);
+                http2Headers.status(io.helidon.http.Status.OK_200);
+                writeHeaders(http2Headers, HeaderFlags.create(END_OF_HEADERS));
+                headersSent = true;
+            } finally {
+                responseLock.unlock();
+            }
+        }
+
+        @Override
+        public void sendMessage(RES message) {
+            if (callClosed()) {
+                return;
+            }
+            try (InputStream inputStream = route.method().streamResponse(message)) {
+                // prepare buffer for writing
+                BufferData bufferData;
+                if (identityCompressor && inputStream instanceof KnownLength knownLength) {
+                    int bytesLength = knownLength.available();
+                    bufferData = allocateWriteBuffer(GRPC_HEADER_SIZE + bytesLength);
+                    bufferData.write(0);        // 0 for identity compressor
+                    bufferData.writeUnsignedInt32(bytesLength);
+                    bufferData.readFrom(inputStream);
+                } else {
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    if (identityCompressor) {
+                        inputStream.transferTo(baos);
+                    } else {
+                        try (OutputStream os = compressor.compress(baos)) {
+                            inputStream.transferTo(os);
+                        }
+                    }
+                    byte[] bytes = baos.toByteArray();
+                    bufferData = allocateWriteBuffer(GRPC_HEADER_SIZE + bytes.length);
+                    bufferData.write(identityCompressor ? 0 : 1);
+                    bufferData.writeUnsignedInt32(bytes.length);
+                    bufferData.write(bytes);
+                }
+
+                // create data frame, EOS sent in close with trailers
+                int writeLength = bufferData.available();
+                Http2FrameHeader header = Http2FrameHeader.create(writeLength,
+                                                                  Http2FrameTypes.DATA,
+                                                                  DATA_FLAGS_ZERO,
+                                                                  streamId);
+
+                responseLock.lock();
+                try {
+                    if (!callClosed()) {
+                        writeData(new Http2FrameData(header, bufferData));
+                        bytesSent += writeLength;
+                    }
+                } finally {
+                    responseLock.unlock();
+                }
+            } catch (UncheckedIOException e) {
+                throw new ServerConnectionException("Failed to write grpc response data", e);
+            } catch (IOException e) {
+                callCancelled = true;
+                cancelContext(e);
+                LOGGER.log(ERROR, "Failed to respond to grpc request: " + route.method(), e);
+            }
+        }
+
+        @Override
+        public void close(Status status, Metadata trailers) {
+            boolean closed = false;
+            responseLock.lock();
+            try {
+                boolean cancelled = callContext != null && callContext.isCancelled();
+                if (!callState.compareAndSet(CallState.OPEN, cancelled ? CallState.CANCELLED : CallState.COMPLETED)) {
+                    return;
+                }
+                closed = true;
+                if (cancelled) {
+                    status = Contexts.statusFromCancelled(callContext);
+                    callCancelled = true;
+                }
+                // Security interceptors can reject the call before startCall returns a listener.
+                Http2StreamState closeState = listener == null ? CLOSED : HALF_CLOSED_LOCAL;
+                WritableHeaders<?> writable = WritableHeaders.create();
+                if (!headersSent) {
+                    writable.set(GRPC_CONTENT_TYPE);
+                }
+                GrpcHeadersUtil.updateHeaders(writable, trailers);
+                writable.set(HeaderValues.create(GrpcStatus.STATUS_NAME, status.getCode().value()));
+                String description = status.getDescription();
+                if (description != null) {
+                    writable.set(HeaderValues.create(GrpcStatus.MESSAGE_NAME, description));
+                }
+
+                // write headers frame with trailers and EOS
+                Http2Headers http2Headers = Http2Headers.create(writable);
+                if (!headersSent) {
+                    http2Headers.status(io.helidon.http.Status.OK_200);
+                }
+                try {
+                    writeHeaders(http2Headers, HeaderFlags.create(END_OF_HEADERS | END_OF_STREAM));
+                } catch (CloseConnectionException e) {
+                    callCancelled = true;
+                    callState.set(CallState.CANCELLED);
+                } finally {
+                    currentStreamState.updateAndGet(current -> nextStreamState(current, closeState));
+                }
+                if (!callCancelled && status.isOk() && methodMetrics != null) {
+                    methodMetrics.sentMessageSize.record(bytesSent);
+                    methodMetrics.callDuration.record(Duration.ofMillis(System.currentTimeMillis() - startMillis));
+                }
+            } finally {
+                responseLock.unlock();
+                if (closed) {
+                    cancelContext(null);
+                    listenerNotificationReady = true;
+                    notifyListener();
+                }
+            }
+        }
+
+        @Override
+        public boolean isCancelled() {
+            return callCancelled || currentStreamState.get() == Http2StreamState.CLOSED;
+        }
+
+        @Override
+        public Attributes getAttributes() {
+            // gRPC security reads peer addresses from the standard gRPC transport attributes.
+            return Attributes.newBuilder()
+                    .set(Grpc.TRANSPORT_ATTR_REMOTE_ADDR, connectionContext.remotePeer().address())
+                    .set(Grpc.TRANSPORT_ATTR_LOCAL_ADDR, connectionContext.localPeer().address()).build();
+        }
+
+        @Override
+        public MethodDescriptor<REQ, RES> getMethodDescriptor() {
+            return route.method();
+        }
+
+        private BufferData allocateWriteBuffer(int length) {
+            writeBufferData.reset();
+            int capacity = writeBufferData.capacity();
+            if (length > capacity) {
+                writeBufferData = BufferData.create(length);
+            }
+            return writeBufferData;
         }
     }
 }
