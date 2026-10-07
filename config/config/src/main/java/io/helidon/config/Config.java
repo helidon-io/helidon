@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.config.spi.ConfigFilter;
+import io.helidon.config.spi.ConfigFilterProvider;
 import io.helidon.config.spi.ConfigMapper;
 import io.helidon.config.spi.ConfigMapperProvider;
 import io.helidon.config.spi.ConfigParser;
@@ -1363,7 +1364,8 @@ public interface Config {
          *
          * @param overridingSource a source with overriding key patterns and assigned values
          * @return an updated builder instance
-         * @deprecated Since 28.0.0, config overrides are deprecated for removal. See {@link OverrideSource} for migration
+         * @deprecated Since 28.0.0, this legacy core API is deprecated for removal in favor of the optional overrides
+         * filter module. See {@link OverrideSource} for migration
          * guidance and the usage feedback request. Existing behavior is preserved; no removal release or timing has
          * been decided.
          */
@@ -1611,7 +1613,24 @@ public interface Config {
         Builder addFilter(Supplier<Function<Config, ConfigFilter>> configFilterSupplier);
 
         /**
-         * Disables automatic registration of filters loaded as a {@link java.util.ServiceLoader service}.
+         * Registers a provider which creates a separate filter factory for each built configuration runtime.
+         * Each factory creates a new filter for the initial configuration and every reload, using an unfiltered
+         * view of that generation's source data. This allows filters to be immutable and their factory to own
+         * change support independently of other configuration runtimes.
+         * <p>
+         * Provider-created filters are applied before filters registered by the {@code addFilter} methods and
+         * before built-in value resolution. Explicit providers are applied in registration order, followed by
+         * automatically discovered providers in {@link io.helidon.common.Weight} order.
+         *
+         * @param provider filter provider
+         * @return an updated builder instance
+         * @see io.helidon.config.spi.ConfigFilterProvider
+         */
+        Builder addFilterProvider(ConfigFilterProvider provider);
+
+        /**
+         * Disables automatic registration of filters and filter providers loaded as a
+         * {@link java.util.ServiceLoader service}.
          * <p>
          * Order of configuration filters loaded as a service is defined by {@link io.helidon.common.Weight} annotation.
          * <p>
@@ -1619,6 +1638,7 @@ public interface Config {
          *
          * @return an updated builder instance
          * @see ConfigFilter
+         * @see io.helidon.config.spi.ConfigFilterProvider
          */
         Builder disableFilterServices();
 
@@ -1723,8 +1743,9 @@ public interface Config {
          * <tr>
          *     <td>override-source</td>
          *     <td>none</td>
-         *     <td>Configure an override source. Deprecated since 28.0.0; behavior is preserved and no removal release or
-         *         timing has been decided. See {@link OverrideSource} for migration guidance and the usage feedback request.
+         *     <td>Configure a legacy override source. Deprecated since 28.0.0 in favor of the optional overrides filter
+         *         module; behavior is preserved and no removal release or timing has been decided. See {@link OverrideSource}
+         *         for migration guidance and the usage feedback request.
          *         Same as config source configuration (see below).</td>
          *     <td>{@link #overrides(java.util.function.Supplier)}</td>
          * </tr>

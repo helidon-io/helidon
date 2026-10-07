@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,10 +36,9 @@ import io.helidon.service.registry.Service;
  * A filter can specify a {@link io.helidon.common.Weight}. If no weight is
  * explicitly assigned, the value of {@value io.helidon.common.Weighted#DEFAULT_WEIGHT} is assumed.
  * <h2>Initializing Filters</h2>
- * Any filter that uses the {@code Config} instance during its initialization
- * should do so in its {@link #init(Config)} method,
- * <em>not</em>
- * in its constructor. The {@code Config.Builder.build()} method invokes each
+ * Configuration-dependent filters should use {@link ConfigFilterProvider} to create a factory for each configuration
+ * runtime and immutable filters for each generation. Legacy filters retain the {@link #init(Config)} lifecycle during
+ * migration. The {@code Config.Builder.build()} method invokes each legacy
  * filter's `init` method according to the filters' weight and just
  * before returning the new {@code Config} instance to the application.
  * <p>
@@ -98,7 +97,11 @@ public interface ConfigFilter {
      * invocation of {@code Config.Builder#build} fails.
      *
      * @param config {@code Config} instance under construction
+     * @deprecated for removal; configuration-dependent filters must use {@link ConfigFilterProvider} instead.
+     *         Providers avoid reusing mutable filter instances across configuration runtimes and reload generations,
+     *         and allow fully initialized, immutable filters. Removal timing remains undecided.
      */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     default void init(Config config) {
     }
 

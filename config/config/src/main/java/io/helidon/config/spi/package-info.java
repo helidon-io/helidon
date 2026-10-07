@@ -47,7 +47,8 @@
  * <tr>
  * <td>{@link OverrideSource}</td>
  * <td>Replaces values of existing config nodes whose keys match specified conditions
- * with alternative values. Deprecated since 28.0.0 for removal; no removal release or timing has been decided.
+ * with alternative values. This legacy core API is deprecated since 28.0.0 for removal in favor of the optional
+ * overrides filter module; no removal release or timing has been decided.
  * See {@link OverrideSource} for migration guidance and the usage feedback request.</td>
  * </tr>
  * <tr>

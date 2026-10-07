@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.config.spi.ConfigFilter;
+import io.helidon.config.spi.ConfigFilterProvider;
 import io.helidon.config.spi.ConfigMapperProvider;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigSource;
@@ -42,6 +43,7 @@ class ConfigProvider implements Supplier<Config> {
                    Supplier<List<ConfigSource>> configSources,
                    Supplier<List<ConfigParser>> configParsers,
                    Supplier<List<ConfigFilter>> configFilters,
+                   Supplier<List<ConfigFilterProvider>> configFilterProviders,
                    Supplier<List<ConfigMapperProvider>> configMappers,
                    ServiceRegistry serviceRegistry) {
         Optional<MetaConfig> metaConfig = metaConfigSupplier.get();
@@ -61,6 +63,8 @@ class ConfigProvider implements Supplier<Config> {
                 .disableFilterServices()
                 .update(it -> configFilters.get()
                         .forEach(it::addFilter))
+                .update(it -> configFilterProviders.get()
+                        .forEach(it::addFilterProvider))
                 //.disableMapperServices()
                 // cannot do this for now, removed ConfigMapperProvider from service loaded services, config does it on its
                 // own

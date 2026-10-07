@@ -47,7 +47,8 @@ import static org.hamcrest.Matchers.is;
  */
 @SuppressWarnings("removal")
 public final class OverrideDeprecationScenario {
-    private static final String WARNING = "Helidon Config overrides are deprecated for removal. "
+    private static final String WARNING = "Legacy Helidon Config overrides APIs are deprecated in favor of the optional "
+            + "overrides filter module. "
             + "If you use this feature, please report your usage at https://github.com/helidon-io/helidon/issues/10415. "
             + "Removal timing has not been decided.";
 

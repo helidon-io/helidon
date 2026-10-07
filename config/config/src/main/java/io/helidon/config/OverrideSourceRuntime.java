@@ -125,6 +125,10 @@ class OverrideSourceRuntime {
         }
     }
 
+    boolean changesSupported() {
+        return changesSupported;
+    }
+
     void stopChanges() {
         if (changesStarted && changesSupported) {
             changesStarted = false;

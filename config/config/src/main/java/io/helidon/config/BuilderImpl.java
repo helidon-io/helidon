@@ -40,6 +40,7 @@ import io.helidon.common.media.type.MediaType;
 import io.helidon.config.ConfigMapperManager.MapperProviders;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigFilter;
+import io.helidon.config.spi.ConfigFilterProvider;
 import io.helidon.config.spi.ConfigMapper;
 import io.helidon.config.spi.ConfigMapperProvider;
 import io.helidon.config.spi.ConfigParser;
@@ -80,6 +81,8 @@ class BuilderImpl implements Config.Builder {
      * Config filters
      */
     private final List<Function<Config, ConfigFilter>> filterProviders;
+    private final List<ConfigFilterProvider> runtimeFilterProviders = new ArrayList<>();
+    private boolean hasFixedFilters;
     private boolean filterServicesEnabled;
 
     /*
@@ -225,6 +228,13 @@ class BuilderImpl implements Config.Builder {
         Objects.requireNonNull(configFilter);
 
         filterProviders.add((config) -> configFilter);
+        hasFixedFilters = true;
+        return this;
+    }
+
+    @Override
+    public Config.Builder addFilterProvider(ConfigFilterProvider provider) {
+        runtimeFilterProviders.add(Objects.requireNonNull(provider));
         return this;
     }
 
@@ -302,8 +312,11 @@ class BuilderImpl implements Config.Builder {
 
     @Override
     public AbstractConfigImpl build() {
+        List<Function<Config, ConfigFilter>> buildFilters = new ArrayList<>(filterProviders);
+        List<ConfigFilterProvider> buildRuntimeFilterProviders = new ArrayList<>(runtimeFilterProviders);
+        boolean buildHasFixedFilters = hasFixedFilters;
         if (valueResolving) {
-            addFilter(ConfigFilters.valueResolving().failOnMissingReference(valueResolvingFailOnMissing));
+            buildFilters.add(ConfigFilters.valueResolving().failOnMissingReference(valueResolvingFailOnMissing).get());
         }
         if (null == changesExecutor) {
             changesExecutor = Executors.newCachedThreadPool(new ConfigThreadFactory("config-changes"));
@@ -328,7 +341,16 @@ class BuilderImpl implements Config.Builder {
          Filters
          */
         if (filterServicesEnabled) {
-            addAutoLoadedFilters();
+            List<ConfigFilter> loadedFilters = HelidonServiceLoader.builder(ServiceLoader.load(ConfigFilter.class))
+                    .build()
+                    .asList();
+            loadedFilters.stream()
+                    .map(LoadedFilterProvider::new)
+                    .forEach(buildFilters::add);
+            buildHasFixedFilters |= !loadedFilters.isEmpty();
+            buildRuntimeFilterProviders.addAll(HelidonServiceLoader.builder(ServiceLoader.load(ConfigFilterProvider.class))
+                                                      .build()
+                                                      .asList());
         }
 
         /*
@@ -339,7 +361,7 @@ class BuilderImpl implements Config.Builder {
         ConfigSourcesRuntime configSources = buildConfigSources(context);
 
         if (LOGGER.isLoggable(Level.TRACE)) {
-            for (var filterProvider : filterProviders) {
+            for (var filterProvider : buildFilters) {
                 LOGGER.log(Level.TRACE, "[" + System.identityHashCode(this)
                         + "] Adding filter provider: " + filterProvider);
             }
@@ -355,7 +377,9 @@ class BuilderImpl implements Config.Builder {
         return createProvider(configMapperManager,
                               configSources,
                               new OverrideSourceRuntime(overrideSource),
-                              filterProviders,
+                              List.copyOf(buildFilters),
+                              List.copyOf(buildRuntimeFilterProviders),
+                              buildHasFixedFilters,
                               cachingEnabled,
                               changesExecutor,
                               keyResolving,
@@ -475,6 +499,8 @@ class BuilderImpl implements Config.Builder {
                                 ConfigSourcesRuntime targetConfigSource,
                                 OverrideSourceRuntime overrideSource,
                                 List<Function<Config, ConfigFilter>> filterProviders,
+                                List<ConfigFilterProvider> runtimeFilterProviders,
+                                boolean hasFixedFilters,
                                 boolean cachingEnabled,
                                 Executor changesExecutor,
                                 boolean keyResolving,
@@ -483,6 +509,8 @@ class BuilderImpl implements Config.Builder {
                                 targetConfigSource,
                                 overrideSource,
                                 filterProviders,
+                                runtimeFilterProviders,
+                                hasFixedFilters,
                                 cachingEnabled,
                                 changesExecutor,
                                 keyResolving,
@@ -551,32 +579,6 @@ class BuilderImpl implements Config.Builder {
         return HelidonServiceLoader.builder(ServiceLoader.load(ConfigParser.class))
                 .build()
                 .asList();
-    }
-
-    private void addAutoLoadedFilters() {
-        /*
-         * The filterProviders field holds a list of Function<Config,
-         * ConfigFilter> so the filters can be instantiated later in
-         * ProviderImpl when we actually have a Config instance. Auto-loaded
-         * filters can come from Java services that provide a ConfigFilter
-         * instance. We need to convert the results from loading the services to
-         * Function<Config, ConfigFilter> so we can store the functions into
-         * filterProviders.
-         *
-         * Sorting the filters by priority has to happen later, in the provider,
-         * once a Config instance is available to use in obtaining filters from
-         * providers.
-         */
-
-        /*
-         * Map each autoloaded ConfigFilter to a filter-providing function.
-         */
-        HelidonServiceLoader.builder(ServiceLoader.load(ConfigFilter.class))
-                .build()
-                .asList()
-                .stream()
-                .map(LoadedFilterProvider::new)
-                .forEach(this::addFilter);
     }
 
     private List<ConfigSource> configSources(Config metaConfig) {

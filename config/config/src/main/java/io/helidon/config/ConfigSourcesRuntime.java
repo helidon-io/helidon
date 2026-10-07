@@ -107,6 +107,10 @@ final class ConfigSourcesRuntime {
                         }));
     }
 
+    boolean changesSupported() {
+        return loadedData.stream().anyMatch(loaded -> loaded.runtime().changesSupported());
+    }
+
     void stopChanges() {
         loadedData.stream()
                 .filter(loaded -> loaded.runtime().changesSupported())

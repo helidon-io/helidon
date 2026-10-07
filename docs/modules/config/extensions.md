@@ -26,6 +26,8 @@ Configuration SPI:
   value. Deprecated since 28.0.0 and marked for removal.
 - `ConfigFilter` - Transforms config `String` values returned from any
   value-type `Config` node, given the key *and* the original value.
+- `ConfigFilterProvider` - Creates a per-runtime `ConfigFilterFactory`, which
+  constructs an immutable filter for each configuration generation.
 - `ConfigMapperProvider` - Provides one or more `ConfigMapper`s each of which
   converts a `Config` object tree to a Java type specific to the application.
 - `PollingStrategy` - Implements a custom technique to trigger polling of
@@ -42,6 +44,8 @@ Service providers:
   by the config system
 - `ConfigFilter` - support for config filters, automatically discovered by the
   config system
+- `ConfigFilterProvider` - support for configured filters with independent
+  runtime factories, automatically discovered by the config system
 - `ConfigParser` - support for config parsers, automatically discovered by the
   config system
 - `ConfigSourceProvider` - support for named config sources, configurable
@@ -92,6 +96,8 @@ service loader and do not require an explicit setup:
   `ConfigParserProvider` as a Java service loader service
 - `ConfigFilter` - each filter on the classpath that implements `ConfigFilter`
   as a Java service loader service
+- `ConfigFilterProvider` - each provider on the classpath that implements
+  `ConfigFilterProvider` as a Java service loader service
 
 Other extensions are selected using the type configured in a config profile and
 the types defined by the extension provider interface.
@@ -226,8 +232,10 @@ my.module.MyConfigParser
 
 The overrides SPI, its factories and implementations, and
 `Config.Builder.overrides(...)` are deprecated since 28.0.0 and marked for
-removal. Existing implementations and the `override-source` meta-configuration
-entry continue to work. No removal version has been decided. See
+removal in favor of the optional [overrides filter module](overrides.md).
+Overrides functionality is being replaced, not discontinued. Existing
+implementations and the `override-source` meta-configuration entry continue to
+work. No removal version has been decided. See
 [Migrating from Overrides](advanced-configuration.md#migrating-from-overrides)
 for alternatives and their semantic differences.
 
@@ -274,12 +282,11 @@ a function which accepts a `Config.Key` and an input `String` value and returns
 a `String` value the config system should use for that key going forward. The
 filter can return the original value or return some other value.
 
-The application registers filters and filter providers by passing `ConfigFilter`
-implementations to one of the config builder [`addFilter`
-methods][addfilter-method]. The config system also uses the Java service loader
-mechanism to load additional filters automatically, for all builders, using the
-service interface described in the following table. Prevent a given builder from
-using the automatically loaded filters by invoking the
+The application registers direct filters using the config builder [`addFilter`
+methods][addfilter-method], and `ConfigFilterProvider` implementations using
+`addFilterProvider(...)`. The config system discovers both service types using
+Java service loader or the service registry. Prevent a given builder from
+using automatically loaded filters and providers by invoking the
 [`disableFilterServices`][disablefilterser] method.
 
 Config SPI Interfaces for filtering:
@@ -299,29 +306,50 @@ Config SPI Interfaces for filtering:
 <td><p><code>String apply(Config.Key key, String stringValue);</code></p></td>
 <td><p>Accepts a key and the corresponding <code>String</code> value and returns the <code>String</code> which the config system should use for that key.</p></td>
 </tr>
+<tr>
+<td><code>ConfigFilterProvider</code></td>
+<td><code>ConfigFilterFactory create(Config initialConfig);</code></td>
+<td>Creates a factory dedicated to one Config runtime from its initial unfiltered configuration. The provider can be shared across runtimes.</td>
+</tr>
+<tr>
+<td><code>ConfigFilterFactory</code></td>
+<td><code>ConfigFilter create(Config config);</code></td>
+<td>Creates an immutable filter for each generation from the current unfiltered configuration. Optional lifecycle methods manage independent change monitoring.</td>
+</tr>
 </tbody>
 </table>
 
 ### Initializing Filters
 
-The `ConfigFilter` Javadoc describes multiple methods for adding filters to a
-`Config.Builder`. Some accept a `ConfigFilter` directly and some accept a
-provider function which, when passed a `Config` instance, returns a
-`ConfigFilter`.
+Use `ConfigFilterProvider` for filters requiring configuration. The provider
+receives an unfiltered initial Config view and creates one `ConfigFilterFactory`
+for that runtime. The factory receives an unfiltered Config view on every build
+or reload, and returns a fully constructed immutable filter. These views do not
+apply legacy overrides, ordinary filters, or value-reference resolution. They
+are construction inputs, not handles for subscribing to or reloading the target.
+Provider-created filters are ready to use without `ConfigFilter.init(Config)`.
 
-***Neither a `ConfigFilter` nor a provider function which furnishes one should
-access the `Config` instance passed to the provider function.***
+Keep per-runtime resources on the factory, rather than the potentially shared
+provider. A factory can implement `startChangeSupport(Runnable)` to start its
+monitoring once and request target reloads. It returns whether automatic change
+support is active. Core schedules these requests asynchronously and may coalesce
+them. `stopChangeSupport()` stops monitoring and forwarding requests; it does
+not prevent future manual reloads or filter creation, and creation must not
+restart monitoring.
 
-Instead, implement the `ConfigFilter.init(Config)` method on the filter. The
-config system invokes the filters' `init` methods according to the filters
-[priority](#about-priority).
+`ConfigFilter.init(Config)` is deprecated since 28.0.0 and marked for removal.
+Legacy direct filters and the existing `addFilter(Function<Config, ConfigFilter>)`
+and supplier registrations retain their initialization behavior. Direct filter
+instances are reused on reload, which can mutate the state seen by previous
+generations. Config warns once when direct filters coexist with automatic
+reload support, or when they are manually reloaded. Stateless direct filters
+can remain safe to reuse.
 
-Recall that whenever any code invokes `Config.get`, the `Config` instance
-invokes the `apply` method of *all* registered filters. By the time the
-application retrieves config this way the config system will have run the `init`
-method on all the filters. *But note that when a filter’s `init` method invokes
-`Config.get`, the `init` methods of lower-priority filters will not yet have
-run.*
+For legacy initialization, the supplied Config can apply other filters that
+have not yet been initialized. The config system invokes `init` according to
+filter [priority](#about-priority). Existing function registrations retain this
+construction context; use the new provider SPI when a filter needs the safe
+unfiltered construction view.
 
 ![spi ConfigFilter](../../images/config/spi-ConfigFilter.png)
 

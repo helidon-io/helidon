@@ -29,7 +29,8 @@ import io.helidon.config.spi.OverrideSource;
 /**
  * In-memory implementation of override source.
  *
- * @deprecated Since 28.0.0, config overrides are deprecated for removal. See {@link OverrideSource} for migration
+ * @deprecated Since 28.0.0, this legacy core API is deprecated for removal in favor of the optional overrides
+ * filter module. See {@link OverrideSource} for migration
  * guidance and the usage feedback request. No removal release or timing has been decided.
  */
 @Deprecated(since = "28.0.0", forRemoval = true)
@@ -58,7 +59,8 @@ public class InMemoryOverrideSource implements OverrideSource {
     /**
      * Fluent API builder for {@link io.helidon.config.InMemoryOverrideSource}.
      *
-     * @deprecated Since 28.0.0, config overrides are deprecated for removal. See {@link OverrideSource} for migration
+     * @deprecated Since 28.0.0, this legacy core API is deprecated for removal in favor of the optional overrides
+     * filter module. See {@link OverrideSource} for migration
      * guidance and the usage feedback request. No removal release or timing has been decided.
      */
     @Deprecated(since = "28.0.0", forRemoval = true)

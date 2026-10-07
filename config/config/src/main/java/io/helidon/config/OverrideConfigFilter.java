@@ -29,7 +29,9 @@ import io.helidon.config.spi.ConfigFilter;
 /**
  * A config filter that replaces values with a new ones of keys that matching with {@link Pattern}.
  *
- * @deprecated since 28.0.0, for removal. If you use config overrides, please report your usage in
+ * @deprecated Since 28.0.0, this legacy core implementation is deprecated for removal in favor of the optional
+ *             overrides filter module. Overrides functionality is being replaced, not discontinued.
+ *             If you use config overrides, please report your usage in
  *             <a href="https://github.com/helidon-io/helidon/issues/10415">issue 10415</a>.
  *             Removal timing has not been decided. See {@link io.helidon.config.spi.OverrideSource}
  *             for migration considerations.
@@ -59,7 +61,8 @@ public class OverrideConfigFilter implements ConfigFilter {
                 if (entry.getKey().test(key)) {
                     if (!DEPRECATION_LOGGED.get() && DEPRECATION_LOGGED.compareAndSet(false, true)) {
                         LOGGER.log(Level.WARNING,
-                                   "Helidon Config overrides are deprecated for removal. If you use this feature, "
+                                   "Legacy Helidon Config overrides APIs are deprecated in favor of the optional overrides "
+                                           + "filter module. If you use this feature, "
                                            + "please report your usage at https://github.com/helidon-io/helidon/issues/10415. "
                                            + "Removal timing has not been decided.");
                     }
