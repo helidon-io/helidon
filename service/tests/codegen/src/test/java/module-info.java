@@ -21,7 +21,7 @@ module io.helidon.service.tests.codegen.test {
     requires io.helidon.service.codegen;
     requires io.helidon.config.metadata;
     requires io.helidon.codegen.apt;
-    requires helidon.codegen.testing;
+    requires io.helidon.codegen.testing;
     requires io.helidon.common;
     requires java.compiler;
 
