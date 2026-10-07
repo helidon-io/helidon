@@ -332,19 +332,12 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
      */
     @Override
     public void rstStream(Http2RstStream rstStream) {
-        close();
+        close(true);
     }
 
     @Override
     public void close() {
-        updateStreamState(CLOSED);
-        if (callState.compareAndSet(CallState.OPEN, CallState.CANCELLED)) {
-            callCancelled = true;
-            Thread.startVirtualThread(() -> {
-                cancelContext(Status.CANCELLED.asRuntimeException());
-                scheduleTerminal(ListenerTerminal.CANCEL);
-            });
-        }
+        close(false);
     }
 
     @Override
@@ -635,6 +628,20 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             if (interrupted) {
                 Thread.currentThread().interrupt();
             }
+        }
+    }
+
+    private void close(boolean peerReset) {
+        updateStreamState(CLOSED);
+        // Normal END_STREAM cleanup may close the sub-protocol while terminal headers are still being written.
+        // Only a peer reset can cancel that terminal publication.
+        if (callState.compareAndSet(CallState.OPEN, CallState.CANCELLED)
+                || (peerReset && callState.compareAndSet(CallState.COMPLETING, CallState.CANCELLED))) {
+            callCancelled = true;
+            Thread.startVirtualThread(() -> {
+                cancelContext(Status.CANCELLED.asRuntimeException());
+                scheduleTerminal(ListenerTerminal.CANCEL);
+            });
         }
     }
 
@@ -930,6 +937,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
     private enum CallState {
         OPEN,
+        COMPLETING,
         COMPLETED,
         CANCELLED
     }
@@ -1128,7 +1136,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             responseLock.lock();
             try {
                 boolean cancelled = callContext != null && callContext.isCancelled();
-                if (!callState.compareAndSet(CallState.OPEN, cancelled ? CallState.CANCELLED : CallState.COMPLETED)) {
+                if (!callState.compareAndSet(CallState.OPEN, cancelled ? CallState.CANCELLED : CallState.COMPLETING)) {
                     return;
                 }
                 closed = true;
@@ -1167,6 +1175,9 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     methodMetrics.callDuration.record(Duration.ofMillis(System.currentTimeMillis() - startMillis));
                 }
             } finally {
+                if (closed) {
+                    callState.compareAndSet(CallState.COMPLETING, CallState.COMPLETED);
+                }
                 responseLock.unlock();
                 if (closed) {
                     cancelContext(null);

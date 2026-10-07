@@ -36,6 +36,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Handler;
@@ -512,6 +513,19 @@ class GrpcProtocolHandlerTest {
         assertThat(cancellations.get(), is(0));
         assertThat(completions.get(), is(1));
         assertThat(writer.trailerWrites.get(), is(1));
+        handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+        assertThat("a late reset preserves successful completion", cancellations.get(), is(0));
+        assertThat(completions.get(), is(1));
+    }
+
+    @Test
+    void testPeerResetDuringTrailersCancelsListenerOnce() throws Exception {
+        terminalWriteWithTransportClose(true);
+    }
+
+    @Test
+    void testNormalStreamCleanupDuringTrailersPreservesCompletion() throws Exception {
+        terminalWriteWithTransportClose(false);
     }
 
     @Test
@@ -1553,6 +1567,79 @@ class GrpcProtocolHandlerTest {
                 call.close(Status.OK, new Metadata());
             }
         }
+    }
+
+    private void terminalWriteWithTransportClose(boolean peerReset) throws Exception {
+        var writing = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        var callReference = new AtomicReference<ServerCall<String, String>>();
+        var cancellations = new AtomicInteger();
+        var completions = new AtomicInteger();
+        var terminal = new CompletableFuture<Context>();
+        var writerInterrupted = new AtomicBoolean();
+        RecordingWriter writer = new RecordingWriter() {
+            @Override
+            public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags,
+                                    FlowControl.Outbound flowControl) {
+                if (flags.endOfStream()) {
+                    writing.countDown();
+                    await(release);
+                    writerInterrupted.set(Thread.currentThread().isInterrupted());
+                }
+                return super.writeHeaders(headers, streamId, flags, flowControl);
+            }
+        };
+        var handler = deadlineHandler("1H", (call, _) -> {
+            callReference.set(call);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onCancel() {
+                    cancellations.incrementAndGet();
+                    terminal.complete(Context.current());
+                }
+
+                @Override
+                public void onComplete() {
+                    completions.incrementAndGet();
+                    terminal.complete(Context.current());
+                }
+            };
+        }, writer);
+        handler.init();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var closing = executor.submit(() -> callReference.get().close(Status.OK, new Metadata()));
+            try {
+                assertThat("the terminal write is blocked", writing.await(5, TimeUnit.SECONDS), is(true));
+                var transportClosed = executor.submit(() -> {
+                    if (peerReset) {
+                        handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+                    } else {
+                        // Normal HTTP/2 END_STREAM cleanup may close the sub-protocol inside writeHeaders.
+                        handler.close();
+                    }
+                });
+                transportClosed.get(5, TimeUnit.SECONDS);
+                if (peerReset) {
+                    assertThat("reset notifies cancellation before the shared writer is released",
+                               terminal.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
+                    assertThat(cancellations.get(), is(1));
+                    assertThat(completions.get(), is(0));
+                } else {
+                    assertThat("normal cleanup waits for terminal publication", terminal.isDone(), is(false));
+                }
+            } finally {
+                release.countDown();
+            }
+            closing.get(5, TimeUnit.SECONDS);
+        }
+        terminal.get(5, TimeUnit.SECONDS);
+        handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+        callReference.get().close(Status.OK, new Metadata());
+        assertThat(cancellations.get(), is(peerReset ? 1 : 0));
+        assertThat(completions.get(), is(peerReset ? 0 : 1));
+        assertThat("reset does not interrupt the shared transport writer", writerInterrupted.get(), is(false));
+        assertThat(writer.trailerWrites.get(), is(1));
+        assertThat(handler.streamState(), is(Http2StreamState.CLOSED));
     }
 
     private void closeFromWorkerWhileCallbackIsActive(String callback, boolean withDeadline) throws Exception {
