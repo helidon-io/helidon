@@ -20,7 +20,7 @@ Helidon WebServer, and give you a direct programming model for defining routes,
 services, configuration, security, observability, and other application
 behavior.
 
-Helidon 27 requires Java 27 and uses virtual threads throughout the WebServer,
+Helidon 28 requires Java 28 and uses virtual threads throughout the WebServer,
 so applications can use a simple blocking style without tying up platform
 threads for each request.
 
