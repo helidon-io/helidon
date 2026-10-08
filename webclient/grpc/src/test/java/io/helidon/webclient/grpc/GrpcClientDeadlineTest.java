@@ -283,6 +283,75 @@ class GrpcClientDeadlineTest {
     }
 
     @Test
+    void concurrentConnectionSetupKeepsCancellationScopedToItsCall() throws Exception {
+        var owner = Context.<Integer>key("connection-owner");
+        var firstSocket = new CompletableFuture<Socket>();
+        var secondSocket = new CompletableFuture<Socket>();
+        var release = new CompletableFuture<Void>();
+        List<Socket> peers = new CopyOnWriteArrayList<>();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor();
+             var listening = new ServerSocket(0, 2, InetAddress.getLoopbackAddress())) {
+            listening.setSoTimeout(5000);
+            var accepting = executor.submit(() -> {
+                peers.add(listening.accept());
+                peers.add(listening.accept());
+                return null;
+            });
+            var client = GrpcClient.builder()
+                    .baseUri("https://localhost:" + listening.getLocalPort())
+                    .connectionListener(new ConnectionListener() {
+                        @Override
+                        public void socketConnected(ConnectedSocketInfo socketInfo) {
+                            (owner.get() == 1 ? firstSocket : secondSocket).complete(socketInfo.socket());
+                            release.join();
+                        }
+
+                        @Override
+                        public void socketChannelConnected(ConnectedSocketChannelInfo socketInfo) {
+                            throw new AssertionError("TCP connection must publish a socket");
+                        }
+                    })
+                    .build();
+            var firstContext = Context.ROOT.withValue(owner, 1);
+            var secondContext = Context.ROOT.withValue(owner, 2);
+            var first = firstContext.call(() -> client.channel().newCall(descriptor(MethodDescriptor.MethodType.UNARY),
+                                                                         CallOptions.DEFAULT));
+            var second = secondContext.call(() -> client.channel().newCall(descriptor(MethodDescriptor.MethodType.UNARY),
+                                                                           CallOptions.DEFAULT));
+            var firstListener = new ResponseListener();
+            var secondListener = new ResponseListener();
+            try {
+                var firstStarted = executor.submit(() -> first.start(firstListener, new Metadata()));
+                var secondStarted = executor.submit(() -> second.start(secondListener, new Metadata()));
+                Socket firstTransport = firstSocket.get(5, TimeUnit.SECONDS);
+                Socket secondTransport = secondSocket.get(5, TimeUnit.SECONDS);
+                accepting.get(5, TimeUnit.SECONDS);
+
+                first.cancel("first call cancelled during connection callback", null);
+                assertThat(firstListener.status.get(5, TimeUnit.SECONDS).getCode(), is(Status.Code.CANCELLED));
+                assertThat("first call closes its published socket", firstTransport.isClosed(), is(true));
+                assertThat("second call retains its own transport", secondTransport.isClosed(), is(false));
+                assertThat("second call remains active", secondListener.status.isDone(), is(false));
+                second.cancel("second call cancelled during connection callback", null);
+                assertThat(secondListener.status.get(5, TimeUnit.SECONDS).getCode(), is(Status.Code.CANCELLED));
+                assertThat(secondTransport.isClosed(), is(true));
+                release.complete(null);
+                firstStarted.get(5, TimeUnit.SECONDS);
+                secondStarted.get(5, TimeUnit.SECONDS);
+                assertThat(firstListener.closeCount.get(), is(1));
+                assertThat(secondListener.closeCount.get(), is(1));
+            } finally {
+                release.complete(null);
+                first.cancel("test cleanup", null);
+                second.cancel("test cleanup", null);
+                for (Socket peer : peers) {
+                    peer.close();
+                }
+            }
+        }
+    }
+
+    @Test
     void deadlineInterruptsTlsHandshake() throws Exception {
         try (var executor = Executors.newVirtualThreadPerTaskExecutor();
              var listening = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {

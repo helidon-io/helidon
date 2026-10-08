@@ -116,6 +116,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
     private static final HeaderName TIMEOUT_NAME = HeaderNames.create("grpc-timeout");
     private static final ScheduledThreadPoolExecutor DEADLINE_SCHEDULER = deadlineScheduler();
+    private static final ScopedValue<GrpcBaseClientCall<?, ?>> CONNECTING_CALL = ScopedValue.newInstance();
 
     private final GrpcClientImpl grpcClient;
     private final GrpcChannel grpcChannel;
@@ -197,6 +198,35 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         // See: https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md
         headers.set(HeaderValues.TE_TRAILERS);
         return headers;
+    }
+
+    static WebClient connectionWebClient(WebClient webClient) {
+        ConnectionListener original = webClient.prototype().connectionListener();
+        return new CallWebClient(webClient, WebClient.builder()
+                .from(webClient.prototype())
+                .executor(webClient.executor())
+                .connectionListener(new ConnectionListener() {
+                    @Override
+                    public void socketConnected(ConnectedSocketInfo socketInfo) throws IOException {
+                        GrpcBaseClientCall<?, ?> call = CONNECTING_CALL.get();
+                        call.registerRawTransport(socketInfo.socket());
+                        if (!call.isClosed()) {
+                            original.socketConnected(socketInfo);
+                        }
+                        call.ensureTransportActive();
+                    }
+
+                    @Override
+                    public void socketChannelConnected(ConnectedSocketChannelInfo socketInfo) throws IOException {
+                        GrpcBaseClientCall<?, ?> call = CONNECTING_CALL.get();
+                        call.registerRawTransport(socketInfo.socketChannel());
+                        if (!call.isClosed()) {
+                            original.socketChannelConnected(socketInfo);
+                        }
+                        call.ensureTransportActive();
+                    }
+                })
+                .buildPrototype());
     }
 
     @Override
@@ -439,30 +469,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     ClientConnection clientConnection(ClientUri clientUri, String authority) {
         WebClient webClient = grpcClient.webClient();
         if (deadline != null || context != Context.ROOT) {
-            ConnectionListener original = webClient.prototype().connectionListener();
-            webClient = new CallWebClient(webClient, WebClient.builder()
-                    .from(webClient.prototype())
-                    .executor(webClient.executor())
-                    .connectionListener(new ConnectionListener() {
-                        @Override
-                        public void socketConnected(ConnectedSocketInfo socketInfo) throws IOException {
-                            registerRawTransport(socketInfo.socket());
-                            if (!isClosed()) {
-                                original.socketConnected(socketInfo);
-                            }
-                            ensureTransportActive();
-                        }
-
-                        @Override
-                        public void socketChannelConnected(ConnectedSocketChannelInfo socketInfo) throws IOException {
-                            registerRawTransport(socketInfo.socketChannel());
-                            if (!isClosed()) {
-                                original.socketChannelConnected(socketInfo);
-                            }
-                            ensureTransportActive();
-                        }
-                    })
-                    .buildPrototype());
+            webClient = grpcClient.connectionWebClient();
         }
         GrpcClientConfig clientConfig = grpcClient.prototype();
         SniConfig sni = clientConfig.sni().orElse(null);
@@ -697,7 +704,9 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         // obtain HTTP2 connection
         ClientUri clientUri = nextClientUri();
         String authority = authority(clientUri);
-        ClientConnection clientConnection = clientConnection(clientUri, authority);
+        ClientConnection clientConnection = deadline == null && context == Context.ROOT
+                ? clientConnection(clientUri, authority)
+                : ScopedValue.where(CONNECTING_CALL, this).call(() -> clientConnection(clientUri, authority));
         lifecycleLock.lock();
         try {
             if (!isClosed()) {
