@@ -54,9 +54,9 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TestHelidonPrometheusFormatting {
@@ -623,7 +623,7 @@ class TestHelidonPrometheusFormatting {
                     .build();
             var formatter = new HelidonPrometheusFormatterProvider().formatter(context, registry).orElseThrow();
 
-            assertSame(failure, assertThrows(LinkageError.class, formatter::format));
+            assertThat(assertThrows(LinkageError.class, formatter::format), sameInstance(failure));
         } finally {
             factory.close();
         }

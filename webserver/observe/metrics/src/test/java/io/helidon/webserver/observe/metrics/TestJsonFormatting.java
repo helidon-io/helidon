@@ -47,8 +47,8 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TestJsonFormatting {
@@ -119,7 +119,7 @@ class TestJsonFormatting {
                 throw failure;
             }));
             JsonFormatter formatter = JsonFormatter.builder(metricsConfig, meterRegistry).build();
-            assertSame(failure, assertThrows(LinkageError.class, formatter::format));
+            assertThat(assertThrows(LinkageError.class, formatter::format), sameInstance(failure));
         } finally {
             meterRegistry.close();
         }
