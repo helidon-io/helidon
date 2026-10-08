@@ -56,6 +56,7 @@ import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TestHelidonPrometheusFormatting {
@@ -566,6 +567,66 @@ class TestHelidonPrometheusFormatting {
     @Test
     void openMetricsPreservesDistinctLabelValues() {
         assertDistinctLabelValues(MediaTypes.APPLICATION_OPENMETRICS_TEXT);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false,false", "false,true", "true,false", "true,true"})
+    void recoverableGaugeFailuresRemainIsolated(boolean openMetrics, boolean nullSample) {
+        MetricsConfig config = MetricsConfig.create();
+        HelidonMetricsFactory factory = HelidonMetricsFactory.create();
+        try {
+            MeterRegistry registry = factory.createMeterRegistry(config);
+            var unavailable = new AtomicBoolean(true);
+            registry.getOrCreate(factory.gaugeBuilder("unavailable.gauge", () -> {
+                if (unavailable.get()) {
+                    if (nullSample) {
+                        return null;
+                    }
+                    throw new IllegalStateException("Synthetic supplier failure");
+                }
+                return 17L;
+            }));
+            registry.getOrCreate(factory.counterBuilder("available.counter")).increment(7);
+            FormatterContext context = FormatterContext.builder()
+                    .mediaType(openMetrics ? MediaTypes.APPLICATION_OPENMETRICS_TEXT : MediaTypes.TEXT_PLAIN)
+                    .metricsConfig(config)
+                    .build();
+            var formatter = new HelidonPrometheusFormatterProvider().formatter(context, registry).orElseThrow();
+
+            assertThat((String) formatter.format().orElseThrow(),
+                       allOf(containsString("unavailable_gauge NaN\n"),
+                             containsString("available_counter_total 7.0\n")));
+            unavailable.set(false);
+            assertThat((String) formatter.format().orElseThrow(),
+                       allOf(containsString("unavailable_gauge 17.0\n"),
+                             containsString("available_counter_total 7.0\n")));
+        } finally {
+            factory.close();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void fatalGaugeSupplierErrorsPropagate(boolean openMetrics) {
+        MetricsConfig config = MetricsConfig.create();
+        HelidonMetricsFactory factory = HelidonMetricsFactory.create();
+        try {
+            MeterRegistry registry = factory.createMeterRegistry(config);
+            var failure = new LinkageError("Synthetic gauge failure");
+            registry.getOrCreate(factory.gaugeBuilder("fatal.gauge", () -> {
+                throw failure;
+            }));
+            registry.getOrCreate(factory.counterBuilder("available.counter")).increment(7);
+            FormatterContext context = FormatterContext.builder()
+                    .mediaType(openMetrics ? MediaTypes.APPLICATION_OPENMETRICS_TEXT : MediaTypes.TEXT_PLAIN)
+                    .metricsConfig(config)
+                    .build();
+            var formatter = new HelidonPrometheusFormatterProvider().formatter(context, registry).orElseThrow();
+
+            assertSame(failure, assertThrows(LinkageError.class, formatter::format));
+        } finally {
+            factory.close();
+        }
     }
 
     @ParameterizedTest

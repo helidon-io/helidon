@@ -125,8 +125,8 @@ final class HelidonPrometheusFormatter implements MeterRegistryFormatter {
     private static double gaugeValue(Gauge<?> gauge) {
         try {
             return gauge.value().doubleValue();
-        } catch (Throwable _) {
-            // An unavailable user gauge must not suppress the remaining meters in the scrape.
+        } catch (RuntimeException _) {
+            // An ordinary user gauge failure must not suppress the remaining meters in the scrape.
             return Double.NaN;
         }
     }
