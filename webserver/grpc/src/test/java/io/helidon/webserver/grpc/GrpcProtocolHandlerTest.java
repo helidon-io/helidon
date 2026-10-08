@@ -277,12 +277,14 @@ class GrpcProtocolHandlerTest {
     void testDeadlineExpiresWhileServiceCallbackIsBlocked() throws Exception {
         var entered = new CountDownLatch(1);
         var release = new CountDownLatch(1);
+        var contextCancelled = new CompletableFuture<Context>();
         var cancelled = new CompletableFuture<Context>();
         var callReference = new AtomicReference<ServerCall<String, String>>();
         var cancellations = new AtomicInteger();
         var completions = new AtomicInteger();
         var writer = new RecordingWriter();
         var handler = deadlineHandler("1S", (call, _) -> {
+            Context.current().addListener(contextCancelled::complete, Runnable::run);
             callReference.set(call);
             call.request(1);
             return new ServerCall.Listener<>() {
@@ -311,8 +313,9 @@ class GrpcProtocolHandlerTest {
             var request = executor.submit(() -> sendRequest(handler));
             try {
                 assertThat("service callback started", entered.await(5, TimeUnit.SECONDS), is(true));
-                Http2Headers trailers = writer.trailers.get(5, TimeUnit.SECONDS);
-                assertThat(trailers.httpHeaders().get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
+                assertThat("context cancellation does not wait for the service callback",
+                           contextCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
+                assertThat("terminal output waits for the existing stream callback", writer.trailers.isDone(), is(false));
                 assertThat("cancel callback waits for the active callback", cancelled.isDone(), is(false));
                 assertThat(callReference.get().isCancelled(), is(true));
             } finally {
@@ -320,6 +323,8 @@ class GrpcProtocolHandlerTest {
             }
             request.get(5, TimeUnit.SECONDS);
         }
+        assertThat(writer.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
+                           .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
         Context context = cancelled.get(5, TimeUnit.SECONDS);
         handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
         assertThat(context.isCancelled(), is(true));
@@ -350,10 +355,12 @@ class GrpcProtocolHandlerTest {
     void testDeadlineExpiresBeforeStartCallReturns() throws Exception {
         var entered = new CountDownLatch(1);
         var release = new CountDownLatch(1);
+        var contextCancelled = new CompletableFuture<Context>();
         var cancelled = new CompletableFuture<Context>();
         var ready = new AtomicInteger();
         var writer = new RecordingWriter();
         var handler = deadlineHandler("1S", (_, _) -> {
+            Context.current().addListener(contextCancelled::complete, Runnable::run);
             entered.countDown();
             await(release);
             return new ServerCall.Listener<>() {
@@ -372,13 +379,16 @@ class GrpcProtocolHandlerTest {
             var initialization = executor.submit(handler::init);
             try {
                 assertThat(entered.await(5, TimeUnit.SECONDS), is(true));
-                assertThat(writer.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
-                                   .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
+                assertThat("context cancellation does not wait for startCall",
+                           contextCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
+                assertThat("terminal output waits for startCall to return", writer.trailers.isDone(), is(false));
             } finally {
                 release.countDown();
             }
             initialization.get(5, TimeUnit.SECONDS);
         }
+        assertThat(writer.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
+                           .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
         assertThat(cancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
         assertThat(ready.get(), is(0));
         assertThat(writer.trailerWrites.get(), is(1));
@@ -870,12 +880,87 @@ class GrpcProtocolHandlerTest {
             assertThat("deadline cancellation runs on a platform timer", firstThread.get().isVirtual(), is(false));
             assertThat("calls reuse the shared deadline timer",
                        secondThread.get(5, TimeUnit.SECONDS), sameInstance(firstThread.get()));
+            // Model the existing stream runners processing their queued cancellation events.
+            first.streamEvent();
+            second.streamEvent();
             assertThat(secondWriter.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
                                .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
             assertThat(firstWriter.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
                                .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
         } finally {
             release.countDown();
+        }
+    }
+
+    @Test
+    void testDeadlineRequestsStreamEventBeforePublishingTerminalStatus() throws Exception {
+        var notified = new CompletableFuture<Thread>();
+        var contextCancelled = new CompletableFuture<Thread>();
+        var listenerCancelled = new CompletableFuture<Thread>();
+        var callReference = new AtomicReference<ServerCall<String, String>>();
+        var writer = new RecordingWriter();
+        var handler = deadlineHandler("1S", (call, _) -> {
+            callReference.set(call);
+            Context.current().addListener(_ -> contextCancelled.complete(Thread.currentThread()), Runnable::run);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onCancel() {
+                    listenerCancelled.complete(Thread.currentThread());
+                }
+            };
+        }, writer);
+        handler.onStreamEvent(() -> notified.complete(Thread.currentThread()));
+        handler.init();
+
+        var timer = notified.get(5, TimeUnit.SECONDS);
+        assertThat("deadline notification uses a platform timer", timer.isVirtual(), is(false));
+        assertThat("application context cancellation stays inline",
+                   contextCancelled.get(5, TimeUnit.SECONDS), sameInstance(timer));
+        assertThat("the cancelled call is visible before terminal output", callReference.get().isCancelled(), is(true));
+        assertThat("the timer does not publish terminal output", writer.trailers.isDone(), is(false));
+        callReference.get().sendMessage("late response");
+        assertThat("cancelled calls ignore late DATA", writer.dataWrites.get(), is(0));
+
+        handler.streamEvent();
+        assertThat(writer.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
+                           .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
+        assertThat("terminal callback runs where the stream event is processed",
+                   listenerCancelled.get(5, TimeUnit.SECONDS), sameInstance(Thread.currentThread()));
+        handler.streamEvent();
+        assertThat("repeated event delivery preserves one terminal status", writer.trailerWrites.get(), is(1));
+    }
+
+    @Test
+    void testDeadlineReleasesInboundDemandWaitBeforeStreamEvent() throws Exception {
+        var contextCancelled = new CompletableFuture<Context>();
+        var requested = new CompletableFuture<Void>();
+        var messages = new AtomicInteger();
+        var writer = new RecordingWriter();
+        var handler = deadlineHandler("1S", (_, _) -> {
+            Context.current().addListener(contextCancelled::complete, Runnable::run);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onMessage(String message) {
+                    messages.incrementAndGet();
+                }
+            };
+        }, writer);
+        handler.onStreamEvent(() -> requested.complete(null));
+        handler.init();
+        var input = EXECUTOR.submit(() -> sendRequest(handler));
+        try {
+            assertThrows(TimeoutException.class, () -> input.get(100, TimeUnit.MILLISECONDS));
+            assertThat(contextCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
+            requested.get(5, TimeUnit.SECONDS);
+            input.get(5, TimeUnit.SECONDS);
+            assertThat("no message was delivered without demand", messages.get(), is(0));
+            assertThat("the timer only requested terminal output", writer.trailers.isDone(), is(false));
+            handler.streamEvent();
+            assertThat(writer.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
+                               .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
+        } finally {
+            handler.close();
+            input.get(5, TimeUnit.SECONDS);
         }
     }
 

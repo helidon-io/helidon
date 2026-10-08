@@ -129,6 +129,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private volatile Context.CancellableContext callContext;
     private volatile GrpcServerCall serverCall;
     private volatile ServerCall.Listener<REQ> listener;
+    private volatile Runnable streamEventNotifier = () -> { };
     private BufferData entityBytes;
     private BufferData readBufferData = BufferData.create(INITIAL_BUFFER_SIZE);
     private BufferData unreadBufferData;
@@ -209,7 +210,18 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     write.cancel();
                 }
                 if (!callClosed()) {
-                    serverCall.closeCancelled();
+                    callCancelled = true;
+                    inboundLock.lock();
+                    try {
+                        readyPending = false;
+                        pendingRequest = null;
+                        halfClosePending = false;
+                        numMessages = 0;
+                        inboundChanged.signalAll();
+                    } finally {
+                        inboundLock.unlock();
+                    }
+                    streamEventNotifier.run();
                 }
             }, Runnable::run);
             if (callContext.isCancelled()) {
@@ -243,7 +255,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 }
                 inboundLock.lock();
                 try {
-                    if (!callClosed() && !listenerTerminated && terminalPending == null) {
+                    if (!callClosed() && !callContext.isCancelled() && !listenerTerminated && terminalPending == null) {
                         readyPending = true;
                     }
                     bytesReceived = 0L;
@@ -258,6 +270,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     inboundLock.unlock();
                 }
             }
+            serverCall.closeCancelled();
             flushQueue();
         } catch (CloseConnectionException e) {
             cancelContext(e);
@@ -275,6 +288,22 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     @Override
     public Http2StreamState streamState() {
         return currentStreamState.get();
+    }
+
+    @Override
+    public void onStreamEvent(Runnable notifier) {
+        streamEventNotifier = Objects.requireNonNull(notifier);
+        if (callContext != null && callContext.isCancelled() && !callClosed()) {
+            notifier.run();
+        }
+    }
+
+    @Override
+    public void streamEvent() {
+        GrpcServerCall call = serverCall;
+        if (call != null) {
+            call.closeCancelled();
+        }
     }
 
     @Override
@@ -410,7 +439,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     long messageSequence = 0;
                     inboundLock.lock();
                     try {
-                        if (!callClosed() && !listenerTerminated && terminalPending == null) {
+                        if (!callClosed() && !callCancelled && !listenerTerminated && terminalPending == null) {
                             if (pendingRequest != null) {
                                 throw new IllegalStateException("Previous gRPC request is still pending");
                             }
@@ -432,6 +461,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                         while (messagesDelivered < messageSequence
                                 && !listenerTerminated
                                 && !callClosed()
+                                && !callCancelled
                                 && terminalPending == null) {
                             inboundChanged.await();
                         }
@@ -453,7 +483,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             if (header.flags(Http2FrameTypes.DATA).endOfStream()) {
                 inboundLock.lock();
                 try {
-                    if (!callClosed() && !listenerTerminated && terminalPending == null) {
+                    if (!callClosed() && !callCancelled && !listenerTerminated && terminalPending == null) {
                         halfClosePending = true;
                     }
                 } finally {
@@ -609,7 +639,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private void addNumMessages(int n) {
         inboundLock.lock();
         try {
-            if (!callClosed() && !listenerTerminated && terminalPending == null) {
+            if (!callClosed() && !callCancelled && !listenerTerminated && terminalPending == null) {
                 numMessages += n;
             }
         } finally {
@@ -977,7 +1007,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         public void sendHeaders(Metadata headers) {
             responseLock.lock();
             try {
-                if (callClosed()) {
+                if (callClosed() || callCancelled) {
                     return;
                 }
                 // prepare response headers
@@ -1005,7 +1035,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
         @Override
         public void sendMessage(RES message) {
-            if (callClosed()) {
+            if (callClosed() || callCancelled) {
                 return;
             }
             try (InputStream inputStream = route.method().streamResponse(message)) {
@@ -1042,7 +1072,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
                 responseLock.lock();
                 try {
-                    if (!callClosed()) {
+                    if (!callClosed() && !callCancelled) {
                         writeData(new Http2FrameData(header, bufferData));
                         bytesSent += writeLength;
                     }

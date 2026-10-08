@@ -237,9 +237,11 @@ handler inherits the remaining context deadline; see [Client Deadlines](client.m
 The server uses a shared deadline timer and writes responses on the thread
 calling the service's `ServerCall`. Cancellation listeners run inline on the
 thread cancelling the context. Keep these listeners brief: a blocking listener
-on the deadline timer delays other server deadlines. If a response write is
-already in progress, the server completes its current frame before sending
-the final status.
+on the deadline timer delays other server deadlines. Deadline cancellation
+signals the existing HTTP/2 stream thread to send the final status, keeping
+transport writes off the shared timer. If a service callback or response write
+is already in progress, the final status waits for it to return; the server
+completes any current frame before sending the status.
 
 ### Metrics
 

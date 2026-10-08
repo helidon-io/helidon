@@ -19,6 +19,7 @@ package io.helidon.webserver.http2;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.http.HttpPrologue;
@@ -26,8 +27,11 @@ import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.ConnectionFlowControl;
 import io.helidon.http.http2.FlowControl;
+import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameData;
+import io.helidon.http.http2.Http2FrameHeader;
+import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2RstStream;
 import io.helidon.http.http2.Http2Settings;
@@ -47,7 +51,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -58,6 +64,179 @@ import static org.mockito.Mockito.when;
 
 class Http2ServerStreamCloseTest {
     private static final int STREAM_ID = 1;
+
+    @Test
+    void testStreamEventAfterRemoteEndRunsOnExistingStreamThread() throws Exception {
+        var handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
+        when(handler.streamState()).thenReturn(Http2StreamState.HALF_CLOSED_REMOTE);
+        var notifier = new AtomicReference<Runnable>();
+        var closeListener = new AtomicReference<Runnable>();
+        registerCallbacks(handler, notifier, closeListener);
+        var streamThread = new AtomicReference<Thread>();
+        var endReceived = new CountDownLatch(1);
+        doAnswer(_ -> {
+            streamThread.set(Thread.currentThread());
+            return null;
+        }).when(handler).init();
+        doAnswer(invocation -> {
+            Http2FrameHeader header = invocation.getArgument(0);
+            assertThat(header.flags(Http2FrameTypes.DATA).endOfStream(), is(true));
+            endReceived.countDown();
+            return null;
+        }).when(handler).data(any(), any());
+        doAnswer(_ -> {
+            assertThat(Thread.currentThread(), sameInstance(streamThread.get()));
+            closeListener.get().run();
+            return null;
+        }).when(handler).streamEvent();
+        var stream = stream(handler);
+        stream.prologue(HttpPrologue.create("HTTP/2.0", "HTTP", "2.0", Method.POST, "/service/method", false));
+        stream.headers(headers(), true);
+        var failure = new AtomicReference<Throwable>();
+        var thread = Thread.ofVirtual().uncaughtExceptionHandler((_, e) -> failure.set(e)).start(stream);
+        try {
+            assertThat("remote end was delivered", endReceived.await(5, TimeUnit.SECONDS), is(true));
+            notifier.get().run();
+            thread.join(5_000);
+            assertThat("existing runner stopped", thread.isAlive(), is(false));
+            assertThat(failure.get(), nullValue());
+            assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
+            notifier.get().run();
+            verify(handler).streamEvent();
+            verify(handler).close();
+        } finally {
+            stream.abortConnection();
+            thread.join(5_000);
+        }
+    }
+
+    @Test
+    void testStreamEventsCoalesceAndNotificationDuringCallbackRemainsPending() throws Exception {
+        var handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
+        when(handler.streamState()).thenReturn(Http2StreamState.OPEN);
+        var notifier = new AtomicReference<Runnable>();
+        var closeListener = new AtomicReference<Runnable>();
+        registerCallbacks(handler, notifier, closeListener);
+        var initialized = new CountDownLatch(1);
+        var releaseInit = new CountDownLatch(1);
+        var streamThread = new AtomicReference<Thread>();
+        var events = new AtomicInteger();
+        doAnswer(_ -> {
+            streamThread.set(Thread.currentThread());
+            initialized.countDown();
+            awaitIgnoringInterrupts(releaseInit);
+            return null;
+        }).when(handler).init();
+        doAnswer(_ -> {
+            assertThat(Thread.currentThread(), sameInstance(streamThread.get()));
+            if (events.incrementAndGet() == 1) {
+                notifier.get().run();
+            } else {
+                closeListener.get().run();
+            }
+            return null;
+        }).when(handler).streamEvent();
+        var stream = stream(handler);
+        stream.prologue(HttpPrologue.create("HTTP/2.0", "HTTP", "2.0", Method.POST, "/service/method", false));
+        stream.headers(headers(), false);
+        var failure = new AtomicReference<Throwable>();
+        var thread = Thread.ofVirtual().uncaughtExceptionHandler((_, e) -> failure.set(e)).start(stream);
+        try {
+            assertThat("initialization started after notifier registration", initialized.await(5, TimeUnit.SECONDS), is(true));
+            for (int i = 0; i < 10_000; i++) {
+                notifier.get().run();
+            }
+            releaseInit.countDown();
+            thread.join(5_000);
+            assertThat("existing runner stopped", thread.isAlive(), is(false));
+            assertThat(failure.get(), nullValue());
+            assertThat(events.get(), is(2));
+            verify(handler, never()).data(any(), any());
+        } finally {
+            releaseInit.countDown();
+            stream.abortConnection();
+            thread.join(5_000);
+        }
+    }
+
+    @Test
+    void testResetDiscardsPendingStreamEventWithoutReopening() throws Exception {
+        var handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
+        when(handler.streamState()).thenReturn(Http2StreamState.OPEN);
+        var notifier = new AtomicReference<Runnable>();
+        var closeListener = new AtomicReference<Runnable>();
+        registerCallbacks(handler, notifier, closeListener);
+        var eventStarted = new CountDownLatch(1);
+        var releaseEvent = new CountDownLatch(1);
+        var initialized = new CountDownLatch(1);
+        doAnswer(_ -> {
+            initialized.countDown();
+            return null;
+        }).when(handler).init();
+        doAnswer(_ -> {
+            eventStarted.countDown();
+            awaitIgnoringInterrupts(releaseEvent);
+            return null;
+        }).when(handler).streamEvent();
+        var stream = stream(handler);
+        stream.prologue(HttpPrologue.create("HTTP/2.0", "HTTP", "2.0", Method.POST, "/service/method", false));
+        stream.headers(headers(), false);
+        var failure = new AtomicReference<Throwable>();
+        var thread = Thread.ofVirtual().uncaughtExceptionHandler((_, e) -> failure.set(e)).start(stream);
+        try {
+            assertThat("handler initialized", initialized.await(5, TimeUnit.SECONDS), is(true));
+            notifier.get().run();
+            assertThat("event started", eventStarted.await(5, TimeUnit.SECONDS), is(true));
+            notifier.get().run();
+            stream.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+            notifier.get().run();
+            releaseEvent.countDown();
+            thread.join(5_000);
+            assertThat("existing runner stopped", thread.isAlive(), is(false));
+            assertThat(failure.get(), nullValue());
+            assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
+            verify(handler).streamEvent();
+            verify(handler).close();
+        } finally {
+            releaseEvent.countDown();
+            stream.abortConnection();
+            thread.join(5_000);
+        }
+    }
+
+    @Test
+    void testFailingStreamEventClosesHandlerAndStopsRunner() throws Exception {
+        var handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
+        when(handler.streamState()).thenReturn(Http2StreamState.OPEN);
+        var notifier = new AtomicReference<Runnable>();
+        registerCallbacks(handler, notifier, new AtomicReference<>());
+        var initialized = new CountDownLatch(1);
+        doAnswer(_ -> {
+            initialized.countDown();
+            return null;
+        }).when(handler).init();
+        var expected = new IllegalStateException("test stream event failure");
+        doThrow(expected).when(handler).streamEvent();
+        var stream = stream(handler);
+        stream.prologue(HttpPrologue.create("HTTP/2.0", "HTTP", "2.0", Method.POST, "/service/method", false));
+        stream.headers(headers(), false);
+        var failure = new AtomicReference<Throwable>();
+        var thread = Thread.ofVirtual().uncaughtExceptionHandler((_, e) -> failure.set(e)).start(stream);
+        try {
+            assertThat("handler initialized", initialized.await(5, TimeUnit.SECONDS), is(true));
+            notifier.get().run();
+            thread.join(5_000);
+            assertThat("existing runner stopped", thread.isAlive(), is(false));
+            assertThat(failure.get(), sameInstance(expected));
+            assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
+            notifier.get().run();
+            verify(handler).streamEvent();
+            verify(handler).close();
+        } finally {
+            stream.abortConnection();
+            thread.join(5_000);
+        }
+    }
 
     @Test
     void testSubProtocolClosedWhenStreamExits() {
@@ -168,6 +347,19 @@ class Http2ServerStreamCloseTest {
             thread.interrupt();
             thread.join(5_000);
         }
+    }
+
+    private static void registerCallbacks(Http2SubProtocolSelector.SubProtocolHandler handler,
+                                          AtomicReference<Runnable> notifier,
+                                          AtomicReference<Runnable> closeListener) {
+        doAnswer(invocation -> {
+            notifier.set(invocation.getArgument(0));
+            return null;
+        }).when(handler).onStreamEvent(any());
+        doAnswer(invocation -> {
+            closeListener.set(invocation.getArgument(0));
+            return null;
+        }).when(handler).onStreamClosed(any());
     }
 
     private static Http2ServerStream stream(Http2SubProtocolSelector.SubProtocolHandler handler) {
