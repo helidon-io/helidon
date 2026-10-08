@@ -26,6 +26,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -41,6 +42,7 @@ import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2Headers;
@@ -61,17 +63,23 @@ import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.api.ConnectionListener;
 import io.helidon.webclient.api.DefaultDnsResolver;
 import io.helidon.webclient.api.DnsAddressLookup;
+import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.SniConfig;
 import io.helidon.webclient.api.TcpClientConnection;
 import io.helidon.webclient.api.UnixDomainSocketClientConnection;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.api.WebClientConfig;
+import io.helidon.webclient.api.WebClientCookieManager;
+import io.helidon.webclient.api.WebClientProtocolResponse;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientConnection;
 import io.helidon.webclient.http2.Http2ClientImpl;
 import io.helidon.webclient.http2.Http2ClientProtocolConfig;
 import io.helidon.webclient.http2.Http2StreamConfig;
 import io.helidon.webclient.http2.StreamTimeoutException;
+import io.helidon.webclient.spi.Protocol;
+import io.helidon.webclient.spi.ProtocolConfig;
 
 import io.grpc.CallOptions;
 import io.grpc.ClientCall;
@@ -432,7 +440,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         WebClient webClient = grpcClient.webClient();
         if (deadline != null || context != Context.ROOT) {
             ConnectionListener original = webClient.prototype().connectionListener();
-            webClient = WebClient.builder()
+            webClient = new CallWebClient(webClient, WebClient.builder()
                     .from(webClient.prototype())
                     .executor(webClient.executor())
                     .connectionListener(new ConnectionListener() {
@@ -454,7 +462,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                             ensureTransportActive();
                         }
                     })
-                    .build();
+                    .buildPrototype());
         }
         GrpcClientConfig clientConfig = grpcClient.prototype();
         SniConfig sni = clientConfig.sni().orElse(null);
@@ -939,6 +947,67 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                                    Timer callDuration,
                                    DistributionSummary sentMessageSize,
                                    DistributionSummary recvMessageSize) { }
+
+    // Expose the call's connection listener without constructing another set of protocol clients.
+    private static final class CallWebClient implements WebClient {
+        private final WebClient delegate;
+        private final WebClientConfig config;
+
+        private CallWebClient(WebClient delegate, WebClientConfig config) {
+            this.delegate = delegate;
+            this.config = config;
+        }
+
+        @Override
+        public HttpClientRequest method(Method method) {
+            return delegate.method(method);
+        }
+
+        @Override
+        public <T, C extends ProtocolConfig> T client(Protocol<T, C> protocol, C protocolConfig) {
+            return delegate.client(protocol, protocolConfig);
+        }
+
+        @Override
+        public <T, C extends ProtocolConfig> T client(Protocol<T, C> protocol) {
+            return delegate.client(protocol);
+        }
+
+        @Override
+        public List<String> tcpProtocolIds() {
+            return delegate.tcpProtocolIds();
+        }
+
+        @Override
+        public void responseReceived(WebClientProtocolResponse response) {
+            delegate.responseReceived(response);
+        }
+
+        @Override
+        public ExecutorService executor() {
+            return delegate.executor();
+        }
+
+        @Override
+        public WebClientCookieManager cookieManager() {
+            return delegate.cookieManager();
+        }
+
+        @Override
+        public WebClientConfig prototype() {
+            return config;
+        }
+
+        @Override
+        public void releaseResource() {
+            delegate.releaseResource();
+        }
+
+        @Override
+        public void closeResource() {
+            delegate.closeResource();
+        }
+    }
 
     private static final class MessageInputStream extends InputStream {
         private final BufferData data;
