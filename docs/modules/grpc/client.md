@@ -147,8 +147,9 @@ Explicitly cancelling a call completes it with `CANCELLED`.
 
 Call startup runs on the caller's thread. A shared timer enforces deadlines;
 expiry closes the call's socket, including during a TLS handshake, without
-interrupting the caller. DNS resolution and TCP connection setup can still
-block until their configured timeouts before the socket becomes available.
+interrupting the caller. Before the socket becomes available, DNS resolution
+can block according to the resolver and JDK behavior. The configured connect
+timeout applies to TCP connection setup.
 Cancellation and terminal callbacks run inline on the thread completing the
 call. Keep these callbacks brief: a blocking callback on the deadline timer
 delays other client deadlines.

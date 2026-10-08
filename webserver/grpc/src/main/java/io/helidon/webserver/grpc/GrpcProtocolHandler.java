@@ -564,6 +564,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         if (callContext.isCancelled() || callClosed()) {
             outbound.cancel();
         }
+        boolean interrupted = Thread.currentThread().isInterrupted();
         try {
             streamWriter.writeData(frameData, outbound);
         } catch (CancellationException e) {
@@ -573,6 +574,9 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             // The deadline handler sends the final status after the writer exits.
         } finally {
             pendingWrite.compareAndSet(outbound, null);
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 

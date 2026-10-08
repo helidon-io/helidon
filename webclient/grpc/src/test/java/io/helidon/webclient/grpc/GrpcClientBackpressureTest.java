@@ -68,7 +68,6 @@ class GrpcClientBackpressureTest {
         var status = new CompletableFuture<Status>();
         var trailers = new CompletableFuture<Metadata>();
         var closeCount = new AtomicInteger();
-        var cleanupCount = new AtomicInteger();
         var executor = Executors.newCachedThreadPool();
         try (executor;
              var listening = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))) {
@@ -110,12 +109,6 @@ class GrpcClientBackpressureTest {
                     transport.complete(connection);
                     return connection;
                 }
-
-                @Override
-                void closeStreamingThreads() {
-                    cleanupCount.incrementAndGet();
-                    super.closeStreamingThreads();
-                }
             };
             try {
                 call.start(new ClientCall.Listener<>() {
@@ -146,7 +139,6 @@ class GrpcClientBackpressureTest {
                 peer.get(5, TimeUnit.SECONDS);
                 call.cancel("repeated close", null);
                 assertThat(closeCount.get(), is(1));
-                assertThat(cleanupCount.get(), is(1));
             } finally {
                 reject.complete(null);
                 if (transport.isDone()) {

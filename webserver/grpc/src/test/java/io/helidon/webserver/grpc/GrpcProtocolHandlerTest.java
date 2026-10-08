@@ -56,6 +56,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.ConnectionFlowControl;
 import io.helidon.http.http2.FlowControl;
+import io.helidon.http.http2.Http2ConnectionWriter;
 import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameData;
@@ -772,37 +773,52 @@ class GrpcProtocolHandlerTest {
 
     @Test
     void testDeadlineDataWritePreservesCallerInterrupt() throws Exception {
-        var callerThread = new AtomicReference<Thread>();
-        var callerInterrupted = new CompletableFuture<Boolean>();
-        RecordingWriter writer = new RecordingWriter() {
+        var output = BufferData.growing(128);
+        DataWriter dataWriter = new DataWriter() {
             @Override
-            public void writeData(Http2FrameData frame, FlowControl.Outbound outbound) {
-                assertThat("DATA is written on the application caller thread",
-                           Thread.currentThread(), sameInstance(callerThread.get()));
-                assertThat("writer observes the existing caller interrupt", Thread.currentThread().isInterrupted(), is(true));
+            public void write(BufferData... buffers) {
+                writeNow(buffers);
+            }
+
+            @Override
+            public void write(BufferData buffer) {
+                writeNow(buffer);
+            }
+
+            @Override
+            public void writeNow(BufferData... buffers) {
+                for (var buffer : buffers) {
+                    writeNow(buffer);
+                }
+            }
+
+            @Override
+            public void writeNow(BufferData buffer) {
+                output.write(buffer);
             }
         };
+        var writer = new Http2ConnectionWriter(new UnimplementedGrpcConnectionContext(), dataWriter, List.of());
+        var callReference = new AtomicReference<ServerCall<String, String>>();
         var handler = deadlineHandler("1H", (call, _) -> {
-            call.request(1);
-            return new ServerCall.Listener<>() {
-                @Override
-                public void onMessage(String message) {
-                    callerThread.set(Thread.currentThread());
-                    Thread.currentThread().interrupt();
-                    try {
-                        call.sendMessage("response");
-                        callerInterrupted.complete(Thread.currentThread().isInterrupted());
-                    } finally {
-                        Thread.interrupted();
-                        call.close(Status.OK, new Metadata());
-                    }
-                }
-            };
+            callReference.set(call);
+            return new ServerCall.Listener<>() { };
         }, writer);
         handler.init();
-        EXECUTOR.submit(() -> sendRequest(handler)).get(5, TimeUnit.SECONDS);
-        assertThat("DATA writing preserves an unrelated caller interrupt",
-                   callerInterrupted.get(5, TimeUnit.SECONDS), is(true));
+        EXECUTOR.submit(() -> {
+            var call = callReference.get();
+            Thread.currentThread().interrupt();
+            try {
+                var failure = assertThrows(IllegalStateException.class, () -> call.sendMessage("response"));
+                assertThat("the real HTTP/2 writer rejects the interrupted DATA write",
+                           failure.getCause(), instanceOf(InterruptedException.class));
+                assertThat("DATA writing preserves an unrelated caller interrupt",
+                           Thread.currentThread().isInterrupted(), is(true));
+                assertThat("interruption prevents any DATA from reaching the transport", output.available(), is(0));
+            } finally {
+                Thread.interrupted();
+                call.close(Status.OK, new Metadata());
+            }
+        }).get(5, TimeUnit.SECONDS);
     }
 
     @Test
@@ -821,6 +837,7 @@ class GrpcProtocolHandlerTest {
         var entered = new CountDownLatch(1);
         var firstThread = new AtomicReference<Thread>();
         var secondThread = new CompletableFuture<Thread>();
+        var secondDeadline = new AtomicReference<Deadline>();
         var firstWriter = new RecordingWriter();
         var first = deadlineHandler("1S", (_, _) -> {
             Context.current().addListener(_ -> {
@@ -834,12 +851,19 @@ class GrpcProtocolHandlerTest {
             first.init();
             assertThat(entered.await(5, TimeUnit.SECONDS), is(true));
             var secondWriter = new RecordingWriter();
-            var second = deadlineHandler("1m", (_, _) -> {
+            var second = deadlineHandler("1S", (_, _) -> {
+                secondDeadline.set(Context.current().getDeadline());
                 Context.current().addListener(_ -> secondThread.complete(Thread.currentThread()), Runnable::run);
                 return new ServerCall.Listener<>() { };
             }, secondWriter);
             second.init();
 
+            var expiryWait = Deadline.after(5, TimeUnit.SECONDS);
+            while (!secondDeadline.get().isExpired() && !expiryWait.isExpired()) {
+                TimeUnit.MILLISECONDS.sleep(10);
+            }
+            assertThat("the second deadline expires while the first cancellation listener remains blocked",
+                       secondDeadline.get().isExpired(), is(true));
             assertThrows(TimeoutException.class, () -> secondThread.get(100, TimeUnit.MILLISECONDS));
             assertThat("a blocked inline listener delays other deadline tasks", secondWriter.trailers.isDone(), is(false));
             release.countDown();

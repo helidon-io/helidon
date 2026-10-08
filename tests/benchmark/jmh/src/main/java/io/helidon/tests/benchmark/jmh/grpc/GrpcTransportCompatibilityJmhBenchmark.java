@@ -75,13 +75,14 @@ public class GrpcTransportCompatibilityJmhBenchmark {
     private static final String EARLY_CLOSE = "EarlyClose";
     private static final int MESSAGE_COUNT = 8;
 
+    private final ReentrantLock callStartupLock = new ReentrantLock();
+
     @Param({"65530", "65531", "131072"})
     private int payloadSize;
 
     @Param({"false", "true"})
     private boolean deadlineEnabled;
 
-    private final ReentrantLock callStartupLock = new ReentrantLock();
     private byte[] payload;
     private WebServer server;
     private GrpcClient grpcClient;
