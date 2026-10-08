@@ -947,11 +947,24 @@ suffixes such as `_total`, `_count`, `_sum`, `_bucket`, and `_max` are applied.
 Helidon checks the enabled meters selected for each Prometheus/OpenMetrics
 scrape and rejects a colliding scrape with a diagnostic identifying the
 exported name and both conflicting meters. Tag variants of the same metric
-remain valid.
+remain valid only when their normalized labels produce distinct exported
+series.
+
+Different raw tag keys within a selected meter, including system tag keys,
+must not normalize to the same label name. Labels reserved for generated
+samples are also rejected: meters exported as histograms reserve `le`, and
+those exported as summaries reserve `quantile`. Histograms also reserve
+`quantile` when their quantile samples are enabled for Prometheus text output.
+These checks prevent normalization or generated labels from discarding a tag
+that distinguishes a meter.
 
 For example, two counters without a base unit named `a.b` and `a_b` both
 produce `a_b_total`, so a scrape selecting both fails. Rename one of the
 metrics so their exported names remain distinct after these transformations.
+
+Similarly, two `requests` counters tagged with `a-b=same` and `a_b=same`
+produce the same `requests_total{a_b="same"}` series, so a scrape selecting
+both fails. Use tag keys and values that preserve distinct exported series.
 
 To retain the Prometheus names emitted by earlier Helidon releases for counters,
 functional counters, gauges, timers, and distribution summaries, add the
