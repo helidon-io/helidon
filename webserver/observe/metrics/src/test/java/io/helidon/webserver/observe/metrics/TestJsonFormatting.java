@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.junit5.OptionalMatcher;
@@ -38,6 +39,8 @@ import io.helidon.metrics.api.Timer;
 import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
@@ -45,6 +48,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TestJsonFormatting {
@@ -66,20 +70,56 @@ class TestJsonFormatting {
         }
     }
 
-    @Test
-    void testNullGaugeDoesNotPreventOtherMetrics() {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testUnavailableGaugeDoesNotPreventOtherMetrics(boolean nullSample) {
         MetricsConfig metricsConfig = MetricsConfig.create();
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
         MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(metricsConfig);
         try {
-            meterRegistry.getOrCreate(metricsFactory.<Double>gaugeBuilder("null-sample", () -> null));
+            var unavailable = new AtomicBoolean(true);
+            meterRegistry.getOrCreate(metricsFactory.gaugeBuilder("unavailable-sample", () -> {
+                if (unavailable.get()) {
+                    if (nullSample) {
+                        return null;
+                    }
+                    throw new IllegalStateException("Synthetic supplier failure");
+                }
+                return 17D;
+            }));
             meterRegistry.getOrCreate(metricsFactory.gaugeBuilder("valid-sample", () -> 7.5D));
 
-            JsonObject jsonOutput = checkAndCast(JsonFormatter.builder(metricsConfig, meterRegistry).build().format());
-            assertThat("Null gauge sample is omitted", jsonOutput.containsKey("null-sample"), is(false));
+            JsonFormatter formatter = JsonFormatter.builder(metricsConfig, meterRegistry).build();
+            JsonObject jsonOutput = checkAndCast(formatter.format());
+            assertThat("Failed gauge sample is omitted", jsonOutput.containsKey("unavailable-sample"), is(false));
             assertThat("Valid gauge is still formatted",
                        jsonOutput.numberValue("valid-sample").map(Number::doubleValue),
                        OptionalMatcher.optionalValue(is(7.5D)));
+            unavailable.set(false);
+            jsonOutput = checkAndCast(formatter.format());
+            assertThat("The failed gauge can recover",
+                       jsonOutput.numberValue("unavailable-sample").map(Number::doubleValue),
+                       OptionalMatcher.optionalValue(is(17D)));
+            assertThat("Valid gauge remains formatted",
+                       jsonOutput.numberValue("valid-sample").map(Number::doubleValue),
+                       OptionalMatcher.optionalValue(is(7.5D)));
+        } finally {
+            meterRegistry.close();
+        }
+    }
+
+    @Test
+    void testFatalGaugeSupplierErrorPropagates() {
+        MetricsConfig metricsConfig = MetricsConfig.create();
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MeterRegistry meterRegistry = metricsFactory.createMeterRegistry(metricsConfig);
+        try {
+            var failure = new LinkageError("Synthetic gauge failure");
+            meterRegistry.getOrCreate(metricsFactory.gaugeBuilder("fatal-sample", () -> {
+                throw failure;
+            }));
+            JsonFormatter formatter = JsonFormatter.builder(metricsConfig, meterRegistry).build();
+            assertSame(failure, assertThrows(LinkageError.class, formatter::format));
         } finally {
             meterRegistry.close();
         }

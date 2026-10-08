@@ -389,7 +389,11 @@ class JsonFormatter implements MeterRegistryFormatter {
                 if (meter() instanceof Gauge gauge) {
 
                     String nameWithTags = flatNameAndTags(meter().id(), systemTagsManager());
-                    addNarrowed(builder, nameWithTags, gauge.value());
+                    try {
+                        addNarrowed(builder, nameWithTags, gauge.value());
+                    } catch (RuntimeException _) {
+                        // An ordinary gauge failure omits only this gauge, preserving the remaining metrics.
+                    }
                     return;
                 }
                 if (meter() instanceof FunctionalCounter fCounter) {
