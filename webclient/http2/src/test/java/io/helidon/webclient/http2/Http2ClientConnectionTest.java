@@ -1541,6 +1541,9 @@ class Http2ClientConnectionTest {
         try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
             test.offerInbound(settingsFrame(10));
             Http2ClientConnection connection = test.createConnection(false);
+            assertThat("Initial SETTINGS acknowledgement must finish before blocking writes",
+                       test.initialWriteNowCallsCompleted.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS),
+                       is(true));
             Http2ClientStream stream = connection.createStream(STREAM_CONFIG);
             stream.writeHeaders(requestHeaders(), false);
             verify(test.dataWriter, timeout(TEST_WAIT_TIMEOUT.toMillis()).times(3)).writeNow(any(BufferData.class));
@@ -1555,8 +1558,11 @@ class Http2ClientConnectionTest {
                                         "invalid".getBytes(StandardCharsets.UTF_8),
                                         false));
 
-            verify(test.clientConnection, timeout(1_000)).closeResource();
+            test.assertConnectionClosed();
             drained.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            assertThat("Protocol failure must close the transport before the blocked write times out",
+                       blockedRetirement.timedOut.get(),
+                       is(false));
         }
     }
 
@@ -3544,6 +3550,7 @@ class Http2ClientConnectionTest {
         private static final class BlockedWrite {
             private final CountDownLatch entered = new CountDownLatch(1);
             private final CountDownLatch released = new CountDownLatch(1);
+            private final AtomicBoolean timedOut = new AtomicBoolean();
             private final AtomicBoolean failAfterRelease;
 
             private BlockedWrite(boolean failAfterRelease) {
@@ -3567,6 +3574,7 @@ class Http2ClientConnectionTest {
                 entered.countDown();
                 try {
                     if (!released.await(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)) {
+                        timedOut.set(true);
                         throw new IllegalStateException("Timed out waiting for test to release blocked write");
                     }
                     if (failAfterRelease.get()) {
