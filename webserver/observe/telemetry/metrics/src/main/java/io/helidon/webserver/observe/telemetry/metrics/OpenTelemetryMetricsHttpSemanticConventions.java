@@ -138,7 +138,6 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             var chainComplete = new AtomicBoolean();
             var responseSent = new AtomicBoolean();
             var recorded = new AtomicBoolean();
-            var measured = config.isMeasured(req.prologue().method(), req.prologue().uriPath());
             /*
             Update the timer in whenSent rather than here in this filter. That way we include time spent in running succeeding
             filters and in preparing the response entity, to more accurately capture as much as possible the full time the
@@ -147,7 +146,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             Runnable recordMetrics = () -> {
                 if (recorded.compareAndSet(false, true)) {
                     try {
-                        updateMetricsIfMeasured(req, res, measured, startTime, System.nanoTime(), exception.get());
+                        updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), exception.get());
                     } catch (Throwable e) {
                         LOGGER.log(WARNING, "Failed to record HTTP request metrics", e);
                     }
@@ -187,17 +186,18 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
 
         private void updateMetricsIfMeasured(RoutingRequest req,
                                              RoutingResponse resp,
-                                             boolean measured,
                                              Long startTime,
                                              long endTime,
                                              Exception exception) {
-            if (!measured) {
+            // Routing can replace the prologue. Select the final request after the chain and response have completed.
+            var prologue = req.prologue();
+            if (!config.isMeasured(prologue.method(), prologue.uriPath())) {
                 return;
             }
             AttributesBuilder attrBuilder = Attributes.builder();
 
-            attrBuilder.put(AttributeKey.stringKey(HTTP_METHOD), httpMethod(req.prologue().method()))
-                    .put(AttributeKey.stringKey(URL_SCHEME), req.prologue().protocol())
+            attrBuilder.put(AttributeKey.stringKey(HTTP_METHOD), httpMethod(prologue.method()))
+                    .put(AttributeKey.stringKey(URL_SCHEME), prologue.protocol())
                     .put(AttributeKey.stringKey(ERROR_TYPE), errorType(resp, exception))
                     .put(AttributeKey.longKey(STATUS_CODE), resp.status().code())
                     .put(AttributeKey.stringKey(SOCKET_NAME), req.listenerContext().config().name());

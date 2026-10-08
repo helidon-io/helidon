@@ -40,6 +40,7 @@ import io.helidon.webserver.http.FilterChain;
 import io.helidon.webserver.http.RoutingRequest;
 import io.helidon.webserver.http.RoutingResponse;
 import io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig;
+import io.helidon.webserver.observe.metrics.AutoHttpMetricsPathConfig;
 import io.helidon.webserver.observe.metrics.MetricsObserverConfig;
 
 import io.opentelemetry.api.OpenTelemetry;
@@ -198,6 +199,38 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
         assertThat(recordedAttributes.get().get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.HTTP_ROUTE)),
                    is("/providedRoute"));
         assertThat(routeInvocations.get(), is(1));
+    }
+
+    @Test
+    void selectionUsesFinalMethodAfterResponseSentAndChainCompletion() throws Exception {
+        AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
+        AtomicInteger recorded = new AtomicInteger();
+        var config = AutoHttpMetricsConfig.builder()
+                .addPaths(List.of(AutoHttpMetricsPathConfig.builder()
+                                         .path("/test")
+                                         .addMethod("GET")
+                                         .enabled(false)
+                                         .build()))
+                .build();
+        Filter filter = filter(attributes -> {
+            recordedAttributes.set(attributes);
+            recorded.incrementAndGet();
+        }, config);
+        RoutingRequest request = request();
+        FilterChain chain = mock(FilterChain.class);
+        AtomicReference<Runnable> whenSent = new AtomicReference<>();
+        doAnswer(_ -> {
+            whenSent.get().run();
+            assertThat("Wait for chain completion", recorded.get(), is(0));
+            when(request.prologue()).thenReturn(HttpPrologue.create("HTTP/1.1", "HTTP", "1.1", Method.POST, "/test", false));
+            return null;
+        }).when(chain).proceed();
+
+        filter.filter(chain, request, response(whenSent));
+        whenSent.get().run();
+
+        assertThat(recorded.get(), is(1));
+        assertThat(methodAttribute(recordedAttributes.get()), is("POST"));
     }
 
     @Test
