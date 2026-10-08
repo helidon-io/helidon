@@ -24,15 +24,25 @@ import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.concurrency.limits.Limit;
+import io.helidon.common.task.InterruptableTask;
 import io.helidon.config.Config;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.http2.FlowControl;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2FrameHeader;
@@ -43,8 +53,15 @@ import io.helidon.http.http2.Http2HuffmanDecoder;
 import io.helidon.http.http2.Http2HuffmanEncoder;
 import io.helidon.http.http2.Http2Setting;
 import io.helidon.http.http2.Http2Settings;
+import io.helidon.http.http2.Http2StreamWriter;
 import io.helidon.http.http2.Http2Util;
+import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http2.Http2Config;
+import io.helidon.webserver.http2.Http2ConnectionSelector;
+import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
+import io.helidon.webserver.spi.ServerConnection;
+import io.helidon.webserver.spi.ServerConnectionSelector;
 
 import io.grpc.Context;
 import io.grpc.Metadata;
@@ -68,6 +85,8 @@ class GrpcDisconnectTest {
         var cancelled = new CompletableFuture<Context>();
         var writing = new CompletableFuture<Void>();
         var finished = new CompletableFuture<Void>();
+        var responseThread = new AtomicReference<Thread>();
+        var dataThread = new AtomicReference<Thread>();
         String largeResponse = "x".repeat(8 * 1024 * 1024);
         var service = ServerServiceDefinition.builder("test.Disconnect")
                 .addMethod(descriptor("Large"), (call, _) -> {
@@ -75,6 +94,8 @@ class GrpcDisconnectTest {
                     return new ServerCall.Listener<>() {
                         @Override
                         public void onHalfClose() {
+                            responseThread.set(Thread.currentThread());
+                            assertThat("response callback uses a virtual stream thread", Thread.currentThread().isVirtual(), is(true));
                             call.sendHeaders(new Metadata());
                             writing.complete(null);
                             try {
@@ -97,10 +118,27 @@ class GrpcDisconnectTest {
                     }
                 })
                 .build();
+        var grpcSelector = GrpcProtocolSelector.create(GrpcConfig.create());
+        Http2SubProtocolSelector checkedGrpcSelector = (ctx, prologue, headers, writer, streamId, serverSettings,
+                                                      clientSettings, flowControl, state, router) ->
+                grpcSelector.subProtocol(ctx, prologue, headers,
+                                         streamId == 1 ? new InlineDataWriter(writer, responseThread, dataThread) : writer,
+                                         streamId, serverSettings, clientSettings, flowControl, state, router);
+        var http2Selector = Http2ConnectionSelector.builder()
+                .http2Config(Http2Config.create())
+                .addSubProtocolSelector(checkedGrpcSelector)
+                .build();
+        var readers = Executors.newThreadPerTaskExecutor(Thread.ofPlatform().daemon().name("grpc-test-reader-", 1).factory());
+        // JDK-8334574 loses socket readiness events on Windows when virtual readers and writers share a socket.
+        // Only this fixture's connection reader uses a platform thread; stream callbacks and DATA writes stay inline.
+        ServerConnectionSelector selector = System.getProperty("os.name").toLowerCase(Locale.ROOT).startsWith("windows")
+                ? new PlatformReaderSelector(http2Selector, readers)
+                : http2Selector;
         var server = WebServer.builder()
                 .host("127.0.0.1")
                 .port(0)
                 .connectionOptions(options -> options.socketSendBufferSize(64 * 1024))
+                .addConnectionSelector(selector)
                 .addRouting(GrpcRouting.builder().config(Config.empty()).service(service))
                 .build()
                 .start();
@@ -131,6 +169,7 @@ class GrpcDisconnectTest {
                 }
             } while (frame.header().type() != Http2FrameType.DATA);
             assertThat("large response started on stream 1", frame.header().streamId(), is(1));
+            assertThat("DATA uses the response callback's stream thread", dataThread.get(), is(responseThread.get()));
 
             // Pause reads only after observing response DATA; resume when the deadline actually fires.
             assertThat(cancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
@@ -179,7 +218,12 @@ class GrpcDisconnectTest {
             assertResponse(subsequentBody);
         } finally {
             cancelled.complete(Context.ROOT);
-            server.stop();
+            try {
+                server.stop();
+            } finally {
+                readers.shutdownNow();
+                assertThat("fixture connection readers stopped", readers.awaitTermination(5, TimeUnit.SECONDS), is(true));
+            }
         }
     }
 
@@ -334,5 +378,101 @@ class GrpcDisconnectTest {
                 .setRequestMarshaller(marshaller)
                 .setResponseMarshaller(marshaller)
                 .build();
+    }
+
+    private record InlineDataWriter(Http2StreamWriter delegate,
+                                    AtomicReference<Thread> responseThread,
+                                    AtomicReference<Thread> dataThread) implements Http2StreamWriter {
+        @Override
+        public void write(Http2FrameData frame) {
+            delegate.write(frame);
+        }
+
+        @Override
+        public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
+            dataThread.set(Thread.currentThread());
+            assertThat("DATA stays on the response callback thread", Thread.currentThread(), is(responseThread.get()));
+            assertThat("DATA uses a virtual stream thread", Thread.currentThread().isVirtual(), is(true));
+            delegate.writeData(frame, flowControl);
+        }
+
+        @Override
+        public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags,
+                                FlowControl.Outbound flowControl) {
+            return delegate.writeHeaders(headers, streamId, flags, flowControl);
+        }
+
+        @Override
+        public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags,
+                                Http2FrameData data, FlowControl.Outbound flowControl) {
+            return delegate.writeHeaders(headers, streamId, flags, data, flowControl);
+        }
+    }
+
+    private record PlatformReaderSelector(ServerConnectionSelector delegate,
+                                          ExecutorService readers) implements ServerConnectionSelector {
+        @Override
+        public int bytesToIdentifyConnection() {
+            return delegate.bytesToIdentifyConnection();
+        }
+
+        @Override
+        public Support supports(BufferData data) {
+            return delegate.supports(data);
+        }
+
+        @Override
+        public Set<String> supportedApplicationProtocols() {
+            return delegate.supportedApplicationProtocols();
+        }
+
+        @Override
+        public ServerConnection connection(ConnectionContext ctx) {
+            return new PlatformReaderConnection(delegate.connection(ctx), readers);
+        }
+    }
+
+    private record PlatformReaderConnection(ServerConnection delegate,
+                                            ExecutorService readers) implements ServerConnection, InterruptableTask<Void> {
+        @Override
+        public void handle(Limit limit) throws InterruptedException {
+            var reader = readers.submit(() -> {
+                delegate.handle(limit);
+                return null;
+            });
+            try {
+                reader.get();
+            } catch (InterruptedException e) {
+                delegate.close(true);
+                reader.cancel(true);
+                throw e;
+            } catch (ExecutionException e) {
+                if (e.getCause() instanceof InterruptedException cause) {
+                    throw cause;
+                }
+                if (e.getCause() instanceof RuntimeException cause) {
+                    throw cause;
+                }
+                if (e.getCause() instanceof Error cause) {
+                    throw cause;
+                }
+                throw new IllegalStateException("Fixture connection reader failed", e.getCause());
+            }
+        }
+
+        @Override
+        public Duration idleTime() {
+            return delegate.idleTime();
+        }
+
+        @Override
+        public void close(boolean interrupt) {
+            delegate.close(interrupt);
+        }
+
+        @Override
+        public boolean canInterrupt() {
+            return delegate instanceof InterruptableTask<?> task && task.canInterrupt();
+        }
     }
 }

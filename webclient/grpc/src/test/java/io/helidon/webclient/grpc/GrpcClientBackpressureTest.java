@@ -48,6 +48,7 @@ import io.grpc.Deadline;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -58,6 +59,108 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @Timeout(20)
 class GrpcClientBackpressureTest {
+    @Test
+    void serverRejectionAbortsTransportBeforeWaitingForBlockedStreamingWriter() throws Exception {
+        var transport = new CompletableFuture<BlockingConnection>();
+        var accepted = new CompletableFuture<Socket>();
+        var headersReceived = new CompletableFuture<Void>();
+        var reject = new CompletableFuture<Void>();
+        var status = new CompletableFuture<Status>();
+        var trailers = new CompletableFuture<Metadata>();
+        var closeCount = new AtomicInteger();
+        var cleanupCount = new AtomicInteger();
+        var executor = Executors.newCachedThreadPool();
+        try (executor;
+             var listening = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))) {
+            listening.setSoTimeout(5000);
+            var peer = executor.submit(() -> {
+                try (Socket socket = listening.accept()) {
+                    accepted.complete(socket);
+                    socket.setSoTimeout(15000);
+                    var output = socket.getOutputStream();
+                    output.write(new byte[] {0, 0, 0, 4, 0, 0, 0, 0, 0});
+                    readInitialHeaders(socket.getInputStream());
+                    headersReceived.complete(null);
+                    reject.get(5, TimeUnit.SECONDS);
+                    var headers = BufferData.create(256);
+                    headers.writeInt8(0x88); // HPACK static :status 200
+                    writeLiteralHeader(headers, "content-type", "application/grpc");
+                    writeLiteralHeader(headers, "grpc-status", "14");
+                    writeLiteralHeader(headers, "grpc-message", "busy");
+                    writeLiteralHeader(headers, "rejection-detail", "retry later");
+                    output.write(new byte[] {0, 0, (byte) headers.available(), 1, 5, 0, 0, 0, 1});
+                    headers.writeTo(output);
+                    output.flush();
+                    // Keep the peer open until client cleanup closes the connection.
+                    socket.getInputStream().readAllBytes();
+                }
+                return null;
+            });
+            var client = GrpcClient.builder()
+                    .baseUri("http://127.0.0.1:" + listening.getLocalPort())
+                    .tls(tls -> tls.enabled(false))
+                    .executor(executor)
+                    .readTimeout(Duration.ofSeconds(10))
+                    .build();
+            var method = descriptor().toBuilder().setType(MethodDescriptor.MethodType.BIDI_STREAMING).build();
+            var call = new GrpcClientCall<byte[], byte[]>((GrpcChannel) client.channel(), method, CallOptions.DEFAULT) {
+                @Override
+                protected ClientConnection clientConnection(ClientUri uri, String authority) {
+                    var connection = new BlockingConnection(super.clientConnection(uri, authority));
+                    transport.complete(connection);
+                    return connection;
+                }
+
+                @Override
+                void closeStreamingThreads() {
+                    cleanupCount.incrementAndGet();
+                    super.closeStreamingThreads();
+                }
+            };
+            try {
+                call.start(new ClientCall.Listener<>() {
+                    @Override
+                    public void onClose(Status result, Metadata metadata) {
+                        closeCount.incrementAndGet();
+                        trailers.complete(metadata);
+                        status.complete(result);
+                    }
+                }, new Metadata());
+                headersReceived.get(5, TimeUnit.SECONDS);
+                BlockingConnection connection = transport.get(5, TimeUnit.SECONDS);
+                connection.blockWrites = true;
+                call.request(1);
+                call.sendMessage(new byte[32]);
+                Thread writer = connection.writeStarted.get(5, TimeUnit.SECONDS);
+                assertThat("the configured platform executor owns the blocked write", writer.isVirtual(), is(false));
+                assertThat("the writer is blocked before the server rejection", connection.transportClosed.isDone(), is(false));
+                reject.complete(null);
+
+                Status result = status.get(5, TimeUnit.SECONDS);
+                assertThat(result.getCode(), is(Status.Code.UNAVAILABLE));
+                assertThat(result.getDescription(), is("busy"));
+                assertThat(trailers.get(5, TimeUnit.SECONDS)
+                                   .get(Metadata.Key.of("rejection-detail", Metadata.ASCII_STRING_MARSHALLER)),
+                           is("retry later"));
+                assertThat("transport close releases the blocked writer", connection.transportClosed.isDone(), is(true));
+                peer.get(5, TimeUnit.SECONDS);
+                call.cancel("repeated close", null);
+                assertThat(closeCount.get(), is(1));
+                assertThat(cleanupCount.get(), is(1));
+            } finally {
+                reject.complete(null);
+                if (transport.isDone()) {
+                    transport.join().closeResource();
+                }
+                if (accepted.isDone()) {
+                    accepted.join().close();
+                }
+                call.cancel("test cleanup", null);
+            }
+        }
+        assertThat("all configured executor tasks have terminated", executor.isTerminated(), is(true));
+    }
+
     @ParameterizedTest
     @EnumSource(CancellationSource.class)
     void cancellationAbortsTransportBeforeWaitingForBlockedWriter(CancellationSource source) throws Exception {
@@ -179,6 +282,14 @@ class GrpcClientBackpressureTest {
                 settingsAcknowledged = true;
             }
         }
+    }
+
+    private static void writeLiteralHeader(BufferData headers, String name, String value) {
+        headers.writeInt8(0);
+        headers.writeInt8(name.length());
+        headers.write(name.getBytes(StandardCharsets.US_ASCII));
+        headers.writeInt8(value.length());
+        headers.write(value.getBytes(StandardCharsets.US_ASCII));
     }
 
     private static MethodDescriptor<byte[], byte[]> descriptor() {

@@ -145,6 +145,14 @@ the call with `DEADLINE_EXCEEDED` if the deadline expires. Deadlines apply to
 unary and streaming calls, including streams waiting for request messages.
 Explicitly cancelling a call completes it with `CANCELLED`.
 
+Call startup runs on the caller's thread. A shared timer enforces deadlines;
+expiry closes the call's socket, including during a TLS handshake, without
+interrupting the caller. DNS resolution and TCP connection setup can still
+block until their configured timeouts before the socket becomes available.
+Cancellation and terminal callbacks run inline on the thread completing the
+call. Keep these callbacks brief: a blocking callback on the deadline timer
+delays other client deadlines.
+
 Calls also inherit the deadline from the gRPC `Context` in which they are
 created. When both the context and the call specify a deadline, the earlier one
 applies. This allows a server handler to pass its remaining deadline to an

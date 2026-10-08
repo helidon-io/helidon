@@ -204,17 +204,10 @@ class GrpcClientCallTest {
         var closeInterrupted = new AtomicBoolean();
         var failingConnection = new AtomicReference<FailingGoAwayConnection>();
         var nanos = new AtomicLong();
-        var timerRead = new CompletableFuture<Void>();
         var deadline = Deadline.after(1, TimeUnit.MINUTES, new Deadline.Ticker() {
             @Override
             public long nanoTime() {
-                long now = nanos.get();
-                if (Thread.currentThread().getName().equals("grpc-client-deadline")) {
-                    // Capture the unexpired clock value before letting the test advance it. The timer
-                    // then sleeps for a real minute, so only the peer reset can select the terminal status.
-                    timerRead.complete(null);
-                }
-                return now;
+                return nanos.get();
             }
         });
         CallOptions options = withDeadline ? CallOptions.DEFAULT.withDeadline(deadline) : CallOptions.DEFAULT;
@@ -285,7 +278,7 @@ class GrpcClientCallTest {
                 call.request(1);
                 assertThat(received.get(5, TimeUnit.SECONDS), is("response"));
                 if (withDeadline) {
-                    timerRead.get(5, TimeUnit.SECONDS);
+                    // Startup schedules the timer for a real minute before the test advances the ticker.
                     if (expireDeadline) {
                         nanos.set(TimeUnit.MINUTES.toNanos(2));
                     }
@@ -302,10 +295,8 @@ class GrpcClientCallTest {
                 if (failGoAway) {
                     assertThat("the graceful close write failed", failingConnection.get().failedWrites.get(), is(1));
                     assertThat(frames, not(hasItem(Http2FrameType.GO_AWAY)));
-                } else if (resetCode == Http2ErrorCode.CANCEL) {
-                    assertThat("peer cancellation aborts before graceful GOAWAY", frames, not(hasItem(Http2FrameType.GO_AWAY)));
                 } else {
-                    assertThat("graceful close writes GOAWAY before EOF", frames, hasItem(Http2FrameType.GO_AWAY));
+                    assertThat("peer failure aborts before graceful GOAWAY", frames, not(hasItem(Http2FrameType.GO_AWAY)));
                 }
                 call.cancel("repeated close", null);
                 assertThat(closeCount.get(), is(1));

@@ -666,6 +666,9 @@ class GrpcProtocolHandlerTest {
             try {
                 assertThat(writing.await(5, TimeUnit.SECONDS), is(true));
                 contextCancelled.get(5, TimeUnit.SECONDS);
+                assertThat("Context listeners run before the blocked DATA writer is released",
+                           writerExited.isDone(), is(false));
+                assertThat("deadline trailers wait for the complete DATA frame", writer.trailers.isDone(), is(false));
                 releaseWrite.countDown();
                 assertThat(writer.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
                                    .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
@@ -681,6 +684,128 @@ class GrpcProtocolHandlerTest {
     }
 
     @Test
+    void testDeadlineFinishesHeadersBeforeSendingTrailers() throws Exception {
+        var writing = new CountDownLatch(1);
+        var releaseWrite = new CountDownLatch(1);
+        var contextCancelled = new CompletableFuture<Context>();
+        var headersExited = new AtomicBoolean();
+        var callReference = new AtomicReference<ServerCall<String, String>>();
+        RecordingWriter writer = new RecordingWriter() {
+            @Override
+            public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags,
+                                    FlowControl.Outbound flowControl) {
+                if (!flags.endOfStream()) {
+                    writing.countDown();
+                    await(releaseWrite);
+                    headersExited.set(true);
+                } else {
+                    assertThat("initial headers exited before trailers", headersExited.get(), is(true));
+                }
+                return super.writeHeaders(headers, streamId, flags, flowControl);
+            }
+        };
+        var handler = deadlineHandler("1S", (call, _) -> {
+            callReference.set(call);
+            Context.current().addListener(contextCancelled::complete, Runnable::run);
+            return new ServerCall.Listener<>() { };
+        }, writer);
+        handler.init();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var response = executor.submit(() -> callReference.get().sendHeaders(new Metadata()));
+            try {
+                assertThat("initial headers are blocked", writing.await(5, TimeUnit.SECONDS), is(true));
+                contextCancelled.get(5, TimeUnit.SECONDS);
+                assertThat("Context listeners run while the initial headers remain blocked", headersExited.get(), is(false));
+                assertThat("trailers wait for the complete headers frame", writer.trailers.isDone(), is(false));
+            } finally {
+                releaseWrite.countDown();
+            }
+            response.get(5, TimeUnit.SECONDS);
+        }
+        assertThat(writer.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
+                           .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
+        assertThat(writer.trailerWrites.get(), is(1));
+    }
+
+    @Test
+    void testInlineContextCancellationFinishesDataBeforeSendingTrailers() throws Exception {
+        try (var parent = Context.current().withCancellation()) {
+            var writerExited = new AtomicBoolean();
+            var trailersWritten = new AtomicBoolean();
+            var cancellationThread = new AtomicReference<Thread>();
+            var caller = Thread.currentThread();
+            RecordingWriter writer = new RecordingWriter() {
+                @Override
+                public void writeData(Http2FrameData frame, FlowControl.Outbound outbound) {
+                    parent.cancel(Status.CANCELLED.asRuntimeException());
+                    assertThat("Context cancellation listeners run inline before DATA returns",
+                               cancellationThread.get(), sameInstance(caller));
+                    assertThat("reentrant cancellation cannot publish trailers within DATA", trailersWritten.get(), is(false));
+                    writerExited.set(true);
+                }
+
+                @Override
+                public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags,
+                                        FlowControl.Outbound flowControl) {
+                    assertThat("DATA exited before trailers", writerExited.get(), is(true));
+                    trailersWritten.set(true);
+                    return super.writeHeaders(headers, streamId, flags, flowControl);
+                }
+            };
+            var handler = deadlineHandler("1H", (call, _) -> {
+                Context.current().addListener(_ -> cancellationThread.set(Thread.currentThread()), Runnable::run);
+                call.request(1);
+                return new ServerCall.Listener<>() {
+                    @Override
+                    public void onMessage(String message) {
+                        call.sendMessage("response");
+                    }
+                };
+            }, writer);
+            parent.run(handler::init);
+            sendRequest(handler);
+            assertThat(writer.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
+                               .get(GrpcStatus.STATUS_NAME).asString().get(), is("1"));
+            assertThat(writer.trailerWrites.get(), is(1));
+        }
+    }
+
+    @Test
+    void testDeadlineDataWritePreservesCallerInterrupt() throws Exception {
+        var callerThread = new AtomicReference<Thread>();
+        var callerInterrupted = new CompletableFuture<Boolean>();
+        RecordingWriter writer = new RecordingWriter() {
+            @Override
+            public void writeData(Http2FrameData frame, FlowControl.Outbound outbound) {
+                assertThat("DATA is written on the application caller thread",
+                           Thread.currentThread(), sameInstance(callerThread.get()));
+                assertThat("writer observes the existing caller interrupt", Thread.currentThread().isInterrupted(), is(true));
+            }
+        };
+        var handler = deadlineHandler("1H", (call, _) -> {
+            call.request(1);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onMessage(String message) {
+                    callerThread.set(Thread.currentThread());
+                    Thread.currentThread().interrupt();
+                    try {
+                        call.sendMessage("response");
+                        callerInterrupted.complete(Thread.currentThread().isInterrupted());
+                    } finally {
+                        Thread.interrupted();
+                        call.close(Status.OK, new Metadata());
+                    }
+                }
+            };
+        }, writer);
+        handler.init();
+        EXECUTOR.submit(() -> sendRequest(handler)).get(5, TimeUnit.SECONDS);
+        assertThat("DATA writing preserves an unrelated caller interrupt",
+                   callerInterrupted.get(5, TimeUnit.SECONDS), is(true));
+    }
+
+    @Test
     void testDeadlineCancelsStreamFlowControlWait() throws Exception {
         assertDeadlineCancelsFlowControlWait(false);
     }
@@ -691,12 +816,15 @@ class GrpcProtocolHandlerTest {
     }
 
     @Test
-    void testBlockingCancellationListenerDoesNotBlockOtherDeadlines() throws Exception {
+    void testBlockingCancellationListenerDelaysSharedDeadlineTimer() throws Exception {
         var release = new CountDownLatch(1);
         var entered = new CountDownLatch(1);
+        var firstThread = new AtomicReference<Thread>();
+        var secondThread = new CompletableFuture<Thread>();
         var firstWriter = new RecordingWriter();
         var first = deadlineHandler("1S", (_, _) -> {
             Context.current().addListener(_ -> {
+                firstThread.set(Thread.currentThread());
                 entered.countDown();
                 await(release);
             }, Runnable::run);
@@ -706,9 +834,18 @@ class GrpcProtocolHandlerTest {
             first.init();
             assertThat(entered.await(5, TimeUnit.SECONDS), is(true));
             var secondWriter = new RecordingWriter();
-            var second = deadlineHandler("1S", (_, _) -> new ServerCall.Listener<>() { }, secondWriter);
+            var second = deadlineHandler("1m", (_, _) -> {
+                Context.current().addListener(_ -> secondThread.complete(Thread.currentThread()), Runnable::run);
+                return new ServerCall.Listener<>() { };
+            }, secondWriter);
             second.init();
 
+            assertThrows(TimeoutException.class, () -> secondThread.get(100, TimeUnit.MILLISECONDS));
+            assertThat("a blocked inline listener delays other deadline tasks", secondWriter.trailers.isDone(), is(false));
+            release.countDown();
+            assertThat("deadline cancellation runs on a platform timer", firstThread.get().isVirtual(), is(false));
+            assertThat("calls reuse the shared deadline timer",
+                       secondThread.get(5, TimeUnit.SECONDS), sameInstance(firstThread.get()));
             assertThat(secondWriter.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
                                .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
             assertThat(firstWriter.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
@@ -1522,6 +1659,282 @@ class GrpcProtocolHandlerTest {
         }
     }
 
+    private static GrpcRouteHandler<String, String> route(ServerCall.Listener<String> listener) {
+        return route(new ServerCallHandler<>() {
+            @Override
+            public ServerCall.Listener<String> startCall(ServerCall<String, String> call, Metadata headers) {
+                return listener;
+            }
+        });
+    }
+
+    private static GrpcRouteHandler<String, String> route(ServerCallHandler<String, String> callHandler) {
+        ServerMethodDefinition<String, String> definition =
+                ServerMethodDefinition.create(stringMethodDescriptor(), callHandler);
+        return GrpcRouteHandler.methodDefinition(definition, null, WeightedBag.create());
+    }
+
+    private static SniContext sniContext(String presentedHost, String matchedHost) {
+        return new SniContext() {
+            @Override
+            public Optional<String> presentedHost() {
+                return Optional.of(presentedHost);
+            }
+
+            @Override
+            public Optional<String> matchedHost() {
+                return Optional.of(matchedHost);
+            }
+
+            @Override
+            public SniMatchType matchType() {
+                return SniMatchType.WILDCARD;
+            }
+
+            @Override
+            public AuthorityCheck checkAuthority(UriAuthority authority) {
+                return AuthorityCheck.ALLOWED;
+            }
+        };
+    }
+
+    private static void sendData(GrpcProtocolHandler<String, String> handler, String content, boolean endOfStream) {
+        BufferData data = content == null ? BufferData.empty() : grpcData(content);
+        int flags = endOfStream ? Http2Flag.END_OF_STREAM : 0;
+        Http2FrameHeader header = Http2FrameHeader.create(data.available(),
+                                                          Http2FrameTypes.DATA,
+                                                          Http2Flag.DataFlags.create(flags),
+                                                          1);
+        handler.data(header, data);
+    }
+
+    private static BufferData grpcData(String content) {
+        byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
+        BufferData data = BufferData.create(5 + bytes.length);
+        data.write(0);
+        data.writeUnsignedInt32(bytes.length);
+        data.write(bytes);
+        return data;
+    }
+
+    private static byte[] gzip(String content) throws IOException {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try (GZIPOutputStream gzip = new GZIPOutputStream(output)) {
+            gzip.write(content.getBytes(StandardCharsets.UTF_8));
+        }
+        return output.toByteArray();
+    }
+
+    private static MethodDescriptor<String, String> stringMethodDescriptor() {
+        MethodDescriptor.Marshaller<String> marshaller = new MethodDescriptor.Marshaller<>() {
+            @Override
+            public InputStream stream(String value) {
+                return new ByteArrayInputStream(value.getBytes(StandardCharsets.UTF_8));
+            }
+
+            @Override
+            public String parse(InputStream stream) {
+                try {
+                    return new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            }
+        };
+        return MethodDescriptor.<String, String>newBuilder()
+                .setType(MethodDescriptor.MethodType.UNARY)
+                .setFullMethodName("test.Test/Call")
+                .setRequestMarshaller(marshaller)
+                .setResponseMarshaller(marshaller)
+                .build();
+    }
+
+    private static Http2StreamWriter headersCapturingWriter(AtomicReference<Http2Headers> capturedHeaders) {
+        return new Http2StreamWriter() {
+            @Override
+            public void write(Http2FrameData frame) {
+            }
+
+            @Override
+            public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
+            }
+
+            @Override
+            public int writeHeaders(Http2Headers headers,
+                                    int streamId,
+                                    Http2Flag.HeaderFlags flags,
+                                    FlowControl.Outbound flowControl) {
+                capturedHeaders.set(headers);
+                return 0;
+            }
+
+            @Override
+            public int writeHeaders(Http2Headers headers,
+                                    int streamId,
+                                    Http2Flag.HeaderFlags flags,
+                                    Http2FrameData dataFrame,
+                                    FlowControl.Outbound flowControl) {
+                throw new UnsupportedOperationException("Unused");
+            }
+        };
+    }
+
+    private static Http2StreamWriter headersFailingWriter() {
+        return new Http2StreamWriter() {
+            @Override
+            public void write(Http2FrameData frame) {
+            }
+
+            @Override
+            public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
+            }
+
+            @Override
+            public int writeHeaders(Http2Headers headers,
+                                    int streamId,
+                                    Http2Flag.HeaderFlags flags,
+                                    FlowControl.Outbound flowControl) {
+                throw new UncheckedIOException(new IOException("Broken pipe"));
+            }
+
+            @Override
+            public int writeHeaders(Http2Headers headers,
+                                    int streamId,
+                                    Http2Flag.HeaderFlags flags,
+                                    Http2FrameData dataFrame,
+                                    FlowControl.Outbound flowControl) {
+                throw new UnsupportedOperationException("Unused");
+            }
+        };
+    }
+
+    private static Http2StreamWriter dataFailingWriter() {
+        return new Http2StreamWriter() {
+            @Override
+            public void write(Http2FrameData frame) {
+            }
+
+            @Override
+            public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
+                throw new UncheckedIOException(new IOException("Broken pipe"));
+            }
+
+            @Override
+            public int writeHeaders(Http2Headers headers,
+                                    int streamId,
+                                    Http2Flag.HeaderFlags flags,
+                                    FlowControl.Outbound flowControl) {
+                return 0;
+            }
+
+            @Override
+            public int writeHeaders(Http2Headers headers,
+                                    int streamId,
+                                    Http2Flag.HeaderFlags flags,
+                                    Http2FrameData dataFrame,
+                                    FlowControl.Outbound flowControl) {
+                throw new UnsupportedOperationException("Unused");
+            }
+        };
+    }
+
+    private static Http2StreamWriter closeFailingWriter() {
+        AtomicInteger headerWrites = new AtomicInteger();
+        return new Http2StreamWriter() {
+            @Override
+            public void write(Http2FrameData frame) {
+            }
+
+            @Override
+            public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
+            }
+
+            @Override
+            public int writeHeaders(Http2Headers headers,
+                                    int streamId,
+                                    Http2Flag.HeaderFlags flags,
+                                    FlowControl.Outbound flowControl) {
+                if (headerWrites.incrementAndGet() == 1) {
+                    return 0;
+                }
+                throw new UncheckedIOException(new IOException("Broken pipe"));
+            }
+
+            @Override
+            public int writeHeaders(Http2Headers headers,
+                                    int streamId,
+                                    Http2Flag.HeaderFlags flags,
+                                    Http2FrameData dataFrame,
+                                    FlowControl.Outbound flowControl) {
+                throw new UnsupportedOperationException("Unused");
+            }
+        };
+    }
+
+    private static Http2StreamWriter noOpWriter() {
+        return new Http2StreamWriter() {
+            @Override
+            public void write(Http2FrameData frame) {
+            }
+
+            @Override
+            public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
+            }
+
+            @Override
+            public int writeHeaders(Http2Headers headers,
+                                    int streamId,
+                                    Http2Flag.HeaderFlags flags,
+                                    FlowControl.Outbound flowControl) {
+                return 0;
+            }
+
+            @Override
+            public int writeHeaders(Http2Headers headers,
+                                    int streamId,
+                                    Http2Flag.HeaderFlags flags,
+                                    Http2FrameData dataFrame,
+                                    FlowControl.Outbound flowControl) {
+                return 0;
+            }
+        };
+    }
+
+    private static List<LogRecord> captureLogRecords(Runnable task) {
+        Logger logger = Logger.getLogger(GrpcProtocolHandler.class.getName());
+        Level previousLevel = logger.getLevel();
+        boolean previousUseParentHandlers = logger.getUseParentHandlers();
+        List<LogRecord> records = new ArrayList<>();
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                records.add(record);
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+
+        handler.setLevel(Level.ALL);
+        logger.addHandler(handler);
+        logger.setUseParentHandlers(false);
+        logger.setLevel(Level.ALL);
+        try {
+            task.run();
+            return records;
+        } finally {
+            logger.removeHandler(handler);
+            logger.setLevel(previousLevel);
+            logger.setUseParentHandlers(previousUseParentHandlers);
+            handler.close();
+        }
+    }
+
     private void requestFromWorkerWhileOnMessageIsActive(boolean queuedMessages, boolean withDeadline) throws Exception {
         var callReference = new AtomicReference<ServerCall<String, String>>();
         var requested = new CompletableFuture<CompletableFuture<Void>>();
@@ -1938,20 +2351,26 @@ class GrpcProtocolHandlerTest {
 
     private void assertDeadlineCancelsFlowControlWait(boolean connectionWindow) throws Exception {
         var waiting = new CountDownLatch(1);
+        var siblingWaiting = new CountDownLatch(1);
         var writerInterrupted = new CompletableFuture<Boolean>();
         var callerInterrupted = new CompletableFuture<Boolean>();
+        var callerThread = new AtomicReference<Thread>();
         var connection = ConnectionFlowControl.serverBuilder((_, _) -> { })
                 .blockTimeout(Duration.ofMinutes(1))
                 .build();
         var flowControl = connection.createStreamFlowControl(1, 65535, 16384);
+        var sibling = connection.createStreamFlowControl(3, 65535, 16384);
         if (connectionWindow) {
             connection.outbound().decrementWindowSize(65535);
         } else {
             flowControl.outbound().resetStreamWindowSize(0);
+            sibling.outbound().resetStreamWindowSize(0);
         }
         RecordingWriter writer = new RecordingWriter() {
             @Override
             public void writeData(Http2FrameData frame, FlowControl.Outbound outbound) {
+                assertThat("DATA is written on the application caller thread",
+                           Thread.currentThread(), sameInstance(callerThread.get()));
                 assertThat("outbound window is exhausted", outbound.getRemainingWindowSize(), is(0));
                 waiting.countDown();
                 try {
@@ -1967,6 +2386,7 @@ class GrpcProtocolHandlerTest {
             return new ServerCall.Listener<>() {
                 @Override
                 public void onMessage(String message) {
+                    callerThread.set(Thread.currentThread());
                     call.sendMessage("response");
                     callerInterrupted.complete(Thread.currentThread().isInterrupted());
                 }
@@ -1974,299 +2394,40 @@ class GrpcProtocolHandlerTest {
         }, writer, stringMethodDescriptor(), flowControl);
         handler.init();
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var siblingWrite = executor.submit(() -> {
+                siblingWaiting.countDown();
+                sibling.outbound().blockTillUpdate();
+                return Thread.currentThread().isInterrupted();
+            });
             var request = executor.submit(() -> sendRequest(handler));
             try {
+                assertThat("sibling reached exhausted flow control", siblingWaiting.await(5, TimeUnit.SECONDS), is(true));
                 assertThat("writer reached exhausted flow control", waiting.await(5, TimeUnit.SECONDS), is(true));
                 assertThat(writer.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
                                    .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
                 request.get(5, TimeUnit.SECONDS);
+                assertThat("cancellation leaves sibling wait pending", siblingWrite.isDone(), is(false));
+                if (connectionWindow) {
+                    connection.incrementOutboundConnectionWindowSize(65535);
+                } else {
+                    sibling.outbound().incrementStreamWindowSize(65535);
+                }
+                assertThat("sibling resumes without an interrupt", siblingWrite.get(5, TimeUnit.SECONDS), is(false));
+                assertThat("sibling retains usable flow-control credit", sibling.outbound().getRemainingWindowSize(), is(65535));
+                sibling.outbound().decrementWindowSize(1);
+                assertThat("sibling can consume credit", sibling.outbound().getRemainingWindowSize(), is(65534));
             } finally {
                 // Also release the real flow-control wait if an assertion fails before cancellation.
                 connection.incrementOutboundConnectionWindowSize(65535);
                 flowControl.outbound().incrementStreamWindowSize(65535);
+                sibling.outbound().incrementStreamWindowSize(65535);
                 handler.close();
             }
         }
-        assertThat("cancellation interrupt is consumed before leaving flow control",
+        assertThat("deadline cancellation does not interrupt the flow-control writer",
                    writerInterrupted.get(5, TimeUnit.SECONDS), is(false));
         assertThat("application caller is not interrupted", callerInterrupted.get(5, TimeUnit.SECONDS), is(false));
         assertThat("one terminal status", writer.trailerWrites.get(), is(1));
-    }
-
-    private static GrpcRouteHandler<String, String> route(ServerCall.Listener<String> listener) {
-        return route(new ServerCallHandler<>() {
-            @Override
-            public ServerCall.Listener<String> startCall(ServerCall<String, String> call, Metadata headers) {
-                return listener;
-            }
-        });
-    }
-
-    private static GrpcRouteHandler<String, String> route(ServerCallHandler<String, String> callHandler) {
-        ServerMethodDefinition<String, String> definition =
-                ServerMethodDefinition.create(stringMethodDescriptor(), callHandler);
-        return GrpcRouteHandler.methodDefinition(definition, null, WeightedBag.create());
-    }
-
-    private static SniContext sniContext(String presentedHost, String matchedHost) {
-        return new SniContext() {
-            @Override
-            public Optional<String> presentedHost() {
-                return Optional.of(presentedHost);
-            }
-
-            @Override
-            public Optional<String> matchedHost() {
-                return Optional.of(matchedHost);
-            }
-
-            @Override
-            public SniMatchType matchType() {
-                return SniMatchType.WILDCARD;
-            }
-
-            @Override
-            public AuthorityCheck checkAuthority(UriAuthority authority) {
-                return AuthorityCheck.ALLOWED;
-            }
-        };
-    }
-
-    private static void sendData(GrpcProtocolHandler<String, String> handler, String content, boolean endOfStream) {
-        BufferData data = content == null ? BufferData.empty() : grpcData(content);
-        int flags = endOfStream ? Http2Flag.END_OF_STREAM : 0;
-        Http2FrameHeader header = Http2FrameHeader.create(data.available(),
-                                                          Http2FrameTypes.DATA,
-                                                          Http2Flag.DataFlags.create(flags),
-                                                          1);
-        handler.data(header, data);
-    }
-
-    private static BufferData grpcData(String content) {
-        byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
-        BufferData data = BufferData.create(5 + bytes.length);
-        data.write(0);
-        data.writeUnsignedInt32(bytes.length);
-        data.write(bytes);
-        return data;
-    }
-
-    private static byte[] gzip(String content) throws IOException {
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-        try (GZIPOutputStream gzip = new GZIPOutputStream(output)) {
-            gzip.write(content.getBytes(StandardCharsets.UTF_8));
-        }
-        return output.toByteArray();
-    }
-
-    private static MethodDescriptor<String, String> stringMethodDescriptor() {
-        MethodDescriptor.Marshaller<String> marshaller = new MethodDescriptor.Marshaller<>() {
-            @Override
-            public InputStream stream(String value) {
-                return new ByteArrayInputStream(value.getBytes(StandardCharsets.UTF_8));
-            }
-
-            @Override
-            public String parse(InputStream stream) {
-                try {
-                    return new String(stream.readAllBytes(), StandardCharsets.UTF_8);
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            }
-        };
-        return MethodDescriptor.<String, String>newBuilder()
-                .setType(MethodDescriptor.MethodType.UNARY)
-                .setFullMethodName("test.Test/Call")
-                .setRequestMarshaller(marshaller)
-                .setResponseMarshaller(marshaller)
-                .build();
-    }
-
-    private static Http2StreamWriter headersCapturingWriter(AtomicReference<Http2Headers> capturedHeaders) {
-        return new Http2StreamWriter() {
-            @Override
-            public void write(Http2FrameData frame) {
-            }
-
-            @Override
-            public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
-            }
-
-            @Override
-            public int writeHeaders(Http2Headers headers,
-                                    int streamId,
-                                    Http2Flag.HeaderFlags flags,
-                                    FlowControl.Outbound flowControl) {
-                capturedHeaders.set(headers);
-                return 0;
-            }
-
-            @Override
-            public int writeHeaders(Http2Headers headers,
-                                    int streamId,
-                                    Http2Flag.HeaderFlags flags,
-                                    Http2FrameData dataFrame,
-                                    FlowControl.Outbound flowControl) {
-                throw new UnsupportedOperationException("Unused");
-            }
-        };
-    }
-
-    private static Http2StreamWriter headersFailingWriter() {
-        return new Http2StreamWriter() {
-            @Override
-            public void write(Http2FrameData frame) {
-            }
-
-            @Override
-            public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
-            }
-
-            @Override
-            public int writeHeaders(Http2Headers headers,
-                                    int streamId,
-                                    Http2Flag.HeaderFlags flags,
-                                    FlowControl.Outbound flowControl) {
-                throw new UncheckedIOException(new IOException("Broken pipe"));
-            }
-
-            @Override
-            public int writeHeaders(Http2Headers headers,
-                                    int streamId,
-                                    Http2Flag.HeaderFlags flags,
-                                    Http2FrameData dataFrame,
-                                    FlowControl.Outbound flowControl) {
-                throw new UnsupportedOperationException("Unused");
-            }
-        };
-    }
-
-    private static Http2StreamWriter dataFailingWriter() {
-        return new Http2StreamWriter() {
-            @Override
-            public void write(Http2FrameData frame) {
-            }
-
-            @Override
-            public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
-                throw new UncheckedIOException(new IOException("Broken pipe"));
-            }
-
-            @Override
-            public int writeHeaders(Http2Headers headers,
-                                    int streamId,
-                                    Http2Flag.HeaderFlags flags,
-                                    FlowControl.Outbound flowControl) {
-                return 0;
-            }
-
-            @Override
-            public int writeHeaders(Http2Headers headers,
-                                    int streamId,
-                                    Http2Flag.HeaderFlags flags,
-                                    Http2FrameData dataFrame,
-                                    FlowControl.Outbound flowControl) {
-                throw new UnsupportedOperationException("Unused");
-            }
-        };
-    }
-
-    private static Http2StreamWriter closeFailingWriter() {
-        AtomicInteger headerWrites = new AtomicInteger();
-        return new Http2StreamWriter() {
-            @Override
-            public void write(Http2FrameData frame) {
-            }
-
-            @Override
-            public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
-            }
-
-            @Override
-            public int writeHeaders(Http2Headers headers,
-                                    int streamId,
-                                    Http2Flag.HeaderFlags flags,
-                                    FlowControl.Outbound flowControl) {
-                if (headerWrites.incrementAndGet() == 1) {
-                    return 0;
-                }
-                throw new UncheckedIOException(new IOException("Broken pipe"));
-            }
-
-            @Override
-            public int writeHeaders(Http2Headers headers,
-                                    int streamId,
-                                    Http2Flag.HeaderFlags flags,
-                                    Http2FrameData dataFrame,
-                                    FlowControl.Outbound flowControl) {
-                throw new UnsupportedOperationException("Unused");
-            }
-        };
-    }
-
-    private static Http2StreamWriter noOpWriter() {
-        return new Http2StreamWriter() {
-            @Override
-            public void write(Http2FrameData frame) {
-            }
-
-            @Override
-            public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
-            }
-
-            @Override
-            public int writeHeaders(Http2Headers headers,
-                                    int streamId,
-                                    Http2Flag.HeaderFlags flags,
-                                    FlowControl.Outbound flowControl) {
-                return 0;
-            }
-
-            @Override
-            public int writeHeaders(Http2Headers headers,
-                                    int streamId,
-                                    Http2Flag.HeaderFlags flags,
-                                    Http2FrameData dataFrame,
-                                    FlowControl.Outbound flowControl) {
-                return 0;
-            }
-        };
-    }
-
-    private static List<LogRecord> captureLogRecords(Runnable task) {
-        Logger logger = Logger.getLogger(GrpcProtocolHandler.class.getName());
-        Level previousLevel = logger.getLevel();
-        boolean previousUseParentHandlers = logger.getUseParentHandlers();
-        List<LogRecord> records = new ArrayList<>();
-        Handler handler = new Handler() {
-            @Override
-            public void publish(LogRecord record) {
-                records.add(record);
-            }
-
-            @Override
-            public void flush() {
-            }
-
-            @Override
-            public void close() {
-            }
-        };
-
-        handler.setLevel(Level.ALL);
-        logger.addHandler(handler);
-        logger.setUseParentHandlers(false);
-        logger.setLevel(Level.ALL);
-        try {
-            task.run();
-            return records;
-        } finally {
-            logger.removeHandler(handler);
-            logger.setLevel(previousLevel);
-            logger.setUseParentHandlers(previousUseParentHandlers);
-            handler.close();
-        }
     }
 
     private ServerCall<String, String> createServerCall(Http2StreamWriter streamWriter) {

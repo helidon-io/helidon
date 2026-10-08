@@ -234,6 +234,13 @@ returns `DEADLINE_EXCEEDED`. Service code should observe context cancellation
 and stop any work it owns. An outbound Helidon gRPC call created within the
 handler inherits the remaining context deadline; see [Client Deadlines](client.md#deadlines).
 
+The server uses a shared deadline timer and writes responses on the thread
+calling the service's `ServerCall`. Cancellation listeners run inline on the
+thread cancelling the context. Keep these listeners brief: a blocking listener
+on the deadline timer delays other server deadlines. If a response write is
+already in progress, the server completes its current frame before sending
+the final status.
+
 ### Metrics
 
 Helidon supports a few metrics that are specific to gRPC and are based on those

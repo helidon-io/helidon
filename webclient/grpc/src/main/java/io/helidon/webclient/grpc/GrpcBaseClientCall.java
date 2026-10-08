@@ -17,6 +17,7 @@
 package io.helidon.webclient.grpc;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -24,14 +25,14 @@ import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.context.Contexts;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.tls.Tls;
 import io.helidon.grpc.core.GrpcHeadersUtil;
@@ -54,7 +55,10 @@ import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientUri;
+import io.helidon.webclient.api.ConnectedSocketChannelInfo;
+import io.helidon.webclient.api.ConnectedSocketInfo;
 import io.helidon.webclient.api.ConnectionKey;
+import io.helidon.webclient.api.ConnectionListener;
 import io.helidon.webclient.api.DefaultDnsResolver;
 import io.helidon.webclient.api.DnsAddressLookup;
 import io.helidon.webclient.api.Proxy;
@@ -103,6 +107,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
             .build();
 
     private static final HeaderName TIMEOUT_NAME = HeaderNames.create("grpc-timeout");
+    private static final ScheduledThreadPoolExecutor DEADLINE_SCHEDULER = deadlineScheduler();
 
     private final GrpcClientImpl grpcClient;
     private final GrpcChannel grpcChannel;
@@ -133,9 +138,8 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private volatile MethodMetrics methodMetrics;
     private volatile long startMillis;
     private volatile Status closeStatus;
-    private volatile Thread deadlineThread;
-    private volatile Thread startThread;
-    private volatile CompletableFuture<Void> transportReady;
+    private ScheduledFuture<?> deadlineTask;
+    private volatile Closeable rawTransport;
     private volatile boolean initialHeadersWritten;
 
     private Metadata closeMetadata;
@@ -225,41 +229,18 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
             return;
         }
 
-        if (deadline == null && context == Context.ROOT) {
-            startTransport(metadata);
-            return;
-        }
-
-        // An owned virtual thread allows cancellation to interrupt connection setup without
-        // interrupting the caller's thread. Calls without a deadline or context retain the direct path.
-        var helidonContext = Contexts.context();
-        var ready = new CompletableFuture<Void>();
         lifecycleLock.lock();
         try {
             if (isClosed()) {
                 return;
             }
-            transportReady = ready;
             if (deadline != null) {
-                deadlineThread = Thread.ofVirtual().name("grpc-client-deadline").unstarted(this::awaitDeadline);
-                deadlineThread.start();
+                scheduleDeadline();
             }
-            startThread = Thread.ofVirtual().name("grpc-client-start").unstarted(context.wrap(() -> {
-                try {
-                    if (helidonContext.isPresent()) {
-                        Contexts.runInContext(helidonContext.get(), () -> startTransport(metadata));
-                    } else {
-                        startTransport(metadata);
-                    }
-                } finally {
-                    ready.complete(null);
-                }
-            }));
-            startThread.start();
         } finally {
             lifecycleLock.unlock();
         }
-        ready.join();
+        context.run(() -> startTransport(metadata));
     }
 
     @Override
@@ -322,21 +303,15 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
             }
             closeStatus = status;
             closeMetadata = metadata;
+            if (deadlineTask != null) {
+                deadlineTask.cancel(false);
+            }
         } finally {
             lifecycleLock.unlock();
         }
 
         context.removeListener(cancellationListener);
-        Thread timer = deadlineThread;
-        if (timer != null && timer != Thread.currentThread()) {
-            timer.interrupt();
-        }
-        Thread starter = startThread;
-        if (starter != null && starter != Thread.currentThread()) {
-            starter.interrupt();
-        }
-        boolean abortTransport = status.getCode() == Status.Code.CANCELLED
-                || status.getCode() == Status.Code.DEADLINE_EXCEEDED;
+        boolean abortTransport = !status.isOk();
         if (abortTransport) {
             // Each call owns its connection. Abort the raw socket before cleanup can wait for
             // an HTTP/2 writer blocked by the peer, including a TLS write or a stream reset.
@@ -377,14 +352,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                 // leave the dedicated raw connection open after the terminal callback.
                 closeTransport();
                 closeComplete = true;
-                try {
-                    notifyClose();
-                } finally {
-                    CompletableFuture<Void> ready = transportReady;
-                    if (ready != null) {
-                        ready.complete(null);
-                    }
-                }
+                notifyClose();
             }
         }
     }
@@ -462,6 +430,32 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
     ClientConnection clientConnection(ClientUri clientUri, String authority) {
         WebClient webClient = grpcClient.webClient();
+        if (deadline != null || context != Context.ROOT) {
+            ConnectionListener original = webClient.prototype().connectionListener();
+            webClient = WebClient.builder()
+                    .from(webClient.prototype())
+                    .executor(webClient.executor())
+                    .connectionListener(new ConnectionListener() {
+                        @Override
+                        public void socketConnected(ConnectedSocketInfo socketInfo) throws IOException {
+                            registerRawTransport(socketInfo.socket());
+                            if (!isClosed()) {
+                                original.socketConnected(socketInfo);
+                            }
+                            ensureTransportActive();
+                        }
+
+                        @Override
+                        public void socketChannelConnected(ConnectedSocketChannelInfo socketInfo) throws IOException {
+                            registerRawTransport(socketInfo.socketChannel());
+                            if (!isClosed()) {
+                                original.socketChannelConnected(socketInfo);
+                            }
+                            ensureTransportActive();
+                        }
+                    })
+                    .build();
+        }
         GrpcClientConfig clientConfig = grpcClient.prototype();
         SniConfig sni = clientConfig.sni().orElse(null);
         Tls tls = "http".equalsIgnoreCase(clientUri.scheme()) ? CLEARTEXT_TLS : clientConfig.tls();
@@ -654,6 +648,13 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         return ClientRequestHeaders.create(headers);
     }
 
+    private static ScheduledThreadPoolExecutor deadlineScheduler() {
+        var scheduler = new ScheduledThreadPoolExecutor(1,
+                Thread.ofPlatform().daemon().name("grpc-client-deadline").factory());
+        scheduler.setRemoveOnCancelPolicy(true);
+        return scheduler;
+    }
+
     private String authority(ClientUri clientUri) {
         String authority = callOptions.getAuthority();
         if (authority != null) {
@@ -802,6 +803,14 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
     private void closeTransport() {
         try {
+            Closeable currentRawTransport = rawTransport;
+            if (currentRawTransport != null) {
+                currentRawTransport.close();
+            }
+        } catch (Throwable t) {
+            LOGGER.log(DEBUG, "Failed to close gRPC raw transport", t);
+        }
+        try {
             ClientConnection currentTransport = transportConnection;
             if (currentTransport != null) {
                 currentTransport.closeResource();
@@ -839,16 +848,47 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         }
     }
 
-    private void awaitDeadline() {
+    private void registerRawTransport(Closeable transport) throws IOException {
+        lifecycleLock.lock();
         try {
-            long remaining;
-            while (!isClosed() && (remaining = deadline.timeRemaining(TimeUnit.NANOSECONDS)) > 0) {
-                TimeUnit.NANOSECONDS.sleep(remaining);
+            if (!isClosed()) {
+                rawTransport = transport;
+                return;
             }
-            close(Status.DEADLINE_EXCEEDED.withDescription("Call deadline exceeded"));
-        } catch (InterruptedException _) {
-            Thread.currentThread().interrupt();
+        } finally {
+            lifecycleLock.unlock();
         }
+        transport.close();
+        throw new IOException("gRPC call closed during connection setup");
+    }
+
+    private void ensureTransportActive() throws IOException {
+        if (isClosed()) {
+            throw new IOException("gRPC call closed during connection setup");
+        }
+    }
+
+    private void scheduleDeadline() {
+        deadlineTask = DEADLINE_SCHEDULER.schedule(this::expireDeadline,
+                                                  Math.max(0, deadline.timeRemaining(TimeUnit.NANOSECONDS)),
+                                                  TimeUnit.NANOSECONDS);
+    }
+
+    private void expireDeadline() {
+        lifecycleLock.lock();
+        try {
+            if (isClosed()) {
+                return;
+            }
+            // A custom deadline ticker can advance more slowly than the scheduler's clock.
+            if (!deadline.isExpired()) {
+                scheduleDeadline();
+                return;
+            }
+        } finally {
+            lifecycleLock.unlock();
+        }
+        close(Status.DEADLINE_EXCEEDED.withDescription("Call deadline exceeded"));
     }
 
     /**

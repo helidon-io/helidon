@@ -38,7 +38,9 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.grpc.GrpcRouting;
 
 import io.grpc.CallOptions;
+import io.grpc.Channel;
 import io.grpc.ClientCall;
+import io.grpc.ClientInterceptor;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.ServerServiceDefinition;
@@ -76,11 +78,15 @@ public class GrpcTransportCompatibilityJmhBenchmark {
     @Param({"65530", "65531", "131072"})
     private int payloadSize;
 
+    @Param({"false", "true"})
+    private boolean deadlineEnabled;
+
     private final ReentrantLock callStartupLock = new ReentrantLock();
     private byte[] payload;
     private WebServer server;
     private GrpcClient grpcClient;
     private GrpcServiceClient client;
+    private Channel channel;
 
     @Setup
     public void setup() {
@@ -107,8 +113,19 @@ public class GrpcTransportCompatibilityJmhBenchmark {
                 .baseUri("http://localhost:" + server.port())
                 .tls(tls -> tls.enabled(false))
                 .build();
+        ClientInterceptor deadlineInterceptor = new ClientInterceptor() {
+            @Override
+            public <ReqT, ResT> ClientCall<ReqT, ResT> interceptCall(MethodDescriptor<ReqT, ResT> method,
+                                                                  CallOptions options,
+                                                                  Channel next) {
+                // Each call gets its own deadline. Keep it beyond the complete steady-state trial.
+                return next.newCall(method, deadlineEnabled ? options.withDeadlineAfter(10, TimeUnit.MINUTES) : options);
+            }
+        };
+        channel = grpcClient.channel(deadlineInterceptor);
         client = grpcClient.serviceClient(GrpcServiceDescriptor.builder()
                                                    .serviceName(SERVICE_NAME)
+                                                   .addInterceptor(deadlineInterceptor)
                                                    .putMethod(SERVER_STREAMING,
                                                               clientMethod(SERVER_STREAMING,
                                                                            MethodDescriptor.MethodType.SERVER_STREAMING))
@@ -151,9 +168,10 @@ public class GrpcTransportCompatibilityJmhBenchmark {
     @Benchmark
     public void earlyClose(Blackhole blackhole) throws InterruptedException {
         CountDownLatch completed = new CountDownLatch(1);
+        CountDownLatch terminated = new CountDownLatch(1);
         AtomicReference<byte[]> response = new AtomicReference<>();
         AtomicReference<Status> status = new AtomicReference<>();
-        ClientCall<byte[], byte[]> call = grpcClient.channel()
+        ClientCall<byte[], byte[]> call = channel
                 .newCall(method(EARLY_CLOSE, MethodDescriptor.MethodType.SERVER_STREAMING).build(), CallOptions.DEFAULT);
         call.start(new ClientCall.Listener<>() {
             @Override
@@ -166,6 +184,7 @@ public class GrpcTransportCompatibilityJmhBenchmark {
             public void onClose(Status closeStatus, Metadata trailers) {
                 status.set(closeStatus);
                 completed.countDown();
+                terminated.countDown();
             }
         }, new Metadata());
         call.request(1);
@@ -177,6 +196,13 @@ public class GrpcTransportCompatibilityJmhBenchmark {
             throw new IllegalStateException("Timed out waiting for first response");
         }
         call.cancel("Benchmark consumed first response", null);
+        if (!terminated.await(10, TimeUnit.SECONDS)) {
+            throw new IllegalStateException("Timed out waiting for benchmark cancellation");
+        }
+        Status terminalStatus = status.get();
+        if (!terminalStatus.isOk() && terminalStatus.getCode() != Status.Code.CANCELLED) {
+            throw new IllegalStateException("Call failed before benchmark cancellation: " + terminalStatus);
+        }
         byte[] firstResponse = response.get();
         if (firstResponse == null) {
             throw new IllegalStateException("Call closed before first response: " + status.get());
@@ -246,7 +272,7 @@ public class GrpcTransportCompatibilityJmhBenchmark {
             // does not race its shared legacy header constants while all measured calls still share one client.
             benchmark.callStartupLock.lock();
             try {
-                call = benchmark.grpcClient.channel()
+                call = benchmark.channel
                         .newCall(method(BIDIRECTIONAL, MethodDescriptor.MethodType.BIDI_STREAMING).build(),
                                  CallOptions.DEFAULT);
                 call.start(new ClientCall.Listener<>() {
@@ -274,13 +300,18 @@ public class GrpcTransportCompatibilityJmhBenchmark {
         }
 
         private byte[] exchange(byte[] request) throws InterruptedException {
+            Status status = closed.get();
+            if (status != null) {
+                throw new IllegalStateException("Call closed before request: " + status);
+            }
             call.sendMessage(request);
             byte[] response = responses.poll(10, TimeUnit.SECONDS);
+            status = closed.get();
+            if (status != null) {
+                throw new IllegalStateException("Call closed during exchange: " + status);
+            }
             if (response == null) {
-                Status status = closed.get();
-                throw new IllegalStateException(status == null
-                                                        ? "Timed out waiting for response"
-                                                        : "Call closed before response: " + status);
+                throw new IllegalStateException("Timed out waiting for response");
             }
             call.request(1);
             return response;

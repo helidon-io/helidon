@@ -54,6 +54,9 @@ import io.helidon.http.http2.Http2FrameHeader;
 import io.helidon.http.http2.Http2FrameType;
 import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.webclient.api.ClientUri;
+import io.helidon.webclient.api.ConnectedSocketChannelInfo;
+import io.helidon.webclient.api.ConnectedSocketInfo;
+import io.helidon.webclient.api.ConnectionListener;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http2.Http2ClientProtocolConfig;
 import io.helidon.webserver.WebServer;
@@ -92,7 +95,7 @@ class GrpcClientDeadlineTest {
     @ParameterizedTest(name = "{0}, Helidon context={1}")
     @CsvSource({"CALL_DEADLINE, true", "CALL_DEADLINE, false", "GRPC_CONTEXT, true", "GRPC_CONTEXT, false",
                 "DIRECT, true", "DIRECT, false"})
-    void preservesContextsWhenStartingTransport(StartupMode mode, boolean withHelidonContext) throws Exception {
+    void preservesContextsAndCallerThreadWhenStartingTransport(StartupMode mode, boolean withHelidonContext) throws Exception {
         WebServer server = server(HttpRouting.builder().post("/test.Deadline/Call", (_, res) -> {
             byte[] message = "response".getBytes(StandardCharsets.UTF_8);
             BufferData data = BufferData.create(5 + message.length);
@@ -113,6 +116,8 @@ class GrpcClientDeadlineTest {
             var supplierContext = new CompletableFuture<Optional<io.helidon.common.context.Context>>();
             var supplierGrpcContext = new CompletableFuture<Context>();
             var suppliedUri = new CompletableFuture<ClientUri>();
+            var supplierThread = new CompletableFuture<Thread>();
+            var callerThread = new CompletableFuture<Thread>();
             var client = GrpcClient.builder()
                     .baseUri(unreachableUri)
                     .tls(tls -> tls.enabled(false))
@@ -125,6 +130,7 @@ class GrpcClientDeadlineTest {
 
                         @Override
                         public ClientUri next() {
+                            supplierThread.complete(Thread.currentThread());
                             var context = Contexts.context();
                             supplierContext.complete(context);
                             supplierGrpcContext.complete(Context.current());
@@ -158,6 +164,7 @@ class GrpcClientDeadlineTest {
             };
             try {
                 var invocation = executor.submit(() -> {
+                    callerThread.complete(Thread.currentThread());
                     Runnable request = () -> grpcContext.run(() -> {
                         call.start(listener, new Metadata());
                         call.request(1);
@@ -179,6 +186,8 @@ class GrpcClientDeadlineTest {
                            is(withHelidonContext ? Optional.of(startContext) : Optional.empty()));
                 assertThat("URI selection preserves the captured gRPC context",
                            supplierGrpcContext.get(5, TimeUnit.SECONDS), sameInstance(grpcContext));
+                assertThat("transport startup runs on the caller's thread",
+                           supplierThread.get(5, TimeUnit.SECONDS), sameInstance(callerThread.get(5, TimeUnit.SECONDS)));
                 assertThat(suppliedUri.get(5, TimeUnit.SECONDS), sameInstance(serverUri));
                 assertThat(status.get(5, TimeUnit.SECONDS).getCode(), is(Status.Code.OK));
                 assertThat(received.get(5, TimeUnit.SECONDS), is("response"));
@@ -285,17 +294,41 @@ class GrpcClientDeadlineTest {
                     accepted.completeExceptionally(e);
                 }
             });
+            var publishedSocket = new CompletableFuture<Socket>();
+            var connectionThread = new CompletableFuture<Thread>();
+            var callerThread = new CompletableFuture<Thread>();
             var client = GrpcClient.builder()
                     .baseUri("https://localhost:" + listening.getLocalPort())
+                    .connectionListener(new ConnectionListener() {
+                        @Override
+                        public void socketConnected(ConnectedSocketInfo socketInfo) {
+                            publishedSocket.complete(socketInfo.socket());
+                            connectionThread.complete(Thread.currentThread());
+                        }
+
+                        @Override
+                        public void socketChannelConnected(ConnectedSocketChannelInfo socketInfo) {
+                            throw new AssertionError("TCP connection must publish a socket");
+                        }
+                    })
                     .build();
             var call = client.channel().newCall(descriptor(MethodDescriptor.MethodType.UNARY),
                                                 CallOptions.DEFAULT.withDeadlineAfter(1, TimeUnit.SECONDS));
             var listener = new ResponseListener();
-            var started = executor.submit(() -> call.start(listener, new Metadata()));
+            var started = executor.submit(() -> {
+                callerThread.complete(Thread.currentThread());
+                call.start(listener, new Metadata());
+                assertThat("deadline cancellation does not interrupt the caller",
+                           Thread.currentThread().isInterrupted(), is(false));
+            });
             try (Socket connection = accepted.get(5, TimeUnit.SECONDS)) {
                 // The peer accepts TCP but never answers the TLS handshake.
                 started.get(5, TimeUnit.SECONDS);
                 assertThat(listener.status.get(5, TimeUnit.SECONDS).getCode(), is(Status.Code.DEADLINE_EXCEEDED));
+                assertThat("the original connection listener runs inline",
+                           connectionThread.get(5, TimeUnit.SECONDS), sameInstance(callerThread.get(5, TimeUnit.SECONDS)));
+                assertThat("the socket published before TLS is closed on expiry",
+                           publishedSocket.get(5, TimeUnit.SECONDS).isClosed(), is(true));
                 connection.setSoTimeout(5000);
                 connection.getInputStream().readAllBytes();
                 assertThat(listener.closeCount.get(), is(1));
@@ -346,6 +379,7 @@ class GrpcClientDeadlineTest {
             try {
                 barrier.reached.get(5, TimeUnit.SECONDS);
                 assertThat(listener.status.get(5, TimeUnit.SECONDS).getCode(), is(Status.Code.DEADLINE_EXCEEDED));
+                barrier.close();
                 started.get(5, TimeUnit.SECONDS);
 
                 BufferData data = BufferData.create(received.get(5, TimeUnit.SECONDS));
@@ -792,7 +826,7 @@ class GrpcClientDeadlineTest {
                 // Expire only once the stream has an id but its initial HEADERS are not on the wire.
                 nanos.set(TimeUnit.SECONDS.toNanos(1));
                 reached.complete(null);
-                // Deadline cancellation interrupts the starter. Keep HEADERS blocked until assertions finish.
+                // Keep the caller's HEADERS write blocked until the deadline closes the transport.
                 released.join();
             }
         }
