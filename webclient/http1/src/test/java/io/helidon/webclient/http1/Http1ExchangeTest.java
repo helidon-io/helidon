@@ -16,12 +16,16 @@
 
 package io.helidon.webclient.http1;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -33,6 +37,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -42,6 +48,7 @@ import io.helidon.common.context.Contexts;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.Http1HeadersParser;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.ClientConnection;
@@ -217,6 +224,48 @@ class Http1ExchangeTest {
         } else {
             assertThat(wire, containsString("\r\ncontent-length: 1\r\n"));
             assertThat(wire, endsWith("\r\n\r\n*"));
+        }
+        assertThat(connection.releases.get(), is(1));
+        assertThat(connection.closes.get(), is(0));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"gzip,-1", "'gzip, chunked',-1", "'gzip, chunked',0"})
+    void preservesUploadTransferCodings(String transferEncoding, int contentLength) throws Exception {
+        var connection = new Connection("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n");
+        var request = request(connection).header(HeaderNames.TRANSFER_ENCODING, transferEncoding);
+        if (contentLength >= 0) {
+            request.header(HeaderNames.CONTENT_LENGTH, Integer.toString(contentLength));
+        }
+        byte[] expected = "Hello from a gzip transfer-coded request".getBytes(StandardCharsets.UTF_8);
+        request.exchange(output -> {
+            try (var gzip = new GZIPOutputStream(output)) {
+                gzip.write(expected);
+            }
+        }, response -> assertThat(response.status(), is(Status.OK_200)));
+
+        var segments = new ArrayDeque<byte[]>();
+        segments.add(connection.request.toByteArray());
+        DataReader wire = DataReader.create(segments::poll);
+        assertThat(wire.readLine(), is("POST /test HTTP/1.1"));
+        var headers = Http1HeadersParser.readHeaders(wire, 8192, true);
+        List<String> codings = headers.get(HeaderNames.TRANSFER_ENCODING).allValues().stream()
+                .flatMap(value -> Arrays.stream(value.split(",")))
+                .map(String::trim)
+                .toList();
+        assertThat("Wire transfer codings must describe the compressed chunked entity",
+                   codings, is(List.of("gzip", "chunked")));
+        assertThat("Chunked requests must not retain Content-Length", headers.contains(HeaderNames.CONTENT_LENGTH), is(false));
+        var compressed = new ByteArrayOutputStream();
+        for (int size = Integer.parseInt(wire.readLine(), 16); size != 0; size = Integer.parseInt(wire.readLine(), 16)) {
+            compressed.writeBytes(wire.readBytes(size));
+            assertThat("Chunk payload must be followed by CRLF", wire.readLine(), is(""));
+        }
+        assertThat("Terminating chunk must be followed by the empty trailer section", wire.readLine(), is(""));
+        assertThat("No bytes may follow the complete chunked entity", wire.available(), is(0));
+        try (var gzip = new GZIPInputStream(new ByteArrayInputStream(compressed.toByteArray()))) {
+            assertThat("Decoding the advertised transfer codings must recover the uploaded entity",
+                       gzip.readAllBytes(), is(expected));
         }
         assertThat(connection.releases.get(), is(1));
         assertThat(connection.closes.get(), is(0));

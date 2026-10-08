@@ -99,7 +99,9 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
         boolean chunked = length == -1 || headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED);
         if (chunked) {
             headers.remove(HeaderNames.CONTENT_LENGTH);
-            headers.set(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+            if (!headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+                headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+            }
         }
         boolean expectContinue = connection.allowExpectContinue()
                 && (chunked || length > 0)
