@@ -167,6 +167,8 @@ final class EurekaRegistrationHttpFeature implements HttpFeature {
                 .build();
             this.instanceInfo = instanceInfo; // volatile write
             this.client = client; // volatile write
+            // Native Eureka registers the instance before it enters the renewal loop.
+            this.register(instanceInfo);
             this.createAndStartRenewalLoop(instanceInfo, client);
         } else if (LOGGER.isLoggable(ERROR)) {
             LOGGER.log(ERROR,
@@ -412,7 +414,20 @@ final class EurekaRegistrationHttpFeature implements HttpFeature {
                 }
                 return false;
             }
+        } catch (UncheckedIOException e) {
+            if (e.getCause() instanceof ConnectException) {
+                if (LOGGER.isLoggable(WARNING)) {
+                    LOGGER.log(WARNING,
+                               "Eureka Server ("
+                               + this.client.prototype().baseUri().orElse(null) // volatile read
+                               + ") not reachable",
+                               e);
+                }
+            } else {
+                throw e;
+            }
         }
+        return false;
     }
 
     /**
