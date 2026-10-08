@@ -398,80 +398,105 @@ class DeclarativeGrpcTest {
         assertThat(GreetingRequestValidatorProvider.invocations(), is(1));
     }
 
+    // Each security outcome gets its own test channel, avoiding reuse after an early rejection.
     @Test
-    void testSecureUnary() {
+    void testSecureUnaryUnauthenticated() {
         var request = request("Tomas");
 
         var unauthenticated = assertThrows(StatusRuntimeException.class, () -> blockingStub.secureGreet(request));
         assertThat(unauthenticated.getStatus().getCode(), is(Code.UNAUTHENTICATED));
+    }
 
+    @Test
+    void testSecureUnary() {
         var response = authenticatedBlockingStub(USERNAME)
-                .secureGreet(request);
+                .secureGreet(request("Tomas"));
 
         assertThat(response.getMessage(), is("Hello Tomas"));
     }
 
     @Test
-    void testAuthorizedUnary() {
+    void testAuthorizedUnaryUnauthenticated() {
         var request = request("Tomas");
 
         var unauthenticated = assertThrows(StatusRuntimeException.class, () -> blockingStub.authorizedGreet(request));
         assertThat(unauthenticated.getStatus().getCode(), is(Code.UNAUTHENTICATED));
+    }
 
+    @Test
+    void testAuthorizedUnary() {
         var response = authenticatedBlockingStub(USERNAME)
-                .authorizedGreet(request);
+                .authorizedGreet(request("Tomas"));
 
         assertThat(response.getMessage(), is("Hello Tomas"));
     }
 
     @Test
-    void testRoleProtectedUnary() {
+    void testRoleProtectedUnaryUnauthenticated() {
         var request = request("Tomas");
 
         var unauthenticated = assertThrows(StatusRuntimeException.class, () -> blockingStub.adminGreet(request));
         assertThat(unauthenticated.getStatus().getCode(), is(Code.UNAUTHENTICATED));
+    }
 
+    @Test
+    void testRoleProtectedUnaryWrongRole() {
         var wrongRole = assertThrows(StatusRuntimeException.class,
-                                     () -> authenticatedBlockingStub(USER).adminGreet(request));
+                                     () -> authenticatedBlockingStub(USER).adminGreet(request("Tomas")));
         assertThat(wrongRole.getStatus().getCode(), is(Code.PERMISSION_DENIED));
+    }
 
+    @Test
+    void testRoleProtectedUnary() {
         var response = authenticatedBlockingStub(ADMIN)
-                .adminGreet(request);
+                .adminGreet(request("Tomas"));
 
         assertThat(response.getMessage(), is("Hello Tomas"));
     }
 
     @Test
-    void testPermitAllOverridesServiceRoles() {
+    void testServiceRolesUnauthenticated() {
         var request = request("Tomas");
 
         var unauthenticated = assertThrows(StatusRuntimeException.class,
                                            () -> defaultSecuredBlockingStub.adminDefaultGreet(request));
         assertThat(unauthenticated.getStatus().getCode(), is(Code.UNAUTHENTICATED));
+    }
 
+    @Test
+    void testServiceRolesWrongRole() {
         var wrongRole = assertThrows(StatusRuntimeException.class,
-                                     () -> authenticatedDefaultSecuredBlockingStub(USER).adminDefaultGreet(request));
+                                     () -> authenticatedDefaultSecuredBlockingStub(USER).adminDefaultGreet(request("Tomas")));
         assertThat(wrongRole.getStatus().getCode(), is(Code.PERMISSION_DENIED));
+    }
 
+    @Test
+    void testServiceRoles() {
         var adminResponse = authenticatedDefaultSecuredBlockingStub(ADMIN)
-                .adminDefaultGreet(request);
+                .adminDefaultGreet(request("Tomas"));
         assertThat(adminResponse.getMessage(), is("Default secured hello Tomas"));
+    }
 
-        var permitAllResponse = defaultSecuredBlockingStub.permitAllDefaultGreet(request);
+    @Test
+    void testPermitAllOverridesServiceRoles() {
+        var permitAllResponse = defaultSecuredBlockingStub.permitAllDefaultGreet(request("Tomas"));
         assertThat(permitAllResponse.getMessage(), is("Default secured hello Tomas"));
     }
 
     @Test
-    void testRoleValidatorOverridesServiceRoles() {
+    void testRoleValidatorOverridesServiceRolesWrongRole() {
         var request = request("Tomas");
 
         var wrongRole = assertThrows(StatusRuntimeException.class,
                                      () -> authenticatedDefaultSecuredBlockingStub(ADMIN)
                                              .roleValidatorDefaultGreet(request));
         assertThat(wrongRole.getStatus().getCode(), is(Code.PERMISSION_DENIED));
+    }
 
+    @Test
+    void testRoleValidatorOverridesServiceRoles() {
         var response = authenticatedDefaultSecuredBlockingStub(USER)
-                .roleValidatorDefaultGreet(request);
+                .roleValidatorDefaultGreet(request("Tomas"));
         assertThat(response.getMessage(), is("Default secured hello Tomas"));
     }
 
@@ -490,33 +515,42 @@ class DeclarativeGrpcTest {
     }
 
     @Test
-    void testInheritedRoleValidatorUnary() {
+    void testInheritedRoleValidatorUnaryUnauthenticated() {
         var request = request("Tomas");
 
         var unauthenticated = assertThrows(StatusRuntimeException.class,
                                            () -> blockingStub.roleValidatorGreet(request));
         assertThat(unauthenticated.getStatus().getCode(), is(Code.UNAUTHENTICATED));
+    }
 
+    @Test
+    void testInheritedRoleValidatorUnaryWrongRole() {
         var wrongRole = assertThrows(StatusRuntimeException.class,
-                                     () -> authenticatedBlockingStub(USER).roleValidatorGreet(request));
+                                     () -> authenticatedBlockingStub(USER).roleValidatorGreet(request("Tomas")));
         assertThat(wrongRole.getStatus().getCode(), is(Code.PERMISSION_DENIED));
+    }
 
+    @Test
+    void testInheritedRoleValidatorUnary() {
         var response = authenticatedBlockingStub(ADMIN)
-                .roleValidatorGreet(request);
+                .roleValidatorGreet(request("Tomas"));
 
         assertThat(response.getMessage(), is("Hello Tomas"));
     }
 
     @Test
-    void testInheritedScopeProtectedUnary() {
+    void testInheritedScopeProtectedUnaryUnauthenticated() {
         var request = request("Tomas");
 
         var unauthenticated = assertThrows(StatusRuntimeException.class,
                                            () -> blockingStub.scopeGreet(request));
         assertThat(unauthenticated.getStatus().getCode(), is(Code.UNAUTHENTICATED));
+    }
 
+    @Test
+    void testInheritedScopeProtectedUnary() {
         var missingScope = assertThrows(StatusRuntimeException.class,
-                                        () -> authenticatedBlockingStub(ADMIN).scopeGreet(request));
+                                        () -> authenticatedBlockingStub(ADMIN).scopeGreet(request("Tomas")));
         assertThat(missingScope.getStatus().getCode(), is(Code.PERMISSION_DENIED));
     }
 
