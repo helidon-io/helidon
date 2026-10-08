@@ -163,14 +163,21 @@ class TestMetricsFormatterComparison {
 
     @ParameterizedTest(name = "{0}, {2}, {3}, {4}")
     @MethodSource("gaugeFailureCases")
-    void failingGaugePreservesOtherSamples(String packageName,
-                                          String classPrefix,
-                                          MediaType mediaType,
-                                          GaugeForm form,
-                                          GaugeFailure failure) {
+    void gaugeFailureFollowsProviderContract(String packageName,
+                                            String classPrefix,
+                                            MediaType mediaType,
+                                            GaugeForm form,
+                                            GaugeFailure failure) {
         try (Fixture fixture = new Fixture(packageName, classPrefix)) {
             AtomicBoolean available = fixture.populateFailingGauge(form, failure);
-            verifyGaugeSamples((String) fixture.format(mediaType, Selection.ALL), mediaType, Double.NaN);
+            if (packageName.equals("helidon") && failure == GaugeFailure.ASSERTION_ERROR) {
+                AssertionError error = assertThrows(AssertionError.class, () -> fixture.format(mediaType, Selection.ALL));
+                assertThat("Fatal gauge error propagates from the native formatter",
+                           error.getMessage(), is("Gauge callback failed"));
+            } else {
+                // Micrometer also converts Error to NaN in its native gauge callback.
+                verifyGaugeSamples((String) fixture.format(mediaType, Selection.ALL), mediaType, Double.NaN);
+            }
 
             available.set(true);
             verifyGaugeSamples((String) fixture.format(mediaType, Selection.ALL), mediaType, 17D);
@@ -179,16 +186,22 @@ class TestMetricsFormatterComparison {
 
     @ParameterizedTest(name = "{0}, {2}, {3}, {4}")
     @MethodSource("gaugeFailureCases")
-    void observerScrapesSurviveGaugeFailure(String packageName,
-                                          String classPrefix,
-                                          MediaType mediaType,
-                                          GaugeForm form,
-                                          GaugeFailure failure) {
+    void observerScrapesFollowGaugeFailureContract(String packageName,
+                                                  String classPrefix,
+                                                  MediaType mediaType,
+                                                  GaugeForm form,
+                                                  GaugeFailure failure) {
         try (Fixture fixture = new Fixture(packageName, classPrefix)) {
             AtomicBoolean available = fixture.populateFailingGauge(form, failure);
             DirectClient client = fixture.observerClient();
             try {
-                verifyGaugeSamples(scrape(client, mediaType), mediaType, Double.NaN);
+                if (packageName.equals("helidon") && failure == GaugeFailure.ASSERTION_ERROR) {
+                    try (Http1ClientResponse response = client.get("/metrics").accept(mediaType).request()) {
+                        assertThat("Fatal native gauge error reaches the server error handler", response.status().code(), is(500));
+                    }
+                } else {
+                    verifyGaugeSamples(scrape(client, mediaType), mediaType, Double.NaN);
+                }
 
                 available.set(true);
                 verifyGaugeSamples(scrape(client, mediaType), mediaType, 17D);
