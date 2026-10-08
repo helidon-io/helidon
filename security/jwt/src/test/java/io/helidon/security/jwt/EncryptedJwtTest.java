@@ -16,14 +16,24 @@
 
 package io.helidon.security.jwt;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
+
+import javax.crypto.Cipher;
+import javax.crypto.Mac;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
 import io.helidon.security.jwt.EncryptedJwt.SupportedAlgorithm;
 import io.helidon.security.jwt.jwk.JwkKeys;
+import io.helidon.security.jwt.jwk.JwkRSA;
 
 import jakarta.json.JsonObject;
 import org.junit.jupiter.api.BeforeAll;
@@ -43,6 +53,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  */
 public class EncryptedJwtTest {
 
+    private static final List<CbcHmacParameters> CBC_HMAC_PARAMETERS = List.of(
+            new CbcHmacParameters(SupportedEncryption.A128CBC_HS256, "HmacSHA256", 16),
+            new CbcHmacParameters(SupportedEncryption.A192CBC_HS384, "HmacSHA384", 24),
+            new CbcHmacParameters(SupportedEncryption.A256CBC_HS512, "HmacSHA512", 32));
     private static final String RSA1_5_UNSUPPORTED = "RSA1_5 is not supported for JWE key management.";
 
     private static JwkKeys jwkKeys;
@@ -135,6 +149,117 @@ public class EncryptedJwtTest {
     }
 
     @Test
+    public void testCbcHmacRfc7518Construction() throws Exception {
+        JwkRSA jwk = (JwkRSA) jwkKeys.forKeyId("RS_512").orElseThrow();
+        for (CbcHmacParameters parameters : CBC_HMAC_PARAMETERS) {
+            EncryptedJwt encryptedJwt = builder(signedJwt)
+                    .jwk(jwk)
+                    .algorithm(SupportedAlgorithm.RSA_OAEP)
+                    .encryption(parameters.encryption())
+                    .build();
+            String[] tokenParts = encryptedJwt.token().split("\\.", -1);
+
+            Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-1AndMGF1Padding");
+            rsaCipher.init(Cipher.DECRYPT_MODE, jwk.privateKey().orElseThrow());
+            byte[] contentEncryptionKey = rsaCipher.doFinal(encryptedJwt.encryptedKey());
+            assertThat(contentEncryptionKey.length, is(parameters.keyLength() * 2));
+
+            byte[] macKey = Arrays.copyOfRange(contentEncryptionKey, 0, parameters.keyLength());
+            byte[] encKey = Arrays.copyOfRange(contentEncryptionKey,
+                                               parameters.keyLength(),
+                                               contentEncryptionKey.length);
+            byte[] aad = tokenParts[0].getBytes(StandardCharsets.US_ASCII);
+            byte[] al = ByteBuffer.allocate(Long.BYTES)
+                    .order(ByteOrder.BIG_ENDIAN)
+                    .putLong(aad.length * 8L)
+                    .array();
+
+            Mac mac = Mac.getInstance(parameters.hmac());
+            mac.init(new SecretKeySpec(macKey, parameters.hmac()));
+            mac.update(aad);
+            mac.update(encryptedJwt.iv());
+            mac.update(encryptedJwt.encryptedPayload());
+            mac.update(al);
+            byte[] expectedTag = Arrays.copyOf(mac.doFinal(), parameters.keyLength());
+            assertThat(encryptedJwt.authTag(), is(expectedTag));
+
+            Cipher aesCipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+            aesCipher.init(Cipher.DECRYPT_MODE,
+                           new SecretKeySpec(encKey, "AES"),
+                           new IvParameterSpec(encryptedJwt.iv()));
+            String decryptedPayload = new String(aesCipher.doFinal(encryptedJwt.encryptedPayload()),
+                                                 StandardCharsets.UTF_8);
+            assertThat(decryptedPayload, is(signedJwt.tokenContent()));
+        }
+    }
+
+    @Test
+    public void testCbcHmacRejectsModifiedIv() {
+        Base64.Decoder decoder = Base64.getUrlDecoder();
+        Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
+        for (CbcHmacParameters parameters : CBC_HMAC_PARAMETERS) {
+            EncryptedJwt encryptedJwt = builder(signedJwt)
+                    .jwks(jwkKeys, "RS_512")
+                    .algorithm(SupportedAlgorithm.RSA_OAEP)
+                    .encryption(parameters.encryption())
+                    .build();
+            String[] tokenParts = encryptedJwt.token().split("\\.", -1);
+            byte[] iv = decoder.decode(tokenParts[2]);
+            iv[0] ^= 1;
+            tokenParts[2] = encoder.encodeToString(iv);
+
+            JwtException exception = assertThrows(JwtException.class,
+                                                   () -> parseToken(String.join(".", tokenParts)).decrypt(jwkKeys),
+                                                   parameters.encryption().toString());
+            assertThat(exception.getMessage(), containsString("HMAC signature does not match"));
+        }
+    }
+
+    @Test
+    public void testCbcHmacRejectsModifiedProtectedHeaderRepresentation() {
+        Base64.Decoder decoder = Base64.getUrlDecoder();
+        Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
+        EncryptedJwt encryptedJwt = builder(signedJwt)
+                .jwks(jwkKeys, "RS_512")
+                .algorithm(SupportedAlgorithm.RSA_OAEP)
+                .encryption(SupportedEncryption.A128CBC_HS256)
+                .build();
+        String[] tokenParts = encryptedJwt.token().split("\\.", -1);
+        String protectedHeader = new String(decoder.decode(tokenParts[0]), StandardCharsets.UTF_8);
+        tokenParts[0] = encoder.encodeToString((" " + protectedHeader).getBytes(StandardCharsets.UTF_8));
+
+        JwtException exception = assertThrows(JwtException.class,
+                                               () -> parseToken(String.join(".", tokenParts)).decrypt(jwkKeys));
+        assertThat(exception.getMessage(), containsString("HMAC signature does not match"));
+    }
+
+    @Test
+    public void testCbcHmacRejectsInvalidContentEncryptionKeyLengths() throws Exception {
+        Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
+        JwkRSA jwk = (JwkRSA) jwkKeys.forKeyId("RS_512").orElseThrow();
+        for (CbcHmacParameters parameters : CBC_HMAC_PARAMETERS) {
+            EncryptedJwt encryptedJwt = builder(signedJwt)
+                    .jwk(jwk)
+                    .algorithm(SupportedAlgorithm.RSA_OAEP)
+                    .encryption(parameters.encryption())
+                    .build();
+            String[] tokenParts = encryptedJwt.token().split("\\.", -1);
+            int expectedKeyLength = parameters.keyLength() * 2;
+
+            for (int keyLength : new int[] {expectedKeyLength - 1, expectedKeyLength + 1}) {
+                Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-1AndMGF1Padding");
+                cipher.init(Cipher.ENCRYPT_MODE, jwk.publicKey());
+                tokenParts[1] = encoder.encodeToString(cipher.doFinal(new byte[keyLength]));
+
+                JwtException exception = assertThrows(JwtException.class,
+                                                       () -> parseToken(String.join(".", tokenParts)).decrypt(jwk),
+                                                       keyLength + "-byte content encryption key");
+                assertThat(exception.getMessage(), containsString("Invalid content encryption key length"));
+            }
+        }
+    }
+
+    @Test
     public void testRsaPkcs1KeyManagementDecryptRejected() {
         Base64.Encoder urlEncoder = Base64.getUrlEncoder().withoutPadding();
         String headerJson = "{\"alg\":\"RSA1_5\",\"enc\":\"A128GCM\",\"cty\":\"JWT\",\"kid\":\"RS_512\"}";
@@ -155,6 +280,9 @@ public class EncryptedJwtTest {
                 .algorithm(SupportedAlgorithm.RSA1_5)
                 .build());
         assertThat(exception.getMessage(), containsString(RSA1_5_UNSUPPORTED));
+    }
+
+    private record CbcHmacParameters(SupportedEncryption encryption, String hmac, int keyLength) {
     }
 
 }

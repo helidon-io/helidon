@@ -16,6 +16,8 @@
 
 package io.helidon.security.jwt;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
@@ -55,6 +57,8 @@ import io.helidon.security.jwt.jwk.JwkRSA;
  */
 public final class EncryptedJwt {
 
+    private static final byte[] EMPTY_BYTES = new byte[0];
+    private static final SecureRandom RANDOM = new SecureRandom();
     private static final Map<SupportedAlgorithm, String> RSA_ALGORITHMS;
     private static final Map<SupportedEncryption, AesAlgorithm> CONTENT_ENCRYPTION;
     private static final String RSA1_5_UNSUPPORTED = "RSA1_5 is not supported for JWE key management.";
@@ -290,7 +294,8 @@ public final class EncryptedJwt {
     public SignedJwt decrypt(JwkKeys jwkKeys, Jwk defaultJwk) {
         Errors.Collector errors = Errors.collector();
 
-        String headerBase64 = encode(header.headerJson().toString().getBytes(StandardCharsets.UTF_8));
+        int headerEnd = token.indexOf('.');
+        byte[] aad = token.substring(0, headerEnd).getBytes(StandardCharsets.US_ASCII);
         String alg = header.algorithm().orElse(null);
         String kid = header.keyId().orElse(null);
         String enc = header.encryption().orElse(null);
@@ -350,13 +355,6 @@ public final class EncryptedJwt {
 
         errors.collect().checkValid();
 
-        byte[] decryptedKey = decryptRsa(algorithm, privateKey, encryptedKey);
-        //Base64 headers are used as an aad. This aad has to be in US_ASCII encoding.
-        EncryptionParts encryptionParts = new EncryptionParts(decryptedKey,
-                                                              iv,
-                                                              headerBase64.getBytes(StandardCharsets.US_ASCII),
-                                                              encryptedPayload,
-                                                              authTag);
         AesAlgorithm aesAlgorithm;
         try {
             SupportedEncryption supportedEncryption = SupportedEncryption.getValue(enc);
@@ -364,7 +362,36 @@ public final class EncryptedJwt {
         } catch (IllegalArgumentException e) {
             throw new JwtException("Unsupported content encryption: " + enc);
         }
+
+        byte[] decryptedKey = decryptRsa(algorithm, privateKey, encryptedKey);
+        byte[] macKey;
+        byte[] encKey;
+        if (aesAlgorithm.hasHmac()) {
+            int keySizeInBytes = aesAlgorithm.keySize() / 8;
+            int expectedKeySize = keySizeInBytes * 2;
+            if (decryptedKey.length != expectedKeySize) {
+                throw new JwtException("Invalid content encryption key length for " + enc
+                                               + ": expected " + expectedKeySize + " bytes but got " + decryptedKey.length);
+            }
+            macKey = new byte[keySizeInBytes];
+            encKey = new byte[keySizeInBytes];
+            System.arraycopy(decryptedKey, 0, macKey, 0, keySizeInBytes);
+            System.arraycopy(decryptedKey, keySizeInBytes, encKey, 0, keySizeInBytes);
+        } else {
+            encKey = decryptedKey;
+            macKey = EMPTY_BYTES;
+        }
+        //Base64 headers are used as an aad. This aad has to be in US_ASCII encoding.
+        EncryptionParts encryptionParts = new EncryptionParts(encKey,
+                                                              macKey,
+                                                              iv,
+                                                              aad,
+                                                              encryptedPayload,
+                                                              authTag);
         String decryptedPayload = new String(aesAlgorithm.decrypt(encryptionParts), StandardCharsets.UTF_8);
+        Arrays.fill(decryptedKey, (byte) 0);
+        Arrays.fill(macKey, (byte) 0);
+        Arrays.fill(encKey, (byte) 0);
         return SignedJwt.parseToken(decryptedPayload);
     }
 
@@ -524,9 +551,13 @@ public final class EncryptedJwt {
             //Base64 headers are used as an aad. This aad has to be in US_ASCII encoding.
             EncryptionParts encryptionParts = contentEncryption.encrypt(jwt.tokenContent().getBytes(StandardCharsets.UTF_8),
                                                                         headersBase64.getBytes(StandardCharsets.US_ASCII));
+            byte[] macKey = encryptionParts.mac();
             byte[] aesKey = encryptionParts.key();
+            byte[] contentEncryptionKey = new byte[macKey.length + aesKey.length];
+            System.arraycopy(macKey, 0, contentEncryptionKey, 0, macKey.length);
+            System.arraycopy(aesKey, 0, contentEncryptionKey, macKey.length, aesKey.length);
 
-            byte[] encryptedAesKey = encryptRsa(rsaCipherType, publicKey, aesKey);
+            byte[] encryptedAesKey = encryptRsa(rsaCipherType, publicKey, contentEncryptionKey);
             String token = tokenBuilder.append(headersBase64).append(".")
                     .append(encode(encryptedAesKey)).append(".")
                     .append(encode(encryptionParts.iv())).append(".")
@@ -642,8 +673,6 @@ public final class EncryptedJwt {
 
     private static class AesAlgorithm {
 
-        private static final SecureRandom RANDOM = new SecureRandom();
-
         private final String cipher;
         private final int keySize;
         private final int ivSize;
@@ -661,12 +690,12 @@ public final class EncryptedJwt {
                 SecretKey secretKey = kgen.generateKey();
                 byte[] iv = new byte[ivSize];
                 RANDOM.nextBytes(iv);
-                EncryptionParts encryptionParts = new EncryptionParts(secretKey.getEncoded(), iv, aad, null, null);
+                EncryptionParts encryptionParts = new EncryptionParts(secretKey.getEncoded(), EMPTY_BYTES, iv, aad, null, null);
                 Cipher cipher = Cipher.getInstance(this.cipher);
                 cipher.init(Cipher.ENCRYPT_MODE, secretKey, createParameterSpec(encryptionParts));
                 postCipherConstruct(cipher, encryptionParts);
                 byte[] encryptedContent = cipher.doFinal(plainContent);
-                return new EncryptionParts(secretKey.getEncoded(), iv, aad, encryptedContent, null);
+                return new EncryptionParts(secretKey.getEncoded(), EMPTY_BYTES, iv, aad, encryptedContent, null);
             } catch (Exception e) {
                 throw new JwtException("Exception during content encryption", e);
             }
@@ -693,6 +722,14 @@ public final class EncryptedJwt {
             return new IvParameterSpec(encryptionParts.iv());
         }
 
+        boolean hasHmac() {
+            return false;
+        }
+
+        int keySize() {
+            return keySize;
+        }
+
     }
 
     private static class AesAlgorithmWithHmac extends AesAlgorithm {
@@ -707,24 +744,14 @@ public final class EncryptedJwt {
         @Override
         public EncryptionParts encrypt(byte[] plainContent, byte[] aad) {
             EncryptionParts encryptionParts = super.encrypt(plainContent, aad);
+            encryptionParts = createMacKey(encryptionParts);
             byte[] authTag = sign(encryptionParts);
             return new EncryptionParts(encryptionParts.key(),
+                                       encryptionParts.mac(),
                                        encryptionParts.iv(),
                                        encryptionParts.aad(),
                                        encryptionParts.encryptedContent(),
                                        authTag);
-        }
-
-        private byte[] sign(EncryptionParts parts) {
-            try {
-                Mac mac = macInstance();
-                mac.init(new SecretKeySpec(parts.key(), "AES"));
-                mac.update(parts.aad());
-                mac.update(parts.encryptedContent());
-                return mac.doFinal();
-            } catch (InvalidKeyException e) {
-                throw new JwtException("Exception occurred while HMAC signature");
-            }
         }
 
         @Override
@@ -735,16 +762,48 @@ public final class EncryptedJwt {
             return super.decrypt(encryptionParts);
         }
 
+        @Override
+        boolean hasHmac() {
+            return true;
+        }
+
+        private EncryptionParts createMacKey(EncryptionParts encryptionParts) {
+            byte[] macKey = new byte[keySize() / 8];
+            RANDOM.nextBytes(macKey);
+            return new EncryptionParts(encryptionParts.key(),
+                                       macKey,
+                                       encryptionParts.iv(),
+                                       encryptionParts.aad(),
+                                       encryptionParts.encryptedContent(),
+                                       encryptionParts.authTag());
+        }
+
+        private byte[] sign(EncryptionParts parts) {
+            byte[] fullHmacTag = computeMac(parts);
+            return Arrays.copyOf(fullHmacTag, fullHmacTag.length / 2);
+        }
+
         private boolean verifySignature(EncryptionParts encryptionParts) {
+            byte[] fullHmacTag = computeMac(encryptionParts);
+            byte[] authKey = Arrays.copyOf(fullHmacTag, fullHmacTag.length / 2);
+            return MessageDigest.isEqual(authKey, encryptionParts.authTag());
+        }
+
+        private byte[] computeMac(EncryptionParts encryptionParts) {
             try {
+                byte[] al = ByteBuffer.allocate(Long.BYTES)
+                        .order(ByteOrder.BIG_ENDIAN)
+                        .putLong(encryptionParts.aad().length * 8L)
+                        .array();
                 Mac mac = macInstance();
-                mac.init(new SecretKeySpec(encryptionParts.key(), "AES"));
+                mac.init(new SecretKeySpec(encryptionParts.mac(), hmac));
                 mac.update(encryptionParts.aad());
+                mac.update(encryptionParts.iv());
                 mac.update(encryptionParts.encryptedContent());
-                byte[] authKey = mac.doFinal();
-                return MessageDigest.isEqual(authKey, encryptionParts.authTag());
+                mac.update(al);
+                return mac.doFinal();
             } catch (InvalidKeyException e) {
-                throw new JwtException("Exception occurred while HMAC signature.");
+                throw new JwtException("Exception occurred while calculating HMAC signature.", e);
             }
         }
 
@@ -773,6 +832,7 @@ public final class EncryptedJwt {
             System.arraycopy(wholeEncryptedContent, 0, encryptedContent, 0, encryptedContent.length);
             System.arraycopy(wholeEncryptedContent, length, authTag, 0, authTag.length);
             return new EncryptionParts(encryptionParts.key(),
+                                       encryptionParts.mac(),
                                        encryptionParts.iv(),
                                        encryptionParts.aad(),
                                        encryptedContent,
@@ -789,6 +849,7 @@ public final class EncryptedJwt {
             System.arraycopy(encryptedPayload, 0, result, 0, epl);
             System.arraycopy(authTag, 0, result, epl, al);
             EncryptionParts newEncParts = new EncryptionParts(encryptionParts.key(),
+                                                              encryptionParts.mac(),
                                                               encryptionParts.iv(),
                                                               encryptionParts.aad(),
                                                               result,
@@ -810,13 +871,20 @@ public final class EncryptedJwt {
     private static final class EncryptionParts {
 
         private final byte[] key;
+        private final byte[] mac;
         private final byte[] iv;
         private final byte[] aad;
         private final byte[] encryptedContent;
         private final byte[] authTag;
 
-        private EncryptionParts(byte[] key, byte[] iv, byte[] aad, byte[] encryptedContent, byte[] authTag) {
+        private EncryptionParts(byte[] key,
+                                byte[] mac,
+                                byte[] iv,
+                                byte[] aad,
+                                byte[] encryptedContent,
+                                byte[] authTag) {
             this.key = key;
+            this.mac = mac;
             this.iv = iv;
             this.aad = aad;
             this.encryptedContent = encryptedContent;
@@ -825,6 +893,10 @@ public final class EncryptedJwt {
 
         public byte[] key() {
             return key;
+        }
+
+        public byte[] mac() {
+            return mac;
         }
 
         public byte[] iv() {
