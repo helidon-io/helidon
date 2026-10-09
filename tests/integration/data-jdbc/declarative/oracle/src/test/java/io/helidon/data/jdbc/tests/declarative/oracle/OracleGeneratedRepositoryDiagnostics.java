@@ -25,14 +25,22 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
-import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -52,65 +60,56 @@ import org.testcontainers.containers.GenericContainer;
 final class OracleGeneratedRepositoryDiagnostics
         implements BeforeAllCallback, BeforeEachCallback, AfterEachCallback, AfterAllCallback {
     private static final System.Logger LOGGER = System.getLogger(OracleGeneratedRepositoryDiagnostics.class.getName());
-    // Identity values appear in connection descriptors, XML attributes and listener summaries.
-    private static final Pattern IDENTITY = Pattern.compile("(?im)(?:\\b(?:host(?:_id|_addr|name)?|machine|node(?:name)?|"
-            + "user(?:name)?|service(?:_name|_names)?|instance(?:_name)?|target_local_instance|sid|db_name|"
-            + "db_unique_name|oracle_sid|connection_id|containerId|key|alias)\\s*(?:=|:)\\s*"
-            + "|\\b(?:Service|Instance)\\s+(?=[\"'])|^\\h*(?:Default\\h+Service|Alias)\\h+)"
-            + "(?:[\"']([^\"'\\r\\n]*)[\"']|&quot;([^\\r\\n]*?)&quot;|([^\\s()<>,\"';]+))");
-    // Dotted address boundaries preserve Oracle's five-component versions and image version tags.
-    private static final Pattern IP_ADDRESS = Pattern.compile("(?i)(?<![\\w.-])"
-            + "(?:(?:25[0-5]|2[0-4]\\d|1?\\d?\\d)\\.){3}(?:25[0-5]|2[0-4]\\d|1?\\d?\\d)"
-            + "(?![\\w.-])|(?<![\\w.:-])(?:"
-            + "::ffff:(?:(?:25[0-5]|2[0-4]\\d|1?\\d?\\d)\\.){3}(?:25[0-5]|2[0-4]\\d|1?\\d?\\d)"
-            + "|(?:[a-f\\d]{1,4}:){7}[a-f\\d]{1,4}"
-            + "|(?:[a-f\\d]{1,4}:){0,6}[a-f\\d]{0,4}::(?:[a-f\\d]{1,4}:){0,6}[a-f\\d]{0,4}"
-            + ")(?:%[\\w.-]+)?(?![\\w.:-])");
-    // Exclude XML closing tags and URL separators from filesystem path matches.
-    private static final Pattern FILE_PATH = Pattern.compile("(?<![\\w</])/(?:[^\\s<>\"'(),;]+)");
-    // Resource high-water marks retain evidence of earlier load when collection begins after a failure.
-    private static final List<String> SAMPLES = List.of("""
-            SELECT RESOURCE_NAME, CURRENT_UTILIZATION, MAX_UTILIZATION, INITIAL_ALLOCATION, LIMIT_VALUE, CON_ID
-            FROM V$RESOURCE_LIMIT WHERE RESOURCE_NAME IN ('processes', 'sessions', 'transactions')
-            """, """
-            SELECT CON_ID, STATUS, SERVER, COUNT(*) AS SESSION_COUNT
-            FROM V$SESSION WHERE SUBSTR(USERNAME, 1, 8) = 'JDBC_IT_'
-            GROUP BY CON_ID, STATUS, SERVER
-            """, """
-            SELECT CASE WHEN BACKGROUND = '1' THEN 'background' ELSE 'foreground' END AS KIND,
-                   COUNT(*) AS PROCESS_COUNT, SUM(PGA_ALLOC_MEM) AS PGA_ALLOCATED_BYTES
-            FROM V$PROCESS GROUP BY CASE WHEN BACKGROUND = '1' THEN 'background' ELSE 'foreground' END
-            """);
-    // Bound command duration and log tails; include both ADR and Free Lite log locations.
+    private static final String LISTENER_TIMESTAMP = "[0-9]{2}-[A-Z]{3}-[0-9]{4} "
+            + "[0-9]{2}:[0-9]{2}:[0-9]{2}(?::[0-9]{3})?";
+    // Extract fields, never matching lines: a listener line may also contain credentials or connection descriptors.
+    private static final Pattern SERVICE = Pattern.compile("Service \"(FREEPDB1|FREE)\" has [0-9]+ instance\\(s\\)\\.",
+                                                           Pattern.CASE_INSENSITIVE);
+    private static final Pattern HANDLER = Pattern.compile("\"DEDICATED\" established:([0-9]{1,19}) "
+            + "refused:([0-9]{1,19}) state:(ready|blocked|unknown)");
+    private static final Pattern TRANSITION = Pattern.compile("\\b(" + LISTENER_TIMESTAMP
+            + ") \\* DEDICATED handler (blocked|unblocked)\\b"
+            + "[^\\r\\n]*?\\bload = ([0-9]{1,19})(?![0-9])");
+    private static final Pattern CONNECTION_ID = Pattern.compile("\\bCONNECTION_ID\\s*=\\s*"
+            + "([A-Za-z0-9+/=_-]{1,128})(?=\\s|\\)|$)");
+    private static final Pattern LISTENER_CONNECTION = Pattern.compile("\\b(" + LISTENER_TIMESTAMP
+            + ") \\* [^\\r\\n]*?\\* establish \\* (FREEPDB1|FREE) \\* (0|12516)(?=\\s|<|$)",
+                                                                      Pattern.CASE_INSENSITIVE);
+    private static final Pattern COUNTER = Pattern.compile("(max|oom|oom_kill|oom_group_kill) ([0-9]{1,19})");
+    private static final DateTimeFormatter LISTENER_TIME = new DateTimeFormatterBuilder()
+            .parseCaseInsensitive().appendPattern("dd-MMM-uuuu HH:mm:ss[:SSS]")
+            .toFormatter(Locale.ENGLISH).withResolverStyle(ResolverStyle.STRICT);
+    // High-water marks retain evidence of earlier load when collection begins after a refusal.
+    private static final String RESOURCE_QUERY = """
+            SELECT RESOURCE_NAME, CURRENT_UTILIZATION, MAX_UTILIZATION, LIMIT_VALUE
+            FROM V$RESOURCE_LIMIT WHERE RESOURCE_NAME IN ('processes', 'sessions') AND CON_ID = 1
+            """;
+    // Raw output stays in memory. Only the structured fields extracted below may reach the artifact.
     private static final String CONTAINER_REPORT = """
-            printf '=== listener services ===\n'
+            printf '=== listener ===\n'
             timeout 2 lsnrctl services
-            printf 'lsnrctl services exit=%s\n' "$?"
-            printf '=== listener status ===\n'
-            timeout 2 lsnrctl status
-            printf 'lsnrctl status exit=%s\n' "$?"
-            printf '=== process limits and cgroups ===\n'
-            cat /proc/1/limits /proc/self/cgroup
+            printf '=== cgroups ===\n'
             for file in /sys/fs/cgroup/pids.current /sys/fs/cgroup/pids.peak /sys/fs/cgroup/pids.max \
-                        /sys/fs/cgroup/pids.events /sys/fs/cgroup/memory.current /sys/fs/cgroup/memory.max \
-                        /sys/fs/cgroup/memory.events /sys/fs/cgroup/pids/pids.current /sys/fs/cgroup/pids/pids.max \
+                        /sys/fs/cgroup/pids.events /sys/fs/cgroup/memory.events \
+                        /sys/fs/cgroup/pids/pids.current /sys/fs/cgroup/pids/pids.max \
                         /sys/fs/cgroup/pids/pids.events /sys/fs/cgroup/memory/memory.failcnt
             do
                 if test -r "$file"; then printf '\n%s\n' "${file##*/}"; cat "$file"; fi
             done
-            printf '\n=== listener and alert logs (including Free Lite without ADR) ===\n'
-            timeout 2 find /opt/oracle/diag /opt/oracle/product /opt/oracle/oradata \
-                -type f \\( -name 'alert_*.log' -o -name 'listener.log' -o -path '*/alert/log.xml' \\) -print \
-                | head -n 3 | while IFS= read -r file
+            printf '\n=== history ===\n'
+            timeout 2 find /opt/oracle/diag /opt/oracle/product \
+                -type f \\( -name 'listener.log' -o -path '*/tnslsnr/*/alert/log.xml' \\) -print \
+                | head -n 1 | while IFS= read -r file
             do
-                printf '\n%s\n' "$file"
-                tail -c 1048576 "$file"
+                tail -c 65536 "$file"
             done
             """;
 
-    private final Path root;
-    private final ConnectionSupplier connections;
-    private final ReportSupplier reports;
+    private final Path root = Path.of("target/failsafe-reports/oracle-generated-repository");
+    private final GenericContainer<?> container;
+    // Raw correlation IDs stay in memory; only generated labels are written. Cleanup can run on another thread.
+    private final ConcurrentMap<String, String> connections = new ConcurrentHashMap<>();
+    private final AtomicInteger connectionSequence = new AtomicInteger();
     // Final collection and timeout cleanup may race; only one task takes ownership of closing the connection.
     private final AtomicReference<Connection> observer = new AtomicReference<>();
 
@@ -122,39 +121,7 @@ final class OracleGeneratedRepositoryDiagnostics
     private boolean refusalCaptured;
 
     OracleGeneratedRepositoryDiagnostics(GenericContainer<?> container) {
-        this(Path.of("target/failsafe-reports/oracle-generated-repository"),
-             () -> {
-                 // Query instance-wide limits through the root service, outside application transactions.
-                 Properties properties = new Properties();
-                 properties.setProperty("user", "sys");
-                 properties.setProperty("password", container.getEnvMap().get("ORACLE_PWD"));
-                 properties.setProperty("internal_logon", "sysdba");
-                 properties.setProperty("oracle.net.CONNECT_TIMEOUT", "2000");
-                 properties.setProperty("oracle.jdbc.ReadTimeout", "2000");
-                 return new OracleDriver().connect("jdbc:oracle:thin:@%s:%s/FREE"
-                         .formatted(container.getHost(), container.getMappedPort(1521)), properties);
-             }, () -> {
-                 Container.ExecResult result = container.execInContainer("timeout", "8", "bash", "-c", CONTAINER_REPORT);
-                 StringBuilder report = new StringBuilder("image=").append(container.getDockerImageName())
-                         .append(" imageId=").append(container.getContainerInfo().getImageId())
-                         .append(" containerId=").append(container.getContainerId()).append('\n');
-                 for (String name : List.of("GITHUB_RUN_ID", "GITHUB_RUN_ATTEMPT", "GITHUB_SHA", "GITHUB_JOB")) {
-                     report.append(name).append('=').append(System.getenv().getOrDefault(name, "local")).append('\n');
-                 }
-                 report.append("exitCode=").append(result.getExitCode()).append('\n')
-                         .append(result.getStdout()).append(result.getStderr());
-                 String logs = container.getLogs();
-                 report.append("\n=== container log (last 1 MiB) ===\n")
-                         .append(logs.substring(Math.max(0, logs.length() - 1048576)));
-                 // Remove the configured password before the common identity redaction at the file writers.
-                 return report.toString().replace(container.getEnvMap().get("ORACLE_PWD"), "<redacted>");
-             });
-    }
-
-    OracleGeneratedRepositoryDiagnostics(Path root, ConnectionSupplier connections, ReportSupplier reports) {
-        this.root = root;
-        this.connections = connections;
-        this.reports = reports;
+        this.container = container;
     }
 
     @Override
@@ -164,12 +131,13 @@ final class OracleGeneratedRepositoryDiagnostics
 
     @Override
     public void beforeEach(ExtensionContext context) {
-        test = context.getDisplayName();
+        // Source method names cannot include argument values supplied through JUnit display names.
+        test = context.getRequiredTestMethod().getName();
     }
 
     @Override
     public void afterEach(ExtensionContext context) {
-        finishTest(context.getDisplayName(), context.getExecutionException().orElse(null));
+        finishTest(context.getRequiredTestMethod().getName(), context.getExecutionException().orElse(null));
     }
 
     @Override
@@ -182,6 +150,8 @@ final class OracleGeneratedRepositoryDiagnostics
         failures = 0;
         refusalCaptured = false;
         directory = null;
+        connections.clear();
+        connectionSequence.set(0);
         test = "suite-start";
         // Prepare a serial worker; files and the observer connection are created only after a failure.
         executor = Executors.newSingleThreadExecutor(Thread.ofPlatform().daemon(true)
@@ -190,19 +160,20 @@ final class OracleGeneratedRepositoryDiagnostics
 
     void connectionAttempt(int attempt, SQLException failure) {
         boolean refused = failure != null;
+        // Extract the one correlation field before the driver failure is translated into a safe exception.
+        String connectionId = connectionId(failure);
         // Capture caller identity and occurrence time before asynchronous collection can fall behind retries.
-        String event = test + " connection-attempt=" + attempt + " thread=" + Thread.currentThread().threadId()
+        String event = test + " service=test connection-attempt=" + attempt + " thread=" + Thread.currentThread().threadId()
                 + " occurredAt=" + Instant.now()
-                + (refused ? " sqlState=" + failure.getSQLState() + " vendorCode=" + failure.getErrorCode() : " recovered");
+                + (refused ? " sqlState=" + sqlState(failure) + " vendorCode=" + failure.getErrorCode() : " recovered");
         // The single worker serializes writes and the first-refusal gate across concurrent callers.
         executor.submit(() -> {
             if (!refused && directory == null) {
                 return;
             }
             initialize();
-            note(event);
+            note(event + " connection=" + connectionLabel(connectionId));
             if (refused && !refusalCaptured) {
-                // One initial snapshot limits collection overhead during a burst of refused connections.
                 refusalCaptured = true;
                 collect("connection-refused");
             }
@@ -211,7 +182,6 @@ final class OracleGeneratedRepositoryDiagnostics
 
     void finishTest(String name, Throwable failure) {
         executor.submit(() -> {
-            // Passing tests record an outcome only after an earlier failure has triggered collection.
             if (failure == null && directory == null) {
                 return;
             }
@@ -219,10 +189,10 @@ final class OracleGeneratedRepositoryDiagnostics
             note(name + " outcome=" + (failure == null ? "passed" : "failed"));
             Throwable current = failure;
             for (int depth = 0; current != null && depth < 16; depth++) {
-                // Exception messages may contain SQL or credentials; record only types and Oracle error codes.
-                note("exception=" + current.getClass().getName()
-                        + (current instanceof SQLException sql ? " sqlState=" + sql.getSQLState()
-                        + " vendorCode=" + sql.getErrorCode() : ""));
+                // Driver messages and exception text are not needed; retain only validated SQL error metadata.
+                if (current instanceof SQLException sql) {
+                    note("sqlState=" + sqlState(sql) + " vendorCode=" + sql.getErrorCode());
+                }
                 current = current.getCause();
             }
             if (failure != null) {
@@ -247,35 +217,63 @@ final class OracleGeneratedRepositoryDiagnostics
             if (failure instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
-            LOGGER.log(System.Logger.Level.WARNING, "Oracle diagnostic collection incomplete: " + failure.getClass().getName());
+            LOGGER.log(System.Logger.Level.WARNING, "Oracle diagnostic collection incomplete");
         } finally {
             closing = true;
             executor.shutdownNow();
-            // Also release the observer if the final task could not run before the deadline.
             if (observer.get() != null) {
                 Thread.ofPlatform().daemon(true).name("oracle-diagnostic-cleanup").start(this::closeObserver);
             }
         }
     }
 
-    private static String redact(String text) {
-        Set<String> identities = new LinkedHashSet<>();
-        Matcher matcher = IDENTITY.matcher(text);
-        while (matcher.find()) {
-            for (int group = 1; group <= matcher.groupCount(); group++) {
-                String identity = matcher.group(group);
-                if (identity != null && !identity.isBlank()) {
-                    identities.add(identity);
+    private static String numeric(String value) {
+        if (value != null) {
+            value = value.strip();
+            // Limits may use these explicit markers; never copy other database or command text.
+            if ("max".equals(value) || "UNLIMITED".equals(value)) {
+                return "unlimited";
+            }
+            if (value.matches("[0-9]{1,19}")) {
+                try {
+                    return Long.toString(Long.parseLong(value));
+                } catch (NumberFormatException _) {
+                    // An out-of-range value is unavailable, not a reason to write the raw input.
                 }
             }
         }
-        // Remove repetitions in plain alert text as well as the original labeled fields.
-        for (String identity : identities) {
-            text = Pattern.compile("(?<![\\p{L}\\p{N}_.-])" + Pattern.quote(identity) + "(?![\\p{L}\\p{N}_.-])",
-                                   Pattern.CASE_INSENSITIVE).matcher(text).replaceAll("<redacted>");
+        return "unavailable";
+    }
+
+    private static String sqlState(SQLException failure) {
+        String state = failure.getSQLState();
+        return state != null && state.matches("[A-Z0-9]{5}") ? state : "unavailable";
+    }
+
+    private static String connectionId(Throwable failure) {
+        for (int depth = 0; failure != null && depth < 16; depth++, failure = failure.getCause()) {
+            String message = failure.getMessage();
+            if (message != null) {
+                Matcher identifier = CONNECTION_ID.matcher(message);
+                if (identifier.find()) {
+                    return identifier.group(1);
+                }
+            }
         }
-        text = IP_ADDRESS.matcher(text).replaceAll("<redacted-ip>");
-        return FILE_PATH.matcher(text).replaceAll("<redacted-path>");
+        return null;
+    }
+
+    private static String serviceRole(String service) {
+        return switch (service.toUpperCase(Locale.ROOT)) {
+        case "FREEPDB1" -> "test";
+        case "FREE" -> "observer";
+        default -> "unavailable";
+        };
+    }
+
+    private String connectionLabel(String identifier) {
+        return identifier == null ? "unavailable"
+                : connections.computeIfAbsent(identifier, _ -> "connection-" + connectionSequence.incrementAndGet());
     }
 
     private void initialize() {
@@ -285,7 +283,7 @@ final class OracleGeneratedRepositoryDiagnostics
         directory = root.resolve("OracleGeneratedRepositoryTest-" + ProcessHandle.current().pid() + '-' + UUID.randomUUID());
         try {
             Files.createDirectories(directory);
-            note("diagnostics-start jdk=" + Runtime.version() + " jdbc=" + OracleDriver.getDriverVersion());
+            note("diagnostics-start");
         } catch (IOException failure) {
             unavailable("initialize", failure);
         }
@@ -294,10 +292,101 @@ final class OracleGeneratedRepositoryDiagnostics
     private void collect(String phase) {
         // Capture listener evidence before opening an observer through the possibly blocked handler.
         try {
-            Files.writeString(directory.resolve("container-" + phase + ".log"),
-                              Instant.now() + "\n" + redact(reports.get()), StandardCharsets.UTF_8);
+            Container.ExecResult result = container.execInContainer("timeout", "8", "bash", "-c", CONTAINER_REPORT);
+            StringBuilder report = new StringBuilder().append(Instant.now()).append('\n')
+                    .append("commandExitCode=").append(result.getExitCode()).append('\n');
+            String section = "";
+            String metric = "";
+            String role = "unavailable";
+            LinkedHashSet<String> handlerServices = new LinkedHashSet<>();
+            boolean metricFound = false;
+            for (String line : result.getStdout().lines().toList()) {
+                line = line.strip();
+                if (List.of("=== listener ===", "=== cgroups ===", "=== history ===").contains(line)) {
+                    section = line;
+                    metric = "";
+                    role = "unavailable";
+                } else if ("=== listener ===".equals(section)) {
+                    if (line.startsWith("Service \"")) {
+                        Matcher service = SERVICE.matcher(line);
+                        role = service.matches() ? serviceRole(service.group(1)) : "unavailable";
+                    }
+                    Matcher handler = HANDLER.matcher(line);
+                    if (!"unavailable".equals(role) && handler.matches()) {
+                        report.append("service=").append(role).append(" handler=DEDICATED established=")
+                                .append(numeric(handler.group(1)))
+                                .append(" refused=").append(numeric(handler.group(2)))
+                                .append(" state=").append(handler.group(3)).append('\n');
+                        handlerServices.add(role);
+                    }
+                } else if ("=== cgroups ===".equals(section)) {
+                    if (List.of("pids.current", "pids.peak", "pids.max", "pids.events",
+                                "memory.events", "memory.failcnt").contains(line)) {
+                        metric = line;
+                    } else if (List.of("pids.current", "pids.peak", "pids.max", "memory.failcnt").contains(metric)
+                            && line.matches("[0-9]{1,19}|max")) {
+                        report.append(metric).append('=').append(numeric(line)).append('\n');
+                        metricFound = true;
+                    } else {
+                        Matcher counter = COUNTER.matcher(line);
+                        if (counter.matches()
+                                && ("pids.events".equals(metric) && "max".equals(counter.group(1))
+                                || "memory.events".equals(metric) && !"max".equals(counter.group(1)))) {
+                            report.append(metric).append('.').append(counter.group(1)).append('=')
+                                    .append(numeric(counter.group(2))).append('\n');
+                            metricFound = true;
+                        }
+                    }
+                }
+            }
+            for (String service : List.of("test", "observer")) {
+                if (!handlerServices.contains(service)) {
+                    report.append("service=").append(service).append(" listener=unavailable\n");
+                }
+            }
+            if (!metricFound) {
+                report.append("cgroups=unavailable\n");
+            }
+            // Keep only recent transition timestamps, recognized states and numeric load; discard all surrounding text.
+            LinkedHashSet<String> history = new LinkedHashSet<>();
+            Matcher transition = TRANSITION.matcher(result.getStdout());
+            while (transition.find()) {
+                try {
+                    LocalDateTime time = LocalDateTime.parse(transition.group(1), LISTENER_TIME);
+                    history.add("listenerTimeLocal=" + time + " scope=instance event=" + transition.group(2)
+                            + " load=" + numeric(transition.group(3)));
+                    if (history.size() > 40) {
+                        history.removeFirst();
+                    }
+                } catch (DateTimeParseException _) {
+                    // Invalid timestamps are discarded, with no fallback to the matching log line.
+                }
+            }
+            report.append(history.isEmpty() ? "listenerTransitions=unavailable\n" : String.join("\n", history) + '\n');
+            // Correlate only known application/observer refusals; unrelated connections are not part of this report.
+            LinkedHashSet<String> listenerConnections = new LinkedHashSet<>();
+            Matcher entry = LISTENER_CONNECTION.matcher(result.getStdout());
+            while (entry.find()) {
+                Matcher identifier = CONNECTION_ID.matcher(entry.group());
+                String label = identifier.find() ? connections.get(identifier.group(1)) : null;
+                if (label != null) {
+                    try {
+                        LocalDateTime time = LocalDateTime.parse(entry.group(1), LISTENER_TIME);
+                        listenerConnections.add("listenerTimeLocal=" + time + " service=" + serviceRole(entry.group(2))
+                                + " connection=" + label + " vendorCode=" + entry.group(3));
+                        if (listenerConnections.size() > 40) {
+                            listenerConnections.removeFirst();
+                        }
+                    } catch (DateTimeParseException _) {
+                        // An invalid event cannot fall back to raw listener text.
+                    }
+                }
+            }
+            report.append(listenerConnections.isEmpty() ? "listenerConnections=unavailable\n"
+                                  : String.join("\n", listenerConnections) + '\n');
+            // Neither stderr nor unrecognized stdout reaches this writer.
+            Files.writeString(directory.resolve("container-" + phase + ".log"), report, StandardCharsets.UTF_8);
         } catch (IOException | InterruptedException | RuntimeException failure) {
-            // Preserve partial evidence and report collection failures without replacing the test failure.
             if (failure instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
@@ -306,49 +395,44 @@ final class OracleGeneratedRepositoryDiagnostics
         // Reuse one observer; later snapshots can reopen it if the initial connection was refused.
         if (observer.get() == null) {
             try {
-                observer.set(connections.get());
-                note("observerSessions=1 role=SYSDBA");
-                query(phase, "SELECT STARTUP_TIME, VERSION, STATUS FROM V$INSTANCE");
-                query("parameters", "SELECT NAME, VALUE FROM V$PARAMETER WHERE NAME IN "
-                        + "('processes', 'sessions', 'transactions', 'cpu_count', 'parallel_max_servers', "
-                        + "'sga_target', 'pga_aggregate_limit') ORDER BY NAME");
+                Properties properties = new Properties();
+                properties.setProperty("user", "sys");
+                properties.setProperty("password", container.getEnvMap().get("ORACLE_PWD"));
+                properties.setProperty("internal_logon", "sysdba");
+                properties.setProperty("oracle.net.CONNECT_TIMEOUT", "2000");
+                properties.setProperty("oracle.jdbc.ReadTimeout", "2000");
+                observer.set(new OracleDriver().connect("jdbc:oracle:thin:@%s:%s/FREE"
+                        .formatted(container.getHost(), container.getMappedPort(1521)), properties));
+                note("observerSessions=1 service=observer");
             } catch (SQLException | RuntimeException failure) {
                 unavailable("initialize-observer", failure);
             } finally {
                 if (closing) {
-                    // A connection may finish opening after the final collection wait has timed out.
                     closeObserver();
                 }
             }
         }
-        for (String sql : SAMPLES) {
-            query(phase, sql);
-        }
-    }
-
-    private void query(String phase, String sql) {
         Connection connection = observer.get();
         if (connection == null) {
             note(phase + " observer-unavailable");
             return;
         }
         try (Statement statement = connection.createStatement()) {
-            // Keep database sampling bounded even when the failure involves an overloaded instance.
             statement.setQueryTimeout(2);
-            statement.setMaxRows(256);
-            try (ResultSet rows = statement.executeQuery(sql)) {
-                StringBuilder values = new StringBuilder(phase).append('\n');
-                int columns = rows.getMetaData().getColumnCount();
-                for (int column = 1; column <= columns; column++) {
-                    values.append(rows.getMetaData().getColumnLabel(column)).append('\t');
-                }
+            statement.setMaxRows(2);
+            try (ResultSet rows = statement.executeQuery(RESOURCE_QUERY)) {
+                boolean sampled = false;
                 while (rows.next()) {
-                    values.append('\n');
-                    for (int column = 1; column <= columns; column++) {
-                        values.append(rows.getObject(column)).append('\t');
+                    String resource = rows.getString(1);
+                    if (List.of("processes", "sessions").contains(resource)) {
+                        note(phase + " resource=" + resource + " current=" + numeric(rows.getString(2))
+                                + " maximum=" + numeric(rows.getString(3)) + " limit=" + numeric(rows.getString(4)));
+                        sampled = true;
                     }
                 }
-                note(values.toString());
+                if (!sampled) {
+                    note(phase + " databaseResources=unavailable");
+                }
             }
         } catch (SQLException | RuntimeException failure) {
             unavailable(phase, failure);
@@ -357,16 +441,17 @@ final class OracleGeneratedRepositoryDiagnostics
 
     private void note(String text) {
         try {
-            Files.writeString(directory.resolve("diagnostics.log"), Instant.now() + " " + redact(text) + '\n',
+            Files.writeString(directory.resolve("diagnostics.log"), Instant.now() + " " + text + '\n',
                               StandardCharsets.UTF_8, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-        } catch (IOException failure) {
-            LOGGER.log(System.Logger.Level.WARNING, "Oracle diagnostics could not be written: " + failure.getClass().getName());
+        } catch (IOException _) {
+            LOGGER.log(System.Logger.Level.WARNING, "Oracle diagnostics could not be written");
         }
     }
 
     private void unavailable(String phase, Throwable failure) {
-        note(phase + " collection-unavailable exception=" + failure.getClass().getName()
-                + (failure instanceof SQLException sql ? " sqlState=" + sql.getSQLState()
+        note(phase + " collection-unavailable"
+                + (failure instanceof SQLException sql ? " service=observer connection=" + connectionLabel(connectionId(sql))
+                + " sqlState=" + sqlState(sql)
                 + " vendorCode=" + sql.getErrorCode() : ""));
     }
 
@@ -379,15 +464,5 @@ final class OracleGeneratedRepositoryDiagnostics
                 unavailable("close-observer", failure);
             }
         }
-    }
-
-    @FunctionalInterface
-    interface ConnectionSupplier {
-        Connection get() throws SQLException;
-    }
-
-    @FunctionalInterface
-    interface ReportSupplier {
-        String get() throws IOException, InterruptedException;
     }
 }

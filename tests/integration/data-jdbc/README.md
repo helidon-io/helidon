@@ -173,23 +173,39 @@ mvn -f tests/integration/data-jdbc/pom.xml -pl mixed-provider -am clean package
 per execution. Runs without either event create no diagnostic files or
 observer connection. The existing CI artifact upload includes this path.
 
-Failure and final reports capture the image/version/CI run information, listener
-services/status, PID/memory limits and events, and available listener/alert/container
-logs. Listener evidence is captured before opening one separate SYSDBA connection
-to record effective database parameters, process/session/transaction current and
-maximum utilization, test sessions and process counts. Exception types, SQLState
-and vendor codes are recorded without full messages. Collection has no startup
-or periodic sampling; snapshots reflect collection time, while resource maximum
-utilization and listener logs provide historical evidence. If the observer cannot
-connect at the failure, the final collection attempts to obtain database evidence
-again.
+Failure and final reports contain only structured, allowlisted fields:
 
-Database queries omit host, service and user names. Diagnostic files redact
-identity values from connection descriptors, XML attributes and listener summaries,
-including repeated names in alert text, IP addresses and filesystem paths. The
-configured database password is also redacted. Timestamps, Oracle error codes,
-handler states and load, resource counts and limits, and software versions remain
-available. Previously generated reports are not rewritten.
+- Connection attempt timestamps, attempt numbers, thread IDs, validated SQLState,
+  vendor codes, recovery/test outcomes, and per-run connection pseudonyms for
+  refusals where Oracle supplies a `CONNECTION_ID`.
+- Dedicated listener handler state and numeric connection counters for the fixed
+  test (`FREEPDB1`) and observer (`FREE`) services, recorded as service roles.
+- Up to 40 recent instance-wide blocked/unblocked transition timestamps and load
+  values, and up to 40 listener connection events matching recorded refusals.
+- Database process/session current and maximum utilization and limits.
+- Container PID current/peak/limit values, PID-limit events, and OOM counters
+  (or memory failure counts on cgroup v1).
+- Collection timestamps, command exit codes, and unavailable/incomplete indicators.
+
+Raw command output is parsed in memory. Only recognized fields with validated
+values are written; unrecognized text is discarded without a raw-text fallback.
+No complete log lines, database alert/container logs, command stderr, connection
+descriptors, raw identities, credentials, or environment values are written.
+The same Oracle connection ID receives the same `connection-N` label across
+attempt and listener records within an execution. Original IDs stay in memory;
+unrelated connections are omitted. Missing IDs are reported as unavailable,
+including successful retries whose IDs are not supplied to the collector.
+Listener timestamps use the listener's local time. Pseudonyms do not support
+direct lookup in an external raw trace. Previously generated reports are not
+rewritten.
+
+Listener evidence is captured before opening one separate SYSDBA connection for
+database resource counts. Collection has no startup or periodic sampling;
+snapshots reflect collection time, while resource maximum utilization and
+listener transitions provide historical evidence. The last 64 KiB of one listener
+log is examined for transitions and matching connections; missing or unrecognized
+history is reported as unavailable. If the observer cannot connect at the failure,
+later snapshots attempt to obtain database evidence again.
 
 Account for the additional observer session in failure snapshots. Diagnostic
 queries have two-second timeouts, container commands have an eight-second
