@@ -49,6 +49,7 @@ interface TlsConfigBlueprint extends TlsMaterialBlueprint, Prototype.Factory<Tls
 
     /**
      * The configured TLS manager. If one is not explicitly defined in the config then a default manager will be created.
+     * Configured manager providers are only invoked when TLS is enabled.
      * Default is either a configuration based TLS manager, or an explicit manager when {@link #sslContext()} is provided.
      * A {@link Tls} instance backed by the default {@link ConfiguredTlsManager} uses an isolated runtime manager, so this
      * method returns its configured prototype rather than its runtime manager. Use {@link Tls#generation()} to obtain the
@@ -58,7 +59,7 @@ interface TlsConfigBlueprint extends TlsMaterialBlueprint, Prototype.Factory<Tls
      * @see ConfiguredTlsManager
      */
     @Option.Configured
-    @Option.Provider(value = TlsManagerProvider.class, discoverServices = false)
+    @Option.Provider(value = TlsManagerProvider.class, discoverServices = false, enabledBy = "enabled")
     TlsManager manager();
 
     /**

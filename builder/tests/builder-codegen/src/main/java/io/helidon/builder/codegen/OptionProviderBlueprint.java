@@ -60,4 +60,12 @@ interface OptionProviderBlueprint {
      * @return whether to discover services
      */
     boolean discoverServices();
+
+    /**
+     * Boolean builder getter that enables provider resolution, or empty for unconditional resolution.
+     *
+     * @return boolean builder getter name
+     */
+    @Option.Default("")
+    String enabledBy();
 }

@@ -19,15 +19,28 @@ package io.helidon.common.tls;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import javax.net.ssl.SSLParameters;
 
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.tls.spi.TlsManagerProvider;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigBuilderSupport;
 
 class TlsConfigDecorator implements Prototype.BuilderDecorator<TlsConfig.BuilderBase<?, ?>> {
 
     @Override
     public void decorate(TlsConfig.BuilderBase<?, ?> target) {
+        if (target.enabled() && target.manager().orElse(null) instanceof DisabledTlsManager disabledManager) {
+            target.manager(ConfigBuilderSupport.discoverService(target.config().orElse(disabledManager.config),
+                                                               "manager",
+                                                               TlsManagerProvider.class,
+                                                               TlsManager.class,
+                                                               target.managerDiscoverServices(),
+                                                               Optional.empty())
+                                   .orElseGet(ConfiguredTlsManager::new));
+        }
         if (target.enabled() && target.sslContext().isPresent()) {
             var sslContext = target.sslContext().orElseThrow();
             List<String> incompatibleOptions = new ArrayList<>();
@@ -84,7 +97,9 @@ class TlsConfigDecorator implements Prototype.BuilderDecorator<TlsConfig.Builder
         TlsManager theManager = target.manager().orElse(null);
         if (theManager == null
                 || (target.sslContext().isEmpty() && theManager instanceof ExplicitContextTlsManager)) {
-            theManager = new ConfiguredTlsManager();
+            theManager = target.enabled()
+                    ? new ConfiguredTlsManager()
+                    : new DisabledTlsManager(target.config().orElseGet(Config::empty));
             target.manager(theManager);
         }
     }
@@ -118,6 +133,14 @@ class TlsConfigDecorator implements Prototype.BuilderDecorator<TlsConfig.Builder
         }
 
         target.sslParameters(parameters);
+    }
+
+    private static final class DisabledTlsManager extends ConfiguredTlsManager {
+        private final Config config;
+
+        private DisabledTlsManager(Config config) {
+            this.config = config;
+        }
     }
 
 }

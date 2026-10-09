@@ -194,11 +194,11 @@ public final class Option {
         /**
          * Whether service discovery may add option values that do not have corresponding configuration.
          * <p>
-         * For a configured provider option, provider implementations are always discovered so they can create entries
-         * that are present in configuration. A value of {@code false} only prevents those providers from adding
-         * unconfigured default values; it does not disable the discovery needed to create configured entries. For a
-         * non-configured provider option, {@code false} prevents discovered implementations from being added as option
-         * values.
+         * For a configured provider option, provider implementations are discovered when provider resolution is enabled
+         * by {@link #enabledBy()}, so they can create entries that are present in configuration. A value of {@code false}
+         * only prevents those providers from adding unconfigured default values; it does not disable the discovery
+         * needed to create configured entries. For a non-configured provider option, {@code false} prevents discovered
+         * implementations from being added as option values.
          * <p>
          * Discovery uses the service loader, or Helidon Service Registry when
          * {@link io.helidon.builder.api.Prototype.RegistrySupport} is enabled.
@@ -210,6 +210,34 @@ public final class Option {
          * @return whether service discovery may add values without matching configuration by default
          */
         boolean discoverServices() default true;
+
+        /**
+         * Name of a zero-argument boolean getter on the generated builder that controls all provider processing for
+         * this option.
+         * <p>
+         * The getter is evaluated when building the prototype, using its current builder value, including programmatic
+         * configuration overrides. When it returns {@code false}, provider lookup, configured-provider validation,
+         * and creation of values by providers are all skipped, even when provider entries are explicitly configured.
+         * Explicitly supplied option values are retained, and normal prototype validation still applies.
+         * <p>
+         * When the getter returns {@code true}, normal provider processing applies. The separate
+         * {@link #discoverServices()} setting and generated {@code <option>DiscoverServices(boolean)} method then
+         * control whether providers may contribute values without matching configuration. Disabling that discovery
+         * alone still allows configured provider entries to be processed; this getter returning {@code false}
+         * suppresses both configured entries and unconfigured defaults.
+         * <p>
+         * For example, on a {@code manager} option, {@code enabledBy = "enabled"} calls the builder's {@code enabled()}
+         * getter. Calling {@code enabled(false)} skips manager provider creation even if manager entries are configured
+         * or {@code managerDiscoverServices(true)} is set. With {@code enabled(true)} and
+         * {@code managerDiscoverServices(false)}, configured manager entries are processed, but providers do not add
+         * unconfigured defaults.
+         * <p>
+         * The default empty name leaves provider processing unconditionally enabled, subject to the normal discovery
+         * and configured-entry settings.
+         *
+         * @return boolean builder getter name, or an empty string
+         */
+        String enabledBy() default "";
 
         /**
          * Values that constitute the identity of each configured provider instance.
