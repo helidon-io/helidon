@@ -167,61 +167,26 @@ mvn -f tests/integration/data-jdbc/pom.xml -pl mixed-provider -am clean package
 
 ## Oracle generated repository diagnostics
 
-`OracleGeneratedRepositoryTest` collects diagnostics only after an Oracle
-`12516` connection refusal or a test failure, under
-`target/failsafe-reports/oracle-generated-repository/`, in a unique directory
-per execution. Runs without either event create no diagnostic files or
-observer connection. The existing CI artifact upload includes this path.
+`OracleGeneratedRepositoryTest` collects diagnostics only after an `ORA-12516`
+connection refusal or a test failure. Each execution writes to a unique directory
+under `target/failsafe-reports/oracle-generated-repository/`, included in CI test artifacts.
 
-Failure and final reports contain only structured, allowlisted fields:
+Reports capture connection attempts and outcomes, listener handler state and
+transitions, database process/session utilization, and container PID/OOM counters.
+Only structured, allowlisted fields are written; credentials, raw identities, and
+raw logs are excluded. Connection IDs use stable pseudonyms within each execution.
 
-- Connection attempt timestamps, attempt numbers, thread IDs, validated SQLState,
-  vendor codes, recovery/test outcomes, and per-run connection pseudonyms for
-  refusals where Oracle supplies a `CONNECTION_ID`.
-- Dedicated listener handler state and numeric connection counters for the fixed
-  test (`FREEPDB1`) and observer (`FREE`) services, recorded as service roles.
-- Up to 40 recent instance-wide blocked/unblocked transition timestamps and load
-  values, and up to 40 listener connection events matching recorded refusals.
-- Database process/session current and maximum utilization and limits.
-- Container PID current/peak/limit values, PID-limit events, and OOM counters
-  (or memory failure counts on cgroup v1).
-- Collection timestamps, command exit codes, and unavailable/incomplete indicators.
+This suite retries connection opening only for `ORA-12516`, with three total
+attempts and waits of 1 second and 2 seconds. Refusals remain recorded even when
+a retry succeeds. Other errors propagate immediately.
 
-Raw command output is parsed in memory. Only recognized fields with validated
-values are written; unrecognized text is discarded without a raw-text fallback.
-No complete log lines, database alert/container logs, command stderr, connection
-descriptors, raw identities, credentials, or environment values are written.
-The same Oracle connection ID receives the same `connection-N` label across
-attempt and listener records within an execution. Original IDs stay in memory;
-unrelated connections are omitted. Missing IDs are reported as unavailable,
-including successful retries whose IDs are not supplied to the collector.
-Listener timestamps use the listener's local time. Pseudonyms do not support
-direct lookup in an external raw trace. Previously generated reports are not
-rewritten.
+Run with Docker available:
 
-Listener evidence is captured before opening one separate SYSDBA connection for
-database resource counts. Collection has no startup or periodic sampling;
-snapshots reflect collection time, while resource maximum utilization and
-listener transitions provide historical evidence. The last 64 KiB of one listener
-log is examined for transitions and matching connections; missing or unrecognized
-history is reported as unavailable. If the observer cannot connect at the failure,
-later snapshots attempt to obtain database evidence again.
+```bash
+mvn -f tests/integration/data-jdbc/declarative/oracle/pom.xml verify
+```
 
-Account for the additional observer session in failure snapshots. Diagnostic
-queries have two-second timeouts, container commands have an eight-second
-timeout, with a fifteen-second final collection wait. Collection errors and
-deadlines indicate incomplete evidence. The suite continues to use its
-existing direct connections and concurrency settings.
-
-Only this suite retries physical connection opening on Oracle error `12516`,
-with three total attempts and waits of 1 second and 2 seconds. This gives the
-listener approximately three seconds to recover; longer blockages still fail.
-Other errors propagate immediately. The first refusal produces `container-connection-refused.log`, and
-all refusals and recoveries are recorded even when the test ultimately passes.
-
-Run `mvn -f tests/integration/data-jdbc/declarative/oracle/pom.xml verify` with
-Docker to collect live evidence. On completion, check that the Oracle tests executed 
-rather than skipped before using the results to investigate `ORA-12516`.
+Confirm that the Oracle tests executed rather than being skipped.
 
 ## Test design notes
 
