@@ -80,12 +80,10 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
     private final LinkedBlockingQueue<BufferData> sendingQueue = new LinkedBlockingQueue<>();
     private final AtomicLong queuedBytes = new AtomicLong();
-    private final AtomicBoolean terminal = new AtomicBoolean();
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean heartbeatStarted = new AtomicBoolean();
     private final ReentrantLock demandLock = new ReentrantLock();
     private final ReentrantLock heartbeatLock = new ReentrantLock();
-    private final ReentrantLock listenerLock = new ReentrantLock();
     private final ReentrantLock writerLock = new ReentrantLock();
 
     private final CountDownLatch startReadBarrier = new CountDownLatch(1);
@@ -105,7 +103,13 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
     @Override
     public void request(int numMessages) {
-        socket().log(LOGGER, DEBUG, "request called %d", numMessages);
+        if (numMessages < 0) {
+            throw new IllegalArgumentException("Number of messages must not be negative");
+        }
+        if (isClosed() || numMessages == 0) {
+            return;
+        }
+        LOGGER.log(DEBUG, "request called {0}", numMessages);
         demandLock.lock();
         try {
             int available = messageRequest.availablePermits();
@@ -117,23 +121,11 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     }
 
     @Override
-    public void cancel(String message, Throwable cause) {
-        if (clientStream() == null) {
+    public void halfClose() {
+        if (isClosed()) {
             return;
         }
-        socket().log(LOGGER, DEBUG, "cancel called %s", message);
-        if (!terminal.get()) {
-            try {
-                notifyClosed(Status.CANCELLED, EMPTY_METADATA);
-            } finally {
-                close();
-            }
-        }
-    }
-
-    @Override
-    public void halfClose() {
-        socket().log(LOGGER, DEBUG, "halfClose called");
+        LOGGER.log(DEBUG, "halfClose called");
         sendingQueue.add(EMPTY_BUFFER_DATA);       // end marker
         scheduleWriter();
         startHeartbeat();
@@ -141,6 +133,9 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
     @Override
     public void sendMessage(ReqT message) {
+        if (isClosed()) {
+            return;
+        }
         // serialize and queue message for writing
         byte[] serialized = serializeMessage(message);
         BufferData messageData = BufferData.createReadOnly(serialized, 0, serialized.length);
@@ -156,10 +151,11 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
 
     @Override
     public boolean isReady() {
-        return !terminal.get() && isRemoteOpen() && queuedBytes.get() < MAX_QUEUED_BYTES;
+        return !isClosed() && clientStream() != null && isRemoteOpen() && queuedBytes.get() < MAX_QUEUED_BYTES;
     }
 
-    protected void startStreamingThreads() {
+    @Override
+    void startStreamingThreads() {
         clientStream().onReset(rstStream -> {
             resetFailure = new Http2Exception(rstStream.errorCode(),
                                               "Reset of " + clientStream().streamId() + " stream received");
@@ -176,13 +172,17 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
         if (heartbeatPeriod().compareTo(Duration.ZERO) <= 0) {
             heartbeatStarted.set(true);
         }
+        if (!sendingQueue.isEmpty()) {
+            startHeartbeat();
+        }
+        scheduleWriter();
         FutureTask<Void> readTask = new FutureTask<>(() -> {
             try {
                 startReadBarrier.await();
                 socket().log(LOGGER, DEBUG, "[Reading thread] started");
                 Status status = Status.OK;
                 Metadata trailingMetadata = EMPTY_METADATA;
-                while (true) {
+                while (!isClosed()) {
                     try {
                         Http2Headers headers = clientStream().readHeaders();
                         if (headers.httpHeaders().contains(STATUS_NAME)) {
@@ -201,11 +201,11 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                     }
                 }
                 Duration requestWaitTime = grpcClient().prototype().protocolConfig().nextRequestWaitTime();
-                while (true) {
+                while (!isClosed()) {
                     if (resetFailure != null) {
                         throw resetFailure;
                     }
-                    if (clientStream().trailers().isDone() || !clientStream().hasEntity()) {
+                    if (!hasUnreadData() && (clientStream().trailers().isDone() || !clientStream().hasEntity())) {
                         socket().log(LOGGER, DEBUG, "[Reading thread] trailers or eos received");
                         break;
                     }
@@ -218,33 +218,37 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                     }
                     if (!messageRequest.tryAcquire(requestWaitTime.toNanos(), TimeUnit.NANOSECONDS)) {
                         socket().log(LOGGER, DEBUG, "[Reading thread] response demand timed out");
-                        notifyClosed(Status.CANCELLED);
+                        close(Status.CANCELLED);
                         return;
                     }
                     if (resetFailure != null) {
                         throw resetFailure;
                     }
-                    notifyMessage(toResponse(bufferData));
+                    onMessage(toResponse(bufferData));
                 }
                 if (clientStream().trailers().isDone()) {
                     Headers trailers = clientStream().trailers().get();
                     trailingMetadata = GrpcHeadersUtil.toMetadata(trailers);
                     status = status(status, trailingMetadata);
                 }
-                notifyClosed(status, trailingMetadata);
+                if (status.getCode() == Status.Code.CANCELLED) {
+                    closeResponse(status, trailingMetadata);
+                } else {
+                    close(status, trailingMetadata);
+                }
             } catch (StreamTimeoutException e) {
-                notifyClosed(Status.DEADLINE_EXCEEDED);
+                close(Status.DEADLINE_EXCEEDED);
             } catch (StatusRuntimeException e) {
                 Metadata trailers = e.getTrailers();
-                notifyClosed(e.getStatus(), trailers == null ? EMPTY_METADATA : trailers);
+                close(e.getStatus(), trailers == null ? EMPTY_METADATA : trailers);
             } catch (Http2Exception e) {
                 socket().log(LOGGER, ERROR, e.getMessage(), e);
-                notifyClosed(resetStatus(e.code()).withDescription(e.getMessage()).withCause(e));
+                closeResponse(resetStatus(e.code()).withDescription(e.getMessage()).withCause(e));
             } catch (Throwable e) {
                 socket().log(LOGGER, ERROR, e.getMessage(), e);
-                notifyClosed(Status.UNKNOWN.withDescription(e.getMessage()).withCause(e));
+                close(Status.UNKNOWN.withDescription(e.getMessage()).withCause(e));
             } finally {
-                close();
+                readStreamThread = null;
             }
             socket().log(LOGGER, DEBUG, "[Reading thread] exiting");
         }, null);
@@ -258,9 +262,35 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
         }
     }
 
+    @Override
+    void closeStreamingThreads() {
+        closed.set(true);
+        sendingQueue.clear();
+        queuedBytes.set(0);
+        // The worker performing cleanup must remain able to write the final HTTP/2 frames.
+        if (readStreamThread != Thread.currentThread()) {
+            cancelFuture(readStreamFuture);
+        }
+        writerLock.lock();
+        try {
+            if (writeStreamThread != Thread.currentThread()) {
+                cancelFuture(writeStreamFuture);
+            }
+        } finally {
+            writerLock.unlock();
+        }
+        heartbeatLock.lock();
+        try {
+            cancelFuture(heartbeatFuture);
+        } finally {
+            heartbeatLock.unlock();
+        }
+    }
+
     private void startHeartbeat() {
         Duration period = heartbeatPeriod();
-        if (period.compareTo(Duration.ZERO) <= 0 || !heartbeatStarted.compareAndSet(false, true)) {
+        if (clientStream() == null || isClosed() || period.compareTo(Duration.ZERO) <= 0
+                || !heartbeatStarted.compareAndSet(false, true)) {
             return;
         }
         socket().log(LOGGER, DEBUG, "[Heartbeat] started with period " + period);
@@ -290,11 +320,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                             scheduleHeartbeat(period);
                         });
                     } catch (RuntimeException | Error t) {
-                        try {
-                            notifyClosed(Status.UNKNOWN.withDescription(t.getMessage()).withCause(t));
-                        } finally {
-                            close();
-                        }
+                        close(Status.UNKNOWN.withDescription(t.getMessage()).withCause(t));
                     }
                 }).start();
             }, period.toNanos(), TimeUnit.NANOSECONDS);
@@ -307,6 +333,9 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
         FutureTask<Void> task;
         writerLock.lock();
         try {
+            if (clientStream() == null) {
+                return;
+            }
             if (closed.get()) {
                 sendingQueue.clear();
                 queuedBytes.set(0);
@@ -341,11 +370,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
             } finally {
                 writerLock.unlock();
             }
-            try {
-                notifyClosed(Status.UNKNOWN.withDescription(t.getMessage()).withCause(t));
-            } finally {
-                close();
-            }
+            close(Status.UNKNOWN.withDescription(t.getMessage()).withCause(t));
         }
     }
 
@@ -382,24 +407,13 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                 } finally {
                     long before = queuedBytes.getAndUpdate(current -> Math.max(0, current - writeLength));
                     if (written && before >= MAX_QUEUED_BYTES && before - writeLength < MAX_QUEUED_BYTES) {
-                        listenerLock.lock();
-                        try {
-                            if (!terminal.get()) {
-                                responseListener().onReady();
-                            }
-                        } finally {
-                            listenerLock.unlock();
-                        }
+                        onReady();
                     }
                 }
             }
         } catch (Throwable e) {
             socket().log(LOGGER, ERROR, e.getMessage(), e);
-            try {
-                notifyClosed(Status.UNKNOWN.withDescription(e.getMessage()).withCause(e));
-            } finally {
-                close();
-            }
+            close(Status.UNKNOWN.withDescription(e.getMessage()).withCause(e));
         } finally {
             boolean reschedule;
             writerLock.lock();
@@ -421,81 +435,6 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
         }
     }
 
-    private void close() {
-        if (!closed.compareAndSet(false, true)) {
-            return;
-        }
-        socket().log(LOGGER, DEBUG, "closing client call");
-        try {
-            sendingQueue.clear();
-            queuedBytes.set(0);
-            Future<?> writeStreamFuture;
-            Thread writeStreamThread;
-            writerLock.lock();
-            try {
-                writeStreamFuture = this.writeStreamFuture;
-                writeStreamThread = this.writeStreamThread;
-            } finally {
-                writerLock.unlock();
-            }
-            if (writeStreamFuture != null && writeStreamThread != Thread.currentThread()) {
-                writeStreamFuture.cancel(true);
-            }
-            if (writeStreamFuture != null) {
-                try {
-                    clientStream().close();
-                } finally {
-                    try {
-                        connection().closeNow();
-                    } finally {
-                        unblockUnaryExecutor();
-                    }
-                }
-            } else {
-                try {
-                    if (resetFailure == null) {
-                        clientStream().cancel();
-                    } else {
-                        clientStream().close();
-                    }
-                } finally {
-                    try {
-                        connection().close();
-                    } finally {
-                        unblockUnaryExecutor();
-                    }
-                }
-            }
-
-            // update metrics
-            if (enableMetrics()) {
-                MethodMetrics methodMetrics = methodMetrics();
-                methodMetrics.callDuration().record(
-                        Duration.ofMillis(System.currentTimeMillis() - startMillis()));
-                methodMetrics.recvMessageSize().record(bytesRcvd().get());
-                methodMetrics.sentMessageSize().record(bytesSent().get());
-            }
-        } finally {
-            Future<?> readStreamFuture = this.readStreamFuture;
-            if (readStreamFuture != null) {
-                readStreamFuture.cancel(true);
-            }
-            heartbeatLock.lock();
-            try {
-                ScheduledFuture<?> heartbeatFuture = this.heartbeatFuture;
-                if (heartbeatFuture != null) {
-                    heartbeatFuture.cancel(true);
-                }
-            } finally {
-                heartbeatLock.unlock();
-            }
-        }
-    }
-
-    private void notifyClosed(Status status) {
-        notifyClosed(status, EMPTY_METADATA);
-    }
-
     private static Status status(Status fallback, Metadata metadata) {
         Status status = metadata.get(InternalStatus.CODE_KEY);
         String description = metadata.get(InternalStatus.MESSAGE_KEY);
@@ -514,30 +453,6 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
         case HTTP_1_1_REQUIRED -> Status.UNKNOWN;
         default -> Status.INTERNAL;
         };
-    }
-
-    private boolean notifyClosed(Status status, Metadata metadata) {
-        if (terminal.compareAndSet(false, true)) {
-            listenerLock.lock();
-            try {
-                responseListener().onClose(status, metadata);
-            } finally {
-                listenerLock.unlock();
-            }
-            return true;
-        }
-        return false;
-    }
-
-    private void notifyMessage(ResT response) {
-        listenerLock.lock();
-        try {
-            if (!terminal.get()) {
-                responseListener().onMessage(response);
-            }
-        } finally {
-            listenerLock.unlock();
-        }
     }
 
     // Package-private lifecycle accessors are test seams for deterministic task cleanup assertions.
@@ -563,6 +478,12 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
             return heartbeatFuture != null && heartbeatFuture.isCancelled();
         } finally {
             heartbeatLock.unlock();
+        }
+    }
+
+    private void cancelFuture(Future<?> future) {
+        if (future != null) {
+            future.cancel(true);
         }
     }
 }

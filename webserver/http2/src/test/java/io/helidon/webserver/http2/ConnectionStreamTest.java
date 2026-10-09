@@ -669,7 +669,8 @@ class ConnectionStreamTest {
             dataReceived.countDown();
         }
 
-        private void close() {
+        @Override
+        public void close() {
             state = Http2StreamState.CLOSED;
             closeListener.run();
         }

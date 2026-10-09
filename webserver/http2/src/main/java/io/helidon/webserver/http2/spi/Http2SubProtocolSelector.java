@@ -78,6 +78,18 @@ public interface Http2SubProtocolSelector {
         void init();
 
         /**
+         * Release resources when the stream handler exits or its connection closes, including after normal completion.
+         * Called at most once for this stream, on either the HTTP/2 connection thread or the stream thread.
+         * This may happen before or concurrently with {@link #init()} or other callbacks.
+         * Implementations must tolerate an already completed or cancelled operation and must not block the calling thread
+         * or write further frames.
+         *
+         * The default implementation does nothing.
+         */
+        default void close() {
+        }
+
+        /**
          * Current stream state.
          *
          * @return stream state
@@ -93,6 +105,31 @@ public interface Http2SubProtocolSelector {
          */
         default void onStreamClosed(Runnable listener) {
             Objects.requireNonNull(listener);
+        }
+
+        /**
+         * Register a notifier that requests {@link #streamEvent()} on the existing HTTP/2 stream thread.
+         * Registration happens before {@link #init()}. The notifier may be called from any thread and does not
+         * wait for the callback. Repeated notifications coalesce into one pending event per stream; a notification
+         * during a callback requests a subsequent callback. Notifications after stream closure are ignored.
+         * Events remain available after the remote peer ends its request, while the local stream is still open.
+         *
+         * The default implementation validates the notifier but does not retain it.
+         *
+         * @param notifier stream event notifier
+         */
+        default void onStreamEvent(Runnable notifier) {
+            Objects.requireNonNull(notifier);
+        }
+
+        /**
+         * Process a requested event on the existing HTTP/2 stream thread. This callback is serialized with
+         * {@link #init()} and {@link #data(Http2FrameHeader, BufferData)}. An event carries no inbound DATA and
+         * consumes no flow-control credit. The callback may block, delaying subsequent callbacks on this stream.
+         *
+         * The default implementation does nothing.
+         */
+        default void streamEvent() {
         }
 
         /**
