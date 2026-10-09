@@ -30,7 +30,7 @@ import io.helidon.metrics.spi.MetricsPublisherProvider;
 import io.micrometer.registry.otlp.AggregationTemporality;
 
 /**
- * Settings for an OTLP publisher.
+ * Settings for the Micrometer OTLP publisher.
  */
 @Prototype.Configured(value = OtlpPublisherProvider.TYPE, root = false)
 @Prototype.Blueprint

@@ -36,6 +36,7 @@
     <modules>
         <module>metrics</module>
         <module>providers</module>
+        <module>publishers</module>
         <module>trace-exemplar</module>
         <module>api</module>
         <module>system-meters</module>

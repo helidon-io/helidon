@@ -57,7 +57,7 @@
         <!-- We need a full metrics implementation to test that config affects system meter names correctly. -->
         <dependency>
             <groupId>io.helidon.metrics.providers</groupId>
-            <artifactId>helidon-metrics-providers-micrometer</artifactId>
+            <artifactId>helidon-metrics-providers-helidon</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

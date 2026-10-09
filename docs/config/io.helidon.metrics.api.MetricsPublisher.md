@@ -23,7 +23,16 @@ This type is a provider contract.
 <code>otlp</code>
 </a>
 </td>
-<td>Settings for an OTLP publisher</td>
+<td>Settings for the Micrometer OTLP publisher</td>
+</tr>
+<tr>
+<td>
+<a id="otlp-2"></a>
+<a href="io.helidon.metrics.publishers.otlp.OtlpPublisher.md">
+<code>otlp</code>
+</a>
+</td>
+<td>Configuration of an OTLP HTTP/JSON publisher for Helidon metrics</td>
 </tr>
 <tr>
 <td>

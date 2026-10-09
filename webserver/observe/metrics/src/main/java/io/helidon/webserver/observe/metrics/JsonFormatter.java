@@ -389,7 +389,11 @@ class JsonFormatter implements MeterRegistryFormatter {
                 if (meter() instanceof Gauge gauge) {
 
                     String nameWithTags = flatNameAndTags(meter().id(), systemTagsManager());
-                    addNarrowed(builder, nameWithTags, gauge.value());
+                    try {
+                        addNarrowed(builder, nameWithTags, gauge.value());
+                    } catch (RuntimeException _) {
+                        // An ordinary gauge failure omits only this gauge, preserving the remaining metrics.
+                    }
                     return;
                 }
                 if (meter() instanceof FunctionalCounter fCounter) {
@@ -461,13 +465,12 @@ class JsonFormatter implements MeterRegistryFormatter {
             }
 
             private void addDetails(HistogramSnapshot snapshot, Meter.Id childId, TimeUnit timeUnit) {
-                snapshot.percentileValues().forEach(vap ->
-                                                            sameNameBuilder
-                                                                    .set(valueId(percentileName(vap.percentile()),
-                                                                                 childId),
-                                                                         timeUnit != null
-                                                                                 ? vap.value(timeUnit)
-                                                                                 : vap.value()));
+                snapshot.percentileValues().forEach(vap -> {
+                    double value = timeUnit != null ? vap.value(timeUnit) : vap.value();
+                    // Empty distributions can report undefined percentiles; JSON has no NaN representation.
+                    sameNameBuilder.set(valueId(percentileName(vap.percentile()), childId),
+                                        Double.isNaN(value) ? 0D : value);
+                });
                 snapshot.histogramCounts().forEach(bucket ->
                                                            sameNameBuilder
                                                                    .set(valueId(bucketName(timeUnit != null

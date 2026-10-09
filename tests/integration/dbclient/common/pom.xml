@@ -42,6 +42,11 @@
             <artifactId>helidon-metrics</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.metrics.providers</groupId>
+            <artifactId>helidon-metrics-providers-helidon</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.dbclient</groupId>
             <artifactId>helidon-dbclient-health</artifactId>
         </dependency>
