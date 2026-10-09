@@ -53,25 +53,30 @@ class OracleGeneratedRepositoryTest extends AbstractGeneratedRepositoryContract 
 
     static final Driver RETRY_DRIVER = new RetryingOracleDriver();
 
+    // Includes the original connection attempt, followed by at most two retries.
     private static final int CONNECTION_ATTEMPTS = 3;
 
     @BeforeAll
     static void registerRetryDriver() throws SQLException {
+        // Helidon resolves the configured driver class among DriverManager's registered instances.
         DriverManager.registerDriver(RETRY_DRIVER);
     }
 
     @AfterAll
     static void deregisterRetryDriver() throws SQLException {
+        // Release the suite's adapter when the shared test JVM continues with other suites.
         DriverManager.deregisterDriver(RETRY_DRIVER);
     }
 
     static Connection connectWithRetry(Driver driver, OracleGeneratedRepositoryDiagnostics diagnostics,
                                        String url, Properties properties) throws SQLException {
         SQLException firstRefusal = null;
+        // Retry only physical connection opening; SQL and transaction execution stay outside this loop.
         for (int attempt = 1; ; attempt++) {
             try {
                 Connection connection = driver.connect(url, properties);
                 if (attempt > 1 && connection != null) {
+                    // Retain refusal evidence even when recovery allows the test to pass.
                     diagnostics.connectionAttempt(attempt, null);
                 }
                 return connection;
@@ -80,6 +85,7 @@ class OracleGeneratedRepositoryTest extends AbstractGeneratedRepositoryContract 
                     throw failure;
                 }
                 if (firstRefusal == null) {
+                    // Preserve the stack of the original failed acquisition if every attempt is refused.
                     firstRefusal = failure;
                 }
                 diagnostics.connectionAttempt(attempt, failure);
@@ -87,8 +93,11 @@ class OracleGeneratedRepositoryTest extends AbstractGeneratedRepositoryContract 
                     throw firstRefusal;
                 }
                 try {
-                    Thread.sleep(250L * attempt);
+                    // The listener can remain blocked beyond a subsecond retry window.
+                    // Wait 1 s, then 2 s, to allow its handler state to refresh before the final attempt.
+                    Thread.sleep(1000L * attempt);
                 } catch (InterruptedException interrupted) {
+                    // Stop retrying on cancellation and preserve the caller's interrupt status.
                     Thread.currentThread().interrupt();
                     firstRefusal.addSuppressed(interrupted);
                     throw firstRefusal;
@@ -99,6 +108,7 @@ class OracleGeneratedRepositoryTest extends AbstractGeneratedRepositoryContract 
 
     @Override
     protected void beforeStartApplication() {
+        // Select the adapter only for this suite, retaining the shared fixture's connection settings.
         Map<String, String> values = new HashMap<>(OracleDeclarativeTestSupport.config().asMap().get());
         values.put("data.clients.jdbc.0.connection.jdbc-driver-class-name", RETRY_DRIVER.getClass().getName());
         TestConfigFactory.config(Config.just(ConfigSources.create(values)));
