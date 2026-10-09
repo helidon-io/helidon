@@ -57,7 +57,9 @@ class OracleGeneratedRepositoryRetryTest {
             diagnostics.stop();
         }
         assertThat(attempts.get(), is(1));
-        assertThat(Files.exists(directory().resolve("container-connection-refused.log")), is(false));
+        try (Stream<Path> files = Files.list(output)) {
+            assertThat(files.count(), is(0L));
+        }
     }
 
     @Test
@@ -114,6 +116,7 @@ class OracleGeneratedRepositoryRetryTest {
     @Test
     void doesNotRetryAnotherOracleErrorWithTheSameSqlState() {
         AtomicInteger attempts = new AtomicInteger();
+        // Multiple Oracle errors share SQLState 66000; the vendor code selects the retry behavior.
         SQLException other = new SQLException("ORA-12516 in text is insufficient", "66000", 12514);
         Driver driver = driver(attempts, () -> {
             throw other;

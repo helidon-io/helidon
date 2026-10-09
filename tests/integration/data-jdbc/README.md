@@ -167,26 +167,40 @@ mvn -f tests/integration/data-jdbc/pom.xml -pl mixed-provider -am clean package
 
 ## Oracle generated repository diagnostics
 
-`OracleGeneratedRepositoryTest` collects diagnostics for successful and failed
-runs under `target/failsafe-reports/oracle-generated-repository/`, in a unique
-directory per execution. The existing CI artifact upload includes this path.
+`OracleGeneratedRepositoryTest` collects diagnostics only after an Oracle
+`12516` connection refusal or a test failure, under
+`target/failsafe-reports/oracle-generated-repository/`, in a unique directory
+per execution. Runs without either event create no diagnostic files or
+observer connection. The existing CI artifact upload includes this path.
 
-One separate SYSDBA connection records effective database parameters and samples
-process/session/transaction current and maximum utilization, test sessions
-and process counts every 500 ms and after each test. Startup, failure and end
-reports capture the image/container/CI identity, listener services/status,
-PID/memory limits and events, and available listener/alert/container logs.
-Exception types, SQLState and vendor codes are recorded without full messages.
+Failure and final reports capture the image/version/CI run information, listener
+services/status, PID/memory limits and events, and available listener/alert/container
+logs. Listener evidence is captured before opening one separate SYSDBA connection
+to record effective database parameters, process/session/transaction current and
+maximum utilization, test sessions and process counts. Exception types, SQLState
+and vendor codes are recorded without full messages. Collection has no startup
+or periodic sampling; snapshots reflect collection time, while resource maximum
+utilization and listener logs provide historical evidence. If the observer cannot
+connect at the failure, the final collection attempts to obtain database evidence
+again.
 
-Account for the additional observer session when comparing runs. Diagnostic
+Database queries omit host, service and user names. Diagnostic files redact
+identity values from connection descriptors, XML attributes and listener summaries,
+including repeated names in alert text, IP addresses and filesystem paths. The
+configured database password is also redacted. Timestamps, Oracle error codes,
+handler states and load, resource counts and limits, and software versions remain
+available. Previously generated reports are not rewritten.
+
+Account for the additional observer session in failure snapshots. Diagnostic
 queries have two-second timeouts, container commands have an eight-second
 timeout, with a fifteen-second final collection wait. Collection errors and
 deadlines indicate incomplete evidence. The suite continues to use its
 existing direct connections and concurrency settings.
 
 Only this suite retries physical connection opening on Oracle error `12516`,
-with three total attempts and waits of 250 ms and 500 ms. Other errors propagate
-immediately. The first refusal produces `container-connection-refused.log`, and
+with three total attempts and waits of 1 second and 2 seconds. This gives the
+listener approximately three seconds to recover; longer blockages still fail.
+Other errors propagate immediately. The first refusal produces `container-connection-refused.log`, and
 all refusals and recoveries are recorded even when the test ultimately passes.
 
 Run `mvn -f tests/integration/data-jdbc/declarative/oracle/pom.xml verify` with
