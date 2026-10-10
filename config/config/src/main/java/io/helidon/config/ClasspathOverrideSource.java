@@ -30,7 +30,11 @@ import io.helidon.config.spi.OverrideSource;
  * {@link OverrideSource} implementation that loads override definitions from a resource on a classpath.
  *
  * @see io.helidon.config.spi.Source.Builder
+ * @deprecated Since 28.0.0, this legacy core API is deprecated for removal in favor of the optional overrides
+ * filter module. See {@link OverrideSource} for migration
+ * guidance and the usage feedback request. No removal release or timing has been decided.
  */
+@Deprecated(since = "28.0.0", forRemoval = true)
 public class ClasspathOverrideSource extends AbstractSource implements OverrideSource {
     private final String resource;
     private final URL resourceUrl;
@@ -100,7 +104,12 @@ public class ClasspathOverrideSource extends AbstractSource implements OverrideS
      * <p>
      * If the {@code OverrideSource} is {@code mandatory} and the {@code resource} does not exist
      * then {@link OverrideSource#load} throws {@link ConfigException}.
+     *
+     * @deprecated Since 28.0.0, this legacy core API is deprecated for removal in favor of the optional overrides
+     * filter module. See {@link OverrideSource} for migration
+     * guidance and the usage feedback request. No removal release or timing has been decided.
      */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     public static final class Builder extends AbstractSourceBuilder<Builder, Void>
             implements io.helidon.common.Builder<Builder, ClasspathOverrideSource> {
 

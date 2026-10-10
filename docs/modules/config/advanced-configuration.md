@@ -515,16 +515,14 @@ assert config.get(Key.escapeName("oracle.com")).name().equals("oracle.com"); // 
 
 ## Filters, Overrides, and Token Substitution
 
-When your application retrieves a config value, the config system can transform
-it before returning the value, according to *filters*, *overrides*, and
-*tokens*. The config system provides some built-in instances of these you can
-use, and you can add your own as described in the sections which describe
-[filters][filters] and [overrides](extensions.md#overridesource-spi).
+When your application retrieves a config value, filters can transform it before
+returning it. The built-in value-resolving filter substitutes token references;
+the optional [overrides filter](overrides.md) replaces existing values using
+wildcard or regular-expression rules.
 
-Your application can add filters and overrides explicitly to a config builder
-and the config system by default uses the Java service loader mechanism to
-locate all available filters and overrides and add them automatically to all
-config builders (unless your code disables that behavior for a given builder).
+Your application can register filters and filter providers explicitly with a
+config builder. The config system also discovers them using Java service loader
+or the service registry. See [ConfigFilter SPI][filters] for custom filters.
 
 ### Filters
 
@@ -537,32 +535,42 @@ substitution described below.
 
 See the [`ConfigFilter`][configfilter] Javadoc for more information.
 
+For a filter requiring configuration or changing rules, implement
+`ConfigFilterProvider`. Its `create(Config)` method receives an unfiltered view
+of the initial configuration and returns a `ConfigFilterFactory` dedicated to
+that Config runtime. The factory creates a new immutable filter from the
+current unfiltered configuration for every generation, including reloads.
+The provider itself can be shared across independent Config instances; its
+factories and their monitoring resources must remain independent.
+
+Existing directly registered or discovered `ConfigFilter` instances retain
+their behavior: reloads reuse the instance and invoke `init(Config)` again.
+That method is deprecated since 28.0.0 and marked for removal; use a provider
+to construct a configured immutable filter instead. When automatic reloads are
+active, or a manual reload occurs, Helidon warns once if a direct filter is
+present because reusing stateful filters may produce inconsistent generations.
+Stateless direct filters do not inherently have this problem.
+
 ### Overrides
 
-The overrides feature allows you to create an external document containing
-key/value pairs which replace the value otherwise returned for the name, and
-then add that document as an override source to a config builder.
+Use the optional [Config Overrides Filter](overrides.md) to replace values
+whose keys match wildcard expressions or Java regular expressions. Add the
+module dependency and configure its automatically discovered provider, or use
+the builder for explicit registration. Definition sources can be monitored for
+changes, which rebuild the target configuration while preserving old snapshots.
 
-There are some key differences between overrides and filters.
+The filter transforms existing values; it does not create missing nodes.
+Ordinary source precedence can introduce nodes and does not interpret wildcard
+keys. See the filter guide for configuration, matching rules, and reload behavior.
 
-- Because overrides are loaded from sources those sources can change while your
-  application runs and so the overrides they that prescribe can change.
-- The override document can use wildcards in key expressions.
-- Overrides can affect only keys that already exist in the original source;
-  filters can supply values even if the key is absent from the config source.
+#### Migrating from Overrides
 
-Each override entry consists of a Java properties-format definition. The key is
-an expression (which can use wildcards) to match config keys read from the
-current config sources, and the override value is the new value for any key
-matching the key expression from that entry. Order is important. The config
-system tests every key expression/value pair one by one in the order they appear
-in the overrides sources. Once the config system finds an override entry in
-which the key expression matches the configuration key, the system returns that
-entry’s value for the key being processed.
-
-See the
-
-`OverrideSource` Javadoc for more detail.
+The legacy `Config.Builder.overrides(...)` API and `OverrideSource` SPI are
+deprecated for removal since 28.0.0; existing behavior remains available and
+no removal version has been decided. Follow
+[Migrating from Config Overrides](overrides.md#migrating-from-config-overrides)
+for before/after examples, meta-configuration changes, rule-order differences,
+and preservation of reload behavior.
 
 ### Tokens
 
@@ -570,28 +578,32 @@ A token reference is a key token starting with `$`, optionally enclosed between
 `{` and `}`, i.e. `$ref` or `${ref}`. Even a key composed of more than one token
 can be referenced in another key, i.e. `${env.ref}`.
 
-As an example use case, you can use token references to declare the default
-values (see `resolving-tokens.yaml` below), while the references may be resolved
-in another config source, which identifies a current environment (see `env.yaml`
-examples below). You can then use the same overrides for different environments,
-say `test` and `prod`. The configuration in each environment is then overridden
-with a different values using wildcards (see `overrides.properties` below).
+For example, use one source to select the environment:
 
-Initialize `Config` with Override Definition from `overrides.properties` file:
-
-<!--@mdc ::code-callout -->
-```java
-Config config = Config.builder()
-    .overrides(OverrideSources.file("conf/overrides.properties")) // <1>
-    .sources(file("conf/env.yaml"), // <2>
-         classpath("resolving-tokens.yaml")) // <3>
-    .build();
+```properties [environment.properties]
+env = prod
 ```
-1. Loads *overrides* from the specified file.
-2. A deployment-specific environment configuration file.
-3. A default configuration containing token references that are resolved using
-   the environment-specific override.
-<!--@mdc :: -->
+
+Reference it from another source's keys and values:
+
+```properties [defaults.properties]
+${env}.greeting = Hello ${env}
+```
+
+```java
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+
+Config config = Config.builder()
+        .sources(ConfigSources.file("environment.properties"),
+                 ConfigSources.file("defaults.properties"))
+        .build();
+
+assert config.get("prod.greeting").asString().get().equals("Hello prod");
+```
+
+Key tokens are resolved before value filtering. If you also use the overrides
+filter, its expressions match the resolved key, such as `prod.greeting`.
 
 You can disable key and value token replacement separately as the following
 example shows.
@@ -666,31 +678,26 @@ for actually reloading the source.
 Your application can invoke the system watcher builder’s `executor` method to
 tell the builder to use a different `Executor`.
 
-Customize config and override sources executors:
+Customize change-watcher executors for two config sources:
 
 <!--@mdc ::code-callout -->
 ```java
 ScheduledExecutorService executor =
     Executors.newScheduledThreadPool(2); // <1>
 
-Config config = Config.builder()
-    .overrides(OverrideSources
-       .file("conf/overrides.properties")
-       .changeWatcher(FileSystemWatcher.builder()
-          .executor(executor) // <2>
-          .build()))
-    .sources(file("conf/env.yaml")
-    .changeWatcher(FileSystemWatcher.builder()
-        .executor(executor) // <3>
-        .build()))
-    .build();
+Config config = Config.create(
+        file("conf/deployment.properties")
+                .changeWatcher(FileSystemWatcher.builder()
+                        .executor(executor) // <2>
+                        .build()),
+        file("conf/application.properties")
+                .changeWatcher(FileSystemWatcher.builder()
+                        .executor(executor) // <3>
+                        .build()));
 ```
 1. Prepares a thread pool executor to be shared by selected sources.
-2. Tells the builder that the resulting overrides source should use the
-   specified `Executor` for notifying interested parties of changes and for
-   reloading the override source.
-3. Uses the same `Executor` and event buffer size for the config source as for
-   the override source above.
+2. Uses the specified executor for the deployment file's change watcher.
+3. Uses the same executor for the application file's change watcher.
 <!--@mdc :: -->
 
 ### Retry Policy Custom Executor

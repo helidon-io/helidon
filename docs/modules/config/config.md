@@ -233,6 +233,13 @@ system properties, environment variables, or through files available on each
 environment (be it a physical machine, a Kubernetes pod, or a docker image)
 without changing your source code.
 
+Source precedence differs from the optional [Config Overrides Filter](overrides.md).
+That filter uses wildcard or regular-expression rules to replace values on
+existing nodes; it does not add missing nodes. Ordinary sources can add nodes
+and do not interpret wildcard keys. Applications using the deprecated core
+overrides API should follow
+[Migrating from Config Overrides](overrides.md#migrating-from-config-overrides).
+
 ### Config Filters
 
 Config system applies configured *config filters* on each value when it is

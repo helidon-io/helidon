@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,11 @@ package io.helidon.config.spi;
 
 /**
  * Java service loader service to provide a override source based on meta configuration.
+ *
+ * @deprecated Since 28.0.0, this legacy core API is deprecated for removal in favor of the optional overrides
+ * filter module. See {@link OverrideSource} for migration
+ * guidance and the usage feedback request. No removal release or timing has been decided.
  */
+@Deprecated(since = "28.0.0", forRemoval = true)
 public interface OverrideSourceProvider extends MetaConfigurableProvider<OverrideSource> {
 }

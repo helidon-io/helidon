@@ -20,20 +20,25 @@ import java.lang.System.Logger.Level;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.config.spi.ConfigFilter;
+import io.helidon.config.spi.ConfigFilterFactory;
+import io.helidon.config.spi.ConfigFilterProvider;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 
@@ -43,6 +48,7 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
 class ProviderImpl implements Config.Context {
 
     private static final System.Logger LOGGER = System.getLogger(ConfigFactory.class.getName());
+    private static final AtomicBoolean FILTER_RELOAD_WARNING = new AtomicBoolean();
 
     private final List<Consumer<ConfigDiff>> listeners = new LinkedList<>();
 
@@ -50,6 +56,12 @@ class ProviderImpl implements Config.Context {
     private final ConfigSourcesRuntime configSource;
     private final OverrideSourceRuntime overrideSource;
     private final List<Function<Config, ConfigFilter>> filterProviders;
+    private final List<ConfigFilterProvider> runtimeFilterProviders;
+    private final List<ConfigFilterFactory> filterFactories = new ArrayList<>();
+    private final boolean hasFixedFilters;
+    private final ReentrantLock lock = new ReentrantLock();
+    private final AtomicBoolean reloadPending = new AtomicBoolean();
+    private final AtomicBoolean reloadRunning = new AtomicBoolean();
     private final boolean cachingEnabled;
 
     private final Executor changesExecutor;
@@ -60,12 +72,17 @@ class ProviderImpl implements Config.Context {
     private Config lastConfig;
     private AbstractConfigImpl lastConfigImpl;
     private boolean listening;
+    private volatile boolean ready;
+    private volatile boolean stopped;
+    private boolean factoriesCreated;
 
     @SuppressWarnings("ParameterNumber")
     ProviderImpl(ConfigMapperManager configMapperManager,
                  ConfigSourcesRuntime configSource,
                  OverrideSourceRuntime overrideSource,
                  List<Function<Config, ConfigFilter>> filterProviders,
+                 List<ConfigFilterProvider> runtimeFilterProviders,
+                 boolean hasFixedFilters,
                  boolean cachingEnabled,
                  Executor changesExecutor,
                  boolean keyResolving,
@@ -73,7 +90,9 @@ class ProviderImpl implements Config.Context {
         this.configMapperManager = configMapperManager;
         this.configSource = configSource;
         this.overrideSource = overrideSource;
-        this.filterProviders = Collections.unmodifiableList(filterProviders);
+        this.filterProviders = List.copyOf(filterProviders);
+        this.runtimeFilterProviders = List.copyOf(runtimeFilterProviders);
+        this.hasFixedFilters = hasFixedFilters;
         this.cachingEnabled = cachingEnabled;
         this.changesExecutor = changesExecutor;
 
@@ -85,41 +104,90 @@ class ProviderImpl implements Config.Context {
         this.keyResolvingFailOnMissing = keyResolvingFailOnMissing;
     }
 
-    public synchronized AbstractConfigImpl newConfig() {
-        lastConfigImpl = build(configSource.load());
-
-        if (!listening) {
-            // only start listening for changes once the first config is built
-            configSource.changeListener(objectNode -> rebuild(objectNode, false));
-            configSource.startChanges();
-            overrideSource.changeListener(() -> rebuild(configSource.latest(), false));
-            overrideSource.startChanges();
-            listening = true;
+    public AbstractConfigImpl newConfig() {
+        try {
+            lock.lock();
+            try {
+                lastConfigImpl = build(configSource.load());
+                if (!listening) {
+                    // only start listening for changes once the first config is built
+                    configSource.changeListener(objectNode -> rebuild(objectNode, false));
+                    configSource.startChanges();
+                    overrideSource.changeListener(() -> rebuild(configSource.latest(), false));
+                    overrideSource.startChanges();
+                    boolean changesSupported = configSource.changesSupported() || overrideSource.changesSupported();
+                    for (ConfigFilterFactory factory : filterFactories) {
+                        changesSupported |= factory.startChangeSupport(this::requestReload);
+                    }
+                    if (changesSupported) {
+                        warnFixedFilters();
+                    }
+                    listening = true;
+                }
+                ready = true;
+                scheduleReload();
+                return lastConfigImpl;
+            } catch (RuntimeException | Error e) {
+                stopped = true;
+                throw e;
+            } finally {
+                lock.unlock();
+            }
+        } catch (RuntimeException | Error e) {
+            try {
+                stopResources();
+            } catch (RuntimeException | Error cleanup) {
+                e.addSuppressed(cleanup);
+            }
+            throw e;
         }
-
-        return lastConfigImpl;
     }
 
     @Override
-    public synchronized Config reload() {
-        rebuild(configSource.latest(), true);
-        return lastConfigInstance();
+    public Config reload() {
+        lock.lock();
+        try {
+            warnFixedFilters();
+            rebuild(configSource.latest(), true);
+            return lastConfigInstance();
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
-    public synchronized Instant timestamp() {
-        return lastConfigInstance().timestamp();
+    public Instant timestamp() {
+        lock.lock();
+        try {
+            return lastConfigInstance().timestamp();
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
-    public synchronized Config last() {
-        return lastConfigInstance();
+    public Config last() {
+        lock.lock();
+        try {
+            return lastConfigInstance();
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
     public void stopChangeSupport() {
-        configSource.stopChanges();
-        overrideSource.stopChanges();
+        lock.lock();
+        try {
+            if (stopped) {
+                return;
+            }
+            stopped = true;
+            reloadPending.set(false);
+        } finally {
+            lock.unlock();
+        }
+        stopResources();
     }
 
     Optional<ConfigNode> lazyValue(String string) {
@@ -127,21 +195,41 @@ class ProviderImpl implements Config.Context {
     }
 
     void onChange(Consumer<ConfigDiff> listener) {
-        this.listeners.add(listener);
+        lock.lock();
+        try {
+            this.listeners.add(listener);
+        } finally {
+            lock.unlock();
+        }
     }
 
     private Config lastConfigInstance() {
         return lastConfigImpl == null ? lastConfig : lastConfigImpl;
     }
 
-    private synchronized AbstractConfigImpl build(Optional<ObjectNode> rootNode) {
+    private AbstractConfigImpl build(Optional<ObjectNode> rootNode) {
 
         // resolve tokens
         rootNode = rootNode.map(this::resolveKeys);
+        ObjectNode node = rootNode.orElseGet(ObjectNode::empty);
+        Config raw = runtimeFilterProviders.isEmpty()
+                ? Config.empty()
+                : new ConfigFactory(configMapperManager, node, (_, value) -> value, this, true).config();
+        if (!factoriesCreated) {
+            for (ConfigFilterProvider provider : runtimeFilterProviders) {
+                filterFactories.add(Objects.requireNonNull(provider.create(raw), "Config filter factory"));
+            }
+            factoriesCreated = true;
+        }
         // filtering
         ChainConfigFilter targetFilter = new ChainConfigFilter();
         // add override filter
         overrideSource.addFilter(targetFilter);
+        List<ConfigFilter> legacyFilters = new ArrayList<>();
+        targetFilter.filterProviders.stream().map(provider -> provider.apply(raw)).forEachOrdered(legacyFilters::add);
+        for (ConfigFilterFactory filterFactory : filterFactories) {
+            targetFilter.addFilter(Objects.requireNonNull(filterFactory.create(raw), "Config filter"));
+        }
 
         // factory
         ConfigFactory factory = new ConfigFactory(configMapperManager,
@@ -150,7 +238,7 @@ class ProviderImpl implements Config.Context {
                                                   this);
         AbstractConfigImpl config = factory.config();
         // initialize filters
-        initializeFilters(config, targetFilter);
+        initializeFilters(config, targetFilter, legacyFilters);
         // caching
         if (cachingEnabled) {
             targetFilter.enableCaching();
@@ -234,56 +322,125 @@ class ProviderImpl implements Config.Context {
         return token;
     }
 
-    private synchronized void rebuild(Optional<ObjectNode> objectNode, boolean force) {
-        // 1. build new Config
-        AbstractConfigImpl newConfig = build(objectNode);
-        // 2. for each subscriber fire event on specific node/key - see AbstractConfigImpl.FilteringConfigChangeEventSubscriber
-        // 3. fire event
-        ConfigDiff configsDiff = ConfigDiff.from(lastConfigInstance(), newConfig);
-        if (!configsDiff.isEmpty()) {
-            lastConfig = newConfig;
-            lastConfigImpl = newConfig;
-            lastConfigsDiff = configsDiff;
-
-            fireLastChangeEvent();
-        } else {
-            if (force) {
+    private void rebuild(Optional<ObjectNode> objectNode, boolean force) {
+        lock.lock();
+        try {
+            if (stopped && !force) {
+                return;
+            }
+            AbstractConfigImpl newConfig = build(objectNode);
+            ConfigDiff configsDiff = ConfigDiff.from(lastConfigInstance(), newConfig);
+            if (!configsDiff.isEmpty()) {
                 lastConfig = newConfig;
                 lastConfigImpl = newConfig;
+                lastConfigsDiff = configsDiff;
+                fireLastChangeEvent();
+            } else {
+                if (force) {
+                    lastConfig = newConfig;
+                    lastConfigImpl = newConfig;
+                }
+                LOGGER.log(Level.TRACE, "Change event is not fired, there is no change from the last load.");
             }
-
-            LOGGER.log(Level.TRACE, "Change event is not fired, there is no change from the last load.");
+        } finally {
+            lock.unlock();
         }
     }
 
     private void fireLastChangeEvent() {
         ConfigDiff configDiffs;
 
-        synchronized (this) {
+        lock.lock();
+        try {
             configDiffs = this.lastConfigsDiff;
+        } finally {
+            lock.unlock();
         }
 
         if (configDiffs != null) {
             LOGGER.log(Level.TRACE, String.format("Firing last event %s (again)", configDiffs));
 
+            List<Consumer<ConfigDiff>> currentListeners = List.copyOf(listeners);
             changesExecutor.execute(() -> {
-                for (Consumer<ConfigDiff> listener : listeners) {
+                for (Consumer<ConfigDiff> listener : currentListeners) {
                     listener.accept(configDiffs);
                 }
             });
         }
     }
 
-    private void initializeFilters(Config config, ChainConfigFilter chain) {
+    @SuppressWarnings("removal")
+    private void initializeFilters(Config config, ChainConfigFilter chain, List<ConfigFilter> legacyFilters) {
         chain.init(config);
 
         filterProviders.stream()
                 .map(providerFunction -> providerFunction.apply(config))
-                .forEachOrdered(chain::addFilter);
+                .forEachOrdered(filter -> {
+                    chain.addFilter(filter);
+                    legacyFilters.add(filter);
+                });
+        legacyFilters.forEach(filter -> filter.init(config));
+    }
 
-        chain.filterProviders.stream()
-                .map(providerFunction -> providerFunction.apply(config))
-                .forEachOrdered(filter -> filter.init(config));
+    private void warnFixedFilters() {
+        if (hasFixedFilters && FILTER_RELOAD_WARNING.compareAndSet(false, true)) {
+            LOGGER.log(Level.WARNING, "Reloading configuration with shared ConfigFilter instances may create inconsistent "
+                    + "filter state. Use ConfigFilterProvider for configuration-dependent filters.");
+        }
+    }
+
+    private void requestReload() {
+        if (!stopped) {
+            reloadPending.set(true);
+            scheduleReload();
+        }
+    }
+
+    private void scheduleReload() {
+        if (ready && !stopped && reloadPending.get() && reloadRunning.compareAndSet(false, true)) {
+            ForkJoinPool.commonPool().execute(this::drainReloads);
+        }
+    }
+
+    private void drainReloads() {
+        try {
+            while (!stopped && reloadPending.getAndSet(false)) {
+                try {
+                    rebuild(configSource.latest(), false);
+                } catch (RuntimeException _) {
+                    LOGGER.log(Level.WARNING, "Cannot reload configuration after a config filter change; "
+                            + "the previous configuration remains available.");
+                }
+            }
+        } finally {
+            reloadRunning.set(false);
+            scheduleReload();
+        }
+    }
+
+    private void stopResources() {
+        Throwable failure = null;
+        List<Runnable> stops = new ArrayList<>();
+        stops.add(configSource::stopChanges);
+        stops.add(overrideSource::stopChanges);
+        filterFactories.forEach(factory -> stops.add(factory::stopChangeSupport));
+        for (Runnable stop : stops) {
+            try {
+                stop.run();
+            } catch (RuntimeException | Error e) {
+                if (failure == null) {
+                    failure = e;
+                } else {
+                    failure.addSuppressed(e);
+                }
+            }
+        }
+        if (failure instanceof RuntimeException e) {
+            throw e;
+        }
+        if (failure instanceof Error e) {
+            throw e;
+        }
     }
 
     private boolean getBoolean(Map<String, String> valueNodes, String key, boolean defaultValue) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,19 @@ import io.helidon.config.ConfigException;
  * {@code Config} nodes, only modify existing ones.
  *
  * @see OverrideData
+ * @deprecated Since 28.0.0, the legacy core overrides API is deprecated for removal in favor of the optional
+ * {@code helidon-config-overrides} filter module. Overrides functionality is being replaced, not discontinued.
+ * Existing behavior is preserved; no removal release or timing has been decided. Please report usage and migration
+ * requirements in
+ * <a href="https://github.com/helidon-io/helidon/issues/10415">issue 10415</a>.
+ * A higher-priority {@link ConfigSource} can supply replacement values for explicitly enumerated keys, but it can also
+ * create nodes and does not interpret override wildcards or predicates. It is not an equivalent replacement for
+ * matching and replacing only existing nodes. The optional overrides module supports wildcard and regular-expression
+ * rules on existing nodes. An application-specific {@link ConfigFilter} may be needed for arbitrary predicates.
+ * Migration must preserve first-match ordering, application before other filters, source polling or watching,
+ * and change notifications as required by the application. Verify these semantics before switching.
  */
+@Deprecated(since = "28.0.0", forRemoval = true)
 public interface OverrideSource extends Source, Supplier<OverrideSource> {
 
     @Override
@@ -78,7 +90,12 @@ public interface OverrideSource extends Source, Supplier<OverrideSource> {
      * second is the replacement value the config system will use as it loads
      * any {@code Config} value node with a key that matches the wildcard
      * expression.
+     *
+     * @deprecated Since 28.0.0, this legacy core API is deprecated for removal in favor of the optional overrides
+     * filter module. See {@link OverrideSource} for migration
+     * guidance and the usage feedback request. No removal release or timing has been decided.
      */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     final class OverrideData {
 
         /**

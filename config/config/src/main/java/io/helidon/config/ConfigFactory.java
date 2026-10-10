@@ -38,6 +38,7 @@ final class ConfigFactory {
     private final Map<ConfigKeyImpl, ConfigNode> fullKeyToNodeMap;
     private final ConfigFilter filter;
     private final ProviderImpl provider;
+    private final boolean snapshot;
     private final Map<PrefixedKey, AbstractConfigImpl> configCache;
     private final ReentrantReadWriteLock configCacheLock = new ReentrantReadWriteLock();
     private final Instant timestamp;
@@ -54,6 +55,14 @@ final class ConfigFactory {
                   ObjectNode node,
                   ConfigFilter filter,
                   ProviderImpl provider) {
+        this(mapperManager, node, filter, provider, false);
+    }
+
+    ConfigFactory(ConfigMapperManager mapperManager,
+                  ObjectNode node,
+                  ConfigFilter filter,
+                  ProviderImpl provider,
+                  boolean snapshot) {
 
         Objects.requireNonNull(mapperManager, "mapperManager argument is null.");
         Objects.requireNonNull(node, "node argument is null.");
@@ -64,6 +73,7 @@ final class ConfigFactory {
         this.fullKeyToNodeMap = ConfigHelper.createFullKeyToNodeMap(node);
         this.filter = filter;
         this.provider = provider;
+        this.snapshot = snapshot;
 
         // all access must be guarded by configCacheLock
         this.configCache = new HashMap<>();
@@ -167,6 +177,10 @@ final class ConfigFactory {
 
     ProviderImpl provider() {
         return provider;
+    }
+
+    boolean snapshot() {
+        return snapshot;
     }
 
     /**

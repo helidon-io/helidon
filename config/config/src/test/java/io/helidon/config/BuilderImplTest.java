@@ -63,6 +63,8 @@ public class BuilderImplTest {
                                           eq(ConfigSourcesRuntime.empty()), //ConfigSource
                                           eq(OverrideSourceRuntime.empty()), //OverrideSource
                                           eq(List.of()), //filterProviders
+                                          eq(List.of()), //runtimeFilterProviders
+                                          eq(false), //hasFixedFilters
                                           eq(true), //cachingEnabled
                                           notNull(), //changesExecutor
                                           eq(true), //keyResolving
@@ -87,6 +89,8 @@ public class BuilderImplTest {
                                           eq(ConfigSourcesRuntime.empty()), //ConfigSource
                                           eq(OverrideSourceRuntime.empty()), //OverrideSource
                                           eq(List.of()), //filterProviders
+                                          eq(List.of()), //runtimeFilterProviders
+                                          eq(false), //hasFixedFilters
                                           eq(true), //cachingEnabled
                                           eq(myExecutor), //changesExecutor
                                           eq(true), //keyResolving
@@ -112,6 +116,8 @@ public class BuilderImplTest {
                                           eq(ConfigSourcesRuntime.empty()), //ConfigSource
                                           eq(OverrideSourceRuntime.empty()), //OverrideSource
                                           eq(List.of()), //filterProviders
+                                          eq(List.of()), //runtimeFilterProviders
+                                          eq(false), //hasFixedFilters
                                           eq(true), //cachingEnabled
                                           eq(myExecutor), //changesExecutor
                                           eq(false), //keyResolving
