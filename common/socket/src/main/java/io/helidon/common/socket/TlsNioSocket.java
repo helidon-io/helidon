@@ -45,6 +45,7 @@ public final class TlsNioSocket extends NioSocket {
     private final Lock handshakeLock = new ReentrantLock();
     private final SSLEngine engine;
     private final ByteBuffer myAppData;
+    private final ByteBuffer emptyHandshakeData = ByteBuffer.allocate(0);
 
     private int unwrapRemaining;
     private ByteBuffer peerAppData;
@@ -317,7 +318,6 @@ public final class TlsNioSocket extends NioSocket {
         SSLEngineResult.HandshakeStatus status = handshakeStatus;
         try {
             handshakeLock.lock();
-            myAppData.clear();
 
             while (status != SSLEngineResult.HandshakeStatus.FINISHED
                     && status != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
@@ -332,9 +332,8 @@ public final class TlsNioSocket extends NioSocket {
                     }
                     // fall through to wrap
                 case NEED_WRAP:
-                    myAppData.clear();
-                    myAppData.flip();
-                    result = wrapAndSend(myAppData, false);
+                    emptyHandshakeData.clear();
+                    result = wrapAndSend(emptyHandshakeData, false);
                     break;
                 case NEED_UNWRAP:
                     peerAppData.clear();
