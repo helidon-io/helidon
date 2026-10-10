@@ -16,13 +16,14 @@
 
 package io.helidon.service.codegen;
 
+import java.util.ArrayDeque;
 import java.util.Collection;
-import java.util.Map;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenUtil;
+import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
@@ -68,7 +69,6 @@ public class EventObserverExtensionProvider implements RegistryCodegenExtensionP
 
     private static final class EventObserverExtension implements RegistryCodegenExtension {
         private static final TypeName GENERATOR = TypeName.create(EventObserverExtensionProvider.EventObserverExtension.class);
-        private static final Map<ClassNameCacheKey, Map<Set<Annotation>, TypeName>> CACHE = new ConcurrentHashMap<>();
 
         @Override
         public void process(RegistryRoundContext roundContext) {
@@ -78,22 +78,58 @@ public class EventObserverExtensionProvider implements RegistryCodegenExtensionP
             process(roundContext, elements, "Async");
         }
 
-        private static TypeName registration(TypeName serviceType, TypeName eventObject, Set<Annotation> qualifiers) {
-            ResolvedType event = ResolvedType.create(eventObject);
+        private static TypeName registration(TypeInfo owningType, TypedElementInfo element, String suffix) {
+            TypeName serviceType = owningType.typeName();
+            String signature = element.signature().toString();
+            // Rank complete method signatures within the owner, independent of processing order and compiler lifetime.
+            long index = owningType.elementInfo().stream()
+                    .filter(it -> it.kind() == ElementKind.METHOD)
+                    .filter(it -> it.hasAnnotation(EVENT_OBSERVER) || it.hasAnnotation(EVENT_OBSERVER_ASYNC))
+                    .map(it -> it.signature().toString())
+                    .filter(it -> it.compareTo(signature) < 0)
+                    .count();
+            // Replace legacy primary descriptors when recompiling into retained output directories.
+            String className = serviceType.classNameWithEnclosingNames().replace('.', '_') + "__Observer";
+            if (!suffix.isEmpty() && element.hasAnnotation(EVENT_OBSERVER)) {
+                className += suffix + "_" + index;
+            } else if (index != 0) {
+                className += "_" + index;
+            }
+            return TypeName.builder()
+                    .packageName(serviceType.packageName())
+                    .className(className)
+                    .build();
+        }
 
-            var map = CACHE.computeIfAbsent(new ClassNameCacheKey(serviceType, event), k -> new ConcurrentHashMap<>());
-            return map.computeIfAbsent(qualifiers, it -> {
-                String className = serviceType.classNameWithEnclosingNames().replace('.', '_')
-                        + "__Observer";
-                var builder = TypeName.builder()
-                        .packageName(serviceType.packageName());
-                if (map.isEmpty()) {
-                    return builder.className(className)
-                            .build();
+        private static boolean overloaded(TypeInfo owningType, TypedElementInfo element) {
+            var remaining = new ArrayDeque<TypeInfo>();
+            Set<TypeName> visited = new HashSet<>();
+            remaining.add(owningType);
+            while (!remaining.isEmpty()) {
+                TypeInfo type = remaining.removeFirst();
+                if (!visited.add(type.typeName().genericTypeName())) {
+                    continue;
                 }
-                return builder.className(className + "_" + map.size())
-                        .build();
-            });
+                boolean inherited = !type.typeName().equals(owningType.typeName());
+                boolean samePackage = type.typeName().packageName().equals(owningType.typeName().packageName());
+                boolean hasOverload = type.elementInfo().stream()
+                        .filter(it -> it.kind() == ElementKind.METHOD)
+                        .filter(it -> it.elementName().equals(element.elementName()))
+                        .filter(it -> !it.signature().equals(element.signature()))
+                        .filter(it -> it.accessModifier() != AccessModifier.PRIVATE)
+                        .filter(it -> samePackage || it.accessModifier() == AccessModifier.PUBLIC)
+                        .filter(it -> !inherited
+                                || type.kind() != ElementKind.INTERFACE
+                                || !ElementInfoPredicates.isStatic(it))
+                        .findAny()
+                        .isPresent();
+                if (hasOverload) {
+                    return true;
+                }
+                type.superTypeInfo().ifPresent(remaining::addLast);
+                remaining.addAll(type.interfaceTypeInfo());
+            }
+            return false;
         }
 
         private void process(RegistryRoundContext roundContext, Collection<TypedElementInfo> elements, String suffix) {
@@ -117,6 +153,10 @@ public class EventObserverExtensionProvider implements RegistryCodegenExtensionP
                 }
                 TypedElementInfo parameter = element.parameterArguments().getFirst();
                 TypeName eventObject = parameter.typeName();
+                if (eventObject.vararg()) {
+                    throw new CodegenException("Event observer methods cannot declare a varargs parameter",
+                                               element.originatingElementValue());
+                }
                 Set<Annotation> qualifiers = Qualifiers.qualifiers(element);
                 TypeInfo owningType = element.enclosingType()
                         .flatMap(roundContext::typeInfo)
@@ -133,7 +173,7 @@ public class EventObserverExtensionProvider implements RegistryCodegenExtensionP
                                                   TypeName eventObject,
                                                   String suffix) {
             TypeName serviceTypeName = owningType.typeName();
-            TypeName generatedType = registration(serviceTypeName, eventObject, qualifiers);
+            TypeName generatedType = registration(owningType, element, suffix);
 
             ClassModel.Builder classModel = ClassModel.builder()
                     .copyright(CodegenUtil.copyright(GENERATOR,
@@ -181,25 +221,29 @@ public class EventObserverExtensionProvider implements RegistryCodegenExtensionP
                     .addContentLine("this.eventObserver = eventObserver;"));
 
             // and the register method to register it
-            classModel.addMethod(register -> register
-                    .addAnnotation(Annotations.OVERRIDE)
-                    .accessModifier(AccessModifier.PUBLIC)
-                    .returnType(TypeNames.PRIMITIVE_VOID)
-                    .name("register")
-                    .addParameter(eventManager -> eventManager
-                            .type(EVENT_MANAGER)
-                            .name("manager"))
-                    .addContent("manager.register")
-                    .addContent(suffix)
-                    .addContent("(EVENT_OBJECT, eventObserver::")
-                    .addContent(element.elementName())
-                    .addContentLine(", QUALIFIERS);")
-            );
+            classModel.addMethod(register -> {
+                register.addAnnotation(Annotations.OVERRIDE)
+                        .accessModifier(AccessModifier.PUBLIC)
+                        .returnType(TypeNames.PRIMITIVE_VOID)
+                        .name("register")
+                        .addParameter(eventManager -> eventManager
+                                .type(EVENT_MANAGER)
+                                .name("manager"))
+                        .addContent("manager.");
+                // Method-local type variables are not declared in the registration class; retain their inferred call.
+                if (element.typeParameters().isEmpty() && overloaded(owningType, element)) {
+                    register.addContent("<")
+                            .addContent(eventObject.boxed())
+                            .addContent(">");
+                }
+                register.addContent("register")
+                        .addContent(suffix)
+                        .addContent("(EVENT_OBJECT, eventObserver::")
+                        .addContent(element.elementName())
+                        .addContentLine(", QUALIFIERS);");
+            });
 
             roundContext.addGeneratedType(generatedType, classModel, serviceTypeName, owningType);
-        }
-
-        private record ClassNameCacheKey(TypeName serviceType, ResolvedType eventType) {
         }
     }
 }
