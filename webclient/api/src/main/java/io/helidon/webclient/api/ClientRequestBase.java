@@ -456,14 +456,23 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     @Override
     public R outputStream(OutputStreamHandler outputStreamConsumer) {
         try {
-            rejectHeadWithEntity();
-            additionalHeaders();
-            validateQueryContentType();
-            validateRequest();
+            prepareOutputStreamRequest();
             return doOutputStream(outputStreamConsumer);
         } finally {
             clearSelectedProxyRoute();
         }
+    }
+
+    /**
+     * Prepare and validate a request whose entity is produced through an output stream.
+     * Protocol implementations providing additional streaming operations use the same validation and additional headers
+     * as {@link #outputStream(io.helidon.webclient.api.ClientRequest.OutputStreamHandler)}.
+     */
+    protected void prepareOutputStreamRequest() {
+        rejectHeadWithEntity();
+        additionalHeaders();
+        validateQueryContentType();
+        validateRequest();
     }
 
     @Override

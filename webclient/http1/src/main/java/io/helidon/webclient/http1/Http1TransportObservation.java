@@ -41,11 +41,16 @@ import static io.helidon.http.HttpTransportObserver.PROTOCOL_HTTP_1_1;
  * One HTTP/1 exchange, retained when a redirect probe resumes its request body.
  */
 final class Http1TransportObservation {
+    private static final int UPLOAD_COMPLETE = 1;
+    private static final int RESPONSE_COMPLETE = 2;
+    private static final int RESPONSE_CANCELLED = 4;
     private static final VarHandle CLOSED;
+    private static final VarHandle COMPLETION;
 
     static {
         try {
             CLOSED = MethodHandles.lookup().findVarHandle(Http1TransportObservation.class, "closed", int.class);
+            COMPLETION = MethodHandles.lookup().findVarHandle(Http1TransportObservation.class, "completion", int.class);
         } catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
         }
@@ -54,6 +59,8 @@ final class Http1TransportObservation {
     private final ClientConnection connection;
     private final StreamObservation stream;
     private volatile int closed;
+    private volatile int completion;
+    private boolean duplex;
 
     private Http1TransportObservation(ClientConnection connection, StreamObservation stream) {
         this.connection = connection;
@@ -68,6 +75,16 @@ final class Http1TransportObservation {
         observation.protocolSelected(PROTOCOL_HTTP_1_1);
         return new Http1TransportObservation(connection,
                                              observation.streamOpened(Direction.BIDIRECTIONAL, Initiator.LOCAL));
+    }
+
+    void startDuplex() {
+        duplex = true;
+    }
+
+    void uploadComplete() {
+        if (duplex) {
+            directionComplete(UPLOAD_COMPLETE);
+        }
     }
 
     void responseHeaders(Method method, Status status, Headers headers) {
@@ -133,11 +150,30 @@ final class Http1TransportObservation {
     }
 
     void complete() {
-        close(StreamOutcome.COMPLETED);
+        if (duplex) {
+            directionComplete(RESPONSE_COMPLETE);
+        } else {
+            close(StreamOutcome.COMPLETED);
+        }
     }
 
     void cancel() {
-        close(StreamOutcome.CANCELLED);
+        if (!duplex) {
+            close(StreamOutcome.CANCELLED);
+            return;
+        }
+        while (true) {
+            int previous = completion;
+            if ((previous & RESPONSE_COMPLETE) != 0) {
+                // Ordinary response disposal after EOF must not cancel an upload that is still making progress.
+                return;
+            }
+            int next = previous | RESPONSE_COMPLETE | RESPONSE_CANCELLED;
+            if (COMPLETION.compareAndSet(this, previous, next)) {
+                completeDirections(next);
+                return;
+            }
+        }
     }
 
     void fail(Throwable failure) {
@@ -150,6 +186,17 @@ final class Http1TransportObservation {
     private void close(StreamOutcome outcome) {
         if (closed == 0 && (boolean) CLOSED.compareAndSet(this, 0, 1)) {
             stream.close(outcome);
+        }
+    }
+
+    private void directionComplete(int direction) {
+        int previous = (int) COMPLETION.getAndBitwiseOr(this, direction);
+        completeDirections(previous | direction);
+    }
+
+    private void completeDirections(int completion) {
+        if ((completion & (UPLOAD_COMPLETE | RESPONSE_COMPLETE)) == (UPLOAD_COMPLETE | RESPONSE_COMPLETE)) {
+            close((completion & RESPONSE_CANCELLED) == 0 ? StreamOutcome.COMPLETED : StreamOutcome.CANCELLED);
         }
     }
 }

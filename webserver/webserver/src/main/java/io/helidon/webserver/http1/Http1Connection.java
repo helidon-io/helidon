@@ -124,6 +124,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     private int requestId;
     private long currentEntitySize;
     private long currentEntitySizeRead;
+    private int currentChunkRemaining;
+    private boolean chunkTerminatorPending;
     private boolean protocolSelected;
     private boolean applicationProcessing;
     private StreamObservation currentStream = StreamObservation.noop();
@@ -210,6 +212,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 recvListener.prologue(ctx, prologue);
                 currentEntitySize = 0;
                 currentEntitySizeRead = 0;
+                currentChunkRemaining = 0;
+                chunkTerminatorPending = false;
                 if (http1Config.validatePrologue()) {
                     validatePrologue(prologue);
                 }
@@ -378,6 +382,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     void reset() {
         currentEntitySize = 0;
         currentEntitySizeRead = 0;
+        currentChunkRemaining = 0;
+        chunkTerminatorPending = false;
     }
 
     // Package-private for deterministic tests of immediate 100-Continue writer failures.
@@ -626,33 +632,45 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     }
 
     private BufferData readNextChunk(HttpPrologue prologue, WritableHeaders<?> headers) {
-        // chunk length processing
-        String hex = reader.readLine();
-        int chunkLength = ParserHelper.parseNonNegative(hex, 16, INVALID_SIZE_EXCEPTION_SUPPLIER);
+        if (currentChunkRemaining == 0) {
+            if (chunkTerminatorPending) {
+                if (!reader.startsWithNewLine()) {
+                    throw invalidRequestFraming(prologue, headers, "Invalid chunk terminator");
+                }
+                reader.skip(2);
+                chunkTerminatorPending = false;
+            }
+            String hex = reader.readLine();
+            int chunkLength = ParserHelper.parseNonNegative(hex, 16, INVALID_SIZE_EXCEPTION_SUPPLIER);
 
-        currentEntitySizeRead += chunkLength;
-        if (maxPayloadSize != -1 && currentEntitySizeRead > maxPayloadSize) {
-            throw RequestException.builder()
-                    .type(EventType.BAD_REQUEST)
-                    .status(Status.REQUEST_ENTITY_TOO_LARGE_413)
-                    .request(DirectTransportRequest.create(prologue, headers))
-                    .setKeepAlive(false)
-                    .build();
-        }
-        // read chunk
-        if (chunkLength == 0) {
-            String end = reader.readLine();
-            if (!end.isEmpty()) {
+            currentEntitySizeRead += chunkLength;
+            if (maxPayloadSize != -1 && currentEntitySizeRead > maxPayloadSize) {
                 throw RequestException.builder()
                         .type(EventType.BAD_REQUEST)
-                        .message("Invalid terminating chunk")
+                        .status(Status.REQUEST_ENTITY_TOO_LARGE_413)
+                        .request(DirectTransportRequest.create(prologue, headers))
+                        .setKeepAlive(false)
                         .build();
             }
-            return null;
+            if (chunkLength == 0) {
+                String end = reader.readLine();
+                if (!end.isEmpty()) {
+                    throw RequestException.builder()
+                            .type(EventType.BAD_REQUEST)
+                            .message("Invalid terminating chunk")
+                            .build();
+                }
+                return null;
+            }
+            currentChunkRemaining = chunkLength;
         }
-        BufferData nextChunkData = reader.readBuffer(chunkLength);
-        reader.skip(2); // skip \r\n after the chunk
-        return nextChunkData;
+        // A wire chunk can be much larger than the transport buffer. Deliver available bytes before pulling more.
+        reader.ensureAvailable();
+        int toRead = Math.min(currentChunkRemaining, Math.min(reader.available(), 8192));
+        BufferData data = reader.readBuffer(toRead);
+        currentChunkRemaining -= toRead;
+        chunkTerminatorPending = currentChunkRemaining == 0;
+        return data;
     }
 
     private BufferData readLengthEntity() {

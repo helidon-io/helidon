@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package io.helidon.webclient.http1;
 
+import java.io.IOException;
+
+import io.helidon.common.Functions;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.webclient.api.ClientRequest;
 
@@ -33,6 +36,48 @@ public interface Http1ClientRequest extends ClientRequest<Http1ClientRequest> {
 
     @Override
     Http1ClientResponse outputStream(OutputStreamHandler outputStreamConsumer);
+
+    /**
+     * Upload an entity while consuming its response concurrently.
+     * The upload handler runs on a virtual thread with the request context; the response handler runs on the calling
+     * thread. This method waits for the response handler and any started upload handler to finish before returning.
+     * Consume the response entity inside its handler; neither the response nor its entity stream may be used after
+     * the handler returns.
+     * The upload handler must close its output stream and honor interruption when waiting outside transport I/O.
+     * A handler failure closes the connection and interrupts the upload handler.
+     * <p>
+     * If a final response arrives during the initial {@code Expect: 100-continue} wait, the upload handler is not
+     * invoked, even if the final response is successful. The response handler still receives that response.
+     * Acquire upload-specific resources inside the upload handler, or manage their cleanup outside this method;
+     * cleanup must not depend on the upload handler being invoked.
+     * <p>
+     * WebClient service completion callbacks can also run concurrently. Non-async callbacks registered with
+     * {@link io.helidon.webclient.api.WebClientServiceRequest#whenSent()} can run on the upload thread when sending
+     * succeeds, or on the upload, calling, or timeout thread when sending fails. Callbacks registered after a stage
+     * completes can run on the registering thread. Non-async callbacks can also run on another thread awaiting
+     * the stage; do not assume callback thread affinity. These callbacks can overlap service-chain execution, response
+     * handling, and {@link io.helidon.webclient.api.WebClientServiceRequest#whenComplete()} callbacks.
+     * Use immutable snapshots or synchronization when sharing mutable request state, including headers, properties,
+     * and request IDs. Propagating the request context shares its registered values; those values must be safe for
+     * concurrent access when used by both handlers or service callbacks.
+     * <p>
+     * Compose completion stages or use a suitable async continuation when one callback depends on another stage.
+     * Do not block inside a service callback waiting for another completion stage or for this method to return:
+     * the callback can run inline on a thread needed to make that progress. Do not assume a fixed ordering between
+     * upload and response completion callbacks.
+     * <p>
+     * Redirect responses are delivered to the response handler without replaying the upload, irrespective of
+     * {@link #followRedirects(boolean)}. Successful response headers do not stop an ongoing upload.
+     * After the response handler returns for a redirect or error response, any ongoing upload is interrupted and
+     * the connection is closed. The handler can consume the response entity before that cancellation.
+     * The request read timeout bounds intervals without transport progress while I/O is pending in either direction;
+     * time spent in application code with no pending transport I/O is excluded.
+     *
+     * @param uploadHandler handler producing the request entity
+     * @param responseHandler handler consuming the response
+     */
+    void exchange(OutputStreamHandler uploadHandler,
+                  Functions.CheckedConsumer<Http1ClientResponse, IOException> responseHandler);
 
     /**
      * Upgrade the current request to a different protocol.

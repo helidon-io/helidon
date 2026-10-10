@@ -14,8 +14,9 @@ Helidon WebClient provides the following features:
 
 - **Blocking approach** The WebClient uses the blocking approach to
   synchronously process a request and its corresponding response. Both
-  `HTTP/1.1` and `HTTP/2` request and response will run in the thread of the
-  user. Additionally, for `HTTP/2`, virtual thread is employed to manage the
+  `HTTP/1.1` and `HTTP/2` request and response normally run in the thread of the
+  user. HTTP/1 also offers an explicit streaming `exchange` operation with a
+  concurrent upload. Additionally, for `HTTP/2`, a virtual thread manages the
   connection.
 
 - **Builder-like setup and execution** Creates every client and request as a
@@ -233,6 +234,109 @@ ClientResponseTyped<String> response = client.get()
     .request(String.class);
 String entityString = response.entity();
 ```
+
+### Streaming a Request and Response Together
+
+An HTTP/1 server can begin responding before it has read the complete request.
+For example, an echo service can copy a large request directly to its response.
+Both peers must make progress: if the client finishes uploading before it starts
+reading, the server can block writing the response while the client blocks
+writing the request. Increasing socket buffers only postpones this problem.
+
+Use `Http1ClientRequest.exchange` for this interaction. It runs the upload
+handler on a virtual thread with the request context and invokes the response
+handler on the calling thread. The call waits for the response handler and any
+started upload handler to finish. The entity can be larger than available
+memory because neither handler needs to materialize it.
+
+```java
+Http1Client client = Http1Client.builder()
+        .baseUri("http://localhost:8080")
+        .build();
+try {
+    client.post("/echo").exchange(output -> {
+        try (output; var input = Files.newInputStream(source)) {
+            input.transferTo(output);
+        }
+    }, response -> {
+        if (response.status().code() != 200) {
+            throw new IOException("Echo failed: " + response.status());
+        }
+        try (var input = response.inputStream(); var output = Files.newOutputStream(destination)) {
+            input.transferTo(output);
+        }
+    });
+} finally {
+    client.closeResource();
+}
+```
+
+Here, `source` and `destination` are distinct `Path` values. The server can use
+one request thread and bounded stream copying:
+
+```java
+routing.post("/echo", (request, response) -> {
+    try (var input = request.content().inputStream(); var output = response.outputStream()) {
+        input.transferTo(output);
+    }
+});
+```
+
+Follow these rules for streaming exchanges:
+
+- Consume the response inside the response handler. The response and its stream
+  are closed before `exchange` returns; do not retain them for later reading.
+- Close the upload stream in its handler. With a declared `Content-Length`,
+  write exactly that many bytes. Otherwise, the client uses chunked encoding.
+- If a final response arrives during the initial `Expect: 100-continue` wait,
+  the upload handler is not invoked, even for a successful final response.
+  The response handler still receives that response. Acquire upload-specific
+  resources inside the upload handler, as in the file-copy example, or manage
+  their cleanup outside `exchange`; cleanup must not rely on the upload
+  handler being invoked.
+- Read and write in bounded pieces. Avoid `readAllBytes()` and conversion to
+  `byte[]` or `String` for entities that might be large. HTTP/1 chunk boundaries
+  do not determine application read boundaries.
+- Flush at application message boundaries when the peer needs a prefix before
+  producing more data. In particular, a server that waits for more request
+  bytes after writing a small response prefix should flush that prefix first.
+- Keep both handlers progressing independently. A slow reader applies normal
+  backpressure to the writer. Do not make the response handler wait for upload
+  completion before reading, or make the upload handler wait for a response
+  that the server produces only after consuming the complete request.
+- Successful response headers allow the upload to continue. Redirect and error
+  responses are delivered without replaying the upload; after their handler
+  returns, an unfinished upload is interrupted and its connection is discarded.
+  A handler that throws also cancels the exchange. Upload code that waits on
+  application resources must honor interruption.
+- The request `readTimeout` bounds periods without transport progress while
+  reads or writes are pending. Progress in either direction keeps the exchange
+  active, allowing long uploads to servers that respond only after receiving
+  the body. This is an idle timeout, not a limit on total exchange duration.
+  `readContinueTimeout` still bounds the initial `100 Continue` wait.
+
+WebClient service implementations must also account for completion callbacks.
+Non-async callbacks registered with `WebClientServiceRequest.whenSent()` can
+run on the upload thread when sending succeeds, or on the upload, calling, or
+timeout thread when sending fails. A callback registered after its stage
+completes can run on the registering thread. Non-async callbacks can also run
+on another thread awaiting the stage; do not assume callback thread affinity.
+These callbacks can overlap
+service-chain execution, response handling, and `whenComplete()` callbacks.
+Use immutable snapshots or synchronize access when sharing mutable request
+state, including headers, properties, and request IDs. The propagated request
+context shares its registered values; use immutable or thread-safe values when
+both handlers or service callbacks access them concurrently.
+
+Compose completion stages or use a suitable async continuation when one
+callback depends on another stage. Do not block inside a service callback
+waiting for another completion stage or for `exchange` to return: the callback
+can run inline on a thread needed to make that progress. Do not assume a fixed
+ordering between upload and response completion callbacks.
+
+This API is available on the protocol-specific `Http1Client`. The existing
+`outputStream` API invokes its upload handler before returning a response;
+use `exchange` when uploading and reading must overlap.
 
 ### Protocol Used
 
