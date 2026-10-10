@@ -165,6 +165,29 @@ mvn -f tests/integration/data-jdbc/pom.xml -pl h2 -am verify
 mvn -f tests/integration/data-jdbc/pom.xml -pl mixed-provider -am clean package
 ```
 
+## Oracle generated repository diagnostics
+
+`OracleGeneratedRepositoryTest` collects diagnostics only after an `ORA-12516`
+connection refusal or a test failure. Each execution writes to a unique directory
+under `target/failsafe-reports/oracle-generated-repository/`, included in CI test artifacts.
+
+Reports capture connection attempts and outcomes, listener handler state and
+transitions, database process/session utilization, and container PID/OOM counters.
+Only structured, allowlisted fields are written; credentials, raw identities, and
+raw logs are excluded. Connection IDs use stable pseudonyms within each execution.
+
+This suite retries connection opening only for `ORA-12516`, with three total
+attempts and waits of 1 second and 2 seconds. Refusals remain recorded even when
+a retry succeeds. Other errors propagate immediately.
+
+Run with Docker available:
+
+```bash
+mvn -f tests/integration/data-jdbc/declarative/oracle/pom.xml verify
+```
+
+Confirm that the Oracle tests executed rather than being skipped.
+
 ## Test design notes
 
 - Prefer portable contracts in `common/src/main/java` and small database leaves
