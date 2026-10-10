@@ -27,7 +27,7 @@ import java.util.function.Supplier;
 import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.ThreadPoolSupplier;
 import io.helidon.config.Config;
-import io.helidon.service.registry.Services;
+import io.helidon.service.registry.GlobalServiceRegistry;
 
 import static java.lang.System.Logger.Level.ERROR;
 
@@ -74,9 +74,8 @@ public final class FaultTolerance {
 
     /**
      * Configure Helidon wide defaults from a config instance.
-     * The default is now to use {@link io.helidon.service.registry.Services#get(Class)} to get
-     * a configuration. This method will work as it used to, but fallback will always
-     * be to the config instance provided by service registry.
+     * This method retains its explicit configuration override. Metrics defaults otherwise use the already active
+     * configuration provided by the service registry, or empty configuration if none is active.
      *
      * @param config config to read fault tolerance configuration
      */
@@ -173,7 +172,12 @@ public final class FaultTolerance {
     static Config config() {
         var config = CONFIG.get();
         if (config == null) {
-            return Services.get(Config.class);
+            if (!GlobalServiceRegistry.configured()) {
+                return Config.empty();
+            }
+            return GlobalServiceRegistry.registry()
+                    .firstActive(Config.class)
+                    .orElseGet(Config::empty);
         }
         return config;
     }
