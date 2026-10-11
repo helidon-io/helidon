@@ -20,14 +20,14 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
-import io.helidon.config.Config;
+import io.helidon.config.spi.ConfigFilterContext;
 import io.helidon.config.spi.ConfigFilterFactory;
 import io.helidon.config.spi.ConfigFilterProvider;
 
 /**
  * Provider of immutable override filters, configured using a generated builder. The provider retains its immutable
- * configuration and can be shared. Each call to {@link #create(Config)} creates independent definition sources and
- * monitoring resources, shared only by the filter generations of that configuration runtime.
+ * configuration and can be shared. Each call to {@link #create(ConfigFilterContext)} creates independent definition sources
+ * and monitoring resources, shared only by the filter generations of that configuration runtime.
  * <p>
  * For programmatic setup, register {@code builder().build()} with
  * {@link io.helidon.config.Config.Builder#addFilterProvider(io.helidon.config.spi.ConfigFilterProvider)}. The builder's
@@ -74,13 +74,12 @@ public final class OverrideConfigFilterProvider implements ConfigFilterProvider,
      * Create the definition machinery for one configuration runtime. Settings come from this provider's prototype;
      * they are not reread from the supplied target configuration.
      *
-     * @param initialConfig initial unfiltered target configuration
+     * @param context target configuration and reload support
      * @return per-runtime factory creating immutable filters
      */
     @Override
-    public ConfigFilterFactory create(Config initialConfig) {
-        Objects.requireNonNull(initialConfig);
-        return OverrideFilterFactory.create(config);
+    public ConfigFilterFactory create(ConfigFilterContext context) {
+        return OverrideFilterFactory.create(config, Objects.requireNonNull(context));
     }
 
     @Override

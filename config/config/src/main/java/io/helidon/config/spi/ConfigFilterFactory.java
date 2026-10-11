@@ -15,8 +15,6 @@
  */
 package io.helidon.config.spi;
 
-import java.util.Objects;
-
 import io.helidon.config.Config;
 
 /**
@@ -24,7 +22,7 @@ import io.helidon.config.Config;
  * A factory is created for each independently built configuration and reused when that configuration is reloaded.
  * Calls to {@link #create(Config)} on the same factory do not overlap, including during manual and automatic reloads.
  * <p>
- * The reload callback passed to {@link #startChangeSupport(Runnable)} may be invoked from monitoring threads while
+ * {@link ConfigFilterContext#reload()} may be invoked from monitoring threads while
  * {@link #create(Config)} or {@link #stopChangeSupport()} is running.
  * Calls to {@link #stopChangeSupport()} may overlap {@link #create(Config)} during manual reload.
  *
@@ -39,7 +37,7 @@ public interface ConfigFilterFactory {
      * The returned filter is scoped to that configuration snapshot. Creating a filter must not change the behavior of
      * filters created for earlier snapshots.
      * The supplied configuration is an unfiltered source view, as described by
-     * {@link ConfigFilterProvider#create(Config)}.
+     * {@link ConfigFilterContext#initialConfig()}.
      *
      * @param config unfiltered source configuration for this snapshot
      * @return fully initialized filter scoped to this configuration snapshot
@@ -48,16 +46,13 @@ public interface ConfigFilterFactory {
 
     /**
      * Starts optional independent change monitoring after the first configuration is built.
-     * Called at most once. The callback requests an asynchronous, coalesced configuration rebuild and may be invoked
-     * during this method. A callback need not wait for filter creation or configuration change delivery.
-     * Callbacks may be invoked concurrently from monitoring threads; the config system serializes resulting rebuilds.
+     * Called at most once. Monitoring may request asynchronous, coalesced configuration rebuilds through
+     * {@link ConfigFilterContext#reload()}, including during this method.
      * Stop change support must also clean up a partially failed start.
      *
-     * @param requestReload callback to request rebuilding this configuration runtime
      * @return whether automatic change monitoring is active
      */
-    default boolean startChangeSupport(Runnable requestReload) {
-        Objects.requireNonNull(requestReload, "requestReload");
+    default boolean startChangeSupport() {
         return false;
     }
 

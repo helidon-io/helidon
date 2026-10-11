@@ -15,7 +15,6 @@
  */
 package io.helidon.config.spi;
 
-import io.helidon.config.Config;
 import io.helidon.service.registry.Service;
 
 /**
@@ -27,19 +26,14 @@ import io.helidon.service.registry.Service;
 @Service.Contract
 public interface ConfigFilterProvider {
     /**
-     * Creates a factory once for each invocation of {@link Config.Builder#build()}.
+     * Creates a factory once for each invocation of {@link io.helidon.config.Config.Builder#build()}.
      * This method may be called concurrently.
      * <p>
-     * The supplied configuration contains merged source values before value filtering.
-     * {@link Config#get(String)} and {@link Config#detach()} return nodes in this unfiltered view.
-     * {@link Config.Context#last()} and {@link Config.Context#reload()} return the same unfiltered node;
-     * {@link Config.Context#stopChangeSupport()} and {@link Config#onChange(java.util.function.Consumer)} have no effect.
-     * <p>
-     * Values from lazy sources are read on demand. Capture the values needed by a filter during its creation so later
-     * source changes cannot affect that filter.
+     * The supplied context provides the {@link ConfigFilterContext#initialConfig() initial unfiltered source configuration}
+     * and can be retained to {@link ConfigFilterContext#reload() request a configuration rebuild}.
      *
-     * @param initialConfig unfiltered initial source configuration
+     * @param context context for this configuration runtime
      * @return new factory
      */
-    ConfigFilterFactory create(Config initialConfig);
+    ConfigFilterFactory create(ConfigFilterContext context);
 }

@@ -109,7 +109,7 @@ public final class ConfigFilterReloadWarningScenario {
             }
 
             @Override
-            public boolean startChangeSupport(Runnable requestReload) {
+            public boolean startChangeSupport() {
                 return true;
             }
         };

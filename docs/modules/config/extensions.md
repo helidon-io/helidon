@@ -270,13 +270,18 @@ Config SPI Interfaces for filtering:
 </tr>
 <tr>
 <td><code>ConfigFilterProvider</code></td>
-<td><code>ConfigFilterFactory create(Config initialConfig);</code></td>
-<td>Creates a factory for each Config builder invocation from its initial unfiltered configuration.</td>
+<td><code>ConfigFilterFactory create(ConfigFilterContext context);</code></td>
+<td>Creates a factory for each Config builder invocation. The context provides the initial unfiltered configuration and requests reloads.</td>
 </tr>
 <tr>
 <td><code>ConfigFilterFactory</code></td>
 <td><code>ConfigFilter create(Config config);</code></td>
 <td>Creates a filter for the initial configuration and each reload. Optional lifecycle methods manage independent change monitoring.</td>
+</tr>
+<tr>
+<td><code>ConfigFilterContext</code></td>
+<td><code>Config initialConfig();</code><br><code>void reload();</code></td>
+<td>Provides the initial construction view and requests asynchronous rebuilds of this configuration runtime.</td>
 </tr>
 </tbody>
 </table>
@@ -284,18 +289,24 @@ Config SPI Interfaces for filtering:
 ### Initializing Filters
 
 Use `ConfigFilterProvider` for filters requiring configuration. The provider
-receives an unfiltered initial Config view and creates one `ConfigFilterFactory`
+receives a `ConfigFilterContext` and creates one `ConfigFilterFactory`
 for each `Config.Builder.build()` invocation. The factory receives an unfiltered Config view on every build
 or reload, and returns a fully constructed immutable filter. These views do not
 apply legacy overrides, ordinary filters, or value-reference resolution. They
 are construction inputs, not handles for subscribing to or reloading the target.
 Provider-created filters are ready to use without `ConfigFilter.init(Config)`.
 
+The context's `initialConfig()` supplies the initial unfiltered view. Retain
+the context to request a rebuild through `reload()` when filter rules change.
+Requests use the latest known source data, recreate filters from all factories
+in that runtime, and can be coalesced. Requests during construction wait until
+initialization completes; requests after change support stops have no effect.
+
 Keep resources for one independently built configuration on the factory, rather than the potentially shared
-provider. A factory can implement `startChangeSupport(Runnable)` to start its
-monitoring once and request target reloads. It returns whether automatic change
-support is active. Core schedules these requests asynchronously and may coalesce
-them. `stopChangeSupport()` stops monitoring and forwarding requests; it does
+provider. A factory can implement `startChangeSupport()` to start its
+monitoring once, after the initial configuration is built. It returns whether automatic change
+support is active. Monitoring requests reloads through the retained context.
+`stopChangeSupport()` stops monitoring and forwarding requests; it does
 not prevent future manual reloads or filter creation, and creation must not
 restart monitoring.
 

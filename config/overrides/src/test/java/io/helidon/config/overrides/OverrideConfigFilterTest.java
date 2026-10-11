@@ -39,17 +39,22 @@ class OverrideConfigFilterTest {
         var firstPrototype = builder.buildPrototype();
         var first = builder.build();
         var second = builder.putOverrideExpression("services.*.endpoint", "https://stable.example/orders").build();
-        var key = Config.Key.create("services.orders.endpoint");
-        var firstFactory = first.create(Config.empty());
-        var secondFactory = second.create(Config.empty());
+        Config firstConfig = Config.builder().disableEnvironmentVariablesSource().disableSystemPropertiesSource()
+                .disableFilterServices()
+                .addSource(ConfigSources.create(Map.of("services.orders.endpoint", "https://primary.example/orders")))
+                .addFilterProvider(first).build();
+        Config secondConfig = Config.builder().disableEnvironmentVariablesSource().disableSystemPropertiesSource()
+                .disableFilterServices()
+                .addSource(ConfigSources.create(Map.of("services.orders.endpoint", "https://primary.example/orders")))
+                .addFilterProvider(second).build();
         try {
-            assertThat(firstFactory.create(Config.empty()).apply(key, "https://primary.example/orders"),
+            assertThat(firstConfig.get("services.orders.endpoint").asString().get(),
                        is("https://canary.example/orders"));
-            assertThat(secondFactory.create(Config.empty()).apply(key, "https://primary.example/orders"),
+            assertThat(secondConfig.get("services.orders.endpoint").asString().get(),
                        is("https://stable.example/orders"));
         } finally {
-            firstFactory.stopChangeSupport();
-            secondFactory.stopChangeSupport();
+            firstConfig.context().stopChangeSupport();
+            secondConfig.context().stopChangeSupport();
         }
         assertThat(first.prototype().overrideExpressions().get("services.*.endpoint"),
                    is("https://canary.example/orders"));

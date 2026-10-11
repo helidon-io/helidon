@@ -536,9 +536,11 @@ substitution described below.
 See the [`ConfigFilter`][configfilter] Javadoc for more information.
 
 For a filter requiring configuration or changing rules, implement
-`ConfigFilterProvider`. Its `create(Config)` method receives an unfiltered view
-of the initial configuration and returns a `ConfigFilterFactory` dedicated to
-that Config runtime. The factory creates a new immutable filter from the
+`ConfigFilterProvider`. Its `create(ConfigFilterContext)` method receives a
+context with the initial unfiltered configuration and returns a
+`ConfigFilterFactory` dedicated to that Config runtime. The context's `reload()`
+method requests an asynchronous rebuild when filter rules change.
+The factory creates a new immutable filter from the
 current unfiltered configuration for every generation, including reloads.
 The provider itself can be shared across independent Config instances; its
 factories and their monitoring resources must remain independent.

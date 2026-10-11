@@ -19,11 +19,11 @@ package io.helidon.config.overrides;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.config.Config;
 import io.helidon.config.MetaConfig;
 import io.helidon.config.spi.ConfigFilter;
+import io.helidon.config.spi.ConfigFilterContext;
 import io.helidon.config.spi.ConfigFilterFactory;
 import io.helidon.config.spi.ConfigSource;
 import io.helidon.config.spi.EventConfigSource;
@@ -34,18 +34,20 @@ final class OverrideFilterFactory implements ConfigFilterFactory {
     private final OverrideConfig config;
     private final Config definitions;
     private final boolean changesSupported;
-    private final AtomicReference<Runnable> requestReload = new AtomicReference<>();
+    private final ConfigFilterContext context;
     private final AtomicBoolean started = new AtomicBoolean();
     private final AtomicBoolean stopped = new AtomicBoolean();
 
-    private OverrideFilterFactory(OverrideConfig config, Config definitions, boolean changesSupported) {
+    private OverrideFilterFactory(OverrideConfig config, Config definitions, boolean changesSupported,
+                                  ConfigFilterContext context) {
         this.config = config;
         this.definitions = definitions;
         this.changesSupported = changesSupported;
+        this.context = context;
         definitions.onChange(_ -> changed());
     }
 
-    static OverrideFilterFactory create(OverrideConfig config) {
+    static OverrideFilterFactory create(OverrideConfig config, ConfigFilterContext context) {
         var sources = new ArrayList<ConfigSource>();
         config.configSources().forEach(supplier -> sources.add(Objects.requireNonNull(supplier.get())));
         config.sourceDescriptors().forEach(descriptor -> sources.addAll(MetaConfig.configSource(descriptor)));
@@ -65,7 +67,7 @@ final class OverrideFilterFactory implements ConfigFilterFactory {
         }
         try {
             boolean changesSupported = sources.stream().anyMatch(OverrideFilterFactory::changesSupported);
-            return new OverrideFilterFactory(config, definitions, changesSupported);
+            return new OverrideFilterFactory(config, definitions, changesSupported, context);
         } catch (RuntimeException e) {
             definitions.context().stopChangeSupport();
             throw e;
@@ -82,18 +84,15 @@ final class OverrideFilterFactory implements ConfigFilterFactory {
     }
 
     @Override
-    public boolean startChangeSupport(Runnable callback) {
-        Objects.requireNonNull(callback);
+    public boolean startChangeSupport() {
         if (stopped.get() || !started.compareAndSet(false, true)) {
             return false;
         }
         if (changesSupported) {
-            requestReload.set(callback);
             if (stopped.get()) {
-                requestReload.set(null);
                 return false;
             }
-            // Reconcile a definition change between the initial filter capture and installing the callback.
+            // Reconcile a definition change between the initial filter capture and starting change support.
             changed();
         }
         return changesSupported;
@@ -102,7 +101,6 @@ final class OverrideFilterFactory implements ConfigFilterFactory {
     @Override
     public void stopChangeSupport() {
         if (stopped.compareAndSet(false, true)) {
-            requestReload.set(null);
             definitions.context().stopChangeSupport();
         }
     }
@@ -114,9 +112,8 @@ final class OverrideFilterFactory implements ConfigFilterFactory {
     }
 
     private void changed() {
-        Runnable callback = requestReload.get();
-        if (callback != null) {
-            callback.run();
+        if (changesSupported && started.get() && !stopped.get()) {
+            context.reload();
         }
     }
 }

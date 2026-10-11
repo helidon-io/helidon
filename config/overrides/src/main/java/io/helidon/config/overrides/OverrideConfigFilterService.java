@@ -18,7 +18,7 @@ package io.helidon.config.overrides;
 
 import java.util.Objects;
 
-import io.helidon.config.Config;
+import io.helidon.config.spi.ConfigFilterContext;
 import io.helidon.config.spi.ConfigFilterFactory;
 import io.helidon.config.spi.ConfigFilterProvider;
 import io.helidon.service.registry.Service;
@@ -37,11 +37,11 @@ public final class OverrideConfigFilterService implements ConfigFilterProvider {
     }
 
     @Override
-    public ConfigFilterFactory create(Config initialConfig) {
-        Objects.requireNonNull(initialConfig);
+    public ConfigFilterFactory create(ConfigFilterContext context) {
+        Objects.requireNonNull(context);
         return OverrideConfigFilterProvider.builder()
-                .config(initialConfig.get("overrides"))
+                .config(context.initialConfig().get("overrides"))
                 .build()
-                .create(initialConfig);
+                .create(context);
     }
 }

@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import io.helidon.config.spi.ConfigFilter;
+import io.helidon.config.spi.ConfigFilterContext;
 import io.helidon.config.spi.ConfigFilterFactory;
 import io.helidon.config.spi.ConfigFilterProvider;
 import io.helidon.config.spi.ConfigNode;
@@ -117,7 +118,7 @@ class ProviderImpl implements Config.Context {
                     overrideSource.startChanges();
                     boolean changesSupported = configSource.changesSupported() || overrideSource.changesSupported();
                     for (ConfigFilterFactory factory : filterFactories) {
-                        changesSupported |= factory.startChangeSupport(this::requestReload);
+                        changesSupported |= factory.startChangeSupport();
                     }
                     if (changesSupported) {
                         warnFixedFilters();
@@ -216,8 +217,9 @@ class ProviderImpl implements Config.Context {
                 ? Config.empty()
                 : new ConfigFactory(configMapperManager, node, (_, value) -> value, this, true).config();
         if (!factoriesCreated) {
+            var context = new FilterContext(raw, this::requestReload);
             for (ConfigFilterProvider provider : runtimeFilterProviders) {
-                filterFactories.add(Objects.requireNonNull(provider.create(raw), "Config filter factory"));
+                filterFactories.add(Objects.requireNonNull(provider.create(context), "Config filter factory"));
             }
             factoriesCreated = true;
         }
@@ -449,6 +451,13 @@ class ProviderImpl implements Config.Context {
             return defaultValue;
         }
         return Boolean.parseBoolean(value);
+    }
+
+    private record FilterContext(Config initialConfig, Runnable requestReload) implements ConfigFilterContext {
+        @Override
+        public void reload() {
+            requestReload.run();
+        }
     }
 
     /**

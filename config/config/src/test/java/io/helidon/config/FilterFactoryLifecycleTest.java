@@ -23,10 +23,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.config.spi.ConfigFilter;
+import io.helidon.config.spi.ConfigFilterContext;
 import io.helidon.config.spi.ConfigFilterFactory;
 import io.helidon.config.spi.ConfigFilterProvider;
 import io.helidon.config.spi.ConfigNode;
@@ -42,11 +44,90 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class FilterFactoryLifecycleTest {
     @Test
+    void constructionSignalsWaitForInitializationAndRecreateEveryFilter() throws InterruptedException {
+        AtomicInteger firstFilters = new AtomicInteger();
+        AtomicInteger secondFilters = new AtomicInteger();
+        AtomicBoolean initialized = new AtomicBoolean();
+        CountDownLatch reloaded = new CountDownLatch(1);
+        Config config = builder().disableCaching().addFilterProvider(context -> {
+            context.reload();
+            assertThat("Provider construction did not recursively create filters", firstFilters.get(), is(0));
+            return raw -> {
+                int generation = firstFilters.incrementAndGet();
+                if (generation == 1) {
+                    context.reload();
+                    assertThat("Filter construction did not recursively create another filter", firstFilters.get(), is(1));
+                } else {
+                    assertThat("Reload waited for every factory to initialize", initialized.get(), is(true));
+                }
+                return (_, value) -> value + ":first" + generation;
+            };
+        }).addFilterProvider(_ -> new ConfigFilterFactory() {
+            @Override
+            public ConfigFilter create(Config raw) {
+                int generation = secondFilters.incrementAndGet();
+                if (generation == 2) {
+                    reloaded.countDown();
+                }
+                return (_, value) -> value + ":second" + generation;
+            }
+
+            @Override
+            public boolean startChangeSupport() {
+                initialized.set(true);
+                return false;
+            }
+        }).build();
+        try {
+            assertThat("Construction requests produced a reload", reloaded.await(10, TimeUnit.SECONDS), is(true));
+            config.context().stopChangeSupport();
+            assertThat("Pending construction requests were coalesced", firstFilters.get(), is(2));
+            assertThat("Every factory recreated its filter", secondFilters.get(), is(2));
+            assertThat(config.context().last().get("nested.value").asString().get(), is("raw:first2:second2"));
+            assertThat("Original uncached snapshot retained both original filters",
+                       config.get("nested.value").asString().get(), is("raw:first1:second1"));
+        } finally {
+            config.context().stopChangeSupport();
+        }
+    }
+
+    @Test
+    void retainedContextsReloadOnlyTheirOwnRuntime() throws InterruptedException {
+        List<ConfigFilterContext> contexts = new ArrayList<>();
+        Config.Builder builder = builder().addFilterProvider(context -> {
+            contexts.add(context);
+            AtomicInteger filters = new AtomicInteger();
+            return _ -> {
+                int captured = filters.incrementAndGet();
+                return (_, value) -> value + captured;
+            };
+        });
+        Config first = builder.build();
+        Config second = builder.build();
+        CountDownLatch changed = new CountDownLatch(1);
+        try {
+            first.onChange(_ -> changed.countDown());
+            second.onChange(_ -> { throw new AssertionError("Other runtime received a context reload"); });
+            contexts.getFirst().reload();
+            assertThat("First runtime delivered its context reload", changed.await(10, TimeUnit.SECONDS), is(true));
+            first.context().stopChangeSupport();
+            second.context().stopChangeSupport();
+            assertThat(first.context().last().get("nested.value").asString().get(), is("raw2"));
+            assertThat("Second runtime retained its initial filter",
+                       second.context().last().get("nested.value").asString().get(), is("raw1"));
+            assertThat("First snapshot retained its original filter", first.get("nested.value").asString().get(), is("raw1"));
+        } finally {
+            first.context().stopChangeSupport();
+            second.context().stopChangeSupport();
+        }
+    }
+
+    @Test
     void rawViewAndGenerationIsolation() {
         AtomicReference<Config> raw = new AtomicReference<>();
         AtomicInteger generation = new AtomicInteger();
         Config config = builder().disableCaching().addFilterProvider(initial -> {
-            raw.set(initial);
+            raw.set(initial.initialConfig());
             return current -> {
                 String captured = current.get("nested.value").asString().get() + generation.incrementAndGet();
                 return (key, value) -> key.toString().equals("nested.value") ? captured : value;
@@ -102,9 +183,9 @@ class FilterFactoryLifecycleTest {
         AtomicInteger generation = new AtomicInteger();
         AtomicInteger starts = new AtomicInteger();
         AtomicInteger stops = new AtomicInteger();
-        AtomicReference<Runnable> signal = new AtomicReference<>();
+        AtomicReference<ConfigFilterContext> signal = new AtomicReference<>();
         CountDownLatch reloaded = new CountDownLatch(1);
-        Config config = builder().addFilterProvider(_ -> new ConfigFilterFactory() {
+        Config config = builder().addFilterProvider(context -> new ConfigFilterFactory() {
             @Override
             public ConfigFilter create(Config raw) {
                 int current = generation.incrementAndGet();
@@ -115,10 +196,10 @@ class FilterFactoryLifecycleTest {
             }
 
             @Override
-            public boolean startChangeSupport(Runnable requestReload) {
+            public boolean startChangeSupport() {
                 starts.incrementAndGet();
-                signal.set(requestReload);
-                requestReload.run();
+                signal.set(context);
+                context.reload();
                 return true;
             }
 
@@ -127,14 +208,15 @@ class FilterFactoryLifecycleTest {
                 stops.incrementAndGet();
             }
         }).build();
-        assertThat(reloaded.await(10, TimeUnit.SECONDS), is(true));
+        assertThat("Startup reload created a replacement filter", reloaded.await(10, TimeUnit.SECONDS), is(true));
         config.context().stopChangeSupport();
         assertThat(config.context().last().get("nested.value").asString().get(), is("raw2"));
-        signal.get().run();
+        signal.get().reload();
         assertThat(config.context().reload().get("nested.value").asString().get(), is("raw3"));
         config.context().stopChangeSupport();
         assertThat(starts.get(), is(1));
         assertThat(stops.get(), is(1));
+        assertThat("Stopped context did not schedule another reload", generation.get(), is(3));
     }
 
     @Test
@@ -151,7 +233,12 @@ class FilterFactoryLifecycleTest {
                 stopped.incrementAndGet();
             }
         };
-        assertThrows(IllegalStateException.class, () -> builder().addFilterProvider(_ -> factory).build());
+        IllegalStateException failure = assertThrows(IllegalStateException.class,
+                                                    () -> builder().addFilterProvider(context -> {
+                                                        context.reload();
+                                                        return factory;
+                                                    }).build());
+        assertThat("Pending reload did not replace the construction failure", failure.getMessage(), is("Cannot create filter"));
         assertThat(stopped.get(), is(1));
     }
 
@@ -201,7 +288,7 @@ class FilterFactoryLifecycleTest {
             }
 
             @Override
-            public boolean startChangeSupport(Runnable reload) {
+            public boolean startChangeSupport() {
                 starts.incrementAndGet();
                 throw new IllegalStateException("Cannot start monitoring");
             }
@@ -218,7 +305,7 @@ class FilterFactoryLifecycleTest {
             }
 
             @Override
-            public boolean startChangeSupport(Runnable reload) {
+            public boolean startChangeSupport() {
                 starts.incrementAndGet();
                 return false;
             }
@@ -256,7 +343,7 @@ class FilterFactoryLifecycleTest {
         AtomicReference<String> sourceValue = new AtomicReference<>("first");
         AtomicReference<Config> raw = new AtomicReference<>();
         Config config = builder().addSource(new LazySource(sourceValue)).addFilterProvider(initial -> {
-            raw.set(initial);
+            raw.set(initial.initialConfig());
             return current -> {
                 String captured = current.get("lazy.value").asString().get();
                 return (_, value) -> captured;

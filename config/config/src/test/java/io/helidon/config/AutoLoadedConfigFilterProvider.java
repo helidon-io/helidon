@@ -19,6 +19,7 @@ package io.helidon.config;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.Weight;
+import io.helidon.config.spi.ConfigFilterContext;
 import io.helidon.config.spi.ConfigFilterFactory;
 import io.helidon.config.spi.ConfigFilterProvider;
 
@@ -28,7 +29,7 @@ public class AutoLoadedConfigFilterProvider implements ConfigFilterProvider {
     static final String PRIORITY_KEY = "auto-provider-priority";
 
     @Override
-    public ConfigFilterFactory create(Config initialConfig) {
+    public ConfigFilterFactory create(ConfigFilterContext context) {
         var generations = new AtomicInteger();
         return _ -> {
             int generation = generations.incrementAndGet();
@@ -47,7 +48,7 @@ public class AutoLoadedConfigFilterProvider implements ConfigFilterProvider {
     @Weight(200)
     public static class HighPriority implements ConfigFilterProvider {
         @Override
-        public ConfigFilterFactory create(Config initialConfig) {
+        public ConfigFilterFactory create(ConfigFilterContext context) {
             return _ -> (key, value) -> PRIORITY_KEY.equals(key.toString()) ? value + ":high" : value;
         }
     }
@@ -55,7 +56,7 @@ public class AutoLoadedConfigFilterProvider implements ConfigFilterProvider {
     @Weight(50)
     public static class LowPriority implements ConfigFilterProvider {
         @Override
-        public ConfigFilterFactory create(Config initialConfig) {
+        public ConfigFilterFactory create(ConfigFilterContext context) {
             return _ -> (key, value) -> PRIORITY_KEY.equals(key.toString()) ? value + ":low" : value;
         }
     }
