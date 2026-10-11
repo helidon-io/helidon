@@ -127,7 +127,7 @@ class Http1PrologueTest {
         DataReader reader = DataReader.create(() -> (method + " / HTTP/1.1\r\n")
                 .getBytes(StandardCharsets.US_ASCII));
 
-        HttpPrologue prologue = new Http1Prologue(reader, 100, true).readPrologue();
+        HttpPrologue prologue = new Http1Prologue(reader, 100, true, true).readPrologue();
 
         assertThat(prologue.method().text(), is(method));
     }

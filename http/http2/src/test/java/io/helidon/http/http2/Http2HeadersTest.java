@@ -214,7 +214,7 @@ class Http2HeadersTest {
         DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
 
         Http2Headers request = headers(literalWithIndexedName(2, method) + " 86 84 01 "
-                                              + lengthAndValue("example.com"), dynamicTable);
+                                              + lengthAndValue("example.com"), dynamicTable, true);
 
         request.validateRequest();
         assertThat(request.method().text(), is(method));
