@@ -39,9 +39,7 @@ import io.helidon.config.spi.WatchableSource;
  *
  * @see AbstractSource
  * @see OverrideSources
- * @deprecated Since 28.0.0, this legacy core API is deprecated for removal in favor of the optional overrides
- * filter module. See {@link OverrideSource} for migration
- * guidance and the usage feedback request. No removal release or timing has been decided.
+ * @deprecated use the replacement documented in {@link OverrideSource}
  */
 @Deprecated(since = "28.0.0", forRemoval = true)
 public class UrlOverrideSource extends AbstractSource
@@ -161,9 +159,7 @@ public class UrlOverrideSource extends AbstractSource
      * If {@code media-type} not set it uses HTTP response header {@code content-type}.
      * If {@code media-type} not returned it tries to guess it from url suffix.
      *
-     * @deprecated Since 28.0.0, this legacy core API is deprecated for removal in favor of the optional overrides
-     * filter module. See {@link OverrideSource} for migration
-     * guidance and the usage feedback request. No removal release or timing has been decided.
+     * @deprecated use the replacement documented in {@link OverrideSource}
      */
     @Deprecated(since = "28.0.0", forRemoval = true)
     public static final class Builder extends AbstractSourceBuilder<Builder, URL>

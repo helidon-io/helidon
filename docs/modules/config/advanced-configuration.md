@@ -565,12 +565,9 @@ keys. See the filter guide for configuration, matching rules, and reload behavio
 
 #### Migrating from Overrides
 
-The legacy `Config.Builder.overrides(...)` API and `OverrideSource` SPI are
-deprecated for removal since 28.0.0; existing behavior remains available and
-no removal version has been decided. Follow
-[Migrating from Config Overrides](overrides.md#migrating-from-config-overrides)
-for before/after examples, meta-configuration changes, rule-order differences,
-and preservation of reload behavior.
+For replacements for the deprecated `Config.Builder.overrides(...)` API and
+`OverrideSource` SPI, see the
+[OverrideSource Javadoc](https://helidon.io/docs/core/v28/apidocs/io.helidon.config/io/helidon/config/spi/OverrideSource.html).
 
 ### Tokens
 

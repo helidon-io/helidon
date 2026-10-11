@@ -1361,13 +1361,20 @@ public interface Config {
          * FINE} overrides {@code logging.level} for all pods in test environment.
          * <p>
          * Override definitions are applied before any {@link ConfigFilter filter}.
+         * <p>
+         * Replace this method with {@link #addFilterProvider(ConfigFilterProvider)} using the optional
+         * {@code helidon-config-overrides} module. For example:
+         * <pre>{@code
+         * builder.addFilterProvider(io.helidon.config.overrides.OverrideConfigFilterProvider.builder()
+         *         .putOverrideExpression("test.*.logging.level", "FINE")
+         *         .build());
+         * }</pre>
+         * See {@link OverrideSource} for source-based replacements and migration details.
          *
          * @param overridingSource a source with overriding key patterns and assigned values
          * @return an updated builder instance
-         * @deprecated Since 28.0.0, this legacy core API is deprecated for removal in favor of the optional overrides
-         * filter module. See {@link OverrideSource} for migration
-         * guidance and the usage feedback request. Existing behavior is preserved; no removal release or timing has
-         * been decided.
+         * @deprecated use {@link #addFilterProvider(ConfigFilterProvider)} with the replacement documented in
+         *         {@link OverrideSource}
          */
         @Deprecated(since = "28.0.0", forRemoval = true)
         Builder overrides(Supplier<? extends OverrideSource> overridingSource);

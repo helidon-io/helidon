@@ -18,9 +18,7 @@ package io.helidon.config.spi;
 /**
  * Java service loader service to provide a override source based on meta configuration.
  *
- * @deprecated Since 28.0.0, this legacy core API is deprecated for removal in favor of the optional overrides
- * filter module. See {@link OverrideSource} for migration
- * guidance and the usage feedback request. No removal release or timing has been decided.
+ * @deprecated use the replacement documented in {@link OverrideSource}
  */
 @Deprecated(since = "28.0.0", forRemoval = true)
 public interface OverrideSourceProvider extends MetaConfigurableProvider<OverrideSource> {

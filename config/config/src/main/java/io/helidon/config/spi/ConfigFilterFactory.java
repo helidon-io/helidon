@@ -21,24 +21,28 @@ import io.helidon.config.Config;
 
 /**
  * {@link ConfigFilter} factory.
- * A factory belongs to one independently built configuration runtime and may own resources shared by its generations.
- * The config system serializes filter creation for a runtime, including manual and automatic reloads.
- * Monitoring callbacks may run concurrently with filter creation and shutdown. The factory must coordinate its
- * monitoring state accordingly; {@link #stopChangeSupport()} may overlap {@link #create(Config)} during manual reload.
+ * A factory is created for each independently built configuration and reused when that configuration is reloaded.
+ * Calls to {@link #create(Config)} on the same factory do not overlap, including during manual and automatic reloads.
+ * <p>
+ * The reload callback passed to {@link #startChangeSupport(Runnable)} may be invoked from monitoring threads while
+ * {@link #create(Config)} or {@link #stopChangeSupport()} is running.
+ * Calls to {@link #stopChangeSupport()} may overlap {@link #create(Config)} during manual reload.
  *
  * @see ConfigFilterProvider
  */
 @FunctionalInterface
 public interface ConfigFilterFactory {
     /**
-     * Creates a fully initialized filter for the initial configuration or a subsequent reload.
-     * Filter state must remain unchanged when later filters are created; old configuration snapshots keep their filters.
-     * The config system does not invoke {@link ConfigFilter#init(Config)} on returned filters.
-     * The supplied configuration is an unfiltered source view with inert context operations, as described by
+     * Creates a new config filter.
+     * <p>
+     * This method is invoked during configuration initialization and subsequent reloads.
+     * The returned filter is scoped to that configuration snapshot. Creating a filter must not change the behavior of
+     * filters created for earlier snapshots.
+     * The supplied configuration is an unfiltered source view, as described by
      * {@link ConfigFilterProvider#create(Config)}.
      *
-     * @param config unfiltered source configuration for this generation
-     * @return immutable or otherwise generation-isolated filter
+     * @param config unfiltered source configuration for this snapshot
+     * @return fully initialized filter scoped to this configuration snapshot
      */
     ConfigFilter create(Config config);
 

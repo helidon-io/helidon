@@ -20,11 +20,6 @@ import io.helidon.service.registry.Service;
 
 /**
  * Java service loader service to create config filter factories.
- * Providers are discovered using {@link java.util.ServiceLoader} or the service registry, and may be shared
- * between configuration runtimes. Mutable state belonging to a configuration runtime must be kept in its factory.
- * A shared provider may receive concurrent {@link #create(Config)} calls and must support that use.
- * Provider filters run after legacy override sources and before filters registered through the legacy {@code addFilter}
- * methods, including value resolution.
  *
  * @see io.helidon.config.Config.Builder#addFilterProvider(ConfigFilterProvider)
  */
@@ -32,14 +27,19 @@ import io.helidon.service.registry.Service;
 @Service.Contract
 public interface ConfigFilterProvider {
     /**
-     * Creates a factory, invoked once for an independently built configuration runtime.
-     * The supplied configuration contains merged source values before value filtering. Navigation, detachment,
-     * and context access remain within this view; context reload and change support operations are inert.
-     * Lazy source values may still be read from their source, so capture required values during creation.
-     * If creation fails before returning a factory, the provider must release any resources it allocated.
+     * Creates a factory once for each invocation of {@link Config.Builder#build()}.
+     * This method may be called concurrently.
+     * <p>
+     * The supplied configuration contains merged source values before value filtering.
+     * {@link Config#get(String)} and {@link Config#detach()} return nodes in this unfiltered view.
+     * {@link Config.Context#last()} and {@link Config.Context#reload()} return the same unfiltered node;
+     * {@link Config.Context#stopChangeSupport()} and {@link Config#onChange(java.util.function.Consumer)} have no effect.
+     * <p>
+     * Values from lazy sources are read on demand. Capture the values needed by a filter during its creation so later
+     * source changes cannot affect that filter.
      *
      * @param initialConfig unfiltered initial source configuration
-     * @return a new factory owned by this configuration runtime
+     * @return new factory
      */
     ConfigFilterFactory create(Config initialConfig);
 }

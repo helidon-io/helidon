@@ -236,9 +236,9 @@ without changing your source code.
 Source precedence differs from the optional [Config Overrides Filter](overrides.md).
 That filter uses wildcard or regular-expression rules to replace values on
 existing nodes; it does not add missing nodes. Ordinary sources can add nodes
-and do not interpret wildcard keys. Applications using the deprecated core
-overrides API should follow
-[Migrating from Config Overrides](overrides.md#migrating-from-config-overrides).
+and do not interpret wildcard keys. For migration from the deprecated core
+overrides API, see the replacement examples in the
+[OverrideSource Javadoc](https://helidon.io/docs/core/v28/apidocs/io.helidon.config/io/helidon/config/spi/OverrideSource.html).
 
 ### Config Filters
 

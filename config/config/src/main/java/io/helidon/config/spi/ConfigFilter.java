@@ -35,11 +35,14 @@ import io.helidon.service.registry.Service;
  * <p>
  * A filter can specify a {@link io.helidon.common.Weight}. If no weight is
  * explicitly assigned, the value of {@value io.helidon.common.Weighted#DEFAULT_WEIGHT} is assumed.
+ * <p>
+ * Filters created through {@link ConfigFilterProvider} run after {@link OverrideSource} overrides and before directly
+ * registered or discovered filters, including value resolution.
  * <h2>Initializing Filters</h2>
- * Configuration-dependent filters should use {@link ConfigFilterProvider} to create a factory for each configuration
- * runtime and immutable filters for each generation. Legacy filters retain the {@link #init(Config)} lifecycle during
- * migration. The {@code Config.Builder.build()} method invokes each legacy
- * filter's `init` method according to the filters' weight and just
+ * Filters that need the {@link Config} instance during initialization should be created via {@link ConfigFilterProvider}.
+ * Filters registered with the {@code addFilter} methods or discovered as {@code ConfigFilter} services receive
+ * {@link #init(Config)} calls. The {@link Config.Builder#build()} method invokes each such
+ * filter's {@code init} method according to the filters' weight and just
  * before returning the new {@code Config} instance to the application.
  * <p>
  * If a filter's {@code init} method uses {@code Config#get} to retrieve config
@@ -95,11 +98,12 @@ public interface ConfigFilter {
      * <p>
      * The config system propagates any thrown exception to the application so its
      * invocation of {@code Config.Builder#build} fails.
+     * <p>
+     * This method is invoked only on directly registered or discovered filters. Filters returned by
+     * {@link ConfigFilterFactory#create(Config)} are fully initialized and do not receive this call.
      *
      * @param config {@code Config} instance under construction
-     * @deprecated for removal; configuration-dependent filters must use {@link ConfigFilterProvider} instead.
-     *         Providers avoid reusing mutable filter instances across configuration runtimes and reload generations,
-     *         and allow fully initialized, immutable filters
+     * @deprecated use {@link ConfigFilterProvider} instead
      */
     @Deprecated(since = "28.0.0", forRemoval = true)
     default void init(Config config) {

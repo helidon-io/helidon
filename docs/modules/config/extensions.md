@@ -225,21 +225,14 @@ my.module.MyConfigParser
 
 ## OverrideSource SPI
 
-The overrides SPI, its factories and implementations, and
-`Config.Builder.overrides(...)` are deprecated since 28.0.0 and marked for
-removal in favor of the optional [overrides filter module](overrides.md).
-Overrides functionality is being replaced, not discontinued. Existing
-implementations and the `override-source` meta-configuration entry continue to
-work. No removal version has been decided. See
-[Migrating from Config Overrides](overrides.md#migrating-from-config-overrides)
-for replacement registrations and their semantic differences.
+The `OverrideSource` SPI is deprecated in favor of the optional
+[overrides filter module](overrides.md). See the
+[OverrideSource Javadoc](https://helidon.io/docs/core/v28/apidocs/io.helidon.config/io/helidon/config/spi/OverrideSource.html)
+for replacement examples.
 
 For custom sources of override expressions, implement `ConfigSource` and
 configure it as a definition source for the filter. For arbitrary predicates
 or transformations, implement [ConfigFilterProvider](#configfilter-spi).
-Keep monitoring resources in the per-runtime factory and capture immutable
-rules in each filter. Ordinary source precedence is another option for concrete
-keys, but it can introduce nodes and does not reproduce wildcard matching.
 
 ## ConfigFilter SPI
 
@@ -278,12 +271,12 @@ Config SPI Interfaces for filtering:
 <tr>
 <td><code>ConfigFilterProvider</code></td>
 <td><code>ConfigFilterFactory create(Config initialConfig);</code></td>
-<td>Creates a factory dedicated to one Config runtime from its initial unfiltered configuration. The provider can be shared across runtimes.</td>
+<td>Creates a factory for each Config builder invocation from its initial unfiltered configuration.</td>
 </tr>
 <tr>
 <td><code>ConfigFilterFactory</code></td>
 <td><code>ConfigFilter create(Config config);</code></td>
-<td>Creates an immutable filter for each generation from the current unfiltered configuration. Optional lifecycle methods manage independent change monitoring.</td>
+<td>Creates a filter for the initial configuration and each reload. Optional lifecycle methods manage independent change monitoring.</td>
 </tr>
 </tbody>
 </table>
@@ -292,13 +285,13 @@ Config SPI Interfaces for filtering:
 
 Use `ConfigFilterProvider` for filters requiring configuration. The provider
 receives an unfiltered initial Config view and creates one `ConfigFilterFactory`
-for that runtime. The factory receives an unfiltered Config view on every build
+for each `Config.Builder.build()` invocation. The factory receives an unfiltered Config view on every build
 or reload, and returns a fully constructed immutable filter. These views do not
 apply legacy overrides, ordinary filters, or value-reference resolution. They
 are construction inputs, not handles for subscribing to or reloading the target.
 Provider-created filters are ready to use without `ConfigFilter.init(Config)`.
 
-Keep per-runtime resources on the factory, rather than the potentially shared
+Keep resources for one independently built configuration on the factory, rather than the potentially shared
 provider. A factory can implement `startChangeSupport(Runnable)` to start its
 monitoring once and request target reloads. It returns whether automatic change
 support is active. Core schedules these requests asynchronously and may coalesce
@@ -307,10 +300,10 @@ not prevent future manual reloads or filter creation, and creation must not
 restart monitoring.
 
 `ConfigFilter.init(Config)` is deprecated since 28.0.0 and marked for removal.
-Legacy direct filters and the existing `addFilter(Function<Config, ConfigFilter>)`
+Direct filters and the existing `addFilter(Function<Config, ConfigFilter>)`
 and supplier registrations retain their initialization behavior. Direct filter
 instances are reused on reload, which can mutate the state seen by previous
-generations. Config warns once when direct filters coexist with automatic
+snapshots. Config warns once when direct filters coexist with automatic
 reload support, or when they are manually reloaded. Stateless direct filters
 can remain safe to reuse.
 
