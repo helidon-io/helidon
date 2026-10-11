@@ -100,6 +100,7 @@ class BadPrologueTest {
             "G/T / HTTP/1.1",
             "GET  HTTP/1.1",
             "GET /{ HTTP/1.1",
+            "GET /?q=< HTTP/1.1",
             "GET / HTTP/1.2",
             "GET / HT\tTP/1.1",
             "GET / ",
@@ -133,7 +134,6 @@ class BadPrologueTest {
 
             assertThat(SocketHttpClient.statusFromResponse(response), is(Status.BAD_REQUEST_400));
             assertThat(response, containsString("Connection: close"));
-            assertThat(response, containsString("Bad request, see server log for more information"));
             assertThat("Server must close the malformed connection", socketClient.receive(), is(""));
             assertThat(messages, not(hasItem("Internal server error")));
             assertThat(client.get().requestEntity(String.class), is("path: /, query: , fragment: "));

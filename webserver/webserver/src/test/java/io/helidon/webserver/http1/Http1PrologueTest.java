@@ -80,7 +80,7 @@ class Http1PrologueTest {
             "GET  HTTP/1.1",
             "GET \t HTTP/1.1",
             "GET /{ HTTP/1.1",
-            "GET /?q={ HTTP/1.1",
+            "GET /#fragment HTTP/1.1",
             "GET / HTTP/1.2",
             "GET / HT\tTP/1.1",
             "GET / ",
