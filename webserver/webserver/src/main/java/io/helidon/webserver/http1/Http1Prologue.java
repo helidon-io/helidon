@@ -110,8 +110,6 @@ public final class Http1Prologue {
             return doRead();
         } catch (DataReader.InsufficientDataAvailableException e) {
             throw new CloseConnectionException("No more data available", e);
-        } catch (IllegalArgumentException e) {
-            throw badRequest("Invalid prologue: " + e.getMessage(), "", "", "", "");
         }
     }
 
@@ -296,6 +294,14 @@ public final class Http1Prologue {
         byte[] prologueBytes = reader.readBytes(eol);
         reader.skip(2); // \r\n
 
+        try {
+            return parsePrologue(prologueBytes);
+        } catch (IllegalArgumentException e) {
+            throw badRequest("Invalid prologue: " + e.getMessage(), "", "", "", "");
+        }
+    }
+
+    private HttpPrologue parsePrologue(byte[] prologueBytes) {
         //   > GET /loom/slow HTTP/1.1
         Method method;
         String path;

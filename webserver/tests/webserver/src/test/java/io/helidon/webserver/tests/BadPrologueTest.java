@@ -134,7 +134,7 @@ class BadPrologueTest {
 
             assertThat(SocketHttpClient.statusFromResponse(response), is(Status.BAD_REQUEST_400));
             assertThat(response, containsString("Connection: close"));
-            assertThat("Server must close the malformed connection", socketClient.receive(), is(""));
+            socketClient.assertConnectionIsClosed();
             assertThat(messages, not(hasItem("Internal server error")));
             assertThat(client.get().requestEntity(String.class), is("path: /, query: , fragment: "));
         } finally {
