@@ -17,10 +17,16 @@
 package io.helidon.webserver.tests;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.ErrorHandling;
 import io.helidon.webserver.WebServerConfig;
@@ -31,8 +37,11 @@ import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -80,6 +89,58 @@ class BadPrologueTest {
                 .requestEntity(String.class);
 
         assertThat(response, is("path: /, query: , fragment: "));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            " / HTTP/1.1",
+            " GET / HTTP/1.1",
+            "\tGET / HTTP/1.1",
+            "GE\tT / HTTP/1.1",
+            "G/T / HTTP/1.1",
+            "GET  HTTP/1.1",
+            "GET /{ HTTP/1.1",
+            "GET / HTTP/1.2",
+            "GET / HT\tTP/1.1",
+            "GET / ",
+            "GET / HTTP/1.1 extra"
+    })
+    void testInvalidPrologueIsBadRequest(String requestLine) {
+        Logger logger = Logger.getLogger("io.helidon.webserver.http1.Http1Connection");
+        Level previousLevel = logger.getLevel();
+        var messages = new ConcurrentLinkedQueue<String>();
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                messages.add(record.getMessage());
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+        handler.setLevel(Level.ALL);
+        logger.addHandler(handler);
+        logger.setLevel(Level.WARNING);
+
+        try {
+            socketClient.requestRaw(requestLine + "\r\nHost: localhost\r\n\r\n");
+            String response = socketClient.receive();
+
+            assertThat(SocketHttpClient.statusFromResponse(response), is(Status.BAD_REQUEST_400));
+            assertThat(response, containsString("Connection: close"));
+            assertThat(response, containsString("Bad request, see server log for more information"));
+            assertThat("Server must close the malformed connection", socketClient.receive(), is(""));
+            assertThat(messages, not(hasItem("Internal server error")));
+            assertThat(client.get().requestEntity(String.class), is("path: /, query: , fragment: "));
+        } finally {
+            logger.removeHandler(handler);
+            logger.setLevel(previousLevel);
+        }
     }
 
     @Test

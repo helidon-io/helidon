@@ -110,6 +110,8 @@ public final class Http1Prologue {
             return doRead();
         } catch (DataReader.InsufficientDataAvailableException e) {
             throw new CloseConnectionException("No more data available", e);
+        } catch (IllegalArgumentException e) {
+            throw badRequest("Invalid prologue: " + e.getMessage(), "", "", "", "");
         }
     }
 

@@ -60,6 +60,54 @@ class Http1PrologueTest {
         assertThat(method, not(sameInstance(Method.DELETE)));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"", " GET", "\tGET", "GE\tT", "G/T", "G\u0000T", "G\u007fT", "G\u0080T"})
+    void testInvalidMethodIsBadRequest(String method) {
+        DataReader reader = DataReader.create(() -> (method + " / HTTP/1.1\r\n")
+                .getBytes(StandardCharsets.ISO_8859_1));
+        Http1Prologue prologue = new Http1Prologue(reader, 100, false);
+
+        RequestException exception = assertThrows(RequestException.class, prologue::readPrologue);
+
+        assertThat(exception.status(), is(Status.BAD_REQUEST_400));
+        assertThat(exception.eventType(), is(DirectHandler.EventType.BAD_REQUEST));
+        assertThat(exception.safeMessage(), is(false));
+        assertThat(exception.getMessage(), containsString("Invalid prologue"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "GET  HTTP/1.1",
+            "GET \t HTTP/1.1",
+            "GET /{ HTTP/1.1",
+            "GET /?q={ HTTP/1.1",
+            "GET / HTTP/1.2",
+            "GET / HT\tTP/1.1",
+            "GET / ",
+            "GET / HTTP/1.1 extra"
+    })
+    void testInvalidTargetOrProtocolIsBadRequest(String requestLine) {
+        DataReader reader = DataReader.create(() -> (requestLine + "\r\n").getBytes(StandardCharsets.US_ASCII));
+        Http1Prologue prologue = new Http1Prologue(reader, 100, true);
+
+        RequestException exception = assertThrows(RequestException.class, prologue::readPrologue);
+
+        assertThat(exception.status(), is(Status.BAD_REQUEST_400));
+        assertThat(exception.eventType(), is(DirectHandler.EventType.BAD_REQUEST));
+        assertThat(exception.safeMessage(), is(false));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"GET", "PUT", "POST", "DELETE", "delete", "Custom", "!#$%&'*+-.^_`|~"})
+    void testValidMethodIsPreserved(String method) {
+        DataReader reader = DataReader.create(() -> (method + " / HTTP/1.1\r\n")
+                .getBytes(StandardCharsets.US_ASCII));
+
+        HttpPrologue prologue = new Http1Prologue(reader, 100, true).readPrologue();
+
+        assertThat(prologue.method().text(), is(method));
+    }
+
     @Test
     void testUriTooLong() {
         // make sure this regression does not happen again
