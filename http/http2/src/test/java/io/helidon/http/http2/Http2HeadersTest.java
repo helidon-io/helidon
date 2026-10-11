@@ -179,6 +179,47 @@ class Http2HeadersTest {
         assertThat(method, not(sameInstance(Method.DELETE)));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"", " GET", "\tGET", "G\tET", "G/T", "G\u0000ET", "G\u001fET", "G\u007fET"})
+    void invalidWireMethodRejectsRequestAfterDecodingEntireHeaderBlock(String method) {
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+        String encoded = literalWithIndexedName(2, method) + " 86 84 01 " + lengthAndValue("example.com")
+                + " " + literalWithNewName("x-method-proof", "decoded");
+
+        Http2Headers invalidHeaders = headers(encoded, dynamicTable);
+
+        Http2Exception methodException = assertThrows(Http2Exception.class, invalidHeaders::method);
+        assertThat(methodException.code(), is(Http2ErrorCode.PROTOCOL));
+        Http2Exception requestException = assertThrows(Http2Exception.class, invalidHeaders::validateRequest);
+        assertThat(requestException.code(), is(Http2ErrorCode.PROTOCOL));
+
+        // Index 62 must refer to the field inserted after the rejected method.
+        Http2Headers validHeaders = headers("82 86 84 01 " + lengthAndValue("example.com") + " be", dynamicTable);
+        validHeaders.validateRequest();
+        assertThat(validHeaders.method(), is(Method.GET));
+        assertThat(validHeaders.httpHeaders().get(HeaderNames.create("x-method-proof")).get(), is("decoded"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", " GET", "G\tET", "G/T", "G\u0000ET"})
+    void invalidWritableMethodIsRejectedImmediately(String method) {
+        WritableHeaders<?> headers = WritableHeaders.create().add(Http2Headers.METHOD_NAME, method);
+
+        assertThrows(IllegalArgumentException.class, () -> Http2Headers.create(headers));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"GET", "delete", "Custom", "!#$%&'*+-.^_`|~09AZaz"})
+    void validWireMethodTokensArePreserved(String method) {
+        DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
+
+        Http2Headers request = headers(literalWithIndexedName(2, method) + " 86 84 01 "
+                                              + lengthAndValue("example.com"), dynamicTable);
+
+        request.validateRequest();
+        assertThat(request.method().text(), is(method));
+    }
+
     @Test
     void caseSensitiveRequestDecoderPreservesMethodTextAcrossContinuation() {
         DynamicTable dynamicTable = DynamicTable.create(Http2Settings.create());
