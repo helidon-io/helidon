@@ -18,7 +18,6 @@ package io.helidon.webserver.http1;
 
 import java.nio.charset.StandardCharsets;
 
-import io.helidon.common.buffers.DataListener;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.HttpPrologue;
@@ -62,15 +61,11 @@ class Http1PrologueTest {
     }
 
     @Test
-    void testReceiveListenerFailureIsNotBadRequest() {
-        DataReader reader = DataReader.create(() -> "GET / HTTP/1.1\r\n".getBytes(StandardCharsets.US_ASCII));
+    void testReceiveFailureIsNotBadRequest() {
         var failure = new IllegalArgumentException("Receive listener failure");
-        reader.listener(new DataListener<Http1PrologueTest>() {
-            @Override
-            public void data(Http1PrologueTest context, byte[] data, int position, int length) {
-                throw failure;
-            }
-        }, this);
+        DataReader reader = DataReader.create(() -> {
+            throw failure;
+        });
         Http1Prologue prologue = new Http1Prologue(reader, 100, true);
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, prologue::readPrologue);
