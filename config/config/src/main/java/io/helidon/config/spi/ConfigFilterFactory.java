@@ -20,7 +20,7 @@ import java.util.Objects;
 import io.helidon.config.Config;
 
 /**
- * Runtime-owned factory for generation-specific configuration filters.
+ * {@link ConfigFilter} factory.
  * A factory belongs to one independently built configuration runtime and may own resources shared by its generations.
  * The config system serializes filter creation for a runtime, including manual and automatic reloads.
  * Monitoring callbacks may run concurrently with filter creation and shutdown. The factory must coordinate its
