@@ -465,6 +465,7 @@ public class Http2Headers {
         if (!pseudoHeaders.hasMethod()) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :method pseudo header");
         }
+        pseudoHeaders.method();
         List<String> hostValues = headers.all(HeaderNames.HOST, List::of);
         if (hostValues.size() > 1) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Repeated Host header");
