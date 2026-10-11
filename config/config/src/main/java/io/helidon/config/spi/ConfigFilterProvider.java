@@ -19,7 +19,7 @@ import io.helidon.config.Config;
 import io.helidon.service.registry.Service;
 
 /**
- * Creates an independent filter factory for each built configuration runtime.
+ * Java service loader service to create config filter factories.
  * Providers are discovered using {@link java.util.ServiceLoader} or the service registry, and may be shared
  * between configuration runtimes. Mutable state belonging to a configuration runtime must be kept in its factory.
  * A shared provider may receive concurrent {@link #create(Config)} calls and must support that use.
