@@ -623,9 +623,6 @@ public class HeadersServerTest {
                                                                               String method,
                                                                               boolean continuation) {
         try (Http2TestConnection connection = testClient.createConnection()) {
-            connection.assertSettings(TIMEOUT);
-            connection.assertWindowsUpdate(0, TIMEOUT);
-            connection.assertSettings(TIMEOUT);
             BufferData headerBlock = BufferData.growing(128);
             writeLiteralWithIndexedName(headerBlock, 2, method);
             int methodLength = headerBlock.available();
@@ -659,6 +656,9 @@ public class HeadersServerTest {
                         BufferData.create(encoded)));
             }
 
+            connection.assertSettings(TIMEOUT);
+            connection.assertWindowsUpdate(0, TIMEOUT);
+            connection.assertSettings(TIMEOUT);
             assertThat(connection.assertRstStream(1, TIMEOUT).errorCode(), is(Http2ErrorCode.PROTOCOL));
 
             BufferData validBlock = BufferData.growing(128);
