@@ -295,6 +295,7 @@ public class Http2Headers {
      * Method pseudo header.
      *
      * @return method or null if none defined
+     * @throws Http2Exception if the decoded method is invalid
      */
     public Method method() {
         return pseudoHeaders.method();
@@ -744,7 +745,7 @@ public class Http2Headers {
                 } else if (headerName.equals(AUTHORITY_NAME)) {
                     validateAndSetPseudoHeader(headerName, pseudoHeaders::hasAuthority, pseudoHeaders::authority, value);
                 } else if (headerName.equals(METHOD_NAME)) {
-                    validateAndSetPseudoHeader(headerName, pseudoHeaders::hasMethod, pseudoHeaders::method, value);
+                    validateAndSetPseudoHeader(headerName, pseudoHeaders::hasMethod, pseudoHeaders::decodedMethod, value);
                 } else if (headerName.equals(SCHEME_NAME)) {
                     validateAndSetPseudoHeader(headerName, pseudoHeaders::hasScheme, pseudoHeaders::scheme, value);
                 } else if (headerName.equals(STATUS_NAME)) {
@@ -1594,6 +1595,7 @@ public class Http2Headers {
     private static class PseudoHeaders {
         private String authority;
         private Method method;
+        private IllegalArgumentException methodFailure;
         private String path;
         private String scheme;
         private Status status;
@@ -1620,12 +1622,23 @@ public class Http2Headers {
             return this;
         }
 
+        void decodedMethod(String method) {
+            try {
+                method(method);
+            } catch (IllegalArgumentException e) {
+                // Finish decoding the header block so the connection's HPACK table remains synchronized.
+                methodFailure = e;
+                size++;
+            }
+        }
+
         void method(String method) {
             method(Method.create(method));
         }
 
         PseudoHeaders method(Method method) {
             this.method = method;
+            this.methodFailure = null;
             size++;
             return this;
         }
@@ -1661,10 +1674,13 @@ public class Http2Headers {
         }
 
         boolean hasMethod() {
-            return method != null;
+            return method != null || methodFailure != null;
         }
 
         Method method() {
+            if (methodFailure != null) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Invalid :method pseudo header", methodFailure);
+            }
             return method;
         }
 
