@@ -74,6 +74,11 @@ final class HelidonMeterRegistry implements MeterRegistry {
         this.clock = builder.clock;
         this.metricsConfig = builder.metricsConfig;
         this.metricsFactory = builder.metricsFactory;
+        metricsConfig.tags().forEach(tag -> {
+            if (tag.key().isEmpty()) {
+                throw new IllegalArgumentException("Global metrics tag key must not be empty");
+            }
+        });
         this.systemTagsManager = SystemTagsManager.create(metricsConfig, metricsFactory);
         this.addListeners.addAll(builder.addListeners);
         this.removeListeners.addAll(builder.removeListeners);

@@ -26,6 +26,9 @@ final class HelidonTag implements Tag {
 
     HelidonTag(String key, String value) {
         this.key = Objects.requireNonNull(key);
+        if (key.isEmpty()) {
+            throw new IllegalArgumentException("Tag key must not be empty");
+        }
         this.value = Objects.requireNonNull(value);
     }
 

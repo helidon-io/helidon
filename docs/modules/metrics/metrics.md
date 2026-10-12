@@ -934,6 +934,10 @@ no longer supported in Helidon 27. Replace it with
 `metrics.rest-request.enabled`.
 
 The Helidon provider formats Prometheus/OpenMetrics output directly.
+It requires non-empty metric names and tag keys, rejecting empty identifiers
+during meter construction or registration. Registry creation also rejects
+configured global tags with empty keys. Empty tag values remain supported.
+
 The Micrometer provider uses Prometheus Java Client 1.7.0 instead of
 the legacy Prometheus simpleclient integration. Both providers preserve letter
 case, replace unsupported characters with underscores, and avoid repeating

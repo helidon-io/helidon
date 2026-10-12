@@ -86,6 +86,9 @@ abstract class HelidonMeter implements Meter {
 
         AbstractBuilder(String name) {
             this.name = Objects.requireNonNull(name);
+            if (name.isEmpty()) {
+                throw new IllegalArgumentException("Meter name must not be empty");
+            }
         }
 
         B from(Meter.Builder<?, ?> builder) {
