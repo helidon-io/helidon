@@ -1214,6 +1214,84 @@ class Http2ClientConnectionTest {
     }
 
     @ParameterizedTest
+    @CsvSource({"false, false", "false, true", "true, false", "true, true"})
+    void invalidMethodTrailersResetStreamAndPreserveConnection(boolean continued, boolean consumePriorData)
+            throws Exception {
+        try (MockedConnectionTestContext test = new MockedConnectionTestContext()) {
+            test.offerInbound(settingsFrame(2));
+            Http2ClientConnection connection = test.createConnection(false);
+            Http2ClientStream malformedStream = connection.createStream(STREAM_CONFIG);
+            Http2ClientStream siblingStream = connection.createStream(STREAM_CONFIG);
+            try {
+                malformedStream.writeHeaders(requestHeaders(), true);
+                siblingStream.writeHeaders(requestHeaders(), true);
+                assertThat(connection.tryStream(STREAM_CONFIG), nullValue());
+                test.offerInbound(rawHeaderFrame(malformedStream.streamId(),
+                                                 BufferData.create(new byte[] {(byte) 0x88}),
+                                                 Http2Flag.END_OF_HEADERS));
+                assertThat(malformedStream.readHeaders().status(), is(Status.OK_200));
+
+                long initialWindow = connection.flowControl().incrementInboundConnectionWindowSize(0);
+                Http2FrameData queuedData = paddedDataFrame(malformedStream.streamId(),
+                                                            "queued".getBytes(StandardCharsets.UTF_8), false, 255);
+                assertThat(connection.handle(queuedData.header(), queuedData.data()), is(true));
+                if (consumePriorData) {
+                    malformedStream.readOne(TEST_WAIT_TIMEOUT);
+                }
+                assertThat("Queued DATA consumes connection credit until read or discarded",
+                           connection.flowControl().incrementInboundConnectionWindowSize(0),
+                           is(initialWindow - (consumePriorData ? 0 : queuedData.header().length())));
+
+                // Incremental :method G/T, followed by a new dynamic entry after the invalid method.
+                BufferData methodField = BufferData.create(new byte[] {0x42, 3, 'G', '/', 'T'});
+                BufferData sharedField = BufferData.create(new byte[] {
+                        0x40, 8, 'x', '-', 's', 'h', 'a', 'r', 'e', 'd',
+                        12, 't', 'r', 'a', 'i', 'l', 'e', 'r', '-', 's', 'y', 'n', 'c'
+                });
+                if (continued) {
+                    test.offerInbound(rawHeaderFrame(malformedStream.streamId(), methodField, Http2Flag.END_OF_STREAM),
+                                      new Http2FrameData(Http2FrameHeader.create(sharedField.available(),
+                                                                                Http2FrameTypes.CONTINUATION,
+                                                                                Http2Flag.ContinuationFlags.create(
+                                                                                        Http2Flag.END_OF_HEADERS),
+                                                                                malformedStream.streamId()),
+                                                         sharedField));
+                } else {
+                    test.offerInbound(rawHeaderFrame(malformedStream.streamId(),
+                                                     BufferData.create(methodField, sharedField),
+                                                     Http2Flag.END_OF_STREAM | Http2Flag.END_OF_HEADERS));
+                }
+                // Index 62 is x-shared, inserted after the invalid method in the preceding trailer block.
+                test.offerInbound(rawHeaderFrame(siblingStream.streamId(),
+                                                 BufferData.create(new byte[] {(byte) 0x88, (byte) 0xbe}),
+                                                 Http2Flag.END_OF_STREAM | Http2Flag.END_OF_HEADERS));
+
+                Http2FrameData reset = test.awaitWrittenFrame(Http2FrameType.RST_STREAM);
+                assertThat(reset.header().streamId(), is(malformedStream.streamId()));
+                assertThat(Http2RstStream.create(reset.data()).errorCode(), is(Http2ErrorCode.PROTOCOL));
+                Http2Exception bodyFailure = assertThrows(Http2Exception.class, malformedStream::read);
+                assertThat(bodyFailure.code(), is(Http2ErrorCode.PROTOCOL));
+                ExecutionException trailersFailure = assertThrows(ExecutionException.class,
+                                                                  () -> malformedStream.trailers().get(
+                                                                          TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS));
+                assertThat(trailersFailure.getCause(), is(bodyFailure));
+                Http2Headers siblingHeaders = siblingStream.readHeaders();
+                assertThat(siblingHeaders.status(), is(Status.OK_200));
+                assertThat(siblingHeaders.httpHeaders().get(SHARED_HEADER).get(), is("trailer-sync"));
+                assertThat("Rejected trailer DATA restores connection credit exactly once",
+                           connection.flowControl().incrementInboundConnectionWindowSize(0), is(initialWindow));
+                Http2ClientStream recoveredStream = connection.tryStream(STREAM_CONFIG);
+                assertThat(recoveredStream, notNullValue());
+                recoveredStream.close();
+            } finally {
+                malformedStream.close();
+                siblingStream.close();
+                connection.close();
+            }
+        }
+    }
+
+    @ParameterizedTest
     @CsvSource({"HEAD, 200, false, false, false", "HEAD, 200, true, false, false",
                 "HEAD, 426, false, false, false", "HEAD, 426, true, false, false",
                 "GET, 304, false, false, false", "GET, 304, true, false, false",
@@ -1627,6 +1705,14 @@ class Http2ClientConnectionTest {
                                                           Http2Flag.HeaderFlags.create(flags),
                                                           streamId);
         return new Http2FrameData(header, data);
+    }
+
+    private static Http2FrameData rawHeaderFrame(int streamId, BufferData data, int flags) {
+        return new Http2FrameData(Http2FrameHeader.create(data.available(),
+                                                         Http2FrameTypes.HEADERS,
+                                                         Http2Flag.HeaderFlags.create(flags),
+                                                         streamId),
+                                 data);
     }
 
     private static Http2FrameData dataFrame(int streamId, byte[] bytes, boolean endOfStream) {

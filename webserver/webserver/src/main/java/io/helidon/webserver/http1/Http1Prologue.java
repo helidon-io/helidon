@@ -304,6 +304,14 @@ public final class Http1Prologue {
         byte[] prologueBytes = reader.readBytes(eol);
         reader.skip(2); // \r\n
 
+        try {
+            return parsePrologue(prologueBytes);
+        } catch (IllegalArgumentException e) {
+            throw badRequest("Invalid prologue: " + e.getMessage(), "", "", "", "");
+        }
+    }
+
+    private HttpPrologue parsePrologue(byte[] prologueBytes) {
         //   > GET /loom/slow HTTP/1.1
         Method method;
         String path;

@@ -22,7 +22,9 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -64,6 +66,8 @@ import io.helidon.webserver.testing.junit5.http2.Http2TestClient;
 import io.helidon.webserver.testing.junit5.http2.Http2TestConnection;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.http.Method.GET;
@@ -173,6 +177,9 @@ public class HeadersServerTest {
     private static void routes(HttpRouting.Builder router) {
         router.error(IllegalStateException.class, (req, res, t) -> res.status(500).send(t.getMessage()));
         router.route(Http2Route.route(GET, "/ping", (req, res) -> res.send("pong")));
+        router.route(Http2Route.route(GET, "/method-proof", (req, res) -> res
+                .header("x-method-proof", req.headers().get(HeaderNames.create("x-method-proof")).get())
+                .send()));
         router.route(Http2Route.route(GET, "/cont-out",
                                       (req, res) -> {
                                           for (int i = 0; i < 500; i++) {
@@ -495,6 +502,18 @@ public class HeadersServerTest {
         }
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"", " GET", "\tGET", "G\tET", "G/T", "G\u0000ET", "G\u001fET", "G\u007fET"})
+    void invalidMethodResetsStreamAndPreservesHeaderTable(String method, Http2TestClient testClient) {
+        assertInvalidMethodResetsStreamAndPreservesHeaderTable(testClient, method, false);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", " GET", "\tGET", "G\tET", "G/T", "G\u0000ET", "G\u001fET", "G\u007fET"})
+    void continuedInvalidMethodResetsStreamAndPreservesHeaderTable(String method, Http2TestClient testClient) {
+        assertInvalidMethodResetsStreamAndPreservesHeaderTable(testClient, method, true);
+    }
+
     @Test
     void relativeRequestTargetResetsStreamAndKeepsConnectionOpen(Http2TestClient testClient) {
         assertInvalidRequestTargetResetsStreamAndKeepsConnectionOpen(testClient, GET, "boards/");
@@ -598,6 +617,86 @@ public class HeadersServerTest {
 
             assertThat(connection.assertHeaders(3, TIMEOUT).status(), is(Status.OK_200));
         }
+    }
+
+    private static void assertInvalidMethodResetsStreamAndPreservesHeaderTable(Http2TestClient testClient,
+                                                                              String method,
+                                                                              boolean continuation) {
+        try (Http2TestConnection connection = testClient.createConnection()) {
+            BufferData headerBlock = BufferData.growing(128);
+            writeLiteralWithIndexedName(headerBlock, 2, method);
+            int methodLength = headerBlock.available();
+            headerBlock.write(0x86); // :scheme: http
+            headerBlock.write(0x04); // :path, without indexing
+            writeRawString(headerBlock, "/method-proof");
+            headerBlock.write(0x01); // :authority, without indexing
+            writeRawString(headerBlock, connection.clientUri().authority());
+            writeLiteralWithNewName(headerBlock, "x-method-proof", "decoded");
+
+            byte[] encoded = headerBlock.readBytes();
+            if (continuation) {
+                connection.writer().write(new Http2FrameData(
+                        Http2FrameHeader.create(methodLength,
+                                                Http2FrameTypes.HEADERS,
+                                                Http2Flag.HeaderFlags.create(Http2Flag.END_OF_STREAM),
+                                                1),
+                        BufferData.create(Arrays.copyOf(encoded, methodLength))));
+                connection.writer().write(new Http2FrameData(
+                        Http2FrameHeader.create(encoded.length - methodLength,
+                                                Http2FrameTypes.CONTINUATION,
+                                                Http2Flag.ContinuationFlags.create(Http2Flag.END_OF_HEADERS),
+                                                1),
+                        BufferData.create(Arrays.copyOfRange(encoded, methodLength, encoded.length))));
+            } else {
+                connection.writer().write(new Http2FrameData(
+                        Http2FrameHeader.create(encoded.length,
+                                                Http2FrameTypes.HEADERS,
+                                                Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                                                1),
+                        BufferData.create(encoded)));
+            }
+
+            connection.assertSettings(TIMEOUT);
+            connection.assertWindowsUpdate(0, TIMEOUT);
+            connection.assertSettings(TIMEOUT);
+            assertThat(connection.assertRstStream(1, TIMEOUT).errorCode(), is(Http2ErrorCode.PROTOCOL));
+
+            BufferData validBlock = BufferData.growing(128);
+            validBlock.write(0x82); // :method: GET
+            validBlock.write(0x86); // :scheme: http
+            validBlock.write(0x04);
+            writeRawString(validBlock, "/method-proof");
+            validBlock.write(0x01);
+            writeRawString(validBlock, connection.clientUri().authority());
+            validBlock.write(0xbe); // Index 62: field inserted after the invalid method.
+            connection.writer().write(new Http2FrameData(
+                    Http2FrameHeader.create(validBlock.available(),
+                                            Http2FrameTypes.HEADERS,
+                                            Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                                            3),
+                    validBlock));
+
+            Http2Headers response = connection.assertHeaders(3, TIMEOUT);
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.httpHeaders().get(HeaderNames.create("x-method-proof")).get(), is("decoded"));
+        }
+    }
+
+    private static void writeLiteralWithIndexedName(BufferData target, int index, String value) {
+        target.write(0x40 | index);
+        writeRawString(target, value);
+    }
+
+    private static void writeLiteralWithNewName(BufferData target, String name, String value) {
+        target.write(0x40);
+        writeRawString(target, name);
+        writeRawString(target, value);
+    }
+
+    private static void writeRawString(BufferData target, String value) {
+        byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+        target.write(bytes.length);
+        target.write(bytes);
     }
 
     private HttpClient http2Client(URI base) throws IOException, InterruptedException {

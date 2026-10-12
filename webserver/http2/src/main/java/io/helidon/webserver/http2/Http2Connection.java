@@ -862,6 +862,17 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             }
         }
 
+        // Method rejection is deferred until the whole HPACK block has been decoded.
+        try {
+            headers.method();
+        } catch (Http2Exception e) {
+            if (newStream) {
+                activateStream(streamId);
+            }
+            stream.resetProtocolError(0, endOfStream);
+            state = State.READ_FRAME;
+            return;
+        }
         receiveFrameListener.headers(ctx, streamId, headers);
 
         if (trailers) {

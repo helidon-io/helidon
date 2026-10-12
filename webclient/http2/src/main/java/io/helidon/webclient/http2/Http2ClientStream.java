@@ -679,18 +679,29 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
             if (closed) {
                 return;
             }
-            if (readState == ReadState.CONTINUE_100_HEADERS || readState == ReadState.HEADERS) {
-                try {
+            boolean trailerBlock = readState == ReadState.DATA || readState == ReadState.TRAILERS;
+            try {
+                if (readState == ReadState.CONTINUE_100_HEADERS || readState == ReadState.HEADERS) {
                     headers.validateResponse();
                     if (protocolConfig().validateResponseHeaders()) {
                         validateRegularHeaders(headers.httpHeaders());
                     }
-                } catch (Http2Exception e) {
+                } else if (trailerBlock) {
+                    // Surface deferred method validation only after the entire HPACK block has been decoded.
+                    headers.method();
+                }
+            } catch (Http2Exception e) {
+                int discardedDataLength = trailerBlock ? buffer.failAndDiscard(e) : 0;
+                try {
                     failInboundLocked(e);
                     reset(e.code());
+                } finally {
+                    if (trailerBlock) {
+                        connection.flowControl().incrementInboundConnectionWindowSize(discardedDataLength);
+                    }
                     inboundStateChanged.signalAll();
-                    return;
                 }
+                return;
             }
             recvListener.headers(ctx, streamId, headers);
             switch (readState) {
