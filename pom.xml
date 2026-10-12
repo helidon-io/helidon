@@ -93,7 +93,7 @@
         <version.plugin.enforcer>3.6.3</version.plugin.enforcer>
         <version.plugin.exec>3.6.3</version.plugin.exec>
         <version.plugin.failsafe>3.5.6</version.plugin.failsafe>
-        <version.plugin.helidon-build-tools>4.0.26</version.plugin.helidon-build-tools>
+        <version.plugin.helidon-build-tools>4.0.31</version.plugin.helidon-build-tools>
         <version.plugin.install>3.1.4</version.plugin.install>
         <version.plugin.invoker>3.10.1</version.plugin.invoker>
         <version.plugin.jar>3.5.1</version.plugin.jar>

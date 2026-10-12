@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (c) 2026 Oracle and/or its affiliates.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<plans xmlns="https://helidon.io/archetype-plans/1.0"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="https://helidon.io/archetype-plans/1.0 https://helidon.io/xsd/archetype-plans-1.0.xsd">
+    <fragment id="observability">
+        <values>
+            <metrics>true</metrics>
+            <metrics.builtin>true</metrics.builtin>
+            <health>true</health>
+            <health.builtin>true</health.builtin>
+            <tracing>true</tracing>
+        </values>
+    </fragment>
+
+    <fragment id="no-observability">
+        <values>
+            <metrics>false</metrics>
+            <health>false</health>
+            <tracing>false</tracing>
+        </values>
+    </fragment>
+
+    <fragment id="docker">
+        <values>
+            <docker>true</docker>
+            <docker.jlink-image>true</docker.jlink-image>
+            <k8s>true</k8s>
+        </values>
+    </fragment>
+
+    <fragment id="no-docker">
+        <values>
+            <docker>false</docker>
+            <k8s>false</k8s>
+        </values>
+    </fragment>
+
+    <fragment id="security">
+        <values>
+            <security>true</security>
+            <extra>none</extra>
+        </values>
+    </fragment>
+
+    <fragment id="se/custom">
+        <values>
+            <flavor>se</flavor>
+            <app-type>custom</app-type>
+            <security>false</security>
+            <db>false</db>
+        </values>
+    </fragment>
+
+    <plan id="se/quickstart">
+        <values>
+            <flavor>se</flavor>
+            <app-type>quickstart</app-type>
+        </values>
+    </plan>
+
+    <plan id="se/extra" extends="se/custom, no-observability, no-docker">
+        <rules>
+            <exclude if="sizeof ((list) ${media}) > 1"/>
+            <exclude if="!(${extra} contains ['cors', 'fault-tolerance', 'coherence'])"/>
+        </rules>
+    </plan>
+
+    <plan id="se/docker" extends="se/custom, no-observability, docker">
+        <values>
+            <media>none</media>
+        </values>
+        <rules>
+            <exclude if="!(${extra} contains ['cors', 'fault-tolerance', 'coherence'])"/>
+        </rules>
+    </plan>
+
+    <plan id="se/observability" extends="se/custom, observability, no-docker">
+        <values>
+            <media>none</media>
+        </values>
+        <rules>
+            <exclude if="!(${extra} contains ['cors', 'fault-tolerance', 'coherence'])"/>
+        </rules>
+    </plan>
+
+    <plan id="se/security" extends="se/custom, security, no-observability, no-docker">
+        <values>
+            <media>none</media>
+        </values>
+        <rules>
+            <exclude if="${security.atz} == [] AND sizeof ((list) ${security.atn}) != 1"/>
+            <exclude if="${security.atz} == ['abac'] AND ${security.atn} != ['oidc']"/>
+        </rules>
+    </plan>
+
+    <plan id="se/database">
+        <values>
+            <flavor>se</flavor>
+            <app-type>database</app-type>
+        </values>
+        <rules>
+            <exclude if="${db.auto-ddl} != (${media.json-lib} == 'jackson')"/>
+            <exclude if="(${db.cp} == 'hikaricp') != (${media.json-lib} == 'jackson')"/>
+        </rules>
+    </plan>
+</plans>

@@ -47,6 +47,9 @@ $(basename "${0}") [OPTIONS] CMD
   --index=INDEX
       Set the index of the project to diff
 
+  --project-dir=DIR
+      Set the generated project directory prefix (default: test-project)
+
   --help
         Prints the usage and exits.
 
@@ -79,6 +82,10 @@ while (( ${#} > 0 )); do
     PROJECT_INDEX=${1#*=}
     shift
     ;;
+  "--project-dir="*)
+    PROJECT_DIR=${1#*=}
+    shift
+    ;;
   "--help")
     usage
     exit 0
@@ -99,6 +106,7 @@ while (( ${#} > 0 )); do
 done
 readonly ARGS
 readonly COMMAND
+readonly PROJECT_DIR="${PROJECT_DIR:-test-project}"
 
 # copy stdout as fd 6 and redirect stdout to stderr
 # this allows us to use fd 6 for returning data
@@ -189,9 +197,9 @@ project_dir() {
   dir="${1}"
   index="${2}"
   if [ "${index}" -eq 1 ] ; then
-    echo "${dir}/myproject"
+    echo "${dir}/${PROJECT_DIR}"
   else
-    echo "${dir}/myproject-${index}"
+    echo "${dir}/${PROJECT_DIR}-${index}"
   fi
 }
 
@@ -218,6 +226,10 @@ diff_project0() {
 
   # checking modified
   while read -r file ; do
+    if [ "${file}" = "build.log" ] ; then
+      continue
+    fi
+
     file_actual="${dir_actual}/${file/${basename_orig}/${basename_actual}}"
     if [ -e "${file_actual}" ] ; then
       # ignore artifactId differences
