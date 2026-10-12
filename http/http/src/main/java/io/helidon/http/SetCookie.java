@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -260,7 +260,7 @@ public class SetCookie {
             result.append("Expires=");
             result.append(expires.format(DateTime.RFC_1123_DATE_TIME));
         }
-        if ((maxAge != null) && !maxAge.isNegative() && !maxAge.isZero()) {
+        if ((maxAge != null) && !maxAge.isNegative()) {
             result.append(PARAM_SEPARATOR);
             result.append("Max-Age=");
             result.append(maxAge.getSeconds());
@@ -427,6 +427,7 @@ public class SetCookie {
 
         /**
          * Sets {@code Max-Age} parameter.
+         * A zero duration expires the cookie immediately.
          *
          * @param maxAge an {@code Max-Age} parameter.
          * @return Updated instance.

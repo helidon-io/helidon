@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,59 @@ public class SetCookieTest {
         assertThat(setCookie.sameSite(), optionalValue(is(SetCookie.SameSite.LAX)));
 
         assertThat("Generate same cookie value", setCookie.toString(), is(TEMPLATE));
+    }
+
+    @Test
+    void testSetCookieWithZeroMaxAge() {
+        SetCookie setCookie = SetCookie.builder("some-cookie", "")
+                .maxAge(Duration.ZERO)
+                .build();
+
+        assertThat(setCookie.maxAge(), optionalValue(is(Duration.ZERO)));
+        assertThat(setCookie.text(), is("some-cookie=; Max-Age=0"));
+    }
+
+    @Test
+    void testParseZeroMaxAge() {
+        String template = "some-cookie=; Max-Age=0; Path=/; Secure; HttpOnly; SameSite=Lax";
+        SetCookie setCookie = SetCookie.parse(template);
+
+        assertThat(setCookie.maxAge(), optionalValue(is(Duration.ZERO)));
+        assertThat(setCookie.text(), is(template));
+    }
+
+    @Test
+    void testAddCookieWithZeroMaxAge() {
+        ServerResponseHeaders headers = ServerResponseHeaders.create();
+        headers.addCookie("some-cookie", "", Duration.ZERO);
+
+        assertThat(headers.get(HeaderNames.SET_COOKIE).get(), is("some-cookie=; Max-Age=0"));
+    }
+
+    @Test
+    void testSetCookieWithoutMaxAge() {
+        SetCookie setCookie = SetCookie.builder("some-cookie", "some-cookie-value").build();
+
+        assertThat(setCookie.maxAge().isEmpty(), is(true));
+        assertThat(setCookie.text(), is("some-cookie=some-cookie-value"));
+    }
+
+    @Test
+    void testSetCookieWithNegativeMaxAge() {
+        SetCookie setCookie = SetCookie.builder("some-cookie", "some-cookie-value")
+                .maxAge(Duration.ofSeconds(-1))
+                .build();
+
+        assertThat(setCookie.text(), is("some-cookie=some-cookie-value"));
+    }
+
+    @Test
+    void testSetCookieWithPositiveMaxAge() {
+        SetCookie setCookie = SetCookie.builder("some-cookie", "some-cookie-value")
+                .maxAge(Duration.ofSeconds(60))
+                .build();
+
+        assertThat(setCookie.text(), is("some-cookie=some-cookie-value; Max-Age=60"));
     }
 
     @Test
