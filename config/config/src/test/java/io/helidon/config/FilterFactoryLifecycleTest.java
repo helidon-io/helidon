@@ -52,7 +52,7 @@ class FilterFactoryLifecycleTest {
         Config config = builder().disableCaching().addFilterProvider(context -> {
             context.reload();
             assertThat("Provider construction did not recursively create filters", firstFilters.get(), is(0));
-            return raw -> {
+            return _ -> {
                 int generation = firstFilters.incrementAndGet();
                 if (generation == 1) {
                     context.reload();
