@@ -1059,11 +1059,18 @@ application.
 All asynchronous event producers must use the `Event.Emitter.emitAsync(..)`
 method instead of the synchronous `Event.Emitter.emit(..)`.
 
-The `emitAsync` method returns a `CompletionStage<MyEvent>` instance. When
-executed, it completes once all event observers have been submitted to the
-executor service. However, there is no guarantee that any event has been
-delivered—it may have been sent to anywhere from 0 to n observers (where n
-represents the number of synchronous observers).
+The `emitAsync` method returns a `CompletionStage<MyEvent>` that completes
+normally with the emitted event after all matching synchronous observers
+(`@Event.Observer`) have finished processing it. If any synchronous observer
+throws an exception, the stage completes exceptionally with an
+`EventDispatchException`. The first observer exception is its cause, and any
+additional observer exceptions are suppressed. If there are no matching
+synchronous observers, the returned stage is already completed.
+
+Asynchronous observers (`@Event.AsyncObserver`) run independently. The returned
+stage neither waits for them nor reports their failures; observer exceptions
+are logged as described below. If the executor rejects task submission,
+`emitAsync` throws `RejectedExecutionException` directly.
 
 Asynchronous Event Producer Example:
 
