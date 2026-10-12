@@ -18,7 +18,6 @@ package io.helidon.webclient.api;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Objects;
 
 import io.helidon.webclient.spi.DnsResolver;
 
@@ -29,15 +28,7 @@ import io.helidon.webclient.spi.DnsResolver;
  */
 public final class DefaultDnsResolver implements DnsResolver {
 
-    private final AddressResolver addressResolver;
-
     private DefaultDnsResolver() {
-        this(InetAddress::getAllByName);
-    }
-
-    // for testing
-    DefaultDnsResolver(AddressResolver addressResolver) {
-        this.addressResolver = Objects.requireNonNull(addressResolver);
     }
 
     /**
@@ -52,7 +43,7 @@ public final class DefaultDnsResolver implements DnsResolver {
     @Override
     public InetAddress resolveAddress(String hostname, DnsAddressLookup dnsAddressLookup) {
         try {
-            InetAddress[] addresses = addressResolver.resolve(hostname);
+            InetAddress[] addresses = InetAddress.getAllByName(hostname);
             addresses = dnsAddressLookup.filter(addresses);
             if (addresses.length > 0) {
                 return addresses[0];
@@ -61,10 +52,5 @@ public final class DefaultDnsResolver implements DnsResolver {
             // falls through
         }
         throw new IllegalArgumentException("Failed to get address for host " + hostname);
-    }
-
-    @FunctionalInterface
-    interface AddressResolver {
-        InetAddress[] resolve(String hostname) throws UnknownHostException;
     }
 }

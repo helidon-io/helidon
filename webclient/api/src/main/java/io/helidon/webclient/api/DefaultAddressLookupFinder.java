@@ -35,9 +35,9 @@ final class DefaultAddressLookupFinder {
                                          System.getProperty(PREFER_IPV6_ADDRESSES));
         if (LOGGER.isLoggable(Level.DEBUG)) {
             switch (lookup) {
-                case IPV6_PREFERRED -> LOGGER.log(Level.DEBUG, "Preferring IPv6 over IPv4 address resolution");
-                case SYSTEM -> LOGGER.log(Level.DEBUG, "Using system resolver order for address resolution");
-                default -> LOGGER.log(Level.DEBUG, "Preferring IPv4 over IPv6 address resolution");
+            case IPV6_PREFERRED -> LOGGER.log(Level.DEBUG, "Preferring IPv6 over IPv4 address resolution");
+            case SYSTEM -> LOGGER.log(Level.DEBUG, "Using system resolver order for address resolution");
+            default -> LOGGER.log(Level.DEBUG, "Preferring IPv4 over IPv6 address resolution");
             }
         }
         return lookup;
