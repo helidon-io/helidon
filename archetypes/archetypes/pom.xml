@@ -29,6 +29,10 @@
     <artifactId>helidon-archetypes</artifactId>
     <name>Helidon Archetypes</name>
 
+    <properties>
+        <archetype.test.maxVariations>160</archetype.test.maxVariations>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.build-tools.archetype</groupId>
@@ -75,6 +79,8 @@
                         </goals>
                         <configuration>
                             <invokerId>io.helidon.build-tools.cli:helidon-cli-impl:zip:3.0.6</invokerId>
+                            <plansFile>${project.basedir}/src/test/archetype/plans.xml</plansFile>
+                            <maxVariations>${archetype.test.maxVariations}</maxVariations>
                             <validations>
                                 <validation>
                                     <match>any</match>
@@ -87,6 +93,9 @@
                             </validations>
                             <externalValues>
                                 <artifactId>test-project</artifactId>
+                                <groupId>com.examples</groupId>
+                                <version>1.0.0-SNAPSHOT</version>
+                                <package>com.example.myproject</package>
                             </externalValues>
                         </configuration>
                     </execution>
