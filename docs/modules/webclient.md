@@ -463,6 +463,10 @@ derived from the [JDK networking properties][jdk-net-properties]:
 | `java.net.preferIPv6Addresses=system`           | `SYSTEM`         | Order returned by the system resolver is kept   |
 | not set, `false`, or any other value            | `IPV4_PREFERRED` | IPv4 addresses first                            |
 
+The values of `java.net.preferIPv6Addresses` are case-insensitive, so `TRUE`
+and `System` have the same behavior as `true` and `system`. The
+`java.net.preferIPv4Stack` override requires the exact lowercase value `true`.
+
 The available strategies are `IPV4` and `IPV6` (a single address family),
 `IPV4_PREFERRED` and `IPV6_PREFERRED` (both families, preferred family first),
 and `SYSTEM` (both families, in resolver order).
