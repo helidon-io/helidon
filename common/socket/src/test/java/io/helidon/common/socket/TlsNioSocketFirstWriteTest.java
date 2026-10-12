@@ -128,16 +128,23 @@ class TlsNioSocketFirstWriteTest {
                 // Neither side starts the engine handshake separately: this application write initiates it.
                 socket.write(BufferData.create(first));
                 socket.write(BufferData.create(subsequent));
+                // Drain post-handshake records and wait for the peer's close-notify before closing the transport.
+                byte[] received;
+                while ((received = socket.get()) != null) {
+                    assertThat("peer sent no application data", received.length, is(0));
+                }
             } finally {
                 socket.close();
             }
         });
-        byte[] actual = peer.getInputStream().readAllBytes();
+        byte[] actual = peer.getInputStream().readNBytes(expected.length);
+        peer.shutdownOutput();
+        byte[] extra = peer.getInputStream().readAllBytes();
         writer.get(TIMEOUT_SECONDS, TimeUnit.SECONDS);
         assertThat("negotiated protocol", peer.getSession().getProtocol(), is(protocol));
-        // Reading through close-notify detects lost bytes as an exact length/content failure, rather than a timeout.
         assertThat("all first and subsequent write bytes for payload size " + size, actual.length, is(expected.length));
         assertThat("first and subsequent write content for payload size " + size, actual, is(expected));
+        assertThat("no extra application bytes after the expected payload", extra.length, is(0));
     }
 
     private static SSLContext context() throws Exception {
