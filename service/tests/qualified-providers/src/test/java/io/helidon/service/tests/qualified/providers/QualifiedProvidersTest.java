@@ -63,6 +63,39 @@ public class QualifiedProvidersTest {
         }
     }
 
+    @Test
+    public void testFirstActiveDoesNotInvokeQualifiedFactory() {
+        ServiceRegistryManager registryManager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                                     .discoverServices(false)
+                                                                                     .addServiceDescriptor(
+                                                                                             FirstQualifiedProvider__ServiceDescriptor.INSTANCE)
+                                                                                     .build());
+
+        try {
+            ServiceRegistry registry = registryManager.registry();
+            Lookup providerLookup = Lookup.builder()
+                    .serviceType(FirstQualifiedProvider.class)
+                    .addFactoryType(FactoryType.QUALIFIED)
+                    .build();
+            FirstQualifiedProvider provider = registry.get(providerLookup);
+            Lookup productLookup = Lookup.builder()
+                    .addContract(String.class)
+                    .addQualifier(Qualifier.create(FirstQualifier.class, "first"))
+                    .build();
+
+            assertThat(registry.firstActive(providerLookup).orElseThrow(), sameInstance(provider));
+            assertThat(registry.firstActive(productLookup).isEmpty(), is(true));
+            assertThat(provider.calls(), is(0));
+
+            assertThat(registry.get(productLookup), is("first"));
+            assertThat(provider.calls(), is(1));
+            assertThat(registry.firstActive(productLookup).isEmpty(), is(true));
+            assertThat(provider.calls(), is(1));
+        } finally {
+            registryManager.shutdown();
+        }
+    }
+
     private void testServices(ServiceRegistry registry) {
         TheService theService = registry.get(TheService.class);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,8 +33,11 @@ class SingletonInjectionPointProviderExample implements InjectionPointFactory<Co
     static final QualifiedInstance<ContractSingleton> FIRST = QualifiedInstance.create(new FirstClass(), FIRST_QUALI);
     static final QualifiedInstance<ContractSingleton> SECOND = QualifiedInstance.create(new SecondClass(), SECOND_QUALI);
 
+    private int calls;
+
     @Override
     public Optional<QualifiedInstance<ContractSingleton>> first(Lookup lookup) {
+        calls++;
         if (lookup.qualifiers().contains(FIRST_QUALI)) {
             return Optional.of(FIRST);
         }
@@ -42,6 +45,10 @@ class SingletonInjectionPointProviderExample implements InjectionPointFactory<Co
             return Optional.of(SECOND);
         }
         return Optional.empty();
+    }
+
+    int calls() {
+        return calls;
     }
 
     @Service.Qualifier

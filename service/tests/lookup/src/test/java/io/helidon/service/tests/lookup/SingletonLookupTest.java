@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Service.InjectionPointFactory;
 import io.helidon.service.registry.ServiceInfo;
 import io.helidon.service.registry.ServiceRegistry;
+import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 
 import org.junit.jupiter.api.AfterAll;
@@ -35,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -79,6 +81,38 @@ class SingletonLookupTest {
         assertThat(first, instanceOf(SingletonSupplierExample.First.class));
         ContractSingleton second = registry.get(CONTRACT);
         assertThat(first, sameInstance(second));
+    }
+
+    @Test
+    void firstActiveDoesNotInvokeInjectionPointFactory() {
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                               .discoverServices(false)
+                                                                               .addServiceDescriptor(
+                                                                                       SingletonInjectionPointProviderExample__ServiceDescriptor.INSTANCE)
+                                                                               .build());
+        ServiceRegistry serviceRegistry = manager.registry();
+
+        try {
+            SingletonInjectionPointProviderExample provider =
+                    serviceRegistry.get(SingletonInjectionPointProviderExample.class);
+            Lookup productLookup = Lookup.builder()
+                    .addContract(ContractSingleton.class)
+                    .addQualifier(SingletonInjectionPointProviderExample.FIRST_QUALI)
+                    .build();
+
+            assertThat(serviceRegistry.firstActive(SingletonInjectionPointProviderExample.class).orElseThrow(),
+                       sameInstance(provider));
+            assertThat(serviceRegistry.firstActive(productLookup).isEmpty(), is(true));
+            assertThat(provider.calls(), is(0));
+
+            assertThat(serviceRegistry.get(productLookup),
+                       sameInstance(SingletonInjectionPointProviderExample.FIRST.get()));
+            assertThat(provider.calls(), is(1));
+            assertThat(serviceRegistry.firstActive(productLookup).isEmpty(), is(true));
+            assertThat(provider.calls(), is(1));
+        } finally {
+            manager.shutdown();
+        }
     }
 
     @Test
