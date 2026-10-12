@@ -777,13 +777,17 @@ are two options:
 
 ### Sending a Response
 
-To complete the request handling, you must send a response by calling the
-`res.send()` method.
+To complete the request handling, send a response using either of these paths:
+
+- Call one of the `res.send()` variants.
+- Obtain `res.outputStream()`, write the response entity, and close the stream
+  before the handler returns. Closing the stream completes the response.
 
 > [!IMPORTANT]
-> one of the variants of `send` method MUST be invoked in the same thread the
-> request is started in; as we run in Virtual Threads, you can simply wait for
-> any asynchronous tasks that must complete before sending a response
+> Complete the response in the same thread the request is started in: invoke
+> `send()`, or write to and close the output stream, before the handler returns.
+> WebServer uses virtual threads, so you can wait for any asynchronous tasks
+> that must finish before completing the response.
 
 <!--@mdc ::code-callout -->
 ```java
@@ -797,6 +801,26 @@ rules.get("/hello", (req, res) -> { // <1>
    `/hello` path
 2. send the response
 <!--@mdc :: -->
+
+For an output-stream response, configure the status and headers before calling
+`outputStream()`. Use try-with-resources to close the stream before the handler
+returns. Do not call `send()` after obtaining the output stream.
+
+```java
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+
+import io.helidon.common.media.type.MediaTypes;
+import io.helidon.http.Status;
+
+rules.get("/hello-stream", (req, res) -> {
+    res.status(Status.OK_200);
+    res.headers().contentType(MediaTypes.TEXT_PLAIN);
+    try (OutputStream stream = res.outputStream()) {
+        stream.write("Hello!".getBytes(StandardCharsets.UTF_8));
+    }
+});
+```
 
 ## Protocol-Specific Routing
 
