@@ -99,4 +99,18 @@ final class OptionDecoratorsSupport {
         }
     }
 
+    static final class DoubleDecorator implements Prototype.OptionDecorator<OptionDecorators.BuilderBase<?, ?>, Double> {
+        @Override
+        public void decorate(OptionDecorators.BuilderBase<?, ?> builder, Double optionValue) {
+            builder.replacementDouble(optionValue);
+        }
+    }
+
+    static final class FloatDecorator implements Prototype.OptionDecorator<OptionDecorators.BuilderBase<?, ?>, Float> {
+        @Override
+        public void decorate(OptionDecorators.BuilderBase<?, ?> builder, Float optionValue) {
+            builder.replacementFloat(optionValue);
+        }
+    }
+
 }

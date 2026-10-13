@@ -91,4 +91,27 @@ class OpenApiFeatureConfigTest {
         assertThat(copy.servicesDiscoverServices(), is(!discover));
         assertThat(copy.managerDiscoverServices(), is(discover));
     }
+
+    @Test
+    void builderCopyPreservesLegacyGetterOverride() {
+        var config = new LegacyBuilder().buildPrototype();
+
+        assertThat(config.isEnabled(), is(false));
+        assertThat(config.enabled(), is(false));
+        assertThat(config.openApiVersion().isEmpty(), is(true));
+        assertThat(config.services().isEmpty(), is(true));
+        assertThat(config.manager().isEmpty(), is(true));
+    }
+
+    private static final class LegacyBuilder extends OpenApiFeatureConfig.BuilderBase<LegacyBuilder, OpenApiFeatureConfig> {
+        @Override
+        public boolean isEnabled() {
+            return false;
+        }
+
+        @Override
+        public OpenApiFeatureConfig buildPrototype() {
+            return OpenApiFeatureConfig.builder().from(this).buildPrototype();
+        }
+    }
 }

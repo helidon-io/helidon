@@ -49,5 +49,19 @@ interface OptionDecoratorsBlueprint {
     @Option.DefaultInt(42)
     int legacyValue();
 
+    double replacementDouble();
+
+    @Deprecated(since = "28.0.0")
+    @Option.Deprecated("replacementDouble")
+    @Option.Decorator(OptionDecoratorsSupport.DoubleDecorator.class)
+    double legacyDouble();
+
+    float replacementFloat();
+
+    @Deprecated(since = "28.0.0")
+    @Option.Deprecated("replacementFloat")
+    @Option.Decorator(OptionDecoratorsSupport.FloatDecorator.class)
+    float legacyFloat();
+
     record Foo(String a, int b) { }
 }

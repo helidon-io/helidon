@@ -199,9 +199,9 @@ class TypeHandlerBasic implements TypeHandler {
 
     @Override
     public void fromBuilderAssignment(ContentBuilder<?> contentBuilder) {
-        // Reapplying a deprecated alias decorator could replace an explicitly configured canonical option with the
-        // alias backing value. The canonical option is copied separately, so preserve only the alias backing value.
-        boolean copyDeprecatedDecoratorFieldDirectly = option().declaredType().primitive()
+        // An unchanged deprecated alias must not replace the separately copied canonical value. A virtual getter
+        // that differs from the alias backing field must still be applied through its decorator.
+        boolean decoratedPrimitiveAlias = option().declaredType().primitive()
                 && option().decorator().isPresent()
                 && option().deprecation().flatMap(OptionDeprecation::alternative).isPresent();
         if (type().equals(CONFIG)) {
@@ -221,12 +221,8 @@ class TypeHandlerBasic implements TypeHandler {
             contentBuilder.addContent("builder.")
                     .addContent(option().getterName())
                     .addContentLine("().ifPresent(this::" + option().setterName() + ");");
-        } else if (copyDeprecatedDecoratorFieldDirectly) {
-            contentBuilder.addContent("this.")
-                    .addContent(option().name())
-                    .addContent(" = builder.")
-                    .addContent(option().name())
-                    .addContentLine(";");
+        } else if (decoratedPrimitiveAlias) {
+            fromDeprecatedBuilderAssignment(contentBuilder);
         } else {
             contentBuilder.addContent(option().setterName())
                     .addContent("(builder.")
@@ -1028,6 +1024,28 @@ class TypeHandlerBasic implements TypeHandler {
                                    .javadoc(javadoc)
                                    .contentBuilder(contentConsumer)
                                    .build());
+    }
+
+    private void fromDeprecatedBuilderAssignment(ContentBuilder<?> contentBuilder) {
+        String name = option().name();
+        String valueName = name + "Value";
+        contentBuilder.addContent("var " + valueName + " = builder.")
+                .addContent(option().getterName())
+                .addContentLine("();")
+                .addContent("if (");
+        if (type().equals(TypeNames.PRIMITIVE_FLOAT) || type().equals(TypeNames.PRIMITIVE_DOUBLE)) {
+            contentBuilder.addContent(type().boxed())
+                    .addContent(".compare(" + valueName + ", builder." + name + ") != 0");
+        } else {
+            contentBuilder.addContent(valueName + " != builder." + name);
+        }
+        contentBuilder.addContentLine(") {")
+                .addContent(option().setterName())
+                .addContentLine("(" + valueName + ");")
+                .decreaseContentPadding()
+                .addContentLine("} else {")
+                .addContentLine("this." + name + " = " + valueName + ";")
+                .addContentLine("}");
     }
 
     private Javadoc getterJavadoc() {
