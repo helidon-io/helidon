@@ -905,11 +905,12 @@ helidon-metrics   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s # <
 1. A service of type `NodePort` that serves the default routes on port `31143`.
 <!--@mdc :: -->
 
-Verify the metrics endpoint using port `30116`, your port will likely be
-different:
+Verify the metrics endpoint using the assigned NodePort (`31143` in the example
+output above). Replace `31143` in the command below with your service's NodePort
+if it differs:
 
 ```shell [Terminal]
-curl http://localhost:31143/metrics
+curl http://localhost:31143/observe/metrics
 ```
 
 > [!NOTE]
