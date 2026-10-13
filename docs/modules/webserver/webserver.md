@@ -1007,59 +1007,22 @@ response as follows:
 
 ### Limiting Internal Error Logs
 
-WebServer limits its internal diagnostics for unexpected failures, including
-unhandled application exceptions that result in `500 Internal Server Error`.
-This prevents repeated requests that trigger the same bug from producing an
-unrestricted stream of stack traces. Logging limits do not change request
-handling or error responses. Application logging, access logs, ordinary
-expected HTTP errors, and a handler explicitly sending status `500` are
-unaffected.
+WebServer limits its own logs for unexpected failures, including application
+exceptions that produce `500 Internal Server Error`. Application logs, access
+logs, expected HTTP errors, and explicit status-only `500` responses are
+unaffected. Request handling and responses stay the same.
 
-The limits are enabled by default and shared by all listeners of one
-WebServer. Each one-hour collection window permits one detailed log entry per
-error identity and at most 100 detailed entries overall. The first permitted entry
-includes the original diagnostic and exception details, with an `error-id` for
-correlation. Further entries are suppressed until the next window.
+By default, each one-hour collection window allows one detailed entry per error
+and at most 100 overall, shared by all listeners. Entries include the original
+diagnostic and an `error-id`. Errors are grouped by logging site, exception type
+and stack locations, excluding exception messages and request values.
 
-An error identity combines the logger and fixed diagnostic with exception
-types and stack locations: up to four exceptions in the cause chain and eight
-stack frames per exception. Exception messages and request data are excluded,
-so changing request values or exception messages does not create new identities
-for the same failure.
+Newly suppressed counts are reported every ten minutes when nonzero, even if
+traffic stops, and remaining counts are reported at shutdown. Reporting does
+not renew the detailed-log allowances. `max-errors` bounds memory use by
+limiting tracked error identities; no exceptions or requests are retained.
 
-At most 100 identities are retained per collection window by default. When
-this limit is reached, new identities are suppressed until the next window; existing
-identities remain tracked. Suppression reports separately retain at most eight
-identity examples. Both collections retain only fixed-size fingerprints and
-counters, rather than exceptions, messages, requests, or stack traces.
-Accounting is thread-safe, and suppression counters saturate rather than
-overflow.
-
-Error identity calculation runs outside the accounting lock, with at most
-four calculations in progress per WebServer. If all four are busy, additional
-entries are counted as suppressed without calculating an identity or queuing
-their exceptions. Under concurrent failure traffic, this can suppress the
-first detailed entry for a distinct error. The aggregate count remains exact,
-but these entries cannot be attributed to individual error identities.
-
-If entries were suppressed, WebServer emits at most one aggregate warning per
-reporting interval, which defaults to ten minutes, including when traffic has
-stopped. It reports remaining counts once at shutdown. Each warning gives
-counts since the previous report: the total suppressed count and counts
-attributable to the per-error, overall, retained-identity, and identity-work
-limits. It also lists counts for up to eight `error-id` examples of repeated
-failures, which can be correlated with their detailed entries.
-
-Reporting clears the suppression counts and examples without renewing any
-detailed-entry allowances. The collection window renews the per-error and
-overall allowances and clears retained detail identities; pending suppression
-counts survive until the next report. These two schedules are independent:
-the reporting interval can be shorter or longer than the collection window
-and does not need to divide it evenly. Aggregate warnings are additional to
-the `max-total` detailed-entry limit.
-
-Configure the limits under `server.error-log`. The following values are the
-defaults:
+Configure `server.error-log` with these defaults:
 
 ```yaml [application.yaml]
 server:
@@ -1072,23 +1035,14 @@ server:
     max-errors: 100
 ```
 
-The equivalent programmatic configuration is:
+For programmatic configuration, use `WebServer.builder().errorLog(...)`:
 
 ```java
 WebServer.builder()
-        .errorLog(it -> it
-                .enabled(true)
-                .window(Duration.ofHours(1))
-                .reportInterval(Duration.ofMinutes(10))
-                .maxPerError(1)
-                .maxTotal(100)
-                .maxErrors(100));
+        .errorLog(it -> it.maxPerError(2));
 ```
 
-Both durations and all three limits must be positive; both durations must also
-be representable in nanoseconds. Set `server.error-log.enabled` to `false`, or
-use `.errorLog(it -> it.enabled(false))`, to restore unrestricted internal
-error logging.
+Durations and limits must be positive. Set `enabled: false` to disable limiting.
 
 ## Direct Error Handling
 
