@@ -56,7 +56,7 @@ For other dependency management options, see
   <dependency>
     <groupId>com.mysql</groupId>
     <artifactId>mysql-connector-j</artifactId> <!-- MySQL JDBC driver -->
-    <version>8.2.0</version>
+    <version>26.7.0</version>
     <scope>runtime</scope>
   </dependency>
 </dependencies>

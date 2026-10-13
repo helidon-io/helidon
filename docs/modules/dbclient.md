@@ -90,7 +90,7 @@ the following dependencies in your project:
      <dependency>
          <groupId>com.mysql</groupId> <!-- (3) -->
          <artifactId>mysql-connector-j</artifactId>
-         <version>8.2.0</version>
+         <version>26.7.0</version>
     </dependency>
 </dependencies>
 ```

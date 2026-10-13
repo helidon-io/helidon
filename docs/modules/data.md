@@ -59,7 +59,7 @@ Jakarta Persistence 3.2 and specify the JDBC driver version explicitly:
 <dependency>
   <groupId>com.mysql</groupId>
   <artifactId>mysql-connector-j</artifactId>
-  <version>8.2.0</version>
+  <version>26.7.0</version>
   <scope>runtime</scope>
 </dependency>
 ```

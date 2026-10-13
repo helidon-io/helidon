@@ -147,7 +147,7 @@ Copy these dependencies to pom.xml:
     <dependency>
         <groupId>com.mysql</groupId>
         <artifactId>mysql-connector-j</artifactId> <!-- (4) -->
-        <version>8.2.0</version>
+        <version>26.7.0</version>
     </dependency>
     <dependency>
         <groupId>org.slf4j</groupId>

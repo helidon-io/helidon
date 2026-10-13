@@ -29,7 +29,7 @@
                         <map>
                             <value key="groupId">com.mysql</value>
                             <value key="artifactId">mysql-connector-j</value>
-                            <value key="version">8.2.0</value>
+                            <value key="version">26.7.0</value>
                         </map>
                     </list>
                     <value key="db-health-check-stmt" if="${health}">SELECT 0</value>
@@ -233,7 +233,7 @@ docker run --rm --name mongo -p 27017:27017 mongo
                 <map if="${db.server} != 'mysql'">
                     <value key="groupId">com.mysql</value>
                     <value key="artifactId">mysql-connector-j</value>
-                    <value key="version">8.2.0</value>
+                    <value key="version">26.7.0</value>
                     <value key="scope">test</value>
                 </map>
                 <map>
