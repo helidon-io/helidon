@@ -89,7 +89,7 @@ class OpenApiFeatureConfigTest {
             var deprecated = method.getAnnotation(Deprecated.class);
             assertThat(method.toString(), deprecated, notNullValue());
             assertThat(method.toString(), deprecated.since(), is("28.0.0"));
-            assertThat(method.toString(), deprecated.forRemoval(), is(false));
+            assertThat(method.toString(), deprecated.forRemoval(), is(true));
         }
         assertThat(OpenApiFeatureConfig.class.getMethod("enabled").getAnnotation(Deprecated.class), nullValue());
         assertThat(OpenApiFeatureConfig.BuilderBase.class.getMethod("enabled", boolean.class).getAnnotation(Deprecated.class),

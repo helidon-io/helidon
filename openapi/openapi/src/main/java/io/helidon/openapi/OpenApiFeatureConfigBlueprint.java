@@ -67,7 +67,7 @@ interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature
      * @return {@code true} if enabled, {@code false} otherwise
      * @deprecated use {@link #enabled()}
      */
-    @Deprecated(since = "28.0.0")
+    @Deprecated(since = "28.0.0", forRemoval = true)
     @Option.Deprecated("enabled")
     @Option.Decorator(OpenApiFeatureConfigSupport.EnabledDecorator.class)
     @Option.Configured("enabled")
