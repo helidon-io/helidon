@@ -775,7 +775,6 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                 && LOGGER.isLoggable(DEBUG) && (exception.safeMessage() || errorHandling.logAllMessages())) {
             LOGGER.log(DEBUG, exception);
         }
-
         String message = null;
         if (errorHandling.includeEntity()) {
             message = exception.safeMessage()
@@ -891,7 +890,8 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             }
             throw writeFailure;
         }
-        if (!finalInformationalResponse && responseStatus.code() == Status.INTERNAL_SERVER_ERROR_500.code()) {
+        if (!finalInformationalResponse && responseStatus.code() == Status.INTERNAL_SERVER_ERROR_500.code()
+                && (exception.safeMessage() || errorHandling.logAllMessages())) {
             ctx.listenerContext().logError(LOGGER, System.Logger.Level.WARNING, "Internal server error", exception);
         }
         return true;
