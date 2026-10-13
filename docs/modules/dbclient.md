@@ -73,7 +73,7 @@ client.
 
 ### Add the DB Client dependencies to the Maven `pom.xml` file.
 
-For the DB Client using JDBC implementation and H2 database, you must include
+For the DB Client using JDBC implementation and MySQL database, you must include
 the following dependencies in your project:
 
 <!--@mdc ::code-callout -->
@@ -88,14 +88,16 @@ the following dependencies in your project:
          <artifactId>helidon-dbclient-jdbc</artifactId>
      </dependency>
      <dependency>
-         <groupId>com.h2database</groupId> <!-- (3) -->
-         <artifactId>h2</artifactId>
+         <groupId>com.mysql</groupId> <!-- (3) -->
+         <artifactId>mysql-connector-j</artifactId>
+         <version>8.2.0</version>
     </dependency>
 </dependencies>
 ```
 1. Add the Helidon DB Client
 2. Specify JDBC or MongoDB
-3. Add the database JDBC driver (only for JDBC)
+3. Add the database JDBC driver with an explicit version (only for JDBC).
+   Helidon does not manage MySQL driver versions for applications.
 <!--@mdc :: -->
 
 ### Use Helidon Config to configure the client.

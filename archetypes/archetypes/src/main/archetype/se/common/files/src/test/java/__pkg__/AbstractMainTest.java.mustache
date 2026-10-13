@@ -20,6 +20,9 @@ abstract class AbstractMainTest {
 {{#MainTest-static-fields}}
     private static final {{.}};
 {{/MainTest-static-fields}}
+{{#MainTest-fields}}
+    {{.}};
+{{/MainTest-fields}}
     private final Http1Client client;
 
     protected AbstractMainTest(Http1Client client) {
@@ -28,11 +31,18 @@ abstract class AbstractMainTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder builder) {
+        {{#MainTest-routing}}
+        {{.}}
+        {{/MainTest-routing}}
         Main.routing(builder);
     }
 
     {{#Abstract-tests}}
     {{.}}
     {{/Abstract-tests}}
+
+    {{#MainTest-methods}}
+    {{.}}
+    {{/MainTest-methods}}
 
 }

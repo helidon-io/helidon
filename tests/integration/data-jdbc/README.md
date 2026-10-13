@@ -19,13 +19,11 @@ also changed.
 
 | Database | Driver dependency | Configured JDBC driver class | Runtime used by tests |
 | --- | --- | --- | --- |
-| H2 | `com.h2database:h2` | `org.h2.Driver` | In-memory H2 database |
 | MySQL | `com.mysql:mysql-connector-j` | `com.mysql.cj.jdbc.Driver` | Testcontainers MySQL using `container-registry.oracle.com/mysql/community-server:9.7.3` |
 | PostgreSQL | `org.postgresql:postgresql` | `org.postgresql.Driver` | Testcontainers image built from `common/src/pgsql/docker` |
 | Oracle Database | `com.oracle.database.jdbc:ojdbc17-production` | `oracle.jdbc.OracleDriver` | Testcontainers Oracle Database Free using `container-registry.oracle.com/database/free:latest-lite` |
 
 External database tests require a working Docker/Testcontainers environment.
-H2 tests do not require Docker.
 
 ## Test database credentials
 
@@ -69,18 +67,16 @@ tests/integration/data-jdbc/
     src/main/java/        Shared contracts, application adapters, repositories, and support code.
     src/<db>/java/        Database-specific fixtures and configuration helpers.
     src/<db>/resources/   Database-specific Testcontainers initialization resources.
-  h2/                     Provider-level H2 integration tests.
+  mysql/                  Provider-level MySQL integration tests.
   imperative/
-    h2/
     mysql/
     oracle/
     pgsql/                Imperative JdbcClient tests by database.
   declarative/
-    h2/
     mysql/
     oracle/
     pgsql/                Generated repository tests by database.
-  mixed-provider/         H2/Hikari application combining Jakarta Persistence and JDBC repositories.
+  mixed-provider/         MySQL/Hikari application combining Jakarta Persistence and JDBC repositories.
 ```
 
 The imperative and declarative database leaves add the appropriate
@@ -93,7 +89,7 @@ uses both Jakarta Persistence and JDBC annotation processors, verifies the
 generated repository implementations and their provider-specific qualifiers,
 and invokes application endpoints backed by a Jakarta Persistence repository,
 a declarative JDBC repository, and the imperative `JdbcClient` API. Its Hikari
-pool uses an in-memory H2 database initialized from `mixed-provider/src/main/resources/init.sql`.
+pool uses a Testcontainers MySQL database initialized from `mixed-provider/src/main/resources/init.sql`.
 
 ## Maven profiles
 
@@ -106,7 +102,7 @@ The Maven options have different meanings:
 | Option | Meaning in this reactor |
 | --- | --- |
 | `-Plong-tests` | Explicitly activates the `long-tests` Maven profile and includes the MySQL, PostgreSQL, and Oracle Database modules. |
-| `-P-long-tests` | Explicitly deactivates the `long-tests` Maven profile and leaves only the H2 modules enabled. |
+| `-P-long-tests` | Explicitly deactivates the `long-tests` Maven profile and excludes the container-backed database modules. |
 | `-Dlong-tests` | Defines a Maven property. Because the profile is automatically activated only when this property is absent (`!long-tests`), defining it also excludes the external database modules. It does not enable them. |
 
 The commands below use explicit profile activation or deactivation to avoid
@@ -123,20 +119,11 @@ run:
 mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests verify
 ```
 
-This command runs the provider-level H2 tests, the mixed-provider test, and the
-imperative and declarative test suites for H2, MySQL, PostgreSQL, and Oracle
+This command runs the provider-level MySQL tests, the mixed-provider test, and the
+imperative and declarative test suites for MySQL, PostgreSQL, and Oracle
 Database. The external database tests use Testcontainers. They are skipped when
 Docker is unavailable, so a successful Maven build does not by itself prove
 that those database tests ran.
-
-### Run only H2 tests
-
-Explicitly deactivate the profile to run the provider-level, mixed-provider,
-imperative, and declarative H2 tests without Docker:
-
-```bash
-mvn -f tests/integration/data-jdbc/pom.xml -P-long-tests verify
-```
 
 ### Run one external database across both styles
 
@@ -149,20 +136,20 @@ mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests -pl imperative/oracle,de
 ### Run one style across all configured databases
 
 ```bash
-mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests -pl imperative/h2,imperative/mysql,imperative/pgsql,imperative/oracle -am verify
-mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests -pl declarative/h2,declarative/mysql,declarative/pgsql,declarative/oracle -am verify
+mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests -pl imperative/mysql,imperative/pgsql,imperative/oracle -am verify
+mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests -pl declarative/mysql,declarative/pgsql,declarative/oracle -am verify
 ```
 
-### Run only the provider-level H2 tests
+### Run only the provider-level MySQL tests
 
 ```bash
-mvn -f tests/integration/data-jdbc/pom.xml -pl h2 -am verify
+mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests -pl mysql -am verify
 ```
 
 ### Run only the mixed-provider test
 
 ```bash
-mvn -f tests/integration/data-jdbc/pom.xml -pl mixed-provider -am clean package
+mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests -pl mixed-provider -am clean package
 ```
 
 ## Test design notes
@@ -171,7 +158,7 @@ mvn -f tests/integration/data-jdbc/pom.xml -pl mixed-provider -am clean package
   that only provide configuration and fixture differences.
 - Keep database-specific SQL and generated-key behavior explicit. Some drivers
   legitimately differ; for example, MySQL Connector/J exposes generated keys
-  differently from H2, PostgreSQL, and Oracle.
+  differently from PostgreSQL and Oracle.
 - Use HikariCP one-connection pools when a test must prove that a failed
   operation returned its connection lease.
 - Do not let application-visible failures expose configured SQL, secret bind

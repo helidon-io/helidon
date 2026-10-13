@@ -31,7 +31,7 @@
 
     <modules>
         <module>common</module>
-        <module>h2</module>
+        <module>mysql</module>
         <module>imperative</module>
         <module>declarative</module>
         <module>mixed-provider</module>

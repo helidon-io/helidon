@@ -407,10 +407,6 @@ public final class TransactionTestImpl extends AbstractTestImpl implements Trans
                     assertThat(columnsCount.get(), equalTo(1));
                     keyByName = keysRow.column("_id");
                     break;
-                case "jdbc:h2":
-                    assertThat(columnsCount.get(), equalTo(1));
-                    keyByName = keysRow.column("id");
-                    break;
                 case "jdbc:mysql":
                     assertThat(columnsCount.get(), equalTo(1));
                     keyByName = keysRow.column("GENERATED_KEY");
@@ -459,15 +455,6 @@ public final class TransactionTestImpl extends AbstractTestImpl implements Trans
             // Result is vendor dependent
             switch(db.dbType()) {
                 case "mongoDb":
-                    break;
-                case "jdbc:h2":
-                    assertThat(columnsCount.get(), equalTo(2));
-                    idByName = keysRow.column("id");
-                    idByIndex = keysRow.column(1);
-                    assertThat(idByName, equalTo(idByIndex));
-                    redByName = keysRow.column("red");
-                    redByIndex = keysRow.column(2);
-                    assertThat(redByName, equalTo(redByIndex));
                     break;
                 case "jdbc:mysql":
                     assertThat(columnsCount.get(), equalTo(1));

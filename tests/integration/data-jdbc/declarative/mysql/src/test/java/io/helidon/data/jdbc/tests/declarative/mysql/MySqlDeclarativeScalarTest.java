@@ -15,12 +15,19 @@
  */
 package io.helidon.data.jdbc.tests.declarative.mysql;
 
+import java.util.Arrays;
+import java.util.List;
+
 import io.helidon.data.jdbc.tests.contract.AbstractDeclarativeScalarContract;
 import io.helidon.data.jdbc.tests.support.TestConfigFactory;
 
+import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  * Executes the generated scalar and typed-null contract against MySQL.
@@ -33,5 +40,34 @@ class MySqlDeclarativeScalarTest extends AbstractDeclarativeScalarContract {
     @Override
     protected void beforeStartApplication() {
         TestConfigFactory.config(MySqlDeclarativeTestSupport.config());
+    }
+
+    /**
+     * Proves repeated named null markers and positional null markers bind every physical placeholder independently.
+     */
+    @Test
+    void storesRepeatedNamedAndPositionalNullsAtEveryPhysicalPosition() {
+        repository().bindRepeated("repeated");
+        assertThat(readStrings(), is(List.of("repeated", "repeated")));
+
+        repository().bindRepeated(null);
+        assertThat(readStrings(), is(Arrays.asList(null, null)));
+
+        repository().bindPositional("first", "second");
+        assertThat(readStrings(), is(List.of("first", "second")));
+
+        repository().bindPositional(null, null);
+        assertThat(readStrings(), is(Arrays.asList(null, null)));
+    }
+
+    private List<String> readStrings() {
+        return client().create("""
+                        SELECT STRING_VALUE, SECOND_STRING_VALUE
+                        FROM SCALAR_VALUE
+                        WHERE ID = 1
+                        """)
+                .map(row -> Arrays.asList(row.optional(1, String.class).orElse(null),
+                                          row.optional(2, String.class).orElse(null)))
+                .one();
     }
 }

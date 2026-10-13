@@ -21,8 +21,11 @@ import java.util.Optional;
 import io.helidon.data.jdbc.tests.application.ContactView;
 import io.helidon.data.jdbc.tests.contract.AbstractGeneratedRepositoryContract;
 import io.helidon.data.jdbc.tests.declarative.repository.ContactRepository;
+import io.helidon.data.jdbc.tests.support.DatabaseFixture;
 import io.helidon.data.jdbc.tests.support.TestConfigFactory;
+import io.helidon.service.registry.ServiceRegistryManager;
 
+import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -72,5 +75,40 @@ class MySqlGeneratedRepositoryTest extends AbstractGeneratedRepositoryContract {
         assertThat(repository.findByName("explicit-key"),
                    is(Optional.of(new ContactView(explicitKeys.getFirst(), "explicit-key", Optional.empty()))));
         return scalarKey;
+    }
+
+    /**
+     * Proves multiple generated methods can execute when application parameters
+     * collide with generated fields and lambda parameters.
+     */
+    @Test
+    void executesMultipleGeneratedMethodsWithNameCollisions() {
+        beforeStartApplication();
+        ServiceRegistryManager manager = ServiceRegistryManager.start();
+        try {
+            DatabaseFixture database = manager.registry().get(DatabaseFixture.class);
+            database.reset();
+            MySqlGeneratedNameCollisionRepository repository =
+                    manager.registry().get(MySqlGeneratedNameCollisionRepository.class);
+
+            assertThat(repository.find("sql-find"), is("sql-find"));
+            assertThat(repository.lookup("sql-lookup"), is("sql-lookup"));
+            assertThat(repository.client("client"), is("client"));
+            assertThat(repository.secondaryClient("secondary-client"), is("secondary-client"));
+
+            long firstId = repository.insert("lambda-row", "lambda-value@example.test").orElseThrow();
+            assertThat(database.committedByName("lambda-row"),
+                       is(Optional.of(new ContactView(firstId,
+                                                      "lambda-row",
+                                                      Optional.of("lambda-value@example.test")))));
+            long secondId = repository.insertSecondary("secondary-lambda-row",
+                                                       "secondary-lambda-value@example.test").orElseThrow();
+            assertThat(database.committedByName("secondary-lambda-row"),
+                       is(Optional.of(new ContactView(secondId,
+                                                      "secondary-lambda-row",
+                                                      Optional.of("secondary-lambda-value@example.test")))));
+        } finally {
+            manager.shutdown();
+        }
     }
 }

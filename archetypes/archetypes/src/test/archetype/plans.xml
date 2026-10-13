@@ -115,9 +115,5 @@
             <flavor>se</flavor>
             <app-type>database</app-type>
         </values>
-        <rules>
-            <exclude if="${db.auto-ddl} != (${media.json-lib} == 'jackson')"/>
-            <exclude if="(${db.cp} == 'hikaricp') != (${media.json-lib} == 'jackson')"/>
-        </rules>
     </plan>
 </plans>

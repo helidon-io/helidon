@@ -50,7 +50,6 @@
         <version.lib.graphql-java.extended.scalars>22.0</version.lib.graphql-java.extended.scalars>
         <version.lib.grpc>1.73.0</version.lib.grpc>
         <version.lib.guava>33.3.1-jre</version.lib.guava>
-        <version.lib.h2>2.4.240</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.handlebars>4.5.2</version.lib.handlebars>
         <version.lib.hikaricp>7.1.0</version.lib.hikaricp>
@@ -78,14 +77,12 @@
         <version.lib.micrometer>1.17.1</version.lib.micrometer>
         <version.lib.micrometer-prometheus>1.17.1</version.lib.micrometer-prometheus>
         <version.lib.mongodb>5.11.1</version.lib.mongodb>
-        <version.lib.mysql-connector-j>8.2.0</version.lib.mysql-connector-j>
         <version.lib.narayana>7.3.4.Final</version.lib.narayana>
         <version.lib.ojdbc.family>23</version.lib.ojdbc.family>
         <version.lib.ojdbc>${version.lib.ojdbc.family}.26.1.0.0</version.lib.ojdbc>
         <version.lib.opentelemetry>1.66.0</version.lib.opentelemetry>
         <version.lib.opentelemetry.semconv>1.44.0</version.lib.opentelemetry.semconv>
         <version.lib.parsson>1.1.9</version.lib.parsson>
-        <version.lib.postgresql>42.7.13</version.lib.postgresql>
         <version.lib.prometheus>1.9.0</version.lib.prometheus>
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
         <version.lib.slf4j>2.0.20</version.lib.slf4j>
@@ -271,21 +268,6 @@
                 <groupId>jakarta.transaction</groupId>
                 <artifactId>jakarta.transaction-api</artifactId>
                 <version>${version.lib.jakarta.transaction-api}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.h2database</groupId>
-                <artifactId>h2</artifactId>
-                <version>${version.lib.h2}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.mysql</groupId>
-                <artifactId>mysql-connector-j</artifactId>
-                <version>${version.lib.mysql-connector-j}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.postgresql</groupId>
-                <artifactId>postgresql</artifactId>
-                <version>${version.lib.postgresql}</version>
             </dependency>
             <dependency>
                 <groupId>com.zaxxer</groupId>

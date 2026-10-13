@@ -16,14 +16,18 @@
 
 package io.helidon.data.jakarta.persistence;
 
+import java.io.PrintWriter;
+import java.sql.Connection;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Logger;
+
+import javax.sql.DataSource;
 
 import io.helidon.data.jakarta.persistence.LocalTransactionStorage.LocalTransactionManager;
 import io.helidon.data.jakarta.persistence.LocalTransactionStorage.LocalTransactionProvider;
 
 import jakarta.persistence.spi.PersistenceUnitInfo;
-import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -36,8 +40,9 @@ class PersistenceConfigurationTest {
     void testNoCdiAnnotations() {
         var provider = new LocalTransactionProvider(new LocalTransactionManager());
         var txSupport = new LocalTxSupport(provider, List.of());
+        DataSource dataSource = new UnusedDataSource();
         var config = JpaPersistenceUnitConfig.builder()
-                .dataSource(new JdbcDataSource())
+                .dataSource(dataSource)
                 .build();
         PersistenceUnitInfo unitInfo = PersistenceConfiguration.create("test",
                                                                        txSupport,
@@ -47,5 +52,51 @@ class PersistenceConfigurationTest {
 
         assertThat("Unspecified CDI scope", unitInfo.getScopeAnnotationName(), nullValue());
         assertThat("Unspecified CDI qualifiers", unitInfo.getQualifierAnnotationNames(), empty());
+    }
+    private static final class UnusedDataSource implements DataSource {
+        @Override
+        public Connection getConnection() {
+            throw new UnsupportedOperationException("This test must not access the DataSource");
+        }
+
+        @Override
+        public Connection getConnection(String username, String password) {
+            throw new UnsupportedOperationException("This test must not access the DataSource");
+        }
+
+        @Override
+        public PrintWriter getLogWriter() {
+            throw new UnsupportedOperationException("This test must not access the DataSource");
+        }
+
+        @Override
+        public void setLogWriter(PrintWriter writer) {
+            throw new UnsupportedOperationException("This test must not access the DataSource");
+        }
+
+        @Override
+        public void setLoginTimeout(int seconds) {
+            throw new UnsupportedOperationException("This test must not access the DataSource");
+        }
+
+        @Override
+        public int getLoginTimeout() {
+            throw new UnsupportedOperationException("This test must not access the DataSource");
+        }
+
+        @Override
+        public Logger getParentLogger() {
+            throw new UnsupportedOperationException("This test must not access the DataSource");
+        }
+
+        @Override
+        public <T> T unwrap(Class<T> iface) {
+            throw new UnsupportedOperationException("This test must not access the DataSource");
+        }
+
+        @Override
+        public boolean isWrapperFor(Class<?> iface) {
+            throw new UnsupportedOperationException("This test must not access the DataSource");
+        }
     }
 }

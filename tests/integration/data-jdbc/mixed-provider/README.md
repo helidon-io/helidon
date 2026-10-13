@@ -4,9 +4,11 @@ This module is a self-contained Helidon application and test suite proving that
 Jakarta Persistence and JDBC repositories can coexist when each repository
 selects its provider with `@Data.Provider`.
 
-The application is under `src/main`, including its Hikari-backed in-memory H2
-configuration. The Jakarta Persistence unit loads the H2 schema and sample data
-from `src/main/resources/init.sql`; the test does not create or seed the database.
+The application is under `src/main`, including its Hikari-backed MySQL
+configuration. The Jakarta Persistence unit loads the schema and sample data
+from `src/main/resources/init.sql`. The test starts a MySQL container and supplies
+its connection settings before resolving the application services. It closes the
+HTTP client, server, and service registry before Testcontainers stops the database.
 The HTTP-level validation and generated-source assertions are under `src/test`.
 
 The application exposes three read paths:
@@ -23,11 +25,14 @@ qualifiers.
 Run the module directly:
 
 ```bash
-mvn clean package
+mvn -Plong-tests clean package
 ```
 
 Or select it from the Data JDBC integration reactor:
 
 ```bash
-mvn -f tests/integration/data-jdbc/pom.xml -pl mixed-provider -am clean package
+mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests -pl mixed-provider -am clean package
 ```
+
+These tests require Docker and use the same approved MySQL image as the JDBC
+matrix. They are skipped when Docker is unavailable.

@@ -65,88 +65,37 @@ The main features of Helidon DB Client are:
 This section describes how to configure and use the key features of the Helidon
 DB Client.
 
-### Set Up the H2 Database
+### Set Up the MySQL Database
 
-#### From Docker
-
-Create the following files:
-
-```dockerfile [dockerfile.h2]
-FROM container-registry.oracle.com/java/openjdk:27-oraclelinux9
-
-ENV H2_VERSION "1.4.199"
-
-ADD "https://repo1.maven.org/maven2/com/h2database/h2/${H2_VERSION}/h2-${H2_VERSION}.jar" /opt/h2.jar
-
-COPY h2.server.properties /root/.h2.server.properties
-
-EXPOSE 8082
-EXPOSE 9092
-
-CMD java \
-       -cp /opt/h2.jar \
-       org.h2.tools.Server \
-       -web -webDaemon -webAllowOthers -webPort 8082 \
-       -tcp -tcpAllowOthers -tcpPort 9092 \
-       -ifNotExists
-```
-
-```properties [h2.server.properties]
-webSSL=false
-webAllowOthers=true
-webPort=8082
-0=Generic H2 (Server)|org.h2.Driver|jdbc\:h2\:tcp\://localhost\:9092/~/test|sa
-```
-
-Build the H2 docker image:
+The library application stores books in MySQL. Start a development database
+using Docker:
 
 ```shell [Terminal]
-docker build -f Dockerfile.h2 . -t h2db
+docker run --rm --name library-mysql -p 3306:3306 \
+    -e MYSQL_ROOT_PASSWORD=root \
+    -e MYSQL_DATABASE=library \
+    -e MYSQL_USER=user \
+    -e MYSQL_PASSWORD=changeit \
+    container-registry.oracle.com/mysql/community-server:9.7.3
 ```
 
-Run the H2 docker image:
-
-```shell [Terminal]
-docker run --rm -p 8082:8082 -p 9092:9092 --name=h2 -it h2db
-```
-
-#### From the Command Line
-
-A database stores the books from the library. H2 is a java SQL database that is
-easy to use and lightweight. If H2 is not installed on your machine, here are
-few steps to quickly download and set it up:
-
-1.  Download the latest H2 version from the official website:
-    <https://www.h2database.com/html/main.html>
-    - Note: Windows operating system users can download the Windows Installer.
-2.  Unzip the downloaded file into your directory.
-    - Only the h2-<version>.jar, located in the h2/bin folder, will be needed.
-3.  Open a terminal window and run the following command to start H2:.
-
-Replace <version> with your current H2 version:
-
-<!--@mdc ::code-callout -->
-```shell [Terminal]
-java -cp h2-{latest-version}.jar org.h2.tools.Shell -url dbc:h2:~/test -user sa -password "" -sql "" # <1>
-java -jar h2-{latest-version}.jar -webAllowOthers -tcpAllowOthers -web -tcp # <2>
-```
-1. Pre-create the database (optional if the file `~/test` already exists)
-2. Start the database
-<!--@mdc :: -->
+Wait until the container reports that MySQL is ready for connections. Keep it
+running while you build and exercise the application.
 
 ### Connect to the Database
 
-Open the console at <http://127.0.0.1:8082> in your favorite browser. It
-displays a login window. Select `Generic H2` from `Saved Settings`. The
-following settings should be set by default:
+Connect using the MySQL command-line client in a second terminal:
 
-- Driver Class: org.h2.Driver
-- JDBC URL: jdbc:h2:tcp://localhost:9092/~/test
-- User Name: sa
-- Password:
+```shell [Terminal]
+docker exec -it library-mysql mysql -uuser -p library
+```
 
-Password must stay empty. Click **Connect**, the browser displays a web page.
-The database is correctly set and running.
+Enter `changeit` when prompted. The application uses these connection settings:
+
+- Driver Class: `com.mysql.cj.jdbc.Driver`
+- JDBC URL: `jdbc:mysql://localhost:3306/library`
+- User Name: `user`
+- Password: `changeit`
 
 ### Create a Sample Helidon Project Using the Helidon CLI
 
@@ -196,13 +145,9 @@ Copy these dependencies to pom.xml:
         <artifactId>helidon-dbclient-hikari</artifactId> <!-- (3) -->
     </dependency>
     <dependency>
-        <groupId>com.h2database</groupId>
-        <artifactId>h2</artifactId> <!-- (4) -->
-    </dependency>
-    <dependency>
-        <groupId>com.oracle.database.jdbc</groupId>
-        <artifactId>ojdbc17-production</artifactId>
-        <type>pom</type>
+        <groupId>com.mysql</groupId>
+        <artifactId>mysql-connector-j</artifactId> <!-- (4) -->
+        <version>8.2.0</version>
     </dependency>
     <dependency>
         <groupId>org.slf4j</groupId>
@@ -230,7 +175,8 @@ Copy these dependencies to pom.xml:
 1. DB Client API dependency.
 2. Using JDBC driver for this example.
 3. Using HikariCP as a connection pool.
-4. H2 driver dependency.
+4. MySQL driver dependency with an explicit version; Helidon does not manage
+   the MySQL driver version for applications.
 5. Support for health check.
 6. Support for metrics.
 7. Support for Helidon JSON mapping.
@@ -262,12 +208,12 @@ Copy these properties into `application.yaml`:
 db:
   source: jdbc # <1>
   connection: # <2>
-    url: "jdbc:h2:tcp://localhost:9092/~/test"
-    username: "sa"
-    password:
+    url: "jdbc:mysql://localhost:3306/library"
+    username: "user"
+    password: "changeit"
   statements: # <3>
     health-check: "SELECT 0"
-    create-table: "CREATE TABLE IF NOT EXISTS LIBRARY (NAME VARCHAR NOT NULL, INFO VARCHAR NOT NULL)"
+    create-table: "CREATE TABLE IF NOT EXISTS LIBRARY (NAME VARCHAR(255) NOT NULL, INFO VARCHAR(255) NOT NULL)"
     insert-book: "INSERT INTO LIBRARY (NAME, INFO) VALUES (:name, :info)"
     select-book: "SELECT INFO FROM LIBRARY WHERE NAME = ?"
     delete-book: "DELETE FROM LIBRARY WHERE NAME = ?"
@@ -280,21 +226,15 @@ db:
         statement-names: [ "select-book" ]
 ```
 1. Source property support two values: jdbc and mongo.
-2. Connection detail we used to set up H2.
+2. Connection details for the MySQL database created above.
 3. SQL statements to manage the database.
 4. Add a counter for metrics only for the `select-book` statement.
 <!--@mdc :: -->
 
-Copy these properties into `application-test.yaml`:
-
-<!--@mdc ::code-callout -->
-```yaml [application-test.yaml]
-db:
-  connection:
-    url: "jdbc:h2:mem:test" # <1>
-```
-1. Override the JDBC URL to use an in-memory database for the tests
-<!--@mdc :: -->
+The quickstart greeting tests do not use the database. If you add database
+tests, provide a separate MySQL database and override the connection settings
+in `application-test.yaml`, or use Testcontainers to supply isolated connection
+settings for each test run.
 
 ### Set Up Helidon DB Client
 
@@ -555,7 +495,7 @@ mvn package
 
 Note that the tests are passing as the `GreetFeature` process was not modified.
 For the purposes of this demonstration, we only added independent new content to
-the existing application. Make sure H2 is running and start the Helidon
+the existing application. Make sure MySQL is running and start the Helidon
 quickstart with this command:
 
 Run the application:
@@ -564,10 +504,12 @@ Run the application:
 java -jar target/helidon-quickstart-se.jar
 ```
 
-Once the application starts, check the table LIBRARY is created in the H2
-database. To do so, go to the H2 Server console and LIBRARY table should be
-present in the left column under `jdbc:h2:tcp://localhost:9092/~/test`. If it is
-not, try to refresh the page, and it should appear.
+Once the application starts, check that the `LIBRARY` table was created in the
+MySQL command-line client:
+
+```sql
+SHOW TABLES;
+```
 
 Use `curl` to send request to the application:
 
@@ -699,7 +641,7 @@ Response body:
   "status": "UP",
   "checks": [
     {
-      "name": "jdbc:h2",
+      "name": "jdbc:mysql",
       "status": "UP"
     }
   ]
