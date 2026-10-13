@@ -16,9 +16,6 @@
 
 package io.helidon.openapi;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.util.List;
 import java.util.Map;
 
 import io.helidon.config.Config;
@@ -30,8 +27,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -80,22 +75,6 @@ class OpenApiFeatureConfigTest {
         assertThat(builder.buildPrototype().enabled(), is(enabled));
     }
 
-    @Test
-    void legacyMethodsAreDeprecated() throws NoSuchMethodException {
-        var methods = List.of(OpenApiFeatureConfig.class.getMethod("isEnabled"),
-                              OpenApiFeatureConfig.BuilderBase.class.getMethod("isEnabled"),
-                              OpenApiFeatureConfig.BuilderBase.class.getMethod("isEnabled", boolean.class));
-        for (var method : methods) {
-            var deprecated = method.getAnnotation(Deprecated.class);
-            assertThat(method.toString(), deprecated, notNullValue());
-            assertThat(method.toString(), deprecated.since(), is("28.0.0"));
-            assertThat(method.toString(), deprecated.forRemoval(), is(true));
-        }
-        assertThat(OpenApiFeatureConfig.class.getMethod("enabled").getAnnotation(Deprecated.class), nullValue());
-        assertThat(OpenApiFeatureConfig.BuilderBase.class.getMethod("enabled", boolean.class).getAnnotation(Deprecated.class),
-                   nullValue());
-    }
-
     @ParameterizedTest
     @CsvSource({"false, false", "false, true", "true, false", "true, true"})
     void builderCopyPreservesEnablementAndDiscovery(boolean enabled, boolean discover) {
@@ -113,27 +92,6 @@ class OpenApiFeatureConfigTest {
         assertThat(copy.servicesDiscoverServices(), is(!discover));
         assertThat(copy.managerDiscoverServices(), is(discover));
         assertThat(copy.buildPrototype().enabled(), is(enabled));
-    }
-
-    @Test
-    void legacyJvmSignaturesRemainCallable() throws Throwable {
-        var lookup = MethodHandles.publicLookup();
-        var setter = lookup.findVirtual(OpenApiFeatureConfig.BuilderBase.class,
-                                        "isEnabled",
-                                        MethodType.methodType(OpenApiFeatureConfig.BuilderBase.class, boolean.class));
-        var builderGetter = lookup.findVirtual(OpenApiFeatureConfig.BuilderBase.class,
-                                               "isEnabled",
-                                               MethodType.methodType(boolean.class));
-        var getter = lookup.findVirtual(OpenApiFeatureConfig.class, "isEnabled", MethodType.methodType(boolean.class));
-        OpenApiFeatureConfig.BuilderBase<?, ?> builder = OpenApiFeatureConfig.builder();
-
-        assertThat((OpenApiFeatureConfig.BuilderBase<?, ?>) setter.invokeExact(builder, false), sameInstance(builder));
-        assertThat((boolean) builderGetter.invokeExact(builder), is(false));
-        OpenApiFeatureConfig config = builder.buildPrototype();
-        assertThat((boolean) getter.invokeExact(config), is(false));
-        assertThat(config.enabled(), is(false));
-        // Adding a default preserves implementations compiled before enabled() existed.
-        assertThat(OpenApiFeatureConfig.class.getMethod("enabled").isDefault(), is(true));
     }
 
     @Test
