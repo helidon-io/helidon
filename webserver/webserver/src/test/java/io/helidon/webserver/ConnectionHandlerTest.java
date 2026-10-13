@@ -15,14 +15,19 @@
  */
 package io.helidon.webserver;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.nio.channels.SocketChannel;
+import java.nio.channels.spi.SelectorProvider;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -38,24 +43,34 @@ import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.configurable.AllowList;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.common.tls.Tls;
+import io.helidon.http.HttpException;
 import io.helidon.http.HttpTransportObserver.ConnectionObservation;
 import io.helidon.http.HttpTransportObserver.ConnectionOutcome;
+import io.helidon.http.RequestException;
+import io.helidon.http.Status;
 import io.helidon.webserver.spi.ServerConnection;
 import io.helidon.webserver.spi.ServerConnectionSelector;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
+@ResourceLock("webserver-error-log-summary")
+@ResourceLock("webserver-connection-handler-log")
 class ConnectionHandlerTest {
 
     @Test
@@ -133,6 +148,88 @@ class ConnectionHandlerTest {
     }
 
     @Test
+    void repeatedInnerConnectionFailuresPreserveFirstDetailsAndCleanup() throws Exception {
+        ErrorLogLimiter limiter = limiter(1, 10);
+        Exception first = new IllegalStateException("first diagnostic");
+        try (LogCapture details = new LogCapture(ConnectionHandler.class.getName());
+             LogCapture summaries = new LogCapture(ErrorLogLimiter.class.getName())) {
+            for (int i = 0; i < 4; i++) {
+                runConnectionFailure(first, limiter);
+            }
+            assertThat(details.warnings(), hasSize(1));
+            assertThat(details.warnings().getFirst().getThrown(), sameInstance(first));
+            assertThat(details.warnings().getFirst().getMessage(), containsString("unexpected exception [error-id="));
+            limiter.flush();
+            assertThat(summaries.warnings(), hasSize(1));
+            assertThat(summaries.warnings().getFirst().getMessage(), containsString(
+                    "Suppressed 3 internal server error log entries (per-error limit: 3, overall limit: 0, "
+                            + "identity limit: 0, identity work limit: 0)."));
+        }
+    }
+
+    @Test
+    void overallBudgetIsSharedByAllInnerInternalFailureSites() throws Exception {
+        ErrorLogLimiter limiter = limiter(10, 2);
+        List<Exception> failures = List.of(new IllegalStateException("software failure"),
+                                          new UncheckedIOException(new IOException("unexpected I/O failure")),
+                                          RequestException.builder().status(Status.INTERNAL_SERVER_ERROR_500).build(),
+                                          new HttpException("escaped internal failure", Status.INTERNAL_SERVER_ERROR_500));
+        try (LogCapture details = new LogCapture(ConnectionHandler.class.getName());
+             LogCapture summaries = new LogCapture(ErrorLogLimiter.class.getName())) {
+            for (Exception failure : failures) {
+                runConnectionFailure(failure, limiter);
+            }
+            assertThat(details.warnings(), hasSize(2));
+            assertThat(details.warnings().get(0).getThrown(), sameInstance(failures.get(0)));
+            assertThat(details.warnings().get(1).getThrown(), sameInstance(failures.get(1)));
+            limiter.flush();
+            assertThat(summaries.warnings(), hasSize(1));
+            assertThat(summaries.warnings().getFirst().getMessage(), containsString(
+                    "Suppressed 2 internal server error log entries (per-error limit: 0, overall limit: 2, "
+                            + "identity limit: 0, identity work limit: 0)."));
+        }
+    }
+
+    @Test
+    void expectedHttpAndTransportFailuresDoNotConsumeInternalErrorBudget() throws Exception {
+        ErrorLogLimiter limiter = limiter(1, 1);
+        List<Exception> expected = List.of(
+                RequestException.builder().status(Status.BAD_REQUEST_400).build(),
+                RequestException.builder().status(Status.NOT_FOUND_404).build(),
+                RequestException.builder().status(Status.SERVICE_UNAVAILABLE_503).build(),
+                new HttpException("bad request", Status.BAD_REQUEST_400),
+                new HttpException("not found", Status.NOT_FOUND_404),
+                new HttpException("unavailable", Status.SERVICE_UNAVAILABLE_503),
+                new SocketWriterException(),
+                new UncheckedIOException(new SocketException("peer disconnected")),
+                new InterruptedException("connection interrupted"));
+        Exception unexpected = new IllegalStateException("internal failure after expected failures");
+        Exception ioTimeout = new UncheckedIOException(new SocketTimeoutException("expected I/O timeout"));
+        Exception wrappedTimeout = new IllegalStateException("expected timeout", new SocketTimeoutException("timeout"));
+        try (LogCapture details = new LogCapture(ConnectionHandler.class.getName());
+             LogCapture summaries = new LogCapture(ErrorLogLimiter.class.getName())) {
+            for (Exception failure : expected) {
+                runConnectionFailure(failure, limiter);
+            }
+            runConnectionFailure(ioTimeout, limiter, ConnectionOutcome.TIMEOUT);
+            runConnectionFailure(wrappedTimeout, limiter, ConnectionOutcome.TIMEOUT);
+            runConnectionFailure(unexpected, limiter);
+            runConnectionFailure(unexpected, limiter);
+            assertThat(details.warnings(), hasSize(9));
+            assertThat(details.warnings().get(6).getThrown(), sameInstance(ioTimeout));
+            assertThat(details.warnings().get(7).getThrown(), sameInstance(wrappedTimeout));
+            assertThat(details.warnings().getLast().getThrown(), sameInstance(unexpected));
+            assertThat(details.records.stream().filter(it -> it.getThrown() != null && expected.contains(it.getThrown()))
+                               .map(LogRecord::getThrown).toList(), hasSize(9));
+            limiter.flush();
+            assertThat(summaries.warnings(), hasSize(1));
+            assertThat(summaries.warnings().getFirst().getMessage(), containsString(
+                    "Suppressed 1 internal server error log entries (per-error limit: 0, overall limit: 1, "
+                            + "identity limit: 0, identity work limit: 0)."));
+        }
+    }
+
+    @Test
     void firstTransportOutcomeWins() throws Exception {
         AssertionError failure = new AssertionError("unexpected failure");
         ListenerConfig listenerConfig = mock(ListenerConfig.class);
@@ -172,7 +269,7 @@ class ConnectionHandlerTest {
                                                      ConnectionOutcome expectedOutcome) throws Exception {
         ListenerConfig listenerConfig = mock(ListenerConfig.class);
         when(listenerConfig.useNio()).thenReturn(true);
-        ListenerContext listenerContext = mock(ListenerContext.class);
+        ListenerContext listenerContext = mock(ListenerContext.class, CALLS_REAL_METHODS);
         when(listenerContext.config()).thenReturn(listenerConfig);
         SocketChannel socket = mock(SocketChannel.class);
         when(socket.getRemoteAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 12345));
@@ -200,13 +297,81 @@ class ConnectionHandlerTest {
 
         try (TestLogHandler logHandler = TestLogHandler.install(failure)) {
             Thread thread = Thread.ofVirtual().start(handler::run);
-            LogRecord record = logHandler.await();
-            thread.join(TimeUnit.SECONDS.toMillis(5));
+            try {
+                LogRecord record = logHandler.await();
+                thread.join(TimeUnit.SECONDS.toMillis(5));
 
-            assertThat(thread.isAlive(), is(false));
-            assertThat(record.getThrown(), sameInstance(failure));
-            assertThat(record.getLevel(), is(expectedLevel));
-            verify(transportObservation).close(expectedOutcome);
+                assertThat(thread.isAlive(), is(false));
+                assertThat(record.getThrown(), sameInstance(failure));
+                assertThat(record.getLevel(), is(expectedLevel));
+                verify(transportObservation).close(expectedOutcome);
+            } finally {
+                thread.interrupt();
+                thread.join(TimeUnit.SECONDS.toMillis(5));
+                assertThat("Test connection thread terminated", thread.isAlive(), is(false));
+            }
+        }
+    }
+
+    private static ErrorLogLimiter limiter(int perError, int overall) {
+        return new ErrorLogLimiter(ErrorLogConfig.builder()
+                                           .maxPerError(perError)
+                                           .maxTotal(overall)
+                                           .build(), 0);
+    }
+
+    private static void runConnectionFailure(Exception failure, ErrorLogLimiter limiter) throws Exception {
+        runConnectionFailure(failure, limiter, ConnectionOutcome.ERROR);
+    }
+
+    private static void runConnectionFailure(Exception failure,
+                                             ErrorLogLimiter limiter,
+                                             ConnectionOutcome outcome) throws Exception {
+        ListenerConfig listenerConfig = mock(ListenerConfig.class);
+        when(listenerConfig.useNio()).thenReturn(true);
+        ListenerContext listenerContext = mock(ListenerContext.class, CALLS_REAL_METHODS);
+        when(listenerContext.config()).thenReturn(listenerConfig);
+        doAnswer(invocation -> {
+            limiter.log(invocation.getArgument(0), invocation.getArgument(1), invocation.getArgument(2),
+                        invocation.getArgument(3), 0);
+            return null;
+        }).when(listenerContext).logError(any(System.Logger.class), any(System.Logger.Level.class),
+                                         any(String.class), any(Throwable.class));
+        SocketChannel socket = mock(SocketChannel.class, withSettings().useConstructor(SelectorProvider.provider()));
+        when(socket.getRemoteAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 12345));
+        when(socket.getLocalAddress()).thenReturn(new InetSocketAddress("127.0.0.1", 80));
+        ListenerConfig virtualHostConfig = mock(ListenerConfig.class);
+        when(virtualHostConfig.sni()).thenReturn(SniConfig.create());
+        when(virtualHostConfig.virtualHosts()).thenReturn(List.of());
+        Tls tls = mock(Tls.class);
+        TestConnectionSelector selector = new TestConnectionSelector(failure);
+        LimitAlgorithm.Token token = mock(LimitAlgorithm.Token.class);
+        ConnectionObservation observation = mock(ConnectionObservation.class);
+        AtomicReference<ConnectionHandler> removed = new AtomicReference<>();
+        ConnectionHandler handler = new ConnectionHandler(listenerContext,
+                                                          Optional.empty(),
+                                                          token,
+                                                          mock(Limit.class),
+                                                          ConnectionProviders.create(List.of(selector)),
+                                                          socket,
+                                                          "server",
+                                                          Router.empty(),
+                                                          tls,
+                                                          VirtualHostRegistry.create("server", virtualHostConfig, tls),
+                                                          observation,
+                                                          removed::set);
+        Thread thread = Thread.ofVirtual().start(handler::run);
+        try {
+            thread.join(TimeUnit.SECONDS.toMillis(5));
+            assertThat("Connection handling terminated", thread.isAlive(), is(false));
+            verify(token).success();
+            assertThat("Connection socket closed", socket.isOpen(), is(false));
+            verify(observation).close(outcome);
+            assertThat(removed.get(), sameInstance(handler));
+        } finally {
+            thread.interrupt();
+            thread.join(TimeUnit.SECONDS.toMillis(5));
+            assertThat("Test connection thread terminated", thread.isAlive(), is(false));
         }
     }
 
@@ -246,6 +411,43 @@ class ConnectionHandlerTest {
                 public void close(boolean interrupt) {
                 }
             };
+        }
+    }
+
+    private static final class LogCapture extends Handler implements AutoCloseable {
+        private final List<LogRecord> records = new CopyOnWriteArrayList<>();
+        private final Logger logger;
+        private final Level previousLevel;
+        private final boolean previousUseParentHandlers;
+
+        private LogCapture(String name) {
+            logger = Logger.getLogger(name);
+            previousLevel = logger.getLevel();
+            previousUseParentHandlers = logger.getUseParentHandlers();
+            setLevel(Level.ALL);
+            logger.setLevel(Level.ALL);
+            logger.setUseParentHandlers(false);
+            logger.addHandler(this);
+        }
+
+        @Override
+        public void publish(LogRecord record) {
+            records.add(record);
+        }
+
+        @Override
+        public void flush() {
+        }
+
+        @Override
+        public void close() {
+            logger.removeHandler(this);
+            logger.setLevel(previousLevel);
+            logger.setUseParentHandlers(previousUseParentHandlers);
+        }
+
+        private List<LogRecord> warnings() {
+            return records.stream().filter(it -> it.getLevel() == Level.WARNING).toList();
         }
     }
 

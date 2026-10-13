@@ -466,10 +466,18 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext, C
             selectedConnection.handle(requestLimit);
         } catch (RequestException e) {
             httpTransportOutcome(ConnectionOutcome.ERROR);
-            helidonSocket.log(LOGGER, WARNING, "escaped Request exception", e);
+            if (e.status().code() == 500) {
+                listenerContext.logError(LOGGER, WARNING, "escaped Request exception", e);
+            } else {
+                helidonSocket.log(LOGGER, WARNING, "escaped Request exception", e);
+            }
         } catch (HttpException e) {
             httpTransportOutcome(ConnectionOutcome.ERROR);
-            helidonSocket.log(LOGGER, WARNING, "escaped HTTP exception", e);
+            if (e.status().code() == 500) {
+                listenerContext.logError(LOGGER, WARNING, "escaped HTTP exception", e);
+            } else {
+                helidonSocket.log(LOGGER, WARNING, "escaped HTTP exception", e);
+            }
         } catch (ServerConnectionException e) {
             httpTransportOutcome(isTimeout(e) ? ConnectionOutcome.TIMEOUT : ConnectionOutcome.ERROR);
             // socket exception - the socket failed, probably killed by OS, proxy or client
@@ -493,12 +501,18 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext, C
             if (e.getCause() instanceof SocketException) {
                 // socket exception - the socket failed, probably killed by OS, proxy or client
                 helidonSocket.log(LOGGER, TRACE, "server I/O issue", e);
-            } else {
+            } else if (isTimeout(e)) {
                 helidonSocket.log(LOGGER, WARNING, "unexpected I/O exception", e);
+            } else {
+                listenerContext.logError(LOGGER, WARNING, "unexpected I/O exception", e);
             }
         } catch (Exception e) {
             httpTransportOutcome(isTimeout(e) ? ConnectionOutcome.TIMEOUT : ConnectionOutcome.ERROR);
-            helidonSocket.log(LOGGER, WARNING, "unexpected exception", e);
+            if (isTimeout(e)) {
+                helidonSocket.log(LOGGER, WARNING, "unexpected exception", e);
+            } else {
+                listenerContext.logError(LOGGER, WARNING, "unexpected exception", e);
+            }
         }
     }
 
