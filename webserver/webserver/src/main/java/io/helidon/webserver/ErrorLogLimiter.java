@@ -32,11 +32,14 @@ final class ErrorLogLimiter {
 
     private final ErrorLogConfig config;
     private final long windowNanos;
+    private final long reportNanos;
     private final ReentrantLock lock = new ReentrantLock();
     private final Semaphore identityPermits = new Semaphore(MAX_IDENTITY_CALCULATIONS);
     private final Map<Long, ErrorState> errors = new LinkedHashMap<>();
+    private final Map<Long, ReportState> reportedErrors = new LinkedHashMap<>();
 
     private long windowStart;
+    private long reportStart;
     private int logged;
     private long suppressed;
     private long repeated;
@@ -47,7 +50,9 @@ final class ErrorLogLimiter {
     ErrorLogLimiter(ErrorLogConfig config, long now) {
         this.config = config;
         this.windowNanos = config.window().toNanos();
+        this.reportNanos = config.reportInterval().toNanos();
         this.windowStart = now;
+        this.reportStart = now;
     }
 
     void log(System.Logger logger, System.Logger.Level level, String message, Throwable failure, long now) {
@@ -120,7 +125,7 @@ final class ErrorLogLimiter {
         lock.lock();
         try {
             summary = summary();
-            reset();
+            resetReports();
         } finally {
             lock.unlock();
         }
@@ -188,7 +193,12 @@ final class ErrorLogLimiter {
             errors.put(identity, state);
         }
         if (state.logged == config.maxPerError()) {
-            state.suppressed = increment(state.suppressed);
+            ReportState report = reportedErrors.get(identity);
+            if (report != null) {
+                report.suppressed = increment(report.suppressed);
+            } else if (reportedErrors.size() < MAX_REPORTED_ERRORS) {
+                reportedErrors.put(identity, new ReportState());
+            }
             suppressed = increment(suppressed);
             repeated = increment(repeated);
             return false;
@@ -199,13 +209,19 @@ final class ErrorLogLimiter {
     }
 
     private String rollover(long now) {
-        long elapsed = now - windowStart;
-        if (elapsed < windowNanos) {
+        long windowElapsed = now - windowStart;
+        if (windowElapsed >= windowNanos) {
+            errors.clear();
+            logged = 0;
+            windowStart = now - windowElapsed % windowNanos;
+        }
+        long reportElapsed = now - reportStart;
+        if (reportElapsed < reportNanos) {
             return null;
         }
         String result = summary();
-        reset();
-        windowStart = now - elapsed % windowNanos;
+        resetReports();
+        reportStart = now - reportElapsed % reportNanos;
         return result;
     }
 
@@ -218,20 +234,15 @@ final class ErrorLogLimiter {
                 .append(repeated).append(", overall limit: ").append(overall)
                 .append(", identity limit: ").append(untracked)
                 .append(", identity work limit: ").append(identityBusy).append(").");
-        int reported = 0;
-        for (Map.Entry<Long, ErrorState> entry : errors.entrySet()) {
-            if (entry.getValue().suppressed != 0 && reported < MAX_REPORTED_ERRORS) {
-                result.append(" error-id=").append(Long.toUnsignedString(entry.getKey(), 16))
-                        .append(": ").append(entry.getValue().suppressed);
-                reported++;
-            }
+        for (Map.Entry<Long, ReportState> entry : reportedErrors.entrySet()) {
+            result.append(" error-id=").append(Long.toUnsignedString(entry.getKey(), 16))
+                    .append(": ").append(entry.getValue().suppressed);
         }
         return result.toString();
     }
 
-    private void reset() {
-        errors.clear();
-        logged = 0;
+    private void resetReports() {
+        reportedErrors.clear();
         suppressed = 0;
         repeated = 0;
         overall = 0;
@@ -241,6 +252,9 @@ final class ErrorLogLimiter {
 
     private static final class ErrorState {
         private int logged;
-        private long suppressed;
+    }
+
+    private static final class ReportState {
+        private long suppressed = 1;
     }
 }

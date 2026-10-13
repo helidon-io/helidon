@@ -440,9 +440,178 @@ class ErrorLogLimiterTest {
         assertThat(summaries, hasSize(0));
     }
 
+    @Test
+    void multipleReportsDoNotRenewPerErrorAllowanceWithinCollectionWindow() {
+        ErrorLogLimiter limiter = limiter(1, 10, 10, 0, 25);
+        log(limiter, failure("first", 1), 0);
+        log(limiter, failure("first repeat", 1), 1);
+        limiter.report(24);
+        assertThat(summaries, hasSize(0));
+        limiter.report(25);
+        assertSummary(0, 1, 1, 0, 0);
+        log(limiter, failure("second report period", 1), 26);
+        limiter.report(50);
+        assertSummary(1, 1, 1, 0, 0);
+        assertThat(details.entries, hasSize(1));
+        log(limiter, failure("third report period", 1), 51);
+        limiter.report(75);
+        assertSummary(2, 1, 1, 0, 0);
+        log(limiter, failure("next collection", 1), WINDOW);
+        assertThat(details.entries, hasSize(2));
+        limiter.flush();
+        assertThat(summaries, hasSize(3));
+    }
+
+    @Test
+    void overallAndTrackedIdentityAllowancesPersistAcrossReports() {
+        ErrorLogLimiter limiter = limiter(10, 2, 1, 0, 25);
+        log(limiter, failure("first identity", 1), 0);
+        log(limiter, failure("untracked identity", 2), 1);
+        limiter.report(25);
+        assertSummary(0, 1, 0, 0, 1);
+        log(limiter, failure("still untracked", 2), 26);
+        log(limiter, failure("retained identity second allowance", 1), 27);
+        log(limiter, failure("overall limit reached", 3), 28);
+        limiter.report(50);
+        assertSummary(1, 2, 0, 1, 1);
+        log(limiter, failure("overall still exhausted", 1), 51);
+        limiter.report(75);
+        assertSummary(2, 1, 0, 1, 0);
+        assertThat(details.entries, hasSize(2));
+        log(limiter, failure("new collection new identity", 3), WINDOW);
+        assertThat(details.entries, hasSize(3));
+    }
+
+    @Test
+    void longerNonDivisorReportIntervalRetainsCountsAndIdentitiesAcrossCollectionResets() {
+        ErrorLogLimiter limiter = limiter(1, 10, 10, 0, 250);
+        for (int i = 0; i < 3; i++) {
+            log(limiter, failure("first in collection", i), i * WINDOW);
+            log(limiter, failure("repeat in collection", i), i * WINDOW + 1);
+        }
+        limiter.report(249);
+        assertThat(details.entries, hasSize(3));
+        assertThat(summaries, hasSize(0));
+        limiter.report(250);
+        assertSummary(0, 3, 3, 0, 0);
+        for (Entry entry : details.entries) {
+            String identity = entry.message().split("error-id=")[1].replace("]", "");
+            assertThat(summaries.getFirst().getMessage(), containsString("error-id=" + identity + ": 1"));
+        }
+        log(limiter, failure("still same collection", 2), 251);
+        assertThat(details.entries, hasSize(3));
+        log(limiter, failure("next collection", 2), 300);
+        assertThat(details.entries, hasSize(4));
+        limiter.report(500);
+        assertSummary(1, 1, 1, 0, 0);
+        assertThat(summaries, hasSize(2));
+    }
+
+    @Test
+    void logReportsOnIndependentNonDivisorIntervalWithoutRenewingAllowance() {
+        ErrorLogLimiter limiter = limiter(1, 10, 10, 0, 30);
+        log(limiter, failure("first", 1), 0);
+        log(limiter, failure("repeat", 1), 1);
+        log(limiter, failure("report boundary", 1), 30);
+        assertSummary(0, 1, 1, 0, 0);
+        log(limiter, failure("second report boundary", 1), 60);
+        assertSummary(1, 1, 1, 0, 0);
+        log(limiter, failure("collection boundary", 1), WINDOW);
+        assertSummary(2, 1, 1, 0, 0);
+        assertThat(details.entries, hasSize(2));
+        limiter.report(120);
+        limiter.flush();
+        assertThat(summaries, hasSize(3));
+    }
+
+    @Test
+    void reportSamplesRemainBoundedAcrossManyCollectionWindows() {
+        ErrorLogLimiter limiter = limiter(1, 10, 1, 0, 2500);
+        for (int i = 0; i < 20; i++) {
+            log(limiter, failure("first in collection", i), i * WINDOW);
+            log(limiter, failure("repeat in collection", i), i * WINDOW + 1);
+        }
+        assertThat(details.entries, hasSize(20));
+        assertThat(summaries, hasSize(0));
+        limiter.report(2500);
+        assertSummary(0, 20, 20, 0, 0);
+        assertThat(summaries.getFirst().getMessage().split("error-id=").length - 1, is(8));
+        limiter.flush();
+        assertThat(summaries, hasSize(1));
+    }
+
+    @Test
+    void shutdownFlushReportsOnlyPendingCountsAndDoesNotRenewAllowances() {
+        ErrorLogLimiter limiter = limiter(1, 10, 10, 0, 25);
+        log(limiter, failure("first", 1), 0);
+        log(limiter, failure("first report", 1), 1);
+        limiter.report(25);
+        assertSummary(0, 1, 1, 0, 0);
+        log(limiter, failure("pending at shutdown", 1), 26);
+        limiter.flush();
+        assertSummary(1, 1, 1, 0, 0);
+        limiter.flush();
+        assertThat(summaries, hasSize(2));
+        log(limiter, failure("allowance remains exhausted after flush", 1), 27);
+        assertThat(details.entries, hasSize(1));
+        limiter.flush();
+        assertSummary(2, 1, 1, 0, 0);
+    }
+
+    @Test
+    void independentCollectionAndReportClocksSurviveNanoTimeWrap() {
+        long start = Long.MAX_VALUE - 50;
+        ErrorLogLimiter limiter = limiter(1, 10, 10, start, 25);
+        log(limiter, failure("first", 1), start);
+        log(limiter, failure("repeat", 1), start + 1);
+        limiter.report(start + 25);
+        assertSummary(0, 1, 1, 0, 0);
+        log(limiter, failure("wrapped repeat", 1), start + 60);
+        limiter.report(start + 75);
+        assertSummary(1, 1, 1, 0, 0);
+        log(limiter, failure("wrapped collection boundary", 1), start + WINDOW);
+        assertThat(details.entries, hasSize(2));
+        limiter.flush();
+        assertThat(summaries, hasSize(2));
+    }
+
+    @Test
+    void concurrentAttemptsRemainAccountedAcrossIndependentReportAndCollectionBoundaries() throws Exception {
+        ErrorLogLimiter limiter = limiter(1, 100, 10, 0, 25);
+        runConcurrent(8, () -> {
+            for (int i = 0; i < 10; i++) {
+                log(limiter, failure("first period", 1), 0);
+            }
+        });
+        assertThat(details.entries, hasSize(1));
+        runConcurrent(8, () -> limiter.report(25));
+        assertConcurrentSummary(0, 79, true);
+        runConcurrent(8, () -> {
+            for (int i = 0; i < 10; i++) {
+                log(limiter, failure("second period", 1), 26);
+            }
+        });
+        runConcurrent(8, () -> limiter.report(50));
+        assertConcurrentSummary(1, 80, true);
+        assertThat(details.entries, hasSize(1));
+        runConcurrent(8, () -> {
+            limiter.report(WINDOW);
+            log(limiter, failure("next collection", 1), WINDOW);
+        });
+        assertThat(details.entries, hasSize(2));
+        limiter.flush();
+        assertConcurrentSummary(2, 7, true);
+        assertThat(summaries, hasSize(3));
+    }
+
     private static ErrorLogLimiter limiter(int perError, int total, int identities, long now) {
+        return limiter(perError, total, identities, now, WINDOW);
+    }
+
+    private static ErrorLogLimiter limiter(int perError, int total, int identities, long now, long reportInterval) {
         return new ErrorLogLimiter(ErrorLogConfig.builder()
                                            .window(Duration.ofNanos(WINDOW))
+                                           .reportInterval(Duration.ofNanos(reportInterval))
                                            .maxPerError(perError)
                                            .maxTotal(total)
                                            .maxErrors(identities)

@@ -1016,8 +1016,8 @@ expected HTTP errors, and a handler explicitly sending status `500` are
 unaffected.
 
 The limits are enabled by default and shared by all listeners of one
-WebServer. Each one-minute window permits one detailed log entry per error
-identity and at most 100 detailed entries overall. The first permitted entry
+WebServer. Each one-hour collection window permits one detailed log entry per
+error identity and at most 100 detailed entries overall. The first permitted entry
 includes the original diagnostic and exception details, with an `error-id` for
 correlation. Further entries are suppressed until the next window.
 
@@ -1027,10 +1027,11 @@ stack frames per exception. Exception messages and request data are excluded,
 so changing request values or exception messages does not create new identities
 for the same failure.
 
-At most 100 identities are retained per window by default. When this limit is
-reached, new identities are suppressed until the next window; existing
-identities remain tracked. The limiter retains only fixed-size fingerprints
-and counters, rather than exceptions, messages, requests, or stack traces.
+At most 100 identities are retained per collection window by default. When
+this limit is reached, new identities are suppressed until the next window; existing
+identities remain tracked. Suppression reports separately retain at most eight
+identity examples. Both collections retain only fixed-size fingerprints and
+counters, rather than exceptions, messages, requests, or stack traces.
 Accounting is thread-safe, and suppression counters saturate rather than
 overflow.
 
@@ -1041,13 +1042,21 @@ their exceptions. Under concurrent failure traffic, this can suppress the
 first detailed entry for a distinct error. The aggregate count remains exact,
 but these entries cannot be attributed to individual error identities.
 
-If entries were suppressed, WebServer emits one aggregate warning at window
-rollover, including when traffic has stopped, and reports remaining counts at
-shutdown. The warning gives the total suppressed count and counts attributable
-to the per-error, overall, retained-identity, and identity-work limits. It also
-lists counts for up to eight tracked `error-id` values that reached the per-error limit.
-This summary is additional to the overall detailed-entry limit, so a window
-can produce at most `max-total` detailed entries plus one aggregate warning.
+If entries were suppressed, WebServer emits at most one aggregate warning per
+reporting interval, which defaults to ten minutes, including when traffic has
+stopped. It reports remaining counts once at shutdown. Each warning gives
+counts since the previous report: the total suppressed count and counts
+attributable to the per-error, overall, retained-identity, and identity-work
+limits. It also lists counts for up to eight `error-id` examples of repeated
+failures, which can be correlated with their detailed entries.
+
+Reporting clears the suppression counts and examples without renewing any
+detailed-entry allowances. The collection window renews the per-error and
+overall allowances and clears retained detail identities; pending suppression
+counts survive until the next report. These two schedules are independent:
+the reporting interval can be shorter or longer than the collection window
+and does not need to divide it evenly. Aggregate warnings are additional to
+the `max-total` detailed-entry limit.
 
 Configure the limits under `server.error-log`. The following values are the
 defaults:
@@ -1056,7 +1065,8 @@ defaults:
 server:
   error-log:
     enabled: true
-    window: PT1M
+    window: PT1H
+    report-interval: PT10M
     max-per-error: 1
     max-total: 100
     max-errors: 100
@@ -1068,14 +1078,15 @@ The equivalent programmatic configuration is:
 WebServer.builder()
         .errorLog(it -> it
                 .enabled(true)
-                .window(Duration.ofMinutes(1))
+                .window(Duration.ofHours(1))
+                .reportInterval(Duration.ofMinutes(10))
                 .maxPerError(1)
                 .maxTotal(100)
                 .maxErrors(100));
 ```
 
-The window and all three limits must be positive; the window must also be
-representable in nanoseconds. Set `server.error-log.enabled` to `false`, or
+Both durations and all three limits must be positive; both durations must also
+be representable in nanoseconds. Set `server.error-log.enabled` to `false`, or
 use `.errorLog(it -> it.enabled(false))`, to restore unrestricted internal
 error logging.
 

@@ -15,23 +15,30 @@
  */
 package io.helidon.webserver;
 
+import java.time.Duration;
+
 import io.helidon.builder.api.Prototype;
 
 final class ErrorLogConfigSupport {
     private ErrorLogConfigSupport() {
     }
 
+    private static void validateDuration(Duration duration, String name) {
+        if (duration.isNegative() || duration.isZero()) {
+            throw new IllegalArgumentException("Error log " + name + " must be positive");
+        }
+        try {
+            duration.toNanos();
+        } catch (ArithmeticException e) {
+            throw new IllegalArgumentException("Error log " + name + " is too large", e);
+        }
+    }
+
     static final class BuilderDecorator implements Prototype.BuilderDecorator<ErrorLogConfig.BuilderBase<?, ?>> {
         @Override
         public void decorate(ErrorLogConfig.BuilderBase<?, ?> target) {
-            if (target.window().isNegative() || target.window().isZero()) {
-                throw new IllegalArgumentException("Error log window must be positive");
-            }
-            try {
-                target.window().toNanos();
-            } catch (ArithmeticException e) {
-                throw new IllegalArgumentException("Error log window is too large", e);
-            }
+            validateDuration(target.window(), "window");
+            validateDuration(target.reportInterval(), "report interval");
             if (target.maxPerError() < 1 || target.maxTotal() < 1 || target.maxErrors() < 1) {
                 throw new IllegalArgumentException("Error log max-per-error, max-total and max-errors must be positive");
             }

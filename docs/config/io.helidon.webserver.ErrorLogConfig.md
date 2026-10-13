@@ -43,15 +43,27 @@ Limits for WebServer's internal error diagnostics, shared by all listeners of a 
 </tr>
 <tr>
 <td>
+<code>report-<wbr>interval</code>
+</td>
+<td>
+<code>Duration</code>
+</td>
+<td>
+<code>PT10M</code>
+</td>
+<td>Interval for suppression reports</td>
+</tr>
+<tr>
+<td>
 <code>window</code>
 </td>
 <td>
 <code>Duration</code>
 </td>
 <td>
-<code>PT1M</code>
+<code>PT1H</code>
 </td>
-<td>Window for detailed logs and suppression reports</td>
+<td>Collection window for detailed logs and retained error identities</td>
 </tr>
 <tr>
 <td>

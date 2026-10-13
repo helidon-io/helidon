@@ -37,14 +37,25 @@ interface ErrorLogConfigBlueprint {
     boolean enabled();
 
     /**
-     * Window for detailed logs and suppression reports. Must be positive and representable in nanoseconds.
-     * Suppressed counts are reported at most once per window, even if traffic stops, and once at shutdown.
+     * Collection window for detailed logs and retained error identities. Must be positive and representable in nanoseconds.
+     * Detailed-log allowances reset when the window ends, independently of suppression reports.
      *
-     * @return window, defaults to one minute
+     * @return collection window, defaults to one hour
      */
     @Option.Configured
-    @Option.Default("PT1M")
+    @Option.Default("PT1H")
     Duration window();
+
+    /**
+     * Interval for suppression reports. Must be positive and representable in nanoseconds.
+     * Each report contains counts since the previous report, even if traffic stops, without resetting detailed-log allowances.
+     * Pending counts are also reported once at shutdown.
+     *
+     * @return reporting interval, defaults to ten minutes
+     */
+    @Option.Configured
+    @Option.Default("PT10M")
+    Duration reportInterval();
 
     /**
      * Maximum detailed logs for one error identity per window. Must be positive.
@@ -59,7 +70,7 @@ interface ErrorLogConfigBlueprint {
 
     /**
      * Maximum detailed logs across all error identities and listeners per window. Must be positive.
-     * Suppression reports are additional, bounded to one aggregate record per window.
+     * Suppression reports are additional, bounded to one aggregate record per reporting interval plus shutdown.
      *
      * @return overall limit, defaults to {@code 100}
      */

@@ -145,7 +145,7 @@ class ErrorLogLimitingTest {
     void reportsSuppressionWhenTrafficStops() throws Exception {
         try (LogCapture logs = new LogCapture();
              TestServer server = new TestServer(builder -> builder.errorLog(log -> log
-                     .window(Duration.ofSeconds(5))
+                     .reportInterval(Duration.ofSeconds(5))
                      .maxPerError(1)))) {
             assertError(server.request(false, false, "/failure"));
             assertError(server.request(false, false, "/failure"));
@@ -156,6 +156,41 @@ class ErrorLogLimitingTest {
             assertThat(summary.getMessage(), containsString("Suppressed 2 internal server error log entries"));
             assertThat(summary.getMessage(), containsString("per-error limit: 2"));
             assertThat(logs.failures(), hasSize(1));
+        }
+    }
+
+    @Test
+    void periodicReportsKeepTheCollectionAllowanceAndReportOnlyNewSuppression() throws Exception {
+        try (LogCapture logs = new LogCapture();
+             TestServer server = new TestServer(builder -> builder.errorLog(log -> log
+                     .window(Duration.ofHours(1))
+                     .reportInterval(Duration.ofSeconds(5))
+                     .maxPerError(1)))) {
+            assertError(server.request(false, false, "/failure?input=first"));
+            assertError(server.request(false, false, "/failure?input=second"));
+            assertError(server.request(false, false, "/failure?input=third"));
+
+            LogRecord firstSummary = logs.summaries.poll(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            assertThat("first interval must be reported after traffic stops", firstSummary, notNullValue());
+            assertThat(firstSummary.getMessage(), containsString("Suppressed 2 internal server error log entries"));
+            assertThat(firstSummary.getMessage(), containsString("per-error limit: 2"));
+            assertThat(logs.failures(), hasSize(1));
+
+            // Changing protocol and input after a report must not renew the hour-long detailed allowance.
+            assertError(server.request(true, false, "/failure?input=fourth"));
+            assertError(server.request(true, false, "/failure?input=fifth"));
+            assertError(server.request(true, false, "/failure?input=sixth"));
+
+            LogRecord secondSummary = logs.summaries.poll(TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+            assertThat("second interval must also be reported without another request", secondSummary, notNullValue());
+            assertThat("reports must count only suppressions since the previous report",
+                       secondSummary.getMessage(), containsString("Suppressed 3 internal server error log entries"));
+            assertThat(secondSummary.getMessage(), containsString("per-error limit: 3"));
+            assertThat("periodic reports must not renew the detailed allowance", logs.failures(), hasSize(1));
+            Throwable original = logs.failures().getFirst().getThrown().getCause();
+            assertThat(original, instanceOf(IllegalStateException.class));
+            assertThat(original.getMessage(), is("input=first"));
+            assertThat(original.getStackTrace()[0].getMethodName(), is("fail"));
         }
     }
 

@@ -33,7 +33,8 @@ class ErrorLogConfigTest {
     void defaults() {
         ErrorLogConfig config = ErrorLogConfig.create();
         assertThat(config.enabled(), is(true));
-        assertThat(config.window(), is(Duration.ofMinutes(1)));
+        assertThat(config.window(), is(Duration.ofHours(1)));
+        assertThat(config.reportInterval(), is(Duration.ofMinutes(10)));
         assertThat(config.maxPerError(), is(1));
         assertThat(config.maxTotal(), is(100));
         assertThat(config.maxErrors(), is(100));
@@ -45,12 +46,14 @@ class ErrorLogConfigTest {
         Config external = Config.just(ConfigSources.create(Map.of(
                 "server.error-log.enabled", "false",
                 "server.error-log.window", "PT2S",
+                "server.error-log.report-interval", "PT1S",
                 "server.error-log.max-per-error", "3",
                 "server.error-log.max-total", "11",
                 "server.error-log.max-errors", "7")));
         ErrorLogConfig expected = ErrorLogConfig.builder()
                 .enabled(false)
                 .window(Duration.ofSeconds(2))
+                .reportInterval(Duration.ofSeconds(1))
                 .maxPerError(3)
                 .maxTotal(11)
                 .maxErrors(7)
@@ -81,9 +84,34 @@ class ErrorLogConfigTest {
     }
 
     @Test
+    void rejectsInvalidReportIntervalsEvenWhenDisabled() {
+        for (Duration interval : new Duration[] {Duration.ZERO, Duration.ofNanos(-1), Duration.ofSeconds(Long.MAX_VALUE)}) {
+            assertThrows(IllegalArgumentException.class, () -> ErrorLogConfig.builder().reportInterval(interval).build());
+            assertThrows(IllegalArgumentException.class,
+                         () -> ErrorLogConfig.builder().enabled(false).reportInterval(interval).build());
+        }
+        assertThat(ErrorLogConfig.builder().reportInterval(Duration.ofNanos(1)).build().reportInterval(),
+                   is(Duration.ofNanos(1)));
+        assertThat(ErrorLogConfig.builder().reportInterval(Duration.ofNanos(Long.MAX_VALUE)).build().reportInterval(),
+                   is(Duration.ofNanos(Long.MAX_VALUE)));
+    }
+
+    @Test
+    void collectionWindowAndReportIntervalHaveIndependentDurations() {
+        for (Duration interval : List.of(Duration.ofNanos(1), Duration.ofNanos(100), Duration.ofNanos(250))) {
+            ErrorLogConfig config = ErrorLogConfig.builder()
+                    .window(Duration.ofNanos(100))
+                    .reportInterval(interval)
+                    .build();
+            assertThat(config.reportInterval(), is(interval));
+        }
+    }
+
+    @Test
     void externalConfigurationIsValidated() {
         for (Map<String, String> values : List.of(
                 Map.of("window", "PT0S"),
+                Map.of("report-interval", "PT0S"),
                 Map.of("max-per-error", "0"),
                 Map.of("max-total", "-1"),
                 Map.of("max-errors", "0"))) {

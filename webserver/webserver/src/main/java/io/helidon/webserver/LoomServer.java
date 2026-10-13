@@ -469,7 +469,7 @@ class LoomServer implements WebServer, Resumable {
         if (!serverConfig.errorLog().enabled()) {
             return;
         }
-        long periodMillis = (serverConfig.errorLog().window().toNanos() - 1) / 1_000_000 + 1;
+        long periodMillis = (serverConfig.errorLog().reportInterval().toNanos() - 1) / 1_000_000 + 1;
         errorLogTimer = new Timer("helidon-error-log-timer", true);
         errorLogTimer.schedule(new TimerTask() {
             @Override
