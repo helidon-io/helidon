@@ -1573,7 +1573,8 @@ final class GenerateAbstractBuilder {
                         .addContentLiteral("****")
                         .addContent(")");
             }
-        } else if (typeName.array()) {
+        } else if (option.declaredType().array()
+                || (option.declaredType().isOptional() && typeName.array())) {
             if (!isBuilder && option.declaredType().isOptional()) {
                 method.addContent(name + ".map(")
                         .addContent(Arrays.class)
