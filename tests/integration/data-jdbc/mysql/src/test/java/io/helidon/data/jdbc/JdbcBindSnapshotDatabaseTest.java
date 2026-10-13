@@ -19,12 +19,14 @@ import javax.sql.DataSource;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+@Testcontainers(disabledWithoutDocker = true)
 @ExtendWith(MySqlTestDatabase.class)
 class JdbcBindSnapshotDatabaseTest {
 

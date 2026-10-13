@@ -16,6 +16,9 @@ import {{.}};
 import static {{.}};
 {{/MainTest-static-imports}}
 
+{{#database}}
+@Testcontainers(disabledWithoutDocker = true)
+{{/database}}
 abstract class AbstractMainTest {
 {{#MainTest-static-fields}}
     private static final {{.}};

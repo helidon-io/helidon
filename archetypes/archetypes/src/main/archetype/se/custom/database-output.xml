@@ -241,6 +241,11 @@ docker run --rm --name mongo -p 27017:27017 mongo
                     <value key="artifactId">mysql</value>
                     <value key="scope">test</value>
                 </map>
+                <map>
+                    <value key="groupId">org.testcontainers</value>
+                    <value key="artifactId">junit-jupiter</value>
+                    <value key="scope">test</value>
+                </map>
             </list>
             <list key="Main-helidon-imports" >
                 <value>io.helidon.common.context.Contexts</value>
@@ -262,6 +267,7 @@ docker run --rm --name mongo -p 27017:27017 mongo
             <list key="MainTest-other-imports">
                 <value>org.junit.jupiter.api.AfterAll</value>
                 <value>org.testcontainers.containers.MySQLContainer</value>
+                <value>org.testcontainers.junit.jupiter.Testcontainers</value>
                 <value>org.testcontainers.utility.DockerImageName</value>
                 <value>jakarta.json.Json</value>
                 <value>jakarta.json.JsonArray</value>
@@ -456,7 +462,8 @@ Start your database before running this example.
 
 The generated tests start and stop a separate MySQL database using Testcontainers.
 A Docker-compatible container runtime is required to run them, including when
-the application is configured for Oracle DB or MongoDB.
+the application is configured for Oracle DB or MongoDB. These tests are skipped
+when Docker is unavailable.
 
 Example docker commands to start databases in temporary containers:
 {{start-db}}

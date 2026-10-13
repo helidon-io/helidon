@@ -93,17 +93,19 @@ pool uses a Testcontainers MySQL database initialized from `mixed-provider/src/m
 
 ## Maven profiles
 
-The MySQL, PostgreSQL, and Oracle Database modules are in the `long-tests`
-Maven profile. This profile is enabled by default so the complete integration
-suite continues to run without additional command-line options.
+The imperative and declarative MySQL, PostgreSQL, and Oracle Database leaves
+are in the `long-tests` Maven profile. This profile is enabled by default so
+the complete integration suite continues to run without additional command-line options.
+The provider-level `mysql` module and `mixed-provider` module are included
+regardless of this profile. All container-backed tests skip when Docker is unavailable.
 
 The Maven options have different meanings:
 
 | Option | Meaning in this reactor |
 | --- | --- |
-| `-Plong-tests` | Explicitly activates the `long-tests` Maven profile and includes the MySQL, PostgreSQL, and Oracle Database modules. |
-| `-P-long-tests` | Explicitly deactivates the `long-tests` Maven profile and excludes the container-backed database modules. |
-| `-Dlong-tests` | Defines a Maven property. Because the profile is automatically activated only when this property is absent (`!long-tests`), defining it also excludes the external database modules. It does not enable them. |
+| `-Plong-tests` | Explicitly activates the `long-tests` Maven profile and includes the imperative and declarative database leaves. |
+| `-P-long-tests` | Explicitly deactivates the `long-tests` Maven profile and excludes the imperative and declarative database leaves. The provider-level `mysql` and `mixed-provider` modules remain included. |
+| `-Dlong-tests` | Defines a Maven property. Because the profile is automatically activated only when this property is absent (`!long-tests`), defining it also excludes the imperative and declarative database leaves. It does not enable them or exclude the provider-level `mysql` and `mixed-provider` modules. |
 
 The commands below use explicit profile activation or deactivation to avoid
 depending on the `!long-tests` automatic-activation rule.
