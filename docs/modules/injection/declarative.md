@@ -29,8 +29,69 @@ To create a declarative application, use the annotations provided in our
 Helidon modules (details under [Features](#features)), and the maven plugin
 described in [Injection: Startup](injection.md#startup) to generate the binding.
 
-In addition, the following section must be added to the `build` of the Maven
-`pom.xml` to enable annotation processors that generate the necessary code:
+### Maven setup
+
+The Helidon SE application parent configures the annotation processors that
+generate the necessary code by default:
+
+```xml [pom.xml]
+<parent>
+  <groupId>io.helidon.applications</groupId>
+  <artifactId>helidon-se</artifactId>
+  <version>28.0.0-SNAPSHOT</version>
+  <relativePath/>
+</parent>
+```
+
+Use the Helidon version selected for your application. This parent provides
+dependency and plugin management and includes
+`helidon-bundles-apt` on the compiler's annotation processor path for both main
+and test sources. No compiler plugin declaration or processor dependency is
+needed in the application POM. Applications still declare the dependencies for
+the features they use and configure the binding plugin described in
+[Injection: Startup](injection.md#startup).
+
+Applications already using `helidon-se` can remove their repeated
+`helidon-bundles-apt` processor path. Keep any other compiler configuration.
+
+#### Additional annotation processors
+
+The application parent appends application-supplied processor paths to the
+inherited Helidon bundle. Declare only the additional processors. For example,
+an application using Helidon Data with Jakarta Persistence adds its integration
+processor as follows:
+
+```xml [pom.xml]
+<build>
+  <plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-compiler-plugin</artifactId>
+      <configuration>
+        <annotationProcessorPaths>
+          <path>
+            <groupId>io.helidon.data.jakarta.persistence</groupId>
+            <artifactId>helidon-data-jakarta-persistence-codegen</artifactId>
+            <version>${helidon.version}</version>
+          </path>
+        </annotationProcessorPaths>
+      </configuration>
+    </plugin>
+  </plugins>
+</build>
+```
+
+As with any explicit Maven compiler processor path, additional processors must
+be listed there; they are not discovered from ordinary application dependencies.
+The inherited `combine.children="append"` preserves both sets of paths. Use
+`combine.self="override"` on `annotationProcessorPaths` only when intentionally
+replacing the entire inherited processor path, including the Helidon processors.
+
+#### Applications using another parent
+
+If the application cannot inherit from `helidon-se`, configure the
+compiler directly. Add the following plugin to the `build` section of its POM,
+define `helidon.version`, and use a recent Maven Compiler Plugin version:
 
 ```xml [pom.xml]
 <plugins>
