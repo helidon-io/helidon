@@ -3708,9 +3708,9 @@
     {
       "name": "zlib",
       "purls": [
-        "pkg:apk/alpine/zlib@1.3.2-r0?distro=alpine-3.21.3"
+        "pkg:apk/alpine/zlib@1.3.2-r1?distro=alpine-3.21.3"
       ],
-      "version": "1.3.2-r0"
+      "version": "1.3.2-r1"
     },
     {
       "name": "zstd-libs",
