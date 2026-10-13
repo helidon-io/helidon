@@ -157,7 +157,7 @@ interface TypeNameBlueprint extends Annotated {
     List<String> typeParameters();
 
     /**
-     * Generic types that provide keyword {@code extends} will have a lower bound defined.
+     * Generic types that provide keyword {@code super} will have a lower bound defined.
      * Each lower bound may be a real type, or another generic type.
      * <p>
      * This list may only have value if this is a generic type.
@@ -170,7 +170,7 @@ interface TypeNameBlueprint extends Annotated {
     List<TypeName> lowerBounds();
 
     /**
-     * Generic types that provide keyword {@code super} will have an upper bound defined.
+     * Generic types that provide keyword {@code extends} will have an upper bound defined.
      * Upper bound may be a real type, or another generic type.
      * <p>
      * This list may only have value if this is a generic type.

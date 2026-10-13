@@ -17,6 +17,7 @@
 package io.helidon.builder.test;
 
 import io.helidon.builder.test.testsubjects.tostring.ArrayValues;
+import io.helidon.builder.test.testsubjects.tostring.OptionalArrayValues;
 import io.helidon.builder.test.testsubjects.tostring.Secret;
 
 import org.junit.jupiter.api.Test;
@@ -60,6 +61,63 @@ class ToStringTest {
     void testToStringWithUnsetArrays() {
         assertThat(ArrayValues.builder().toString(),
                    is("ArrayValuesBuilder{data=null,secretData=null,secretChars=null,optionalSecretChars=null}"));
+    }
+
+    @Test
+    void testToStringWithOptionalArrays() {
+        var builder = OptionalArrayValues.builder()
+                .data(new byte[] {1, 2, 3})
+                .values(new String[] {"first", null, "last"})
+                .secretData(new byte[] {4, 5, 6})
+                .secretChars("secret".toCharArray());
+
+        assertThat(builder.toString(),
+                   is("OptionalArrayValuesBuilder{data=[1, 2, 3],values=[first, null, last],secretData=****,secretChars=****}"));
+        assertThat(builder.build().toString(),
+                   is("OptionalArrayValues{data=Optional[[1, 2, 3]],values=Optional[[first, null, last]],"
+                              + "secretData=****,secretChars=****}"));
+    }
+
+    @Test
+    void testToStringWithOptionalEmptyArrays() {
+        var builder = OptionalArrayValues.builder()
+                .data(new byte[0])
+                .values(new String[0])
+                .secretData(new byte[0])
+                .secretChars(new char[0]);
+
+        assertThat(builder.toString(),
+                   is("OptionalArrayValuesBuilder{data=[],values=[],secretData=****,secretChars=****}"));
+        assertThat(builder.build().toString(),
+                   is("OptionalArrayValues{data=Optional[[]],values=Optional[[]],secretData=****,secretChars=****}"));
+    }
+
+    @Test
+    void testToStringWithUnsetOptionalArrays() {
+        var builder = OptionalArrayValues.builder();
+
+        assertThat(builder.toString(),
+                   is("OptionalArrayValuesBuilder{data=null,values=null,secretData=null,secretChars=null}"));
+        assertThat(builder.build().toString(),
+                   is("OptionalArrayValues{data=Optional.empty,values=Optional.empty,secretData=null,secretChars=null}"));
+    }
+
+    @Test
+    void testToStringWithClearedOptionalArrays() {
+        var builder = OptionalArrayValues.builder()
+                .data(new byte[] {1, 2, 3})
+                .values(new String[] {"first", "last"})
+                .secretData(new byte[] {4, 5, 6})
+                .secretChars("secret".toCharArray())
+                .clearData()
+                .clearValues()
+                .clearSecretData()
+                .clearSecretChars();
+
+        assertThat(builder.toString(),
+                   is("OptionalArrayValuesBuilder{data=null,values=null,secretData=null,secretChars=null}"));
+        assertThat(builder.build().toString(),
+                   is("OptionalArrayValues{data=Optional.empty,values=Optional.empty,secretData=null,secretChars=null}"));
     }
 
     @Test
