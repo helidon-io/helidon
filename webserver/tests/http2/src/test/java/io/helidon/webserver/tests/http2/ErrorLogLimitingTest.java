@@ -206,8 +206,10 @@ class ErrorLogLimitingTest {
                     assertError(server.request(false, false, "/no-entity?input=" + i));
                 }
             }
-            assertThat(logs.diagnostics("io.helidon.webserver.http1.Http1ServerResponse",
-                                        "Attempt to send a no-entity status with entity"), hasSize(1));
+            List<LogRecord> noEntity = logs.diagnostics("io.helidon.webserver.http1.Http1ServerResponse",
+                                                       "Attempt to send a no-entity status with entity");
+            assertThat(noEntity, hasSize(1));
+            assertThat(noEntity.getFirst().getThrown().getMessage(), containsString(Status.NO_CONTENT_204.text()));
             assertThat(logs.diagnostics("io.helidon.webserver.http.HttpRoutingImpl", "A route MUST"), hasSize(1));
             assertThat(logs.failures(), hasSize(1));
         }

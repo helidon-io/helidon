@@ -198,7 +198,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         }
         // if no entity status, we cannot send bytes here
         if (isNoEntityStatus && length > 0) {
-            status(noEntityInternalError());
+            status(noEntityInternalError(status()));
             return;
         }
 
@@ -546,12 +546,14 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         return keepConnectionOpen;
     }
 
-    private Status noEntityInternalError() {
+    private Status noEntityInternalError(Status attemptedStatus) {
         ctx.listenerContext().logError(LOGGER,
                                       System.Logger.Level.ERROR, "Attempt to send a no-entity status with entity."
                                               + " Server responded with Internal Server Error. Please fix your routing, "
                                               + "this is not allowed by HTTP specification, "
-                                              + "such responses MUST NOT contain an entity.");
+                                              + "such responses MUST NOT contain an entity.",
+                                      new IllegalStateException("Attempt to send status " + attemptedStatus.text()
+                                                                        + " with entity."));
         return Status.INTERNAL_SERVER_ERROR_500;
     }
 
