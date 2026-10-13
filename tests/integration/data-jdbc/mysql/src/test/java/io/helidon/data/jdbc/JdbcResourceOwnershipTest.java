@@ -16,6 +16,8 @@
 package io.helidon.data.jdbc;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -107,12 +109,13 @@ class JdbcResourceOwnershipTest {
 
     /**
      * Proves that a single SQL statement which disables auto-commit is rejected. The connection state is restored and
-     * the single-connection pool remains usable.
+     * the single-connection pool remains usable. A delegated connection reads the actual server
+     * auto-commit state because Connector/J's cached flag does not reflect SQL state transitions.
      */
     @Test
     void rejectsStatementWhichDisablesAutoCommit() throws SQLException {
         try (HikariDataSource dataSource = dataSource()) {
-            JdbcClient client = initializedClient(dataSource);
+            JdbcClient client = initializedClient(autoCommitChangingClient(dataSource));
 
             DataException failure = assertThrows(DataException.class,
                                                  () -> client.create("SET AUTOCOMMIT = 0").execute());
@@ -207,10 +210,10 @@ class JdbcResourceOwnershipTest {
      * closing the result set, statement, and sole pool lease.
      */
     @Test
-    void returnsConnectionAfterRequiredRowReadFailure() {
+    void returnsConnectionAfterRequiredRowReadFailure() throws SQLException {
         try (HikariDataSource dataSource = dataSource()) {
-            JdbcClient client = initializedClient(dataSource);
             String conversionCanary = "private-required-row-read-canary";
+            JdbcClient client = initializedClient(rowReadFailureClient(dataSource, conversionCanary));
             client.create("INSERT INTO TEST_VALUE(DATA_VALUE) VALUES (?)")
                     .bind(1, conversionCanary)
                     .execute();
@@ -236,10 +239,10 @@ class JdbcResourceOwnershipTest {
      * failure and the single Hikari connection must be reusable afterwards.
      */
     @Test
-    void returnsConnectionAfterOptionalRowReadFailure() {
+    void returnsConnectionAfterOptionalRowReadFailure() throws SQLException {
         try (HikariDataSource dataSource = dataSource()) {
-            JdbcClient client = initializedClient(dataSource);
             String conversionCanary = "private-optional-row-read-canary";
+            JdbcClient client = initializedClient(rowReadFailureClient(dataSource, conversionCanary));
             client.create("INSERT INTO TEST_VALUE(DATA_VALUE) VALUES (?)")
                     .bind(1, conversionCanary)
                     .execute();
@@ -376,6 +379,39 @@ class JdbcResourceOwnershipTest {
         }
     }
 
+    private static JdbcClient autoCommitChangingClient(HikariDataSource pool) throws SQLException {
+        DataSource dataSource = mock(DataSource.class);
+        when(dataSource.getConnection()).thenAnswer(_ -> MySqlTestDatabase.serverAutoCommit(pool.getConnection()));
+        return JdbcTestClients.create(dataSource);
+    }
+
+    /**
+     * Executes a real MySQL query and injects only the SQLException read category that
+     * Connector/J normally reports as a runtime conversion exception instead.
+     */
+    private static JdbcClient rowReadFailureClient(HikariDataSource pool, String canary) throws SQLException {
+        DataSource dataSource = mock(DataSource.class);
+        when(dataSource.getConnection()).thenAnswer(_ -> {
+            Connection pooledConnection = pool.getConnection();
+            Connection connection = mock(Connection.class, delegatesTo(pooledConnection));
+            String sql = "SELECT DATA_VALUE FROM TEST_VALUE";
+            doAnswer(_ -> {
+                PreparedStatement statement = pooledConnection.prepareStatement(sql);
+                PreparedStatement failingStatement = mock(PreparedStatement.class, delegatesTo(statement));
+                doAnswer(_ -> {
+                    ResultSet resultSet = statement.getResultSet();
+                    ResultSet failingResultSet = mock(ResultSet.class, delegatesTo(resultSet));
+                    doThrow(new SQLException("conversion failed for " + canary, "22018"))
+                            .when(failingResultSet).getInt(1);
+                    return failingResultSet;
+                }).when(failingStatement).getResultSet();
+                return failingStatement;
+            }).when(connection).prepareStatement(sql);
+            return connection;
+        });
+        return JdbcTestClients.create(dataSource);
+    }
+
     private static HikariDataSource dataSource() {
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(MySqlTestDatabase.jdbcUrl("jdbc_resource_ownership_" + DATABASE_SEQUENCE.incrementAndGet()));
@@ -387,7 +423,10 @@ class JdbcResourceOwnershipTest {
     }
 
     private static JdbcClient initializedClient(HikariDataSource dataSource) {
-        JdbcClient client = JdbcTestClients.create(dataSource);
+        return initializedClient(JdbcTestClients.create(dataSource));
+    }
+
+    private static JdbcClient initializedClient(JdbcClient client) {
         client.create("CREATE TABLE TEST_VALUE (ID BIGINT AUTO_INCREMENT PRIMARY KEY, "
                               + "DATA_VALUE VARCHAR(40) NOT NULL UNIQUE)")
                 .execute();

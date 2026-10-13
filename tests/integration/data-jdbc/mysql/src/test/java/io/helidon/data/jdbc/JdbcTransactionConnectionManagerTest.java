@@ -139,7 +139,9 @@ class JdbcTransactionConnectionManagerTest {
      */
     @Test
     void doesNotReportRollbackAfterSqlEnablesAutoCommit() throws Exception {
-        DataSource dataSource = initializedDataSource("tx_sql_enables_auto_commit");
+        DataSource delegate = initializedDataSource("tx_sql_enables_auto_commit");
+        DataSource dataSource = new TestDataSource(delegate,
+                                                 () -> MySqlTestDatabase.serverAutoCommit(delegate.getConnection()));
         JdbcTransactionConnectionManager manager = new JdbcTransactionConnectionManager();
         manager.start("jdbc");
         manager.begin("auto-commit-enabled");

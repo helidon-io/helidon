@@ -15,6 +15,7 @@
  */
 package io.helidon.data.jdbc;
 
+import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.time.Duration;
@@ -26,6 +27,10 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
+
+import static org.mockito.AdditionalAnswers.delegatesTo;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 
 /**
  * Shares a suite-owned MySQL container while keeping each regression's schema isolated.
@@ -70,6 +75,23 @@ final class MySqlTestDatabase implements BeforeAllCallback {
 
     static String password() {
         return PASSWORD;
+    }
+
+    /**
+     * Reads server auto-commit state for tests that change it using SQL, which Connector/J's cached flag does not reflect.
+     */
+    static Connection serverAutoCommit(Connection delegate) throws SQLException {
+        Connection connection = mock(Connection.class, delegatesTo(delegate));
+        doAnswer(_ -> {
+            try (var statement = delegate.createStatement();
+                 var resultSet = statement.executeQuery("SELECT @@autocommit")) {
+                if (!resultSet.next()) {
+                    throw new SQLException("The server did not report its auto-commit state.");
+                }
+                return resultSet.getBoolean(1);
+            }
+        }).when(connection).getAutoCommit();
+        return connection;
     }
 
     @Override
