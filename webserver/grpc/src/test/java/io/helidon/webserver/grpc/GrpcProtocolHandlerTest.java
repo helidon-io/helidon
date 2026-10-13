@@ -2680,6 +2680,39 @@ class GrpcProtocolHandlerTest {
         }
     }
 
+    private static class FailingTrailerSocket extends UnimplementedGrpcConnectionContext implements HelidonSocket {
+        private final BufferData output = BufferData.growing(128);
+        private final UncheckedIOException failure = new UncheckedIOException(new IOException("terminal socket write failed"));
+        private boolean failWrites;
+
+        @Override
+        public void write(BufferData buffer) {
+            if (failWrites) {
+                throw failure;
+            }
+            output.write(buffer);
+        }
+
+        @Override
+        public void close() {
+        }
+
+        @Override
+        public void idle() {
+            throw new UnsupportedOperationException("Unused");
+        }
+
+        @Override
+        public boolean isConnected() {
+            return true;
+        }
+
+        @Override
+        public byte[] get() {
+            throw new UnsupportedOperationException("Unused");
+        }
+    }
+
     @Nested
     class BufferDataInputStreamTest {
 
@@ -2798,39 +2831,6 @@ class GrpcProtocolHandlerTest {
 
         private GrpcProtocolHandler.BufferDataInputStream stream(byte[] content) {
             return new GrpcProtocolHandler.BufferDataInputStream(BufferData.create(content));
-        }
-    }
-
-    private static class FailingTrailerSocket extends UnimplementedGrpcConnectionContext implements HelidonSocket {
-        private final BufferData output = BufferData.growing(128);
-        private final UncheckedIOException failure = new UncheckedIOException(new IOException("terminal socket write failed"));
-        private boolean failWrites;
-
-        @Override
-        public void write(BufferData buffer) {
-            if (failWrites) {
-                throw failure;
-            }
-            output.write(buffer);
-        }
-
-        @Override
-        public void close() {
-        }
-
-        @Override
-        public void idle() {
-            throw new UnsupportedOperationException("Unused");
-        }
-
-        @Override
-        public boolean isConnected() {
-            return true;
-        }
-
-        @Override
-        public byte[] get() {
-            throw new UnsupportedOperationException("Unused");
         }
     }
 
