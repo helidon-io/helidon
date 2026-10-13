@@ -290,30 +290,45 @@ docker run --rm --name mongo -p 27017:27017 mongo
             </list>
             <list key="MainTest-routing">
                 <value><![CDATA[DATABASE.start();
-        Config config = Config.builder(
-                ConfigSources.create(Map.of("db.connection.url", DATABASE.getJdbcUrl(),
-                                            "db.connection.username", DATABASE.getUsername(),
-                                            "db.connection.password", DATABASE.getPassword())),
-                ConfigSources.classpath("application-test.yaml"),
-                ConfigSources.classpath("application.yaml"))
-                .disableEnvironmentVariablesSource()
-                .disableSystemPropertiesSource()
-                .build();
-        Services.set(Config.class, config);
-        dbClient = DbClient.create(config.get("db"));
-        Contexts.globalContext().register(dbClient);]]></value>
+            Config config = Config.builder(
+                    ConfigSources.create(Map.of("db.connection.url", DATABASE.getJdbcUrl(),
+                                                "db.connection.username", DATABASE.getUsername(),
+                                                "db.connection.password", DATABASE.getPassword())),
+                    ConfigSources.classpath("application-test.yaml"),
+                    ConfigSources.classpath("application.yaml"))
+                    .disableEnvironmentVariablesSource()
+                    .disableSystemPropertiesSource()
+                    .build();
+            Services.set(Config.class, config);
+            dbClient = DbClient.create(config.get("db"));
+            Contexts.globalContext().register(dbClient);]]></value>
             </list>
             <list key="MainTest-methods">
                 <value><![CDATA[
     @AfterAll
     static void stopDatabase() {
+        Throwable failure = null;
         try {
             if (dbClient != null) {
                 Contexts.globalContext().unregister(dbClient);
-                dbClient.close();
+                try {
+                    dbClient.close();
+                } finally {
+                    dbClient = null;
+                }
             }
+        } catch (RuntimeException | Error cleanupFailure) {
+            failure = cleanupFailure;
+            throw cleanupFailure;
         } finally {
-            DATABASE.stop();
+            try {
+                DATABASE.stop();
+            } catch (RuntimeException | Error cleanupFailure) {
+                if (failure == null) {
+                    throw cleanupFailure;
+                }
+                failure.addSuppressed(cleanupFailure);
+            }
         }
     }
 ]]></value>

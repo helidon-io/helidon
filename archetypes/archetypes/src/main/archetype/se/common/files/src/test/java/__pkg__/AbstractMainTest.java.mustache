@@ -31,10 +31,24 @@ abstract class AbstractMainTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder builder) {
-        {{#MainTest-routing}}
-        {{.}}
-        {{/MainTest-routing}}
+{{#database}}
+        try {
+            {{#MainTest-routing}}
+            {{.}}
+            {{/MainTest-routing}}
+            Main.routing(builder);
+        } catch (RuntimeException | Error failure) {
+            try {
+                stopDatabase();
+            } catch (RuntimeException | Error cleanupFailure) {
+                failure.addSuppressed(cleanupFailure);
+            }
+            throw failure;
+        }
+{{/database}}
+{{^database}}
         Main.routing(builder);
+{{/database}}
     }
 
     {{#Abstract-tests}}
