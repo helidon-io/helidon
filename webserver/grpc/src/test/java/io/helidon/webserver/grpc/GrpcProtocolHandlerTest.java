@@ -48,7 +48,10 @@ import java.util.zip.GZIPOutputStream;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
+import io.helidon.common.socket.SocketWriter;
+import io.helidon.common.socket.SocketWriterException;
 import io.helidon.common.uri.UriAuthority;
 import io.helidon.grpc.core.WeightedBag;
 import io.helidon.http.HeaderName;
@@ -61,6 +64,7 @@ import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2FrameHeader;
+import io.helidon.http.http2.Http2FrameType;
 import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2RstStream;
@@ -532,6 +536,61 @@ class GrpcProtocolHandlerTest {
     @Test
     void testPeerResetDuringTrailersCancelsListenerOnce() throws Exception {
         terminalWriteWithTransportClose(true);
+    }
+
+    @Test
+    void testAsyncSocketFailureDuringTrailersCancelsListenerOnce() {
+        var socket = new FailingTrailerSocket();
+        var socketWriter = SocketWriter.create(EXECUTOR, socket, 2, false);
+        var writer = new Http2ConnectionWriter(socket, socketWriter, List.of());
+        var callReference = new AtomicReference<ServerCall<String, String>>();
+        var cancellations = new AtomicInteger();
+        var completions = new AtomicInteger();
+        var cancelledContext = new AtomicReference<Context>();
+        var connection = ConnectionFlowControl.serverBuilder((_, _) -> { }).build();
+        var flowControl = connection.createStreamFlowControl(1, 65535, 16384);
+        var handler = deadlineHandler("1H", (call, _) -> {
+            callReference.set(call);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onCancel() {
+                    cancellations.incrementAndGet();
+                    cancelledContext.set(Context.current());
+                }
+
+                @Override
+                public void onComplete() {
+                    completions.incrementAndGet();
+                }
+            };
+        }, writer, stringMethodDescriptor(), flowControl);
+        try {
+            handler.init();
+            var call = callReference.get();
+            call.sendHeaders(new Metadata());
+            var initialHeaders = Http2FrameHeader.create(socket.output);
+            assertThat("initial response headers reach the socket", initialHeaders.type(), is(Http2FrameType.HEADERS));
+            assertThat("initial response headers leave the stream open",
+                       initialHeaders.flags(Http2FrameTypes.HEADERS).endOfStream(), is(false));
+            socket.failWrites = true;
+
+            var failure = assertThrows(SocketWriterException.class, () -> call.close(Status.OK, new Metadata()));
+
+            assertThat("the real async writer retains the injected socket failure",
+                       failure.getCause(), sameInstance(socket.failure));
+            assertThat("failed trailers cannot complete the service call", completions.get(), is(0));
+            assertThat("failed trailers cancel the service call once", cancellations.get(), is(1));
+            assertThat("the cancellation callback sees a cancelled Context", cancelledContext.get().isCancelled(), is(true));
+            assertThat("transport failure preserves call cancellation", call.isCancelled(), is(true));
+            handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+            handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+            call.close(Status.OK, new Metadata());
+            assertThat("late resets cannot duplicate cancellation", cancellations.get(), is(1));
+            assertThat("late resets cannot convert failure to completion", completions.get(), is(0));
+        } finally {
+            handler.close();
+            socketWriter.close();
+        }
     }
 
     @Test
@@ -2739,6 +2798,39 @@ class GrpcProtocolHandlerTest {
 
         private GrpcProtocolHandler.BufferDataInputStream stream(byte[] content) {
             return new GrpcProtocolHandler.BufferDataInputStream(BufferData.create(content));
+        }
+    }
+
+    private static class FailingTrailerSocket extends UnimplementedGrpcConnectionContext implements HelidonSocket {
+        private final BufferData output = BufferData.growing(128);
+        private final UncheckedIOException failure = new UncheckedIOException(new IOException("terminal socket write failed"));
+        private boolean failWrites;
+
+        @Override
+        public void write(BufferData buffer) {
+            if (failWrites) {
+                throw failure;
+            }
+            output.write(buffer);
+        }
+
+        @Override
+        public void close() {
+        }
+
+        @Override
+        public void idle() {
+            throw new UnsupportedOperationException("Unused");
+        }
+
+        @Override
+        public boolean isConnected() {
+            return true;
+        }
+
+        @Override
+        public byte[] get() {
+            throw new UnsupportedOperationException("Unused");
         }
     }
 

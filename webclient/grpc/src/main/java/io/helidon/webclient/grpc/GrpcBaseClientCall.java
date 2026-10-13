@@ -290,6 +290,10 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
     abstract void closeStreamingThreads();
 
+    boolean requestWritesComplete() {
+        return true;
+    }
+
     protected final boolean isClosed() {
         return closeStatus != null;
     }
@@ -349,10 +353,11 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         }
 
         context.removeListener(cancellationListener);
-        boolean abortTransport = !status.isOk();
+        boolean abortTransport = !status.isOk() || !requestWritesComplete();
         if (abortTransport) {
             // Each call owns its connection. Abort the raw socket before cleanup can wait for
-            // an HTTP/2 writer blocked by the peer, including a TLS write or a stream reset.
+            // an HTTP/2 writer blocked by the peer, including an early OK response while request
+            // DATA is still being written, a TLS write or a stream reset.
             closeTransport();
         }
         try {

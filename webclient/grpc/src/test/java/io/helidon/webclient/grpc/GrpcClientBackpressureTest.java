@@ -25,9 +25,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -48,7 +51,6 @@ import io.grpc.Deadline;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -59,8 +61,18 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @Timeout(20)
 class GrpcClientBackpressureTest {
-    @Test
-    void serverRejectionAbortsTransportBeforeWaitingForBlockedStreamingWriter() throws Exception {
+    @ParameterizedTest
+    @EnumSource(ResponseOutcome.class)
+    void serverResponseAbortsTransportBeforeWaitingForBlockedStreamingWriter(ResponseOutcome outcome) throws Exception {
+        var nanos = new AtomicLong();
+        var deadline = Deadline.after(1, TimeUnit.SECONDS, new Deadline.Ticker() {
+            @Override
+            public long nanoTime() {
+                return nanos.get();
+            }
+        });
+        CallOptions options = outcome == ResponseOutcome.OK_WITH_DEADLINE
+                ? CallOptions.DEFAULT.withDeadline(deadline) : CallOptions.DEFAULT;
         var transport = new CompletableFuture<BlockingConnection>();
         var accepted = new CompletableFuture<Socket>();
         var headersReceived = new CompletableFuture<Void>();
@@ -68,6 +80,9 @@ class GrpcClientBackpressureTest {
         var status = new CompletableFuture<Status>();
         var trailers = new CompletableFuture<Metadata>();
         var closeCount = new AtomicInteger();
+        var deadlineExpiredAtClose = new AtomicBoolean();
+        var received = new CompletableFuture<byte[]>();
+        List<String> events = new ArrayList<>();
         var executor = Executors.newCachedThreadPool();
         try (executor;
              var listening = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))) {
@@ -84,11 +99,20 @@ class GrpcClientBackpressureTest {
                     var headers = BufferData.create(256);
                     headers.writeInt8(0x88); // HPACK static :status 200
                     writeLiteralHeader(headers, "content-type", "application/grpc");
-                    writeLiteralHeader(headers, "grpc-status", "14");
-                    writeLiteralHeader(headers, "grpc-message", "busy");
-                    writeLiteralHeader(headers, "rejection-detail", "retry later");
-                    output.write(new byte[] {0, 0, (byte) headers.available(), 1, 5, 0, 0, 0, 1});
+                    output.write(new byte[] {0, 0, (byte) headers.available(), 1, 4, 0, 0, 0, 1});
                     headers.writeTo(output);
+                    byte[] response = "response".getBytes(StandardCharsets.US_ASCII);
+                    output.write(new byte[] {0, 0, 13, 0, 0, 0, 0, 0, 1});
+                    output.write(new byte[] {0, 0, 0, 0, 8});
+                    output.write(response);
+                    var trailingHeaders = BufferData.create(256);
+                    writeLiteralHeader(trailingHeaders, "grpc-status", outcome == ResponseOutcome.UNAVAILABLE ? "14" : "0");
+                    if (outcome == ResponseOutcome.UNAVAILABLE) {
+                        writeLiteralHeader(trailingHeaders, "grpc-message", "busy");
+                    }
+                    writeLiteralHeader(trailingHeaders, "response-detail", "custom trailers");
+                    output.write(new byte[] {0, 0, (byte) trailingHeaders.available(), 1, 5, 0, 0, 0, 1});
+                    trailingHeaders.writeTo(output);
                     output.flush();
                     // Keep the peer open until client cleanup closes the connection.
                     socket.getInputStream().readAllBytes();
@@ -102,7 +126,7 @@ class GrpcClientBackpressureTest {
                     .readTimeout(Duration.ofSeconds(10))
                     .build();
             var method = descriptor().toBuilder().setType(MethodDescriptor.MethodType.BIDI_STREAMING).build();
-            var call = new GrpcClientCall<byte[], byte[]>((GrpcChannel) client.channel(), method, CallOptions.DEFAULT) {
+            var call = new GrpcClientCall<byte[], byte[]>((GrpcChannel) client.channel(), method, options) {
                 @Override
                 protected ClientConnection clientConnection(ClientUri uri, String authority) {
                     var connection = new BlockingConnection(super.clientConnection(uri, authority));
@@ -113,7 +137,15 @@ class GrpcClientBackpressureTest {
             try {
                 call.start(new ClientCall.Listener<>() {
                     @Override
+                    public void onMessage(byte[] message) {
+                        events.add("message");
+                        received.complete(message);
+                    }
+
+                    @Override
                     public void onClose(Status result, Metadata metadata) {
+                        events.add("close");
+                        deadlineExpiredAtClose.set(deadline.isExpired());
                         closeCount.incrementAndGet();
                         trailers.complete(metadata);
                         status.complete(result);
@@ -121,6 +153,10 @@ class GrpcClientBackpressureTest {
                 }, new Metadata());
                 headersReceived.get(5, TimeUnit.SECONDS);
                 BlockingConnection connection = transport.get(5, TimeUnit.SECONDS);
+                // Advance the logical clock during cleanup, after the server outcome wins.
+                // A registered deadline may expire before onClose without replacing that outcome;
+                // the frozen startup clock prevents an unrelated real-time setup failure.
+                connection.transportClosed.thenRun(() -> nanos.set(TimeUnit.SECONDS.toNanos(2)));
                 connection.blockWrites = true;
                 call.request(1);
                 call.sendMessage(new byte[32]);
@@ -129,12 +165,15 @@ class GrpcClientBackpressureTest {
                 assertThat("the writer is blocked before the server rejection", connection.transportClosed.isDone(), is(false));
                 reject.complete(null);
 
+                assertThat(new String(received.get(5, TimeUnit.SECONDS), StandardCharsets.US_ASCII), is("response"));
                 Status result = status.get(5, TimeUnit.SECONDS);
-                assertThat(result.getCode(), is(Status.Code.UNAVAILABLE));
-                assertThat(result.getDescription(), is("busy"));
+                assertThat(result.getCode(), is(outcome == ResponseOutcome.UNAVAILABLE ? Status.Code.UNAVAILABLE : Status.Code.OK));
+                assertThat(result.getDescription(), is(outcome == ResponseOutcome.UNAVAILABLE ? "busy" : null));
                 assertThat(trailers.get(5, TimeUnit.SECONDS)
-                                   .get(Metadata.Key.of("rejection-detail", Metadata.ASCII_STRING_MARSHALLER)),
-                           is("retry later"));
+                                   .get(Metadata.Key.of("response-detail", Metadata.ASCII_STRING_MARSHALLER)),
+                           is("custom trailers"));
+                assertThat(events, is(List.of("message", "close")));
+                assertThat("the logical deadline expires during cleanup before onClose", deadlineExpiredAtClose.get(), is(true));
                 assertThat("transport close releases the blocked writer", connection.transportClosed.isDone(), is(true));
                 peer.get(5, TimeUnit.SECONDS);
                 call.cancel("repeated close", null);
@@ -312,6 +351,12 @@ class GrpcClientBackpressureTest {
         DEADLINE,
         CALL,
         CONTEXT
+    }
+
+    private enum ResponseOutcome {
+        OK,
+        OK_WITH_DEADLINE,
+        UNAVAILABLE
     }
 
     private static final class BlockingConnection implements ClientConnection {

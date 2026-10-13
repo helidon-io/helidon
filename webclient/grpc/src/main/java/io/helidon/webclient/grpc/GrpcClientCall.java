@@ -94,6 +94,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     private volatile Thread writeStreamThread;
     private volatile ScheduledFuture<?> heartbeatFuture;
     private volatile RuntimeException resetFailure;
+    private volatile boolean requestWritesComplete;
     private boolean writerScheduled;
 
     GrpcClientCall(GrpcChannel grpcChannel, MethodDescriptor<ReqT, ResT> methodDescriptor, CallOptions callOptions) {
@@ -263,6 +264,11 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     }
 
     @Override
+    boolean requestWritesComplete() {
+        return requestWritesComplete;
+    }
+
+    @Override
     void closeStreamingThreads() {
         closed.set(true);
         sendingQueue.clear();
@@ -391,6 +397,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                 if (bufferData == EMPTY_BUFFER_DATA) {
                     if (!endOfStream) {
                         clientStream().writeData(EMPTY_BUFFER_DATA, true);
+                        requestWritesComplete = true;
                     }
                     return;
                 }
@@ -400,6 +407,9 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
                 boolean written = false;
                 try {
                     clientStream().writeData(bufferData, endOfStream);
+                    if (endOfStream) {
+                        requestWritesComplete = true;
+                    }
                     written = true;
                     if (enableMetrics()) {
                         bytesSent().addAndGet(writeLength);
