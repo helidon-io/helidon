@@ -903,6 +903,14 @@
 
     <profiles>
         <profile>
+            <id>preview</id>
+            <properties>
+                <maven.compiler.enablePreview>true</maven.compiler.enablePreview>
+                <surefire.argLine>-Xmx1024m -Dfile.encoding=UTF-8 --enable-preview</surefire.argLine>
+                <failsafe.argLine>-Xmx1024m -Dfile.encoding=UTF-8 --enable-preview</failsafe.argLine>
+            </properties>
+        </profile>
+        <profile>
             <id>tests</id>
             <modules>
                 <module>tests</module>
