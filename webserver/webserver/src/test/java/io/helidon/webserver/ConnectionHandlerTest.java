@@ -50,6 +50,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -67,7 +68,7 @@ class ConnectionHandlerTest {
     void unexpectedThrowableAndFatalObserverFailureStillCleanUp() throws Exception {
         AssertionError failure = new AssertionError("unexpected failure");
         ListenerConfig listenerConfig = mock(ListenerConfig.class);
-        ListenerContext listenerContext = mock(ListenerContext.class);
+        ListenerContext listenerContext = mock(ListenerContext.class, CALLS_REAL_METHODS);
         when(listenerContext.config()).thenReturn(listenerConfig);
         ListenerConfig virtualHostConfig = mock(ListenerConfig.class);
         when(virtualHostConfig.sni()).thenReturn(SniConfig.create());

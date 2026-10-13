@@ -172,7 +172,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext, C
                 run(channelId);
             } catch (Throwable e) {
                 httpTransportOutcome(ConnectionOutcome.ERROR);
-                LOGGER.log(ERROR, "Unexpected throwable while handling connection", e);
+                listenerContext.logError(LOGGER, ERROR, "Unexpected throwable while handling connection", e);
             }
         } finally {
             try {

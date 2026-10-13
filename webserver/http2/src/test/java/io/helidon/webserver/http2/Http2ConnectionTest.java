@@ -103,6 +103,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -250,6 +251,9 @@ class Http2ConnectionTest {
         IllegalStateException failure = new IllegalStateException("stream failure");
         Http2ConnectionStreams streams = new Http2ConnectionStreams();
         Http2ServerStream stream = mock(Http2ServerStream.class);
+        ConnectionContext context = mock(ConnectionContext.class);
+        when(stream.connectionContext()).thenReturn(context);
+        when(context.listenerContext()).thenReturn(mock(ListenerContext.class, CALLS_REAL_METHODS));
         doThrow(failure).when(stream).run();
         when(stream.streamId()).thenReturn(1);
         when(stream.streamState()).thenReturn(Http2StreamState.CLOSED);
@@ -273,6 +277,9 @@ class Http2ConnectionTest {
         UncheckedIOException failure = new UncheckedIOException(new IOException("stream failure"));
         Http2ConnectionStreams streams = new Http2ConnectionStreams();
         Http2ServerStream stream = mock(Http2ServerStream.class);
+        ConnectionContext context = mock(ConnectionContext.class);
+        when(stream.connectionContext()).thenReturn(context);
+        when(context.listenerContext()).thenReturn(mock(ListenerContext.class, CALLS_REAL_METHODS));
         doThrow(failure).when(stream).run();
         when(stream.streamId()).thenReturn(1);
         when(stream.streamState()).thenReturn(Http2StreamState.CLOSED);

@@ -176,10 +176,10 @@ final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
             while (result == RoutingResult.ROUTE) {
                 counter++;
                 if (counter == maxReRouteCount) {
-                    LOGGER.log(System.Logger.Level.ERROR, "Rerouted more than " + maxReRouteCount
-                            + " times. Will not attempt further routing");
-
-                    throw new HttpException("Too many reroutes", Status.INTERNAL_SERVER_ERROR_500, true);
+                    HttpException failure = new HttpException("Too many reroutes", Status.INTERNAL_SERVER_ERROR_500, true);
+                    ctx.listenerContext().logError(LOGGER, System.Logger.Level.ERROR,
+                                                   "Maximum reroute count exceeded. Will not attempt further routing", failure);
+                    throw failure;
                 }
 
                 result = doRoute(ctx, request, response);
@@ -247,16 +247,18 @@ final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
 
                 // not nexted, not rerouted - invalid state
                 // user must send a response within the current thread
-                LOGGER.log(System.Logger.Level.WARNING,
-                           "A route MUST call either send, reroute, or next on ServerResponse on the request thread. "
-                                   + "Neither of these was called for request: " + safePrologue(request.prologue())
-                                   + "; Handler: " + next.handler());
-
-                throw RequestException.builder()
+                RequestException failure = RequestException.builder()
                         // we cannot share the information above with a client
                         .message("Internal Server Error")
                         .type(DirectHandler.EventType.INTERNAL_ERROR)
+                        .cause(new IllegalStateException("Neither send, reroute nor next was called for request: "
+                                                                 + safePrologue(request.prologue())
+                                                                 + "; Handler: " + next.handler()))
                         .build();
+                ctx.listenerContext().logError(LOGGER, System.Logger.Level.WARNING,
+                                               "A route MUST call either send, reroute, or next on ServerResponse "
+                                                       + "on the request thread", failure);
+                throw failure;
             }
 
             return RoutingResult.NONE;
@@ -301,10 +303,10 @@ final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
             while (routingResult == RoutingResult.ROUTE) {
                 counter++;
                 if (counter == maxReRouteCount) {
-                    LOGGER.log(System.Logger.Level.ERROR, "Rerouted more than " + maxReRouteCount
-                            + " times. Will not attempt further routing");
-
-                    throw new HttpException("Too many reroutes", Status.INTERNAL_SERVER_ERROR_500, true);
+                    HttpException failure = new HttpException("Too many reroutes", Status.INTERNAL_SERVER_ERROR_500, true);
+                    ctx.listenerContext().logError(LOGGER, System.Logger.Level.ERROR,
+                                                   "Maximum reroute count exceeded. Will not attempt further routing", failure);
+                    throw failure;
                 }
                 routingResult = doRoute(ctx, request, response);
             }
@@ -359,15 +361,17 @@ final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
                     return RoutingResult.FINISH;
                 }
 
-                LOGGER.log(System.Logger.Level.WARNING,
-                           "A protocol upgrade policy route MUST call either send, reroute, or next on ServerResponse "
-                                   + "on the request thread. Neither of these was called for request: "
-                                   + safePrologue(request.prologue()) + "; Handler: " + next.handler());
-
-                throw RequestException.builder()
+                RequestException failure = RequestException.builder()
                         .message("Internal Server Error")
                         .type(DirectHandler.EventType.INTERNAL_ERROR)
+                        .cause(new IllegalStateException("Neither send, reroute nor next was called for request: "
+                                                                 + safePrologue(request.prologue())
+                                                                 + "; Handler: " + next.handler()))
                         .build();
+                ctx.listenerContext().logError(LOGGER, System.Logger.Level.WARNING,
+                                               "A protocol upgrade policy route MUST call either send, reroute, or next "
+                                                       + "on ServerResponse on the request thread", failure);
+                throw failure;
             }
 
             result = Objects.requireNonNull(upgrade.upgrade(upgradeResponse));

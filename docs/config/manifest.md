@@ -142,6 +142,7 @@ See the [root type](config_reference.md).
 - [io.<wbr>helidon.<wbr>webclient.<wbr>websocket.<wbr>WsClient](io.helidon.webclient.websocket.WsClient.md)
 - [io.<wbr>helidon.<wbr>webclient.<wbr>websocket.<wbr>WsClient<wbr>Protocol<wbr>Config](io.helidon.webclient.websocket.WsClientProtocolConfig.md)
 - [io.<wbr>helidon.<wbr>webserver.<wbr>Error<wbr>Handling](io.helidon.webserver.ErrorHandling.md)
+- [io.<wbr>helidon.<wbr>webserver.<wbr>Error<wbr>LogConfig](io.helidon.webserver.ErrorLogConfig.md)
 - [io.<wbr>helidon.<wbr>webserver.<wbr>Listener<wbr>Config](io.helidon.webserver.ListenerConfig.md)
 - [io.<wbr>helidon.<wbr>webserver.<wbr>Proxy<wbr>Protocol<wbr>Config](io.helidon.webserver.ProxyProtocolConfig.md)
 - [io.<wbr>helidon.<wbr>webserver.<wbr>SniConfig](io.helidon.webserver.SniConfig.md)

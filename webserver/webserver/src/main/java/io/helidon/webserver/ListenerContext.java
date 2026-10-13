@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 
 import io.helidon.common.context.Context;
@@ -28,6 +29,40 @@ import io.helidon.webserver.http.DirectHandlers;
  * Provides elements that are configured on listener (socket) level.
  */
 public interface ListenerContext {
+    /**
+     * Log an unexpected internal server failure using the server's error log limits.
+     * The message must identify the logging site and must not contain request data or exception messages.
+     * The full failure is logged for allowed occurrences; it is not retained by the limiter.
+     * The default implementation logs directly for independently implemented listener contexts.
+     *
+     * @param logger logger for the diagnostic
+     * @param level log level
+     * @param message fixed diagnostic message
+     * @param failure failure to log
+     */
+    default void logError(System.Logger logger, System.Logger.Level level, String message, Throwable failure) {
+        Objects.requireNonNull(logger, "logger");
+        Objects.requireNonNull(level, "level");
+        Objects.requireNonNull(message, "message");
+        Objects.requireNonNull(failure, "failure");
+        logger.log(level, message, failure);
+    }
+
+    /**
+     * Log an unexpected internal server error without an associated throwable.
+     * The message must be a fixed diagnostic identifying the logging site.
+     *
+     * @param logger logger for the diagnostic
+     * @param level log level
+     * @param message fixed diagnostic message
+     */
+    default void logError(System.Logger logger, System.Logger.Level level, String message) {
+        Objects.requireNonNull(logger, "logger");
+        Objects.requireNonNull(level, "level");
+        Objects.requireNonNull(message, "message");
+        logger.log(level, message);
+    }
+
     /**
      * Server context configured as the top level parents of all request context.
      *

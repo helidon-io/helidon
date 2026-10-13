@@ -1028,7 +1028,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 .errorHandling();
 
         // log message in DEBUG mode
-        if (LOGGER.isLoggable(DEBUG) && (e.safeMessage() || errorHandling.logAllMessages())) {
+        if (e.status().code() != Status.INTERNAL_SERVER_ERROR_500.code()
+                && LOGGER.isLoggable(DEBUG) && (e.safeMessage() || errorHandling.logAllMessages())) {
             LOGGER.log(DEBUG, e);
         }
 
@@ -1085,8 +1086,8 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
             throw new ServerConnectionException("Failed to write request exception", writeException);
         }
         try {
-            if (status == Status.INTERNAL_SERVER_ERROR_500) {
-                LOGGER.log(WARNING, "Internal server error", e);
+            if (status.code() == Status.INTERNAL_SERVER_ERROR_500.code()) {
+                ctx.listenerContext().logError(LOGGER, WARNING, "Internal server error", e);
             }
         } finally {
             flushBeforeClose();

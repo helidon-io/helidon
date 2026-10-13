@@ -1005,6 +1005,73 @@ response as follows:
 - Otherwise, the exceptions are translated to an Internal Server Error HTTP
   error code `500`.
 
+### Limiting Internal Error Logs
+
+WebServer limits its internal diagnostics for unexpected failures, including
+unhandled application exceptions that result in `500 Internal Server Error`.
+This prevents repeated requests that trigger the same bug from producing an
+unrestricted stream of stack traces. Logging limits do not change request
+handling or error responses. Application logging, access logs, ordinary
+expected HTTP errors, and a handler explicitly sending status `500` are
+unaffected.
+
+The limits are enabled by default and shared by all listeners of one
+WebServer. Each one-minute window permits one detailed log entry per error
+identity and at most 100 detailed entries overall. The first permitted entry
+includes the original diagnostic and exception details, with an `error-id` for
+correlation. Further entries are suppressed until the next window.
+
+An error identity combines the logger and fixed diagnostic with exception
+types and stack locations: up to four exceptions in the cause chain and eight
+stack frames per exception. Exception messages and request data are excluded,
+so changing request values or exception messages does not create new identities
+for the same failure.
+
+At most 100 identities are retained per window by default. When this limit is
+reached, new identities are suppressed until the next window; existing
+identities remain tracked. The limiter retains only fixed-size fingerprints
+and counters, rather than exceptions, messages, requests, or stack traces.
+Accounting is thread-safe, and suppression counters saturate rather than
+overflow.
+
+If entries were suppressed, WebServer emits one aggregate warning at window
+rollover, including when traffic has stopped, and reports remaining counts at
+shutdown. The warning gives the total suppressed count and counts attributable
+to the per-error, overall, and retained-identity limits. It also lists counts
+for up to eight tracked `error-id` values that reached the per-error limit.
+This summary is additional to the overall detailed-entry limit, so a window
+can produce at most `max-total` detailed entries plus one aggregate warning.
+
+Configure the limits under `server.error-log`. The following values are the
+defaults:
+
+```yaml [application.yaml]
+server:
+  error-log:
+    enabled: true
+    window: PT1M
+    max-per-error: 1
+    max-total: 100
+    max-errors: 100
+```
+
+The equivalent programmatic configuration is:
+
+```java
+WebServer.builder()
+        .errorLog(it -> it
+                .enabled(true)
+                .window(Duration.ofMinutes(1))
+                .maxPerError(1)
+                .maxTotal(100)
+                .maxErrors(100));
+```
+
+The window and all three limits must be positive; the window must also be
+representable in nanoseconds. Set `server.error-log.enabled` to `false`, or
+use `.errorLog(it -> it.enabled(false))`, to restore unrestricted internal
+error logging.
+
 ## Direct Error Handling
 
 There are a number of scenarios where errors can be detected before the request

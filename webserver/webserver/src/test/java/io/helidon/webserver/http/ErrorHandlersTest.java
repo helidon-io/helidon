@@ -188,6 +188,7 @@ class ErrorHandlersTest {
     @Test
     public void testCloseConnectionExceptionContainsCause() {
         ConnectionContext ctx = mock(ConnectionContext.class);
+        when(ctx.listenerContext()).thenReturn(mock(ListenerContext.class));
         RoutingRequest req = mock(RoutingRequest.class);
         RoutingResponse res = mock(RoutingResponse.class);
         when(res.resetEntity()).thenReturn(false);

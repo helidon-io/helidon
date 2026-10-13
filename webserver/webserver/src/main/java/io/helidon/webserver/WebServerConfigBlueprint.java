@@ -36,6 +36,15 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
 @Prototype.RegistrySupport
 interface WebServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Factory<WebServer> {
     /**
+     * Limits for internal server-error logging, shared across all listeners.
+     *
+     * @return internal error log configuration
+     */
+    @Option.Configured
+    @Option.DefaultMethod("create")
+    ErrorLogConfig errorLog();
+
+    /**
      * When true the webserver registers a shutdown hook with the JVM Runtime.
      * <p>
      * Defaults to true. Set this to false such that a shutdown hook is not registered.
