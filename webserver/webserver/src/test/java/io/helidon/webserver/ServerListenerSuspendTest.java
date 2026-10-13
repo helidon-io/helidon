@@ -17,29 +17,40 @@
 package io.helidon.webserver;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.function.BooleanSupplier;
 
 import io.helidon.common.configurable.AllowList;
+import io.helidon.http.HttpTransportObserver;
+import io.helidon.webserver.spi.ServerFeature;
 
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ServerListenerSuspendTest {
     private static final int SOCKET_TIMEOUT_MILLIS = 5000;
+    private static final int NO_ADMISSION_MILLIS = 1000;
+    private static final String PROXY_HEADER = "PROXY TCP4 192.168.0.1 192.168.0.11 56324 443\r\n";
 
     @Test
     void failedProxyProtocolSetupReleasesConnectionLimit() throws Exception {
@@ -51,89 +62,87 @@ class ServerListenerSuspendTest {
                 .build()
                 .start();
 
-        try {
-            try (Socket malformed = new Socket("127.0.0.1", server.port())) {
-                malformed.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
+        try (var _ = new ServerLifecycle(server)) {
+            try (Socket malformed = new Socket()) {
+                connect(malformed, server);
                 malformed.getOutputStream().write("PROXY \r\n".getBytes(StandardCharsets.US_ASCII));
                 malformed.getOutputStream().flush();
-                try {
-                    assertThat(malformed.getInputStream().read(), is(-1));
-                } catch (SocketException e) {
-                    // Connection reset is also an acceptable close signal for the malformed socket.
-                }
+                assertClosed(malformed, "malformed PROXY connection must close");
             }
 
-            String response = "";
-            try (Socket valid = new Socket("127.0.0.1", server.port())) {
-                valid.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
-                valid.getOutputStream()
-                        .write(("PROXY TCP4 192.168.0.1 192.168.0.11 56324 443\r\n"
-                                + "GET / HTTP/1.1\r\n"
-                                + "Host: localhost\r\n"
-                                + "Connection: close\r\n"
-                                + "\r\n").getBytes(StandardCharsets.US_ASCII));
-                valid.getOutputStream().flush();
-                ByteArrayOutputStream responseBytes = new ByteArrayOutputStream();
-                byte[] buffer = new byte[256];
-                do {
-                    int read = valid.getInputStream().read(buffer);
-                    if (read == -1) {
-                        break;
-                    }
-                    responseBytes.write(buffer, 0, read);
-                    response = responseBytes.toString(StandardCharsets.US_ASCII);
-                } while (!response.contains("ok"));
+            try (Socket valid = new Socket()) {
+                connect(valid, server);
+                sendRequest(valid, PROXY_HEADER, "close");
+                assertResponse(valid, "request after malformed PROXY setup must recover the connection permit");
             }
+        }
+    }
 
-            assertThat(response, containsString("200 OK"));
-            assertThat(response, containsString("ok"));
-        } finally {
-            server.stop();
+    @Test
+    void connectionLimitStopsAdmissionUntilConnectionCloses() throws Exception {
+        WebServer server = WebServer.builder()
+                .port(0)
+                .maxConnections(1)
+                .routing(routing -> routing.get("/", (req, res) -> res.send("ok")))
+                .build()
+                .start();
+
+        try (var _ = new ServerLifecycle(server);
+             Socket admitted = new Socket();
+             Socket queued = new Socket()) {
+            connect(admitted, server);
+            sendRequest(admitted, "", "keep-alive");
+            assertResponse(admitted, "first connection must be admitted before testing the limit");
+
+            connect(queued, server);
+            sendRequest(queued, "", "close");
+            // TCP connect can succeed in the OS backlog without admission to the application.
+            queued.setSoTimeout(NO_ADMISSION_MILLIS);
+            assertThrows(SocketTimeoutException.class, () -> queued.getInputStream().read(),
+                         "queued request must not receive a response while the only connection slot is occupied");
+
+            // The admitted connection must still work while a new connection is waiting.
+            sendRequest(admitted, "", "keep-alive");
+            assertResponse(admitted, "connection limit must not stop requests on an admitted connection");
+            admitted.close();
+            assertResponse(queued, "queued request must progress after the admitted connection closes");
         }
     }
 
     @Test
     void suspendStopsListenerWaitingOnConnectionLimitDuringCheckpoint() throws Exception {
+        var admissions = new ConnectionAdmissions();
         LoomServer server = (LoomServer) WebServer.builder()
                 .port(0)
+                .addFeature(admissions)
                 .proxyProtocol(it -> it.trustedProxies(AllowList.builder().allowAll(true).build()))
                 .maxConnections(1)
+                .routing(routing -> routing.get("/", (req, res) -> res.send("ok")))
                 .build()
                 .start();
 
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Socket stalledConnection = null;
-        Socket queuedConnection = null;
-        boolean suspended = false;
+        try (var lifecycle = new ServerLifecycle(server)) {
+            try (Socket stalled = new Socket(); Socket queued = new Socket()) {
+                connect(stalled, server);
+                stalled.getOutputStream().write("PROXY ".getBytes(StandardCharsets.US_ASCII));
+                stalled.getOutputStream().flush();
+                assertThat("incomplete PROXY connection must be accepted before testing checkpoint suspension",
+                           admissions.opened.poll(SOCKET_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS), is(true));
 
-        try {
-            stalledConnection = new Socket("127.0.0.1", server.port());
-            queuedConnection = new Socket("127.0.0.1", server.port());
+                connect(queued, server);
+                sendRequest(queued, PROXY_HEADER, "close");
+                assertThat("listener must not admit the queued connection while PROXY setup holds the only slot",
+                           admissions.opened.poll(NO_ADMISSION_MILLIS, TimeUnit.MILLISECONDS), nullValue());
 
-            waitFor(Duration.ofSeconds(5),
-                    () -> listenerThreadState(WebServer.DEFAULT_SOCKET_NAME) == Thread.State.TIMED_WAITING,
-                    "listener did not block on the connection limit");
-
-            Future<?> suspendFuture = executor.submit(server::suspend);
-            try {
-                suspendFuture.get(2, TimeUnit.SECONDS);
-                suspended = true;
-            } catch (TimeoutException e) {
-                closeQuietly(stalledConnection);
-                closeQuietly(queuedConnection);
-                awaitSuspendForCleanup(suspendFuture);
-                suspended = true;
-                fail("Suspend blocked while the listener was waiting for a TCP connection slot", e);
+                lifecycle.run(server::suspend, "checkpoint suspension while the connection limit is reached");
+                assertClosed(stalled, "checkpoint suspension must close the incomplete PROXY connection");
             }
-        } finally {
-            closeQuietly(stalledConnection);
-            closeQuietly(queuedConnection);
-            if (suspended) {
-                server.resume();
+            lifecycle.run(server::resume, "resume after checkpoint suspension");
+            try (Socket valid = new Socket()) {
+                connect(valid, server);
+                sendRequest(valid, PROXY_HEADER, "close");
+                assertResponse(valid, "request after checkpoint suspension must recover the connection permit");
             }
-            server.stop();
-            executor.shutdownNow();
-            executor.awaitTermination(5, TimeUnit.SECONDS);
         }
     }
 
@@ -145,113 +154,144 @@ class ServerListenerSuspendTest {
                 .routing(routing -> routing.get("/", (req, res) -> res.send("ok")))
                 .build()
                 .start();
-        boolean suspended = false;
 
-        try {
-            waitFor(Duration.ofSeconds(5),
-                    () -> {
-                        Thread listener = listenerThread(WebServer.DEFAULT_SOCKET_NAME);
-                        if (listener == null) {
-                            return false;
-                        }
-                        for (StackTraceElement element : listener.getStackTrace()) {
-                            if ("accept".equals(element.getMethodName())) {
-                                return true;
-                            }
-                        }
-                        return false;
-                    },
-                    "listener did not block in accept");
-
-            server.suspend();
-            suspended = true;
-            server.resume();
-            suspended = false;
-
-            String response = "";
-            try (Socket valid = new Socket("127.0.0.1", server.port())) {
-                valid.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
-                valid.getOutputStream()
-                        .write(("GET / HTTP/1.1\r\n"
-                                + "Host: localhost\r\n"
-                                + "Connection: close\r\n"
-                                + "\r\n").getBytes(StandardCharsets.US_ASCII));
-                valid.getOutputStream().flush();
-                ByteArrayOutputStream responseBytes = new ByteArrayOutputStream();
-                byte[] buffer = new byte[256];
-                do {
-                    int read = valid.getInputStream().read(buffer);
-                    if (read == -1) {
-                        break;
-                    }
-                    responseBytes.write(buffer, 0, read);
-                    response = responseBytes.toString(StandardCharsets.US_ASCII);
-                } while (!response.contains("ok"));
+        try (var lifecycle = new ServerLifecycle(server)) {
+            // Exercise idle suspension repeatedly without depending on where or how the listener parks.
+            for (int cycle = 1; cycle <= 5; cycle++) {
+                try (Socket valid = new Socket()) {
+                    connect(valid, server);
+                    sendRequest(valid, "", "close");
+                    assertResponse(valid, "request before idle suspension cycle " + cycle);
+                    assertThat("connection must close before idle suspension cycle " + cycle,
+                               valid.getInputStream().read(), is(-1));
+                }
+                lifecycle.run(server::suspend, "idle suspension cycle " + cycle);
+                lifecycle.run(server::resume, "idle resume cycle " + cycle);
+                try (Socket valid = new Socket()) {
+                    connect(valid, server);
+                    sendRequest(valid, "", "close");
+                    assertResponse(valid, "request after idle resume cycle " + cycle + " must recover the connection permit");
+                }
             }
+        }
+    }
 
-            assertThat(response, containsString("200 OK"));
-            assertThat(response, containsString("ok"));
+    private static void connect(Socket socket, WebServer server) throws IOException {
+        socket.connect(new InetSocketAddress("127.0.0.1", server.port()), SOCKET_TIMEOUT_MILLIS);
+        socket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
+    }
+
+    private static void sendRequest(Socket socket, String prefix, String connection) throws IOException {
+        socket.getOutputStream().write((prefix + "GET / HTTP/1.1\r\n"
+                                               + "Host: localhost\r\n"
+                                               + "Connection: " + connection + "\r\n\r\n")
+                                              .getBytes(StandardCharsets.US_ASCII));
+        socket.getOutputStream().flush();
+    }
+
+    private static void assertClosed(Socket socket, String message) {
+        try {
+            assertThat(message, socket.getInputStream().read(), is(-1));
+        } catch (SocketException _) {
+            // A reset is also an acceptable close signal when setup is incomplete or invalid.
+        } catch (IOException e) {
+            throw new AssertionError(message, e);
+        }
+    }
+
+    private static void assertResponse(Socket socket, String message) throws IOException {
+        var responseBytes = new ByteArrayOutputStream();
+        long deadline = System.nanoTime() + Duration.ofMillis(SOCKET_TIMEOUT_MILLIS).toNanos();
+        String response = "";
+        try {
+            while (!response.endsWith("\r\n\r\nok") && responseBytes.size() < 8192) {
+                long remaining = deadline - System.nanoTime();
+                if (remaining <= 0) {
+                    throw new SocketTimeoutException("response deadline expired");
+                }
+                socket.setSoTimeout((int) Math.max(1, TimeUnit.NANOSECONDS.toMillis(remaining)));
+                int read = socket.getInputStream().read();
+                if (read == -1) {
+                    break;
+                }
+                responseBytes.write(read);
+                response = responseBytes.toString(StandardCharsets.US_ASCII);
+            }
+        } catch (IOException e) {
+            throw new AssertionError(message + "; response received: " + response, e);
         } finally {
-            if (suspended) {
-                server.resume();
-            }
-            server.stop();
+            socket.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
         }
+        assertThat(message, response, startsWith("HTTP/1.1 200 OK\r\n"));
+        assertThat(message, response, endsWith("\r\n\r\nok"));
     }
 
-    private static void awaitSuspendForCleanup(Future<?> suspendFuture) throws Exception {
-        try {
-            suspendFuture.get(5, TimeUnit.SECONDS);
-        } catch (TimeoutException e) {
-            fail("Suspend still did not finish after releasing the stalled connection", e);
-        } catch (ExecutionException e) {
-            throw unwrapExecutionException(e);
-        }
-    }
+    private static final class ServerLifecycle implements AutoCloseable {
+        private final WebServer server;
+        private final ExecutorService executor = Executors.newSingleThreadExecutor(Thread.ofVirtual().factory());
 
-    private static Exception unwrapExecutionException(ExecutionException e) {
-        if (e.getCause() instanceof Exception exception) {
-            return exception;
+        private ServerLifecycle(WebServer server) {
+            this.server = server;
         }
-        if (e.getCause() instanceof Error error) {
-            throw error;
-        }
-        return e;
-    }
 
-    private static Thread.State listenerThreadState(String socketName) {
-        Thread thread = listenerThread(socketName);
-        return thread == null ? null : thread.getState();
-    }
-
-    private static Thread listenerThread(String socketName) {
-        String threadName = "server-" + socketName + "-listener";
-        for (Thread thread : Thread.getAllStackTraces().keySet()) {
-            if (threadName.equals(thread.getName())) {
-                return thread;
+        @Override
+        public void close() throws Exception {
+            // Client sockets close first, so a timed-out suspend can finish before stop takes the lifecycle lock.
+            try {
+                run(server::stop, "server cleanup");
+            } finally {
+                executor.shutdownNow();
+                assertThat("server lifecycle executor must terminate",
+                           executor.awaitTermination(SOCKET_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS), is(true));
             }
         }
-        return null;
-    }
 
-    private static void waitFor(Duration timeout, BooleanSupplier condition, String message) throws InterruptedException {
-        long deadline = System.nanoTime() + timeout.toNanos();
-        while (System.nanoTime() < deadline) {
-            if (condition.getAsBoolean()) {
-                return;
+        private void run(Runnable operation, String message) throws Exception {
+            var future = executor.submit(operation);
+            try {
+                future.get(SOCKET_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
+            } catch (TimeoutException e) {
+                throw new AssertionError(message + " did not finish within " + SOCKET_TIMEOUT_MILLIS + " ms", e);
+            } catch (ExecutionException e) {
+                throw new AssertionError(message + " failed", e.getCause());
             }
-            Thread.sleep(10);
         }
-        fail(message);
     }
 
-    private static void closeQuietly(Socket socket) {
-        if (socket == null) {
-            return;
+    private static final class ConnectionAdmissions
+            implements ServerFeature, HttpTransportObserverSupport.ObserverLifecycle, HttpTransportObserver {
+        private final BlockingQueue<Boolean> opened = new LinkedBlockingQueue<>();
+
+        @Override
+        public String name() {
+            return "test-connection-admissions";
         }
-        try {
-            socket.close();
-        } catch (Exception ignored) {
+
+        @Override
+        public String type() {
+            return "test-connection-admissions";
+        }
+
+        @Override
+        public void setup(ServerFeatureContext featureContext) {
+            assertThat("transport observation must be registered",
+                       HttpTransportObserverSupport.addObserver(featureContext, WebServer.DEFAULT_SOCKET_NAME, this), is(true));
+        }
+
+        @Override
+        public HttpTransportObserver start() {
+            return this;
+        }
+
+        @Override
+        public CompletionStage<Void> stop() {
+            return CompletableFuture.completedFuture(null);
+        }
+
+        @Override
+        public ConnectionObservation connectionOpened(Role role, String transport, Handshake handshake) {
+            opened.add(true);
+            return ConnectionObservation.noop();
         }
     }
 }
