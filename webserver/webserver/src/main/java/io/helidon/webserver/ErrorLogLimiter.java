@@ -83,24 +83,27 @@ final class ErrorLogLimiter {
         } finally {
             lock.unlock();
         }
-        if (calculate) {
-            try {
-                // Stack extraction may copy a full trace. Keep it outside the accounting lock and bound concurrent work.
-                identity = identity(logger.getName(), message, failure);
-                lock.lock();
+        try {
+            if (calculate) {
                 try {
-                    // A concurrent request or report may have changed the budgets or rolled the window during extraction.
-                    allowed = admit(identity);
+                    // Stack extraction may copy a full trace. Keep it outside the accounting lock and bound concurrent work.
+                    identity = identity(logger.getName(), message, failure);
+                    lock.lock();
+                    try {
+                        // A concurrent request or report may have changed budgets or rolled the window during extraction.
+                        allowed = admit(identity);
+                    } finally {
+                        lock.unlock();
+                    }
                 } finally {
-                    lock.unlock();
+                    identityPermits.release();
                 }
-            } finally {
-                identityPermits.release();
             }
-        }
-        // Never call a logging backend while holding the accounting lock.
-        if (summary != null) {
-            LOGGER.log(System.Logger.Level.WARNING, summary);
+        } finally {
+            // Never call a logging backend while holding the accounting lock, even when identity extraction fails.
+            if (summary != null) {
+                LOGGER.log(System.Logger.Level.WARNING, summary);
+            }
         }
         if (allowed) {
             logger.log(level, message + " [error-id=" + Long.toUnsignedString(identity, 16) + "]", failure);

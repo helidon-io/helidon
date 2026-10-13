@@ -441,6 +441,34 @@ class ErrorLogLimiterTest {
     }
 
     @Test
+    void failingIdentityCalculationPreservesDueSuppressionReport() {
+        ErrorLogLimiter limiter = limiter(1, 100, 100, 0, 25);
+        log(limiter, failure("first", 1), 0);
+        log(limiter, failure("suppressed repeat", 1), 1);
+        IllegalArgumentException extractionFailure = new IllegalArgumentException("Cannot obtain stack");
+        Throwable failure = new IllegalStateException() {
+            @Override
+            public StackTraceElement[] getStackTrace() {
+                throw extractionFailure;
+            }
+        };
+
+        assertThat(assertThrows(IllegalArgumentException.class, () -> log(limiter, failure, 25)),
+                   sameInstance(extractionFailure));
+        assertThat("The due report survives the failed identity calculation", summaries, hasSize(1));
+        assertSummary(0, 1, 1, 0, 0);
+        assertThat(details.entries, hasSize(1));
+        log(limiter, failure("subsequent error", 2), 26);
+        log(limiter, failure("next suppressed repeat", 1), 27);
+        assertThat("Identity work remains available", details.entries, hasSize(2));
+        limiter.report(50);
+        assertThat("The next report contains only new suppressions", summaries, hasSize(2));
+        assertSummary(1, 1, 1, 0, 0);
+        limiter.flush();
+        assertThat("Shutdown must not duplicate either report", summaries, hasSize(2));
+    }
+
+    @Test
     void multipleReportsDoNotRenewPerErrorAllowanceWithinCollectionWindow() {
         ErrorLogLimiter limiter = limiter(1, 10, 10, 0, 25);
         log(limiter, failure("first", 1), 0);
