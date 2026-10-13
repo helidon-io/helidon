@@ -133,26 +133,24 @@ public class Http3DataIngressJmhBenchmark {
 
     @Benchmark
     public int heapCompatibilityMaterializedBulk(DataState state) {
-        byte[] data = state.reader.readEntityDataWithTrailers(state.payloadSize);
-        if (data.length != state.payloadSize) {
-            throw new IllegalStateException("Materialized DATA length mismatch: " + data.length);
+        int offset = 0;
+        while (offset < state.payloadSize) {
+            byte[] data = state.reader.readEntityDataWithTrailers(state.payloadSize - offset);
+            if (data.length == 0 || data.length > state.payloadSize - offset) {
+                throw new IllegalStateException("Materialized DATA length mismatch at " + offset + ": " + data.length);
+            }
+            state.materialized = data;
+            state.materializedOffset = offset;
+            System.arraycopy(data, 0, state.destination, offset, data.length);
+            offset += data.length;
         }
-        state.materialized = data;
-        System.arraycopy(data, 0, state.destination, 0, data.length);
         state.bulk = true;
-        return state.destination[data.length - 1] & 0xFF;
+        return state.destination[state.destination.length - 1] & 0xFF;
     }
 
     @Benchmark
     public int heapSliceBulk(DataState state) {
-        BufferData data = state.reader.readEntityBufferWithTrailers(state.payloadSize);
-        state.handedOff = data;
-        int read = data.read(state.destination, 0, state.destination.length);
-        if (read != state.destination.length) {
-            throw new IllegalStateException("Sliced DATA length mismatch: " + read);
-        }
-        state.bulk = true;
-        return state.destination[state.destination.length - 1] & 0xFF;
+        return state.readSliceBulk();
     }
 
     @Benchmark
@@ -209,17 +207,11 @@ public class Http3DataIngressJmhBenchmark {
 
     @Benchmark
     public int heapSliceTrailersCompletion(DataState state) {
-        BufferData data = state.reader.readEntityBufferWithTrailers(state.payloadSize);
-        state.handedOff = data;
-        int read = data.read(state.destination, 0, state.destination.length);
-        if (read != state.destination.length) {
-            throw new IllegalStateException("Sliced DATA length mismatch: " + read);
-        }
+        int result = state.readSliceBulk();
         if (state.reader.readEntityBufferWithTrailers(state.payloadSize).available() != 0) {
             throw new IllegalStateException("HTTP/3 reader exposed entity data after trailers");
         }
-        state.bulk = true;
-        return state.destination[state.destination.length - 1] & 0xFF;
+        return result;
     }
 
     @Benchmark
@@ -264,6 +256,7 @@ public class Http3DataIngressJmhBenchmark {
         private BufferData source;
         private BufferData handedOff;
         private byte[] materialized;
+        private int materializedOffset;
         private StreamFrame directFrame;
         private Http3MessageReader reader;
         private int checksum;
@@ -306,17 +299,25 @@ public class Http3DataIngressJmhBenchmark {
             Http3MessageReader verificationReader = newReader(verificationSource);
             verificationReader.readResponseHead(ignored -> {
             });
-            BufferData verificationSlice = verificationReader.readEntityBufferWithTrailers(payloadSize);
-            if (verificationSource.available() != TRAILER_SIZE
-                    || verificationSlice.available() != payloadSize
-                    || verificationSlice.get(0) != (expectedPayload[0] & 0xFF)
-                    || verificationSlice.get(payloadSize - 1) != (expectedPayload[payloadSize - 1] & 0xFF)) {
-                throw new IllegalStateException("HTTP/3 DATA benchmark range setup is invalid");
+            int verified = 0;
+            while (verified < payloadSize) {
+                BufferData slice = verificationReader.readEntityBufferWithTrailers(payloadSize - verified);
+                int length = slice.available();
+                if (length == 0 || length > payloadSize - verified
+                        || slice.get(0) != (expectedPayload[verified] & 0xFF)
+                        || slice.get(length - 1) != (expectedPayload[verified + length - 1] & 0xFF)) {
+                    throw new IllegalStateException("HTTP/3 DATA benchmark range setup is invalid at " + verified);
+                }
+                expectOutOfBounds(slice, length);
+                slice.skip(length);
+                slice.rewind();
+                expectOutOfBounds(slice, length);
+                slice.skip(length);
+                verified += length;
             }
-            expectOutOfBounds(verificationSlice, payloadSize);
-            verificationSlice.skip(payloadSize);
-            verificationSlice.rewind();
-            expectOutOfBounds(verificationSlice, payloadSize);
+            if (verificationSource.available() != TRAILER_SIZE) {
+                throw new IllegalStateException("HTTP/3 DATA benchmark consumed the trailing guard range");
+            }
             verificationReader.close();
         }
 
@@ -348,6 +349,7 @@ public class Http3DataIngressJmhBenchmark {
             }
             handedOff = null;
             materialized = null;
+            materializedOffset = 0;
             checksum = 0;
             bulk = false;
             Arrays.fill(destination, (byte) 0);
@@ -378,8 +380,12 @@ public class Http3DataIngressJmhBenchmark {
                     throw new IllegalStateException("HTTP/3 DATA slice was not fully consumed");
                 }
             }
-            if (materialized != null && !Arrays.equals(expectedPayload, materialized)) {
-                throw new IllegalStateException("Materialized HTTP/3 DATA changed the payload");
+            if (materialized != null) {
+                for (int index = 0; index < materialized.length; index++) {
+                    if (materialized[index] != expectedPayload[materializedOffset + index]) {
+                        throw new IllegalStateException("Materialized HTTP/3 DATA changed the payload");
+                    }
+                }
             }
 
             if (bulk) {
@@ -409,6 +415,25 @@ public class Http3DataIngressJmhBenchmark {
             System.arraycopy(data, 0, destination, 0, data.length);
             bulk = true;
             return destination[data.length - 1] & 0xFF;
+        }
+
+        private int readSliceBulk() {
+            int offset = 0;
+            while (offset < payloadSize) {
+                BufferData data = reader.readEntityBufferWithTrailers(payloadSize - offset);
+                handedOff = data;
+                int length = data.available();
+                if (length == 0 || length > payloadSize - offset) {
+                    throw new IllegalStateException("Sliced DATA length mismatch at " + offset + ": " + length);
+                }
+                int read = data.read(destination, offset, length);
+                if (read != length) {
+                    throw new IllegalStateException("Sliced DATA consumption mismatch: " + read + " instead of " + length);
+                }
+                offset += read;
+            }
+            bulk = true;
+            return destination[destination.length - 1] & 0xFF;
         }
 
         private int sliceBulk() {

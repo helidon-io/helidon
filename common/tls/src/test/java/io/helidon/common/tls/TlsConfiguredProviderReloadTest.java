@@ -30,6 +30,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.arrayWithSize;
 
 class TlsConfiguredProviderReloadTest {
     private static final String MANAGER_NAME = "server-listener";
@@ -84,6 +85,24 @@ class TlsConfiguredProviderReloadTest {
         assertThat(issuer(second), is("again"));
         assertThat(first.generation(), is(2L));
         assertThat(second.generation(), is(2L));
+    }
+
+    @Test
+    void providerReloadRetainsHashAndDefensiveParameters() {
+        Tls first = Tls.create(config("configured"));
+        int originalHash = first.hashCode();
+        first.sslParameters().setApplicationProtocols(new String[] {"changed"});
+
+        StaticReloadTlsManagerProvider.reload(MANAGER_NAME, "reloaded");
+        Tls second = Tls.create(config("configured"));
+
+        assertThat(first.sslParameters().getApplicationProtocols(), arrayWithSize(0));
+        assertThat(first.hashCode(), is(originalHash));
+        assertThat(second, is(first));
+        assertThat(second.hashCode(), is(originalHash));
+        assertThat(issuer(first), is("reloaded"));
+        assertThat(first.generation(), is(1L));
+        assertThat(second.generation(), is(1L));
     }
 
     private static Config config(String initialIssuer) {

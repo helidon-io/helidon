@@ -51,6 +51,82 @@ class Http3MessageReaderTest {
     private static final Http3FrameListener NO_OP_FRAME_LISTENER = Http3FrameListener.create(List.of());
 
     @Test
+    void shouldReturnIndependentWritableEmptyTrailersThroughoutLifecycle() {
+        Http3MessageReader reader = responseReader(Method.GET, headersFrame(HeaderValues.create(":status", "200")));
+        Headers before = reader.trailers();
+        ((WritableHeaders<?>) before).set(HeaderValues.create("x-local", "before"));
+        assertThat(reader.trailers().size(), is(0));
+        reader.readResponseHead(_ -> { });
+        assertThat(reader.trailers().size(), is(0));
+        assertThat(reader.readEntityDataWithTrailers(8), is(new byte[0]));
+        Headers completed = reader.trailers();
+        ((WritableHeaders<?>) completed).set(HeaderValues.create("x-local", "completed"));
+        reader.close();
+        reader.close();
+        assertThat(reader.trailers().size(), is(0));
+        assertThat(before.get(HeaderNames.create("x-local")).get(), is("before"));
+        assertThat(completed.get(HeaderNames.create("x-local")).get(), is("completed"));
+    }
+
+    @Test
+    void shouldAssignTrailersAfterListenerReentryAndCopyDecodedFields() {
+        AtomicReference<Http3MessageReader> current = new AtomicReference<>();
+        Http3FrameListener listener = new Http3FrameListener() {
+            @Override
+            public boolean enabled() {
+                return true;
+            }
+
+            @Override
+            public void trailers(SocketContext context, long streamId, Headers headers) {
+                assertThat(current.get().trailers().size(), is(0));
+                ((WritableHeaders<?>) current.get().trailers()).set(HeaderValues.create("x-ignored", "local"));
+                ((WritableHeaders<?>) headers).set(HeaderValues.create("x-listener", "assigned"));
+            }
+        };
+        Http3MessageReader reader = Http3MessageReader.response(
+                FakeReceiverStream.create(headersFrame(HeaderValues.create(":status", "200")),
+                        headersFrame(HeaderValues.create("x-trailer", "wire"))),
+                qpackContext(), Http3TestSocketContext.INSTANCE, Method.GET, 16_384, listener);
+        current.set(reader);
+        reader.readResponseHead(_ -> { });
+        assertThat(reader.readEntityDataWithTrailers(8), is(new byte[0]));
+        Headers first = reader.trailers();
+        assertThat(first.first(HeaderNames.create("x-listener")), is(Optional.of("assigned")));
+        assertThat(first.contains(HeaderNames.create("x-ignored")), is(false));
+        ((WritableHeaders<?>) first).clear();
+        assertThat(reader.trailers().first(HeaderNames.create("x-trailer")), is(Optional.of("wire")));
+        assertThat(reader.trailers().first(HeaderNames.create("x-listener")), is(Optional.of("assigned")));
+        reader.close();
+    }
+
+    @Test
+    void shouldPreservePreviousTrailersWhenListenerThrows() {
+        IllegalStateException expected = new IllegalStateException("trailer listener");
+        Http3FrameListener listener = new Http3FrameListener() {
+            @Override
+            public boolean enabled() {
+                return true;
+            }
+
+            @Override
+            public void trailers(SocketContext context, long streamId, Headers headers) {
+                throw expected;
+            }
+        };
+        Http3MessageReader reader = Http3MessageReader.response(
+                FakeReceiverStream.create(headersFrame(HeaderValues.create(":status", "200")),
+                        headersFrame(HeaderValues.create("x-trailer", "wire"))),
+                qpackContext(), Http3TestSocketContext.INSTANCE, Method.GET, 16_384, listener);
+        reader.readResponseHead(_ -> { });
+
+        assertThat(assertThrows(IllegalStateException.class, () -> reader.readEntityDataWithTrailers(8)),
+                sameInstance(expected));
+        assertThat(reader.trailers().size(), is(0));
+        reader.close();
+    }
+
+    @Test
     void shouldDeliverInformationalResponsesWithoutMergingTheirFields() throws Exception {
         Http3MessageReader reader = responseReader(Method.GET,
                                                    headersFrame(HeaderValues.create(":status", "103"),

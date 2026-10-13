@@ -24,6 +24,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.SequencedSet;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
@@ -996,7 +998,12 @@ final class Http3ConnectionCache extends ClientConnectionCache {
                     boolean sendErrorDetails,
                     Duration initialResponseTimeout,
                     Duration handshakeTimeout,
-                    Duration streamOpenTimeout) {
+                    Duration streamOpenTimeout,
+                    Optional<RuntimeExecutorKey> runtimeExecutorKey) {
+        CacheKey {
+            Objects.requireNonNull(runtimeExecutorKey, "runtimeExecutorKey");
+        }
+
         ConnectionKey connectionKey() {
             return endpointKey.connectionKey();
         }
@@ -1007,6 +1014,27 @@ final class Http3ConnectionCache extends ClientConnectionCache {
 
         long tlsGeneration() {
             return endpointKey.tlsGeneration();
+        }
+    }
+
+    record RuntimeExecutorKey(Executor executor) implements Executor {
+        RuntimeExecutorKey {
+            Objects.requireNonNull(executor, "executor");
+        }
+
+        @Override
+        public void execute(Runnable task) {
+            executor.execute(task);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof RuntimeExecutorKey other && executor == other.executor;
+        }
+
+        @Override
+        public int hashCode() {
+            return System.identityHashCode(executor);
         }
     }
 

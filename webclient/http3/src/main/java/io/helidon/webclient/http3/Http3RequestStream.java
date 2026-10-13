@@ -274,7 +274,8 @@ final class Http3RequestStream {
             if (releaseRequested.get()) {
                 return response;
             }
-            currentRequest.requestBody().writeTo(new BufferedOutputStream(requestOutput, REQUEST_BUFFER_SIZE) {
+            currentRequest.requestBody().writeTo(new BufferedOutputStream(requestOutput,
+                    currentRequest.requestBody().isEmpty() ? 1 : REQUEST_BUFFER_SIZE) {
                 @Override
                 public void close() throws IOException {
                     if (requestOutput.dispatchFailure == null) {
@@ -559,7 +560,12 @@ final class Http3RequestStream {
                             NOT_PROCESSED,
                             false));
         }
-        continueDecision.completeExceptionally(Http3RequestFailureSupport.connectionRetired());
+        if (continueDecision.isDone()) {
+            // The selected result cannot change; retain assistance for waiters and timeout cancellation.
+            continueDecision.complete(null);
+        } else {
+            continueDecision.completeExceptionally(Http3RequestFailureSupport.connectionRetired());
+        }
         try {
             reader.close();
         } finally {

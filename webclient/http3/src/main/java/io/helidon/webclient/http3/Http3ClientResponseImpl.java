@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
@@ -39,6 +40,9 @@ import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientResponse;
 
 class Http3ClientResponseImpl implements Http3ClientResponse {
+    private static final int MAX_HINT = 1024 * 1024;
+    private static final int MAX_ARRAY_LENGTH = Integer.MAX_VALUE - 8;
+
     private final HttpClientResponse delegate;
     private final Duration readTimeout;
     private final String protocolId;
@@ -55,6 +59,7 @@ class Http3ClientResponseImpl implements Http3ClientResponse {
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final long maxBufferedEntitySize;
     private boolean entityRequested;
+    private byte[] stagingBuffer;
 
     Http3ClientResponseImpl(HttpClientResponse delegate) {
         this.delegate = delegate;
@@ -171,6 +176,32 @@ class Http3ClientResponseImpl implements Http3ClientResponse {
     }
 
     @Override
+    public <T> T as(Class<T> type) {
+        if (type != byte[].class) {
+            return entity().as(type);
+        }
+        boolean directEligible = delegate == null
+                && getClass() == Http3ClientResponseImpl.class && !entityRequested;
+        var responseEntity = entity();
+        if (!responseEntity.hasEntity()) {
+            return responseEntity.as(type);
+        }
+        long hint;
+        try {
+            hint = headers().contentLength().orElse(-1);
+        } catch (IllegalArgumentException _) {
+            return responseEntity.as(type);
+        }
+        if (hint < 1 || hint > MAX_HINT) {
+            return responseEntity.as(type);
+        }
+        if (directEligible) {
+            return type.cast(readDestination(new DestinationInputStream(), (int) hint));
+        }
+        return type.cast(readDestination(responseEntity.inputStream(), (int) hint));
+    }
+
+    @Override
     public long maxBufferedEntitySize() {
         return delegate == null ? maxBufferedEntitySize : delegate.maxBufferedEntitySize();
     }
@@ -199,6 +230,7 @@ class Http3ClientResponseImpl implements Http3ClientResponse {
             delegate.close();
             return;
         }
+        stagingBuffer = null;
         if (closed.compareAndSet(false, true)) {
             try {
                 closeResponseRunnable.run();
@@ -211,14 +243,63 @@ class Http3ClientResponseImpl implements Http3ClientResponse {
         }
     }
 
+    private static byte[] readDestination(InputStream input, int hint) {
+        byte[] result = new byte[hint];
+        byte[] probe = null;
+        int used = 0;
+        try {
+            for (;;) {
+                if (used == result.length) {
+                    if (probe == null) {
+                        probe = new byte[1];
+                    }
+                    int read = input.read(probe, 0, 1);
+                    if (read < 0) {
+                        return result;
+                    }
+                    if (read == 0) {
+                        continue;
+                    }
+                    result = Arrays.copyOf(result, grownCapacity(result.length));
+                    result[used++] = probe[0];
+                } else {
+                    int read = input.read(result, used, Math.min(16 * 1024, result.length - used));
+                    if (read < 0) {
+                        return Arrays.copyOf(result, used);
+                    }
+                    used += read;
+                }
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static int grownCapacity(int current) {
+        if (current >= MAX_ARRAY_LENGTH) {
+            throw new OutOfMemoryError("Required response byte array exceeds maximum length");
+        }
+        return (int) Math.min((long) MAX_ARRAY_LENGTH, (long) current * 2);
+    }
+
     private BufferData readBytes(int estimate) {
         try {
-            byte[] buffer = new byte[estimate > 0 ? estimate : 16];
-            int read = inputStream.read(buffer);
+            int requested = estimate > 0 ? estimate : 16;
+            byte[] buffer = stagingBuffer;
+            if (buffer == null || buffer.length < requested) {
+                buffer = new byte[requested];
+                stagingBuffer = buffer;
+            }
+            int read = inputStream.read(buffer, 0, requested);
             if (read < 1) {
+                stagingBuffer = null;
                 return BufferData.empty();
             }
-            return BufferData.create(buffer, 0, read);
+            if (read == buffer.length) {
+                stagingBuffer = null;
+                return BufferData.create(buffer, 0, read);
+            }
+            return BufferData.create(Arrays.copyOf(buffer, read));
         } catch (IOException e) {
             UncheckedIOException failure = new UncheckedIOException(e);
             failRead(failure);
@@ -230,6 +311,7 @@ class Http3ClientResponseImpl implements Http3ClientResponse {
     }
 
     private void failRead(Throwable failure) {
+        stagingBuffer = null;
         if (closed.compareAndSet(false, true)) {
             try {
                 readFailureAction.accept(failure);
@@ -240,6 +322,36 @@ class Http3ClientResponseImpl implements Http3ClientResponse {
             }
             responseTrailers.completeExceptionally(failure);
             complete.completeExceptionally(failure);
+        }
+    }
+
+    private final class DestinationInputStream extends InputStream {
+        @Override
+        public int read() {
+            byte[] single = new byte[1];
+            return read(single, 0, 1) < 0 ? -1 : single[0] & 0xff;
+        }
+
+        @Override
+        public int read(byte[] bytes, int offset, int length) {
+            int read;
+            try {
+                read = inputStream.read(bytes, offset, length);
+            } catch (IOException e) {
+                UncheckedIOException failure = new UncheckedIOException(e);
+                failRead(failure);
+                throw failure;
+            } catch (RuntimeException | Error failure) {
+                failRead(failure);
+                throw failure;
+            }
+            // Match RequestingInputStream: a zero supplier result ends the entity too.
+            // EOF close errors belong to entity completion, outside readBytes' failure handling.
+            if (read < 1) {
+                Http3ClientResponseImpl.this.close();
+                return -1;
+            }
+            return read;
         }
     }
 }

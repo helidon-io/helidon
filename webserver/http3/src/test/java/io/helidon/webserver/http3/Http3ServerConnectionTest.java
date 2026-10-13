@@ -1398,6 +1398,7 @@ class Http3ServerConnectionTest {
         QuicStreamWriter writer = mock(QuicStreamWriter.class);
         CompletableFuture<QuicSenderStream.SendingStreamState> sendingCompletion = new CompletableFuture<>();
         when(transportStream.streamId()).thenReturn(streamId);
+        when(transportStream.receivingState()).thenReturn(QuicReceiverStream.ReceivingStreamState.RECV);
         when(transportStream.connectReader(any(SequentialScheduler.class))).thenReturn(reader);
         when(transportStream.connectWriter(any(SequentialScheduler.class))).thenReturn(writer);
         when(transportStream.futureSendingCompletion()).thenReturn(sendingCompletion);

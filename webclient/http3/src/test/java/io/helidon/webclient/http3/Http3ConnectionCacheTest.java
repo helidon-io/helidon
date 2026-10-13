@@ -18,11 +18,20 @@ package io.helidon.webclient.http3;
 
 import java.net.InetAddress;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.Executor;
 
 import io.helidon.common.tls.Tls;
 import io.helidon.common.tls.TlsMaterial;
 import io.helidon.common.uri.UriAuthority;
+import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpTransportObserver;
+import io.helidon.http.WritableHeaders;
+import io.helidon.webclient.api.ClientAltSvcConfig;
 import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.api.DnsAddressLookup;
 import io.helidon.webclient.api.Proxy;
@@ -31,6 +40,8 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 
@@ -166,6 +177,117 @@ class Http3ConnectionCacheTest {
         assertThat(smallerLimit.cacheKey().equals(largerLimit.cacheKey()), is(false));
     }
 
+    @Test
+    void defaultRuntimeExecutorKeepsSharedCacheKeyCompatibility() {
+        Tls tls = tls();
+        Http3ClientImpl first = runtimeClient(tls, Http3ClientProtocolConfig.create());
+        Http3ClientImpl second = runtimeClient(tls, Http3ClientProtocolConfig.create());
+        try {
+            Http3ConnectionCache.CacheKey firstKey = runtimeKey(first);
+            Http3ConnectionCache.CacheKey secondKey = runtimeKey(second);
+
+            assertThat(first.connectionCache(), sameInstance(second.connectionCache()));
+            assertThat(firstKey.runtimeExecutorKey(), is(Optional.empty()));
+            assertThat(secondKey, is(firstKey));
+            assertThat(secondKey.hashCode(), is(firstKey.hashCode()));
+        } finally {
+            first.closeResource();
+            second.closeResource();
+        }
+    }
+
+    @Test
+    void sameExplicitExecutorRetainsCacheLookupWithoutCallingExecutorEqualityOrHash() {
+        Tls tls = tls();
+        var executor = new HostileExecutor();
+        Http3ClientProtocolConfig config = Http3ClientProtocolConfig.builder().runtimeExecutor(executor).buildPrototype();
+        Http3ClientImpl first = runtimeClient(tls, config);
+        Http3ClientImpl second = runtimeClient(tls, config);
+        try {
+            Http3ConnectionCache.CacheKey firstKey = runtimeKey(first);
+            Map<Http3ConnectionCache.CacheKey, String> pools = new HashMap<>();
+            pools.put(firstKey, "same executor");
+            executor.hash = Integer.MIN_VALUE;
+            Http3ConnectionCache.CacheKey secondKey = runtimeKey(second);
+
+            assertThat(secondKey, is(firstKey));
+            assertThat(pools.get(secondKey), is("same executor"));
+            assertThat(firstKey.runtimeExecutorKey().orElseThrow().executor(), sameInstance(executor));
+            Http3Discovery discovery = Http3Discovery.create((_, _) -> { });
+            discovery.recordAltSvc(firstKey.endpointKey(), ClientResponseHeaders.create(WritableHeaders.create()
+                    .add(HeaderValues.create(HeaderNames.ALT_SVC, "h3=\":9443\""))));
+            Http3Discovery.Selection learned = discovery.automaticTarget(secondKey.endpointKey(), true, _ -> false)
+                    .orElseThrow();
+            assertThat(learned.target().peerPort(), is(9443));
+            discovery.recordFailure(learned);
+            assertThat(discovery.automaticTarget(firstKey.endpointKey(), true, _ -> false).isEmpty(), is(true));
+            assertThat(executor.equalsCalls, is(0));
+            assertThat(executor.hashCalls, is(0));
+        } finally {
+            first.closeResource();
+            second.closeResource();
+        }
+    }
+
+    @Test
+    void differentExplicitExecutorsCannotShareCacheKeysEvenWhenTheirEqualsReturnsTrue() {
+        Tls tls = tls();
+        var firstExecutor = new HostileExecutor();
+        var secondExecutor = new HostileExecutor();
+        Http3ClientImpl first = runtimeClient(tls, Http3ClientProtocolConfig.builder()
+                .runtimeExecutor(firstExecutor).buildPrototype());
+        Http3ClientImpl second = runtimeClient(tls, Http3ClientProtocolConfig.builder()
+                .runtimeExecutor(secondExecutor).buildPrototype());
+        Http3ClientImpl defaults = runtimeClient(tls, Http3ClientProtocolConfig.create());
+        try {
+            Http3ConnectionCache.CacheKey firstKey = runtimeKey(first);
+            Http3ConnectionCache.CacheKey secondKey = runtimeKey(second);
+            Map<Http3ConnectionCache.CacheKey, String> pools = new HashMap<>();
+            pools.put(firstKey, "first");
+            pools.put(secondKey, "second");
+
+            assertThat(first.connectionCache(), sameInstance(second.connectionCache()));
+            assertThat(secondKey, not(firstKey));
+            assertThat(runtimeKey(defaults), not(firstKey));
+            assertThat(pools.size(), is(2));
+            assertThat(pools.get(firstKey), is("first"));
+            assertThat(pools.get(secondKey), is("second"));
+            Http3Discovery discovery = Http3Discovery.create((_, _) -> { });
+            ClientResponseHeaders advertisement = ClientResponseHeaders.create(WritableHeaders.create()
+                    .add(HeaderValues.create(HeaderNames.ALT_SVC, "h3=\":9443\"")));
+            discovery.recordAltSvc(firstKey.endpointKey(), advertisement);
+            assertThat(discovery.automaticTarget(secondKey.endpointKey(), true, _ -> false).isEmpty(), is(true));
+            discovery.recordAltSvc(secondKey.endpointKey(), advertisement);
+            discovery.recordFailure(discovery.automaticTarget(firstKey.endpointKey(), true, _ -> false).orElseThrow());
+            assertThat(discovery.automaticTarget(secondKey.endpointKey(), true, _ -> false)
+                               .orElseThrow().target().peerPort(), is(9443));
+            assertThat(firstExecutor.equalsCalls + secondExecutor.equalsCalls, is(0));
+            assertThat(firstExecutor.hashCalls + secondExecutor.hashCalls, is(0));
+        } finally {
+            first.closeResource();
+            second.closeResource();
+            defaults.closeResource();
+        }
+    }
+
+    private static Http3ClientImpl runtimeClient(Tls tls, Http3ClientProtocolConfig config) {
+        return (Http3ClientImpl) Http3Client.builder()
+                .servicesDiscoverServices(false)
+                .baseUri("https://runtime-executor.example")
+                .altSvc(ClientAltSvcConfig.create())
+                .tls(tls)
+                .protocolConfig(config)
+                .build();
+    }
+
+    private static Http3ConnectionCache.CacheKey runtimeKey(Http3ClientImpl client) {
+        var request = (Http3ClientRequestImpl) client.get("/cache-key");
+        request.priorKnowledge(true);
+        Http3Discovery.Selection selection = client.requestTarget(request, request.resolvedUri(), request.headers(), true)
+                .orElseThrow();
+        return client.connectionCacheKey(selection.key(), selection.target());
+    }
+
     private static Http3ExchangeClient.ConnectionConfig config(Tls tls,
                                                                 Duration handshakeTimeout,
                                                                 Duration streamOpenTimeout) {
@@ -209,7 +331,8 @@ class Http3ConnectionCacheTest {
                                                                                     sendErrorDetails,
                                                                                     Duration.ofSeconds(30),
                                                                                     handshakeTimeout,
-                                                                                    streamOpenTimeout);
+                                                                                    streamOpenTimeout,
+                                                                                    Optional.empty());
         return new Http3ExchangeClient.ConnectionConfig(cacheKey,
                                                         connectionCacheSize,
                                                         null,
@@ -240,5 +363,28 @@ class Http3ConnectionCacheTest {
 
     private static Tls tls() {
         return Tls.builder().trustAll(true).build();
+    }
+
+    private static final class HostileExecutor implements Executor {
+        private int hash = 7;
+        private int hashCalls;
+        private int equalsCalls;
+
+        @Override
+        public void execute(Runnable command) {
+            throw new AssertionError("Cache-key lookup must not submit transport work");
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            equalsCalls++;
+            return other instanceof HostileExecutor;
+        }
+
+        @Override
+        public int hashCode() {
+            hashCalls++;
+            return hash;
+        }
     }
 }

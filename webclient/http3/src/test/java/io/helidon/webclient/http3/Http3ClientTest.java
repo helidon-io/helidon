@@ -19,6 +19,7 @@ package io.helidon.webclient.http3;
 import java.net.URI;
 import java.net.UnixDomainSocketAddress;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -29,11 +30,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.context.Context;
+import io.helidon.common.tls.Tls;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.HeaderNames;
@@ -75,6 +78,7 @@ import org.mockito.ArgumentCaptor;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -87,6 +91,82 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 class Http3ClientTest {
+    @Test
+    void runtimeExecutorIsOptionalAndPreservedByPrototypeCopy() {
+        assertThat(Http3ClientProtocolConfig.create().runtimeExecutor().isEmpty(), equalTo(true));
+        try (var executor = Executors.newSingleThreadExecutor()) {
+            var config = Http3ClientProtocolConfig.builder().runtimeExecutor(executor).buildPrototype();
+            var copied = Http3ClientProtocolConfig.builder(config).buildPrototype();
+
+            assertThat(copied.runtimeExecutor().orElseThrow(), sameInstance(executor));
+            assertThat(Http3ClientProtocolConfig.builder(copied).clearRuntimeExecutor()
+                               .buildPrototype().runtimeExecutor().isEmpty(), equalTo(true));
+        }
+    }
+
+    @Test
+    void closingClientNeverClosesBorrowedRuntimeExecutor() throws Exception {
+        for (boolean shared : List.of(false, true)) {
+            try (var executor = Executors.newSingleThreadExecutor()) {
+                Http3Client client = Http3Client.builder()
+                        .servicesDiscoverServices(false)
+                        .shareConnectionCache(shared)
+                        .protocolConfig(Http3ClientProtocolConfig.builder().runtimeExecutor(executor).buildPrototype())
+                        .build();
+                try {
+                    client.closeResourceAsync().toCompletableFuture().get(5, TimeUnit.SECONDS);
+
+                    assertThat("borrowed executor remains open, shared=" + shared, executor.isShutdown(), equalTo(false));
+                    assertThat(executor.submit(() -> 42).get(5, TimeUnit.SECONDS), equalTo(42));
+                    client.closeResource();
+                    assertThat(executor.isShutdown(), equalTo(false));
+                } finally {
+                    client.closeResource();
+                }
+            }
+        }
+    }
+
+    @Test
+    @Timeout(10)
+    void runtimeExecutorRejectionFailsRequestAndAllowsClientClose() throws Exception {
+        var marker = new RejectedExecutionException("runtime executor rejected transport work");
+        var submitted = new AtomicInteger();
+        var producerCalls = new AtomicInteger();
+        Http3Client client = Http3Client.builder()
+                .servicesDiscoverServices(false)
+                .shareConnectionCache(false)
+                .baseUri("https://localhost:1")
+                .tls(Tls.builder().trustAll(true).build())
+                .protocolConfig(Http3ClientProtocolConfig.builder()
+                                        .priorKnowledge(true)
+                                        .initialResponseTimeout(Duration.ofSeconds(1))
+                                        .handshakeTimeout(Duration.ofSeconds(1))
+                                        .runtimeExecutor(_ -> {
+                                            submitted.incrementAndGet();
+                                            throw marker;
+                                        })
+                                        .buildPrototype())
+                .build();
+        try {
+            RuntimeException failure = assertThrows(RuntimeException.class, () -> client.post("/rejected")
+                    .outputStream(output -> {
+                        producerCalls.incrementAndGet();
+                        output.close();
+                    }));
+            // Asynchronous rejection can close the connection before readiness reports its original cause.
+            // The request must still fail before the producer runs, without retaining the failed session.
+            assertThat(Http3RequestFailureSupport.attemptDisposition(failure),
+                       equalTo(Http3RequestFailureSupport.AttemptDisposition.NOT_PROCESSED));
+            assertThat(Http3RequestFailureSupport.sessionReusable(failure), equalTo(false));
+            assertThat(producerCalls.get(), equalTo(0));
+            assertThat(submitted.get(), greaterThan(0));
+            client.closeResourceAsync().toCompletableFuture().get(5, TimeUnit.SECONDS);
+        } finally {
+            client.closeResource();
+        }
+    }
+
     @Test
     void directClientClosesAcquiredTransportLifecycleExactlyOnce() {
         ObserverState state = new ObserverState(new Object());

@@ -54,6 +54,9 @@ public final class Http3StreamSupport {
     private static final SequentialScheduler NO_OP_SCHEDULER = scheduler(NO_OP);
     private static final Http3FrameListener NO_OP_FRAME_LISTENER = Http3FrameListener.create(List.of());
 
+    private static final int BATCH_TARGET = 16 * 1024;
+    private static final int BATCH_REFERENCES = 32;
+
     private Http3StreamSupport() {
     }
 
@@ -242,6 +245,22 @@ public final class Http3StreamSupport {
         private boolean endOfStream;
         private BufferData current;
 
+        // Buffered DATA state is guarded by queueLock; no payload is copied.
+        private BufferData[] stash;
+        private int stashHead;
+        private int stashCount;
+        private int stashBytes;
+        private boolean pendingEof;
+        private Throwable pendingFailure;
+        private boolean pendingFailureDelivered;
+        private boolean batchingArmed;
+        private int batchingTarget;
+        private int batchingAllowance;
+        private boolean idleCycle;
+        private boolean observedEmpty;
+        private boolean pollBudgetExhausted;
+        private long idleDeadlineNanos;
+
         StreamInput(QuicReceiverStream stream,
                     Runnable resetAction,
                     Http3MessageReader.ReadOptions readOptions) {
@@ -252,7 +271,7 @@ public final class Http3StreamSupport {
                 if (stream.receivingState().isReset()) {
                     resetAction.run();
                 }
-                offerIfOpen(DATA_AVAILABLE);
+                dataAvailable();
             });
             this.reader = stream.connectReader(scheduler);
             try {
@@ -314,6 +333,24 @@ public final class Http3StreamSupport {
             return bytes;
         }
 
+        BufferData readDataBuffer(int length) {
+            if (length == 0) {
+                return readBuffer(length);
+            }
+
+            ensureDataTranche(length);
+            queueLock.lock();
+            try {
+                if (closed) {
+                    throw new StreamInputException("HTTP/3 stream reader is closed.");
+                }
+                refreshTerminal();
+                return consumeDataLocked(length);
+            } finally {
+                queueLock.unlock();
+            }
+        }
+
         BufferData readBuffer(int length) {
             if (length == 0) {
                 return BufferData.empty();
@@ -363,8 +400,12 @@ public final class Http3StreamSupport {
         boolean endOfStreamReady() {
             queueLock.lock();
             try {
-                if (current != null && current.available() > 0) {
+                if (stashBytes > 0 || pendingFailure != null
+                        || (current != null && current.available() > 0)) {
                     return false;
+                }
+                if (pendingEof) {
+                    return true;
                 }
                 if (endOfStream) {
                     return true;
@@ -389,7 +430,7 @@ public final class Http3StreamSupport {
                     return;
                 }
                 boolean eofReady = endOfStreamReady();
-                if (eofReady && !endOfStream) {
+                if (eofReady && !endOfStream && !pendingEof) {
                     try {
                         eofReady = reader.poll().orElse(null) == QuicStreamReader.EOF;
                     } catch (IllegalStateException e) {
@@ -397,6 +438,11 @@ public final class Http3StreamSupport {
                     }
                 }
                 closed = true;
+                clearStash();
+                batchingArmed = false;
+                batchingAllowance = 0;
+                pendingFailure = null;
+                pendingEof = false;
                 endOfStream = eofReady;
                 current = null;
                 signals.clear();
@@ -415,21 +461,286 @@ public final class Http3StreamSupport {
             return closed;
         }
 
-        private void offerIfOpen(Object value) {
-            queueLock.lock();
-            try {
-                if (!closed) {
-                    if (!signals.offer(value)) {
-                        // A pending notification already guarantees another poll.
+        private BufferData consumeDataLocked(int length) {
+            if (current == null || current.available() == 0) {
+                current = null;
+                throwPendingFailure();
+                if (!takeStash()) {
+                    throw truncatedFrame();
+                }
+            }
+            int toRead = Math.min(Math.min(length, current.available()), batchingAllowance);
+            if (toRead <= 0) {
+                throw new StreamInputException("HTTP/3 DATA tranche has no available bytes.");
+            }
+            BufferData result = BufferData.readOnlySlice(current, toRead);
+            batchingAllowance -= toRead;
+            if (current.available() == 0) {
+                current = null;
+            }
+            if (batchingAllowance == 0) {
+                // Do not let callbacks refill while the last returned slice is outstanding.
+                batchingArmed = false;
+            }
+            return result;
+        }
+
+        private void ensureDataTranche(int length) {
+            for (;;) {
+                long waitNanos = -1;
+                queueLock.lock();
+                try {
+                    if (closed) {
+                        throw new StreamInputException("HTTP/3 stream reader is closed.");
+                    }
+                    refreshTerminal();
+                    if (batchingAllowance > 0) {
                         return;
                     }
+                    if (current != null && current.available() == 0) {
+                        current = null;
+                    }
+                    if (current == null) {
+                        throwPendingFailure();
+                    }
+                    if (!batchingArmed) {
+                        batchingArmed = true;
+                        batchingTarget = Math.min(BATCH_TARGET, length);
+                        observedEmpty = false;
+                        prefetch(false);
+                    } else if (pollBudgetExhausted) {
+                        prefetch(false);
+                    }
+                    int available = availableBytes();
+                    if (available >= batchingTarget) {
+                        releaseTranche(true);
+                        return;
+                    }
+                    if ((stashCount == BATCH_REFERENCES || pollBudgetExhausted) && available > 0) {
+                        releaseTranche(false);
+                        return;
+                    }
+                    if (pendingEof || pendingFailure != null || endOfStream) {
+                        if (available > 0) {
+                            releaseTranche(false);
+                            return;
+                        }
+                        batchingArmed = false;
+                        throwPendingFailure();
+                        throw truncatedFrame();
+                    }
+                    if (readOptions.readTimeoutActive()) {
+                        if (!idleCycle) {
+                            idleCycle = true;
+                            idleDeadlineNanos = System.nanoTime() + readOptions.readTimeout().toNanos();
+                        }
+                        waitNanos = idleDeadlineNanos - System.nanoTime();
+                        if (waitNanos <= 0) {
+                            if (available > 0) {
+                                releaseTranche(false);
+                                return;
+                            }
+                            batchingArmed = false;
+                            throw new UncheckedIOException(new Http3ReadTimeoutException(
+                                    "No data received on HTTP/3 stream " + stream.streamId()
+                                            + " within the timeout " + readOptions.readTimeout()));
+                        }
+                    }
+                } finally {
+                    queueLock.unlock();
+                }
+                try {
+                    Object signal = waitNanos < 0 ? signals.take()
+                            : signals.poll(waitNanos, TimeUnit.NANOSECONDS);
+                    if (signal == READER_CLOSED) {
+                        throw new StreamInputException("HTTP/3 stream reader is closed.");
+                    }
+                    // Expiry rechecks progress and bytes under queueLock; stale tokens grant no grace.
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new StreamInputException("Interrupted while reading HTTP/3 stream", e);
+                }
+            }
+        }
+
+        private void dataAvailable() {
+            queueLock.lock();
+            try {
+                if (closed) {
+                    return;
+                }
+                refreshTerminal();
+                if (!batchingArmed || batchingAllowance > 0) {
+                    offerSignal(DATA_AVAILABLE);
+                    return;
+                }
+                prefetch(true);
+                if (availableBytes() >= batchingTarget || stashCount == BATCH_REFERENCES || pollBudgetExhausted
+                        || pendingEof || pendingFailure != null) {
+                    offerSignal(DATA_AVAILABLE);
                 }
             } finally {
                 queueLock.unlock();
             }
         }
 
+        private void prefetch(boolean callback) {
+            int transferred = 0;
+            int attempts = 0;
+            boolean emptyThisPoll = false;
+            pollBudgetExhausted = false;
+            try {
+                while (availableBytes() < batchingTarget && stashCount < BATCH_REFERENCES
+                        && attempts < BATCH_REFERENCES && !pendingEof && pendingFailure == null) {
+                    attempts++;
+                    Optional<BufferData> next = reader.poll();
+                    if (next.isEmpty()) {
+                        emptyThisPoll = true;
+                        observedEmpty = true;
+                        break;
+                    }
+                    BufferData buffer = next.orElseThrow();
+                    if (buffer == QuicStreamReader.EOF) {
+                        pendingEof = true;
+                        break;
+                    }
+                    int bytes = buffer.available();
+                    if (bytes == 0) {
+                        // A zero buffer is not EOF and cannot establish input progress.
+                        continue;
+                    }
+                    if (stash == null) {
+                        stash = new BufferData[BATCH_REFERENCES];
+                    }
+                    stash[(stashHead + stashCount) % BATCH_REFERENCES] = buffer;
+                    stashCount++;
+                    stashBytes += bytes;
+                    transferred += bytes;
+                }
+                pollBudgetExhausted = attempts == BATCH_REFERENCES && availableBytes() < batchingTarget
+                        && !emptyThisPoll && !pendingEof && pendingFailure == null;
+                if (pollBudgetExhausted) {
+                    // Yield through the capacity-one token, rather than wait with unexamined queued input.
+                    offerSignal(DATA_AVAILABLE);
+                }
+                if (callback && transferred > 0 && observedEmpty && readOptions.readTimeoutActive()) {
+                    idleCycle = true;
+                    idleDeadlineNanos = System.nanoTime() + readOptions.readTimeout().toNanos();
+                }
+            } catch (RuntimeException | Error failure) {
+                captureFailure(failure);
+            }
+        }
+
+        private void releaseTranche(boolean full) {
+            batchingAllowance = Math.min(batchingTarget, availableBytes());
+            if (full) {
+                idleCycle = false;
+            }
+        }
+
+        private int availableBytes() {
+            return stashBytes + (current == null ? 0 : current.available());
+        }
+
+        private boolean takeStash() {
+            if (stashCount == 0) {
+                return false;
+            }
+            current = stash[stashHead];
+            stash[stashHead] = null;
+            stashHead = (stashHead + 1) % BATCH_REFERENCES;
+            stashCount--;
+            stashBytes -= current.available();
+            return true;
+        }
+
+        private void clearStash() {
+            while (stashCount > 0) {
+                stash[stashHead] = null;
+                stashHead = (stashHead + 1) % BATCH_REFERENCES;
+                stashCount--;
+            }
+            stashBytes = 0;
+        }
+
+        private void refreshTerminal() {
+            if (pendingFailure != null) {
+                return;
+            }
+            try {
+                if (stream.receivingState().isReset() || stream.isStopSendingRequested()) {
+                    // Existing current may drain, but new prefetched buffers gain no such privilege.
+                    clearStash();
+                    pendingEof = false;
+                    batchingAllowance = Math.min(batchingAllowance, current == null ? 0 : current.available());
+                    Optional<BufferData> terminal = reader.poll();
+                    if (terminal.isPresent() && terminal.orElseThrow() != QuicStreamReader.EOF) {
+                        throw new StreamInputException("HTTP/3 stopped stream returned new data.");
+                    }
+                    throw new StreamInputException("HTTP/3 stream reader was reset or stopped.");
+                }
+                // Connection/session failure is surfaced by the existing reader, not swallowed in a callback.
+                reader.peek();
+            } catch (RuntimeException | Error failure) {
+                captureFailure(failure);
+            }
+        }
+
+        private void captureFailure(Throwable failure) {
+            if (pendingFailure == null) {
+                pendingFailure = failure;
+            }
+            clearStash();
+            pendingEof = false;
+            batchingAllowance = Math.min(batchingAllowance, current == null ? 0 : current.available());
+            offerSignal(DATA_AVAILABLE);
+        }
+
+        private void throwPendingFailure() {
+            if (pendingFailure != null && pendingFailureDelivered) {
+                // Draining close may read again under try-with-resources. Reusing the primary exception
+                // would trigger self-suppression and mask the original stream cancellation.
+                throw new StreamInputException("HTTP/3 stream reader previously failed.", pendingFailure);
+            }
+            if (pendingFailure instanceof RuntimeException failure) {
+                pendingFailureDelivered = true;
+                throw failure;
+            }
+            if (pendingFailure instanceof Error failure) {
+                pendingFailureDelivered = true;
+                throw failure;
+            }
+        }
+
+        private void offerIfOpen(Object value) {
+            queueLock.lock();
+            try {
+                if (!closed) {
+                    offerSignal(value);
+                }
+            } finally {
+                queueLock.unlock();
+            }
+        }
+
+        // Caller holds queueLock; a full queue deliberately coalesces notifications.
+        private void offerSignal(Object value) {
+            if (!signals.offer(value)) {
+                // A pending notification already guarantees another poll.
+                return;
+            }
+        }
+
         private boolean ensureCurrent() {
+            queueLock.lock();
+            try {
+                batchingArmed = false;
+                batchingAllowance = 0;
+                idleCycle = false;
+            } finally {
+                queueLock.unlock();
+            }
             for (;;) {
                 queueLock.lock();
                 try {
@@ -440,6 +751,15 @@ public final class Http3StreamSupport {
                         return true;
                     }
                     current = null;
+                    refreshTerminal();
+                    throwPendingFailure();
+                    if (takeStash()) {
+                        return true;
+                    }
+                    if (pendingEof) {
+                        pendingEof = false;
+                        endOfStream = true;
+                    }
                     if (endOfStream) {
                         return false;
                     }

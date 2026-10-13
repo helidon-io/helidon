@@ -165,7 +165,7 @@ public final class UriHost {
         }
         String ascii;
         try {
-            ascii = IDN.toASCII(normalized, IDN.USE_STD3_ASCII_RULES);
+            ascii = isEligibleAsciiDns(normalized) ? normalized : IDN.toASCII(normalized, IDN.USE_STD3_ASCII_RULES);
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Host is not a valid DNS name", e);
         }
@@ -176,6 +176,29 @@ public final class UriHost {
         UriValidator.validateNonIpLiteral(ascii);
         validateDnsName(ascii);
         return new UriHost(ascii, Kind.DNS);
+    }
+
+    private static boolean isEligibleAsciiDns(String normalized) {
+        if (normalized.isEmpty() || normalized.length() > 253) {
+            return false;
+        }
+        int labelStart = 0;
+        for (int i = 0; i <= normalized.length(); i++) {
+            if (i == normalized.length() || normalized.charAt(i) == '.') {
+                if (i == labelStart || i - labelStart > 63
+                        || normalized.charAt(labelStart) == '-' || normalized.charAt(i - 1) == '-') {
+                    return false;
+                }
+                labelStart = i + 1;
+            } else {
+                char c = normalized.charAt(i);
+                if (!(c >= 'a' && c <= 'z') && !(c >= 'A' && c <= 'Z')
+                        && !(c >= '0' && c <= '9') && c != '-') {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     private static void validateDnsName(String host) {

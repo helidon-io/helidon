@@ -465,7 +465,9 @@ final class Http3ExchangeClient implements AutoCloseable {
                                                 QuicClientObserver observer,
                                                 ResolvedClientTarget resolvedTarget) {
             QuicClientRuntime.Builder runtimeBuilder = QuicClientRuntime.builder()
-                    .executor(transportExecutor())
+                    .executor(cacheKey.runtimeExecutorKey()
+                                      .map(Http3ConnectionCache.RuntimeExecutorKey::executor)
+                                      .orElse(transportExecutor()))
                     .tls(tls())
                     .tlsSessionCache(tlsSessionCache)
                     .initialTokenCache(initialTokenCache)

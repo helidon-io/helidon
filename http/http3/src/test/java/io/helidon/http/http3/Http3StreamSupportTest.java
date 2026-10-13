@@ -60,6 +60,7 @@ import io.helidon.quic.stream.QuicStreamReader;
 import io.helidon.quic.stream.QuicStreamWriter;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -74,6 +75,143 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class Http3StreamSupportTest {
     private static final Http3FrameListener NO_OP_FRAME_LISTENER = Http3FrameListener.create(List.of());
+
+    @Test
+    @Timeout(30)
+    void shouldPreservePrimaryTransportFailureWhenDrainingCloseReadsAgain() {
+        FakeReceiverStream stream = FakeReceiverStream.create(List.of(
+                BufferData.create(Http3Protocol.encodeResponseHeaders(200, WritableHeaders.create())),
+                BufferData.create(Http3Protocol.encodeDataFrame(new byte[] {1, 2, 3}))));
+        Http3MessageReader reader = responseReader(stream);
+        reader.readResponseHead(_ -> { });
+        int pollsBeforeFailure = stream.pollCount();
+        IllegalStateException transportFailure = new IllegalStateException("transport failed");
+        stream.reader.pollFailure = transportFailure;
+        try {
+            IllegalStateException primary = assertThrows(IllegalStateException.class, () -> {
+                try (InputStream drainingStream = new InputStream() {
+                    @Override
+                    public int read() {
+                        return reader.readEntityBufferWithTrailers(1).read();
+                    }
+
+                    @Override
+                    public void close() {
+                        // Model the entity stream's draining close, which reads after the first failure.
+                        reader.readEntityBufferWithTrailers(1);
+                    }
+                }) {
+                    drainingStream.read();
+                }
+            });
+            assertThat(primary, sameInstance(transportFailure));
+            assertThat(primary.getSuppressed().length, is(1));
+            assertThat(primary.getSuppressed()[0], instanceOf(IllegalStateException.class));
+            assertThat(primary.getSuppressed()[0].getCause(), sameInstance(transportFailure));
+            IllegalStateException repeated = assertThrows(IllegalStateException.class,
+                    () -> reader.readEntityBufferWithTrailers(1));
+            assertThat(repeated.getCause(), sameInstance(transportFailure));
+            assertThat("Queued bytes must not resume after failure", stream.pollCount(), is(pollsBeforeFailure));
+        } finally {
+            reader.close();
+        }
+        assertThat(stream.disconnected(), is(true));
+    }
+
+    @Test
+    @Timeout(30)
+    void shouldReadFragmentedDataAcrossPollBudgetWithoutConsumingTrailerBytes() {
+        byte[] body = new byte[32769];
+        for (int index = 0; index < body.length; index++) {
+            body[index] = (byte) index;
+        }
+        for (int fragmentSize : List.of(1, 257, 8192)) {
+            List<BufferData> buffers = new ArrayList<>();
+            buffers.add(BufferData.create(Http3Protocol.encodeResponseHeaders(200,
+                    WritableHeaders.create().set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, body.length)))));
+            List<BufferData> fragmented = splitBytes(Http3Protocol.encodeDataFrame(body), fragmentSize);
+            // One-byte fragments cross the prefetch reference budget without introducing a fake readiness event.
+            // This synchronous fake does not schedule another notification after polling an empty transport buffer.
+            buffers.addAll(fragmented);
+            buffers.add(BufferData.create(Http3Protocol.encodeHeadersFrame(
+                    WritableHeaders.create().set(HeaderValues.create("x-end", "trailer")))));
+            Http3MessageReader reader = responseReader(FakeReceiverStream.create(buffers));
+            reader.readResponseHead(_ -> { });
+            byte[] actual = new byte[body.length];
+            int used = 0;
+            for (;;) {
+                BufferData data = reader.readEntityBufferWithTrailers(8192);
+                if (data.available() == 0) {
+                    break;
+                }
+                int bytes = data.available();
+                data.read(actual, used, bytes);
+                used += bytes;
+                assertThat("Trailers must remain unassigned during DATA", reader.trailers().size(), is(0));
+            }
+            assertThat("fragmentSize=" + fragmentSize, used, is(body.length));
+            assertThat("fragmentSize=" + fragmentSize, actual, is(body));
+            assertThat(reader.trailers().first(HeaderNames.create("x-end")).orElseThrow(), is("trailer"));
+            assertThat(reader.messageComplete(), is(true));
+            reader.close();
+        }
+    }
+
+    @Test
+    @Timeout(30)
+    void shouldCloseWhileDataPrefetchIsInFlightWithoutRetainingBufferedData() throws Exception {
+        byte[] body = new byte[8192];
+        FakeReceiverStream stream = FakeReceiverStream.create(List.of(
+                BufferData.create(Http3Protocol.encodeResponseHeaders(200, WritableHeaders.create())),
+                BufferData.create(Http3Protocol.encodeDataFrame(body))));
+        Http3MessageReader reader = responseReader(stream);
+        reader.readResponseHead(_ -> { });
+        CountDownLatch polling = new CountDownLatch(1);
+        CountDownLatch releasePoll = new CountDownLatch(1);
+        CountDownLatch closing = new CountDownLatch(1);
+        stream.reader.blockNextPoll(polling, releasePoll);
+        AtomicReference<Throwable> readFailure = new AtomicReference<>();
+        AtomicReference<Throwable> closeFailure = new AtomicReference<>();
+        Thread consumer = Thread.ofVirtual().unstarted(() -> {
+            try {
+                reader.readEntityBufferWithTrailers(8192);
+            } catch (Throwable failure) {
+                readFailure.set(failure);
+            }
+        });
+        Thread closer = Thread.ofVirtual().unstarted(() -> {
+            closing.countDown();
+            try {
+                reader.close();
+            } catch (Throwable failure) {
+                closeFailure.set(failure);
+            }
+        });
+        try {
+            consumer.start();
+            assertThat("Transport poll entered", polling.await(5, TimeUnit.SECONDS), is(true));
+            closer.start();
+            assertThat("Close requested", closing.await(5, TimeUnit.SECONDS), is(true));
+            releasePoll.countDown();
+            consumer.join(5000);
+            closer.join(5000);
+            assertThat("Consumer finished", consumer.isAlive(), is(false));
+            assertThat("Close finished", closer.isAlive(), is(false));
+            assertThat(closeFailure.get(), nullValue());
+            if (readFailure.get() != null) {
+                assertThat(readFailure.get(), instanceOf(IllegalStateException.class));
+            }
+            assertThat(stream.disconnected(), is(true));
+            assertThrows(IllegalStateException.class, () -> reader.readEntityBufferWithTrailers(8192));
+        } finally {
+            releasePoll.countDown();
+            consumer.interrupt();
+            closer.interrupt();
+            consumer.join(5000);
+            closer.join(5000);
+            reader.close();
+        }
+    }
 
     @Test
     void shouldReadEntityAndTrailersUsingTrailerAwareReader() throws Exception {
@@ -1987,6 +2125,7 @@ class Http3StreamSupportTest {
         private int pollCount;
         private CountDownLatch pollStarted;
         private CountDownLatch allowPoll;
+        private RuntimeException pollFailure;
 
         private FakeStreamReader(FakeReceiverStream stream,
                                  SequentialScheduler scheduler,
@@ -2005,6 +2144,9 @@ class Http3StreamSupportTest {
         @Override
         public Optional<BufferData> poll() {
             ensureConnected();
+            if (pollFailure != null) {
+                throw pollFailure;
+            }
             if (!started || index >= buffers.size()) {
                 return Optional.empty();
             }
@@ -2029,6 +2171,9 @@ class Http3StreamSupportTest {
         @Override
         public Optional<BufferData> peek() {
             ensureConnected();
+            if (pollFailure != null) {
+                throw pollFailure;
+            }
             if (!started || index >= buffers.size()) {
                 return Optional.empty();
             }

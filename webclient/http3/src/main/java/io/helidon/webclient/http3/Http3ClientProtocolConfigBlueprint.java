@@ -18,6 +18,7 @@ package io.helidon.webclient.http3;
 
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
@@ -166,5 +167,21 @@ interface Http3ClientProtocolConfigBlueprint extends ProtocolConfig, HttpConfig 
      */
     @Option.Configured
     Optional<QuicConfig> quic();
+
+    /**
+     * Executor borrowed for QUIC transport runtime work. When empty, the runtime uses the WebClient executor.
+     * Request producers and response readers continue to use their existing executors.
+     * <p>
+     * The client never closes a supplied executor. Its owner must keep it usable until all connections using it have
+     * terminated. With a shared connection cache, connections can outlive the client that created them. Use
+     * {@link io.helidon.webclient.api.HttpClientConfig#shareConnectionCache()} set to {@code false} for a client-scoped
+     * executor, and close the client before shutting down that executor.
+     * <p>
+     * Explicitly configured executor instances partition connection reuse by identity. This option is programmatic;
+     * it does not configure or create a thread pool.
+     *
+     * @return optional borrowed QUIC runtime executor
+     */
+    Optional<Executor> runtimeExecutor();
 
 }

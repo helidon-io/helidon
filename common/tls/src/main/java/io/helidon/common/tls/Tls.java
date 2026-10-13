@@ -20,12 +20,15 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.security.AlgorithmConstraints;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import javax.net.ssl.SNIMatcher;
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -163,9 +166,9 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
     @Override
     public int hashCode() {
         if (enabled) {
-            return 31 * Objects.hash(sslContext()) + hashCode(sslParameters());
+            return 31 * (31 + Objects.hashCode(sslContext())) + hashCode(sslParameters);
         }
-        return Objects.hash(Tls.class);
+        return 31 + Objects.hashCode(Tls.class);
     }
 
     @Override
@@ -428,23 +431,6 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
         return parameters;
     }
 
-    private static int hashCode(SSLParameters first) {
-        int result = Objects.hash(first.getAlgorithmConstraints(),
-                                  first.getEnableRetransmissions(),
-                                  first.getEndpointIdentificationAlgorithm(),
-                                  first.getMaximumPacketSize(),
-                                  first.getNeedClientAuth(),
-                                  first.getUseCipherSuitesOrder(),
-                                  first.getWantClientAuth(),
-                                  first.getServerNames(),
-                                  first.getSNIMatchers());
-        result = 31 * result + Arrays.hashCode(first.getApplicationProtocols());
-        result = 31 * result + Arrays.hashCode(first.getCipherSuites());
-        result = 31 * result + Arrays.hashCode(first.getProtocols());
-
-        return result;
-    }
-
     static boolean equals(SSLParameters first, SSLParameters second) {
         return Objects.equals(first.getAlgorithmConstraints(), second.getAlgorithmConstraints())
                 && Arrays.equals(first.getApplicationProtocols(), second.getApplicationProtocols())
@@ -458,6 +444,33 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
                 && (first.getWantClientAuth() == second.getWantClientAuth())
                 && Objects.equals(first.getServerNames(), second.getServerNames())
                 && Objects.equals(first.getSNIMatchers(), second.getSNIMatchers());
+    }
+
+    private static int hashCode(SSLParameters first) {
+        // Objects.hash evaluates every argument before invoking any element hashCode.
+        AlgorithmConstraints constraints = first.getAlgorithmConstraints();
+        boolean retransmissions = first.getEnableRetransmissions();
+        String identification = first.getEndpointIdentificationAlgorithm();
+        int packetSize = first.getMaximumPacketSize();
+        boolean needAuth = first.getNeedClientAuth();
+        boolean cipherOrder = first.getUseCipherSuitesOrder();
+        boolean wantAuth = first.getWantClientAuth();
+        List<SNIServerName> serverNames = first.getServerNames();
+        Collection<SNIMatcher> matchers = first.getSNIMatchers();
+
+        int result = 31 + Objects.hashCode(constraints);
+        result = 31 * result + Boolean.hashCode(retransmissions);
+        result = 31 * result + Objects.hashCode(identification);
+        result = 31 * result + Integer.hashCode(packetSize);
+        result = 31 * result + Boolean.hashCode(needAuth);
+        result = 31 * result + Boolean.hashCode(cipherOrder);
+        result = 31 * result + Boolean.hashCode(wantAuth);
+        result = 31 * result + Objects.hashCode(serverNames);
+        result = 31 * result + Objects.hashCode(matchers);
+        result = 31 * result + Arrays.hashCode(first.getApplicationProtocols());
+        result = 31 * result + Arrays.hashCode(first.getCipherSuites());
+        result = 31 * result + Arrays.hashCode(first.getProtocols());
+        return result;
     }
 
     private void checkEnabled() {

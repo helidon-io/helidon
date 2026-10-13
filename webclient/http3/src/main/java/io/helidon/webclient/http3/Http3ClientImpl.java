@@ -65,6 +65,8 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
     private final WebClient webClient;
     private final Http3ClientConfig clientConfig;
     private final Http3ClientProtocolConfig protocolConfig;
+    private final Http3ClientProtocolConfig discoveryProtocolConfig;
+    private final Optional<Http3ConnectionCache.RuntimeExecutorKey> runtimeExecutorKey;
     private final Http3ConnectionCache connectionCache;
     private final Http3ConnectionCache clientCache;
     private final Http3TlsCompatibility tlsCompatibility =
@@ -101,6 +103,13 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
         this.webClient = webClient;
         this.clientConfig = clientConfig;
         this.protocolConfig = clientConfig.protocolConfig();
+        this.runtimeExecutorKey = protocolConfig.runtimeExecutor().map(Http3ConnectionCache.RuntimeExecutorKey::new);
+        // Discovery and connection reuse use executor identity, never caller-defined hashCode/equals.
+        this.discoveryProtocolConfig = runtimeExecutorKey.isEmpty()
+                ? protocolConfig
+                : Http3ClientProtocolConfig.builder(protocolConfig)
+                        .runtimeExecutor(runtimeExecutorKey.orElseThrow())
+                        .buildPrototype();
         this.clientSettings = Http3ExchangeClient.clientSettings(protocolConfig);
         Optional<ClientAltSvcConfig> altSvc = clientConfig.altSvc()
                 .filter(ClientAltSvcConfig::enabled);
@@ -602,7 +611,8 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
                                                  protocolConfig.sendErrorDetails(),
                                                  clientSettings.initialResponseTimeout(),
                                                  protocolConfig.handshakeTimeout(),
-                                                 protocolConfig.streamOpenTimeout());
+                                                 protocolConfig.streamOpenTimeout(),
+                                                 runtimeExecutorKey);
     }
 
     boolean allowsDirectHttp3() {
@@ -672,7 +682,7 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
 
     private Http3Discovery.EndpointContextKey endpointContextKey(ClientConnectionTarget connectionTarget) {
         return new Http3Discovery.EndpointContextKey(connectionTarget.connectionKey(),
-                                                     protocolConfig,
+                                                     discoveryProtocolConfig,
                                                      connectionTarget.scheme(),
                                                      connectionTarget.originAuthority(),
                                                      connectionTarget.tlsGeneration(),
@@ -690,7 +700,7 @@ final class Http3ClientImpl implements Http3Client, HttpClientSpi {
         UriAuthority effectiveAuthority = origin.authority();
         ConnectionKey connectionKey = connectionKey(clientRequest, clientUri, normalizedHeaders);
         return new Http3Discovery.EndpointContextHint(connectionKey,
-                                                      protocolConfig,
+                                                      discoveryProtocolConfig,
                                                       scheme,
                                                       effectiveAuthority,
                                                       connectionKey.tls().generation(),

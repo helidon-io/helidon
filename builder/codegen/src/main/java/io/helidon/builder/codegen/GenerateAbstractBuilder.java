@@ -1450,24 +1450,62 @@ final class GenerateAbstractBuilder {
                 method.addContentLine("return 1;");
             }
         } else {
-            if (hasSuper) {
-                method.addContent("return 31 * super.hashCode() + ")
-                        .addContent(Objects.class)
-                        .addContent(".hash(");
-            } else {
-                method.addContent("return ")
-                        .addContent(Objects.class)
-                        .addContent(".hash(");
-            }
+            List<OptionHandler> ordinaryFields = equalityFields.stream()
+                    .filter(it -> !(it.option().declaredType().isOptional()
+                            && it.typeHandler().type().equals(Types.CHAR_ARRAY)))
+                    .toList();
+            boolean arrayFields = ordinaryFields.stream().anyMatch(it -> it.option().declaredType().array());
+            if (arrayFields) {
+                if (hasSuper) {
+                    method.addContent("return 31 * super.hashCode() + ")
+                            .addContent(Objects.class)
+                            .addContent(".hash(");
+                } else {
+                    method.addContent("return ")
+                            .addContent(Objects.class)
+                            .addContent(".hash(");
+                }
 
-            method.addContent(equalityFields.stream()
-                                      .filter(it -> !(
-                                              it.option().declaredType().isOptional()
-                                                      && it.typeHandler().type().equals(Types.CHAR_ARRAY)))
-                                      .map(OptionHandler::option)
-                                      .map(OptionInfo::name)
-                                      .collect(Collectors.joining(", ")))
-                    .addContent(")");
+                method.addContent(equalityFields.stream()
+                                          .filter(it -> !(
+                                                  it.option().declaredType().isOptional()
+                                                          && it.typeHandler().type().equals(Types.CHAR_ARRAY)))
+                                          .map(OptionHandler::option)
+                                          .map(OptionInfo::name)
+                                          .collect(Collectors.joining(", ")))
+                        .addContent(")");
+
+            } else {
+                if (hasSuper) {
+                    method.addContentLine("int superHash = super.hashCode();");
+                }
+                method.addContentLine("int result = 1;");
+                for (OptionHandler field : ordinaryFields) {
+                    OptionInfo option = field.option();
+                    method.addContent("result = 31 * result + ");
+                    if (option.declaredType().primitive()) {
+                        Class<?> wrapper = switch (option.declaredType().fqName()) {
+                            case "boolean" -> Boolean.class;
+                            case "byte" -> Byte.class;
+                            case "short" -> Short.class;
+                            case "char" -> Character.class;
+                            case "int" -> Integer.class;
+                            case "long" -> Long.class;
+                            case "float" -> Float.class;
+                            case "double" -> Double.class;
+                            default -> throw new IllegalArgumentException("Unsupported primitive hash option: "
+                                                                                 + option.declaredType());
+                        };
+                        method.addContent(wrapper);
+                    } else {
+                        method.addContent(Objects.class);
+                    }
+                    method.addContent(".hashCode(this.")
+                            .addContent(option.name())
+                            .addContentLine(");");
+                }
+                method.addContent(hasSuper ? "return 31 * superHash + result" : "return result");
+            }
 
             for (OptionHandler field : equalityFields) {
                 if (field.option().declaredType().isOptional()
@@ -1475,7 +1513,7 @@ final class GenerateAbstractBuilder {
                     // Optional<char[]>
                     method.addContent(" + 31 * ")
                             .addContent(Types.GENERATED_EQUALITY_UTIL)
-                            .addContent(".optionalCharArrayHash(")
+                            .addContent(".optionalCharArrayHash(this.")
                             .addContent(field.option().name())
                             .addContent(")");
                 }

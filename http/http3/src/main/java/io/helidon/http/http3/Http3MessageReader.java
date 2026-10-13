@@ -83,7 +83,7 @@ public final class Http3MessageReader implements AutoCloseable {
     private boolean trailersAllowed = true;
     private boolean tunnel;
     private OptionalLong contentLength = OptionalLong.empty();
-    private Headers trailers = WritableHeaders.create();
+    private Headers trailers;
     private Phase phase = Phase.INITIAL_HEADERS;
     private Http3Protocol.DecodedRequestHead requestHead;
     private ResponseHead responseHead;
@@ -471,7 +471,7 @@ public final class Http3MessageReader implements AutoCloseable {
                 if (currentFrameType == Http3Protocol.FRAME_DATA) {
                     validateDataFrame(currentFrameLength);
                     int chunkSize = (int) Math.min(currentFrameLength, requested);
-                    BufferData buffer = input.readBuffer(chunkSize);
+                    BufferData buffer = input.readDataBuffer(chunkSize);
                     int dataLength = buffer.available();
                     boolean last = currentFrameLength == dataLength;
                     if (frameListener.enabled()) {
@@ -615,7 +615,7 @@ public final class Http3MessageReader implements AutoCloseable {
      * @return decoded trailers
      */
     public Headers trailers() {
-        return WritableHeaders.create(trailers);
+        return trailers == null ? WritableHeaders.create() : WritableHeaders.create(trailers);
     }
 
     /**

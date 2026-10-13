@@ -389,7 +389,8 @@ public final class UriValidator {
     }
 
     static boolean isIpv4Address(String host) {
-        return IP_V4_ADDRESS_PATTERN.matcher(host).matches();
+        Objects.requireNonNull(host);
+        return decimalAddress(host, true);
     }
 
     /**
@@ -403,8 +404,7 @@ public final class UriValidator {
         checkNotBlank(Segment.HOST, "Host", host, host);
 
         // Ipv4 address: 127.0.0.1
-        Matcher matcher = IP_V4_PATTERN.matcher(host);
-        if (matcher.matches()) {
+        if (decimalAddress(host, false)) {
             /*
               IPv4address = dec-octet "." dec-octet "." dec-octet "." dec-octet
               dec-octet   = DIGIT                 ; 0-9
@@ -856,6 +856,37 @@ public final class UriValidator {
             result.append(Integer.toHexString(segments[i]));
         }
         return result.toString();
+    }
+
+    private static boolean decimalAddress(String host, boolean strict) {
+        int length = host.length();
+        if (length < 7 || length > 15) {
+            return false;
+        }
+        int index = 0;
+        for (int component = 0; component < 4; component++) {
+            int start = index;
+            int value = 0;
+            while (index < length && host.charAt(index) >= '0' && host.charAt(index) <= '9') {
+                if (index - start == 3) {
+                    return false;
+                }
+                value = value * 10 + host.charAt(index) - '0';
+                index++;
+            }
+            int digits = index - start;
+            if (digits == 0 || (strict && (value > 255 || (digits > 1 && host.charAt(start) == '0')))) {
+                return false;
+            }
+            if (component == 3) {
+                return index == length;
+            }
+            if (index == length || host.charAt(index) != '.') {
+                return false;
+            }
+            index++;
+        }
+        return false;
     }
 
     private static void validateIpFuture(String ipLiteral, String host) {
