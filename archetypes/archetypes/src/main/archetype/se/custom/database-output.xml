@@ -34,7 +34,7 @@
                     </list>
                     <value key="db-health-check-stmt" if="${health}">SELECT 0</value>
                     <list key="db-connection">
-                        <value><![CDATA[    url: jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false
+                        <value><![CDATA[    url: jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false&allowPublicKeyRetrieval=true
     username: user
     password: changeit]]></value>
                     </list>
