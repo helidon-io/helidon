@@ -18,6 +18,7 @@ package io.helidon.openapi;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.List;
 import java.util.Map;
 
 import io.helidon.config.Config;
@@ -25,9 +26,12 @@ import io.helidon.config.ConfigSources;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -74,6 +78,41 @@ class OpenApiFeatureConfigTest {
         assertThat(builder.buildPrototype().enabled(), is(!enabled));
         builder.config(config);
         assertThat(builder.buildPrototype().enabled(), is(enabled));
+    }
+
+    @Test
+    void legacyMethodsAreDeprecated() throws NoSuchMethodException {
+        var methods = List.of(OpenApiFeatureConfig.class.getMethod("isEnabled"),
+                              OpenApiFeatureConfig.BuilderBase.class.getMethod("isEnabled"),
+                              OpenApiFeatureConfig.BuilderBase.class.getMethod("isEnabled", boolean.class));
+        for (var method : methods) {
+            var deprecated = method.getAnnotation(Deprecated.class);
+            assertThat(method.toString(), deprecated, notNullValue());
+            assertThat(method.toString(), deprecated.since(), is("28.0.0"));
+            assertThat(method.toString(), deprecated.forRemoval(), is(false));
+        }
+        assertThat(OpenApiFeatureConfig.class.getMethod("enabled").getAnnotation(Deprecated.class), nullValue());
+        assertThat(OpenApiFeatureConfig.BuilderBase.class.getMethod("enabled", boolean.class).getAnnotation(Deprecated.class),
+                   nullValue());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false, false", "false, true", "true, false", "true, true"})
+    void builderCopyPreservesEnablementAndDiscovery(boolean enabled, boolean discover) {
+        var source = OpenApiFeatureConfig.builder().enabled(false);
+        if (enabled) {
+            source.enabled(true);
+        }
+        source.openApiVersionDiscoverServices(discover)
+                .servicesDiscoverServices(!discover)
+                .managerDiscoverServices(discover);
+
+        var copy = OpenApiFeatureConfig.builder().enabled(!enabled).from(source);
+        assertThat(copy.isEnabled(), is(enabled));
+        assertThat(copy.openApiVersionDiscoverServices(), is(discover));
+        assertThat(copy.servicesDiscoverServices(), is(!discover));
+        assertThat(copy.managerDiscoverServices(), is(discover));
+        assertThat(copy.buildPrototype().enabled(), is(enabled));
     }
 
     @Test
