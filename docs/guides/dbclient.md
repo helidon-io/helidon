@@ -80,7 +80,7 @@ docker run --rm --name library-mysql -p 3306:3306 \
 ```
 
 Wait until the container reports that MySQL is ready for connections. Keep it
-running while you build and exercise the application.
+running while you run and exercise the application.
 
 ### Connect to the Database
 
@@ -231,10 +231,36 @@ db:
 4. Add a counter for metrics only for the `select-book` statement.
 <!--@mdc :: -->
 
-The quickstart greeting tests do not use the database. If you add database
-tests, provide a separate MySQL database and override the connection settings
-in `application-test.yaml`, or use Testcontainers to supply isolated connection
-settings for each test run.
+The quickstart tests register the application's routes, including
+`LibraryService`, which connects to the database and creates the `LIBRARY`
+table. Even tests of the greeting endpoints therefore need MySQL.
+
+Start a separate test database in another terminal so tests do not use the
+development database:
+
+```shell [Terminal]
+docker run --rm --name library-mysql-test -p 3307:3306 \
+    -e MYSQL_ROOT_PASSWORD=root \
+    -e MYSQL_DATABASE=library_test \
+    -e MYSQL_USER=user \
+    -e MYSQL_PASSWORD=changeit \
+    container-registry.oracle.com/mysql/community-server:9.7.3
+```
+
+Wait until MySQL is ready for connections and keep this container running
+while you build the application. Add the following connection overrides to
+`src/test/resources/application-test.yaml`:
+
+```yaml [application-test.yaml]
+db:
+  connection:
+    url: "jdbc:mysql://localhost:3307/library_test"
+    username: "user"
+    password: "changeit"
+```
+
+The test profile overrides these connection settings and retains the SQL
+statements from `application.yaml`.
 
 ### Set Up Helidon DB Client
 
@@ -493,10 +519,9 @@ Run the following to build the application:
 mvn package
 ```
 
-Note that the tests are passing as the `GreetFeature` process was not modified.
-For the purposes of this demonstration, we only added independent new content to
-the existing application. Make sure MySQL is running and start the Helidon
-quickstart with this command:
+The build runs the quickstart tests against the separate MySQL test database
+on port 3307. To run the application, keep the development database on port
+3306 running.
 
 Run the application:
 
