@@ -213,10 +213,10 @@ db:
     password: "changeit"
   statements: # <3>
     health-check: "SELECT 0"
-    create-table: "CREATE TABLE IF NOT EXISTS LIBRARY (NAME VARCHAR(255) NOT NULL, INFO VARCHAR(255) NOT NULL)"
-    insert-book: "INSERT INTO LIBRARY (NAME, INFO) VALUES (:name, :info)"
-    select-book: "SELECT INFO FROM LIBRARY WHERE NAME = ?"
-    delete-book: "DELETE FROM LIBRARY WHERE NAME = ?"
+    create-table: "CREATE TABLE IF NOT EXISTS `LIBRARY` (NAME VARCHAR(255) NOT NULL, INFO VARCHAR(255) NOT NULL)"
+    insert-book: "INSERT INTO `LIBRARY` (NAME, INFO) VALUES (:name, :info)"
+    select-book: "SELECT INFO FROM `LIBRARY` WHERE NAME = ?"
+    delete-book: "DELETE FROM `LIBRARY` WHERE NAME = ?"
   health-check:
     type: "query"
     statementName: "health-check"
@@ -227,7 +227,8 @@ db:
 ```
 1. Source property support two values: jdbc and mongo.
 2. Connection details for the MySQL database created above.
-3. SQL statements to manage the database.
+3. SQL statements to manage the database. Backticks quote the table name
+   `LIBRARY`, which is a reserved word in MySQL.
 4. Add a counter for metrics only for the `select-book` statement.
 <!--@mdc :: -->
 
