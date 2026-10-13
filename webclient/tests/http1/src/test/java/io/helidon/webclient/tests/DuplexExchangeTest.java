@@ -19,20 +19,32 @@ package io.helidon.webclient.tests;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.Duration;
+import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.CRC32;
 
+import io.helidon.common.buffers.BufferData;
+import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.pki.Keys;
+import io.helidon.common.task.InterruptableTask;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http1.Http1Config;
+import io.helidon.webserver.http1.Http1ConnectionSelector;
+import io.helidon.webserver.spi.ServerConnection;
+import io.helidon.webserver.spi.ServerConnectionSelector;
 
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -155,6 +167,13 @@ class DuplexExchangeTest {
                                 input.transferTo(output);
                             }
                         }));
+        if (System.getProperty("os.name").toLowerCase(Locale.ROOT).startsWith("windows")) {
+            // Avoid lost socket readiness on Windows when virtual readers and writers share a socket.
+            // Keep the real asynchronous writer and backpressure; only the fixture's connection reader changes.
+            serverBuilder.addConnectionSelector(new PlatformReaderSelector(Http1ConnectionSelector.builder()
+                                                                                  .config(Http1Config.create())
+                                                                                  .build()));
+        }
         var clientBuilder = Http1Client.builder()
                 .shareConnectionCache(false)
                 .proxy(Proxy.noProxy())
@@ -229,6 +248,73 @@ class DuplexExchangeTest {
         } finally {
             client.closeResource();
             server.stop();
+        }
+    }
+
+    private record PlatformReaderSelector(ServerConnectionSelector delegate) implements ServerConnectionSelector {
+        @Override
+        public int bytesToIdentifyConnection() {
+            return delegate.bytesToIdentifyConnection();
+        }
+
+        @Override
+        public Support supports(BufferData data) {
+            return delegate.supports(data);
+        }
+
+        @Override
+        public Set<String> supportedApplicationProtocols() {
+            return delegate.supportedApplicationProtocols();
+        }
+
+        @Override
+        public ServerConnection connection(ConnectionContext ctx) {
+            return new PlatformReaderConnection(delegate.connection(ctx));
+        }
+    }
+
+    private record PlatformReaderConnection(ServerConnection delegate) implements ServerConnection, InterruptableTask<Void> {
+        @Override
+        public void handle(Limit limit) throws InterruptedException {
+            try (var executor = Executors.newSingleThreadExecutor()) {
+                var reader = executor.submit(() -> {
+                    delegate.handle(limit);
+                    return null;
+                });
+                try {
+                    reader.get();
+                } catch (InterruptedException e) {
+                    delegate.close(true);
+                    reader.cancel(true);
+                    throw e;
+                } catch (ExecutionException e) {
+                    if (e.getCause() instanceof InterruptedException cause) {
+                        throw cause;
+                    }
+                    if (e.getCause() instanceof RuntimeException cause) {
+                        throw cause;
+                    }
+                    if (e.getCause() instanceof Error cause) {
+                        throw cause;
+                    }
+                    throw new IllegalStateException("Fixture connection reader failed", e.getCause());
+                }
+            }
+        }
+
+        @Override
+        public Duration idleTime() {
+            return delegate.idleTime();
+        }
+
+        @Override
+        public void close(boolean interrupt) {
+            delegate.close(interrupt);
+        }
+
+        @Override
+        public boolean canInterrupt() {
+            return delegate instanceof InterruptableTask<?> task && task.canInterrupt();
         }
     }
 }
