@@ -51,7 +51,18 @@ interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature
     double weight();
 
     /**
-     * Sets whether the feature should be enabled.
+     * Whether the feature is enabled.
+     *
+     * @return {@code true} if enabled, {@code false} otherwise
+     */
+    default boolean enabled() {
+        return isEnabled();
+    }
+
+    /**
+     * Whether the feature is enabled.
+     * This accessor is retained for compatibility.
+     * Prefer {@link io.helidon.openapi.OpenApiFeatureConfig#enabled()}.
      *
      * @return {@code true} if enabled, {@code false} otherwise
      */

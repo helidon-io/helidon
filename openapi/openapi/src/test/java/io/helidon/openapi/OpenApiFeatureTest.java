@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -47,6 +48,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpMediaType;
+import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.Status;
 import io.helidon.json.JsonBoolean;
 import io.helidon.json.JsonNull;
@@ -54,6 +56,7 @@ import io.helidon.json.JsonObject;
 import io.helidon.json.JsonString;
 import io.helidon.openapi.spi.OpenApiDocumentSource;
 import io.helidon.openapi.spi.OpenApiManagerProvider;
+import io.helidon.openapi.spi.OpenApiServiceProvider;
 import io.helidon.openapi.spi.OpenApiVersion;
 import io.helidon.openapi.spi.OpenApiVersionProvider;
 import io.helidon.openapi.v30.OpenApi30Version;
@@ -72,6 +75,7 @@ import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.spi.ServerFeature;
 import io.helidon.webserver.testing.junit5.RoutingTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
@@ -81,6 +85,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.yaml.snakeyaml.Yaml;
@@ -89,6 +94,7 @@ import static io.helidon.common.testing.junit5.MapMatcher.mapEqualTo;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
@@ -373,48 +379,117 @@ class OpenApiFeatureTest {
         assertThat(feature.prototype().openApiVersion().isEmpty(), is(true));
     }
 
-    @Test
-    void disabledCreateFromConsumerDoesNotDiscoverProviders(@TempDir Path tempDir) throws IOException {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void disabledCreateFromConsumerDoesNotDiscoverProviders(boolean legacy, @TempDir Path tempDir) throws IOException {
         Path staticDirectory = tempDir.resolve("openapi-dir");
         Files.createDirectory(staticDirectory);
-        OpenApiFeature feature = OpenApiFeature.create(builder -> builder.isEnabled(false)
-                .staticFile(staticDirectory.toString()));
+        OpenApiFeature feature = OpenApiFeature.create(builder -> {
+            builder.staticFile(staticDirectory.toString());
+            if (legacy) {
+                builder.isEnabled(false);
+            } else {
+                builder.enabled(false);
+            }
+        });
 
         feature.setup(new TestFeatureContext("admin"));
         feature.initialize();
 
         assertThat(feature.prototype().isEnabled(), is(false));
+        assertThat(feature.prototype().enabled(), is(false));
         assertThat(feature.prototype().openApiVersion().isEmpty(), is(true));
     }
 
-    @Test
-    void disabledBuilderDoesNotDiscoverProviders(@TempDir Path tempDir) throws IOException {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void disabledBuilderDoesNotDiscoverProviders(boolean legacy, @TempDir Path tempDir) throws IOException {
         Path staticDirectory = tempDir.resolve("openapi-dir");
         Files.createDirectory(staticDirectory);
-        OpenApiFeature feature = OpenApiFeature.builder()
-                .isEnabled(false)
-                .staticFile(staticDirectory.toString())
+        var registryConfig = ServiceRegistryConfig.builder()
+                .discoverServices(false)
+                .discoverServicesFromServiceLoader(false)
+                .addServiceDescriptor(testDescriptor(OpenApiVersionProvider.class,
+                                                     "FailingVersionProvider",
+                                                     new FailingOpenApiVersionProvider()))
+                .addServiceDescriptor(testDescriptor(OpenApiServiceProvider.class,
+                                                     "FailingServiceProvider",
+                                                     new FailingOpenApiServiceProvider()))
+                .addServiceDescriptor(testDescriptor(OpenApiManagerProvider.class,
+                                                     "FailingManagerProvider",
+                                                     new FailingOpenApiManagerProvider()))
                 .build();
+        var registryManager = ServiceRegistryManager.create(registryConfig);
+        testRegistryManagers.add(registryManager);
+        var builder = OpenApiFeature.builder()
+                .serviceRegistry(registryManager.registry())
+                .managerDiscoverServices(true)
+                .staticFile(staticDirectory.toString());
+        if (legacy) {
+            builder.isEnabled(false);
+        } else {
+            builder.enabled(false);
+        }
+        OpenApiFeature feature = builder.build();
 
         feature.setup(new TestFeatureContext("admin"));
         feature.initialize();
 
         assertThat(feature.prototype().isEnabled(), is(false));
+        assertThat(feature.prototype().enabled(), is(false));
         assertThat(feature.prototype().openApiVersion().isEmpty(), is(true));
+        assertThat(feature.prototype().services().isEmpty(), is(true));
+        assertThat(feature.prototype().manager().isEmpty(), is(true));
     }
 
-    @Test
-    void reenabledBuilderRestoresProviderDiscovery() {
-        ServiceRegistryManager registryManager = documentSourceRegistry();
+    @ParameterizedTest
+    @CsvSource({"false, false", "false, true", "true, false", "true, true"})
+    void reenabledBuilderRestoresProviderDiscovery(boolean legacyDisable, boolean legacyEnable) {
+        var service = new TestOpenApiService("test", "test");
+        var serviceProvider = new OpenApiServiceProvider() {
+            @Override
+            public String configKey() {
+                return service.type();
+            }
+
+            @Override
+            public OpenApiService create(Config config, String name) {
+                return service;
+            }
+        };
+        var registryConfig = ServiceRegistryConfig.builder()
+                .discoverServices(false)
+                .discoverServicesFromServiceLoader(false)
+                .addServiceDescriptor(testDescriptor(OpenApiVersionProvider.class,
+                                                     "VersionProvider",
+                                                     new OpenApi30VersionProvider()))
+                .addServiceDescriptor(testDescriptor(OpenApiServiceProvider.class, "ServiceProvider", serviceProvider))
+                .addServiceDescriptor(testDescriptor(OpenApiManagerProvider.class,
+                                                     "FailingManagerProvider",
+                                                     new FailingOpenApiManagerProvider()))
+                .build();
+        ServiceRegistryManager registryManager = ServiceRegistryManager.create(registryConfig);
         try {
-            OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+            var builder = OpenApiFeatureConfig.builder()
                     .serviceRegistry(registryManager.registry())
-                    .isEnabled(false)
-                    .isEnabled(true)
-                    .buildPrototype();
+                    .managerDiscoverServices(true);
+            if (legacyDisable) {
+                builder.isEnabled(false);
+            } else {
+                builder.enabled(false);
+            }
+            if (legacyEnable) {
+                builder.isEnabled(true);
+            } else {
+                builder.enabled(true);
+            }
+            OpenApiFeatureConfig config = builder.buildPrototype();
 
             assertThat(config.isEnabled(), is(true));
+            assertThat(config.enabled(), is(true));
             assertThat(config.openApiVersion().orElseThrow().type(), is("3.0"));
+            assertThat(config.services(), contains(service));
+            assertThat(config.manager().isEmpty(), is(true));
         } finally {
             registryManager.shutdown();
         }
@@ -1924,6 +1999,41 @@ class OpenApiFeatureTest {
     }
 
     private static final class ConfigExpressionOpenApi {
+    }
+
+    private record TestOpenApiService(String name, String type) implements OpenApiService {
+        @Override
+        public boolean supports(ServerRequestHeaders headers) {
+            return false;
+        }
+
+        @Override
+        public void setup(HttpRules routing, String docPath, Function<MediaType, String> content) {
+        }
+    }
+
+    private static final class FailingOpenApiServiceProvider implements OpenApiServiceProvider {
+        @Override
+        public String configKey() {
+            return "failing";
+        }
+
+        @Override
+        public OpenApiService create(Config config, String name) {
+            throw new AssertionError("Disabled OpenAPI feature must not create services.");
+        }
+    }
+
+    private static final class FailingOpenApiManagerProvider implements OpenApiManagerProvider {
+        @Override
+        public String configKey() {
+            return "failing";
+        }
+
+        @Override
+        public OpenApiManager<?> create(Config config, String name) {
+            throw new AssertionError("OpenAPI feature must not automatically create managers.");
+        }
     }
 
     private static final class FailingOpenApiVersionProvider implements OpenApiVersionProvider {

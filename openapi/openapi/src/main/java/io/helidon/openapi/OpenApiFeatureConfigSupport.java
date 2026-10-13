@@ -27,6 +27,18 @@ final class OpenApiFeatureConfigSupport {
     private OpenApiFeatureConfigSupport() {
     }
 
+    /**
+     * Sets whether the feature is enabled. Disabling the feature also disables provider discovery;
+     * enabling it restores discovery of OpenAPI versions and services.
+     *
+     * @param builder builder to update
+     * @param enabled whether to enable the feature
+     */
+    @Prototype.BuilderMethod
+    static void enabled(OpenApiFeatureConfig.BuilderBase<?, ?> builder, boolean enabled) {
+        builder.isEnabled(enabled);
+    }
+
     @Prototype.RuntimeTypeFactoryMethod
     static OpenApiFeature create(OpenApiFeatureConfig config) {
         Supplier<ServiceRegistry> registrySupplier = () -> config.runtimeServiceRegistry()
