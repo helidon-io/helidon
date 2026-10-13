@@ -93,6 +93,7 @@ import org.yaml.snakeyaml.Yaml;
 import static io.helidon.common.testing.junit5.MapMatcher.mapEqualTo;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -444,7 +445,8 @@ class OpenApiFeatureTest {
 
     @ParameterizedTest
     @CsvSource({"false, false", "false, true", "true, false", "true, true"})
-    void reenabledBuilderRestoresProviderDiscovery(boolean legacyDisable, boolean legacyEnable) {
+    void reenabledBuilderPreservesProviderDiscovery(boolean legacy, boolean discoverManager) {
+        var manager = new RecordingOpenApiManager();
         var service = new TestOpenApiService("test", "test");
         var serviceProvider = new OpenApiServiceProvider() {
             @Override
@@ -465,20 +467,26 @@ class OpenApiFeatureTest {
                                                      new OpenApi30VersionProvider()))
                 .addServiceDescriptor(testDescriptor(OpenApiServiceProvider.class, "ServiceProvider", serviceProvider))
                 .addServiceDescriptor(testDescriptor(OpenApiManagerProvider.class,
-                                                     "FailingManagerProvider",
-                                                     new FailingOpenApiManagerProvider()))
+                                                     "ManagerProvider",
+                                                     managerProvider(manager)))
                 .build();
         ServiceRegistryManager registryManager = ServiceRegistryManager.create(registryConfig);
         try {
             var builder = OpenApiFeatureConfig.builder()
                     .serviceRegistry(registryManager.registry())
-                    .managerDiscoverServices(true);
-            if (legacyDisable) {
+                    .managerDiscoverServices(discoverManager);
+            if (legacy) {
                 builder.isEnabled(false);
             } else {
                 builder.enabled(false);
             }
-            if (legacyEnable) {
+            OpenApiFeatureConfig disabledConfig = builder.buildPrototype();
+            assertThat(disabledConfig.enabled(), is(false));
+            assertThat(disabledConfig.openApiVersion().isEmpty(), is(true));
+            assertThat(disabledConfig.services().isEmpty(), is(true));
+            assertThat(disabledConfig.manager().isEmpty(), is(true));
+
+            if (legacy) {
                 builder.isEnabled(true);
             } else {
                 builder.enabled(true);
@@ -489,7 +497,11 @@ class OpenApiFeatureTest {
             assertThat(config.enabled(), is(true));
             assertThat(config.openApiVersion().orElseThrow().type(), is("3.0"));
             assertThat(config.services(), contains(service));
-            assertThat(config.manager().isEmpty(), is(true));
+            if (discoverManager) {
+                assertThat(config.manager().orElseThrow(), sameInstance(manager));
+            } else {
+                assertThat(config.manager().isEmpty(), is(true));
+            }
         } finally {
             registryManager.shutdown();
         }

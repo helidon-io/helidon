@@ -27,18 +27,6 @@ final class OpenApiFeatureConfigSupport {
     private OpenApiFeatureConfigSupport() {
     }
 
-    /**
-     * Sets whether the feature is enabled. Disabling the feature also disables provider discovery;
-     * enabling it restores discovery of OpenAPI versions and services.
-     *
-     * @param builder builder to update
-     * @param enabled whether to enable the feature
-     */
-    @Prototype.BuilderMethod
-    static void enabled(OpenApiFeatureConfig.BuilderBase<?, ?> builder, boolean enabled) {
-        builder.isEnabled(enabled);
-    }
-
     @Prototype.RuntimeTypeFactoryMethod
     static OpenApiFeature create(OpenApiFeatureConfig config) {
         Supplier<ServiceRegistry> registrySupplier = () -> config.runtimeServiceRegistry()
@@ -56,18 +44,15 @@ final class OpenApiFeatureConfigSupport {
             builder.config()
                     .map(Config::root)
                     .ifPresent(builder::sourceRoot);
+            // we decorate isEnabled setter, this is to align if `enabled` differs, maybe because of config or explicit call.
+            builder.isEnabled(builder.enabled());
         }
     }
 
     static final class EnabledDecorator implements Prototype.OptionDecorator<OpenApiFeatureConfig.BuilderBase<?, ?>, Boolean> {
         @Override
         public void decorate(OpenApiFeatureConfig.BuilderBase<?, ?> builder, Boolean enabled) {
-            if (enabled) {
-                builder.openApiVersionDiscoverServices(true)
-                        .servicesDiscoverServices(true);
-            } else {
-                OpenApiFeature.disableProviderDiscovery(builder);
-            }
+            builder.enabled(enabled);
         }
     }
 }

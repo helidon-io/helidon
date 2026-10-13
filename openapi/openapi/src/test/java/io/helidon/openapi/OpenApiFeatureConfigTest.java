@@ -44,9 +44,8 @@ class OpenApiFeatureConfigTest {
     void setterAliasesShareState(boolean enabled) {
         var builder = OpenApiFeatureConfig.builder();
         assertThat(builder.enabled(enabled), sameInstance(builder));
-        assertThat(builder.isEnabled(), is(enabled));
+
         assertThat(builder.buildPrototype().enabled(), is(enabled));
-        assertThat(builder.buildPrototype().isEnabled(), is(enabled));
 
         builder.isEnabled(!enabled);
         assertThat(builder.buildPrototype().enabled(), is(!enabled));
@@ -54,7 +53,6 @@ class OpenApiFeatureConfigTest {
 
         builder.enabled(enabled);
         assertThat(builder.buildPrototype().enabled(), is(enabled));
-        assertThat(builder.buildPrototype().isEnabled(), is(enabled));
     }
 
     @ParameterizedTest
@@ -65,9 +63,7 @@ class OpenApiFeatureConfigTest {
         var prototype = builder.buildPrototype();
 
         assertThat(prototype.enabled(), is(enabled));
-        assertThat(prototype.isEnabled(), is(enabled));
         assertThat(OpenApiFeatureConfig.builder(prototype).buildPrototype().enabled(), is(enabled));
-        assertThat(OpenApiFeatureConfig.builder().from(builder).buildPrototype().isEnabled(), is(enabled));
 
         builder.enabled(!enabled);
         assertThat(builder.buildPrototype().enabled(), is(!enabled));
@@ -87,34 +83,12 @@ class OpenApiFeatureConfigTest {
                 .managerDiscoverServices(discover);
 
         var copy = OpenApiFeatureConfig.builder().enabled(!enabled).from(source);
-        assertThat(copy.isEnabled(), is(enabled));
         assertThat(copy.openApiVersionDiscoverServices(), is(discover));
         assertThat(copy.servicesDiscoverServices(), is(!discover));
         assertThat(copy.managerDiscoverServices(), is(discover));
         assertThat(copy.buildPrototype().enabled(), is(enabled));
-    }
-
-    @Test
-    void conventionalSetterPreservesLegacyBuilderOverrides() {
-        var builder = new LegacyBuilder();
-        assertThat(builder.enabled(false), sameInstance(builder));
-        assertThat(builder.setterCalls, is(1));
-        assertThat(builder.isEnabled(), is(false));
-        assertThat(builder.buildPrototype().enabled(), is(false));
-    }
-
-    private static final class LegacyBuilder extends OpenApiFeatureConfig.BuilderBase<LegacyBuilder, OpenApiFeatureConfig> {
-        private int setterCalls;
-
-        @Override
-        public LegacyBuilder isEnabled(boolean enabled) {
-            setterCalls++;
-            return super.isEnabled(enabled);
-        }
-
-        @Override
-        public OpenApiFeatureConfig buildPrototype() {
-            return OpenApiFeatureConfig.builder().from(this).buildPrototype();
-        }
+        assertThat(copy.openApiVersionDiscoverServices(), is(discover));
+        assertThat(copy.servicesDiscoverServices(), is(!discover));
+        assertThat(copy.managerDiscoverServices(), is(discover));
     }
 }
