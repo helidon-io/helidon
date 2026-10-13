@@ -36,11 +36,6 @@ final class MySqlTestDatabase implements BeforeAllCallback {
     private static final String PASSWORD = "jdbc-test-password";
     private static volatile MySQLContainer<?> container;
 
-    @Override
-    public void beforeAll(ExtensionContext context) {
-        context.getRoot().getStore(NAMESPACE).getOrComputeIfAbsent(Database.class, _ -> new Database(), Database.class);
-    }
-
     static DataSource dataSource(String databaseName) {
         MysqlDataSource dataSource = new MysqlDataSource();
         dataSource.setUrl(jdbcUrl(databaseName));
@@ -77,6 +72,11 @@ final class MySqlTestDatabase implements BeforeAllCallback {
         return PASSWORD;
     }
 
+    @Override
+    public void beforeAll(ExtensionContext context) {
+        context.getRoot().getStore(NAMESPACE).getOrComputeIfAbsent(Database.class, _ -> new Database(), Database.class);
+    }
+
     private static final class Database implements ExtensionContext.Store.CloseableResource {
 
         private final MySQLContainer<?> database;
@@ -86,6 +86,8 @@ final class MySqlTestDatabase implements BeforeAllCallback {
                                                    .asCompatibleSubstituteFor("mysql"))
                     .withUsername(username())
                     .withPassword(password())
+                    // OCR MySQL restricts root to localhost unless remote access is explicitly enabled.
+                    .withEnv("MYSQL_ROOT_HOST", "%")
                     .withStartupTimeout(Duration.ofMinutes(3));
             try {
                 database.start();
