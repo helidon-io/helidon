@@ -283,7 +283,6 @@ docker run --rm --name mongo -p 27017:27017 mongo
                 <value>io.helidon.config.Config</value>
                 <value>io.helidon.config.ConfigSources</value>
                 <value>io.helidon.dbclient.DbClient</value>
-                <value>io.helidon.service.registry.Services</value>
             </list>
             <list key="MainTest-fields">
                 <value>private static DbClient dbClient</value>
@@ -299,7 +298,6 @@ docker run --rm --name mongo -p 27017:27017 mongo
                     .disableEnvironmentVariablesSource()
                     .disableSystemPropertiesSource()
                     .build();
-            Services.set(Config.class, config);
             dbClient = DbClient.create(config.get("db"));
             Contexts.globalContext().register(dbClient);]]></value>
             </list>
