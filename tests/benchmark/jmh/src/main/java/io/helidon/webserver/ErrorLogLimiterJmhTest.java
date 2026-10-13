@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.ResourceBundle;
 
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -40,6 +41,12 @@ public class ErrorLogLimiterJmhTest {
 
     private final DiscardLogger logger = new DiscardLogger();
 
+    @Param({"8", "1024"})
+    private int stackDepth;
+
+    @Param({"1", "4"})
+    private int causeCount;
+
     private Throwable repeatedFailure;
     private Throwable[] distinctFailures;
     private ErrorLogLimiter repeated;
@@ -49,10 +56,10 @@ public class ErrorLogLimiterJmhTest {
 
     @Setup
     public void setup() {
-        repeatedFailure = failure(1);
+        repeatedFailure = failure(1, stackDepth, causeCount);
         distinctFailures = new Throwable[DISTINCT_ERRORS];
         for (int i = 0; i < distinctFailures.length; i++) {
-            distinctFailures[i] = failure(i + 2);
+            distinctFailures[i] = failure(i + 2, stackDepth, causeCount);
         }
         repeated = new ErrorLogLimiter(config(true, 1000, 100), NOW);
         identityCap = new ErrorLogLimiter(config(true, 1000, 1), NOW);
@@ -111,13 +118,20 @@ public class ErrorLogLimiterJmhTest {
                 .build();
     }
 
-    private static Throwable failure(int line) {
+    private static Throwable failure(int line, int stackDepth, int causeCount) {
         IllegalStateException failure = new IllegalStateException("fixed failure");
-        StackTraceElement[] stack = new StackTraceElement[8];
+        StackTraceElement[] stack = new StackTraceElement[stackDepth];
         for (int i = 0; i < stack.length; i++) {
             stack[i] = new StackTraceElement("example.RequestHandler", "handle", "RequestHandler.java", line + i);
         }
         failure.setStackTrace(stack);
+        Throwable current = failure;
+        for (int i = 1; i < causeCount; i++) {
+            var cause = new IllegalStateException("fixed cause");
+            cause.setStackTrace(stack);
+            current.initCause(cause);
+            current = cause;
+        }
         return failure;
     }
 

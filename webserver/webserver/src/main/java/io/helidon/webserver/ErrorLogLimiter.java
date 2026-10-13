@@ -18,6 +18,7 @@ package io.helidon.webserver;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.http.RequestException;
@@ -26,11 +27,13 @@ final class ErrorLogLimiter {
     private static final System.Logger LOGGER = System.getLogger(ErrorLogLimiter.class.getName());
     private static final int MAX_CAUSES = 4;
     private static final int MAX_FRAMES = 8;
+    private static final int MAX_IDENTITY_CALCULATIONS = 4;
     private static final int MAX_REPORTED_ERRORS = 8;
 
     private final ErrorLogConfig config;
     private final long windowNanos;
     private final ReentrantLock lock = new ReentrantLock();
+    private final Semaphore identityPermits = new Semaphore(MAX_IDENTITY_CALCULATIONS);
     private final Map<Long, ErrorState> errors = new LinkedHashMap<>();
 
     private long windowStart;
@@ -39,6 +42,7 @@ final class ErrorLogLimiter {
     private long repeated;
     private long overall;
     private long untracked;
+    private long identityBusy;
 
     ErrorLogLimiter(ErrorLogConfig config, long now) {
         this.config = config;
@@ -59,37 +63,35 @@ final class ErrorLogLimiter {
         }
         String summary;
         long identity = 0;
+        boolean calculate = false;
         boolean allowed = false;
         lock.lock();
         try {
             summary = rollover(now);
-            if (logged == config.maxTotal()) {
-                suppressed = increment(suppressed);
-                overall = increment(overall);
-            } else {
-                identity = identity(logger.getName(), message, failure);
-                ErrorState state = errors.get(identity);
-                if (state == null && errors.size() == config.maxErrors()) {
+            if (!overallLimitReached()) {
+                calculate = identityPermits.tryAcquire();
+                if (!calculate) {
                     suppressed = increment(suppressed);
-                    untracked = increment(untracked);
-                } else {
-                    if (state == null) {
-                        state = new ErrorState();
-                        errors.put(identity, state);
-                    }
-                    if (state.logged == config.maxPerError()) {
-                        state.suppressed = increment(state.suppressed);
-                        suppressed = increment(suppressed);
-                        repeated = increment(repeated);
-                    } else {
-                        state.logged++;
-                        logged++;
-                        allowed = true;
-                    }
+                    identityBusy = increment(identityBusy);
                 }
             }
         } finally {
             lock.unlock();
+        }
+        if (calculate) {
+            try {
+                // Stack extraction may copy a full trace. Keep it outside the accounting lock and bound concurrent work.
+                identity = identity(logger.getName(), message, failure);
+                lock.lock();
+                try {
+                    // A concurrent request or report may have changed the budgets or rolled the window during extraction.
+                    allowed = admit(identity);
+                } finally {
+                    lock.unlock();
+                }
+            } finally {
+                identityPermits.release();
+            }
         }
         // Never call a logging backend while holding the accounting lock.
         if (summary != null) {
@@ -162,6 +164,40 @@ final class ErrorLogLimiter {
         return (hash ^ 0xff) * 0x100000001b3L;
     }
 
+    private boolean overallLimitReached() {
+        if (logged != config.maxTotal()) {
+            return false;
+        }
+        suppressed = increment(suppressed);
+        overall = increment(overall);
+        return true;
+    }
+
+    private boolean admit(long identity) {
+        if (overallLimitReached()) {
+            return false;
+        }
+        ErrorState state = errors.get(identity);
+        if (state == null && errors.size() == config.maxErrors()) {
+            suppressed = increment(suppressed);
+            untracked = increment(untracked);
+            return false;
+        }
+        if (state == null) {
+            state = new ErrorState();
+            errors.put(identity, state);
+        }
+        if (state.logged == config.maxPerError()) {
+            state.suppressed = increment(state.suppressed);
+            suppressed = increment(suppressed);
+            repeated = increment(repeated);
+            return false;
+        }
+        state.logged++;
+        logged++;
+        return true;
+    }
+
     private String rollover(long now) {
         long elapsed = now - windowStart;
         if (elapsed < windowNanos) {
@@ -180,7 +216,8 @@ final class ErrorLogLimiter {
         StringBuilder result = new StringBuilder("Suppressed ")
                 .append(suppressed).append(" internal server error log entries (per-error limit: ")
                 .append(repeated).append(", overall limit: ").append(overall)
-                .append(", identity limit: ").append(untracked).append(").");
+                .append(", identity limit: ").append(untracked)
+                .append(", identity work limit: ").append(identityBusy).append(").");
         int reported = 0;
         for (Map.Entry<Long, ErrorState> entry : errors.entrySet()) {
             if (entry.getValue().suppressed != 0 && reported < MAX_REPORTED_ERRORS) {
@@ -199,6 +236,7 @@ final class ErrorLogLimiter {
         repeated = 0;
         overall = 0;
         untracked = 0;
+        identityBusy = 0;
     }
 
     private static final class ErrorState {

@@ -20,8 +20,11 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -37,7 +40,10 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ResourceLock("webserver-error-log-summary")
 class ErrorLogLimiterTest {
@@ -256,7 +262,7 @@ class ErrorLogLimiterTest {
         });
         assertThat(details.entries, hasSize(3));
         limiter.flush();
-        assertSummary(0, 1597, 1597, 0, 0);
+        assertConcurrentSummary(0, 1597, true);
     }
 
     @Test
@@ -267,16 +273,171 @@ class ErrorLogLimiterTest {
                 limiter.log(details, System.Logger.Level.ERROR, Thread.currentThread().getName(), failure("", i), 0);
             }
         });
-        assertThat(details.entries, hasSize(7));
+        int firstWindowLogged = details.entries.size();
+        assertThat(firstWindowLogged, greaterThanOrEqualTo(1));
+        assertThat(firstWindowLogged, lessThanOrEqualTo(7));
         runConcurrent(16, () -> {
             limiter.report(WINDOW);
             log(limiter, failure("new window", 1), WINDOW);
         });
-        assertSummary(0, 153, 0, 153, 0);
+        assertConcurrentSummary(0, 160 - firstWindowLogged, false);
         assertThat(summaries, hasSize(1));
-        assertThat(details.entries, hasSize(14));
+        int secondWindowLogged = details.entries.size() - firstWindowLogged;
+        assertThat(secondWindowLogged, greaterThanOrEqualTo(1));
+        assertThat(secondWindowLogged, lessThanOrEqualTo(7));
         limiter.flush();
-        assertSummary(1, 9, 0, 9, 0);
+        assertConcurrentSummary(1, 16 - secondWindowLogged, false);
+    }
+
+    @Test
+    void blockedIdentityDoesNotPreventReportsAndRechecksCurrentWindowBudget() throws Exception {
+        ErrorLogLimiter limiter = limiter(1, 1, 10, 0);
+        CountDownLatch entered = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            Future<?> blocked = executor.submit(() -> log(limiter, new BlockingFailure(1, entered, release), 0));
+            assertThat("Identity calculation started", entered.await(10, TimeUnit.SECONDS), is(true));
+            executor.submit(() -> limiter.report(WINDOW)).get(10, TimeUnit.SECONDS);
+            log(limiter, failure("current window", 2), WINDOW);
+            release.countDown();
+            blocked.get(10, TimeUnit.SECONDS);
+            assertThat(details.entries, hasSize(1));
+            limiter.report(WINDOW * 2);
+            assertSummary(0, 1, 0, 1, 0);
+            assertThat(summaries, hasSize(1));
+        } finally {
+            release.countDown();
+            stop(executor);
+        }
+    }
+
+    @Test
+    void concurrentIdentityCompletionRechecksOverallCap() throws Exception {
+        ErrorLogLimiter limiter = limiter(10, 1, 10, 0);
+        CountDownLatch entered = new CountDownLatch(2);
+        CountDownLatch release = new CountDownLatch(1);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            Future<?> first = executor.submit(() -> log(limiter, new BlockingFailure(1, entered, release), 0));
+            Future<?> second = executor.submit(() -> log(limiter, new BlockingFailure(2, entered, release), 0));
+            assertThat("Both identities passed the initial budget check", entered.await(10, TimeUnit.SECONDS), is(true));
+            release.countDown();
+            first.get(10, TimeUnit.SECONDS);
+            second.get(10, TimeUnit.SECONDS);
+            assertThat(details.entries, hasSize(1));
+            limiter.flush();
+            assertSummary(0, 1, 0, 1, 0);
+        } finally {
+            release.countDown();
+            stop(executor);
+        }
+    }
+
+    @Test
+    void concurrentIdentityCompletionRechecksTrackedIdentityCap() throws Exception {
+        ErrorLogLimiter limiter = limiter(10, 10, 1, 0);
+        CountDownLatch entered = new CountDownLatch(2);
+        CountDownLatch release = new CountDownLatch(1);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            Future<?> first = executor.submit(() -> log(limiter, new BlockingFailure(1, entered, release), 0));
+            Future<?> second = executor.submit(() -> log(limiter, new BlockingFailure(2, entered, release), 0));
+            assertThat("Both identities passed the initial budget check", entered.await(10, TimeUnit.SECONDS), is(true));
+            release.countDown();
+            first.get(10, TimeUnit.SECONDS);
+            second.get(10, TimeUnit.SECONDS);
+            assertThat(details.entries, hasSize(1));
+            limiter.flush();
+            assertSummary(0, 1, 0, 0, 1);
+        } finally {
+            release.countDown();
+            stop(executor);
+        }
+    }
+
+    @Test
+    void concurrentIdentityCompletionRechecksPerErrorCap() throws Exception {
+        ErrorLogLimiter limiter = limiter(1, 10, 10, 0);
+        CountDownLatch entered = new CountDownLatch(2);
+        CountDownLatch release = new CountDownLatch(1);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            Future<?> first = executor.submit(() -> log(limiter, new BlockingFailure(1, entered, release), 0));
+            Future<?> second = executor.submit(() -> log(limiter, new BlockingFailure(1, entered, release), 0));
+            assertThat("Both matching identities are being calculated", entered.await(10, TimeUnit.SECONDS), is(true));
+            release.countDown();
+            first.get(10, TimeUnit.SECONDS);
+            second.get(10, TimeUnit.SECONDS);
+            assertThat(details.entries, hasSize(1));
+            limiter.flush();
+            assertSummary(0, 1, 1, 0, 0);
+        } finally {
+            release.countDown();
+            stop(executor);
+        }
+    }
+
+    @Test
+    void identityWorkBoundSuppressesWithoutCalculatingAndReleasesSlots() throws Exception {
+        ErrorLogLimiter limiter = limiter(1, 100, 100, 0);
+        CountDownLatch entered = new CountDownLatch(4);
+        CountDownLatch release = new CountDownLatch(1);
+        List<Future<?>> tasks = new CopyOnWriteArrayList<>();
+        ExecutorService executor = Executors.newFixedThreadPool(5);
+        try {
+            for (int i = 0; i < 4; i++) {
+                int line = i;
+                tasks.add(executor.submit(() -> log(limiter, new BlockingFailure(line, entered, release), 0)));
+            }
+            assertThat("Four identity calculations started", entered.await(10, TimeUnit.SECONDS), is(true));
+            AtomicInteger unexpectedStackCalls = new AtomicInteger();
+            Throwable excess = new IllegalStateException() {
+                @Override
+                public StackTraceElement[] getStackTrace() {
+                    unexpectedStackCalls.incrementAndGet();
+                    return super.getStackTrace();
+                }
+            };
+            executor.submit(() -> log(limiter, excess, 0)).get(10, TimeUnit.SECONDS);
+            assertThat("Excess work must not copy a stack", unexpectedStackCalls.get(), is(0));
+            assertThat(details.entries, hasSize(0));
+            limiter.flush();
+            assertSummary(0, 1, 0, 0, 0, 1);
+            executor.submit(() -> log(limiter, excess, 0)).get(10, TimeUnit.SECONDS);
+            assertThat("Flushing counters must not release active work slots", unexpectedStackCalls.get(), is(0));
+            release.countDown();
+            for (Future<?> task : tasks) {
+                task.get(10, TimeUnit.SECONDS);
+            }
+            assertThat(details.entries, hasSize(4));
+            log(limiter, failure("slot reused", 10), 0);
+            assertThat(details.entries, hasSize(5));
+            limiter.flush();
+            assertSummary(1, 1, 0, 0, 0, 1);
+            assertThat(summaries, hasSize(2));
+        } finally {
+            release.countDown();
+            stop(executor);
+        }
+    }
+
+    @Test
+    void failingIdentityCalculationReleasesWorkSlots() {
+        ErrorLogLimiter limiter = limiter(1, 100, 100, 0);
+        Throwable failure = new IllegalStateException() {
+            @Override
+            public StackTraceElement[] getStackTrace() {
+                throw new IllegalArgumentException("Cannot obtain stack");
+            }
+        };
+        for (int i = 0; i < 8; i++) {
+            assertThrows(IllegalArgumentException.class, () -> log(limiter, failure, 0));
+        }
+        log(limiter, failure("subsequent error", 1), 0);
+        assertThat(details.entries, hasSize(1));
+        limiter.flush();
+        assertThat(summaries, hasSize(0));
     }
 
     private static ErrorLogLimiter limiter(int perError, int total, int identities, long now) {
@@ -313,7 +474,8 @@ class ErrorLogLimiterTest {
     private static void runConcurrent(int threads, Runnable action) throws Exception {
         CountDownLatch start = new CountDownLatch(1);
         List<Future<?>> tasks = new CopyOnWriteArrayList<>();
-        try (var executor = Executors.newFixedThreadPool(threads)) {
+        ExecutorService executor = Executors.newFixedThreadPool(threads);
+        try {
             for (int i = 0; i < threads; i++) {
                 tasks.add(executor.submit(() -> {
                     start.await();
@@ -323,9 +485,17 @@ class ErrorLogLimiterTest {
             }
             start.countDown();
             for (Future<?> task : tasks) {
-                task.get();
+                task.get(10, TimeUnit.SECONDS);
             }
+        } finally {
+            start.countDown();
+            stop(executor);
         }
+    }
+
+    private static void stop(ExecutorService executor) throws InterruptedException {
+        executor.shutdownNow();
+        assertThat("Test executor terminated", executor.awaitTermination(10, TimeUnit.SECONDS), is(true));
     }
 
     private void log(ErrorLogLimiter limiter, Throwable failure, long now) {
@@ -333,12 +503,61 @@ class ErrorLogLimiterTest {
     }
 
     private void assertSummary(int index, long total, long repeated, long overall, long untracked) {
+        assertSummary(index, total, repeated, overall, untracked, 0);
+    }
+
+    private void assertSummary(int index, long total, long repeated, long overall, long untracked, long workLimited) {
         assertThat(summaries.get(index).getMessage(), containsString("Suppressed " + total
                 + " internal server error log entries (per-error limit: " + repeated
-                + ", overall limit: " + overall + ", identity limit: " + untracked + ")."));
+                + ", overall limit: " + overall + ", identity limit: " + untracked
+                + ", identity work limit: " + workLimited + ")."));
+    }
+
+    private void assertConcurrentSummary(int index, long total, boolean repeatedErrors) {
+        String message = summaries.get(index).getMessage();
+        assertThat(message, containsString("Suppressed " + total + " internal server error log entries"));
+        String counts = message.substring(message.indexOf('(') + 1, message.indexOf(')'));
+        long sum = 0;
+        for (String category : counts.split(", ")) {
+            sum += Long.parseLong(category.substring(category.indexOf(": ") + 2));
+        }
+        assertThat("Suppression categories account for every attempt", sum, is(total));
+        assertThat(message, containsString(", identity limit: 0,"));
+        if (repeatedErrors) {
+            assertThat(message, containsString(", overall limit: 0,"));
+        } else {
+            assertThat(message, containsString("(per-error limit: 0,"));
+        }
     }
 
     private record Entry(String message, Throwable failure) {
+    }
+
+    private static final class BlockingFailure extends IllegalStateException {
+        private final CountDownLatch entered;
+        private final CountDownLatch release;
+
+        private BlockingFailure(int line, CountDownLatch entered, CountDownLatch release) {
+            this.entered = entered;
+            this.release = release;
+            setStackTrace(new StackTraceElement[] {
+                    new StackTraceElement("Application", "handle", "Application.java", line)
+            });
+        }
+
+        @Override
+        public StackTraceElement[] getStackTrace() {
+            entered.countDown();
+            try {
+                if (!release.await(10, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("Test did not release identity calculation");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Identity calculation interrupted", e);
+            }
+            return super.getStackTrace();
+        }
     }
 
     private static final class RecordingLogger implements System.Logger {

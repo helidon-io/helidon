@@ -1034,11 +1034,18 @@ and counters, rather than exceptions, messages, requests, or stack traces.
 Accounting is thread-safe, and suppression counters saturate rather than
 overflow.
 
+Error identity calculation runs outside the accounting lock, with at most
+four calculations in progress per WebServer. If all four are busy, additional
+entries are counted as suppressed without calculating an identity or queuing
+their exceptions. Under concurrent failure traffic, this can suppress the
+first detailed entry for a distinct error. The aggregate count remains exact,
+but these entries cannot be attributed to individual error identities.
+
 If entries were suppressed, WebServer emits one aggregate warning at window
 rollover, including when traffic has stopped, and reports remaining counts at
 shutdown. The warning gives the total suppressed count and counts attributable
-to the per-error, overall, and retained-identity limits. It also lists counts
-for up to eight tracked `error-id` values that reached the per-error limit.
+to the per-error, overall, retained-identity, and identity-work limits. It also
+lists counts for up to eight tracked `error-id` values that reached the per-error limit.
 This summary is additional to the overall detailed-entry limit, so a window
 can produce at most `max-total` detailed entries plus one aggregate warning.
 
