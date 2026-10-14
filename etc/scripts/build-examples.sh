@@ -49,7 +49,7 @@ HELIDON_VERSION=$(version "${WS_DIR}/bom/pom.xml")
 readonly HELIDON_VERSION
 
 echo "Cloning examples repository into ${WS_DIR}/helidon-examples"
-git clone --branch helidon-27.x --single-branch https://github.com/helidon-io/helidon-examples.git "${WS_DIR}/helidon-examples"
+git clone --branch helidon-28.x --single-branch https://github.com/helidon-io/helidon-examples.git "${WS_DIR}/helidon-examples"
 
 echo "Updating helidon.version in examples to ${HELIDON_VERSION}"
 "${WS_DIR}/helidon-examples"/etc/scripts/update-version.sh "${HELIDON_VERSION}"
