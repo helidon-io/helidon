@@ -1087,6 +1087,7 @@ final class JsonParserStream extends JsonParserBase {
                         throw createException("Duplicit exponent or decimal point detected");
                     }
                 }
+                currentIndex--;
                 decimalExponent += expNegative ? -explicitExp : explicitExp;
             } else {
                 //Other character than "e" detected

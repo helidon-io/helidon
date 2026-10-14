@@ -480,7 +480,7 @@ class JsonParserArray extends JsonParserBase {
             decimalExponent += expNegative ? -explicitExp : explicitExp;
         }
         if (currentIndex == start) {
-            currentIndex = i;
+            currentIndex = i - 1;
         }
 
         // Handle zero

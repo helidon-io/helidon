@@ -38,6 +38,15 @@ public class ArrayTest {
 
     @ParameterizedTest
     @EnumSource(BindingMethod.class)
+    void testNumericObjectArrays(BindingMethod bindingMethod) {
+        for (String number : new String[] {"0", "5", "-5", "15", "5.0", "0.0", "5e0"}) {
+            Object[] result = bindingMethod.deserialize(jsonBinding, "[" + number + ",10,5]", Object[].class);
+            assertThat(result, is(new Object[] {Double.valueOf(number), 10.0, 5.0}));
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
     public void testOneDimensionPrimitiveArrayParameterized(BindingMethod bindingMethod) {
         int[] expectedArray = {1, 2, 3};
         OneDimensionPrimitiveArray recordWithArray = new OneDimensionPrimitiveArray(expectedArray);

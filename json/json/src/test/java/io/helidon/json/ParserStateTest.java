@@ -16,8 +16,12 @@
 
 package io.helidon.json;
 
+import java.util.stream.Stream;
+
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -28,6 +32,31 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Covers parser behavior after exceptions, state consistency, and edge cases.
  */
 class ParserStateTest {
+
+    @ParameterizedTest
+    @MethodSource("doubleDelimiters")
+    void testDoubleDoesNotConsumeFollowingDelimiter(ParserMethod parserMethod,
+                                                   String number,
+                                                   char delimiter,
+                                                   int bufferSize) {
+        String suffix = switch (delimiter) {
+            case ',' -> ",10]";
+            case ']' -> "]";
+            default -> " ]";
+        };
+        JsonParser parser = parserMethod.createParser("[" + number + suffix, bufferSize);
+        assertThat(parser.nextToken(), is((byte) number.charAt(0)));
+        assertThat(parser.readDouble(), is(Double.parseDouble(number)));
+        assertThat(parser.nextToken(), is((byte) (delimiter == ' ' ? ']' : delimiter)));
+    }
+
+    private static Stream<Arguments> doubleDelimiters() {
+        return Stream.of(ParserMethod.values())
+                .flatMap(parserMethod -> Stream.of("0", "5", "-5", "15", "5.0", "0.0", "5e0")
+                        .flatMap(number -> Stream.of(',', ']', ' ')
+                                .flatMap(delimiter -> Stream.of(6, 64)
+                                        .map(bufferSize -> Arguments.of(parserMethod, number, delimiter, bufferSize)))));
+    }
 
     @ParameterizedTest
     @EnumSource(ParserMethod.class)
