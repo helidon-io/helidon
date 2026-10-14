@@ -60,6 +60,16 @@ class ParserStateTest {
     }
 
     @ParameterizedTest
+    @MethodSource("largeExponentsAtEndOfInput")
+    void testLargeExponentAtEndOfInput(ParserMethod parserMethod, String number, String prefix, int bufferSize) {
+        JsonParser parser = parserMethod.createParser(prefix + number, bufferSize);
+        assertThat(parser.currentByte(), is((byte) number.charAt(0)));
+        assertThat(parser.readDouble(), is(Double.parseDouble(number)));
+        assertThat(parser.currentByte(), is((byte) number.charAt(number.length() - 1)));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
     @MethodSource("invalidLargeExponents")
     void testInvalidLargeExponent(ParserMethod parserMethod, String number, int bufferSize) {
         JsonParser parser = parserMethod.createParser("[" + number + "]", bufferSize);
@@ -308,6 +318,14 @@ class ParserStateTest {
                         .flatMap(number -> Stream.of(',', ']', ' ')
                                 .flatMap(delimiter -> Stream.of(6, 64, 512)
                                         .map(bufferSize -> Arguments.of(parserMethod, number, delimiter, bufferSize)))));
+    }
+
+    private static Stream<Arguments> largeExponentsAtEndOfInput() {
+        return Stream.of(ParserMethod.values())
+                .flatMap(parserMethod -> Stream.of("0e1001", "-0e1001", "1e1001", "1e-1001", "0e10010", "0e2147483648")
+                        .flatMap(number -> Stream.of("", " ")
+                                .flatMap(prefix -> Stream.of(6, 64, 512)
+                                        .map(bufferSize -> Arguments.of(parserMethod, number, prefix, bufferSize)))));
     }
 
     private static Stream<Arguments> invalidLargeExponents() {
