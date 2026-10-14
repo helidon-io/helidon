@@ -938,9 +938,6 @@ class Http3WebServerIT {
             assertThat(routeReading.await(5, TimeUnit.SECONDS), equalTo(true));
             cancelledRequest.writer().reset(Http3ErrorCode.REQUEST_CANCELLED.code());
             assertThat(routeCancelled.await(5, TimeUnit.SECONDS), equalTo(true));
-            if (routeFailure.get().getClass() != QuicStreamException.class) {
-                throw new AssertionError("Unexpected request-body cancellation failure", routeFailure.get());
-            }
             assertThat(routeFailure.get().getClass(), equalTo(QuicStreamException.class));
             ExecutionException cancellation = assertThrows(
                     ExecutionException.class,

@@ -33,6 +33,7 @@ import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -75,6 +76,25 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class Http3StreamSupportTest {
     private static final Http3FrameListener NO_OP_FRAME_LISTENER = Http3FrameListener.create(List.of());
+
+    @Test
+    @Timeout(20)
+    void shouldReturnPartialDataBeforeMoreInputWithoutReadTimeout() throws Exception {
+        verifyFirstPartialRead(Duration.ZERO, false);
+    }
+
+    @Test
+    @Timeout(20)
+    void shouldReturnPartialDataBeforeReadTimeout() throws Exception {
+        verifyFirstPartialRead(Duration.ofSeconds(10), false);
+    }
+
+    @Test
+    @Timeout(30)
+    void shouldWakeWaitingReadWhenCallbackDeliversPartialData() throws Exception {
+        verifyFirstPartialRead(Duration.ZERO, true);
+        verifyFirstPartialRead(Duration.ofSeconds(10), true);
+    }
 
     @Test
     @Timeout(30)
@@ -1600,6 +1620,76 @@ class Http3StreamSupportTest {
         VariableLengthEncoder.encode(frame, payload.available());
         frame.write(payload);
         return frame.readBytes();
+    }
+
+    private static void verifyFirstPartialRead(Duration timeout, boolean deliveredByCallback) throws Exception {
+        byte[] body = new byte[16 * 1024];
+        for (int index = 0; index < body.length; index++) {
+            body[index] = (byte) (index * 31 + 7);
+        }
+        byte[] dataFrame = Http3Protocol.encodeDataFrame(body);
+        int frameHeaderLength = dataFrame.length - body.length;
+        for (boolean singleByte : List.of(true, false)) {
+            List<BufferData> buffers = new CopyOnWriteArrayList<>();
+            buffers.add(BufferData.create(Http3Protocol.encodeResponseHeaders(200,
+                    WritableHeaders.create().set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, body.length)))));
+            buffers.add(BufferData.create(Arrays.copyOf(dataFrame,
+                    frameHeaderLength + (deliveredByCallback ? 0 : 1024))));
+            // Deliberately no EOF and no remainder of the advertised DATA payload.
+            FakeReceiverStream stream = new FakeReceiverStream(buffers);
+            Http3MessageReader reader = Http3MessageReader.response(stream,
+                    qpackContext(0, 0), Http3TestSocketContext.INSTANCE, Method.GET, 16_384,
+                    Http3MessageReader.ResponseOptions.create(timeout, NO_OP_FRAME_LISTENER));
+            if (!timeout.isZero()) {
+                reader.activateReadTimeout();
+            }
+            reader.readResponseHead(_ -> { });
+            InputStream input = reader.inputStreamWithTrailers();
+            byte[] actual = new byte[1024];
+            CompletableFuture<Integer> firstRead = new CompletableFuture<>();
+            Thread consumer = Thread.ofVirtual().unstarted(() -> {
+                try {
+                    firstRead.complete(singleByte ? input.read() : input.read(actual));
+                } catch (Throwable failure) {
+                    firstRead.completeExceptionally(failure);
+                }
+            });
+            try {
+                consumer.start();
+                if (deliveredByCallback) {
+                    Thread.State waitingState = timeout.isZero() ? Thread.State.WAITING : Thread.State.TIMED_WAITING;
+                    long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+                    while (consumer.getState() != waitingState && consumer.isAlive() && System.nanoTime() < deadline) {
+                        Thread.onSpinWait();
+                    }
+                    assertThat("Read waiting before transport delivery", consumer.getState(), is(waitingState));
+                    buffers.add(BufferData.create(Arrays.copyOf(body, 1024)));
+                    stream.reader.scheduler.runOrSchedule();
+                }
+                int result = firstRead.get(2, TimeUnit.SECONDS);
+                if (singleByte) {
+                    assertThat("First byte returned before further DATA or EOF", result, is(body[0] & 0xff));
+                } else {
+                    assertThat("Ready prefix returned before further DATA or EOF", result, is(actual.length));
+                    assertThat(actual, is(Arrays.copyOf(body, actual.length)));
+                }
+                assertThat("Partial DATA must not complete the message", reader.messageComplete(), is(false));
+                assertThat("Partial DATA must not publish trailers", reader.trailers().size(), is(0));
+            } finally {
+                try {
+                    reader.close();
+                } finally {
+                    consumer.interrupt();
+                    consumer.join(5000);
+                    try {
+                        input.close();
+                    } finally {
+                        assertThat("Partial-read consumer terminated", consumer.isAlive(), is(false));
+                    }
+                }
+            }
+            assertThat(stream.disconnected(), is(true));
+        }
     }
 
     private record DynamicResponse(byte[] headersFrame, List<byte[]> encoderInstructions) {

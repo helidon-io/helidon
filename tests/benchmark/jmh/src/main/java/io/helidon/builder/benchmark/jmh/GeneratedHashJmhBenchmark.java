@@ -187,14 +187,6 @@ public class GeneratedHashJmhBenchmark {
         return protocolHash(protocol);
     }
 
-    private void verifyHashes() {
-        verifyHash("http", generatedHttp(), objectsHttp());
-        verifyHash("log", generatedLog(), objectsLog());
-        verifyHash("transport", generatedTransport(), objectsTransport());
-        verifyHash("quic", generatedQuic(), objectsQuic());
-        verifyHash("protocol", generatedProtocol(), objectsProtocol());
-    }
-
     private static void verifyHash(String family, int generated, int expected) {
         if (generated != expected) {
             throw new IllegalStateException(family + " generated hash " + generated + " differs from formula " + expected);
@@ -229,5 +221,13 @@ public class GeneratedHashJmhBenchmark {
                                value.qpackBlockedStreams(), value.sendErrorDetails(), value.initialResponseTimeout(),
                                value.handshakeTimeout(), value.streamOpenTimeout(), value.quic(), value.runtimeExecutor());
         return 31 * inherited + own;
+    }
+
+    private void verifyHashes() {
+        verifyHash("http", generatedHttp(), objectsHttp());
+        verifyHash("log", generatedLog(), objectsLog());
+        verifyHash("transport", generatedTransport(), objectsTransport());
+        verifyHash("quic", generatedQuic(), objectsQuic());
+        verifyHash("protocol", generatedProtocol(), objectsProtocol());
     }
 }

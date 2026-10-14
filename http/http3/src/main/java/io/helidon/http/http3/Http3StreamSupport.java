@@ -512,19 +512,12 @@ public final class Http3StreamSupport {
                         prefetch(false);
                     }
                     int available = availableBytes();
-                    if (available >= batchingTarget) {
-                        releaseTranche(true);
-                        return;
-                    }
-                    if ((stashCount == BATCH_REFERENCES || pollBudgetExhausted) && available > 0) {
-                        releaseTranche(false);
+                    if (available > 0) {
+                        // The target bounds prefetching; it must not delay already available DATA.
+                        releaseTranche();
                         return;
                     }
                     if (pendingEof || pendingFailure != null || endOfStream) {
-                        if (available > 0) {
-                            releaseTranche(false);
-                            return;
-                        }
                         batchingArmed = false;
                         throwPendingFailure();
                         throw truncatedFrame();
@@ -536,10 +529,6 @@ public final class Http3StreamSupport {
                         }
                         waitNanos = idleDeadlineNanos - System.nanoTime();
                         if (waitNanos <= 0) {
-                            if (available > 0) {
-                                releaseTranche(false);
-                                return;
-                            }
                             batchingArmed = false;
                             throw new UncheckedIOException(new Http3ReadTimeoutException(
                                     "No data received on HTTP/3 stream " + stream.streamId()
@@ -575,7 +564,7 @@ public final class Http3StreamSupport {
                     return;
                 }
                 prefetch(true);
-                if (availableBytes() >= batchingTarget || stashCount == BATCH_REFERENCES || pollBudgetExhausted
+                if (availableBytes() > 0 || pollBudgetExhausted
                         || pendingEof || pendingFailure != null) {
                     offerSignal(DATA_AVAILABLE);
                 }
@@ -632,11 +621,9 @@ public final class Http3StreamSupport {
             }
         }
 
-        private void releaseTranche(boolean full) {
+        private void releaseTranche() {
             batchingAllowance = Math.min(batchingTarget, availableBytes());
-            if (full) {
-                idleCycle = false;
-            }
+            idleCycle = false;
         }
 
         private int availableBytes() {

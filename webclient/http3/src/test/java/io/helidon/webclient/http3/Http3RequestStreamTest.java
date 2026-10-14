@@ -199,6 +199,12 @@ class Http3RequestStreamTest {
                     _ -> finished.incrementAndGet(), _ -> { });
         }
 
+        @Override
+        public void close() {
+            request.finish(StreamOutcome.CANCELLED);
+            qpack.close(new IllegalStateException("Request fixture closed"));
+        }
+
         private void execute(Executor executor) {
             request.execute(executor, (response, failure) -> {
                 if (failure == null) {
@@ -231,12 +237,6 @@ class Http3RequestStreamTest {
             if (last) {
                 fin.incrementAndGet();
             }
-        }
-
-        @Override
-        public void close() {
-            request.finish(StreamOutcome.CANCELLED);
-            qpack.close(new IllegalStateException("Request fixture closed"));
         }
     }
 }

@@ -405,6 +405,25 @@ public class Http3DataIngressJmhBenchmark {
             reader = null;
         }
 
+        private static Http3MessageReader newReader(BufferData input) {
+            return Http3MessageReader.response(new BenchmarkReceiverStream(input),
+                                               Http3QpackContext.create(0, 0, 16_384, ignored -> {
+                                               }),
+                                               SOCKET_CONTEXT,
+                                               Method.GET,
+                                               16_384,
+                                               NO_OP_FRAME_LISTENER);
+        }
+
+        private static void expectOutOfBounds(BufferData data, int index) {
+            try {
+                data.get(index);
+                throw new IllegalStateException("Buffer exposed bytes beyond its logical range");
+            } catch (IndexOutOfBoundsException expected) {
+                // Expected strict upper bound.
+            }
+        }
+
         private int materializedBulk() {
             byte[] data = new byte[payloadSize];
             int read = source.read(data, 0, data.length);
@@ -450,25 +469,6 @@ public class Http3DataIngressJmhBenchmark {
         private void prepareDirectSource() {
             source = directFrame.ownedPayloadData();
             source.skip(frameHeaderSize);
-        }
-
-        private static Http3MessageReader newReader(BufferData input) {
-            return Http3MessageReader.response(new BenchmarkReceiverStream(input),
-                                               Http3QpackContext.create(0, 0, 16_384, ignored -> {
-                                               }),
-                                               SOCKET_CONTEXT,
-                                               Method.GET,
-                                               16_384,
-                                               NO_OP_FRAME_LISTENER);
-        }
-
-        private static void expectOutOfBounds(BufferData data, int index) {
-            try {
-                data.get(index);
-                throw new IllegalStateException("Buffer exposed bytes beyond its logical range");
-            } catch (IndexOutOfBoundsException expected) {
-                // Expected strict upper bound.
-            }
         }
     }
 
