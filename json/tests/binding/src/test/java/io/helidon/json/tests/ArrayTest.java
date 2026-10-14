@@ -47,6 +47,24 @@ public class ArrayTest {
 
     @ParameterizedTest
     @EnumSource(BindingMethod.class)
+    void testLargeExponentNumericArrays(BindingMethod bindingMethod) {
+        for (String number : new String[] {"0e999", "0e1000", "0e1001", "0e10010", "0e2147483648",
+                                           "0e-1001", "0e+1001", "0E1001", "-0e1001", "-0e-1001", "0.0e1001"}) {
+            for (String suffix : new String[] {"]", ",5]", " ]"}) {
+                String json = "[" + number + suffix;
+                Double[] doubles = suffix.startsWith(",")
+                        ? new Double[] {Double.valueOf(number), 5.0} : new Double[] {Double.valueOf(number)};
+                Float[] floats = suffix.startsWith(",")
+                        ? new Float[] {Float.valueOf(number), 5.0f} : new Float[] {Float.valueOf(number)};
+                assertThat(bindingMethod.deserialize(jsonBinding, json, Object[].class), is(doubles));
+                assertThat(bindingMethod.deserialize(jsonBinding, json, Double[].class), is(doubles));
+                assertThat(bindingMethod.deserialize(jsonBinding, json, Float[].class), is(floats));
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
     public void testOneDimensionPrimitiveArrayParameterized(BindingMethod bindingMethod) {
         int[] expectedArray = {1, 2, 3};
         OneDimensionPrimitiveArray recordWithArray = new OneDimensionPrimitiveArray(expectedArray);

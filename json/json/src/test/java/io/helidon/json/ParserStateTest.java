@@ -50,12 +50,21 @@ class ParserStateTest {
         assertThat(parser.nextToken(), is((byte) (delimiter == ' ' ? ']' : delimiter)));
     }
 
-    private static Stream<Arguments> doubleDelimiters() {
-        return Stream.of(ParserMethod.values())
-                .flatMap(parserMethod -> Stream.of("0", "5", "-5", "15", "5.0", "0.0", "5e0")
-                        .flatMap(number -> Stream.of(',', ']', ' ')
-                                .flatMap(delimiter -> Stream.of(6, 64)
-                                        .map(bufferSize -> Arguments.of(parserMethod, number, delimiter, bufferSize)))));
+    @ParameterizedTest
+    @MethodSource("largeExponentDelimiters")
+    void testLargeExponentDoesNotConsumeFollowingDelimiter(ParserMethod parserMethod,
+                                                           String number,
+                                                           char delimiter,
+                                                           int bufferSize) {
+        testDoubleDoesNotConsumeFollowingDelimiter(parserMethod, number, delimiter, bufferSize);
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidLargeExponents")
+    void testInvalidLargeExponent(ParserMethod parserMethod, String number, int bufferSize) {
+        JsonParser parser = parserMethod.createParser("[" + number + "]", bufferSize);
+        parser.nextToken();
+        assertThrows(JsonException.class, parser::readDouble);
     }
 
     @ParameterizedTest
@@ -280,6 +289,32 @@ class ParserStateTest {
         JsonParser parser3 = parserMethod.createParser("\"\"");
         String emptyStr = parser3.readString();
         assertThat(emptyStr.isEmpty(), is(true));
+    }
+
+    private static Stream<Arguments> doubleDelimiters() {
+        return Stream.of(ParserMethod.values())
+                .flatMap(parserMethod -> Stream.of("0", "5", "-5", "15", "5.0", "0.0", "5e0")
+                        .flatMap(number -> Stream.of(',', ']', ' ')
+                                .flatMap(delimiter -> Stream.of(6, 64)
+                                        .map(bufferSize -> Arguments.of(parserMethod, number, delimiter, bufferSize)))));
+    }
+
+    private static Stream<Arguments> largeExponentDelimiters() {
+        return Stream.of(ParserMethod.values())
+                .flatMap(parserMethod -> Stream.of("0e999", "0e1000", "0e1001", "0e10010", "0e2147483648",
+                                                  "0e-1001", "0e+1001", "0E1001", "-0e1001", "-0e-1001",
+                                                  "0.0e1001", "1e1001", "1e-1001", "-1e1001",
+                                                  "0." + "0".repeat(1999) + "1e20000")
+                        .flatMap(number -> Stream.of(',', ']', ' ')
+                                .flatMap(delimiter -> Stream.of(6, 64, 512)
+                                        .map(bufferSize -> Arguments.of(parserMethod, number, delimiter, bufferSize)))));
+    }
+
+    private static Stream<Arguments> invalidLargeExponents() {
+        return Stream.of(ParserMethod.values())
+                .flatMap(parserMethod -> Stream.of("0e1001.5", "0e1001e2", "0e1001E2", "-0e10010.5")
+                        .flatMap(number -> Stream.of(6, 64, 512)
+                                .map(bufferSize -> Arguments.of(parserMethod, number, bufferSize))));
     }
 
 }

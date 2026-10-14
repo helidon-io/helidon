@@ -1036,6 +1036,7 @@ final class JsonParserStream extends JsonParserBase {
 
         // Calculate the base decimal exponent
         int decimalExponent = 0;
+        boolean exponentTooLarge = false;
         if (digitsBeforeDecimal > 0) {
             // 123.456 -> mantissa=123456, digitsBeforeDecimal=3, significantDigits=6 -> Base exponent -3
             decimalExponent = digitsBeforeDecimal - significantDigits;
@@ -1068,9 +1069,9 @@ final class JsonParserStream extends JsonParserBase {
                 int digit = -1;
                 boolean foundExponentValue = false;
                 while ((currentIndex < bufferLength) && (digit = WHOLE_NUMBER_PARTS[buffer[currentIndex] & 0xFF]) > -1) {
-                    explicitExp = explicitExp * 10 + digit;
-                    if (explicitExp > 1000) {
-                        break;
+                    if (!exponentTooLarge) {
+                        explicitExp = explicitExp * 10 + digit;
+                        exponentTooLarge = explicitExp > 1000;
                     }
                     currentIndex++;
                     if (currentIndex == bufferLength && !finished) {
@@ -1081,7 +1082,7 @@ final class JsonParserStream extends JsonParserBase {
                 if (!foundExponentValue) {
                     throw createException("Exponent did not have a value specified");
                 }
-                if (digit == -1) {
+                if (digit < 0) {
                     b = buffer[currentIndex];
                     if (b == 'e' || b == 'E' || b == '.') {
                         throw createException("Duplicit exponent or decimal point detected");
@@ -1104,7 +1105,9 @@ final class JsonParserStream extends JsonParserBase {
             return negative ? -0.0 : 0.0;
         }
 
-        if (decimalExponent >= POW10_DOUBLE_CACHE_SIZE || decimalExponent <= -POW10_DOUBLE_CACHE_SIZE) {
+        if (exponentTooLarge
+                || decimalExponent >= POW10_DOUBLE_CACHE_SIZE
+                || decimalExponent <= -POW10_DOUBLE_CACHE_SIZE) {
             skipNumber();
             bufferingJsonValue = false;
             // Delegate to Java for exact result
