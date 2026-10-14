@@ -90,6 +90,19 @@ public interface Http2SubProtocolSelector {
         }
 
         /**
+         * Finish application processing after stream closure when the HTTP/2 stream runner exits.
+         * Called at most once on the existing HTTP/2 stream thread, serialized with {@link #init()},
+         * {@link #data(Http2FrameHeader, BufferData)}, and {@link #streamEvent()}.
+         * This callback can occur even when the stream closes before {@code init()} is invoked.
+         * It may overlap {@link #close()} or {@link #rstStream(Http2RstStream)} on the connection thread.
+         * Implementations may block their own stream thread but must not write further frames.
+         *
+         * The default implementation does nothing.
+         */
+        default void streamFinished() {
+        }
+
+        /**
          * Current stream state.
          *
          * @return stream state
@@ -137,6 +150,8 @@ public interface Http2SubProtocolSelector {
          * This method is normally dispatched on the HTTP/2 connection thread. If the stream closes while
          * subprotocol selection is in progress, it is dispatched on the stream thread before {@link #init()}.
          * Implementations must support both threads and concurrent invocation with {@code init()}.
+         * Implementations must not block the calling thread; application cancellation that can block belongs in
+         * {@link #streamFinished()}.
          *
          * @param rstStream RST stream frame
          */

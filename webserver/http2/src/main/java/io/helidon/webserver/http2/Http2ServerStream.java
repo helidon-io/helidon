@@ -417,7 +417,6 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                     pendingSubProtocolReset = reset;
                 } else {
                     handler = subProtocolHandler;
-                    subProtocolHandler = null;
                 }
             }
         } finally {
@@ -672,7 +671,6 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                     throw writeFailure;
                 }
             }
-            // no sense in throwing an exception, as this is invoked from an executor service directly
         } catch (RequestException e) {
             if (!handleRequestException(e)) {
                 return;
@@ -680,8 +678,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             completed = true;
         } catch (Http2Exception e) {
             ctx.log(LOGGER, DEBUG, "Intentional HTTP/2 stream exception, code: %s, message: %s",
-                    e.code(),
-                    e.getMessage());
+                    e.code(), e.getMessage());
             closeRejectedStream(e.code(), true);
             completed = true;
         } finally {
@@ -690,9 +687,8 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                     if (!connectionFailed && !resetSent) {
                         boolean sendReset = claimResetStreamSent();
                         if (sendReset) {
-                            Http2RstStream rst = new Http2RstStream(Http2ErrorCode.INTERNAL);
                             try {
-                                writeResetStream(rst, serverSettings);
+                                writeResetStream(new Http2RstStream(Http2ErrorCode.INTERNAL), serverSettings);
                                 resetSent = true;
                             } catch (SocketWriterException | UncheckedIOException writeFailure) {
                                 ctx.log(LOGGER, DEBUG, "Failed to reset stream %d after handler failure", streamId);
@@ -734,14 +730,22 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                 throw e;
             } finally {
                 closeSubProtocol(subProtocolHandler);
-                runnerLock.lock();
                 try {
-                    runnerThread = null;
-                    if (!ignoreInboundDataAfterReset || subProtocolTerminal) {
-                        subProtocolHandler = null;
+                    if (subProtocolHandler != null) {
+                        subProtocolHandler.streamFinished();
                     }
+                } catch (Throwable e) {
+                    LOGGER.log(System.Logger.Level.WARNING, "Failed to finish HTTP/2 sub-protocol handler", e);
                 } finally {
-                    runnerLock.unlock();
+                    runnerLock.lock();
+                    try {
+                        runnerThread = null;
+                        if (!ignoreInboundDataAfterReset || subProtocolTerminal) {
+                            subProtocolHandler = null;
+                        }
+                    } finally {
+                        runnerLock.unlock();
+                    }
                 }
             }
         }

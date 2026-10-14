@@ -56,6 +56,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -104,6 +105,7 @@ class Http2ServerStreamCloseTest {
             notifier.get().run();
             verify(handler).streamEvent();
             verify(handler).close();
+            verify(handler).streamFinished();
         } finally {
             stream.abortConnection();
             thread.join(5_000);
@@ -197,6 +199,7 @@ class Http2ServerStreamCloseTest {
             assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
             verify(handler).streamEvent();
             verify(handler).close();
+            verify(handler).streamFinished();
         } finally {
             releaseEvent.countDown();
             stream.abortConnection();
@@ -232,6 +235,7 @@ class Http2ServerStreamCloseTest {
             notifier.get().run();
             verify(handler).streamEvent();
             verify(handler).close();
+            verify(handler).streamFinished();
         } finally {
             stream.abortConnection();
             thread.join(5_000);
@@ -242,6 +246,12 @@ class Http2ServerStreamCloseTest {
     void testSubProtocolClosedWhenStreamExits() {
         var handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
         when(handler.streamState()).thenReturn(Http2StreamState.CLOSED);
+        var runner = Thread.currentThread();
+        var finishThread = new AtomicReference<Thread>();
+        doAnswer(_ -> {
+            finishThread.set(Thread.currentThread());
+            return null;
+        }).when(handler).streamFinished();
         var stream = stream(handler);
         stream.prologue(HttpPrologue.create("HTTP/2.0", "HTTP", "2.0", Method.POST, "/service/method", false));
         stream.headers(headers(), false);
@@ -250,6 +260,11 @@ class Http2ServerStreamCloseTest {
         stream.abortConnection();
 
         verify(handler).close();
+        verify(handler).streamFinished();
+        assertThat(finishThread.get(), sameInstance(runner));
+        var order = inOrder(handler);
+        order.verify(handler).close();
+        order.verify(handler).streamFinished();
     }
 
     @Test
@@ -279,6 +294,7 @@ class Http2ServerStreamCloseTest {
             assertThat(failure.get(), nullValue());
             assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
             verify(handler, times(1)).close();
+            verify(handler).streamFinished();
         } finally {
             release.countDown();
             thread.interrupt();
@@ -291,11 +307,18 @@ class Http2ServerStreamCloseTest {
         var entered = new CountDownLatch(1);
         var release = new CountDownLatch(1);
         var handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
+        var selectionThread = new AtomicReference<Thread>();
+        var finishThread = new AtomicReference<Thread>();
         Http2SubProtocolSelector selector = (_, _, _, _, _, _, _, _, _, _) -> {
+            selectionThread.set(Thread.currentThread());
             entered.countDown();
             awaitIgnoringInterrupts(release);
             return new SubProtocolResult(true, handler);
         };
+        doAnswer(_ -> {
+            finishThread.set(Thread.currentThread());
+            return null;
+        }).when(handler).streamFinished();
         var stream = stream(selector, noOpWriter());
         stream.prologue(HttpPrologue.create("HTTP/2.0", "HTTP", "2.0", Method.POST, "/service/method", false));
         stream.headers(headers(), false);
@@ -312,6 +335,11 @@ class Http2ServerStreamCloseTest {
             assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
             verify(handler, never()).init();
             verify(handler).close();
+            verify(handler).streamFinished();
+            assertThat(finishThread.get(), sameInstance(selectionThread.get()));
+            var order = inOrder(handler);
+            order.verify(handler).close();
+            order.verify(handler).streamFinished();
         } finally {
             release.countDown();
             thread.interrupt();
@@ -329,6 +357,7 @@ class Http2ServerStreamCloseTest {
             return null;
         }).when(handler).init();
         doThrow(new IllegalStateException("test cleanup failure")).when(handler).close();
+        doThrow(new IllegalStateException("test application cleanup failure")).when(handler).streamFinished();
         var stream = stream(handler);
         stream.prologue(HttpPrologue.create("HTTP/2.0", "HTTP", "2.0", Method.POST, "/service/method", false));
         stream.headers(headers(), false);
@@ -343,9 +372,120 @@ class Http2ServerStreamCloseTest {
             assertThat(failure.get(), nullValue());
             assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
             verify(handler).close();
+            stream.abortConnection();
+            stream.run();
+            verify(handler).streamFinished();
         } finally {
             thread.interrupt();
             thread.join(5_000);
+        }
+    }
+
+    @Test
+    void testBlockingStreamFinishedDoesNotBlockConnectionAbort() throws Exception {
+        var handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
+        when(handler.streamState()).thenReturn(Http2StreamState.OPEN);
+        var initialized = new CountDownLatch(1);
+        var finishEntered = new CountDownLatch(1);
+        var releaseFinish = new CountDownLatch(1);
+        var runner = new AtomicReference<Thread>();
+        var finishThread = new AtomicReference<Thread>();
+        doAnswer(_ -> {
+            runner.set(Thread.currentThread());
+            initialized.countDown();
+            return null;
+        }).when(handler).init();
+        doAnswer(_ -> {
+            finishThread.set(Thread.currentThread());
+            finishEntered.countDown();
+            awaitIgnoringInterrupts(releaseFinish);
+            return null;
+        }).when(handler).streamFinished();
+        var stream = stream(handler);
+        stream.prologue(HttpPrologue.create("HTTP/2.0", "HTTP", "2.0", Method.POST, "/service/method", false));
+        stream.headers(headers(), false);
+        var failure = new AtomicReference<Throwable>();
+        var thread = Thread.ofVirtual().uncaughtExceptionHandler((_, e) -> failure.set(e)).start(stream);
+        var abortReturned = new CountDownLatch(1);
+        Thread abortThread = null;
+        try {
+            assertThat("handler initialized", initialized.await(5, TimeUnit.SECONDS), is(true));
+            stream.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+            assertThat("application cleanup started", finishEntered.await(5, TimeUnit.SECONDS), is(true));
+            abortThread = Thread.ofPlatform().uncaughtExceptionHandler((_, e) -> failure.set(e)).start(() -> {
+                stream.abortConnection();
+                abortReturned.countDown();
+            });
+            assertThat("connection cleanup returned while application cleanup blocked",
+                       abortReturned.await(5, TimeUnit.SECONDS), is(true));
+            assertThat("application cleanup remains blocked", thread.isAlive(), is(true));
+            releaseFinish.countDown();
+            thread.join(5_000);
+            assertThat("stream stopped", thread.isAlive(), is(false));
+            assertThat(failure.get(), nullValue());
+            verify(handler).rstStream(any());
+            verify(handler).close();
+            verify(handler).streamFinished();
+            assertThat(finishThread.get(), sameInstance(runner.get()));
+            var order = inOrder(handler);
+            order.verify(handler).close();
+            order.verify(handler).streamFinished();
+        } finally {
+            releaseFinish.countDown();
+            stream.abortConnection();
+            thread.join(5_000);
+            if (abortThread != null) {
+                abortThread.join(5_000);
+                assertThat("connection cleanup thread stopped", abortThread.isAlive(), is(false));
+            }
+            assertThat("stream cleanup thread stopped", thread.isAlive(), is(false));
+        }
+    }
+
+    @Test
+    void testLocalProtocolResetRetainsHandlerForStreamFinished() throws Exception {
+        var handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
+        when(handler.streamState()).thenReturn(Http2StreamState.OPEN);
+        var initialized = new CountDownLatch(1);
+        var releaseInit = new CountDownLatch(1);
+        var runner = new AtomicReference<Thread>();
+        var finishThread = new AtomicReference<Thread>();
+        doAnswer(_ -> {
+            runner.set(Thread.currentThread());
+            initialized.countDown();
+            awaitIgnoringInterrupts(releaseInit);
+            return null;
+        }).when(handler).init();
+        doAnswer(_ -> {
+            finishThread.set(Thread.currentThread());
+            return null;
+        }).when(handler).streamFinished();
+        var stream = stream(handler);
+        stream.prologue(HttpPrologue.create("HTTP/2.0", "HTTP", "2.0", Method.POST, "/service/method", false));
+        stream.headers(headers(), false);
+        var failure = new AtomicReference<Throwable>();
+        var thread = Thread.ofVirtual().uncaughtExceptionHandler((_, e) -> failure.set(e)).start(stream);
+        try {
+            assertThat("handler initialized", initialized.await(5, TimeUnit.SECONDS), is(true));
+            stream.windowUpdate(new Http2WindowUpdate(0));
+            verify(handler).rstStream(any());
+            releaseInit.countDown();
+            thread.join(5_000);
+            assertThat("stream stopped", thread.isAlive(), is(false));
+            assertThat(failure.get(), nullValue());
+            stream.abortConnection();
+            verify(handler).close();
+            verify(handler).streamFinished();
+            assertThat(finishThread.get(), sameInstance(runner.get()));
+            var order = inOrder(handler);
+            order.verify(handler).close();
+            order.verify(handler).streamFinished();
+            assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
+        } finally {
+            releaseInit.countDown();
+            stream.abortConnection();
+            thread.join(5_000);
+            assertThat("stream cleanup thread stopped", thread.isAlive(), is(false));
         }
     }
 
