@@ -145,14 +145,18 @@ the call with `DEADLINE_EXCEEDED` if the deadline expires. Deadlines apply to
 unary and streaming calls, including streams waiting for request messages.
 Explicitly cancelling a call completes it with `CANCELLED`.
 
-Call startup runs on the caller's thread. A shared timer enforces deadlines;
-expiry closes the call's socket, including during a TLS handshake, without
+Call startup runs on the caller's thread. A shared timer checks deadlines;
+actual expiry starts a virtual thread to close the call's socket and notify
+the listener, keeping socket cleanup and application callbacks off the shared
+timer. Calls that finish before their deadline create no additional deadline
+thread. Expiry closes the socket, including during a TLS handshake, without
 interrupting the caller. Before the socket becomes available, DNS resolution
 can block according to the resolver and JDK behavior. The configured connect
 timeout applies to TCP connection setup.
 Cancellation and terminal callbacks run inline on the thread completing the
-call. Keep these callbacks brief: a blocking callback on the deadline timer
-delays other client deadlines.
+call, which can be the expiry virtual thread. A blocking expiry callback does
+not delay other calls' deadlines. Keep callbacks brief so they do not delay
+their own call's completion.
 
 Calls also inherit the deadline from the gRPC `Context` in which they are
 created. When both the context and the call specify a deadline, the earlier one

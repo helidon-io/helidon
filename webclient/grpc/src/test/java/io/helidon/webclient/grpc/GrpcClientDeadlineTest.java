@@ -151,6 +151,7 @@ class GrpcClientDeadlineTest {
                                                                                     options)));
             var received = new CompletableFuture<String>();
             var status = new CompletableFuture<Status>();
+            var terminalThread = new CompletableFuture<Thread>();
             var listener = new ClientCall.Listener<String>() {
                 @Override
                 public void onMessage(String message) {
@@ -159,6 +160,7 @@ class GrpcClientDeadlineTest {
 
                 @Override
                 public void onClose(Status result, Metadata trailers) {
+                    terminalThread.complete(Thread.currentThread());
                     status.complete(result);
                 }
             };
@@ -191,6 +193,9 @@ class GrpcClientDeadlineTest {
                 assertThat(suppliedUri.get(5, TimeUnit.SECONDS), sameInstance(serverUri));
                 assertThat(status.get(5, TimeUnit.SECONDS).getCode(), is(Status.Code.OK));
                 assertThat(received.get(5, TimeUnit.SECONDS), is("response"));
+                assertThat("successful deadline calls deliver completion on the existing caller",
+                           terminalThread.get(5, TimeUnit.SECONDS),
+                           sameInstance(callerThread.get(5, TimeUnit.SECONDS)));
             } finally {
                 call.cancel("test cleanup", null);
             }
@@ -347,6 +352,116 @@ class GrpcClientDeadlineTest {
                 for (Socket peer : peers) {
                     peer.close();
                 }
+            }
+        }
+    }
+
+    @Test
+    void blockedDeadlineCallbackDoesNotDelayIndependentDeadlineOrSocketCleanup() throws Exception {
+        var owner = Context.<Integer>key("deadline-callback-owner");
+        var firstSocket = new CompletableFuture<Socket>();
+        var secondSocket = new CompletableFuture<Socket>();
+        var releaseStartup = new CompletableFuture<Void>();
+        var releaseCallback = new CompletableFuture<Void>();
+        var callbackEntered = new CompletableFuture<Thread>();
+        var callbackFinished = new CompletableFuture<Void>();
+        var firstStatus = new CompletableFuture<Status>();
+        var firstContextObserved = new CompletableFuture<Context>();
+        var firstCount = new AtomicInteger();
+        var firstClock = new AtomicLong();
+        var secondClock = new AtomicLong();
+        List<Socket> peers = new CopyOnWriteArrayList<>();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor();
+             var listening = new ServerSocket(0, 2, InetAddress.getLoopbackAddress())) {
+            listening.setSoTimeout(5000);
+            var accepting = executor.submit(() -> {
+                peers.add(listening.accept());
+                peers.add(listening.accept());
+                return null;
+            });
+            var client = GrpcClient.builder()
+                    .baseUri("https://localhost:" + listening.getLocalPort())
+                    .connectionListener(new ConnectionListener() {
+                        @Override
+                        public void socketConnected(ConnectedSocketInfo socketInfo) {
+                            (owner.get() == 1 ? firstSocket : secondSocket).complete(socketInfo.socket());
+                            releaseStartup.join();
+                        }
+
+                        @Override
+                        public void socketChannelConnected(ConnectedSocketChannelInfo socketInfo) {
+                            throw new AssertionError("TCP connection must publish a socket");
+                        }
+                    })
+                    .build();
+            var firstContext = Context.ROOT.withValue(owner, 1);
+            var secondContext = Context.ROOT.withValue(owner, 2);
+            var first = firstContext.call(() -> client.channel().newCall(descriptor(MethodDescriptor.MethodType.UNARY),
+                    CallOptions.DEFAULT.withDeadline(Deadline.after(100, TimeUnit.MILLISECONDS, new Deadline.Ticker() {
+                        @Override
+                        public long nanoTime() {
+                            return firstClock.get();
+                        }
+                    }))));
+            var second = secondContext.call(() -> client.channel().newCall(descriptor(MethodDescriptor.MethodType.UNARY),
+                    CallOptions.DEFAULT.withDeadline(Deadline.after(100, TimeUnit.MILLISECONDS, new Deadline.Ticker() {
+                        @Override
+                        public long nanoTime() {
+                            return secondClock.get();
+                        }
+                    }))));
+            var firstListener = new ClientCall.Listener<String>() {
+                @Override
+                public void onClose(Status status, Metadata trailers) {
+                    firstCount.incrementAndGet();
+                    firstContextObserved.complete(Context.current());
+                    firstStatus.complete(status);
+                    callbackEntered.complete(Thread.currentThread());
+                    releaseCallback.join();
+                    callbackFinished.complete(null);
+                }
+            };
+            var secondListener = new ResponseListener();
+            try {
+                var firstStarted = executor.submit(() -> first.start(firstListener, new Metadata()));
+                var secondStarted = executor.submit(() -> second.start(secondListener, new Metadata()));
+                Socket firstTransport = firstSocket.get(5, TimeUnit.SECONDS);
+                Socket secondTransport = secondSocket.get(5, TimeUnit.SECONDS);
+                accepting.get(5, TimeUnit.SECONDS);
+                firstClock.set(TimeUnit.SECONDS.toNanos(1));
+                Thread callbackThread = callbackEntered.get(5, TimeUnit.SECONDS);
+                assertThat("the expired call closes its socket before application notification",
+                           firstTransport.isClosed(), is(true));
+
+                // Advance the second deadline only after the first application callback is blocked.
+                secondClock.set(TimeUnit.SECONDS.toNanos(1));
+                assertThat(secondListener.status.get(5, TimeUnit.SECONDS).getCode(), is(Status.Code.DEADLINE_EXCEEDED));
+                assertThat("independent deadline cleanup closes its socket", secondTransport.isClosed(), is(true));
+                assertThat("the first application callback is still blocked", callbackFinished.isDone(), is(false));
+                assertThat("actual deadline expiry dispatches to a virtual thread",
+                           callbackThread.isVirtual(), is(true));
+                assertThat("the expiry callback starts without an interrupt",
+                           callbackThread.isInterrupted(), is(false));
+                assertThat("the expiry callback preserves the captured gRPC context",
+                           firstContextObserved.get(5, TimeUnit.SECONDS), sameInstance(firstContext));
+                assertThat(firstStatus.get(5, TimeUnit.SECONDS).getCode(), is(Status.Code.DEADLINE_EXCEEDED));
+                releaseStartup.complete(null);
+                firstStarted.get(5, TimeUnit.SECONDS);
+                secondStarted.get(5, TimeUnit.SECONDS);
+                releaseCallback.complete(null);
+                callbackFinished.get(5, TimeUnit.SECONDS);
+                first.cancel("repeated cancellation", null);
+                second.cancel("repeated cancellation", null);
+                assertThat(firstCount.get(), is(1));
+                assertThat(secondListener.closeCount.get(), is(1));
+            } finally {
+                for (Socket peer : peers) {
+                    peer.close();
+                }
+                releaseCallback.complete(null);
+                releaseStartup.complete(null);
+                first.cancel("test cleanup", null);
+                second.cancel("test cleanup", null);
             }
         }
     }

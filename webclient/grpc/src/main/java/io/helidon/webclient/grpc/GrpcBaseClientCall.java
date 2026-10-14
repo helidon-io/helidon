@@ -29,6 +29,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
@@ -116,6 +117,9 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
     private static final HeaderName TIMEOUT_NAME = HeaderNames.create("grpc-timeout");
     private static final ScheduledThreadPoolExecutor DEADLINE_SCHEDULER = deadlineScheduler();
+    private static final ThreadFactory DEADLINE_EXPIRY_THREAD_FACTORY = Thread.ofVirtual()
+            .name("helidon-grpc-client-deadline-expiry-", 0)
+            .factory();
     private static final ScopedValue<GrpcBaseClientCall<?, ?>> CONNECTING_CALL = ScopedValue.newInstance();
 
     private final GrpcClientImpl grpcClient;
@@ -910,7 +914,10 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         } finally {
             lifecycleLock.unlock();
         }
-        close(Status.DEADLINE_EXCEEDED.withDescription("Call deadline exceeded"));
+        // Only actual expiry creates a worker: transport cleanup and application callbacks must
+        // not block the shared timer, while normal completion needs no additional thread.
+        DEADLINE_EXPIRY_THREAD_FACTORY.newThread(() ->
+                close(Status.DEADLINE_EXCEEDED.withDescription("Call deadline exceeded"))).start();
     }
 
     /**
