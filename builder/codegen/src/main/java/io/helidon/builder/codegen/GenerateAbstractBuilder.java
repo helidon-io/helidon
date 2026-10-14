@@ -1573,9 +1573,16 @@ final class GenerateAbstractBuilder {
                         .addContentLiteral("****")
                         .addContent(")");
             }
-        } else if (option.declaredType().array()) {
-            method.addContent(Arrays.class)
-                    .addContent(".toString(" + name + ")");
+        } else if (option.declaredType().array()
+                || (option.declaredType().isOptional() && typeName.array())) {
+            if (!isBuilder && option.declaredType().isOptional()) {
+                method.addContent(name + ".map(")
+                        .addContent(Arrays.class)
+                        .addContent("::toString)");
+            } else {
+                method.addContent(Arrays.class)
+                        .addContent(".toString(" + name + ")");
+            }
         } else {
             method.addContent(name);
         }

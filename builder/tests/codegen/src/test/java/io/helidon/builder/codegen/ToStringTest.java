@@ -29,6 +29,7 @@ import io.helidon.common.Builder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.helidon.codegen.testing.CodegenMatchers.matches;
 import static org.hamcrest.CoreMatchers.is;
@@ -46,6 +47,35 @@ class ToStringTest {
                          Arguments.of("char", "(data == null ? \"null\" : \"****\")"),
                          Arguments.of("String", "Arrays.toString(data)"),
                          Arguments.of("Object", "Arrays.toString(data)"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"List<byte[]>", "Set<String[]>", "Map<String, byte[]>", "Supplier<byte[]>"})
+    void testArrayValuedContainersCompile(String type) {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(List.of(Prototype.class, Builder.class))
+                .addProcessor(AptProcessor::new)
+                .addSource("PayloadBlueprint.java", """
+                        package example;
+
+                        import java.util.List;
+                        import java.util.Map;
+                        import java.util.Set;
+                        import java.util.function.Supplier;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        @Prototype.Blueprint
+                        interface PayloadBlueprint {
+                            %s data();
+                        }
+
+                        """.formatted(type))
+                .build()
+                .compile();
+
+        assertThat(result.diagnostics().toString(), result.success(), is(true));
     }
 
     @ParameterizedTest(name = "{0}[]")
