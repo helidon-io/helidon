@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
@@ -107,6 +108,9 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private static final int INITIAL_BUFFER_SIZE = 16 * 1024;
 
     private static final ScheduledThreadPoolExecutor DEADLINE_EXECUTOR = new GrpcDeadlineExecutor();
+    private static final ThreadFactory TRANSPORT_CANCELLATION_THREADS = Thread.ofVirtual()
+            .name("helidon-grpc-server-transport-cancel-", 0)
+            .factory();
 
     private final ConnectionContext connectionContext;
     private final Http2Headers headers;
@@ -811,6 +815,10 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 || (peerReset && callState.compareAndSet(CallState.COMPLETING, CallState.CANCELLED));
         if (cancelled) {
             callCancelled = true;
+            // An active service callback can wait for Context cancellation, preventing streamFinished from running.
+            if (callContext != null) {
+                TRANSPORT_CANCELLATION_THREADS.newThread(() -> cancelContext(Status.CANCELLED.asRuntimeException())).start();
+            }
         }
         // Publish cancellation before waking the stream runner for application cleanup.
         try {

@@ -500,7 +500,9 @@ class GrpcProtocolHandlerTest {
             try {
                 assertThat(entered.await(5, TimeUnit.SECONDS), is(true));
                 handler.close();
-                assertThat("application cancellation waits for startCall to return", contextCancelled.isDone(), is(false));
+                assertThat("transport cancels the context while startCall is active",
+                           contextCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
+                assertThat("service cancellation waits for startCall to return", listenerCancelled.isDone(), is(false));
                 handler.close();
             } finally {
                 release.countDown();
@@ -519,8 +521,11 @@ class GrpcProtocolHandlerTest {
     void testTransportClosePreservesSuccessfulCompletion() {
         var cancellations = new AtomicInteger();
         var completions = new AtomicInteger();
+        var contextCancellationThread = new AtomicReference<Thread>();
+        Thread caller = Thread.currentThread();
         var writer = new RecordingWriter();
         var handler = deadlineHandler("1H", (call, _) -> {
+            Context.current().addListener(_ -> contextCancellationThread.set(Thread.currentThread()), Runnable::run);
             call.close(Status.OK, new Metadata());
             return new ServerCall.Listener<>() {
                 @Override
@@ -541,10 +546,13 @@ class GrpcProtocolHandlerTest {
         assertThat(cancellations.get(), is(0));
         assertThat(completions.get(), is(1));
         assertThat(writer.trailerWrites.get(), is(1));
+        assertThat("normal completion cancels context inline without a transport worker",
+                   contextCancellationThread.get(), is(caller));
         handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
         handler.streamFinished();
         assertThat("a late reset preserves successful completion", cancellations.get(), is(0));
         assertThat(completions.get(), is(1));
+        assertThat("late reset creates no replacement cancellation worker", contextCancellationThread.get(), is(caller));
     }
 
     @Test

@@ -240,8 +240,13 @@ a virtual thread to cancel that call's context. Calls that complete before
 their deadline create no additional deadline thread. Cancellation listeners
 run inline on the thread cancelling the context; a blocked expiry listener
 does not delay other calls' deadlines. Keep these listeners brief so they do
-not delay their own call's cancellation. Transport resets and connection
-closure dispatch application cancellation on the existing HTTP/2 stream thread.
+not delay their own call's cancellation. When a transport reset or connection
+closure cancels a live call, a virtual thread cancels its context independently
+of any active service callback. A service callback waiting for context
+cancellation can therefore return even when the call has no deadline. Normal
+completion creates no transport cancellation thread. The service's `onCancel`
+callback remains serialized with other service callbacks on the existing
+HTTP/2 stream thread.
 Deadline cancellation signals that stream thread to send the final status,
 keeping transport writes off the expiry thread. If a service callback or
 response write is already in progress, the final status waits for it to return; the server
