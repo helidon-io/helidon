@@ -330,6 +330,27 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         close(false);
     }
 
+    @Override
+    public void streamFinished() {
+        close(false);
+        inboundLock.lock();
+        try {
+            // Transport teardown can reach this runner before a concurrent reset cancels terminal publication.
+            while (callState.get() == CallState.COMPLETING) {
+                inboundChanged.awaitUninterruptibly();
+            }
+        } finally {
+            inboundLock.unlock();
+        }
+        if (callState.get() == CallState.CANCELLED) {
+            try {
+                cancelContext(Status.CANCELLED.asRuntimeException());
+            } finally {
+                scheduleTerminal(ListenerTerminal.CANCEL);
+            }
+        }
+    }
+
     private void updateStreamState(Http2StreamState next) {
         Http2StreamState state = currentStreamState.updateAndGet(current -> nextStreamState(current, next));
         Runnable listener = null;
@@ -620,20 +641,30 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     }
 
     private void cancelContext(Throwable cause) {
+        cancelPendingOperations();
         Context.CancellableContext context = callContext;
         if (context != null) {
             context.cancel(cause);
         }
-        CancellableOutbound write = pendingWrite.get();
-        if (write != null) {
-            write.cancel();
-        }
-        inboundLock.lock();
+    }
+
+    private void cancelPendingOperations() {
         try {
-            pendingRequest = null;
-            inboundChanged.signalAll();
+            CancellableOutbound write = pendingWrite.get();
+            if (write != null) {
+                write.cancel();
+            }
         } finally {
-            inboundLock.unlock();
+            inboundLock.lock();
+            try {
+                readyPending = false;
+                pendingRequest = null;
+                halfClosePending = false;
+                numMessages = 0;
+                inboundChanged.signalAll();
+            } finally {
+                inboundLock.unlock();
+            }
         }
     }
 
@@ -779,16 +810,19 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     }
 
     private void close(boolean peerReset) {
-        updateStreamState(CLOSED);
         // Normal END_STREAM cleanup may close the sub-protocol while terminal headers are still being written.
         // Only a peer reset can cancel that terminal publication.
-        if (callState.compareAndSet(CallState.OPEN, CallState.CANCELLED)
-                || (peerReset && callState.compareAndSet(CallState.COMPLETING, CallState.CANCELLED))) {
+        boolean cancelled = callState.compareAndSet(CallState.OPEN, CallState.CANCELLED)
+                || (peerReset && callState.compareAndSet(CallState.COMPLETING, CallState.CANCELLED));
+        if (cancelled) {
             callCancelled = true;
-            try {
-                cancelContext(Status.CANCELLED.asRuntimeException());
-            } finally {
-                scheduleTerminal(ListenerTerminal.CANCEL);
+        }
+        // Publish cancellation before waking the stream runner for application cleanup.
+        try {
+            updateStreamState(CLOSED);
+        } finally {
+            if (cancelled) {
+                cancelPendingOperations();
             }
         }
     }

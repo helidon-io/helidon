@@ -90,6 +90,16 @@ import static org.hamcrest.Matchers.greaterThan;
 @Timeout(15)
 class GrpcDisconnectTest {
     @Test
+    void resetWithBlockedContextCancellationPreservesSiblingCall() throws Exception {
+        resetWithBlockedCancellationPreservesSiblingCall(true);
+    }
+
+    @Test
+    void resetWithBlockedServiceCancellationPreservesSiblingCall() throws Exception {
+        resetWithBlockedCancellationPreservesSiblingCall(false);
+    }
+
+    @Test
     void deadlineDuringSocketWritePreservesSiblingAndSubsequentCalls() throws Exception {
         var cancelled = new CompletableFuture<Context>();
         var writing = new CompletableFuture<Void>();
@@ -406,20 +416,28 @@ class GrpcDisconnectTest {
         var started = new CompletableFuture<Context>();
         var contextCancelled = new CompletableFuture<Context>();
         var listenerCancelled = new CompletableFuture<Context>();
+        var streamThread = new AtomicReference<Thread>();
+        var contextCancellationThread = new AtomicReference<Thread>();
+        var serviceCancellationThread = new AtomicReference<Thread>();
         var cancellations = new AtomicInteger();
         var completions = new AtomicInteger();
         var service = ServerServiceDefinition.builder("test.Disconnect")
                 .addMethod(descriptor("Call"), (_, _) -> {
-                    Context.current().addListener(contextCancelled::complete, Runnable::run);
+                    Context.current().addListener(context -> {
+                        contextCancellationThread.set(Thread.currentThread());
+                        contextCancelled.complete(context);
+                    }, Runnable::run);
                     return new ServerCall.Listener<>() {
                         @Override
                         public void onReady() {
+                            streamThread.set(Thread.currentThread());
                             started.complete(Context.current());
                         }
 
                         @Override
                         public void onCancel() {
                             cancellations.incrementAndGet();
+                            serviceCancellationThread.set(Thread.currentThread());
                             listenerCancelled.complete(Context.current());
                         }
 
@@ -448,9 +466,105 @@ class GrpcDisconnectTest {
             // Closing TCP, without RST_STREAM or any request DATA, must release the call before its deadline.
             assertThat(contextCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
             assertThat(listenerCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
+            assertThat("disconnect context cancellation uses the existing stream runner",
+                       contextCancellationThread.get(), is(streamThread.get()));
+            assertThat("disconnect service cancellation uses the existing stream runner",
+                       serviceCancellationThread.get(), is(streamThread.get()));
             assertThat(cancellations.get(), is(1));
             assertThat(completions.get(), is(0));
         } finally {
+            server.stop();
+        }
+    }
+
+    private void resetWithBlockedCancellationPreservesSiblingCall(boolean blockContextListener) throws Exception {
+        var started = new CompletableFuture<Thread>();
+        var callbackEntered = new CompletableFuture<Thread>();
+        var callbackReleased = new CompletableFuture<Void>();
+        var callbackFinished = new CompletableFuture<Void>();
+        var contextCancellations = new AtomicInteger();
+        var serviceCancellations = new AtomicInteger();
+        var completions = new AtomicInteger();
+        var service = ServerServiceDefinition.builder("test.Disconnect")
+                .addMethod(descriptor("Blocked"), (_, _) -> {
+                    Context.current().addListener(_ -> {
+                        contextCancellations.incrementAndGet();
+                        if (blockContextListener) {
+                            callbackEntered.complete(Thread.currentThread());
+                            callbackReleased.join();
+                        }
+                    }, Runnable::run);
+                    started.complete(Thread.currentThread());
+                    return new ServerCall.Listener<>() {
+                        @Override
+                        public void onCancel() {
+                            serviceCancellations.incrementAndGet();
+                            if (!blockContextListener) {
+                                callbackEntered.complete(Thread.currentThread());
+                                callbackReleased.join();
+                            }
+                            callbackFinished.complete(null);
+                        }
+
+                        @Override
+                        public void onComplete() {
+                            completions.incrementAndGet();
+                        }
+                    };
+                })
+                .addMethod(descriptor("Small"), (call, _) -> new ServerCall.Listener<>() {
+                    @Override
+                    public void onHalfClose() {
+                        call.sendHeaders(new Metadata());
+                        call.sendMessage("small response");
+                        call.close(Status.OK, new Metadata());
+                    }
+                })
+                .build();
+        var server = WebServer.builder()
+                .host("127.0.0.1")
+                .port(0)
+                .addRouting(GrpcRouting.builder().config(Config.empty()).service(service))
+                .build()
+                .start();
+        try (var socket = new Socket()) {
+            initializeLargeWindowConnection(socket, server.port());
+            startCall(socket, 1, "Blocked", "1H");
+            Thread streamThread = started.get(5, TimeUnit.SECONDS);
+            var reset = BufferData.create(4);
+            reset.writeInt32(8); // HTTP/2 CANCEL
+            writeFrame(socket, new Http2FrameData(Http2FrameHeader.create(4, Http2FrameTypes.RST_STREAM,
+                                                                        Http2Flag.NoFlags.create(), 1), reset));
+            Thread cancellationThread = callbackEntered.get(5, TimeUnit.SECONDS);
+
+            // A blocked application callback must leave this connection able to process another stream.
+            startCall(socket, 3, "Small", null);
+            var responseTable = Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            var decoder = Http2HuffmanDecoder.create();
+            var siblingBody = new ByteArrayOutputStream();
+            int siblingStatus = -1;
+            while (siblingStatus < 0) {
+                var frame = readFrame(socket);
+                if (frame.header().type() == Http2FrameType.DATA && frame.header().streamId() == 3) {
+                    siblingBody.write(frame.data().readBytes());
+                } else if (frame.header().type() == Http2FrameType.HEADERS) {
+                    var headers = Http2Headers.create(null, responseTable, decoder, frame).httpHeaders();
+                    if (frame.header().streamId() == 3 && frame.header().flags(Http2FrameTypes.HEADERS).endOfStream()) {
+                        siblingStatus = headers.get(HeaderNames.create("grpc-status")).asInt().get();
+                    }
+                }
+            }
+            assertThat("sibling completes while application cancellation is blocked", siblingStatus, is(0));
+            assertResponse(siblingBody);
+            assertThat("application cancellation remains blocked", callbackFinished.isDone(), is(false));
+            assertThat("application cancellation uses the existing stream runner", cancellationThread, is(streamThread));
+            callbackReleased.complete(null);
+            callbackFinished.get(5, TimeUnit.SECONDS);
+            assertThat("context cancellation is delivered once", contextCancellations.get(), is(1));
+            assertThat("service cancellation is delivered once", serviceCancellations.get(), is(1));
+            assertThat("reset does not report successful completion", completions.get(), is(0));
+        } finally {
+            callbackReleased.complete(null);
             server.stop();
         }
     }

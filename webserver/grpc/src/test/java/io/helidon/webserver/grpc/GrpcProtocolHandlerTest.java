@@ -435,6 +435,10 @@ class GrpcProtocolHandlerTest {
         handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
         handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
 
+        assertThat("reset defers application cancellation to stream teardown", cancelled.isDone(), is(false));
+        handler.streamFinished();
+        handler.streamFinished();
+
         assertThat(cancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
         assertThat(cancellations.get(), is(1));
         assertThat(writer.trailerWrites.get(), is(0));
@@ -452,6 +456,7 @@ class GrpcProtocolHandlerTest {
         handler.close();
         handler.init();
         handler.close();
+        handler.streamFinished();
 
         assertThat(handler.streamState(), is(Http2StreamState.CLOSED));
         assertThat(calls.get(), is(0));
@@ -485,11 +490,17 @@ class GrpcProtocolHandlerTest {
             };
         }, writer);
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            var initialization = executor.submit(handler::init);
+            var initialization = executor.submit(() -> {
+                try {
+                    handler.init();
+                } finally {
+                    handler.streamFinished();
+                }
+            });
             try {
                 assertThat(entered.await(5, TimeUnit.SECONDS), is(true));
                 handler.close();
-                assertThat(contextCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
+                assertThat("application cancellation waits for startCall to return", contextCancelled.isDone(), is(false));
                 handler.close();
             } finally {
                 release.countDown();
@@ -497,6 +508,7 @@ class GrpcProtocolHandlerTest {
             initialization.get(5, TimeUnit.SECONDS);
         }
 
+        assertThat(contextCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
         assertThat(listenerCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
         assertThat(cancellations.get(), is(1));
         assertThat(ready.get(), is(0));
@@ -524,18 +536,30 @@ class GrpcProtocolHandlerTest {
         }, writer);
         handler.init();
         handler.close();
+        handler.streamFinished();
 
         assertThat(cancellations.get(), is(0));
         assertThat(completions.get(), is(1));
         assertThat(writer.trailerWrites.get(), is(1));
         handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+        handler.streamFinished();
         assertThat("a late reset preserves successful completion", cancellations.get(), is(0));
         assertThat(completions.get(), is(1));
     }
 
     @Test
     void testPeerResetDuringTrailersCancelsListenerOnce() throws Exception {
-        terminalWriteWithTransportClose(true);
+        terminalWriteWithTransportClose(true, false);
+    }
+
+    @Test
+    void testStreamFinishBeforePeerResetDuringTrailersCancelsListenerOnce() throws Exception {
+        terminalWriteWithTransportClose(true, true);
+    }
+
+    @Test
+    void testStreamFinishDuringTrailersPreservesNormalCompletion() throws Exception {
+        terminalWriteWithTransportClose(false, true);
     }
 
     @Test
@@ -595,7 +619,7 @@ class GrpcProtocolHandlerTest {
 
     @Test
     void testNormalStreamCleanupDuringTrailersPreservesCompletion() throws Exception {
-        terminalWriteWithTransportClose(false);
+        terminalWriteWithTransportClose(false, false);
     }
 
     @Test
@@ -637,13 +661,20 @@ class GrpcProtocolHandlerTest {
         }, writer);
         handler.init();
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            var request = executor.submit(() -> sendRequest(handler));
+            var request = executor.submit(() -> {
+                try {
+                    sendRequest(handler);
+                } finally {
+                    handler.streamFinished();
+                }
+            });
             try {
                 assertThat(writing.await(5, TimeUnit.SECONDS), is(true));
                 handler.close();
-                contextCancelled.get(5, TimeUnit.SECONDS);
+                assertThat("application cancellation waits for the stream writer", contextCancelled.isDone(), is(false));
                 releaseWrite.countDown();
                 request.get(5, TimeUnit.SECONDS);
+                assertThat(contextCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
                 assertThat(listenerCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
             } finally {
                 releaseWrite.countDown();
@@ -1324,6 +1355,7 @@ class GrpcProtocolHandlerTest {
 
         assertThat("request thread completed", requestThread.isAlive(), is(false));
         assertThat("data thread completed", dataThread.isAlive(), is(false));
+        handler.streamFinished();
         assertThat(events, is(List.of("message-start", "message-end", "cancel")));
     }
 
@@ -1473,6 +1505,7 @@ class GrpcProtocolHandlerTest {
         handler.rstStream(new Http2RstStream(io.helidon.http.http2.Http2ErrorCode.CANCEL));
         assertThat("cancellation must release the data worker", dataFinished.await(10, TimeUnit.SECONDS), is(true));
         dataThread.join(TimeUnit.SECONDS.toMillis(10));
+        handler.streamFinished();
 
         assertThat(dataThread.isAlive(), is(false));
         assertThat(cancelCount.get(), is(1));
@@ -2183,7 +2216,7 @@ class GrpcProtocolHandlerTest {
         }
     }
 
-    private void terminalWriteWithTransportClose(boolean peerReset) throws Exception {
+    private void terminalWriteWithTransportClose(boolean peerReset, boolean finishFirst) throws Exception {
         var writing = new CountDownLatch(1);
         var release = new CountDownLatch(1);
         var callReference = new AtomicReference<ServerCall<String, String>>();
@@ -2220,10 +2253,39 @@ class GrpcProtocolHandlerTest {
             };
         }, writer);
         handler.init();
+        if (peerReset && !finishFirst) {
+            // Emulate the stream runner finishing as soon as closure is published.
+            handler.onStreamClosed(handler::streamFinished);
+        }
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             var closing = executor.submit(() -> callReference.get().close(Status.OK, new Metadata()));
+            var finishing = new CompletableFuture<Boolean>();
             try {
                 assertThat("the terminal write is blocked", writing.await(5, TimeUnit.SECONDS), is(true));
+                if (finishFirst) {
+                    var finishingThread = new CompletableFuture<Thread>();
+                    executor.submit(() -> {
+                        Thread.currentThread().interrupt();
+                        finishingThread.complete(Thread.currentThread());
+                        try {
+                            handler.streamFinished();
+                            finishing.complete(Thread.currentThread().isInterrupted());
+                        } catch (Throwable failure) {
+                            finishing.completeExceptionally(failure);
+                        } finally {
+                            Thread.interrupted();
+                        }
+                    });
+                    Thread thread = finishingThread.get(5, TimeUnit.SECONDS);
+                    long waitDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+                    while (!finishing.isDone() && thread.getState() != Thread.State.WAITING
+                            && System.nanoTime() < waitDeadline) {
+                        Thread.yield();
+                    }
+                    assertThat("stream teardown waits for the in-flight terminal publication",
+                               finishing.isDone(), is(false));
+                    assertThat("stream teardown reached its terminal-state wait", thread.getState(), is(Thread.State.WAITING));
+                }
                 var transportClosed = executor.submit(() -> {
                     if (peerReset) {
                         handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
@@ -2238,13 +2300,24 @@ class GrpcProtocolHandlerTest {
                                terminal.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
                     assertThat(cancellations.get(), is(1));
                     assertThat(completions.get(), is(0));
+                    if (finishFirst) {
+                        assertThat("stream teardown preserves its incoming interrupt after reset",
+                                   finishing.get(5, TimeUnit.SECONDS), is(true));
+                    }
                 } else {
                     assertThat("normal cleanup waits for terminal publication", terminal.isDone(), is(false));
+                    if (finishFirst) {
+                        assertThat("normal cleanup leaves stream teardown waiting", finishing.isDone(), is(false));
+                    }
                 }
             } finally {
                 release.countDown();
             }
             closing.get(5, TimeUnit.SECONDS);
+            if (finishFirst) {
+                assertThat("stream teardown preserves its incoming interrupt after terminal publication",
+                           finishing.get(5, TimeUnit.SECONDS), is(true));
+            }
         }
         terminal.get(5, TimeUnit.SECONDS);
         handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
