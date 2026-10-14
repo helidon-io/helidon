@@ -14,37 +14,6 @@
    <vulnerabilityName>CVE-2021-26291</vulnerabilityName>
 </suppress>
 
-<!-- False Positive. This does not apply to server Java deployment and certainly not to our use of graalvm SDK.
-    This vulnerability applies to Java deployments, typically in clients running sandboxed
-    Java Web Start applications or sandboxed Java applets, that load and run untrusted code
-    (e.g., code that comes from the internet) and rely on the Java sandbox for security. This
-    vulnerability does not apply to Java deployments, typically in servers, that load and run only trusted code
--->
-<suppress>
-   <notes><![CDATA[
-   file name: nativeimage-23.1.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\.sdk/graal\-sdk@.*$</packageUrl>
-   <vulnerabilityName>CVE-2023-22006</vulnerabilityName>
-</suppress>
-
-<!-- This low priority CVE does not apply to our use of the graalvm compiler.
--->
-<suppress>
-   <notes><![CDATA[
-   file name: compiler-23.1.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\.compiler/compiler@.*$</packageUrl>
-   <vulnerabilityName>CVE-2024-21138</vulnerabilityName>
-</suppress>
-<suppress>
-   <notes><![CDATA[
-   file name: compiler-23.1.0.jar
-   ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.graalvm\.compiler/compiler@.*$</packageUrl>
-   <vulnerabilityName>CVE-2024-21235</vulnerabilityName>
-</suppress>
-
 <!--
     These are FPs.
     See https://github.com/jeremylong/DependencyCheck/issues/5973

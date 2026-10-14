@@ -23,23 +23,31 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.common.Api;
 
 /**
- * AOT (Ahead of time compilation) support. Defines support for GraalVM native image.
+ * Legacy GraalVM Native Image compatibility metadata.
+ *
+ * @deprecated GraalVM Native Image is no longer supported. Remove uses of this metadata.
  */
 @Api.Internal
 @Prototype.Blueprint
+@Prototype.Annotated("java.lang.Deprecated(since = \"28.0.0\", forRemoval = true)")
+@Deprecated(since = "28.0.0", forRemoval = true)
 interface AotBlueprint {
     /**
      * Whether this module supports AOT, defaults to {@code true}.
      *
-     * @return is deprecated
+     * @return whether AOT is supported
+     * @deprecated GraalVM Native Image is no longer supported. Remove uses of this metadata.
      */
     @Option.DefaultBoolean(true)
+    @Deprecated(since = "28.0.0", forRemoval = true)
     boolean supported();
 
     /**
      * AOT description.
      *
      * @return description
+     * @deprecated GraalVM Native Image is no longer supported. Remove uses of this metadata.
      */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     Optional<String> description();
 }

@@ -94,7 +94,7 @@
     <!-- See http://checkstyle.sf.net/config_sizes.html -->
     <module name="LineLength">
         <property name="max" value="130"/>
-        <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://|@see| \* |@link|imp|@todo|@version|^Args=|.*--initialize-at-build-time|^javax.sql.DataSource"/>
+        <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://|@see| \* |@link|imp|@todo|@version|^javax.sql.DataSource"/>
     </module>
 
     <module name="TreeWalker">

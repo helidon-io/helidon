@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 
 import io.helidon.common.LazyValue;
-import io.helidon.common.NativeImageHelper;
 import io.helidon.config.spi.ChangeEventType;
 import io.helidon.config.spi.PollingStrategy;
 
@@ -57,10 +56,6 @@ public final class MutabilitySupport {
      * @return runnable to stop the file watcher
      */
     public static Runnable poll(Path path, Duration duration, Consumer<Path> updater, Consumer<Path> cleaner) {
-        if (NativeImageHelper.isBuildTime()) {
-            LOGGER.log(Level.INFO, "File polling is not enabled in native image build time. Path: " + path);
-        }
-
         PollingStrategy strategy = PollingStrategies.regular(duration)
                 .executor(EXECUTOR.get())
                 .build();
@@ -78,9 +73,6 @@ public final class MutabilitySupport {
      * @return runnable to stop the file watcher
      */
     public static Runnable watch(Path path, Consumer<Path> updater, Consumer<Path> cleaner) {
-        if (NativeImageHelper.isBuildTime()) {
-            LOGGER.log(Level.INFO, "File watching is not enabled in native image build time. Path: " + path);
-        }
         FileSystemWatcher watcher = FileSystemWatcher.builder()
                 .executor(EXECUTOR.get())
                 .build();

@@ -163,8 +163,6 @@ This descriptor is discovered at runtime and used to instantiate a service witho
 
 Reflection is used only to obtain an instance of the service descriptor (by using its public `INSTANCE` singleton field). As both
 the descriptor and the `INSTANCE` field are always public, there is no need to add `opens` to `module-info.java`.
-Support for GraalVM native image is handled in Helidon native image extension, by registering all service descriptors for
-reflection (the class, and the field).
 
 ### Registry file format
 

@@ -55,8 +55,8 @@ import io.helidon.common.Errors;
  * <ul>
  *     <li>Any type except for another annotation and array is available as String (similar for arrays)</li>
  *     <li>primitive types - only available as boxed types</li>
- *     <li>Class - use string, the method that provides class instances uses {@link java.lang.Class#forName(String)},
- *          which is not ideal, and may require additional configuration in native image</li>
+ *     <li>Class - use string to avoid loading the class; the method that provides class instances uses
+ *          {@link java.lang.Class#forName(String)}</li>
  *     <li>enum value - available as a String or enum value</li>
  *     <li>another annotation - available as instance(s) of Annotation</li>
  *     <li>arrays - available as a {@link java.util.List} of values</li>

@@ -83,10 +83,12 @@ interface FeatureMetadataBlueprint {
     List<Flavor> invalidFlavors();
 
     /**
-     * Ahead of time compilation information (native-image).
+     * Legacy GraalVM Native Image compatibility information.
      *
      * @return AOT information
+     * @deprecated GraalVM Native Image is no longer supported. Remove uses of this metadata.
      */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     Optional<Aot> aot();
 
     /**

@@ -31,7 +31,7 @@
     <name>Helidon Tests Integration Packaging</name>
 
     <description>
-        A set of tests that verify the Helidon packaging variants (native-image, jlink, jar).
+        A set of tests that verify the Helidon packaging variants (jlink, jar, fat jar).
     </description>
 
     <modules>

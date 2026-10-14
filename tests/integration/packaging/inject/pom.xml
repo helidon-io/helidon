@@ -183,22 +183,6 @@
             </build>
         </profile>
         <profile>
-            <id>native-image</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <configuration>
-                            <includes combine.children="append">
-                                <include>**/*Native*IT</include>
-                            </includes>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
             <id>jlink-image</id>
             <build>
                 <plugins>

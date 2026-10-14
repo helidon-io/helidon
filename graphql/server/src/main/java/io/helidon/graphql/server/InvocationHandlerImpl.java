@@ -458,7 +458,7 @@ class InvocationHandlerImpl implements InvocationHandler {
         }
 
         // the allow list is exception or its superclass
-        // we do not want to use class.forName, as that causes trouble in native image
+        // Match names against the existing class hierarchy without loading additional classes.
         do {
             if (exceptionAllowSet.contains(exceptionClazz.getName())) {
                 allowExceptions.put(exceptionClazz, true);
@@ -481,7 +481,7 @@ class InvocationHandlerImpl implements InvocationHandler {
         }
 
         // the deny list is exception or its superclass
-        // we do not want to use class.forName, as that causes trouble in native image
+        // Match names against the existing class hierarchy without loading additional classes.
         do {
             if (exceptionDenySet.contains(exceptionClazz.getName())) {
                 denyExceptions.put(exceptionClazz, true);

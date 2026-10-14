@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,19 +21,24 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.testing.junit5.RestoreSystemPropertiesExt;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigParser;
 import io.helidon.config.spi.ConfigParser.Content;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.parallel.Isolated;
 
 import static io.helidon.config.testing.ValueNodeMatcher.valueNode;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.nullValue;
 
 /**
  * Tests {@link io.helidon.config.spi.ConfigParser}.
  */
+@Isolated
 public class YamlConfigParserTest {
 
     private static final String COMPLEX_YAML =
@@ -82,6 +87,18 @@ public class YamlConfigParserTest {
 
         assertThat(node.entrySet(), hasSize(1));
         assertThat(node.get("aaa"), valueNode("bbb"));
+    }
+
+    @Test
+    @ExtendWith(RestoreSystemPropertiesExt.class)
+    public void testLoadWithoutRuntimeName() {
+        System.clearProperty("java.runtime.name");
+
+        ConfigParser parser = YamlConfigParser.create();
+        ConfigNode.ObjectNode node = parser.parse(toContent("aaa: bbb"));
+
+        assertThat(node.get("aaa"), valueNode("bbb"));
+        assertThat(System.getProperty("java.runtime.name"), nullValue());
     }
 
     @Test

@@ -59,8 +59,7 @@ import io.helidon.common.LazyValue;
 @Api.Stable
 public class ConfiguredTlsManager implements TlsManager {
     private static final System.Logger LOGGER = System.getLogger(ConfiguredTlsManager.class.getName());
-    // secure random cannot be stored in native image, it must
-    // be initialized at runtime
+    // Initialize the entropy source only when it is needed.
     private static final LazyValue<SecureRandom> RANDOM = LazyValue.create(SecureRandom::new);
     private final String name;
     private final String type;

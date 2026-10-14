@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,18 @@
 package io.helidon.logging.common.spi;
 
 /**
- * Used by Helidon to correctly initialize logging at build time (such as when building GraalVM native image)
- * and at runtime (to configure loggers).
+ * Used by Helidon to initialize logging during class initialization and during the runtime phase.
  *
  * @see io.helidon.logging.common.LogConfig
  */
 public interface LoggingProvider {
     /**
-     * This is executed at static initialization, such as when building
-     * GraalVM native image or when starting the application.
+     * Configures logging during static initialization of {@link io.helidon.logging.common.LogConfig}.
      */
     void initialization();
 
     /**
-     * Runtime configuration, called when the application starts in GraalVM native image (not called when running on hotspot).
+     * Configures logging during the first call to {@link io.helidon.logging.common.LogConfig#configureRuntime()}.
      */
     void runTime();
 }

@@ -23,7 +23,6 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("Database client over JDBC")
 @Features.Flavor(HelidonFlavor.SE)
 @Features.Path({"DbClient", "JDBC"})
-@Features.Aot(description = "Requires a JDBC driver with native image support (see examples)")
 module io.helidon.dbclient.jdbc {
 
     requires java.sql;

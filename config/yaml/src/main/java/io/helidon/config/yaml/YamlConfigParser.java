@@ -68,11 +68,6 @@ public class YamlConfigParser implements ConfigParser {
      */
     @Api.Internal
     public YamlConfigParser() {
-        // fix for NPE in Yaml parser when running in Graal
-        // cannot be in static block, as that gets ignored
-        if (System.getProperty("java.runtime.name") == null) {
-            System.setProperty("java.runtime.name", "unknown");
-        }
     }
 
     /**

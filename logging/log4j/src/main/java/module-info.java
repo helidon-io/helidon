@@ -24,7 +24,6 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("Log4j MDC support")
 @Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
 @Features.Path({"Logging", "Log4j"})
-@Features.Aot(description = "Only programmatic configuration supported, does not work with Helidon loggers")
 module io.helidon.logging.log4j {
 
     requires org.apache.logging.log4j;

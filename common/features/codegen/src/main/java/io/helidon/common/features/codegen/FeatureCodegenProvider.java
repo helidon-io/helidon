@@ -43,7 +43,6 @@ public class FeatureCodegenProvider implements CodegenExtensionProvider {
                       FeatureCodegenTypes.PATH,
                       FeatureCodegenTypes.FLAVOR,
                       FeatureCodegenTypes.INVALID_FLAVOR,
-                      FeatureCodegenTypes.AOT,
                       FeatureCodegenTypes.PREVIEW,
                       FeatureCodegenTypes.INCUBATING);
     }

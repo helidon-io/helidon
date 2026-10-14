@@ -21,7 +21,6 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.Arrays;
 
-import io.helidon.common.NativeImageHelper;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.health.HealthCheckResponse.Status;
@@ -42,13 +41,10 @@ public class DeadlockHealthCheck implements HealthCheck {
      * Used for detecting deadlocks.
      */
     private final ThreadMXBean threadBean;
-    private final boolean disabled;
 
         // ignored when dependency injection is not active
     DeadlockHealthCheck(ThreadMXBean threadBean) {
         this.threadBean = threadBean;
-        // in Graal native image, we cannot use this check, as it would always fail
-        this.disabled = NativeImageHelper.isNativeImage();
     }
 
     /**
@@ -87,15 +83,6 @@ public class DeadlockHealthCheck implements HealthCheck {
 
     @Override
     public HealthCheckResponse call() {
-        if (disabled) {
-            LOGGER.log(Level.TRACE, "Running in graal native image, this health-check always returns up.");
-            return HealthCheckResponse.builder()
-                    .detail("enabled", "false")
-                    .detail("description", "in native image")
-                    .status(Status.UP)
-                    .build();
-        }
-
         HealthCheckResponse.Builder builder = HealthCheckResponse.builder();
 
         try {
@@ -106,7 +93,7 @@ public class DeadlockHealthCheck implements HealthCheck {
                 LOGGER.log(Level.TRACE, "Health check observed deadlocked threads: " + Arrays.toString(deadlockedThreads));
             }
         } catch (Throwable e) {
-            // ThreadBean does not work - probably in native image. Report ERROR, not DOWN, because we do not know that
+            // ThreadBean does not work. Report ERROR, not DOWN, because we do not know that
             // there are deadlocks which DOWN should imply; we simply cannot find out.
             LOGGER.log(Level.TRACE, "Error invoking ThreadMXBean to find deadlocks; cannot complete this healthcheck", e);
             builder.status(Status.ERROR);
