@@ -151,6 +151,14 @@ public final class ErrorHandlers {
             if (e.status().code() == Status.INTERNAL_SERVER_ERROR_500.code()) {
                 ctx.listenerContext().logError(LOGGER, System.Logger.Level.WARNING,
                                               "Request failed, cannot send error response, as response already sent", e);
+                if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                    HttpPrologue prologue = request.prologue();
+                    ctx.log(LOGGER, System.Logger.Level.TRACE,
+                            "Request failed: %s, cannot send error response, as response already sent",
+                            e, prologue.method()
+                                    + " " + LogFormatter.escape(prologue.uriPath().rawPath())
+                                    + " " + prologue.protocol() + "/" + prologue.protocolVersion());
+                }
             } else {
                 HttpPrologue prologue = request.prologue();
                 ctx.log(LOGGER, System.Logger.Level.WARNING,

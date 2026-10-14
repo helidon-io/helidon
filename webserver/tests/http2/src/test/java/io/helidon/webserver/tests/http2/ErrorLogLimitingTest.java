@@ -55,6 +55,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.startsWith;
 
 @ResourceLock("webserver-error-loggers")
 @ResourceLock("webserver-error-log-summary")
@@ -210,8 +211,10 @@ class ErrorLogLimitingTest {
             assertThat("missing-send diagnostic must not include the changing URI in its identity", missingSend, hasSize(1));
             assertThat(missingSend.getFirst().getThrown().getCause().getMessage(), containsString("/not-sent"));
             List<LogRecord> reroutes = logs.diagnostics("io.helidon.webserver.http.HttpRoutingImpl",
-                                                      "Maximum reroute count exceeded");
+                                                      "Rerouted more than");
             assertThat(reroutes, hasSize(1));
+            assertThat(reroutes.getFirst().getMessage(),
+                       startsWith("Rerouted more than 7 times. Will not attempt further routing"));
             assertThat(reroutes.getFirst().getThrown().getMessage(), is("Too many reroutes"));
             assertThat("the resulting direct-handler logs must also be limited", logs.failures(), hasSize(2));
         }
@@ -251,7 +254,8 @@ class ErrorLogLimitingTest {
     }
 
     private static void routing(HttpRouting.Builder routing) {
-        routing.get("/failure", ErrorLogLimitingTest::fail)
+        routing.maxReRouteCount(7)
+                .get("/failure", ErrorLogLimitingTest::fail)
                 .get("/other-site", (_, _) -> {
                     throw new IllegalStateException("different failure site");
                 })

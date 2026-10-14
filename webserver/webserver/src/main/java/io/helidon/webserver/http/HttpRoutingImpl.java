@@ -178,7 +178,8 @@ final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
                 if (counter == maxReRouteCount) {
                     HttpException failure = new HttpException("Too many reroutes", Status.INTERNAL_SERVER_ERROR_500, true);
                     ctx.listenerContext().logError(LOGGER, System.Logger.Level.ERROR,
-                                                   "Maximum reroute count exceeded. Will not attempt further routing", failure);
+                                                   "Rerouted more than " + maxReRouteCount
+                                                           + " times. Will not attempt further routing", failure);
                     throw failure;
                 }
 
@@ -305,7 +306,8 @@ final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
                 if (counter == maxReRouteCount) {
                     HttpException failure = new HttpException("Too many reroutes", Status.INTERNAL_SERVER_ERROR_500, true);
                     ctx.listenerContext().logError(LOGGER, System.Logger.Level.ERROR,
-                                                   "Maximum reroute count exceeded. Will not attempt further routing", failure);
+                                                   "Rerouted more than " + maxReRouteCount
+                                                           + " times. Will not attempt further routing", failure);
                     throw failure;
                 }
                 routingResult = doRoute(ctx, request, response);

@@ -19,14 +19,18 @@ package io.helidon.webserver.http;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
+import io.helidon.common.testing.junit5.InMemoryLoggingHandler;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
+import io.helidon.http.RequestException;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
 import io.helidon.http.encoding.ContentEncodingContext;
@@ -39,17 +43,24 @@ import io.helidon.webserver.ListenerContext;
 
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalEmpty;
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -201,6 +212,53 @@ class ErrorHandlersTest {
             fail("It is expected a CloseConnectionException");
         } catch (CloseConnectionException e) {
             assertThat(e.getCause(), instanceOf(OtherException.class));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    @ResourceLock("webserver-error-loggers")
+    void sentInternalErrorRequestDetailsAreTraceOnly(boolean traceEnabled) {
+        Logger logger = Logger.getLogger(ErrorHandlers.class.getName());
+        Level previousLevel = logger.getLevel();
+        try (var logs = InMemoryLoggingHandler.create(logger)) {
+            logger.setLevel(traceEnabled ? Level.FINER : Level.WARNING);
+            logs.setLevel(Level.ALL);
+            ConnectionContext ctx = mock(ConnectionContext.class, CALLS_REAL_METHODS);
+            ListenerContext listener = mock(ListenerContext.class);
+            when(ctx.listenerContext()).thenReturn(listener);
+            RoutingRequest request = mock(RoutingRequest.class);
+            when(request.prologue()).thenReturn(HttpPrologue.create("HTTP/1.1",
+                                                                   "HTTP",
+                                                                   "1.1",
+                                                                   Method.GET,
+                                                                   UriPath.create("/sent-details"),
+                                                                   UriQuery.empty(),
+                                                                   UriFragment.empty()));
+            RoutingResponse response = mock(RoutingResponse.class);
+            RequestException failure = RequestException.builder()
+                    .status(Status.INTERNAL_SERVER_ERROR_500)
+                    .message("request failed")
+                    .build();
+
+            assertThrows(CloseConnectionException.class, () -> ErrorHandlers.create(Map.of())
+                    .runWithErrorHandling(ctx, request, response, () -> {
+                        throw failure;
+                    }));
+
+            verify(listener).logError(System.getLogger(ErrorHandlers.class.getName()), System.Logger.Level.WARNING,
+                                      "Request failed, cannot send error response, as response already sent", failure);
+            assertThat(logs.logRecords(), hasSize(traceEnabled ? 1 : 0));
+            if (traceEnabled) {
+                var record = logs.logRecords().getFirst();
+                assertThat(record.getLevel(), is(Level.FINER));
+                assertThat(record.getMessage(), containsString("GET /sent-details HTTP/1.1"));
+                assertThat(record.getThrown(), sameInstance(failure));
+            } else {
+                verify(request, never()).prologue();
+            }
+        } finally {
+            logger.setLevel(previousLevel);
         }
     }
 
