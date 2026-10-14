@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,10 @@ public abstract class ProcessRunner {
 
         /**
          * Execute native processes.
+         *
+         * @deprecated GraalVM Native Image support is no longer provided. Use a JVM execution mode instead.
          */
+        @Deprecated(since = "28.0.0", forRemoval = true)
         NATIVE,
 
         /**
@@ -279,7 +282,7 @@ public abstract class ProcessRunner {
 
     /**
      * Set the final name of the artifact.
-     * This is the expected name of the native image and jar file
+     * This is the expected name of the artifact, including the executable for the legacy native execution mode.
      *
      * @param finalName final name
      * @return this instance

@@ -24,7 +24,6 @@ import java.nio.file.Paths;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-import io.helidon.common.NativeImageHelper;
 import io.helidon.common.Weight;
 import io.helidon.logging.common.spi.LoggingProvider;
 
@@ -64,10 +63,7 @@ public class JulProvider implements LoggingProvider {
         configureLogging(true);
     }
 
-    // when is either `initialization` or `runtime`
-    // when building native image, the `initialization` is called
-    // when running it, the `runtime` is called
-    // when outside of native-image, only `initialization` is called
+    // Configure logging for either the initialization phase or the runtime phase.
     private static void configureLogging(boolean runtime) {
         try {
             doConfigureLogging(runtime);
@@ -97,14 +93,8 @@ public class JulProvider implements LoggingProvider {
             source = findAndConfigureLogging();
         }
 
-        if (runtime || NativeImageHelper.isBuildTime()) {
-            String when = runtime ? WHEN_RUNTIME : WHEN_INIT;
-            Logger.getLogger(JulProvider.class.getName()).info("Logging at " + when + " configured using " + source);
-        } else {
-            // build time without native image (when not in native, this is executed only on class initialization,
-            // so for the user it is runtime)
-            Logger.getLogger(JulProvider.class.getName()).info("Logging at " + WHEN_RUNTIME + " configured using " + source);
-        }
+        String when = runtime ? WHEN_RUNTIME : WHEN_INIT;
+        Logger.getLogger(JulProvider.class.getName()).info("Logging at " + when + " configured using " + source);
     }
 
     private static String findAndConfigureLogging() throws IOException {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,11 +43,6 @@ final class FeatureCodegenTypes {
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.common.features.api.Features.InvalidFlavor}.
      */
     static final TypeName INVALID_FLAVOR = TypeName.create("io.helidon.common.features.api.Features.InvalidFlavor");
-    /**
-     * {@link io.helidon.common.types.TypeName} for {@code io.helidon.common.features.api.Features.Aot}.
-     */
-    static final TypeName AOT = TypeName.create("io.helidon.common.features.api.Features.Aot");
-
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.common.features.api.Features.Preview}.
      */

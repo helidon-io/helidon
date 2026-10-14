@@ -856,7 +856,7 @@
                 <version>${version.lib.jmh}</version>
             </dependency>
             <dependency>
-                <!-- used for classpath scanning in native image extension -->
+                <!-- used for classpath scanning by code generation and service registry tooling -->
                 <groupId>io.github.classgraph</groupId>
                 <artifactId>classgraph</artifactId>
                 <version>${version.lib.classgraph}</version>

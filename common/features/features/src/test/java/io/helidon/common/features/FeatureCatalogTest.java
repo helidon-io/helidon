@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -44,6 +45,13 @@ class FeatureCatalogTest {
             var features = FeatureCatalog.features(supplied);
 
             assertThat(features.stream().map(FeatureMetadata::module).toList(), contains("test.root", "test.child"));
+            // Deprecated metadata remains available to callers and survives serialization.
+            FeatureMetadata child = features.get(1);
+            assertThat(child.name(), is("Test Child"));
+            assertThat(child.description().orElseThrow(), is("Child description"));
+            assertThat(child.path(), contains("Root", "Undescribed", "Child"));
+            assertThat(child.aot().orElseThrow().supported(), is(false));
+            assertThat(child.toHson().structValue("aot").orElseThrow().booleanValue("supported", true), is(false));
             assertThat(thread.getContextClassLoader(), sameInstance(context));
         } finally {
             thread.setContextClassLoader(original);

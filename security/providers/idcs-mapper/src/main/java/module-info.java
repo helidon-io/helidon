@@ -24,7 +24,6 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("Security provider role mapping - Oracle IDCS")
 @Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
 @Features.Path({"Security", "Provider", "IdcsRoleMapper"})
-@Features.Aot(false)
 module io.helidon.security.providers.idcs.mapper {
 
     requires io.helidon.common.context;

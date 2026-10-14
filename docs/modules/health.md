@@ -386,11 +386,6 @@ statuses:
 </tbody>
 </table>
 
-> [!NOTE]
-> Helidon cannot support the indicated health checks in the GraalVM native image
-> environment, so with native image those health checks do not appear in the
-> health output.
-
 Simply adding the built-in health check dependency is sufficient to register all
 the built-in health checks automatically. If you want to use only some of the
 built-in checks in your application, you can disable automatic discovery of the

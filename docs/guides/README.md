@@ -30,5 +30,4 @@ index:
 - [Gradle](gradle.md)
 - [Jlink](jlink.md)
 - [Maven](maven.md)
-- [Native Image](native-image.md)
 - [Performance](performance.md)

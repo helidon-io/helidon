@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * A replacement for {@link java.lang.invoke.MethodHandle} that we cannot use for the time being, due to
- * limitations of GraalVM native image.
+ * Reflection-based access to constructors, methods, and fields used for configuration object mapping.
  */
 interface HelidonMethodHandle {
     static HelidonMethodHandle create(Class<?> type, Constructor<?> constructor) {
