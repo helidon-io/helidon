@@ -2,7 +2,7 @@
 
 ## Description
 
-Settings for an OTLP publisher
+Settings for the Micrometer OTLP publisher
 
 ## Configuration options
 
@@ -190,11 +190,6 @@ Settings for an OTLP publisher
 </table>
 
 
-
-## Usages
-
-- <a href="io.helidon.metrics.api.MetricsPublisher.md#otlp"><code>metrics.<wbr>publishers.<wbr>otlp</code></a>
-- <a href="io.helidon.metrics.api.MetricsPublisher.md#otlp"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>publishers.<wbr>otlp</code></a>
 
 ---
 

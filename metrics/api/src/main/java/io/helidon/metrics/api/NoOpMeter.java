@@ -55,6 +55,13 @@ class NoOpMeter implements Meter, NoOpWrapper {
              builder.type);
     }
 
+    private NoOpMeter(Meter.Builder<?, ?> builder, Type type) {
+        this(new NoOpMeter.Id(builder.name(), builder.tags()),
+             builder.baseUnit().orElse(null),
+             builder.description().orElse(null),
+             type);
+    }
+
     private NoOpMeter(Id id, String baseUnit, String description, Type type) {
         this.id = id;
         this.unit = Objects.requireNonNullElse(baseUnit, "");
@@ -220,6 +227,10 @@ class NoOpMeter implements Meter, NoOpWrapper {
             super(builder);
         }
 
+        protected Counter(io.helidon.metrics.api.Counter.Builder builder) {
+            super(builder, Type.COUNTER);
+        }
+
         static Counter create(String name, Iterable<Tag> tags) {
             return builder(name)
                     .tags(tags)
@@ -260,6 +271,10 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
         private FunctionalCounter(Builder<?> builder) {
             super(builder);
+        }
+
+        protected FunctionalCounter(io.helidon.metrics.api.FunctionalCounter.Builder<?> builder) {
+            super(builder, Type.COUNTER);
         }
 
         static <T> FunctionalCounter.Builder<T> builder(String name, T target, Function<T, Long> fn) {
@@ -304,6 +319,10 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
         private DistributionSummary(Builder builder) {
             super(builder);
+        }
+
+        protected DistributionSummary(io.helidon.metrics.api.DistributionSummary.Builder builder) {
+            super(builder, Type.DISTRIBUTION_SUMMARY);
         }
 
         static DistributionSummary.Builder builder(String name) {
@@ -461,6 +480,20 @@ class NoOpMeter implements Meter, NoOpWrapper {
             super(builder);
         }
 
+        private Gauge(io.helidon.metrics.api.Gauge.Builder<N> builder) {
+            super(builder, Type.GAUGE);
+        }
+
+        static <N extends Number> Gauge<N> create(io.helidon.metrics.api.Gauge.Builder<N> builder) {
+            Supplier<N> supplier = builder.supplier();
+            return new Gauge<>(builder) {
+                @Override
+                public N value() {
+                    return Objects.requireNonNull(supplier.get(), "Gauge supplier must return a non-null value");
+                }
+            };
+        }
+
         static <T> Builder.DoubleFunctionBased<T> builder(String name, T stateObject, ToDoubleFunction<T> fn) {
             return new Builder.DoubleFunctionBased<>(name, stateObject, fn);
         }
@@ -516,7 +549,7 @@ class NoOpMeter implements Meter, NoOpWrapper {
                     return new Gauge<>(this) {
                         @Override
                         public N value() {
-                            return supplier.get();
+                            return Objects.requireNonNull(supplier.get(), "Gauge supplier must return a non-null value");
                         }
                     };
                 }
@@ -533,6 +566,10 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
         private Timer(Builder builder) {
             super(builder);
+        }
+
+        protected Timer(io.helidon.metrics.api.Timer.Builder builder) {
+            super(builder, Type.TIMER);
         }
 
         static Sample start() {
@@ -553,47 +590,47 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
         @Override
         public io.helidon.metrics.api.HistogramSnapshot snapshot() {
-            return null;
+            return HistogramSnapshot.empty(0L, 0D, 0D);
         }
 
         @Override
         public void record(long amount, TimeUnit unit) {
-
+            Objects.requireNonNull(unit);
         }
 
         @Override
         public void record(Duration duration) {
-
+            Objects.requireNonNull(duration);
         }
 
         @Override
         public <T> T record(Supplier<T> f) {
-            return null;
+            return Objects.requireNonNull(f).get();
         }
 
         @Override
         public <T> T record(Callable<T> f) throws Exception {
-            return f.call();
+            return Objects.requireNonNull(f).call();
         }
 
         @Override
         public void record(Runnable f) {
-            f.run();
+            Objects.requireNonNull(f).run();
         }
 
         @Override
         public Runnable wrap(Runnable f) {
-            return f;
+            return Objects.requireNonNull(f);
         }
 
         @Override
         public <T> Callable<T> wrap(Callable<T> f) {
-            return f;
+            return Objects.requireNonNull(f);
         }
 
         @Override
         public <T> Supplier<T> wrap(Supplier<T> f) {
-            return null;
+            return Objects.requireNonNull(f);
         }
 
         @Override
@@ -603,16 +640,19 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
         @Override
         public double totalTime(TimeUnit unit) {
+            Objects.requireNonNull(unit);
             return 0;
         }
 
         @Override
         public double mean(TimeUnit unit) {
+            Objects.requireNonNull(unit);
             return 0;
         }
 
         @Override
         public double max(TimeUnit unit) {
+            Objects.requireNonNull(unit);
             return 0;
         }
 
@@ -623,6 +663,7 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
             @Override
             public long stop(io.helidon.metrics.api.Timer timer) {
+                Objects.requireNonNull(timer);
                 return 0;
             }
         }
@@ -637,6 +678,8 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
             private Builder(String name) {
                 super(name, Type.TIMER);
+                this.percentiles = new double[0];
+                this.buckets = new Duration[0];
             }
 
             @Override
@@ -646,25 +689,28 @@ class NoOpMeter implements Meter, NoOpWrapper {
 
             @Override
             public Builder percentiles(double... percentiles) {
-                this.percentiles = percentiles;
+                this.percentiles = Objects.requireNonNull(percentiles).clone();
                 return identity();
             }
 
             @Override
             public Builder buckets(Duration... buckets) {
-                this.buckets = buckets;
+                this.buckets = Objects.requireNonNull(buckets).clone();
+                for (Duration bucket : this.buckets) {
+                    Objects.requireNonNull(bucket);
+                }
                 return identity();
             }
 
             @Override
             public Builder minimumExpectedValue(Duration min) {
-                this.min = min;
+                this.min = Objects.requireNonNull(min);
                 return identity();
             }
 
             @Override
             public Builder maximumExpectedValue(Duration max) {
-                this.max = max;
+                this.max = Objects.requireNonNull(max);
                 return identity();
             }
 

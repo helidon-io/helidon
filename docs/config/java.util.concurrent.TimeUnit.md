@@ -47,9 +47,9 @@ This type is an enumeration.
 
 ## Usages
 
-- <a href="io.helidon.metrics.providers.micrometer.OtlpPublisher.md#base-time-unit"><code>metrics.<wbr>publishers.<wbr>otlp.<wbr>base-<wbr>time-<wbr>unit</code></a>
+- <a href="io.helidon.metrics.publishers.OtlpConfig.md#base-time-unit"><code>metrics.<wbr>publishers.<wbr>otlp.<wbr>base-<wbr>time-<wbr>unit</code></a>
 - <a href="io.helidon.metrics.TimersConfig.md#json-units-default"><code>metrics.<wbr>timers.<wbr>json-<wbr>units-<wbr>default</code></a>
-- <a href="io.helidon.metrics.providers.micrometer.OtlpPublisher.md#base-time-unit"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>publishers.<wbr>otlp.<wbr>base-<wbr>time-<wbr>unit</code></a>
+- <a href="io.helidon.server.features.observe.observers.metrics.publishers.OtlpConfig.md#base-time-unit"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>publishers.<wbr>otlp.<wbr>base-<wbr>time-<wbr>unit</code></a>
 - <a href="io.helidon.server.features.observe.observers.metrics.TimersConfig.md#json-units-default"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>timers.<wbr>json-<wbr>units-<wbr>default</code></a>
 
 ---

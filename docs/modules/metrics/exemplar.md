@@ -35,9 +35,10 @@ registry and exposed by the OpenMetrics output (media type
 
 ## Maven Coordinates
 
-To enable OpenMetrics exemplar support, add the following dependency to your
-project’s `pom.xml` (see [Managing
-Dependencies](../../dependency-management.md)).
+To enable OpenMetrics exemplar support, select the
+[Micrometer metrics provider](micrometer.md#maven-coordinates) and add the
+following dependency to your project’s `pom.xml` (see
+[Managing Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

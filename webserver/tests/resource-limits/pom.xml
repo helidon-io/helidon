@@ -66,6 +66,11 @@
             <artifactId>helidon-webserver-observe-metrics</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.metrics.providers</groupId>
+            <artifactId>helidon-metrics-providers-helidon</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-concurrency-limits</artifactId>
         </dependency>

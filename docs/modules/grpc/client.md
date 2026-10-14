@@ -261,7 +261,8 @@ GrpcClient grpcClient = GrpcClient.builder()
 > [!NOTE]
 > Metrics are only available for gRPC clients running in a server environment.
 
-For more information see [Helidon Metrics](../metrics/metrics.md).
+Include a metrics provider in your application as described in
+[Helidon Metrics](../metrics/metrics.md#maven-coordinates).
 
 ## Tracing
 

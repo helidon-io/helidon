@@ -15,18 +15,26 @@
  */
 package io.helidon.metrics.provider.tests;
 
+import java.math.BigDecimal;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TestGauge {
 
@@ -36,7 +44,12 @@ class TestGauge {
     @BeforeAll
     static void prep() {
         metricsFactory = Services.get(MetricsFactory.class);
-        meterRegistry = Services.get(MeterRegistry.class);
+        meterRegistry = metricsFactory.createMeterRegistry(MetricsConfig.create());
+    }
+
+    @AfterAll
+    static void closeRegistry() {
+        meterRegistry.close();
     }
 
     @Test
@@ -68,6 +81,35 @@ class TestGauge {
         i.getAndAdd(incr);
 
         assertThat("Gauge after update", g.value(), is((double) initial + incr));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void supplierGaugesRejectNullSamples(boolean enabled) {
+        var sample = new AtomicReference<BigDecimal>();
+        var calls = new AtomicInteger();
+        MeterRegistry registry = metricsFactory.createMeterRegistry(MetricsConfig.builder().enabled(enabled).build());
+        try {
+            Gauge<BigDecimal> gauge = registry.getOrCreate(metricsFactory.gaugeBuilder("non-null-gauge", () -> {
+                calls.incrementAndGet();
+                return sample.get();
+            }));
+
+            assertThat("Registration must not sample the gauge", calls.get(), is(0));
+            assertThrows(NullPointerException.class, gauge::value);
+            assertThat("A rejected sample invokes the supplier once", calls.get(), is(1));
+            BigDecimal first = new BigDecimal("9007199254740993.25");
+            sample.set(first);
+            assertThat("Sampling preserves the supplied Number instance", gauge.value(), sameInstance(first));
+            sample.set(null);
+            assertThrows(NullPointerException.class, gauge::value);
+            BigDecimal recovered = new BigDecimal("9007199254740994.75");
+            sample.set(recovered);
+            assertThat("The gauge recovers after an invalid sample", gauge.value(), sameInstance(recovered));
+            assertThat("Each read invokes the supplier once", calls.get(), is(4));
+        } finally {
+            registry.close();
+        }
     }
 
     private static class Custom {

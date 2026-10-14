@@ -73,7 +73,7 @@ examples are executed from the root directory of your project
 The generated source code is already configured for both metrics and health
 checks, but the following example removes health checks.
 
-Metrics dependencies in the generated `pom.xml`:
+Ensure the generated `pom.xml` contains the following metrics dependencies:
 
 <!--@mdc ::code-callout -->
 ```xml [pom.xml]
@@ -83,16 +83,22 @@ Metrics dependencies in the generated `pom.xml`:
         <artifactId>helidon-webserver-observe-metrics</artifactId> <!-- (1) -->
     </dependency>
     <dependency>
+        <groupId>io.helidon.metrics.providers</groupId>
+        <artifactId>helidon-metrics-providers-helidon</artifactId> <!-- (2) -->
+        <scope>runtime</scope>
+    </dependency>
+    <dependency>
         <groupId>io.helidon.metrics</groupId>
-        <artifactId>helidon-metrics-system-meters</artifactId>     <!-- (2) -->
+        <artifactId>helidon-metrics-system-meters</artifactId>     <!-- (3) -->
         <scope>runtime</scope>
     </dependency>
 </dependencies>
 ```
-1. Includes the Helidon observability component for metrics and, as transitive
-   dependencies, the Helidon neutral metrics API and a full-featured
-   implementation of the API.
-2. Includes the built-in meters.
+1. Includes the Helidon observability component for metrics and the neutral
+   metrics API.
+2. Selects the Helidon metrics provider explicitly. The observer does not
+   select a provider.
+3. Includes the built-in meters.
 <!--@mdc :: -->
 
 With these dependencies in your project, Helidon’s auto-discovery of webserver

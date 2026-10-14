@@ -323,8 +323,9 @@ public interface MeterRegistry extends Wrapper {
 
     /**
      * Enroll a listener to be notified when a {@link io.helidon.metrics.api.Meter} is removed.
+     * Removing a disabled meter does not notify listeners.
      *
-     * @param onRemoveListener listener to invoke upon each meter removal
+     * @param onRemoveListener listener to invoke upon each enabled meter removal
      * @return the meter registry
      */
     MeterRegistry onMeterRemoved(Consumer<Meter> onRemoveListener);

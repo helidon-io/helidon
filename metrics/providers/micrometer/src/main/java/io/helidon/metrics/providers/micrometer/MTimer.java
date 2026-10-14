@@ -34,9 +34,9 @@ import io.micrometer.core.instrument.Clock;
 class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.helidon.metrics.api.Timer {
 
     /*
-    Micrometer timers, unlike other Micrometer meters, do not provide a way to assign the baseUnit setting. Instead, you can
-    specify what units you want when you get values from the timer. So that the JSON formatter can prepare the output we
-    save the base unit as part of this wrapper around the Micrometer timer.
+    Micrometer timers, unlike other Micrometer meters, do not provide a way to assign the baseUnit setting. Instead,
+    you can specify what units you want when you get values from the timer. So that the JSON formatter can prepare the
+    output we save the base unit as part of this wrapper around the Micrometer timer.
      */
     private final Optional<TimeUnit> baseTimeUnit;
 
@@ -71,6 +71,7 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
     }
 
     static Sample start(io.helidon.metrics.api.MeterRegistry meterRegistry) {
+        Objects.requireNonNull(meterRegistry);
         if (meterRegistry instanceof MMeterRegistry mMeterRegistry) {
             return Sample.create(io.micrometer.core.instrument.Timer.start(mMeterRegistry.delegate()));
         }
@@ -79,6 +80,7 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
     }
 
     static Sample start(io.helidon.metrics.api.Clock clock) {
+        Objects.requireNonNull(clock);
         // This is a relatively infrequently-used method, so it is not overly costly
         // to create a new instance of Micrometer's Clock each invocation.
         return Sample.create(io.micrometer.core.instrument.Timer.start(new Clock() {
@@ -106,42 +108,44 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
 
     @Override
     public void record(long amount, TimeUnit unit) {
-        delegate().record(amount, unit);
+        delegate().record(amount, Objects.requireNonNull(unit));
     }
 
     @Override
     public void record(Duration duration) {
-        delegate().record(duration);
+        delegate().record(Objects.requireNonNull(duration));
     }
 
     @Override
     public <T> T record(Supplier<T> f) {
-        return delegate().record(f);
+        return delegate().record(Objects.requireNonNull(f));
     }
 
     @Override
     public <T> T record(Callable<T> f) throws Exception {
-        return delegate().recordCallable(f);
+        return delegate().recordCallable(Objects.requireNonNull(f));
     }
 
     @Override
     public void record(Runnable f) {
-        delegate().record(f);
+        delegate().record(Objects.requireNonNull(f));
     }
 
     @Override
     public Runnable wrap(Runnable f) {
-        return delegate().wrap(f);
+        return delegate().wrap(Objects.requireNonNull(f));
     }
 
     @Override
     public <T> Callable<T> wrap(Callable<T> f) {
-        return delegate().wrap(f);
+        Callable<T> wrapped = delegate().wrap(Objects.requireNonNull(f));
+        return wrapped::call;
     }
 
     @Override
     public <T> Supplier<T> wrap(Supplier<T> f) {
-        return delegate().wrap(f);
+        Supplier<T> wrapped = delegate().wrap(Objects.requireNonNull(f));
+        return wrapped::get;
     }
 
     @Override
@@ -151,17 +155,17 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
 
     @Override
     public double totalTime(TimeUnit unit) {
-        return delegate().totalTime(unit);
+        return delegate().totalTime(Objects.requireNonNull(unit));
     }
 
     @Override
     public double mean(TimeUnit unit) {
-        return delegate().mean(unit);
+        return delegate().mean(Objects.requireNonNull(unit));
     }
 
     @Override
     public double max(TimeUnit unit) {
-        return delegate().max(unit);
+        return delegate().max(Objects.requireNonNull(unit));
     }
 
     @Override
@@ -194,7 +198,7 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
         private final io.micrometer.core.instrument.Timer.Sample delegate;
 
         private Sample(io.micrometer.core.instrument.Timer.Sample delegate) {
-            this.delegate = delegate;
+            this.delegate = Objects.requireNonNull(delegate);
         }
 
         static Sample create(io.micrometer.core.instrument.Timer.Sample delegate) {
@@ -203,6 +207,7 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
 
         @Override
         public long stop(io.helidon.metrics.api.Timer timer) {
+            Objects.requireNonNull(timer);
             if (timer instanceof MTimer mTimer) {
                 return delegate.stop(mTimer.delegate());
             }
@@ -211,9 +216,11 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
         }
     }
 
-    static class Builder extends
-                         MMeter.Builder<io.micrometer.core.instrument.Timer.Builder, io.micrometer.core.instrument.Timer,
-                                 MTimer.Builder, MTimer>
+    static class Builder
+            extends MMeter.Builder<io.micrometer.core.instrument.Timer.Builder,
+                    io.micrometer.core.instrument.Timer,
+                    MTimer.Builder,
+                    MTimer>
             implements io.helidon.metrics.api.Timer.Builder {
 
         private double[] percentiles;
@@ -230,14 +237,14 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
 
         @Override
         public Builder baseUnit(String baseUnit) {
-            return (baseUnit != null && !baseUnit.isBlank())
+            return (!Objects.requireNonNull(baseUnit).isBlank())
                     ? baseUnit(TimeUnit.valueOf(baseUnit.toUpperCase(Locale.ROOT)))
                     : identity();
         }
 
         @Override
         public Builder baseUnit(TimeUnit baseUnit) {
-            this.baseTimeUnit = baseUnit;
+            this.baseTimeUnit = Objects.requireNonNull(baseUnit);
             return identity();
         }
 
@@ -248,28 +255,31 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
 
         @Override
         public Builder percentiles(double... percentiles) {
-            this.percentiles = percentiles;
-            delegate().publishPercentiles(percentiles);
+            this.percentiles = Objects.requireNonNull(percentiles).clone();
+            delegate().publishPercentiles(this.percentiles);
             return identity();
         }
 
         @Override
         public Builder buckets(Duration... buckets) {
-            this.buckets = buckets;
-            delegate().serviceLevelObjectives(buckets);
+            this.buckets = Objects.requireNonNull(buckets).clone();
+            for (Duration bucket : this.buckets) {
+                Objects.requireNonNull(bucket);
+            }
+            delegate().serviceLevelObjectives(this.buckets);
             return identity();
         }
 
         @Override
         public Builder minimumExpectedValue(Duration min) {
-            this.min = min;
+            this.min = Objects.requireNonNull(min);
             delegate().minimumExpectedValue(min);
             return identity();
         }
 
         @Override
         public Builder maximumExpectedValue(Duration max) {
-            this.max = max;
+            this.max = Objects.requireNonNull(max);
             delegate().maximumExpectedValue(max);
             return identity();
         }
@@ -294,12 +304,13 @@ class MTimer extends MMeter<io.micrometer.core.instrument.Timer> implements io.h
 
         @Override
         protected Builder delegateBaseUnit(String baseUnit) {
-            // The Micrometer Timer does not have baseUnit (it's fixed at ns) but for uniformity we implement this anyway.
+            // The Micrometer Timer does not have baseUnit (it's fixed at ns) but we implement this for uniformity.
             return identity();
         }
 
         @Override
         public Builder publishPercentileHistogram(boolean value) {
+            this.publishPercentileHistogram = value;
             delegate().publishPercentileHistogram(value);
             return identity();
         }

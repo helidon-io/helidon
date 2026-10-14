@@ -49,7 +49,7 @@ public interface Gauge<N extends Number> extends Meter {
      * Creates a builder for a supplier-based gauge.
      *
      * @param name           gauge name
-     * @param numberSupplier {@link java.util.function.Supplier} for an instance of a type which extends {@link Number}
+     * @param numberSupplier {@link java.util.function.Supplier} for a non-null instance of a type which extends {@link Number}
      * @param <N>            subtype of {@code Number} which the supplier provides
      * @return new builder
      * @deprecated this method uses service registry to get a {@code MetricsFactory} instance, which may be inefficient,
@@ -67,7 +67,8 @@ public interface Gauge<N extends Number> extends Meter {
      * registered.
      * </p>
      *
-     * @return current value of the gauge
+     * @return non-null current value of the gauge
+     * @throws NullPointerException if the supplier returns {@code null}
      */
     N value();
 
@@ -81,7 +82,7 @@ public interface Gauge<N extends Number> extends Meter {
     interface Builder<N extends Number> extends Meter.Builder<Builder<N>, Gauge<N>> {
 
         /**
-         * Returns a {@link java.util.function.Supplier} for the values the gauge will produce.
+         * Returns a {@link java.util.function.Supplier} for the non-null values the gauge will produce.
          *
          * @return supplier for the values
          */

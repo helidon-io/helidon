@@ -34,10 +34,13 @@ Dependencies](../../dependency-management.md)).
 ```
 
 The first dependency adds the metrics observer and the `/observe/metrics`
-endpoint. It includes Helidon's Micrometer-based metrics implementation at
-runtime. The second dependency makes the Micrometer API available when
-compiling application code which uses Micrometer types directly, as the
+endpoint without selecting a metrics provider. The second dependency selects
+the Micrometer provider and makes the Micrometer API available
+when compiling application code which uses Micrometer types directly, as the
 examples on this page do.
+
+No exclusions are needed to use this provider. If the Helidon metrics provider
+is also present, the higher-weight Micrometer provider takes precedence.
 
 ## Usage
 

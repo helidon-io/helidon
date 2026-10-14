@@ -16,6 +16,8 @@
 
 package io.helidon.json.tests;
 
+import java.lang.reflect.Modifier;
+
 import io.helidon.common.GenericType;
 import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
@@ -84,6 +86,10 @@ public class CustomConverterTest {
     @ParameterizedTest
     @EnumSource(BindingMethod.class)
     public void testCustomSerializerOnTheFieldParameterized(BindingMethod bindingMethod) {
+        assertThat("The discovered generated converter must remain package-private",
+                   CustomConverterTest_CustomFieldSerializer__GeneratedConverter.class.getModifiers()
+                           & (Modifier.PUBLIC | Modifier.PROTECTED | Modifier.PRIVATE),
+                   is(0));
         CustomFieldSerializer instance = new CustomFieldSerializer("without serializer", "with serializer");
         String expected = "{\"fieldWithoutSerializer\":\"without serializer\","
                 + "\"fieldWithSerializer\":\"with serializer_custom_converter\"}";

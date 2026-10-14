@@ -180,7 +180,7 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
          */
         @Override
         public N value() {
-            return registrationSource.stateObject().get();
+            return Objects.requireNonNull(registrationSource.stateObject().get(), "Gauge supplier must return a non-null value");
         }
 
         @Override
@@ -209,8 +209,8 @@ abstract class MGauge<N extends Number> extends MMeter<io.micrometer.core.instru
 
             private Builder(String name, Supplier<N> supplier) {
                 super(name, supplier, source -> {
-                    Number value = source.get();
-                    return value == null ? Double.NaN : value.doubleValue();
+                    Number value = Objects.requireNonNull(source.get(), "Gauge supplier must return a non-null value");
+                    return value.doubleValue();
                 });
                 this.supplier = supplier;
             }

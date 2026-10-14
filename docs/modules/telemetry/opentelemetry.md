@@ -23,7 +23,7 @@ Helidon supports OpenTelemetry in several important ways:
 - Conforms to the [OpenTelemetry semantic conventions][opentelemetry-se] for
   automatically-created spans and metrics for HTTP requests
 - Allows [publishing Helidon metrics][publishing-helid] to backend systems using
-  OTLP.
+  OTLP using the optional native OTLP publisher or the Micrometer metrics provider.
 
 OpenTelemetry models observability as a set of [*signals*][signals].
 
