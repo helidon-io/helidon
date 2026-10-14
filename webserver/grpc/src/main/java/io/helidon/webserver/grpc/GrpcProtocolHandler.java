@@ -106,12 +106,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private static final int GRPC_HEADER_SIZE = 5;
     private static final int INITIAL_BUFFER_SIZE = 16 * 1024;
 
-    private static final ScheduledThreadPoolExecutor DEADLINE_EXECUTOR = new ScheduledThreadPoolExecutor(1,
-            Thread.ofPlatform().daemon().name("grpc-server-deadline", 0).factory());
-
-    static {
-        DEADLINE_EXECUTOR.setRemoveOnCancelPolicy(true);
-    }
+    private static final ScheduledThreadPoolExecutor DEADLINE_EXECUTOR = new GrpcDeadlineExecutor();
 
     private final ConnectionContext connectionContext;
     private final Http2Headers headers;

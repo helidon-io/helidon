@@ -932,7 +932,7 @@ class GrpcProtocolHandlerTest {
     }
 
     @Test
-    void testBlockingCancellationListenerDelaysSharedDeadlineTimer() throws Exception {
+    void testBlockingCancellationListenerDoesNotDelayIndependentDeadline() throws Exception {
         var release = new CountDownLatch(1);
         var entered = new CountDownLatch(1);
         var firstThread = new AtomicReference<Thread>();
@@ -964,17 +964,17 @@ class GrpcProtocolHandlerTest {
             }
             assertThat("the second deadline expires while the first cancellation listener remains blocked",
                        secondDeadline.get().isExpired(), is(true));
-            assertThrows(TimeoutException.class, () -> secondThread.get(100, TimeUnit.MILLISECONDS));
-            assertThat("a blocked inline listener delays other deadline tasks", secondWriter.trailers.isDone(), is(false));
-            release.countDown();
-            assertThat("deadline cancellation runs on a platform timer", firstThread.get().isVirtual(), is(false));
-            assertThat("calls reuse the shared deadline timer",
-                       secondThread.get(5, TimeUnit.SECONDS), sameInstance(firstThread.get()));
+            Thread independentCancellation = secondThread.get(5, TimeUnit.SECONDS);
+            assertThat("deadline cancellation uses an expiry-only virtual thread", firstThread.get().isVirtual(), is(true));
+            assertThat("independent deadline cancellation uses a virtual thread", independentCancellation.isVirtual(), is(true));
+            assertThat("the blocked cancellation does not occupy the other call's thread",
+                       independentCancellation == firstThread.get(), is(false));
             // Model the existing stream runners processing their queued cancellation events.
             first.streamEvent();
             second.streamEvent();
             assertThat(secondWriter.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
                                .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
+            release.countDown();
             assertThat(firstWriter.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
                                .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
         } finally {
@@ -1002,12 +1002,12 @@ class GrpcProtocolHandlerTest {
         handler.onStreamEvent(() -> notified.complete(Thread.currentThread()));
         handler.init();
 
-        var timer = notified.get(5, TimeUnit.SECONDS);
-        assertThat("deadline notification uses a platform timer", timer.isVirtual(), is(false));
+        var expiryThread = notified.get(5, TimeUnit.SECONDS);
+        assertThat("deadline notification uses an expiry-only virtual thread", expiryThread.isVirtual(), is(true));
         assertThat("application context cancellation stays inline",
-                   contextCancelled.get(5, TimeUnit.SECONDS), sameInstance(timer));
+                   contextCancelled.get(5, TimeUnit.SECONDS), sameInstance(expiryThread));
         assertThat("the cancelled call is visible before terminal output", callReference.get().isCancelled(), is(true));
-        assertThat("the timer does not publish terminal output", writer.trailers.isDone(), is(false));
+        assertThat("the expiry thread does not publish terminal output", writer.trailers.isDone(), is(false));
         callReference.get().sendMessage("late response");
         assertThat("cancelled calls ignore late DATA", writer.dataWrites.get(), is(0));
 

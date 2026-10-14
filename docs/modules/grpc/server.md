@@ -235,12 +235,16 @@ and stop any work it owns. An outbound Helidon gRPC call created within the
 handler inherits the remaining context deadline; see [Client Deadlines](client.md#deadlines).
 
 The server uses a shared deadline timer and writes responses on the thread
-calling the service's `ServerCall`. Cancellation listeners run inline on the
-thread cancelling the context. Keep these listeners brief: a blocking listener
-on the deadline timer delays other server deadlines. Deadline cancellation
-signals the existing HTTP/2 stream thread to send the final status, keeping
-transport writes off the shared timer. If a service callback or response write
-is already in progress, the final status waits for it to return; the server
+calling the service's `ServerCall`. When a deadline expires, the timer starts
+a virtual thread to cancel that call's context. Calls that complete before
+their deadline create no additional deadline thread. Cancellation listeners
+run inline on the thread cancelling the context; a blocked expiry listener
+does not delay other calls' deadlines. Keep these listeners brief so they do
+not delay their own call's cancellation. Transport resets and connection
+closure dispatch application cancellation on the existing HTTP/2 stream thread.
+Deadline cancellation signals that stream thread to send the final status,
+keeping transport writes off the expiry thread. If a service callback or
+response write is already in progress, the final status waits for it to return; the server
 completes any current frame before sending the status.
 
 ### Metrics

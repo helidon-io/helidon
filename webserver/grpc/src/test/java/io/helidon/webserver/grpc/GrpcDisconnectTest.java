@@ -361,9 +361,11 @@ class GrpcDisconnectTest {
             assertThat("stalled trailers remain blocked during the independent deadline", terminalCompleted.isDone(), is(false));
             assertThat("cancellation trailers use the idle call's existing stream thread", trailerThread, is(streamThread));
             assertThat("cancellation trailers use a virtual stream thread", trailerThread.isVirtual(), is(true));
-            assertThat("application context cancellation remains inline on the shared timer",
-                       blockedCancelled.get(5, TimeUnit.SECONDS), is(timerThread));
-            assertThat("shared deadline timer uses a platform thread", timerThread.isVirtual(), is(false));
+            Thread blockedExpiryThread = blockedCancelled.get(5, TimeUnit.SECONDS);
+            assertThat("independent expiry uses a virtual thread", timerThread.isVirtual(), is(true));
+            assertThat("blocked expiry uses a virtual thread", blockedExpiryThread.isVirtual(), is(true));
+            assertThat("each expiry has its own cancellation thread", blockedExpiryThread, not(timerThread));
+            assertThat("application cancellation is separate from the transport writer", blockedExpiryThread, not(trailerThread));
 
             // Retire the large stream, then release its transport write and read the sibling's trailers.
             var reset = BufferData.create(4);
@@ -408,6 +410,108 @@ class GrpcDisconnectTest {
                 readers.shutdownNow();
                 assertThat("fixture connection readers stopped", readers.awaitTermination(5, TimeUnit.SECONDS), is(true));
             }
+        }
+    }
+
+    @Test
+    void blockedDeadlineContextListenerDoesNotDelayIndependentDeadline() throws Exception {
+        var blockedStarted = new CompletableFuture<Thread>();
+        var blockedEntered = new CompletableFuture<Thread>();
+        var releaseBlocked = new CompletableFuture<Void>();
+        var blockedFinished = new CompletableFuture<Void>();
+        var blockedContextFinished = new CompletableFuture<Void>();
+        var independentFinished = new CompletableFuture<Thread>();
+        var blockedContextCancellations = new AtomicInteger();
+        var blockedServiceCancellations = new AtomicInteger();
+        var independentCancellations = new AtomicInteger();
+        var completions = new AtomicInteger();
+        var service = ServerServiceDefinition.builder("test.Disconnect")
+                .addMethod(descriptor("Blocked"), (_, _) -> {
+                    Context.current().addListener(_ -> {
+                        blockedContextCancellations.incrementAndGet();
+                        blockedEntered.complete(Thread.currentThread());
+                        releaseBlocked.join();
+                        blockedContextFinished.complete(null);
+                    }, Runnable::run);
+                    blockedStarted.complete(Thread.currentThread());
+                    return new ServerCall.Listener<>() {
+                        @Override
+                        public void onCancel() {
+                            blockedServiceCancellations.incrementAndGet();
+                            blockedFinished.complete(null);
+                        }
+
+                        @Override
+                        public void onComplete() {
+                            completions.incrementAndGet();
+                        }
+                    };
+                })
+                .addMethod(descriptor("Independent"), (_, _) -> new ServerCall.Listener<>() {
+                    @Override
+                    public void onCancel() {
+                        independentCancellations.incrementAndGet();
+                        independentFinished.complete(Thread.currentThread());
+                    }
+                })
+                .addMethod(descriptor("Small"), (call, _) -> new ServerCall.Listener<>() {
+                    @Override
+                    public void onHalfClose() {
+                        call.sendHeaders(new Metadata());
+                        call.sendMessage("small response");
+                        call.close(Status.OK, new Metadata());
+                    }
+                })
+                .build();
+        var server = WebServer.builder()
+                .host("127.0.0.1")
+                .port(0)
+                .addRouting(GrpcRouting.builder().config(Config.empty()).service(service))
+                .build()
+                .start();
+        // Release the application gate before socket cleanup, including when the shared timer stalls.
+        AutoCloseable gate = () -> releaseBlocked.complete(null);
+        try (var socket = new Socket(); var independentSocket = new Socket(); gate) {
+            initializeLargeWindowConnection(socket, server.port());
+            startCall(socket, 1, "Blocked", "1S");
+            Thread streamThread = blockedStarted.get(5, TimeUnit.SECONDS);
+            Thread expiryThread = blockedEntered.get(5, TimeUnit.SECONDS);
+
+            initializeLargeWindowConnection(independentSocket, server.port());
+            startCall(independentSocket, 1, "Independent", "1S");
+            var decoder = Http2HuffmanDecoder.create();
+            var independentTable = Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            assertThat("independent connection reaches its deadline while the first listener blocks",
+                       readResponse(independentSocket, 1, independentTable, decoder, new ByteArrayOutputStream()), is(4));
+            independentFinished.get(5, TimeUnit.SECONDS);
+            assertThat("first context cancellation listener remains blocked", blockedContextFinished.isDone(), is(false));
+            assertThat("expiry cancellation uses a virtual thread", expiryThread.isVirtual(), is(true));
+            assertThat("expiry cancellation is separate from the stream runner", expiryThread, not(streamThread));
+
+            startCall(socket, 3, "Small", null);
+            var responseTable = Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            var siblingBody = new ByteArrayOutputStream();
+            assertThat("same-connection sibling completes while the cancellation listener blocks",
+                       readResponse(socket, 3, responseTable, decoder, siblingBody), is(0));
+            assertResponse(siblingBody);
+            assertThat("first context cancellation listener remains blocked after sibling completion",
+                       blockedContextFinished.isDone(), is(false));
+            releaseBlocked.complete(null);
+            blockedContextFinished.get(5, TimeUnit.SECONDS);
+            blockedFinished.get(5, TimeUnit.SECONDS);
+
+            startCall(socket, 5, "Small", null);
+            var subsequentBody = new ByteArrayOutputStream();
+            assertThat("same connection remains usable after cancellation completes",
+                       readResponse(socket, 5, responseTable, decoder, subsequentBody), is(0));
+            assertResponse(subsequentBody);
+            assertThat("blocked context listener is notified once", blockedContextCancellations.get(), is(1));
+            assertThat("blocked service listener is notified once", blockedServiceCancellations.get(), is(1));
+            assertThat("independent service listener is notified once", independentCancellations.get(), is(1));
+            assertThat("deadline cancellation does not report successful completion", completions.get(), is(0));
+        } finally {
+            releaseBlocked.complete(null);
+            server.stop();
         }
     }
 
@@ -648,6 +752,24 @@ class GrpcDisconnectTest {
                                                                 Http2Flag.SettingsFlags.create(Http2Flag.ACK)));
         }
         return new Http2FrameData(header, BufferData.create(payload));
+    }
+
+    private static int readResponse(Socket socket,
+                                    int streamId,
+                                    Http2Headers.DynamicTable responseTable,
+                                    Http2HuffmanDecoder decoder,
+                                    ByteArrayOutputStream body) throws IOException {
+        while (true) {
+            var frame = readFrame(socket);
+            if (frame.header().type() == Http2FrameType.DATA && frame.header().streamId() == streamId) {
+                body.write(frame.data().readBytes());
+            } else if (frame.header().type() == Http2FrameType.HEADERS) {
+                var headers = Http2Headers.create(null, responseTable, decoder, frame).httpHeaders();
+                if (frame.header().streamId() == streamId && frame.header().flags(Http2FrameTypes.HEADERS).endOfStream()) {
+                    return headers.get(HeaderNames.create("grpc-status")).asInt().get();
+                }
+            }
+        }
     }
 
     private static void assertResponse(ByteArrayOutputStream bytes) {
