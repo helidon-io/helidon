@@ -39,6 +39,7 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
 @Prototype.CustomMethods(OpenApiFeatureConfigSupport.class)
 @Prototype.Provides(ServerFeatureProvider.class)
 @Prototype.RegistrySupport
+@Prototype.IncludeDefaultMethods("enabled")
 interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature> {
     /**
      * Weight of the OpenAPI feature. This is quite low, to be registered after routing.
@@ -51,12 +52,27 @@ interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature
     double weight();
 
     /**
-     * Sets whether the feature should be enabled.
+     * Whether the feature is enabled.
      *
      * @return {@code true} if enabled, {@code false} otherwise
      */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    default boolean enabled() {
+        return isEnabled();
+    }
+
+    /**
+     * Whether the feature is enabled.
+     * This accessor is retained for compatibility.
+     * Prefer {@link io.helidon.openapi.OpenApiFeatureConfig#enabled()}.
+     *
+     * @return {@code true} if enabled, {@code false} otherwise
+     * @deprecated use {@link #enabled()}
+     */
+    @Deprecated(since = "28.0.0", forRemoval = true)
+    @Option.Deprecated("enabled")
     @Option.Decorator(OpenApiFeatureConfigSupport.EnabledDecorator.class)
-    @Option.Configured("enabled")
     @Option.DefaultBoolean(true)
     boolean isEnabled();
 
@@ -142,7 +158,7 @@ interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature
      */
     @Api.Preview
     @Option.Configured("document")
-    @Option.Provider(OpenApiVersionProvider.class)
+    @Option.Provider(value = OpenApiVersionProvider.class, enabledBy = "enabled")
     Optional<OpenApiVersion> openApiVersion();
 
     /**
@@ -151,7 +167,7 @@ interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature
      * @return the OpenAPI services
      */
     @Option.Configured
-    @Option.Provider(OpenApiServiceProvider.class)
+    @Option.Provider(value = OpenApiServiceProvider.class, enabledBy = "enabled")
     @Option.Singular
     List<OpenApiService> services();
 
@@ -161,7 +177,7 @@ interface OpenApiFeatureConfigBlueprint extends Prototype.Factory<OpenApiFeature
      * @return the OpenAPI manager
      */
     @Option.Configured
-    @Option.Provider(value = OpenApiManagerProvider.class, discoverServices = false)
+    @Option.Provider(value = OpenApiManagerProvider.class, discoverServices = false, enabledBy = "enabled")
     Optional<OpenApiManager<?>> manager();
 
     /**

@@ -55,9 +55,68 @@ class OptionDecoratorTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
+    void copyPreservesDeprecatedGetterOverride() {
+        var copy = OptionDecorators.builder().from(new LegacyBuilder());
+
+        assertThat(copy.legacyValue(), is(0));
+        assertThat(copy.replacementValue(), is(0));
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    void copyPreservesFloatingPointGetterOverride() {
+        var copy = OptionDecorators.builder().from(new LegacyBuilder());
+
+        assertThat(copy.legacyDouble(), is(-0.0));
+        assertThat(copy.replacementDouble(), is(-0.0));
+        assertThat(copy.legacyFloat(), is(-0.0F));
+        assertThat(copy.replacementFloat(), is(-0.0F));
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    void copyDoesNotReapplyUnchangedNaNAlias() {
+        var source = OptionDecorators.builder()
+                .legacyDouble(Double.NaN)
+                .replacementDouble(64.0)
+                .legacyFloat(Float.NaN)
+                .replacementFloat(64.0F);
+
+        var copy = OptionDecorators.builder().from(source);
+
+        assertThat(copy.legacyDouble(), is(Double.NaN));
+        assertThat(copy.replacementDouble(), is(64.0));
+        assertThat(copy.legacyFloat(), is(Float.NaN));
+        assertThat(copy.replacementFloat(), is(64.0F));
+    }
+
+    @Test
     void deprecatedPrimitiveGetterDescriptorIsPreserved() throws NoSuchMethodException {
         var method = OptionDecorators.BuilderBase.class.getMethod("legacyValue");
 
         assertThat(method.getReturnType(), sameInstance(int.class));
+    }
+
+    private static final class LegacyBuilder extends OptionDecorators.BuilderBase<LegacyBuilder, OptionDecorators> {
+        @Override
+        public int legacyValue() {
+            return 0;
+        }
+
+        @Override
+        public double legacyDouble() {
+            return -0.0;
+        }
+
+        @Override
+        public float legacyFloat() {
+            return -0.0F;
+        }
+
+        @Override
+        public OptionDecorators buildPrototype() {
+            return OptionDecorators.builder().from(this).buildPrototype();
+        }
     }
 }

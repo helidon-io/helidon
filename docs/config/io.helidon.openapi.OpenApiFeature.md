@@ -53,7 +53,7 @@ OpenAPI feature configuration
 <td>
 <code>true</code>
 </td>
-<td>Sets whether the feature should be enabled</td>
+<td>Whether the feature is enabled</td>
 </tr>
 <tr>
 <td>

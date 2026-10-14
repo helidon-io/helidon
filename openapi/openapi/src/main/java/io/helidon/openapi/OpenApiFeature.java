@@ -146,7 +146,7 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
         String defaultContent = "";
         MediaType defaultContentMediaType = MediaTypes.APPLICATION_OCTET_STREAM;
         OpenApiFormat defaultContentFormat = OpenApiFormat.UNSUPPORTED;
-        if (config.isEnabled()) {
+        if (config.enabled()) {
             String staticFile = config.staticFile().orElse(null);
             if (staticFile != null) {
                 defaultContent = readContent(staticFile);
@@ -266,7 +266,7 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
 
     @Override
     public void setup(ServerFeatureContext featureContext) {
-        if (!config.isEnabled()) {
+        if (!config.enabled()) {
             return;
         }
 
@@ -314,7 +314,7 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
      * Initialize the model.
      */
     public void initialize() {
-        if (!config.isEnabled()) {
+        if (!config.enabled()) {
             return;
         }
         initialized.set(true);
@@ -344,7 +344,7 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
         }
         if (hasConfiguredOpenApiFeature(featuresConfig)) {
             OpenApiFeatureConfig.Builder builder = builderSupplier.get()
-                    .isEnabled(false)
+                    .enabled(false)
                     .name(STANDBY_NAME);
             disableProviderDiscovery(builder);
             return builder.buildPrototype();

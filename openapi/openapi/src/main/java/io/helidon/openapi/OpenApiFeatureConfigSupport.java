@@ -44,18 +44,15 @@ final class OpenApiFeatureConfigSupport {
             builder.config()
                     .map(Config::root)
                     .ifPresent(builder::sourceRoot);
+            // we decorate isEnabled setter, this is to align if `enabled` differs, maybe because of config or explicit call.
+            builder.isEnabled(builder.enabled());
         }
     }
 
     static final class EnabledDecorator implements Prototype.OptionDecorator<OpenApiFeatureConfig.BuilderBase<?, ?>, Boolean> {
         @Override
         public void decorate(OpenApiFeatureConfig.BuilderBase<?, ?> builder, Boolean enabled) {
-            if (enabled) {
-                builder.openApiVersionDiscoverServices(true)
-                        .servicesDiscoverServices(true);
-            } else {
-                OpenApiFeature.disableProviderDiscovery(builder);
-            }
+            builder.enabled(enabled);
         }
     }
 }
