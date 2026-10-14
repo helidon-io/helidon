@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,12 +35,14 @@ import io.helidon.service.registry.Service;
  * <p>
  * A filter can specify a {@link io.helidon.common.Weight}. If no weight is
  * explicitly assigned, the value of {@value io.helidon.common.Weighted#DEFAULT_WEIGHT} is assumed.
+ * <p>
+ * Filters created through {@link ConfigFilterProvider} run after {@link OverrideSource} overrides and before directly
+ * registered or discovered filters, including value resolution.
  * <h2>Initializing Filters</h2>
- * Any filter that uses the {@code Config} instance during its initialization
- * should do so in its {@link #init(Config)} method,
- * <em>not</em>
- * in its constructor. The {@code Config.Builder.build()} method invokes each
- * filter's `init` method according to the filters' weight and just
+ * Filters that need the {@link Config} instance during initialization should be created via {@link ConfigFilterProvider}.
+ * Filters registered with the {@code addFilter} methods or discovered as {@code ConfigFilter} services receive
+ * {@link #init(Config)} calls. The {@link Config.Builder#build()} method invokes each such
+ * filter's {@code init} method according to the filters' weight and just
  * before returning the new {@code Config} instance to the application.
  * <p>
  * If a filter's {@code init} method uses {@code Config#get} to retrieve config
@@ -96,9 +98,14 @@ public interface ConfigFilter {
      * <p>
      * The config system propagates any thrown exception to the application so its
      * invocation of {@code Config.Builder#build} fails.
+     * <p>
+     * This method is invoked only on directly registered or discovered filters. Filters returned by
+     * {@link ConfigFilterFactory#create(Config)} are fully initialized and do not receive this call.
      *
      * @param config {@code Config} instance under construction
+     * @deprecated use {@link ConfigFilterProvider} instead
      */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     default void init(Config config) {
     }
 

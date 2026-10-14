@@ -13,5 +13,6 @@ index:
 - [Supported Formats](supported-formats.md)
 - [Configuration Profiles](config-profiles.md)
 - [Mutability Support](mutability-support.md)
+- [Config Overrides Filter](overrides.md)
 - [Advanced Configuration Topics](advanced-configuration.md)
 - [Extensions](extensions.md)

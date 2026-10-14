@@ -149,6 +149,10 @@ abstract class AbstractConfigImpl implements Config {
 
     @Override
     public void onChange(Consumer<Config> onChangeConsumer) {
+        Objects.requireNonNull(onChangeConsumer, "onChangeConsumer");
+        if (factory.snapshot()) {
+            return;
+        }
         factory.provider()
                 .onChange(event -> {
                     // check if change contains this node
@@ -170,21 +174,33 @@ abstract class AbstractConfigImpl implements Config {
 
         @Override
         public Instant timestamp() {
+            if (factory.snapshot()) {
+                return factory.timestamp();
+            }
             return AbstractConfigImpl.this.factory.context().timestamp();
         }
 
         @Override
         public Config last() {
+            if (factory.snapshot()) {
+                return AbstractConfigImpl.this;
+            }
             return AbstractConfigImpl.this.contextConfig(AbstractConfigImpl.this.factory.context().last());
         }
 
         @Override
         public Config reload() {
+            if (factory.snapshot()) {
+                return AbstractConfigImpl.this;
+            }
             return AbstractConfigImpl.this.contextConfig(AbstractConfigImpl.this.factory.context().reload());
         }
 
         @Override
         public void stopChangeSupport() {
+            if (factory.snapshot()) {
+                return;
+            }
             AbstractConfigImpl.this.factory.context().stopChangeSupport();
         }
     }

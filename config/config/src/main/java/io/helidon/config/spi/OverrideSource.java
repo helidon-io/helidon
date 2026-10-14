@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,9 +49,61 @@ import io.helidon.config.ConfigException;
  * The config override mechanism affects existing {@code Config} nodes that come
  * from a {@link ConfigSource}. The override mechanism cannot create additional
  * {@code Config} nodes, only modify existing ones.
+ * <h2>Replacement</h2>
+ * Add the {@code io.helidon.config:helidon-config-overrides} dependency and register its
+ * {@code io.helidon.config.overrides.OverrideConfigFilterProvider} instead of calling
+ * {@link Config.Builder#overrides(Supplier)}. For example, replace a file override source with:
+ * <pre>{@code
+ * import io.helidon.config.Config;
+ * import io.helidon.config.ConfigSources;
+ * import io.helidon.config.overrides.OverrideConfigFilterProvider;
+ *
+ * Config target = Config.builder()
+ *         .disableFilterServices()
+ *         .addSource(ConfigSources.file("application.properties"))
+ *         .addFilterProvider(OverrideConfigFilterProvider.builder()
+ *                 .addConfigSource(() -> ConfigSources.file("overrides.properties").build())
+ *                 .build())
+ *         .build();
+ * }</pre>
+ * Use {@code ConfigSources.classpath(resource)} or {@code ConfigSources.url(url)} for the corresponding sources.
+ * Configure polling or watching on the new source if updates are required; a file source alone does not enable them.
+ * This example disables automatic filter discovery. If other discovered filters are needed, leave discovery enabled
+ * and avoid configuring the same override rules through both automatic and explicit registration.
+ * <p>
+ * Replace {@code OverrideSources.create(map)} with builder rules. Use ordered calls when overlapping rules require
+ * a particular priority:
+ * <pre>{@code
+ * import io.helidon.config.overrides.OverrideConfigFilterProvider;
+ *
+ * var provider = OverrideConfigFilterProvider.builder()
+ *         .putOverrideExpression("environments.prod.batch-size", "150")
+ *         .putOverrideExpression("environments.*.batch-size", "200")
+ *         .build();
+ * }</pre>
+ * Definition sources use ordinary Config parsers selected by media type; use properties content with a
+ * {@code .properties} file or specify its media type. Definition maps do not guarantee the legacy document order.
+ * Flat rules such as {@code service=one} and {@code service.level=two} conflict when loaded as a configuration tree;
+ * register them with the provider builder instead. Arbitrary predicates require a custom {@link ConfigFilterProvider}.
+ * <p>
+ * For automatic setup, move the legacy {@code override-source} descriptor from Config meta-configuration to
+ * {@code overrides.sources} in the initial application configuration. Renaming the meta-configuration entry is
+ * insufficient. Include any polling, watching, optional-source, or retry settings in the new descriptor:
+ * <pre>{@code
+ * overrides:
+ *   sources:
+ *     - type: file
+ *       properties:
+ *         path: overrides.properties
+ * }</pre>
+ * The definition file contains expression/value entries directly, without an {@code overrides.expressions} prefix.
+ * Remove the corresponding legacy registration. The new filter runs after source merging and before value resolution;
+ * it replaces only existing values. Ordinary source precedence can add nodes and does not interpret wildcard keys.
  *
  * @see OverrideData
+ * @deprecated use {@code OverrideConfigFilterProvider} from the {@code helidon-config-overrides} module instead
  */
+@Deprecated(since = "28.0.0", forRemoval = true)
 public interface OverrideSource extends Source, Supplier<OverrideSource> {
 
     @Override
@@ -78,7 +130,10 @@ public interface OverrideSource extends Source, Supplier<OverrideSource> {
      * second is the replacement value the config system will use as it loads
      * any {@code Config} value node with a key that matches the wildcard
      * expression.
+     *
+     * @deprecated use the replacement documented in {@link OverrideSource}
      */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     final class OverrideData {
 
         /**

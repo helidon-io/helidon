@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,12 @@ import io.helidon.config.spi.OverrideSource;
 
 /**
  * In-memory implementation of override source.
+ *
+ * @deprecated Since 28.0.0, this legacy core API is deprecated for removal in favor of the optional overrides
+ * filter module. See {@link OverrideSource} for migration
+ * guidance and the usage feedback request. No removal release or timing has been decided.
  */
+@Deprecated(since = "28.0.0", forRemoval = true)
 public class InMemoryOverrideSource implements OverrideSource {
 
     private final OverrideData overrideData;
@@ -53,7 +58,12 @@ public class InMemoryOverrideSource implements OverrideSource {
 
     /**
      * Fluent API builder for {@link io.helidon.config.InMemoryOverrideSource}.
+     *
+     * @deprecated Since 28.0.0, this legacy core API is deprecated for removal in favor of the optional overrides
+     * filter module. See {@link OverrideSource} for migration
+     * guidance and the usage feedback request. No removal release or timing has been decided.
      */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     public static final class Builder implements io.helidon.common.Builder<Builder, InMemoryOverrideSource> {
 
         private OverrideData overrideData;

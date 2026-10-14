@@ -79,6 +79,7 @@ class ConfigProviderRegistryTest {
                                                      List::of,
                                                      List::of,
                                                      List::of,
+                                                     List::of,
                                                      registry);
         try {
             assertThat(provider.get().get("registry.value").asString().get(), is("from-named-source"));

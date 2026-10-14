@@ -40,6 +40,7 @@ module io.helidon.config {
     uses io.helidon.config.spi.ConfigMapperProvider;
     uses io.helidon.config.spi.ConfigParser;
     uses io.helidon.config.spi.ConfigFilter;
+    uses io.helidon.config.spi.ConfigFilterProvider;
     uses io.helidon.config.spi.ConfigSourceProvider;
     uses io.helidon.config.spi.OverrideSourceProvider;
     uses io.helidon.config.spi.RetryPolicyProvider;
