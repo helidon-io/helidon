@@ -23,6 +23,8 @@ import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQueryWriteable;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
@@ -150,11 +152,44 @@ class ClientUriTest {
         assertThat(query.all("p1"), hasItems("v1", "v2"));
     }
 
-    @Test
-    void testResolvePath() {
-        ClientUri helper = ClientUri.create(URI.create("http://localhost:8080/loom"));
-        helper.resolve(URI.create("/quick"));
+    @ParameterizedTest
+    @CsvSource({
+            "http, 8080, quick",
+            "http, 8080, /quick",
+            "https, 8443, quick",
+            "https, 8443, /quick"
+    })
+    void testResolvePath(String scheme, int port, String path) {
+        ClientUri helper = ClientUri.create(URI.create(scheme + "://localhost:" + port + "/loom"));
+        helper.resolve(URI.create(path));
+
+        assertThat(helper.authority(), is("localhost:" + port));
+        assertThat(helper.host(), is("localhost"));
         assertThat(helper.path(), is(UriPath.create("/loom/quick")));
+        assertThat(helper.port(), is(port));
+        assertThat(helper.scheme(), is(scheme));
+        assertThat(helper.toUri(), is(URI.create(scheme + "://localhost:" + port + "/loom/quick")));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "http, 8080, //other.example/path, other.example, 80",
+            "https, 8443, //other.example/path, other.example, 443",
+            "http, 8080, //other.example:9090/path, other.example, 9090",
+            "https, 8443, //other.example:9090/path, other.example, 9090",
+            "http, 8080, //base.example/path, base.example, 80",
+            "https, 8443, //base.example/path, base.example, 443"
+    })
+    void testResolveNetworkPathAuthority(String scheme, int basePort, String reference, String host, int port) {
+        ClientUri helper = ClientUri.create(URI.create(scheme + "://base.example:" + basePort + "/base"));
+        helper.resolve(URI.create(reference));
+
+        assertThat(helper.authority(), is(host + ":" + port));
+        assertThat(helper.host(), is(host));
+        assertThat(helper.path(), is(UriPath.create("/base/path")));
+        assertThat(helper.port(), is(port));
+        assertThat(helper.scheme(), is(scheme));
+        assertThat(helper.toUri(), is(URI.create(scheme + "://" + host + ":" + port + "/base/path")));
     }
 
     @Test

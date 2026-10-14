@@ -180,6 +180,7 @@ public class ClientUri implements UriInfo {
 
     /**
      * Resolve the provided URI against this URI.
+     * If the provided URI replaces the authority without an explicit port, the scheme's default port is used.
      *
      * @param uri URI to use
      * @return updated instance
@@ -196,6 +197,8 @@ public class ClientUri implements UriInfo {
         }
         if (uri.getHost() != null) {
             uriBuilder.host(uri.getHost());
+            // Replacing the authority resets the port to the scheme default unless an explicit port follows.
+            uriBuilder.port(0);
         }
         if (uri.getPort() != -1) {
             uriBuilder.port(uri.getPort());
