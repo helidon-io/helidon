@@ -44,6 +44,7 @@ import io.helidon.common.types.TypedElementInfo;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -374,10 +375,28 @@ public class TypeNameContentCodegenTest {
 
     @ParameterizedTest
     @MethodSource("annotationStrings")
-    void testAnnotationStringCompilesAndRoundTrips(String value) throws IOException, ReflectiveOperationException {
+    void testAnnotationStringCompilesAndRoundTrips(String value, String annotationValue)
+            throws IOException, ReflectiveOperationException {
         ClassModel classModel = ClassModel.builder()
                 .packageName(PACKAGE_NAME)
                 .name("AnnotatedString")
+                .addMethod(method -> method
+                        .isStatic(true)
+                        .name("content")
+                        .returnType(TypeNames.STRING)
+                        .addContent("return ")
+                        .addContentLiteral(value)
+                        .addContentLine(";"))
+                .addMethod(method -> method
+                        .isStatic(true)
+                        .name("metadata")
+                        .returnType(TypeName.create(Annotation.class))
+                        .addContent("return ")
+                        .addContentCreate(Annotation.builder()
+                                                  .typeName(TypeName.create(Deprecated.class))
+                                                  .property("since", value)
+                                                  .build())
+                        .addContentLine(";"))
                 .addAnnotation(Annotation.builder()
                                        .typeName(TypeName.create(Deprecated.class))
                                        .property("since", value)
@@ -386,6 +405,7 @@ public class TypeNameContentCodegenTest {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .addProcessor(new ContentProcessor(new GeneratedModel("AnnotatedString", classModel)))
+                .addClasspath(List.of(Builder.class, Prototype.class, Annotation.class, TypeName.class))
                 .printDiagnostics(false)
                 .addSource("io/helidon/codegen/test/codegen/use/generated/Trigger.java", """
                         package io.helidon.codegen.test.codegen.use.generated;
@@ -399,19 +419,37 @@ public class TypeNameContentCodegenTest {
         URL[] urls = {result.classOutput().toUri().toURL()};
         try (URLClassLoader loader = new URLClassLoader(urls, getClass().getClassLoader())) {
             Class<?> generated = Class.forName(PACKAGE_NAME + ".AnnotatedString", true, loader);
-            assertThat(generated.getAnnotation(Deprecated.class).since(), is(value));
+            assertThat(generated.getAnnotation(Deprecated.class).since(), is(annotationValue));
+            assertThat(generated.getMethod("content").invoke(null), is(value));
+            Annotation metadata = (Annotation) generated.getMethod("metadata").invoke(null);
+            assertThat(metadata.stringValue("since").orElseThrow(), is(value));
         }
     }
 
-    private static Stream<String> annotationStrings() {
-        return Stream.of("^a\rb$",
-                         "^a\r\nb$",
-                         "^a\nb$",
-                         "^\\Qa\rb\\E$",
-                         "(?x)^a\rb$",
-                         "(?x)^a#comment\rb$",
-                         "^a\\\rb$",
-                         "^a\tb\bc\fd\u0001$");
+    private static Stream<Arguments> annotationStrings() {
+        Stream<Arguments> rawValues = Stream.of("",
+                                               "plain",
+                                               "\"",
+                                               "a\"b",
+                                               "a\"\"\"b",
+                                               "\\u000d",
+                                               "^a\rb$",
+                                               "^a\r\nb$",
+                                               "^a\nb$",
+                                               "^\\Qa\rb\\E$",
+                                               "(?x)^a\rb$",
+                                               "(?x)^a#comment\rb$",
+                                               "^a\\\rb$",
+                                               "^a\tb\bc\fd\u0001$",
+                                               new String(new char[] {0, 1, 7, 8, 9, 10, 11, 12, 13, 26, 31, 127, 133, 159}),
+                                               "\ud83d\ude00",
+                                               "x\ud800y",
+                                               "x\udc00y",
+                                               "x\u2028y\u2029z")
+                .map(value -> Arguments.of(value, value));
+        return Stream.concat(rawValues,
+                             Stream.of(Arguments.of("\"source\\nquoted\"", "source\nquoted"),
+                                       Arguments.of("\"\"", "")));
     }
 
     private static Annotation randomAnnotation() {

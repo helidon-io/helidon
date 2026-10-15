@@ -166,7 +166,7 @@ class ModelWriter extends Writer {
     }
 
     void writeValue(String str) {
-        if (str.startsWith("\"") && str.endsWith("\"")) {
+        if (str.length() >= 2 && str.startsWith("\"") && str.endsWith("\"")) {
             write(str);
         } else {
             write("\"");

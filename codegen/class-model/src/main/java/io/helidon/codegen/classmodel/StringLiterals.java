@@ -37,7 +37,7 @@ final class StringLiterals {
             case '"' -> result.append("\\\"");
             case '\\' -> result.append("\\\\");
             default -> {
-                if (ch < ' ') {
+                if (ch < ' ' || Character.isSurrogate(ch)) {
                     result.append(String.format("\\u%04x", (int) ch));
                 } else {
                     result.append(ch);
