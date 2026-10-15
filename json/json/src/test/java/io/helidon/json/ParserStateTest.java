@@ -16,8 +16,14 @@
 
 package io.helidon.json;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.stream.Stream;
+
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -28,6 +34,116 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Covers parser behavior after exceptions, state consistency, and edge cases.
  */
 class ParserStateTest {
+
+    @ParameterizedTest
+    @MethodSource("doubleDelimiters")
+    void testDoubleDoesNotConsumeFollowingDelimiter(ParserMethod parserMethod,
+                                                   String number,
+                                                   char delimiter,
+                                                   int bufferSize) {
+        String suffix = switch (delimiter) {
+            case ',' -> ",10]";
+            case ']' -> "]";
+            default -> " ]";
+        };
+        JsonParser parser = parserMethod.createParser("[" + number + suffix, bufferSize);
+        assertThat(parser.nextToken(), is((byte) number.charAt(0)));
+        assertThat(parser.readDouble(), is(Double.parseDouble(number)));
+        assertThat(parser.nextToken(), is((byte) (delimiter == ' ' ? ']' : delimiter)));
+    }
+
+    @ParameterizedTest
+    @MethodSource("largeExponentDelimiters")
+    void testLargeExponentDoesNotConsumeFollowingDelimiter(ParserMethod parserMethod,
+                                                           String number,
+                                                           char delimiter,
+                                                           int bufferSize) {
+        testDoubleDoesNotConsumeFollowingDelimiter(parserMethod, number, delimiter, bufferSize);
+    }
+
+    @ParameterizedTest
+    @MethodSource("largeExponentsAtEndOfInput")
+    void testLargeExponentAtEndOfInput(ParserMethod parserMethod, String number, String prefix, int bufferSize) {
+        JsonParser parser = parserMethod.createParser(prefix + number, bufferSize);
+        assertThat(parser.currentByte(), is((byte) number.charAt(0)));
+        assertThat(parser.readDouble(), is(Double.parseDouble(number)));
+        assertThat(parser.currentByte(), is((byte) number.charAt(number.length() - 1)));
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidLargeExponents")
+    void testInvalidLargeExponent(ParserMethod parserMethod, String number, int bufferSize) {
+        JsonParser parser = parserMethod.createParser("[" + number + "]", bufferSize);
+        parser.nextToken();
+        assertThrows(JsonException.class, parser::readDouble);
+    }
+
+    @ParameterizedTest
+    @MethodSource("doubleBufferBoundaries")
+    void testDoubleAcrossBufferBoundary(ParserMethod parserMethod, String number, int bufferSize, boolean marked) {
+        for (int offset = 0; offset < bufferSize; offset++) {
+            for (String suffix : new String[] {"", "]", ",5]", " ]"}) {
+                String context = number + ", buffer=" + bufferSize + ", offset=" + offset + ", suffix=" + suffix;
+                String json = " ".repeat(offset) + (suffix.isEmpty() ? "" : "[") + number + suffix;
+                JsonParser parser = parserMethod.createParser(json, bufferSize);
+                if (!suffix.isEmpty()) {
+                    assertThat(context, parser.nextToken(), is((byte) number.charAt(0)));
+                }
+                if (marked) {
+                    parser.mark();
+                    assertThat(context, parser.readDouble(), is(Double.parseDouble(number)));
+                    parser.resetToMark();
+                }
+                assertThat(context, parser.readDouble(), is(Double.parseDouble(number)));
+                assertThat(context, parser.currentByte(), is((byte) number.charAt(number.length() - 1)));
+                if (!suffix.isEmpty()) {
+                    assertThat(context, parser.nextToken(), is((byte) (suffix.startsWith(",") ? ',' : ']')));
+                    if (suffix.startsWith(",")) {
+                        assertThat(context, parser.nextToken(), is((byte) '5'));
+                        assertThat(context, parser.readDouble(), is(5.0));
+                        assertThat(context, parser.nextToken(), is((byte) ']'));
+                    }
+                }
+                assertThat(context, parser.hasNext(), is(false));
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidDoubleBufferBoundaries")
+    void testInvalidDoubleAcrossBufferBoundary(ParserMethod parserMethod, String number, int bufferSize) {
+        for (int offset = 0; offset < bufferSize; offset++) {
+            for (String suffix : new String[] {"", "]"}) {
+                String json = " ".repeat(offset) + (suffix.isEmpty() ? "" : "[") + number + suffix;
+                JsonParser parser = parserMethod.createParser(json, bufferSize);
+                if (!suffix.isEmpty()) {
+                    parser.nextToken();
+                }
+                assertThrows(JsonException.class, parser::readDouble, json);
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("doubleReadSizes")
+    void testDoubleAcrossShortStreamReads(int bufferSize, int readSize) {
+        String json = " ".repeat(505) + "[0e1001," + " ".repeat(504) + "7]";
+        var stream = new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)) {
+            @Override
+            public int read(byte[] bytes, int offset, int length) {
+                return super.read(bytes, offset, Math.min(length, readSize));
+            }
+        };
+        JsonParser parser = JsonParser.create(stream, bufferSize);
+        assertThat(parser.nextToken(), is((byte) '0'));
+        assertThat(parser.readDouble(), is(0.0));
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '7'));
+        assertThat(parser.readDouble(), is(7.0));
+        assertThat(parser.nextToken(), is((byte) ']'));
+        assertThat(parser.hasNext(), is(false));
+    }
 
     @ParameterizedTest
     @EnumSource(ParserMethod.class)
@@ -251,6 +367,63 @@ class ParserStateTest {
         JsonParser parser3 = parserMethod.createParser("\"\"");
         String emptyStr = parser3.readString();
         assertThat(emptyStr.isEmpty(), is(true));
+    }
+
+    private static Stream<Arguments> invalidDoubleBufferBoundaries() {
+        return Stream.of(ParserMethod.values())
+                .flatMap(parserMethod -> Stream.of("7.", "7e", "7e+", "7e-", "0e1001.5", "7.5.0")
+                        .flatMap(number -> Stream.of(6, 64, 512)
+                                .map(bufferSize -> Arguments.of(parserMethod, number, bufferSize))));
+    }
+
+    private static Stream<Arguments> doubleReadSizes() {
+        return Stream.of(6, 64, 512)
+                .flatMap(bufferSize -> Stream.of(1, 5, 73)
+                        .map(readSize -> Arguments.of(bufferSize, readSize)));
+    }
+
+    private static Stream<Arguments> doubleBufferBoundaries() {
+        return Stream.of(ParserMethod.values())
+                .flatMap(parserMethod -> Stream.of("0", "-0", "7", "-7", "77", "7.5", "-7.5", "0.5",
+                                                  "7e1", "7e+1", "7e-1", "0e1001", "-0e1001", "1e1001", "1e-1001",
+                                                  "123456789012345678", "0e" + "9".repeat(80))
+                        .flatMap(number -> Stream.of(6, 64, 512)
+                                .flatMap(bufferSize -> Stream.of(false, true)
+                                        .map(marked -> Arguments.of(parserMethod, number, bufferSize, marked)))));
+    }
+
+    private static Stream<Arguments> doubleDelimiters() {
+        return Stream.of(ParserMethod.values())
+                .flatMap(parserMethod -> Stream.of("0", "5", "-5", "15", "5.0", "0.0", "5e0")
+                        .flatMap(number -> Stream.of(',', ']', ' ')
+                                .flatMap(delimiter -> Stream.of(6, 64)
+                                        .map(bufferSize -> Arguments.of(parserMethod, number, delimiter, bufferSize)))));
+    }
+
+    private static Stream<Arguments> largeExponentDelimiters() {
+        return Stream.of(ParserMethod.values())
+                .flatMap(parserMethod -> Stream.of("0e999", "0e1000", "0e1001", "0e10010", "0e2147483648",
+                                                  "0e-1001", "0e+1001", "0E1001", "-0e1001", "-0e-1001",
+                                                  "0.0e1001", "1e1001", "1e-1001", "-1e1001",
+                                                  "0." + "0".repeat(1999) + "1e20000")
+                        .flatMap(number -> Stream.of(',', ']', ' ')
+                                .flatMap(delimiter -> Stream.of(6, 64, 512)
+                                        .map(bufferSize -> Arguments.of(parserMethod, number, delimiter, bufferSize)))));
+    }
+
+    private static Stream<Arguments> largeExponentsAtEndOfInput() {
+        return Stream.of(ParserMethod.values())
+                .flatMap(parserMethod -> Stream.of("0e1001", "-0e1001", "1e1001", "1e-1001", "0e10010", "0e2147483648")
+                        .flatMap(number -> Stream.of("", " ")
+                                .flatMap(prefix -> Stream.of(6, 64, 512)
+                                        .map(bufferSize -> Arguments.of(parserMethod, number, prefix, bufferSize)))));
+    }
+
+    private static Stream<Arguments> invalidLargeExponents() {
+        return Stream.of(ParserMethod.values())
+                .flatMap(parserMethod -> Stream.of("0e1001.5", "0e1001e2", "0e1001E2", "-0e10010.5")
+                        .flatMap(number -> Stream.of(6, 64, 512)
+                                .map(bufferSize -> Arguments.of(parserMethod, number, bufferSize))));
     }
 
 }
