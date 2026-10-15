@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -42,7 +43,11 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import static io.helidon.codegen.testing.CodegenMatchers.matches;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
@@ -367,6 +372,91 @@ public class TypeNameContentCodegenTest {
 
         assertThat(source, containsString(".enclosingType(TypeName.create(\"" + enclosingType.fqName() + "\"))"));
         assertClassGenerated(result, "ElementInfo");
+    }
+
+    @ParameterizedTest
+    @MethodSource("annotationStrings")
+    void testAnnotationStringGeneratesCompilableSource(String value, String expectedLiteral, String expectedAnnotationLiteral)
+            throws IOException {
+        ClassModel classModel = ClassModel.builder()
+                .packageName(PACKAGE_NAME)
+                .name("AnnotatedString")
+                .addMethod(method -> method
+                        .isStatic(true)
+                        .name("content")
+                        .returnType(TypeNames.STRING)
+                        .addContent("return ")
+                        .addContentLiteral(value)
+                        .addContentLine(";"))
+                .addMethod(method -> method
+                        .isStatic(true)
+                        .name("metadata")
+                        .returnType(TypeName.create(Annotation.class))
+                        .addContent("return ")
+                        .addContentCreate(Annotation.builder()
+                                                  .typeName(TypeName.create(Deprecated.class))
+                                                  .property("since", value)
+                                                  .build())
+                        .addContentLine(";"))
+                .addAnnotation(Annotation.builder()
+                                       .typeName(TypeName.create(Deprecated.class))
+                                       .property("since", value)
+                                       .build())
+                .build();
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addProcessor(new ContentProcessor(new GeneratedModel("AnnotatedString", classModel)))
+                .addClasspath(List.of(Builder.class, Prototype.class, Annotation.class, TypeName.class))
+                .printDiagnostics(false)
+                .addSource("io/helidon/codegen/test/codegen/use/generated/Trigger.java", """
+                        package io.helidon.codegen.test.codegen.use.generated;
+
+                        final class Trigger {
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
+        assertThat(generatedSource(result, "AnnotatedString"), matches("""
+                //...
+                @Deprecated(since = "%s")
+                public class AnnotatedString {
+                //...
+                        return "%s";
+                //...
+                                .property("since", "%s")
+                //...
+                """.formatted(expectedAnnotationLiteral, expectedLiteral, expectedLiteral)));
+        assertClassGenerated(result, "AnnotatedString");
+    }
+
+    private static Stream<Arguments> annotationStrings() {
+        return Stream.of(literalCase("", ""),
+                         literalCase("plain", "plain"),
+                         literalCase("\"", "\\\""),
+                         literalCase("a\"b", "a\\\"b"),
+                         literalCase("a\"\"\"b", "a\\\"\\\"\\\"b"),
+                         literalCase("\\u000d", "\\\\u000d"),
+                         literalCase("^a\rb$", "^a\\rb$"),
+                         literalCase("^a\r\nb$", "^a\\r\\nb$"),
+                         literalCase("^a\nb$", "^a\\nb$"),
+                         literalCase("^\\Qa\rb\\E$", "^\\\\Qa\\rb\\\\E$"),
+                         literalCase("(?x)^a\rb$", "(?x)^a\\rb$"),
+                         literalCase("(?x)^a#comment\rb$", "(?x)^a#comment\\rb$"),
+                         literalCase("^a\\\rb$", "^a\\\\\\rb$"),
+                         literalCase("^a\tb\bc\fd\u0001$", "^a\\tb\\bc\\fd\\u0001$"),
+                         literalCase(new String(new char[] {0, 1, 7, 8, 9, 10, 11, 12, 13, 26, 31, 127, 133, 159}),
+                                     "\\u0000\\u0001\\u0007\\b\\t\\n\\u000b\\f\\r\\u001a\\u001f\u007f\u0085\u009f"),
+                         literalCase("\ud83d\ude00", "\\ud83d\\ude00"),
+                         literalCase("x\ud800y", "x\\ud800y"),
+                         literalCase("x\udc00y", "x\\udc00y"),
+                         literalCase("x\u2028y\u2029z", "x\u2028y\u2029z"),
+                         Arguments.of("\"source\\nquoted\"", "\\\"source\\\\nquoted\\\"", "source\\nquoted"),
+                         Arguments.of("\"\"", "\\\"\\\"", ""));
+    }
+
+    private static Arguments literalCase(String value, String expectedLiteral) {
+        return Arguments.of(value, expectedLiteral, expectedLiteral);
     }
 
     private static Annotation randomAnnotation() {

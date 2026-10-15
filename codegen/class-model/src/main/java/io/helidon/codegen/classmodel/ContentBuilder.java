@@ -17,7 +17,6 @@
 package io.helidon.codegen.classmodel;
 
 import java.util.List;
-import java.util.Objects;
 
 import io.helidon.common.Api;
 import io.helidon.common.types.Annotation;
@@ -84,7 +83,7 @@ public interface ContentBuilder<T extends ContentBuilder<T>> {
      * @return updated builder instance
      */
     default T addContentLiteral(String literal) {
-        return addContent("\"" + escapedContentLiteral(literal) + "\"");
+        return addContent("\"" + StringLiterals.escape(literal) + "\"");
     }
 
     /**
@@ -230,30 +229,4 @@ public interface ContentBuilder<T extends ContentBuilder<T>> {
      * @return updated builder instance
      */
     T clearContent();
-
-    private static String escapedContentLiteral(String literal) {
-        Objects.requireNonNull(literal, "literal is null");
-
-        StringBuilder result = new StringBuilder(literal.length());
-        for (int i = 0; i < literal.length(); i++) {
-            char ch = literal.charAt(i);
-            switch (ch) {
-            case '\b' -> result.append("\\b");
-            case '\t' -> result.append("\\t");
-            case '\n' -> result.append("\\n");
-            case '\f' -> result.append("\\f");
-            case '\r' -> result.append("\\r");
-            case '"' -> result.append("\\\"");
-            case '\\' -> result.append("\\\\");
-            default -> {
-                if (ch < ' ') {
-                    result.append(String.format("\\u%04x", (int) ch));
-                } else {
-                    result.append(ch);
-                }
-            }
-            }
-        }
-        return result.toString();
-    }
 }
