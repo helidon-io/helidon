@@ -70,4 +70,12 @@ class ContentBuilderTest {
         assertThat(c.generatedString(),
                    is("    \"first\\npath \\\\ tab \\t quote \\\" delimiter \\\"\\\"\\\" return\\rnext\""));
     }
+
+    @Test
+    void testAddContentLiteralCarriageReturn() {
+        var c = new TestContentBuilder();
+        c.addContentLiteral("^a\rb$");
+
+        assertThat(c.generatedString(), is("    \"^a\\rb$\""));
+    }
 }

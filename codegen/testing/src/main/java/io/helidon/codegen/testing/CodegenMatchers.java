@@ -58,7 +58,7 @@ public final class CodegenMatchers {
                 if (it.trim().startsWith("//...")) {
                     return ".*";
                 } else {
-                    return "\\Q" + it + "\\E";
+                    return Pattern.quote(it);
                 }
             }).collect(Collectors.joining("\n"));
             this.regex = expected.endsWith("\n") ? regex + "\n" : regex;
