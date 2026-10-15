@@ -88,13 +88,16 @@ class Http3RuntimeExecutorTest {
                 assertThat("The explicitly supplied runtime pool executed QUIC work", runtimeExecutor.getPoolSize(),
                            greaterThan(0));
 
+                // Response consumption can precede acknowledgement of the request FIN.
+                assertCompletedStreams(firstObserver, 3);
                 first.closeResourceAsync().toCompletableFuture().get(10, TimeUnit.SECONDS);
-                assertClosedConnection(firstObserver, 3);
+                assertClosedConnection(firstObserver);
                 assertThat(runtimeExecutor.isShutdown(), is(false));
                 assertResponse(second, "/body");
 
+                assertCompletedStreams(secondObserver, 4);
                 second.closeResourceAsync().toCompletableFuture().get(10, TimeUnit.SECONDS);
-                assertClosedConnection(secondObserver, 4);
+                assertClosedConnection(secondObserver);
                 assertThat(runtimeExecutor.isShutdown(), is(false));
                 assertThat(runtimeExecutor.submit(() -> 42).get(5, TimeUnit.SECONDS), is(42));
             } finally {
@@ -133,16 +136,21 @@ class Http3RuntimeExecutorTest {
         }
     }
 
-    private static void assertClosedConnection(RecordingTransportObserverService observer, int requests) {
+    private static void assertCompletedStreams(RecordingTransportObserverService observer, int requests) {
+        assertThat(observer.connections().size(), is(1));
+        var connection = observer.connections().getFirst();
+        assertThat(connection.streams().size(), is(requests));
+        assertThat(connection.streams().stream()
+                           .map(stream -> stream.outcome().orTimeout(10, TimeUnit.SECONDS).join())
+                           .toList(), everyItem(is(COMPLETED)));
+    }
+
+    private static void assertClosedConnection(RecordingTransportObserverService observer) {
         assertThat(observer.connections().size(), is(1));
         var connection = observer.connections().getFirst();
         assertThat(connection.handshake(), is(QUIC_TLS));
         assertThat(connection.handshakeOutcome().orTimeout(10, TimeUnit.SECONDS).join(), is(SUCCESS));
         assertThat(connection.protocols(), contains(PROTOCOL_HTTP_3));
-        assertThat(connection.streams().size(), is(requests));
-        assertThat(connection.streams().stream()
-                           .map(stream -> stream.outcome().orTimeout(10, TimeUnit.SECONDS).join())
-                           .toList(), everyItem(is(COMPLETED)));
         assertThat(connection.outcome().orTimeout(10, TimeUnit.SECONDS).join(), is(LOCAL_CLOSE));
         assertThat(observer.lifecyclesStarted(), is(1));
         assertThat(observer.lifecyclesStopped(), is(1));

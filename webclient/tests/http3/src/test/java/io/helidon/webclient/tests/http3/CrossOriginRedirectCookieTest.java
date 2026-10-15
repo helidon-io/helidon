@@ -49,10 +49,7 @@ import io.helidon.webclient.api.WebClientCookieManager;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http3.Http3Client;
 import io.helidon.webclient.http3.Http3ClientResponse;
-import io.helidon.webserver.TcpTransportConfig;
 import io.helidon.webserver.WebServer;
-import io.helidon.webserver.http1.Http1Config;
-import io.helidon.webserver.http3.Http3RawTestServer;
 
 import org.junit.jupiter.api.Test;
 
@@ -260,7 +257,7 @@ class CrossOriginRedirectCookieTest {
         AtomicReference<String> capturedQuery = new AtomicReference<>();
         CompletableFuture<Void> fallbackObserved = new CompletableFuture<>();
 
-        try (Http3RawTestServer server = Http3RawTestServer.create((_, connection, streamId, stream) -> {
+        try (Http3FallbackTestServer server = Http3FallbackTestServer.create((_, connection, streamId, stream) -> {
                  http3RequestCount.incrementAndGet();
                  try {
                      stream.requestBodyInputStream().readAllBytes();
@@ -271,82 +268,65 @@ class CrossOriginRedirectCookieTest {
                                                                             Http3ErrorCode.VERSION_FALLBACK.code());
                  fallbackObserved.orTimeout(10, TimeUnit.SECONDS).join();
                  return null;
-             })) {
-            Http3TlsSupport.Http3TlsMaterials tlsMaterials = Http3TlsSupport.load();
-            int port = URI.create(server.baseUri()).getPort();
-            WebServer fallbackServer = WebServer.builder()
-                    .address(InetAddress.getLoopbackAddress())
-                    .port(port)
-                    .bindingsDiscoverServices(false)
-                    .addBinding(TcpTransportConfig.create())
-                    .protocolsDiscoverServices(false)
-                    .tls(tlsMaterials.serverTls())
-                    .addProtocol(Http1Config.create())
-                    .routing(routing -> routing.post("/fallback", (request, response) -> {
-                        http1RequestCount.incrementAndGet();
-                        fallbackSawExpect.set(request.headers().contains(HeaderValues.EXPECT_100));
-                        capturedCookies.set(request.headers().get(HeaderNames.COOKIE).allValues());
-                        capturedQuery.set(request.query().rawValue());
-                        fallbackBody.set(request.content().as(byte[].class));
-                        response.header(HeaderNames.SET_COOKIE, "response=once; Path=/").send("fallback-ok");
-                        fallbackObserved.complete(null);
-                    }))
-                    .build()
-                    .start();
+             }, routing -> routing.post("/fallback", (request, response) -> {
+                 http1RequestCount.incrementAndGet();
+                 fallbackSawExpect.set(request.headers().contains(HeaderValues.EXPECT_100));
+                 capturedCookies.set(request.headers().get(HeaderNames.COOKIE).allValues());
+                 capturedQuery.set(request.query().rawValue());
+                 fallbackBody.set(request.content().as(byte[].class));
+                 response.header(HeaderNames.SET_COOKIE, "response=once; Path=/").send("fallback-ok");
+                 fallbackObserved.complete(null);
+             }))) {
+            URI baseUri = URI.create(server.baseUri());
+            CountingCookieStore cookieStore = new CountingCookieStore();
+            HttpCookie stored = new HttpCookie("stored", "value");
+            stored.setPath("/");
+            stored.setVersion(0);
+            cookieStore.add(baseUri, stored);
+            int initialAdds = cookieStore.additions();
+            AtomicInteger serviceInvocations = new AtomicInteger();
+            WebClientCookieManager cookieManager = WebClientCookieManager.create(config -> config
+                    .automaticStoreEnabled(true)
+                    .cookieStore(cookieStore)
+                    .putDefaultCookie("default", "value"));
+            Http3Client client = Http3Client.builder()
+                    .baseUri(baseUri)
+                    .shareConnectionCache(false)
+                    .servicesDiscoverServices(false)
+                    .proxy(Proxy.noProxy())
+                    .tls(server.clientTls())
+                    .filterRedirectHeaders(false)
+                    .cookieManager(cookieManager)
+                    .addService((chain, request) -> {
+                        serviceInvocations.incrementAndGet();
+                        request.headers().add(HeaderNames.COOKIE, "service=value");
+                        return chain.proceed(request);
+                    })
+                    .build();
             try {
-                URI baseUri = URI.create(server.baseUri());
-                CountingCookieStore cookieStore = new CountingCookieStore();
-                HttpCookie stored = new HttpCookie("stored", "value");
-                stored.setPath("/");
-                stored.setVersion(0);
-                cookieStore.add(baseUri, stored);
-                int initialAdds = cookieStore.additions();
-                AtomicInteger serviceInvocations = new AtomicInteger();
-                WebClientCookieManager cookieManager = WebClientCookieManager.create(config -> config
-                        .automaticStoreEnabled(true)
-                        .cookieStore(cookieStore)
-                        .putDefaultCookie("default", "value"));
-                Http3Client client = Http3Client.builder()
-                        .baseUri(baseUri)
-                        .shareConnectionCache(false)
-                        .servicesDiscoverServices(false)
-                        .proxy(Proxy.noProxy())
-                        .tls(tlsMaterials.clientTls())
-                        .filterRedirectHeaders(false)
-                        .cookieManager(cookieManager)
-                        .addService((chain, request) -> {
-                            serviceInvocations.incrementAndGet();
-                            request.headers().add(HeaderNames.COOKIE, "service=value");
-                            return chain.proceed(request);
-                        })
-                        .build();
-                try {
-                    try (Http3ClientResponse response = client.post("/fallback?" + FALLBACK_RAW_QUERY)
-                            .header(HeaderNames.COOKIE, "explicit=value")
-                            .skipUriEncoding(true)
-                            .sendExpectContinue(true)
-                            .readContinueTimeout(Duration.ofMillis(250))
-                            .readTimeout(Duration.ofSeconds(5))
-                            .submit("payload")) {
-                        assertThat(response.status(), is(Status.OK_200));
-                        assertThat(response.protocolId(), is(Http1Client.PROTOCOL_ID));
-                        assertThat(response.as(String.class), is("fallback-ok"));
-                    }
-                } finally {
-                    client.closeResource();
+                try (Http3ClientResponse response = client.post("/fallback?" + FALLBACK_RAW_QUERY)
+                        .header(HeaderNames.COOKIE, "explicit=value")
+                        .skipUriEncoding(true)
+                        .sendExpectContinue(true)
+                        .readContinueTimeout(Duration.ofMillis(250))
+                        .readTimeout(Duration.ofSeconds(5))
+                        .submit("payload")) {
+                    assertThat(response.status(), is(Status.OK_200));
+                    assertThat(response.protocolId(), is(Http1Client.PROTOCOL_ID));
+                    assertThat(response.as(String.class), is("fallback-ok"));
                 }
-
-                assertCookiesExactlyOnce(capturedCookies.get());
-                assertThat(capturedQuery.get(), is(FALLBACK_RAW_QUERY));
-                assertThat(http3RequestCount.get(), is(1));
-                assertThat(http1RequestCount.get(), is(1));
-                assertThat(fallbackSawExpect.get(), is(true));
-                assertThat(fallbackBody.get(), is("payload".getBytes(StandardCharsets.UTF_8)));
-                assertThat(serviceInvocations.get(), is(1));
-                assertThat(cookieStore.additions(), is(initialAdds + 1));
             } finally {
-                fallbackServer.stop();
+                client.closeResource();
             }
+
+            assertCookiesExactlyOnce(capturedCookies.get());
+            assertThat(capturedQuery.get(), is(FALLBACK_RAW_QUERY));
+            assertThat(http3RequestCount.get(), is(1));
+            assertThat(http1RequestCount.get(), is(1));
+            assertThat(fallbackSawExpect.get(), is(true));
+            assertThat(fallbackBody.get(), is("payload".getBytes(StandardCharsets.UTF_8)));
+            assertThat(serviceInvocations.get(), is(1));
+            assertThat(cookieStore.additions(), is(initialAdds + 1));
         }
     }
 

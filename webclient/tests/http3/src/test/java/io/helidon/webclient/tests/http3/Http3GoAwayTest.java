@@ -18,8 +18,6 @@ package io.helidon.webclient.tests.http3;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.InetAddress;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
@@ -50,9 +48,6 @@ import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http3.Http3Client;
 import io.helidon.webclient.http3.Http3ClientProtocolConfig;
 import io.helidon.webclient.http3.Http3ClientResponse;
-import io.helidon.webserver.TcpTransportConfig;
-import io.helidon.webserver.WebServer;
-import io.helidon.webserver.http1.Http1Config;
 import io.helidon.webserver.http3.Http3RawTestServer;
 
 import org.junit.jupiter.api.Test;
@@ -365,7 +360,7 @@ class Http3GoAwayTest {
         AtomicReference<QuicConnection> firstConnection = new AtomicReference<>();
         CountDownLatch versionFallbackObserved = new CountDownLatch(1);
 
-        try (Http3RawTestServer server = Http3RawTestServer.create((request, connection, streamId, stream) -> {
+        try (Http3FallbackTestServer server = Http3FallbackTestServer.create((request, connection, streamId, stream) -> {
                  http3RequestCount.incrementAndGet();
                  if (VERSION_FALLBACK_PATH.equals(request.path().orElseThrow())) {
                      firstConnection.set(connection);
@@ -390,56 +385,39 @@ class Http3GoAwayTest {
                  }
                  return Http3RawTestServer.text(Status.OK_200.code(),
                                                 connection == firstConnection.get() ? "same-connection" : "new-connection");
-             })) {
-            Http3TlsSupport.Http3TlsMaterials tlsMaterials = Http3TlsSupport.load();
-            int port = URI.create(server.baseUri()).getPort();
-            WebServer fallbackServer = WebServer.builder()
-                    .address(InetAddress.getLoopbackAddress())
-                    .port(port)
-                    .bindingsDiscoverServices(false)
-                    .addBinding(TcpTransportConfig.create())
-                    .protocolsDiscoverServices(false)
-                    .tls(tlsMaterials.serverTls())
-                    .addProtocol(Http1Config.create())
-                    .routing(routing -> routing.post(VERSION_FALLBACK_PATH, (_, response) -> {
-                        http1RequestCount.incrementAndGet();
-                        versionFallbackObserved.countDown();
-                        response.send("fallback-ok");
-                    }))
-                    .build()
-                    .start();
+             }, routing -> routing.post(VERSION_FALLBACK_PATH, (_, response) -> {
+                 http1RequestCount.incrementAndGet();
+                 versionFallbackObserved.countDown();
+                 response.send("fallback-ok");
+             }))) {
+            WebClient client = WebClient.builder()
+                    .baseUri(server.baseUri())
+                    .shareConnectionCache(false)
+                    .proxy(Proxy.noProxy())
+                    .tls(server.clientTls())
+                    .addProtocolPreference(Http3Client.PROTOCOL_ID)
+                    .addProtocolPreference(Http1Client.PROTOCOL_ID)
+                    .addProtocolConfig(Http3ClientProtocolConfig.create())
+                    .build();
             try {
-                WebClient client = WebClient.builder()
-                        .baseUri(server.baseUri())
-                        .shareConnectionCache(false)
-                        .proxy(Proxy.noProxy())
-                        .tls(tlsMaterials.clientTls())
-                        .addProtocolPreference(Http3Client.PROTOCOL_ID)
-                        .addProtocolPreference(Http1Client.PROTOCOL_ID)
-                        .addProtocolConfig(Http3ClientProtocolConfig.create())
-                        .build();
-                try {
-                    try (HttpClientResponse response = client.post(VERSION_FALLBACK_PATH)
-                            .protocolId(Http3Client.PROTOCOL_ID)
-                            .submit("payload")) {
-                        assertThat(response.status(), is(Status.OK_200));
-                        assertThat(response.protocolId(), is(Http1Client.PROTOCOL_ID));
-                        assertThat(response.as(String.class), is("fallback-ok"));
-                    }
-                    try (HttpClientResponse response = client.get(VERSION_FALLBACK_REUSE_PATH)
-                            .protocolId(Http3Client.PROTOCOL_ID)
-                            .request()) {
-                        assertThat(response.status(), is(Status.OK_200));
-                        assertThat(response.protocolId(), is(Http3Client.PROTOCOL_ID));
-                        assertThat(response.as(String.class), is("same-connection"));
-                    }
-                    assertThat(http3RequestCount.get(), is(2));
-                    assertThat(http1RequestCount.get(), is(1));
-                } finally {
-                    client.closeResource();
+                try (HttpClientResponse response = client.post(VERSION_FALLBACK_PATH)
+                        .protocolId(Http3Client.PROTOCOL_ID)
+                        .submit("payload")) {
+                    assertThat(response.status(), is(Status.OK_200));
+                    assertThat(response.protocolId(), is(Http1Client.PROTOCOL_ID));
+                    assertThat(response.as(String.class), is("fallback-ok"));
                 }
+                try (HttpClientResponse response = client.get(VERSION_FALLBACK_REUSE_PATH)
+                        .protocolId(Http3Client.PROTOCOL_ID)
+                        .request()) {
+                    assertThat(response.status(), is(Status.OK_200));
+                    assertThat(response.protocolId(), is(Http3Client.PROTOCOL_ID));
+                    assertThat(response.as(String.class), is("same-connection"));
+                }
+                assertThat(http3RequestCount.get(), is(2));
+                assertThat(http1RequestCount.get(), is(1));
             } finally {
-                fallbackServer.stop();
+                client.closeResource();
             }
         }
     }
