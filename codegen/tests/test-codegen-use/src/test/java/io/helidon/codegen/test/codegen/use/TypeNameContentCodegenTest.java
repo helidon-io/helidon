@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -42,6 +43,8 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItem;
@@ -367,6 +370,48 @@ public class TypeNameContentCodegenTest {
 
         assertThat(source, containsString(".enclosingType(TypeName.create(\"" + enclosingType.fqName() + "\"))"));
         assertClassGenerated(result, "ElementInfo");
+    }
+
+    @ParameterizedTest
+    @MethodSource("annotationStrings")
+    void testAnnotationStringCompilesAndRoundTrips(String value) throws IOException, ReflectiveOperationException {
+        ClassModel classModel = ClassModel.builder()
+                .packageName(PACKAGE_NAME)
+                .name("AnnotatedString")
+                .addAnnotation(Annotation.builder()
+                                       .typeName(TypeName.create(Deprecated.class))
+                                       .property("since", value)
+                                       .build())
+                .build();
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addProcessor(new ContentProcessor(new GeneratedModel("AnnotatedString", classModel)))
+                .printDiagnostics(false)
+                .addSource("io/helidon/codegen/test/codegen/use/generated/Trigger.java", """
+                        package io.helidon.codegen.test.codegen.use.generated;
+
+                        final class Trigger {
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
+        URL[] urls = {result.classOutput().toUri().toURL()};
+        try (URLClassLoader loader = new URLClassLoader(urls, getClass().getClassLoader())) {
+            Class<?> generated = Class.forName(PACKAGE_NAME + ".AnnotatedString", true, loader);
+            assertThat(generated.getAnnotation(Deprecated.class).since(), is(value));
+        }
+    }
+
+    private static Stream<String> annotationStrings() {
+        return Stream.of("^a\rb$",
+                         "^a\r\nb$",
+                         "^a\nb$",
+                         "^\\Qa\rb\\E$",
+                         "(?x)^a\rb$",
+                         "(?x)^a#comment\rb$",
+                         "^a\\\rb$",
+                         "^a\tb\bc\fd\u0001$");
     }
 
     private static Annotation randomAnnotation() {

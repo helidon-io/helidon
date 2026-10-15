@@ -170,7 +170,7 @@ class ModelWriter extends Writer {
             write(str);
         } else {
             write("\"");
-            write(escape(str));
+            write(StringLiterals.escape(str));
             write("\"");
         }
     }
@@ -211,12 +211,6 @@ class ModelWriter extends Writer {
         write(identifier);
         write(".");
         write(constantValue.name());
-    }
-
-    private static String escape(String str) {
-        var escaped = str.replace("\\", "\\\\");
-        escaped = escaped.replace("\"", "\\\"");
-        return escaped;
     }
 
     private static String escape(Character ch) {
