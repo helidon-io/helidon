@@ -47,6 +47,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import static io.helidon.codegen.testing.CodegenMatchers.matches;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
@@ -375,8 +376,8 @@ public class TypeNameContentCodegenTest {
 
     @ParameterizedTest
     @MethodSource("annotationStrings")
-    void testAnnotationStringCompilesAndRoundTrips(String value, String annotationValue)
-            throws IOException, ReflectiveOperationException {
+    void testAnnotationStringGeneratesCompilableSource(String value, String expectedLiteral, String expectedAnnotationLiteral)
+            throws IOException {
         ClassModel classModel = ClassModel.builder()
                 .packageName(PACKAGE_NAME)
                 .name("AnnotatedString")
@@ -416,40 +417,46 @@ public class TypeNameContentCodegenTest {
                 .build()
                 .compile();
         assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
-        URL[] urls = {result.classOutput().toUri().toURL()};
-        try (URLClassLoader loader = new URLClassLoader(urls, getClass().getClassLoader())) {
-            Class<?> generated = Class.forName(PACKAGE_NAME + ".AnnotatedString", true, loader);
-            assertThat(generated.getAnnotation(Deprecated.class).since(), is(annotationValue));
-            assertThat(generated.getMethod("content").invoke(null), is(value));
-            Annotation metadata = (Annotation) generated.getMethod("metadata").invoke(null);
-            assertThat(metadata.stringValue("since").orElseThrow(), is(value));
-        }
+        assertThat(generatedSource(result, "AnnotatedString"), matches("""
+                //...
+                @Deprecated(since = "%s")
+                public class AnnotatedString {
+                //...
+                        return "%s";
+                //...
+                                .property("since", "%s")
+                //...
+                """.formatted(expectedAnnotationLiteral, expectedLiteral, expectedLiteral)));
+        assertClassGenerated(result, "AnnotatedString");
     }
 
     private static Stream<Arguments> annotationStrings() {
-        Stream<Arguments> rawValues = Stream.of("",
-                                               "plain",
-                                               "\"",
-                                               "a\"b",
-                                               "a\"\"\"b",
-                                               "\\u000d",
-                                               "^a\rb$",
-                                               "^a\r\nb$",
-                                               "^a\nb$",
-                                               "^\\Qa\rb\\E$",
-                                               "(?x)^a\rb$",
-                                               "(?x)^a#comment\rb$",
-                                               "^a\\\rb$",
-                                               "^a\tb\bc\fd\u0001$",
-                                               new String(new char[] {0, 1, 7, 8, 9, 10, 11, 12, 13, 26, 31, 127, 133, 159}),
-                                               "\ud83d\ude00",
-                                               "x\ud800y",
-                                               "x\udc00y",
-                                               "x\u2028y\u2029z")
-                .map(value -> Arguments.of(value, value));
-        return Stream.concat(rawValues,
-                             Stream.of(Arguments.of("\"source\\nquoted\"", "source\nquoted"),
-                                       Arguments.of("\"\"", "")));
+        return Stream.of(literalCase("", ""),
+                         literalCase("plain", "plain"),
+                         literalCase("\"", "\\\""),
+                         literalCase("a\"b", "a\\\"b"),
+                         literalCase("a\"\"\"b", "a\\\"\\\"\\\"b"),
+                         literalCase("\\u000d", "\\\\u000d"),
+                         literalCase("^a\rb$", "^a\\rb$"),
+                         literalCase("^a\r\nb$", "^a\\r\\nb$"),
+                         literalCase("^a\nb$", "^a\\nb$"),
+                         literalCase("^\\Qa\rb\\E$", "^\\\\Qa\\rb\\\\E$"),
+                         literalCase("(?x)^a\rb$", "(?x)^a\\rb$"),
+                         literalCase("(?x)^a#comment\rb$", "(?x)^a#comment\\rb$"),
+                         literalCase("^a\\\rb$", "^a\\\\\\rb$"),
+                         literalCase("^a\tb\bc\fd\u0001$", "^a\\tb\\bc\\fd\\u0001$"),
+                         literalCase(new String(new char[] {0, 1, 7, 8, 9, 10, 11, 12, 13, 26, 31, 127, 133, 159}),
+                                     "\\u0000\\u0001\\u0007\\b\\t\\n\\u000b\\f\\r\\u001a\\u001f\u007f\u0085\u009f"),
+                         literalCase("\ud83d\ude00", "\\ud83d\\ude00"),
+                         literalCase("x\ud800y", "x\\ud800y"),
+                         literalCase("x\udc00y", "x\\udc00y"),
+                         literalCase("x\u2028y\u2029z", "x\u2028y\u2029z"),
+                         Arguments.of("\"source\\nquoted\"", "\\\"source\\\\nquoted\\\"", "source\\nquoted"),
+                         Arguments.of("\"\"", "\\\"\\\"", ""));
+    }
+
+    private static Arguments literalCase(String value, String expectedLiteral) {
+        return Arguments.of(value, expectedLiteral, expectedLiteral);
     }
 
     private static Annotation randomAnnotation() {
