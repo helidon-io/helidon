@@ -160,8 +160,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             outputStream.status(status);
         }
 
-        // check consistency if status code should not include entity
-        if (isNoEntityStatus) {
+        // Normalize 205 only when sending, so a later status change does not retain a generated zero length.
+        if (isNoEntityStatus && status.code() != Status.RESET_CONTENT_205.code()) {
             normalizeNoEntityHeaders(headers, status);
         }
         return this;
@@ -644,11 +644,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         void status(Status status) {
             Status previousWriteForbiddenStatus = writeForbiddenStatus;
             writeForbiddenStatus = isNoEntityStatus(status) ? status : null;
-            if (previousWriteForbiddenStatus != null
-                    && previousWriteForbiddenStatus.code() == Status.RESET_CONTENT_205.code()
-                    && status.code() != Status.RESET_CONTENT_205.code()) {
-                headers.remove(HeaderNames.CONTENT_LENGTH);
-            }
             if (previousWriteForbiddenStatus != null && writeForbiddenStatus == null) {
                 checkResponseHeaders();
             }
