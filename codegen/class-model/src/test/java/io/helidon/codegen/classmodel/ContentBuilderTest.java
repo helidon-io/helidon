@@ -59,6 +59,14 @@ class ContentBuilderTest {
         var c = new TestContentBuilder();
         c.addContentLiteral("test string with\n lines");
 
-        assertThat(c.generatedString(), is("    \"\"\"\ntest string with\n lines\"\"\""));
+        assertThat(c.generatedString(), is("    \"test string with\\n lines\""));
+    }
+
+    @Test
+    void testAddContentLiteralCarriageReturn() {
+        var c = new TestContentBuilder();
+        c.addContentLiteral("^a\rb$");
+
+        assertThat(c.generatedString(), is("    \"^a\\rb$\""));
     }
 }
