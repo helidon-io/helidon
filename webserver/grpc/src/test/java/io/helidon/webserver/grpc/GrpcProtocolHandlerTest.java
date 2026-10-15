@@ -626,6 +626,74 @@ class GrpcProtocolHandlerTest {
     }
 
     @Test
+    void testExistingConnectionWriterFailureDuringTrailersCancelsListenerOnce() {
+        var socket = new FailingTrailerSocket();
+        var socketWriter = SocketWriter.create(EXECUTOR, socket, 2, false);
+        var writer = new Http2ConnectionWriter(socket, socketWriter, List.of());
+        var callReference = new AtomicReference<ServerCall<String, String>>();
+        var cancellations = new AtomicInteger();
+        var completions = new AtomicInteger();
+        var cancelledContext = new AtomicReference<Context>();
+        var connection = ConnectionFlowControl.serverBuilder((_, _) -> { }).build();
+        var flowControl = connection.createStreamFlowControl(1, 65535, 16384);
+        var siblingFlowControl = connection.createStreamFlowControl(3, 65535, 16384);
+        var handler = deadlineHandler("1H", (call, _) -> {
+            callReference.set(call);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onCancel() {
+                    cancellations.incrementAndGet();
+                    cancelledContext.set(Context.current());
+                }
+
+                @Override
+                public void onComplete() {
+                    completions.incrementAndGet();
+                }
+            };
+        }, writer, stringMethodDescriptor(), flowControl);
+        try {
+            handler.init();
+            var call = callReference.get();
+            call.sendHeaders(new Metadata());
+            var initialHeaders = Http2FrameHeader.create(socket.output);
+            assertThat("initial response headers reach the socket", initialHeaders.type(), is(Http2FrameType.HEADERS));
+            assertThat("initial response headers belong to the live service call", initialHeaders.streamId(), is(1));
+            assertThat("initial response headers leave the stream open",
+                       initialHeaders.flags(Http2FrameTypes.HEADERS).endOfStream(), is(false));
+            socket.failWrites = true;
+            var physicalFailure = assertThrows(SocketWriterException.class,
+                                               () -> writer.writeHeaders(Http2Headers.create(WritableHeaders.create()),
+                                                                         3,
+                                                                         Http2Flag.HeaderFlags.create(4),
+                                                                         siblingFlowControl.outbound()));
+            assertThat("a sibling stream first encounters the physical socket failure",
+                       physicalFailure.getCause(), sameInstance(socket.failure));
+
+            var failure = assertThrows(IllegalStateException.class, () -> call.close(Status.OK, new Metadata()));
+
+            assertThat("the existing connection writer failure survives trailer publication",
+                       failure.getCause(), sameInstance(physicalFailure));
+            assertThat("failed trailers cannot complete the service call", completions.get(), is(0));
+            assertThat("failed trailers cancel the service call once", cancellations.get(), is(1));
+            assertThat("the cancellation callback sees a cancelled Context", cancelledContext.get().isCancelled(), is(true));
+            assertThat("transport failure preserves call cancellation", call.isCancelled(), is(true));
+            handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+            handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+            call.close(Status.OK, new Metadata());
+            call.close(Status.OK, new Metadata());
+            handler.streamFinished();
+            handler.streamFinished();
+            handler.close();
+            assertThat("late reset, close and stream finish cannot duplicate cancellation", cancellations.get(), is(1));
+            assertThat("late reset, close and stream finish cannot produce completion", completions.get(), is(0));
+        } finally {
+            handler.close();
+            socketWriter.close();
+        }
+    }
+
+    @Test
     void testNormalStreamCleanupDuringTrailersPreservesCompletion() throws Exception {
         terminalWriteWithTransportClose(false, false);
     }

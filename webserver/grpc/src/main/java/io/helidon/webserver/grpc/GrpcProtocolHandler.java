@@ -34,7 +34,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.socket.SocketWriterException;
 import io.helidon.grpc.core.GrpcHeadersUtil;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
@@ -1204,7 +1203,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 } catch (CloseConnectionException e) {
                     callCancelled = true;
                     callState.set(CallState.CANCELLED);
-                } catch (SocketWriterException e) {
+                } catch (RuntimeException | Error e) {
                     callCancelled = true;
                     callState.set(CallState.CANCELLED);
                     throw e;
