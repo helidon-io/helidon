@@ -191,6 +191,18 @@ class ShutdownOrderTest {
         }
     }
 
+    interface GraphBranch {
+        void use();
+    }
+
+    interface ChainContract {
+        void use();
+    }
+
+    interface DriverContract {
+        void use();
+    }
+
     @Service.Singleton
     static class Connection {
         private final List<String> events = new ArrayList<>();
@@ -321,10 +333,6 @@ class ShutdownOrderTest {
         }
     }
 
-    interface GraphBranch {
-        void use();
-    }
-
     @Service.Singleton
     @Service.RunLevel(Service.RunLevel.NORMAL + 2)
     static class GraphLeft {
@@ -416,17 +424,14 @@ class ShutdownOrderTest {
         }
     }
 
-    interface ChainContract {
-        void use();
-    }
-
     abstract static class SharedChain implements ChainContract {
+        private final String label;
+
         @Service.Inject
         Optional<ChainContract> next;
         @Service.Inject
         GraphState state;
 
-        private final String label;
         private boolean open = true;
 
         SharedChain(String label) {
@@ -471,10 +476,6 @@ class ShutdownOrderTest {
         ChainC() {
             super("C");
         }
-    }
-
-    interface DriverContract {
-        void use();
     }
 
     @Service.Singleton

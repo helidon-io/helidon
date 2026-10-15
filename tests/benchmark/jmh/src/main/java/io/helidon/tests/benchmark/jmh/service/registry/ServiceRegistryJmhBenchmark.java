@@ -127,6 +127,17 @@ public class ServiceRegistryJmhBenchmark {
     }
 
     /**
+     * Resolve a new consumer that injects a new per-lookup dependency.
+     *
+     * @param state registry shared by all benchmark threads
+     * @return the newly created consumer
+     */
+    @Benchmark
+    public PerLookupConsumer getPerLookupConsumerWithPerLookupDependency(PerLookupDependencyState state) {
+        return state.registry.get(PerLookupConsumer.class);
+    }
+
+    /**
      * Construct and shut down a registry containing a singleton dependency chain.
      *
      * @param state isolated lifecycle configuration
@@ -308,6 +319,43 @@ public class ServiceRegistryJmhBenchmark {
     }
 
     /**
+     * Registry shared by threads resolving consumers with per-lookup dependencies.
+     */
+    @State(Scope.Benchmark)
+    public static class PerLookupDependencyState {
+        private ServiceRegistryManager manager;
+        private ServiceRegistry registry;
+
+        /**
+         * Initialize the registry and verify fresh consumers and dependencies.
+         */
+        @Setup(Level.Trial)
+        public void setUp() {
+            manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                           .discoverServices(false)
+                                                           .discoverServicesFromServiceLoader(false)
+                                                           .addServiceDescriptor(
+                                                                   new ConnectionDescriptor(Service.PerLookup.TYPE))
+                                                           .addServiceDescriptor(new PerLookupConsumerDescriptor())
+                                                           .build());
+            registry = manager.registry();
+            PerLookupConsumer first = registry.get(PerLookupConsumer.class);
+            PerLookupConsumer second = registry.get(PerLookupConsumer.class);
+            if (first == second || first.connection == second.connection) {
+                throw new IllegalStateException("Per-lookup consumers must inject fresh per-lookup connections");
+            }
+        }
+
+        /**
+         * Shut down the shared registry.
+         */
+        @TearDown(Level.Trial)
+        public void tearDown() {
+            manager.shutdown();
+        }
+    }
+
+    /**
      * Per-thread configuration for isolated lifecycle measurements.
      */
     @State(Scope.Thread)
@@ -447,8 +495,20 @@ public class ServiceRegistryJmhBenchmark {
     }
 
     private static final class ConnectionDescriptor extends LifecycleDescriptor<Connection> {
+        private final TypeName scope;
+
         private ConnectionDescriptor() {
+            this(Service.Singleton.TYPE);
+        }
+
+        private ConnectionDescriptor(TypeName scope) {
             super(Connection.class, ConnectionDescriptor.class, null);
+            this.scope = scope;
+        }
+
+        @Override
+        public TypeName scope() {
+            return scope;
         }
 
         @Override
