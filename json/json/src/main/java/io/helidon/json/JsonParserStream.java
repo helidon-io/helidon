@@ -932,7 +932,7 @@ final class JsonParserStream extends JsonParserBase {
             currentIndex++;
         }
         if (currentIndex >= bufferLength) {
-            fetchData();
+            fetchDoubleData();
             if (currentIndex >= bufferLength) {
                 throw createException("Empty number");
             }
@@ -1007,7 +1007,7 @@ final class JsonParserStream extends JsonParserBase {
                 }
                 currentIndex++;
                 if (currentIndex == bufferLength) {
-                    fetchData();
+                    fetchDoubleData();
                 }
             } else if (b == '.') {
                 if (hasDecimal) {
@@ -1016,7 +1016,7 @@ final class JsonParserStream extends JsonParserBase {
                 hasDecimal = true;
                 currentIndex++;
                 if (currentIndex == bufferLength) {
-                    fetchData();
+                    fetchDoubleData();
                 }
             } else {
                 currentIndex--;
@@ -1036,6 +1036,7 @@ final class JsonParserStream extends JsonParserBase {
 
         // Calculate the base decimal exponent
         int decimalExponent = 0;
+        boolean exponentTooLarge = false;
         if (digitsBeforeDecimal > 0) {
             // 123.456 -> mantissa=123456, digitsBeforeDecimal=3, significantDigits=6 -> Base exponent -3
             decimalExponent = digitsBeforeDecimal - significantDigits;
@@ -1062,31 +1063,32 @@ final class JsonParserStream extends JsonParserBase {
                     throw createException("Missing exponent value");
                 }
                 if (currentIndex == bufferLength) {
-                    fetchData();
+                    fetchDoubleData();
                 }
 
                 int digit = -1;
                 boolean foundExponentValue = false;
                 while ((currentIndex < bufferLength) && (digit = WHOLE_NUMBER_PARTS[buffer[currentIndex] & 0xFF]) > -1) {
-                    explicitExp = explicitExp * 10 + digit;
-                    if (explicitExp > 1000) {
-                        break;
+                    if (!exponentTooLarge) {
+                        explicitExp = explicitExp * 10 + digit;
+                        exponentTooLarge = explicitExp > 1000;
                     }
                     currentIndex++;
                     if (currentIndex == bufferLength && !finished) {
-                        fetchData();
+                        fetchDoubleData();
                     }
                     foundExponentValue = true;
                 }
                 if (!foundExponentValue) {
                     throw createException("Exponent did not have a value specified");
                 }
-                if (digit == -1) {
+                if (digit < 0) {
                     b = buffer[currentIndex];
                     if (b == 'e' || b == 'E' || b == '.') {
                         throw createException("Duplicit exponent or decimal point detected");
                     }
                 }
+                currentIndex--;
                 decimalExponent += expNegative ? -explicitExp : explicitExp;
             } else {
                 //Other character than "e" detected
@@ -1103,7 +1105,9 @@ final class JsonParserStream extends JsonParserBase {
             return negative ? -0.0 : 0.0;
         }
 
-        if (decimalExponent >= POW10_DOUBLE_CACHE_SIZE || decimalExponent <= -POW10_DOUBLE_CACHE_SIZE) {
+        if (exponentTooLarge
+                || decimalExponent >= POW10_DOUBLE_CACHE_SIZE
+                || decimalExponent <= -POW10_DOUBLE_CACHE_SIZE) {
             skipNumber();
             bufferingJsonValue = false;
             // Delegate to Java for exact result
@@ -2546,5 +2550,12 @@ final class JsonParserStream extends JsonParserBase {
                 finished = false;
             }
         }
+    }
+
+    private void fetchDoubleData() {
+        // Compaction leaves the cursor on the last retained byte; continue at the next unread byte.
+        int valueOffset = currentIndex - jsonValueStart;
+        fetchData();
+        currentIndex = jsonValueStart + valueOffset;
     }
 }
