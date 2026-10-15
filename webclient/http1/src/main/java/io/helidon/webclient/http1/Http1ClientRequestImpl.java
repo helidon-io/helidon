@@ -593,15 +593,20 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
             responseRequestHeaders.first(HeaderNames.HOST)
                     .ifPresent(value -> delegateHeaders.set(HeaderValues.create(HeaderNames.HOST, value)));
         }
+        WebClientServiceResponse rawServiceResponse = callChain.rawServiceResponse();
+        ClientConnection responseConnection = null;
+        if (rawServiceResponse != null) {
+            responseConnection = rawServiceResponse.connection() instanceof ClientConnection transportConnection
+                    ? transportConnection
+                    : callChain.connection();
+        }
         Http1ClientResponseImpl response = new Http1ClientResponseImpl(clientConfig(),
                                                                        http1Client().protocolConfig(),
                                                                        serviceResponse.status(),
                                                                        serviceResponse.serviceRequest().method(),
                                                                        responseRequestHeaders,
                                                                        serviceResponse.headers(),
-                                                                       callChain.rawServiceResponse() == null
-                                                                               ? null
-                                                                               : callChain.connection(),
+                                                                       responseConnection,
                                                                        serviceResponse.inputStream().orElse(null),
                                                                        mediaContext(),
                                                                        finalizedEndpointUri(),
