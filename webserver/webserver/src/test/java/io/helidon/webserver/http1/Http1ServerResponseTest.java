@@ -579,8 +579,10 @@ class Http1ServerResponseTest {
         String responseText = responseText(responseBuffer);
         assertAll(
                 () -> assertThat(responseText, startsWith("HTTP/1.1 " + status + "\r\n")),
-                () -> assertThat(responseText.contains("Content-Length: 6\r\n"), is(explicitLength)),
-                () -> assertThat(responseText.contains("Transfer-Encoding: chunked\r\n"), is(!explicitLength)),
+                () -> assertThat(responseText, explicitLength
+                        ? containsString("Content-Length: 6\r\n") : not(containsString("Content-Length:"))),
+                () -> assertThat(responseText, explicitLength
+                        ? not(containsString("Transfer-Encoding:")) : containsString("Transfer-Encoding: chunked\r\n")),
                 () -> assertThat(responseText, endsWith(explicitLength
                                                               ? "\r\n\r\nentity" : "\r\n\r\n6\r\nentity\r\n0\r\n\r\n"))
         );
