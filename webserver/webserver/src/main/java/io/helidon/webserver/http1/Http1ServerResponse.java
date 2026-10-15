@@ -153,8 +153,14 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         if (outputStream != null && outputStream.totalBytesWritten() > 0) {
             throw new IllegalStateException("Cannot set response status after response was already sent.");
         }
+        Status previousStatus = status();
         // set internal state
         super.status(status);
+        if (previousStatus.code() == Status.RESET_CONTENT_205.code()
+                && status.code() != Status.RESET_CONTENT_205.code()
+                && headers.contentLength().orElse(-1) == 0) {
+            headers.remove(HeaderNames.CONTENT_LENGTH);
+        }
         isNoEntityStatus = isNoEntityStatus(status);
         if (outputStream != null) {
             outputStream.status(status);
@@ -644,11 +650,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         void status(Status status) {
             Status previousWriteForbiddenStatus = writeForbiddenStatus;
             writeForbiddenStatus = isNoEntityStatus(status) ? status : null;
-            if (previousWriteForbiddenStatus != null
-                    && previousWriteForbiddenStatus.code() == Status.RESET_CONTENT_205.code()
-                    && status.code() != Status.RESET_CONTENT_205.code()) {
-                headers.remove(HeaderNames.CONTENT_LENGTH);
-            }
             if (previousWriteForbiddenStatus != null && writeForbiddenStatus == null) {
                 checkResponseHeaders();
             }

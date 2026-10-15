@@ -521,6 +521,84 @@ class Http1ServerResponseTest {
         }
     }
 
+    @ParameterizedTest
+    @ValueSource(ints = {200, 400, 404, 500})
+    void earlyEntityStatusClearsEarlierResetContentLength(int code) throws IOException {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create());
+        response.status(Status.RESET_CONTENT_205);
+        response.status(Status.create(code));
+        OutputStream output = response.outputStream();
+        response.flushHeaders();
+        output.write("entity".getBytes(StandardCharsets.UTF_8));
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String text = responseText(responseBuffer);
+        assertThat(text, containsString("HTTP/1.1 " + code));
+        assertThat(text, containsString("Transfer-Encoding: chunked\r\n"));
+        assertThat(text, containsString("\r\nentity\r\n"));
+        assertThat(text, endsWith("0\r\n\r\n"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {200, 400, 404, 500})
+    void directEntityStatusClearsEarlierResetContentLength(int code) {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create());
+        response.status(Status.RESET_CONTENT_205);
+        response.status(Status.create(code));
+        response.send("entity".getBytes(StandardCharsets.UTF_8));
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String text = responseText(responseBuffer);
+        assertThat(text, containsString("HTTP/1.1 " + code));
+        assertThat(text, containsString("Content-Length: 6\r\n"));
+        assertThat(text, endsWith("\r\n\r\nentity"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void entityStatusPreservesExplicitPositiveLength(boolean requestStreamFirst) throws IOException {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create());
+        response.status(Status.RESET_CONTENT_205);
+        response.contentLength(6);
+        if (requestStreamFirst) {
+            OutputStream output = response.outputStream();
+            response.status(Status.OK_200);
+            output.write("entity".getBytes(StandardCharsets.UTF_8));
+            response.commit();
+        } else {
+            response.status(Status.OK_200);
+            response.send("entity".getBytes(StandardCharsets.UTF_8));
+        }
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String text = responseText(responseBuffer);
+        assertThat(text, containsString("Content-Length: 6\r\n"));
+        assertThat(text, endsWith("\r\n\r\nentity"));
+    }
+
+    @Test
+    void earlyEntityStatusClearsResetLengthThroughNotModified() {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create());
+        response.status(Status.RESET_CONTENT_205);
+        response.status(Status.NOT_MODIFIED_304);
+        response.status(Status.OK_200);
+        response.send("entity".getBytes(StandardCharsets.UTF_8));
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String text = responseText(responseBuffer);
+        assertThat(text, containsString("Content-Length: 6\r\n"));
+        assertThat(text, endsWith("\r\n\r\nentity"));
+    }
+
     @Test
     void lateEntityStatusClearsEarlierResetContentLength() throws IOException {
         ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
