@@ -53,6 +53,12 @@
                     <source>${version.java}</source>
                     <doclint>all</doclint>
                     <quiet>true</quiet>
+                    <additionalOptions>
+                        <option>-tag</option>
+                        <option>'implSpec:a:Implementation Requirements:'</option>
+                        <option>-tag</option>
+                        <option>'implNote:a:Implementation Note:'</option>
+                    </additionalOptions>
                     <windowtitle>Helidon Project ${project.version} API</windowtitle>
                     <doctitle>Helidon Project ${project.version} API</doctitle>
                     <!--suppress UnresolvedMavenProperty -->

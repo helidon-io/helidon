@@ -843,16 +843,22 @@ class Http3DiscoveryTest {
 
     @Test
     void shouldKeepOnlyPersistentAdvertisementAfterNetworkChange() {
-        try (RequestContext context = RequestContext.create("https://example.com:8453")) {
+        MutableClock clock = new MutableClock(START);
+        try (RequestContext context = RequestContext.create("https://example.com:8453", clock)) {
             Http3Discovery discovery = context.discovery();
             recordAltSvc(discovery, context, altSvc("h3=\":9453\"; persist=1"));
             Http3Discovery.Selection alternative = automaticTarget(discovery, context).orElseThrow();
             discovery.recordFailure(alternative);
 
+            clock.advance(Duration.ofSeconds(1));
             discovery.networkChanged();
             assertThat(learnedTarget(discovery, context).peerPort(), is(9453));
 
+            clock.advance(Duration.ofSeconds(1));
             recordAltSvc(discovery, context, altSvc("h3=\":9454\""));
+            assertThat(learnedTarget(discovery, context).peerPort(), is(9454));
+
+            clock.advance(Duration.ofSeconds(1));
             discovery.networkChanged();
             assertThat(automaticTarget(discovery, context).isEmpty(), is(true));
         }

@@ -75,7 +75,7 @@ class ReasonPhraseTest {
         socket.bind(new InetSocketAddress("localhost", 0));
 
         client = WebClient.builder()
-                .keepAlive(true)
+                .keepAlive(false)
                 .readTimeout(Duration.ofSeconds(1))
                 .baseUri("http://localhost:" + socket.getLocalPort())
                 .build();
@@ -175,8 +175,7 @@ class ReasonPhraseTest {
 
                 writeLine(customStatusLine, os);
                 writeLine("Content-Type: text/plain;charset=UTF-8", os);
-                writeLine("Keep-Alive: timeout=20", os);
-                writeLine("Connection: keep-alive", os);
+                writeLine("Connection: close", os);
                 writeLine("", os);
                 os.flush();
             } catch (Exception e) {

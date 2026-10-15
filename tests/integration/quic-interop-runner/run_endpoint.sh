@@ -87,5 +87,8 @@ exec > >(tee -a "${SERVER_LOG_FILE}") 2>&1
 log "Starting Helidon HTTP/3 interop server."
 log "ROLE=${role} TESTCASE=${testcase}"
 
+# Split whitespace-separated options without expanding filename patterns.
+set -f
+# shellcheck disable=SC2086
 exec java ${JAVA_OPTS:-} \
     -jar "${APP_JAR}"
