@@ -918,10 +918,13 @@ class Http3DiscoveryTest {
 
     @Test
     void shouldRemoveOnlyCurrentAlternativeAfterMisdirectedResponse() {
-        try (RequestContext context = RequestContext.create("https://example.com:8454")) {
+        MutableClock clock = new MutableClock(START);
+        try (RequestContext context = RequestContext.create("https://example.com:8454", clock)) {
             Http3Discovery discovery = context.discovery();
             recordAltSvc(discovery, context, altSvc("h3=\":9454\""));
             Http3Discovery.Selection old = automaticTarget(discovery, context).orElseThrow();
+
+            clock.advance(Duration.ofSeconds(1));
             recordAltSvc(discovery, context, altSvc("h3=\":9455\""));
 
             discovery.recordMisdirected(old);
