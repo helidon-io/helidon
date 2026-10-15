@@ -264,8 +264,15 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     }
 
     @Override
-    boolean requestWritesComplete() {
-        return requestWritesComplete;
+    boolean canCloseGracefully() {
+        writerLock.lock();
+        try {
+            // Terminal status is already recorded, so scheduleWriter cannot admit another task.
+            // Request END_STREAM alone does not rule out a heartbeat holding the connection writer.
+            return requestWritesComplete && !writerScheduled;
+        } finally {
+            writerLock.unlock();
+        }
     }
 
     @Override
@@ -342,7 +349,7 @@ class GrpcClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
             if (clientStream() == null) {
                 return;
             }
-            if (closed.get()) {
+            if (closed.get() || isClosed()) {
                 sendingQueue.clear();
                 queuedBytes.set(0);
                 return;

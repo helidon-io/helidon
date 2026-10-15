@@ -62,6 +62,142 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Timeout(20)
 class GrpcClientBackpressureTest {
     @ParameterizedTest
+    @EnumSource(HeartbeatOutcome.class)
+    void successfulResponseCompletesAfterRequestEndWithBlockedHeartbeat(HeartbeatOutcome outcome) throws Exception {
+        var transport = new CompletableFuture<BlockingConnection>();
+        var accepted = new CompletableFuture<Socket>();
+        var headersReceived = new CompletableFuture<Void>();
+        var requestEnded = new CompletableFuture<Void>();
+        var respond = new CompletableFuture<Void>();
+        var status = new CompletableFuture<Status>();
+        var trailers = new CompletableFuture<Metadata>();
+        var closeCount = new AtomicInteger();
+        var executor = Executors.newSingleThreadExecutor();
+        var peerExecutor = Executors.newVirtualThreadPerTaskExecutor();
+        try (executor;
+             peerExecutor;
+             var listening = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))) {
+            listening.setSoTimeout(5000);
+            var peer = peerExecutor.submit(() -> {
+                try (Socket socket = listening.accept()) {
+                    accepted.complete(socket);
+                    socket.setSoTimeout(15000);
+                    var output = socket.getOutputStream();
+                    output.write(new byte[] {0, 0, 0, 4, 0, 0, 0, 0, 0});
+                    InputStream input = socket.getInputStream();
+                    readInitialHeaders(input);
+                    headersReceived.complete(null);
+                    boolean endOfStream = false;
+                    while (!endOfStream) {
+                        byte[] bytes = input.readNBytes(Http2FrameHeader.LENGTH);
+                        assertThat("complete request frame header", bytes.length, is(Http2FrameHeader.LENGTH));
+                        Http2FrameHeader frame = Http2FrameHeader.create(BufferData.create(bytes));
+                        assertThat("complete request frame payload", input.readNBytes(frame.length()).length,
+                                   is(frame.length()));
+                        endOfStream = frame.type() == Http2FrameType.DATA
+                                && frame.flags(Http2FrameTypes.DATA).endOfStream();
+                    }
+                    requestEnded.complete(null);
+                    respond.get(5, TimeUnit.SECONDS);
+                    var headers = BufferData.create(256);
+                    headers.writeInt8(0x88); // HPACK static :status 200
+                    writeLiteralHeader(headers, "content-type", "application/grpc");
+                    writeLiteralHeader(headers, "grpc-status", "0");
+                    writeLiteralHeader(headers, "grpc-message", "completed");
+                    writeLiteralHeader(headers, "response-detail", "custom trailers");
+                    output.write(new byte[] {0, 0, (byte) headers.available(), 1, 5, 0, 0, 0, 1});
+                    headers.writeTo(output);
+                    output.flush();
+                    // Retain TCP until client cleanup, including while the heartbeat cannot write.
+                    return input.readAllBytes();
+                } catch (Throwable t) {
+                    headersReceived.completeExceptionally(t);
+                    requestEnded.completeExceptionally(t);
+                    throw t;
+                }
+            });
+            var client = GrpcClient.builder()
+                    .baseUri("http://127.0.0.1:" + listening.getLocalPort())
+                    .tls(tls -> tls.enabled(false))
+                    .executor(executor)
+                    .protocolConfig(config -> config.heartbeatPeriod(outcome == HeartbeatOutcome.BLOCKED
+                                                                            ? Duration.ofMillis(20) : Duration.ZERO))
+                    .readTimeout(Duration.ofSeconds(10))
+                    .build();
+            var method = descriptor().toBuilder().setType(MethodDescriptor.MethodType.BIDI_STREAMING).build();
+            var call = new GrpcClientCall<byte[], byte[]>((GrpcChannel) client.channel(), method, CallOptions.DEFAULT) {
+                @Override
+                protected ClientConnection clientConnection(ClientUri uri, String authority) {
+                    var connection = new BlockingConnection(super.clientConnection(uri, authority));
+                    transport.complete(connection);
+                    return connection;
+                }
+            };
+            try {
+                call.start(new ClientCall.Listener<>() {
+                    @Override
+                    public void onClose(Status result, Metadata metadata) {
+                        closeCount.incrementAndGet();
+                        trailers.complete(metadata);
+                        status.complete(result);
+                    }
+                }, new Metadata());
+                headersReceived.get(5, TimeUnit.SECONDS);
+                call.request(1);
+                call.sendMessage(new byte[32]);
+                call.halfClose();
+                requestEnded.get(5, TimeUnit.SECONDS);
+                BlockingConnection connection = transport.get(5, TimeUnit.SECONDS);
+                if (outcome == HeartbeatOutcome.BLOCKED) {
+                    // Arm only after the peer observes END_STREAM: no request DATA can hit this gate.
+                    connection.blockHeartbeatWrites = true;
+                    Thread writer = connection.writeStarted.get(5, TimeUnit.SECONDS);
+                    assertThat("the configured platform executor owns the blocked heartbeat", writer.isVirtual(), is(false));
+                    assertThat("the heartbeat remains blocked before the response", connection.transportClosed.isDone(), is(false));
+                } else {
+                    // END_STREAM has reached the peer; this queued task also proves the writer task has exited.
+                    executor.submit(() -> { }).get(5, TimeUnit.SECONDS);
+                }
+                respond.complete(null);
+                Status result = status.get(5, TimeUnit.SECONDS);
+                assertThat(result.getCode(), is(Status.Code.OK));
+                assertThat(result.getDescription(), is("completed"));
+                assertThat(trailers.get(5, TimeUnit.SECONDS)
+                                   .get(Metadata.Key.of("response-detail", Metadata.ASCII_STRING_MARSHALLER)),
+                           is("custom trailers"));
+                if (outcome == HeartbeatOutcome.BLOCKED) {
+                    assertThat("transport close releases the blocked heartbeat", connection.transportClosed.isDone(), is(true));
+                }
+                byte[] closingFrames = peer.get(5, TimeUnit.SECONDS);
+                boolean gracefulClose = false;
+                var frames = BufferData.create(closingFrames);
+                while (frames.available() >= Http2FrameHeader.LENGTH) {
+                    Http2FrameHeader frame = Http2FrameHeader.create(frames);
+                    if (frame.type() == Http2FrameType.GO_AWAY) {
+                        gracefulClose = true;
+                    }
+                    frames.skip(frame.length());
+                }
+                assertThat("idle completion retains graceful GOAWAY; a blocked heartbeat requires transport abort",
+                           gracefulClose, is(outcome == HeartbeatOutcome.IDLE));
+                call.cancel("repeated close", null);
+                assertThat(closeCount.get(), is(1));
+            } finally {
+                respond.complete(null);
+                if (transport.isDone()) {
+                    transport.join().closeResource();
+                }
+                if (accepted.isDone()) {
+                    accepted.join().close();
+                }
+                call.cancel("test cleanup", null);
+            }
+        }
+        assertThat("all configured executor tasks have terminated", executor.isTerminated(), is(true));
+        assertThat("all peer executor tasks have terminated", peerExecutor.isTerminated(), is(true));
+    }
+
+    @ParameterizedTest
     @EnumSource(ResponseOutcome.class)
     void serverResponseAbortsTransportBeforeWaitingForBlockedStreamingWriter(ResponseOutcome outcome) throws Exception {
         var nanos = new AtomicLong();
@@ -359,6 +495,11 @@ class GrpcClientBackpressureTest {
         UNAVAILABLE
     }
 
+    private enum HeartbeatOutcome {
+        BLOCKED,
+        IDLE
+    }
+
     private static final class BlockingConnection implements ClientConnection {
         private final ClientConnection delegate;
         private final DataWriter writer;
@@ -366,6 +507,7 @@ class GrpcClientBackpressureTest {
         private final CompletableFuture<Void> transportClosed = new CompletableFuture<>();
 
         private volatile boolean blockWrites;
+        private volatile boolean blockHeartbeatWrites;
 
         private BlockingConnection(ClientConnection delegate) {
             this.delegate = delegate;
@@ -373,25 +515,25 @@ class GrpcClientBackpressureTest {
             this.writer = new DataWriter() {
                 @Override
                 public void write(BufferData... buffers) {
-                    awaitWritable();
+                    awaitWritable(buffers);
                     delegateWriter.write(buffers);
                 }
 
                 @Override
                 public void write(BufferData buffer) {
-                    awaitWritable();
+                    awaitWritable(buffer);
                     delegateWriter.write(buffer);
                 }
 
                 @Override
                 public void writeNow(BufferData... buffers) {
-                    awaitWritable();
+                    awaitWritable(buffers);
                     delegateWriter.writeNow(buffers);
                 }
 
                 @Override
                 public void writeNow(BufferData buffer) {
-                    awaitWritable();
+                    awaitWritable(buffer);
                     delegateWriter.writeNow(buffer);
                 }
 
@@ -437,8 +579,11 @@ class GrpcClientBackpressureTest {
             }
         }
 
-        private void awaitWritable() {
-            if (blockWrites) {
+        private void awaitWritable(BufferData... buffers) {
+            boolean heartbeat = buffers.length > 0
+                    && buffers[0].available() >= Http2FrameHeader.LENGTH
+                    && buffers[0].get(3) == 6; // HTTP/2 PING frame type
+            if (blockWrites || (blockHeartbeatWrites && heartbeat)) {
                 writeStarted.complete(Thread.currentThread());
                 // Model TCP backpressure while the HTTP/2 writer owns its lock. Closing the
                 // underlying transport releases the write without interrupting the application.
