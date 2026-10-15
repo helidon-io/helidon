@@ -47,6 +47,7 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
     private final DeliveryEngine deliveryEngine;
     private final String channelName;
     private final DefaultMessagingGraph graph;
+    private final MessagingMetrics.Recorder recorder;
 
     private DefaultMessagingChannel(GenericType<T> payloadType,
                                     List<Consumer<MessageBatch<?>>> validators,
@@ -60,6 +61,7 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
         this.deliveryEngine = deliveryEngine;
         this.channelName = channelName;
         this.graph = graph;
+        this.recorder = graph.recorder(channelName);
     }
 
     static Runnable streamSource(Stream<?> stream, Consumer<Object> consumer) {
@@ -138,13 +140,20 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
     }
 
     private void dispatchBatch(MessageBatch<?> batch) {
-        validators.forEach(validator -> validator.accept(batch));
-        for (int i = 0; i < outputs.size(); i++) {
-            try {
-                outputs.get(i).accept(batch);
-            } catch (RuntimeException e) {
-                throw normalizeFailure(batch, i, e);
+        long started = recorder.start();
+        boolean failed = true;
+        try {
+            validators.forEach(validator -> validator.accept(batch));
+            for (int i = 0; i < outputs.size(); i++) {
+                try {
+                    outputs.get(i).accept(batch);
+                } catch (RuntimeException e) {
+                    throw normalizeFailure(batch, i, e);
+                }
             }
+            failed = false;
+        } finally {
+            recorder.finish(started, failed);
         }
     }
 
