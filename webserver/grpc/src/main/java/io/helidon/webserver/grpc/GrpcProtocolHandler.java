@@ -203,7 +203,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 cancelContext(Status.CANCELLED.asRuntimeException());
                 return;
             }
-            callContext.addListener(cancelled -> {
+            callContext.addListener(_ -> {
                 CancellableOutbound write = pendingWrite.get();
                 if (write != null) {
                     write.cancel();
