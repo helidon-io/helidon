@@ -85,6 +85,17 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
     }
 
     @Override
+    public WebClientServiceResponse proceed(WebClientServiceRequest request) {
+        try {
+            return super.proceed(request);
+        } catch (RuntimeException | Error e) {
+            abortOnCallerThread(e);
+            checkFailure();
+            throw e;
+        }
+    }
+
+    @Override
     WebClientServiceResponse doProceed(ClientConnection connection,
                                        WebClientServiceRequest request,
                                        ClientRequestHeaders headers,
