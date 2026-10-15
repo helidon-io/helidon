@@ -85,6 +85,18 @@ Messaging configuration
 </tr>
 <tr>
 <td>
+<code>enable-<wbr>health</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether to expose graph readiness and liveness checks</td>
+</tr>
+<tr>
+<td>
 <code>max-<wbr>pending-<wbr>admissions</code>
 </td>
 <td>
@@ -129,6 +141,18 @@ Messaging configuration
 <td>
 </td>
 <td>Positive maximum capacity-wait time, representable in nanoseconds</td>
+</tr>
+<tr>
+<td>
+<code>enable-<wbr>metrics</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether to record channel processing counts, failures, and duration using the metrics registry</td>
 </tr>
 <tr>
 <td>

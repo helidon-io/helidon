@@ -66,6 +66,10 @@
             <artifactId>helidon-fault-tolerance</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.health</groupId>
+            <artifactId>helidon-health</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.http</groupId>
             <artifactId>helidon-http</artifactId>
         </dependency>
@@ -107,8 +111,11 @@
                     <execution>
                         <id>check-dependencies</id>
                         <configuration>
-                            <!-- Config requires this module transitively on the main module path. -->
-                            <ignoredNonTestScopedDependencies>io.helidon.common:helidon-common-media-type</ignoredNonTestScopedDependencies>
+                            <!-- Config and Messaging require these modules on the main module path. -->
+                            <ignoredNonTestScopedDependencies>
+                                <dependency>io.helidon.common:helidon-common-media-type</dependency>
+                                <dependency>io.helidon.health:helidon-health</dependency>
+                            </ignoredNonTestScopedDependencies>
                         </configuration>
                     </execution>
                 </executions>

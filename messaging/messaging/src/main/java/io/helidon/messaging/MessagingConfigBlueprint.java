@@ -29,6 +29,7 @@ import io.helidon.messaging.spi.MessagingConnector;
 import io.helidon.messaging.spi.MessagingConnectorProvider;
 import io.helidon.messaging.spi.MessagingIncomingConfig;
 import io.helidon.messaging.spi.MessagingOutgoingConfig;
+import io.helidon.service.registry.ServiceRegistry;
 
 /**
  * Messaging configuration.
@@ -42,6 +43,34 @@ import io.helidon.messaging.spi.MessagingOutgoingConfig;
 @Prototype.RegistrySupport
 @Api.Preview
 interface MessagingConfigBlueprint extends Prototype.Factory<MessagingGraph> {
+    /**
+     * Whether to record channel processing counts, failures, and duration using the metrics registry.
+     * A missing metrics provider uses the no-op metrics implementation. Registry-level metric filters still apply.
+     *
+     * @return whether messaging metrics are enabled
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    boolean enableMetrics();
+
+    /**
+     * Whether to expose graph readiness and liveness checks.
+     *
+     * @return whether messaging health checks are enabled
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    boolean enableHealth();
+
+    /**
+     * Service registry used to discover providers and services, including messaging metrics and health checks.
+     * When absent, the {@link io.helidon.service.registry.GlobalServiceRegistry} supplies the registry.
+     *
+     * @return explicitly selected service registry
+     */
+    @Option.Redundant
+    Optional<ServiceRegistry> serviceRegistry();
+
     /**
      * Maximum number of admitted deliveries waiting for execution. Zero disables buffering.
      *
