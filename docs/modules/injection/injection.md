@@ -970,6 +970,10 @@ To create an event observer:
   to observe
 - annotate the method with [`@Event.Observer`][event-observer]
 
+Observer parameters cannot use varargs syntax (`String...`). Use an array
+parameter (`String[]`) to observe array events. This applies to both
+`@Event.Observer` and `@Event.AsyncObserver`.
+
 Event observer example:
 
 ```java

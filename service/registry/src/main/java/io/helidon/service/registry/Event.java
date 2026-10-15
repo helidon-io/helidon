@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,8 @@ import java.util.concurrent.CompletionStage;
  * <p>
  * To receive events, implement a method (at least package private) with the event object as a parameter, annotated with
  * {@link io.helidon.service.registry.Event.Observer}. The method can have any name, must be {@code void},
- * and have a single parameter that defines the event type.
+ * and have a single parameter that defines the event type. Observer parameters cannot use varargs syntax;
+ * array parameters are supported for observing array events.
  */
 public final class Event {
     private Event() {
@@ -35,6 +36,7 @@ public final class Event {
 
     /**
      * A service method that is an event observer. The method MUST have a parameter that is the type of the event.
+     * The parameter cannot use varargs syntax; array parameters are supported for observing array events.
      */
     @Target(ElementType.METHOD)
     public @interface Observer {
@@ -42,6 +44,7 @@ public final class Event {
 
     /**
      * A service method that is an event observer. The method MUST have a parameter that is the type of the event.
+     * The parameter cannot use varargs syntax; array parameters are supported for observing array events.
      * Async observers are invoked on a separate thread and will never feed information back to the
      * {@link io.helidon.service.registry.Event.Emitter}
      * (even if {@link io.helidon.service.registry.Event.Emitter#emitAsync(Object, Qualifier...)} is used).
