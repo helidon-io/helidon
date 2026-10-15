@@ -38,6 +38,42 @@ public class ArrayTest {
 
     @ParameterizedTest
     @EnumSource(BindingMethod.class)
+    void testNumericObjectArrays(BindingMethod bindingMethod) {
+        for (String number : new String[] {"0", "5", "-5", "15", "5.0", "0.0", "5e0"}) {
+            Object[] result = bindingMethod.deserialize(jsonBinding, "[" + number + ",10,5]", Object[].class);
+            assertThat(result, is(new Object[] {Double.valueOf(number), 10.0, 5.0}));
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    void testLargeExponentNumericArrays(BindingMethod bindingMethod) {
+        for (String number : new String[] {"0e999", "0e1000", "0e1001", "0e10010", "0e2147483648",
+                                           "0e-1001", "0e+1001", "0E1001", "-0e1001", "-0e-1001", "0.0e1001"}) {
+            for (String suffix : new String[] {"]", ",5]", " ]"}) {
+                String json = "[" + number + suffix;
+                Double[] doubles = suffix.startsWith(",")
+                        ? new Double[] {Double.valueOf(number), 5.0} : new Double[] {Double.valueOf(number)};
+                Float[] floats = suffix.startsWith(",")
+                        ? new Float[] {Float.valueOf(number), 5.0f} : new Float[] {Float.valueOf(number)};
+                assertThat(bindingMethod.deserialize(jsonBinding, json, Object[].class), is(doubles));
+                assertThat(bindingMethod.deserialize(jsonBinding, json, Double[].class), is(doubles));
+                assertThat(bindingMethod.deserialize(jsonBinding, json, Float[].class), is(floats));
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    void testNumericArrayAfterBufferedExponent(BindingMethod bindingMethod) {
+        String json = " ".repeat(505) + "[0e1001," + " ".repeat(504) + "7]";
+        assertThat(bindingMethod.deserialize(jsonBinding, json, Object[].class), is(new Object[] {0.0, 7.0}));
+        assertThat(bindingMethod.deserialize(jsonBinding, json, Double[].class), is(new Double[] {0.0, 7.0}));
+        assertThat(bindingMethod.deserialize(jsonBinding, json, Float[].class), is(new Float[] {0.0f, 7.0f}));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
     public void testOneDimensionPrimitiveArrayParameterized(BindingMethod bindingMethod) {
         int[] expectedArray = {1, 2, 3};
         OneDimensionPrimitiveArray recordWithArray = new OneDimensionPrimitiveArray(expectedArray);
