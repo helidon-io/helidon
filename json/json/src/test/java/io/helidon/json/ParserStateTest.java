@@ -16,6 +16,8 @@
 
 package io.helidon.json;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.params.ParameterizedTest;
@@ -75,6 +77,72 @@ class ParserStateTest {
         JsonParser parser = parserMethod.createParser("[" + number + "]", bufferSize);
         parser.nextToken();
         assertThrows(JsonException.class, parser::readDouble);
+    }
+
+    @ParameterizedTest
+    @MethodSource("doubleBufferBoundaries")
+    void testDoubleAcrossBufferBoundary(ParserMethod parserMethod, String number, int bufferSize, boolean marked) {
+        for (int offset = 0; offset < bufferSize; offset++) {
+            for (String suffix : new String[] {"", "]", ",5]", " ]"}) {
+                String context = number + ", buffer=" + bufferSize + ", offset=" + offset + ", suffix=" + suffix;
+                String json = " ".repeat(offset) + (suffix.isEmpty() ? "" : "[") + number + suffix;
+                JsonParser parser = parserMethod.createParser(json, bufferSize);
+                if (!suffix.isEmpty()) {
+                    assertThat(context, parser.nextToken(), is((byte) number.charAt(0)));
+                }
+                if (marked) {
+                    parser.mark();
+                    assertThat(context, parser.readDouble(), is(Double.parseDouble(number)));
+                    parser.resetToMark();
+                }
+                assertThat(context, parser.readDouble(), is(Double.parseDouble(number)));
+                assertThat(context, parser.currentByte(), is((byte) number.charAt(number.length() - 1)));
+                if (!suffix.isEmpty()) {
+                    assertThat(context, parser.nextToken(), is((byte) (suffix.startsWith(",") ? ',' : ']')));
+                    if (suffix.startsWith(",")) {
+                        assertThat(context, parser.nextToken(), is((byte) '5'));
+                        assertThat(context, parser.readDouble(), is(5.0));
+                        assertThat(context, parser.nextToken(), is((byte) ']'));
+                    }
+                }
+                assertThat(context, parser.hasNext(), is(false));
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidDoubleBufferBoundaries")
+    void testInvalidDoubleAcrossBufferBoundary(ParserMethod parserMethod, String number, int bufferSize) {
+        for (int offset = 0; offset < bufferSize; offset++) {
+            for (String suffix : new String[] {"", "]"}) {
+                String json = " ".repeat(offset) + (suffix.isEmpty() ? "" : "[") + number + suffix;
+                JsonParser parser = parserMethod.createParser(json, bufferSize);
+                if (!suffix.isEmpty()) {
+                    parser.nextToken();
+                }
+                assertThrows(JsonException.class, parser::readDouble, json);
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("doubleReadSizes")
+    void testDoubleAcrossShortStreamReads(int bufferSize, int readSize) {
+        String json = " ".repeat(505) + "[0e1001," + " ".repeat(504) + "7]";
+        var stream = new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8)) {
+            @Override
+            public int read(byte[] bytes, int offset, int length) {
+                return super.read(bytes, offset, Math.min(length, readSize));
+            }
+        };
+        JsonParser parser = JsonParser.create(stream, bufferSize);
+        assertThat(parser.nextToken(), is((byte) '0'));
+        assertThat(parser.readDouble(), is(0.0));
+        assertThat(parser.nextToken(), is((byte) ','));
+        assertThat(parser.nextToken(), is((byte) '7'));
+        assertThat(parser.readDouble(), is(7.0));
+        assertThat(parser.nextToken(), is((byte) ']'));
+        assertThat(parser.hasNext(), is(false));
     }
 
     @ParameterizedTest
@@ -299,6 +367,29 @@ class ParserStateTest {
         JsonParser parser3 = parserMethod.createParser("\"\"");
         String emptyStr = parser3.readString();
         assertThat(emptyStr.isEmpty(), is(true));
+    }
+
+    private static Stream<Arguments> invalidDoubleBufferBoundaries() {
+        return Stream.of(ParserMethod.values())
+                .flatMap(parserMethod -> Stream.of("7.", "7e", "7e+", "7e-", "0e1001.5", "7.5.0")
+                        .flatMap(number -> Stream.of(6, 64, 512)
+                                .map(bufferSize -> Arguments.of(parserMethod, number, bufferSize))));
+    }
+
+    private static Stream<Arguments> doubleReadSizes() {
+        return Stream.of(6, 64, 512)
+                .flatMap(bufferSize -> Stream.of(1, 5, 73)
+                        .map(readSize -> Arguments.of(bufferSize, readSize)));
+    }
+
+    private static Stream<Arguments> doubleBufferBoundaries() {
+        return Stream.of(ParserMethod.values())
+                .flatMap(parserMethod -> Stream.of("0", "-0", "7", "-7", "77", "7.5", "-7.5", "0.5",
+                                                  "7e1", "7e+1", "7e-1", "0e1001", "-0e1001", "1e1001", "1e-1001",
+                                                  "123456789012345678", "0e" + "9".repeat(80))
+                        .flatMap(number -> Stream.of(6, 64, 512)
+                                .flatMap(bufferSize -> Stream.of(false, true)
+                                        .map(marked -> Arguments.of(parserMethod, number, bufferSize, marked)))));
     }
 
     private static Stream<Arguments> doubleDelimiters() {

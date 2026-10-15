@@ -932,7 +932,7 @@ final class JsonParserStream extends JsonParserBase {
             currentIndex++;
         }
         if (currentIndex >= bufferLength) {
-            fetchData();
+            fetchDoubleData();
             if (currentIndex >= bufferLength) {
                 throw createException("Empty number");
             }
@@ -1007,7 +1007,7 @@ final class JsonParserStream extends JsonParserBase {
                 }
                 currentIndex++;
                 if (currentIndex == bufferLength) {
-                    fetchData();
+                    fetchDoubleData();
                 }
             } else if (b == '.') {
                 if (hasDecimal) {
@@ -1016,7 +1016,7 @@ final class JsonParserStream extends JsonParserBase {
                 hasDecimal = true;
                 currentIndex++;
                 if (currentIndex == bufferLength) {
-                    fetchData();
+                    fetchDoubleData();
                 }
             } else {
                 currentIndex--;
@@ -1063,7 +1063,7 @@ final class JsonParserStream extends JsonParserBase {
                     throw createException("Missing exponent value");
                 }
                 if (currentIndex == bufferLength) {
-                    fetchData();
+                    fetchDoubleData();
                 }
 
                 int digit = -1;
@@ -1075,7 +1075,7 @@ final class JsonParserStream extends JsonParserBase {
                     }
                     currentIndex++;
                     if (currentIndex == bufferLength && !finished) {
-                        fetchData();
+                        fetchDoubleData();
                     }
                     foundExponentValue = true;
                 }
@@ -2550,5 +2550,12 @@ final class JsonParserStream extends JsonParserBase {
                 finished = false;
             }
         }
+    }
+
+    private void fetchDoubleData() {
+        // Compaction leaves the cursor on the last retained byte; continue at the next unread byte.
+        int valueOffset = currentIndex - jsonValueStart;
+        fetchData();
+        currentIndex = jsonValueStart + valueOffset;
     }
 }

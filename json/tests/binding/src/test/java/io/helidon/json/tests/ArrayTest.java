@@ -65,6 +65,15 @@ public class ArrayTest {
 
     @ParameterizedTest
     @EnumSource(BindingMethod.class)
+    void testNumericArrayAfterBufferedExponent(BindingMethod bindingMethod) {
+        String json = " ".repeat(505) + "[0e1001," + " ".repeat(504) + "7]";
+        assertThat(bindingMethod.deserialize(jsonBinding, json, Object[].class), is(new Object[] {0.0, 7.0}));
+        assertThat(bindingMethod.deserialize(jsonBinding, json, Double[].class), is(new Double[] {0.0, 7.0}));
+        assertThat(bindingMethod.deserialize(jsonBinding, json, Float[].class), is(new Float[] {0.0f, 7.0f}));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
     public void testOneDimensionPrimitiveArrayParameterized(BindingMethod bindingMethod) {
         int[] expectedArray = {1, 2, 3};
         OneDimensionPrimitiveArray recordWithArray = new OneDimensionPrimitiveArray(expectedArray);
