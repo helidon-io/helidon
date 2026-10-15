@@ -20,13 +20,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -95,81 +92,6 @@ public class FileSystemWatcherTest {
         Files.createFile(watchedPath);
 
         assertThat(watchedFileLatch.await(40, TimeUnit.SECONDS), is(true));
-    }
-
-    @Disabled //TODO test is still TOO slow to be unit test -> refactor it to run much quicker
-    @Test
-    public void testPollingSymLink() throws InterruptedException, IOException {
-        CountDownLatch firstEventLatch = new CountDownLatch(1);
-        CountDownLatch secondEventLatch = new CountDownLatch(1);
-        CountDownLatch thirdEventLatch = new CountDownLatch(1);
-
-        Path watchedPath = tempDir.resolve(WATCHED_FILE);
-
-        FileSystemWatcher watcher = FileSystemWatcher.create();
-        watcher.start(watchedPath, changeEvent -> {
-            if (firstEventLatch.getCount() > 0) {
-                firstEventLatch.countDown();
-            } else if (secondEventLatch.getCount() > 0) {
-                secondEventLatch.countDown();
-            } else {
-                thirdEventLatch.countDown();
-            }
-        });
-
-        Path targetDir = createFile(List.of("a: a"));
-        Path symlinkToDir = Files.createSymbolicLink(tempDir.resolve("symlink-to-target-dir"), targetDir);
-        Files.createSymbolicLink(tempDir.resolve(WATCHED_FILE), symlinkToDir.resolve(WATCHED_FILE));
-
-        Path newTarget = createFile(List.of("a: b"));
-        Files.walk(targetDir).map(Path::toFile).forEach(File::delete);
-        Files.delete(targetDir);
-        Files.delete(symlinkToDir);
-        symlinkToDir = Files.createSymbolicLink(tempDir.resolve("symlink-to-target-dir"), newTarget);
-
-        printDir();
-
-        assertThat(firstEventLatch.await(30, TimeUnit.SECONDS), is(true));
-
-        targetDir = newTarget;
-        newTarget = createFile(List.of("a: c"));
-        Files.walk(targetDir).map(Path::toFile).forEach(File::delete);
-        Files.delete(targetDir);
-        Files.delete(symlinkToDir);
-        symlinkToDir = Files.createSymbolicLink(tempDir.resolve("symlink-to-target-dir"), newTarget);
-
-        printDir();
-
-        assertThat(secondEventLatch.await(40, TimeUnit.SECONDS), is(true));
-
-        targetDir = newTarget;
-        newTarget = createFile(List.of("a: d"));
-        Files.walk(targetDir).map(Path::toFile).forEach(File::delete);
-        Files.delete(targetDir);
-        Files.delete(symlinkToDir);
-        Files.createSymbolicLink(tempDir.resolve("symlink-to-target-dir"), newTarget);
-
-        printDir();
-
-        assertThat(thirdEventLatch.await(40, TimeUnit.SECONDS), is(true));
-
-    }
-
-    private void printDir() throws IOException {
-        Files.walk(tempDir).forEach(f -> {
-            System.out.print(f.toFile().isFile() ? "f" : "d");
-            System.out.print(" ");
-            System.out.print(f.toFile().lastModified());
-            System.out.print(" ");
-            System.out.println(f);
-        });
-    }
-
-    private Path createFile(Iterable<String> content) throws IOException {
-        Path folder = Files.createDirectory(tempDir.resolve("symlink-folder-" + UUID.randomUUID()));
-        Path target = Files.createFile(folder.resolve(FileSystemWatcherTest.WATCHED_FILE));
-        Files.write(target, content);
-        return folder;
     }
 
     @Test
