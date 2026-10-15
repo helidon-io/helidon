@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import static io.helidon.codegen.testing.CodegenMatchers.matches;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
@@ -115,6 +116,22 @@ class TestCompilerTest {
                 /AcmeObject.java:7: warning: Ugh-oh
                     void makeStuff();
                          ^""")));
+    }
+
+    @Test
+    void testCodegenMatcherWithQuoteSequences() {
+        String source = """
+                final class Example {
+                    String value = "^\\\\Qa\\rb\\\\E$\\\\E";
+                }
+                """;
+        String expected = """
+                //...
+                    String value = "^\\\\Qa\\rb\\\\E$\\\\E";
+                //...
+                """;
+        assertThat(source, matches(expected));
+        assertThat(source.replace("Qa", "Qb"), not(matches(expected)));
     }
 
     /**
