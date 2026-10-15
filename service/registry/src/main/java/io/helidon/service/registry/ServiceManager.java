@@ -89,6 +89,7 @@ class ServiceManager<T> {
         ScopedRegistry scopedRegistry = scopeSupplier.get().registry();
         try {
             if (dependent != null
+                    && dependent.scope().equals(provider.descriptor().scope())
                     && lookup.dependency().map(it -> !it.isSupplier()).orElse(true)
                     && scopedRegistry instanceof ScopedRegistryImpl scopedRegistryImpl) {
                 return scopedRegistryImpl.activator(provider.descriptor(), activatorSupplier, dependent).instances(lookup);
