@@ -38,6 +38,22 @@ class AnnotationTest {
     private static final TypeName ANNOTATION_TYPE = TypeName.create(Test.class);
 
     @Test
+    void testAnnotationStringControlCharacters() {
+        Field field = Field.builder()
+                .accessModifier(AccessModifier.PRIVATE)
+                .type(String.class)
+                .name("name")
+                .addAnnotation(Annotation.builder()
+                                       .typeName(TypeName.create(Deprecated.class))
+                                       .property("since", "^a\r\nb\tc\bd\fe\u0001$")
+                                       .build())
+                .build();
+
+        assertThat(write(field),
+                   is("@java.lang.Deprecated(since = \"^a\\r\\nb\\tc\\bd\\fe\\u0001$\")\nprivate String name;"));
+    }
+
+    @Test
     void testAnnotationWithConstant() {
         var annotation = Annotation.builder()
                 .typeName(ANNOTATION_TYPE)
