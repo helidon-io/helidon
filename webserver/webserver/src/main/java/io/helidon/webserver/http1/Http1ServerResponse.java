@@ -160,10 +160,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             outputStream.status(status);
         }
 
-        // Normalize 205 only when sending, so a later status change does not retain a generated zero length.
-        if (isNoEntityStatus && status.code() != Status.RESET_CONTENT_205.code()) {
-            normalizeNoEntityHeaders(headers, status);
-        }
         return this;
     }
 

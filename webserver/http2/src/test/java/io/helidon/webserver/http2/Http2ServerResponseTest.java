@@ -53,6 +53,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -75,16 +76,19 @@ class Http2ServerResponseTest {
                                                                   Status.RESET_CONTENT_205,
                                                                   Status.NOT_MODIFIED_304);
 
-    @ParameterizedTest(name = "status={0}, intermediate304={1}, explicitLength={2}")
+    @ParameterizedTest(name = "transientStatus={0}, status={1}, intermediate304={2}, explicitLength={3}")
     @MethodSource("entityStatusTransitions")
-    void resetContentToEntityStatusAllowsBufferedEntity(Status status, boolean intermediate304, boolean explicitLength) {
+    void noEntityToEntityStatusAllowsBufferedEntity(Status transientStatus,
+                                                    Status status,
+                                                    boolean intermediate304,
+                                                    boolean explicitLength) {
         Http2ServerStream stream = mock(Http2ServerStream.class);
         Http2ServerResponse response = createResponse(stream, Method.GET, ContentEncodingContext.create());
         byte[] entity = "entity".getBytes(StandardCharsets.UTF_8);
-        response.status(Status.RESET_CONTENT_205);
         if (explicitLength) {
             response.contentLength(entity.length);
         }
+        response.status(transientStatus);
         if (intermediate304) {
             response.status(Status.NOT_MODIFIED_304);
         }
@@ -105,17 +109,20 @@ class Http2ServerResponseTest {
         verify(stream, never()).writeData(any(), anyBoolean());
     }
 
-    @ParameterizedTest(name = "status={0}, intermediate304={1}, explicitLength={2}")
+    @ParameterizedTest(name = "transientStatus={0}, status={1}, intermediate304={2}, explicitLength={3}")
     @MethodSource("entityStatusTransitions")
-    void resetContentToEntityStatusAllowsStreamingEntity(Status status, boolean intermediate304, boolean explicitLength)
+    void noEntityToEntityStatusAllowsStreamingEntity(Status transientStatus,
+                                                     Status status,
+                                                     boolean intermediate304,
+                                                     boolean explicitLength)
             throws IOException {
         Http2ServerStream stream = mock(Http2ServerStream.class);
         Http2ServerResponse response = createResponse(stream, Method.GET, ContentEncodingContext.create());
         byte[] entity = "entity".getBytes(StandardCharsets.UTF_8);
-        response.status(Status.RESET_CONTENT_205);
         if (explicitLength) {
             response.contentLength(entity.length);
         }
+        response.status(transientStatus);
         if (intermediate304) {
             response.status(Status.NOT_MODIFIED_304);
         }
@@ -140,6 +147,93 @@ class Http2ServerResponseTest {
                 () -> assertThat(endStream.getValue().available(), is(0))
         );
         verify(stream, never()).writeHeadersWithData(any(), anyInt(), any(), anyBoolean());
+    }
+
+    @Test
+    void temporaryNoEntityStatusesPreserveHeadRepresentationLength() {
+        for (Status transientStatus : NO_ENTITY_STATUSES) {
+            Http2ServerStream stream = mock(Http2ServerStream.class);
+            Http2ServerResponse response = createResponse(stream, Method.HEAD, ContentEncodingContext.create());
+            response.contentLength(23);
+            response.status(transientStatus);
+            response.status(Status.OK_200);
+
+            response.send();
+
+            var responseHeaders = ArgumentCaptor.forClass(Http2Headers.class);
+            verify(stream).writeHeaders(responseHeaders.capture(), eq(true));
+            assertAll(transientStatus.toString(),
+                    () -> assertThat(responseHeaders.getValue().status(), is(Status.OK_200)),
+                    () -> assertThat(responseHeaders.getValue().httpHeaders().contentLength().orElseThrow(), is(23L))
+            );
+            verify(stream, never()).writeHeadersWithData(any(), anyInt(), any(), anyBoolean());
+            verify(stream, never()).writeData(any(), anyBoolean());
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {204, 205, 304})
+    void eagerlyFlushedHeadNoEntityStatusesNormalizeHeadersBeforeWriting(int statusCode) {
+        Status status = Status.create(statusCode);
+        Http2ServerStream stream = mock(Http2ServerStream.class);
+        when(stream.writeHeaders(any(Http2Headers.class), anyBoolean())).thenAnswer(invocation -> {
+            Http2Headers sentHeaders = invocation.getArgument(0);
+            Headers sentHttpHeaders = sentHeaders.httpHeaders();
+            assertAll(status.toString(),
+                    () -> assertThat(sentHeaders.status(), is(status)),
+                    () -> assertNoEntityContentLength(status, sentHttpHeaders),
+                    () -> assertThat(sentHttpHeaders.contains(HeaderNames.TRANSFER_ENCODING), is(false)),
+                    () -> assertThat(sentHttpHeaders.contains(HeaderNames.TRAILER), is(false))
+            );
+            return 0;
+        });
+        Http2ServerResponse response = createResponse(stream, Method.HEAD, ContentEncodingContext.create());
+        response.contentLength(23);
+        response.header(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+        response.header(HeaderValues.create(HeaderNames.TRAILER, "test-trailer"));
+        response.status(status);
+
+        response.outputStream();
+        response.flushHeaders();
+        response.commit();
+
+        verify(stream).writeHeaders(any(Http2Headers.class), eq(true));
+        verify(stream, never()).writeHeadersWithData(any(), anyInt(), any(), anyBoolean());
+        verify(stream, never()).writeData(any(), anyBoolean());
+        verify(stream, never()).writeTrailers(any());
+    }
+
+    @Test
+    void temporaryNoEntityStatusesPreserveStreamingTrailers() throws IOException {
+        for (Status transientStatus : NO_ENTITY_STATUSES) {
+            Http2ServerStream stream = mock(Http2ServerStream.class);
+            Http2ServerResponse response = createResponse(stream, Method.GET, ContentEncodingContext.create());
+            response.header(HeaderValues.create(HeaderNames.TRAILER, "test-trailer"));
+            response.trailers().set(HeaderNames.create("test-trailer"), "complete");
+            response.status(transientStatus);
+            response.status(Status.OK_200);
+
+            OutputStream output = response.outputStream();
+            response.flushHeaders();
+            output.write("entity".getBytes(StandardCharsets.UTF_8));
+            response.commit();
+
+            var responseHeaders = ArgumentCaptor.forClass(Http2Headers.class);
+            var responseTrailers = ArgumentCaptor.forClass(Http2Headers.class);
+            var responseEntity = ArgumentCaptor.forClass(BufferData.class);
+            verify(stream).writeHeaders(responseHeaders.capture(), eq(false));
+            verify(stream).writeData(responseEntity.capture(), eq(false));
+            verify(stream).writeTrailers(responseTrailers.capture());
+            assertAll(transientStatus.toString(),
+                    () -> assertThat(responseHeaders.getValue().status(), is(Status.OK_200)),
+                    () -> assertThat(responseHeaders.getValue().httpHeaders().get(HeaderNames.TRAILER).get(),
+                                     is("test-trailer")),
+                    () -> assertThat(new String(responseEntity.getValue().readBytes(), StandardCharsets.UTF_8), is("entity")),
+                    () -> assertThat(responseTrailers.getValue().httpHeaders()
+                                             .get(HeaderNames.create("test-trailer")).get(), is("complete"))
+            );
+            verify(stream, never()).writeData(any(), eq(true));
+        }
     }
 
     @Test
@@ -1075,10 +1169,14 @@ class Http2ServerResponseTest {
     }
 
     private static Stream<Arguments> entityStatusTransitions() {
-        return Stream.of(Status.OK_200, Status.BAD_REQUEST_400, Status.NOT_FOUND_404, Status.INTERNAL_SERVER_ERROR_500)
-                .flatMap(status -> Stream.of(false, true)
-                        .flatMap(intermediate304 -> Stream.of(false, true)
-                                .map(explicitLength -> Arguments.of(status, intermediate304, explicitLength))));
+        return NO_ENTITY_STATUSES.stream()
+                .flatMap(transientStatus -> Stream.of(Status.OK_200, Status.BAD_REQUEST_400,
+                                                     Status.NOT_FOUND_404, Status.INTERNAL_SERVER_ERROR_500)
+                        .flatMap(status -> (transientStatus == Status.RESET_CONTENT_205
+                                ? Stream.of(false, true) : Stream.of(false))
+                                .flatMap(intermediate304 -> Stream.of(false, true)
+                                        .map(explicitLength -> Arguments.of(transientStatus, status,
+                                                                            intermediate304, explicitLength)))));
     }
 
     private static void assertNoEntityContentLength(Status status, Headers headers) {
