@@ -115,11 +115,23 @@ public class ServiceRegistryJmhBenchmark {
         return state.noCacheRegistry.get(state.directContractLookup);
     }
 
+    /**
+     * Resolve a new consumer that injects a shared singleton.
+     *
+     * @param state shared registry state
+     * @return the newly created consumer
+     */
     @Benchmark
     public PerLookupConsumer getPerLookupConsumerWithSingletonDependency(InjectionState state) {
         return state.registry.get(PerLookupConsumer.class);
     }
 
+    /**
+     * Construct and shut down a registry containing a singleton dependency chain.
+     *
+     * @param state isolated lifecycle configuration
+     * @return the destroyed consumer
+     */
     @Benchmark
     public SingletonConsumer createAndShutdownSingletonDependencyChain(LifecycleState state) {
         ServiceRegistryManager manager = ServiceRegistryManager.create(state.config);
@@ -254,12 +266,18 @@ public class ServiceRegistryJmhBenchmark {
         }
     }
 
+    /**
+     * Registry shared by threads resolving per-lookup consumers.
+     */
     @State(Scope.Benchmark)
     public static class InjectionState {
         private ServiceRegistryManager manager;
         private ServiceRegistry registry;
         private Connection connection;
 
+        /**
+         * Initialize the registry and verify injection identity.
+         */
         @Setup(Level.Trial)
         public void setUp() {
             manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
@@ -277,6 +295,9 @@ public class ServiceRegistryJmhBenchmark {
             }
         }
 
+        /**
+         * Shut down the registry and verify singleton destruction.
+         */
         @TearDown(Level.Trial)
         public void tearDown() {
             manager.shutdown();
@@ -286,10 +307,16 @@ public class ServiceRegistryJmhBenchmark {
         }
     }
 
+    /**
+     * Per-thread configuration for isolated lifecycle measurements.
+     */
     @State(Scope.Thread)
     public static class LifecycleState {
         private ServiceRegistryConfig config;
 
+        /**
+         * Initialize the chain configuration and verify lifecycle completion.
+         */
         @Setup(Level.Trial)
         public void setUp() {
             config = ServiceRegistryConfig.builder()
