@@ -23,7 +23,6 @@ import java.io.UncheckedIOException;
 import java.net.UnixDomainSocketAddress;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -245,6 +244,46 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         return doOutputStream(streamHandler, new AtomicBoolean(), followedRedirects, false);
     }
 
+    @Override
+    public void exchange(OutputStreamHandler uploadHandler,
+                         Functions.CheckedConsumer<Http1ClientResponse, IOException> responseHandler) {
+        Objects.requireNonNull(uploadHandler);
+        Objects.requireNonNull(responseHandler);
+        CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
+        CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
+        var chain = new Http1CallExchangeChain(http1Client, this, whenSent, whenComplete, uploadHandler);
+        boolean success = false;
+        try {
+            prepareOutputStreamRequest();
+            try (Http1ClientResponse response = invokeWithServices(chain, whenSent, whenComplete)) {
+                try {
+                    responseHandler.accept(response);
+                    if (response.status().code() >= 300) {
+                        chain.cancelUpload();
+                    }
+                } catch (IOException | RuntimeException | Error e) {
+                    chain.abortOnCallerThread(e);
+                    throw e;
+                }
+            }
+            chain.awaitUpload();
+            success = true;
+        } catch (IOException e) {
+            chain.abortOnCallerThread(e);
+            throw new UncheckedIOException(e);
+        } catch (RuntimeException e) {
+            chain.abortOnCallerThread(e);
+            chain.checkFailure();
+            throw e;
+        } catch (Error e) {
+            chain.abortOnCallerThread(e);
+            throw e;
+        } finally {
+            chain.finish(success);
+            clearSelectedProxyRoute();
+        }
+    }
+
     private Http1ClientResponseImpl doOutputStream(OutputStreamHandler streamHandler,
                                                    AtomicBoolean handlerClaimed,
                                                    int followedRedirects,
@@ -370,46 +409,6 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         return securityState.lastEffectiveOrigin()
                 .map(origin -> origin.apply(endpointUri))
                 .orElseGet(() -> ClientRequestOrigin.create(endpointUri).apply(endpointUri));
-    }
-
-    @Override
-    public void exchange(OutputStreamHandler uploadHandler,
-                         Functions.CheckedConsumer<Http1ClientResponse, IOException> responseHandler) {
-        Objects.requireNonNull(uploadHandler);
-        Objects.requireNonNull(responseHandler);
-        CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
-        CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
-        var chain = new Http1CallExchangeChain(http1Client, this, whenSent, whenComplete, uploadHandler);
-        boolean success = false;
-        try {
-            prepareOutputStreamRequest();
-            try (Http1ClientResponse response = invokeWithServices(chain, whenSent, whenComplete)) {
-                try {
-                    responseHandler.accept(response);
-                    if (response.status().code() >= 300) {
-                        chain.cancelUpload();
-                    }
-                } catch (IOException | RuntimeException | Error e) {
-                    chain.abortOnCallerThread(e);
-                    throw e;
-                }
-            }
-            chain.awaitUpload();
-            success = true;
-        } catch (IOException e) {
-            chain.abortOnCallerThread(e);
-            throw new UncheckedIOException(e);
-        } catch (RuntimeException e) {
-            chain.abortOnCallerThread(e);
-            chain.checkFailure();
-            throw e;
-        } catch (Error e) {
-            chain.abortOnCallerThread(e);
-            throw e;
-        } finally {
-            chain.finish(success);
-            clearSelectedProxyRoute();
-        }
     }
 
     @Override
