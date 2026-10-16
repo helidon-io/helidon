@@ -534,7 +534,7 @@ class Http2ServerStreamCloseTest {
                                      Http2Settings.create(),
                                      writer,
                                      flowControl,
-                                     new Http2ServerStream.InboundDataBudget(1024, 131070),
+                                     new InboundDataBudget(1024, 131070),
                                      mock(Http2ConnectionChecks.class));
     }
 
