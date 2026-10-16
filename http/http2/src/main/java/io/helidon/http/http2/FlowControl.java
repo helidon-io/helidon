@@ -81,7 +81,7 @@ public interface FlowControl {
          * Increment stream window size.
          *
          * @param increment increment in bytes
-         * @return {@code true} if succeeded, {@code false} if timed out
+         * @return remaining stream window size in bytes after the increment
          */
         long incrementStreamWindowSize(int increment);
 
