@@ -222,9 +222,7 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 if (http1Config.validatePrologue()) {
                     validatePrologue(prologue);
                 }
-
                 openStream();
-
                 WritableHeaders<?> headers = http1headers.readHeaders(prologue);
                 currentHeaders = headers;
                 if (http1Config.validateRequestHeaders()) {
