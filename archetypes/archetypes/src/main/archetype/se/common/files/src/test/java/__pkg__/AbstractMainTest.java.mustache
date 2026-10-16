@@ -16,10 +16,16 @@ import {{.}};
 import static {{.}};
 {{/MainTest-static-imports}}
 
+{{#database}}
+@Testcontainers(disabledWithoutDocker = true)
+{{/database}}
 abstract class AbstractMainTest {
 {{#MainTest-static-fields}}
     private static final {{.}};
 {{/MainTest-static-fields}}
+{{#MainTest-fields}}
+    {{.}};
+{{/MainTest-fields}}
     private final Http1Client client;
 
     protected AbstractMainTest(Http1Client client) {
@@ -28,8 +34,29 @@ abstract class AbstractMainTest {
 
     @SetUpRoute
     static void routing(HttpRouting.Builder builder) {
+{{#database}}
+        try {
+            {{#MainTest-routing}}
+            {{.}}
+            {{/MainTest-routing}}
+            Main.routing(builder);
+        } catch (RuntimeException | Error failure) {
+            try {
+                stopDatabase();
+            } catch (RuntimeException | Error cleanupFailure) {
+                failure.addSuppressed(cleanupFailure);
+            }
+            throw failure;
+        }
+{{/database}}
+{{^database}}
         Main.routing(builder);
+{{/database}}
     }
+
+    {{#MainTest-methods}}
+    {{.}}
+    {{/MainTest-methods}}
 
     {{#Abstract-tests}}
     {{.}}

@@ -40,7 +40,8 @@ To enable Data Repository, add the following dependency to your project’s
 
 The Jakarta Persistence provider, such as EclipseLink, and the JDBC driver, such
 as MySQL, are required at runtime. The core BOM does not manage persistence
-provider versions; select a version compatible with Jakarta Persistence 3.2:
+provider or MySQL driver versions. Select a provider version compatible with
+Jakarta Persistence 3.2 and specify the JDBC driver version explicitly:
 
 ```xml [pom.xml]
 <dependency>
@@ -58,6 +59,7 @@ provider versions; select a version compatible with Jakarta Persistence 3.2:
 <dependency>
   <groupId>com.mysql</groupId>
   <artifactId>mysql-connector-j</artifactId>
+  <version>26.7.0</version>
   <scope>runtime</scope>
 </dependency>
 ```

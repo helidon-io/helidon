@@ -1,7 +1,12 @@
 db:
-  connection:
-    url: jdbc:h2:mem:test
-{{#db-health-check-test-stmt}}
+  source: jdbc
+  init-schema: true
+  init-data: true
+  health-check:
+    type: query
+    statementName: health-check
   statements:
+    health-check: "SELECT 0"
+{{#db-health-check-test-stmt}}
     {{.}}
 {{/db-health-check-test-stmt}}

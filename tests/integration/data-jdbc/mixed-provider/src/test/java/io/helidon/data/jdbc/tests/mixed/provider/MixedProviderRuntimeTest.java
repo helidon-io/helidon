@@ -17,13 +17,25 @@ package io.helidon.data.jdbc.tests.mixed.provider;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
 
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+import io.helidon.data.jdbc.tests.database.MySqlDatabase;
 import io.helidon.http.Status;
+import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.service.registry.Services;
 import io.helidon.webclient.http1.Http1Client;
-import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.WebServer;
 
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -32,13 +44,49 @@ import static org.hamcrest.MatcherAssert.assertThat;
 /**
  * End-to-end mixed-provider application validation.
  */
-@ServerTest
+@Testcontainers(disabledWithoutDocker = true)
 class MixedProviderRuntimeTest {
 
-    private final Http1Client client;
+    @Container
+    static final MySQLContainer<?> MYSQL = MySqlDatabase.container();
 
-    MixedProviderRuntimeTest(Http1Client client) {
-        this.client = client;
+    private ServiceRegistryManager manager;
+    private WebServer server;
+    private Http1Client client;
+
+    @BeforeEach
+    void startApplication() {
+        Config config = Config.create(ConfigSources.create(Map.of(
+                "data.sources.sql.0.name", "mixed",
+                "data.sources.sql.0.provider.hikari.jdbc-driver-class-name", "com.mysql.cj.jdbc.Driver",
+                "data.sources.sql.0.provider.hikari.url", MYSQL.getJdbcUrl(),
+                "data.sources.sql.0.provider.hikari.username", MYSQL.getUsername(),
+                "data.sources.sql.0.provider.hikari.password", MYSQL.getPassword())),
+                                      ConfigSources.classpath("application.yaml"));
+        manager = ServiceRegistryManager.create();
+        GlobalServiceRegistry.registry(manager.registry());
+        Services.set(Config.class, config);
+        server = manager.registry().get(WebServer.class).start();
+        client = Http1Client.builder().baseUri("http://localhost:" + server.port()).build();
+    }
+
+    @AfterEach
+    void stopApplication() {
+        try {
+            if (client != null) {
+                client.closeResource();
+            }
+        } finally {
+            try {
+                if (server != null) {
+                    server.stop();
+                }
+            } finally {
+                if (manager != null) {
+                    manager.shutdown();
+                }
+            }
+        }
     }
 
     @Test

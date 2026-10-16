@@ -43,7 +43,6 @@
                 </property>
             </activation>
             <modules>
-                <module>h2</module>
                 <module>mysql</module>
                 <module>pgsql</module>
                 <module>oracle</module>
