@@ -696,11 +696,18 @@ Graphs using the same `MeterRegistry` instance share meters with matching final 
 customizer makes different channels share one identity. Closing one graph releases its ownership; meters created by
 messaging remain until the last graph using them closes or finishes terminal rollback. Pre-existing application meters
 are borrowed and remain registered after the graphs close. Creating a graph after the last owner removes a messaging
-meter starts a new series. The shared registry itself remains open.
+meter starts a new series. If application code removes and replaces a meter while a graph is alive, later graphs use
+the replacement; closing an owner of the removed meter preserves the replacement. The shared registry itself remains open.
 Use the same registry instance when sharing meters; separate wrappers around one underlying provider registry are not
 treated as the same owner. A force-closed graph's late callbacks do not update surviving or replacement registrations.
 If a provider operation is in progress, cleanup is deferred until it returns, allowing its callbacks to close graphs
 without waiting for meter registration. Recording already in progress completes before its meter ownership is released.
+
+Graph construction on another thread also proceeds while a provider operation is active. Its meter registration is
+deferred, and completed attempts are buffered until registration can publish them. Attempts starting before registration
+use the system monotonic clock for their entire duration; subsequent attempts use the registry's clock. At most 64 channel
+registrations can wait per registry, and each pending channel can buffer 1,024 completed attempts. Exceeding either limit
+disables metrics for that channel and logs a warning without interrupting message processing.
 
 An ordinary metrics provider failure disables the affected recording and is logged once per graph without changing
 delivery or retry behavior. If a provider listener creates another graph on the callback thread during meter registration
