@@ -140,7 +140,7 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
     }
 
     private void dispatchBatch(MessageBatch<?> batch) {
-        long started = recorder.start();
+        var started = recorder.start();
         boolean failed = true;
         try {
             validators.forEach(validator -> validator.accept(batch));

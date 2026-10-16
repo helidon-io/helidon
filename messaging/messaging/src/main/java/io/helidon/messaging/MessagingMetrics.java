@@ -17,17 +17,19 @@
 package io.helidon.messaging;
 
 import java.util.ArrayDeque;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+import io.helidon.common.Wrapper;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Meter;
@@ -40,6 +42,9 @@ import io.helidon.service.registry.GlobalServiceRegistry;
 import static java.lang.System.Logger.Level.WARNING;
 
 final class MessagingMetrics {
+    private static final int MAX_PENDING_REGISTRATIONS = 64;
+    private static final int MAX_PENDING_SAMPLES = 1024;
+    private static final Sample UNTIMED = new Sample(null, 0, false);
     private static final String DURATION = "messaging.processing.duration";
     private static final String FAILURES = "messaging.processing.failures";
     private static final String ORIGIN = MessagingGraph.class.getName();
@@ -98,11 +103,7 @@ final class MessagingMetrics {
             lock.unlock();
         }
         // Publish the pending recorder before invoking providers, so reentrant close can retire it.
-        try {
-            recorder.initialize(state.acquire(channel, failures));
-        } finally {
-            releaseRegistry(state);
-        }
+        state.acquire(channel, recorder, failures);
         return recorder;
     }
 
@@ -172,11 +173,47 @@ final class MessagingMetrics {
         }
     }
 
+    private static Object meterIdentity(Meter meter) {
+        Object current = meter;
+        Set<Object> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        while (current instanceof Wrapper wrapper && seen.add(current)) {
+            Object delegate;
+            try {
+                delegate = Objects.requireNonNull(wrapper.unwrap(Object.class));
+            } catch (UnsupportedOperationException _) {
+                break;
+            }
+            if (delegate == current) {
+                break;
+            }
+            current = delegate;
+        }
+        return current;
+    }
+
+    static final class Sample {
+        private final Clock clock;
+        private final long started;
+        private final boolean timed;
+
+        private Sample(Clock clock, long started, boolean timed) {
+            this.clock = clock;
+            this.started = started;
+            this.timed = timed;
+        }
+
+        private long elapsed() {
+            return timed ? (clock == null ? System.nanoTime() : clock.monotonicTime()) - started : 0;
+        }
+    }
+
     static final class Recorder {
         private final FailureReporter failures;
         private final ReentrantLock lock = new ReentrantLock();
+        private final ArrayDeque<Observation> pending = new ArrayDeque<>();
         private Registration registration;
         private int activeCalls;
+        private boolean initialized;
         private boolean retired;
         private boolean disabled;
 
@@ -184,70 +221,137 @@ final class MessagingMetrics {
             this.failures = failures;
         }
 
-        long start() {
+        Sample start() {
             if (this == NOOP_RECORDER) {
-                return 0;
+                return UNTIMED;
             }
-            Registration current = begin(true);
-            if (current == null) {
-                return 0;
-            }
-            try {
-                return current.clock.monotonicTime();
-            } catch (RuntimeException e) {
-                disable(e);
-                return 0;
-            } finally {
-                end();
-            }
-        }
-
-        void finish(long started, boolean failed) {
-            if (this == NOOP_RECORDER) {
-                return;
-            }
-            Registration current = begin(false);
-            if (current == null) {
-                return;
-            }
-            try {
-                if (current.timer != null) {
-                    ((Timer) current.timer.meter).record(current.clock.monotonicTime() - started, TimeUnit.NANOSECONDS);
-                }
-                if (failed && current.counter != null) {
-                    ((Counter) current.counter.meter).increment();
-                }
-            } catch (RuntimeException e) {
-                disable(e);
-            } finally {
-                end();
-            }
-        }
-
-        private void initialize(Registration acquired) {
-            boolean release;
+            Registration current;
             lock.lock();
             try {
-                release = retired;
-                if (!release) {
-                    registration = acquired;
+                if (retired || disabled) {
+                    return UNTIMED;
+                }
+                if (!initialized) {
+                    // A pending registration must not call a provider that might be waiting for this graph.
+                    return new Sample(null, System.nanoTime(), true);
+                }
+                current = registration;
+                if (current == null || current.timer == null) {
+                    return UNTIMED;
+                }
+                activeCalls++;
+            } finally {
+                lock.unlock();
+            }
+            try {
+                return new Sample(current.clock, current.clock.monotonicTime(), true);
+            } catch (RuntimeException e) {
+                disable(e);
+                return UNTIMED;
+            } finally {
+                end();
+            }
+        }
+
+        void finish(Sample started, boolean failed) {
+            if (this == NOOP_RECORDER) {
+                return;
+            }
+            Registration current;
+            boolean overflow = false;
+            lock.lock();
+            try {
+                if (retired || disabled) {
+                    return;
+                }
+                if (!initialized) {
+                    if (pending.size() == MAX_PENDING_SAMPLES) {
+                        disabled = true;
+                        pending.clear();
+                        overflow = true;
+                    } else {
+                        // Pending samples always start on the system clock; initialization and this append are atomic.
+                        pending.addLast(new Observation(started.timed ? System.nanoTime() - started.started : 0, failed));
+                    }
+                    current = null;
+                } else {
+                    current = registration;
+                    if (current != null) {
+                        activeCalls++;
+                    }
                 }
             } finally {
                 lock.unlock();
             }
-            if (release && acquired != null) {
-                acquired.close();
+            if (overflow) {
+                failures.report(new IllegalStateException("Messaging metrics pending sample buffer is full"));
+            }
+            if (current == null) {
+                return;
+            }
+            try {
+                current.record(started.elapsed(), failed);
+            } catch (RuntimeException e) {
+                disable(e);
+            } finally {
+                end();
             }
         }
 
-        private Registration begin(boolean timed) {
+        private boolean needsInitialization() {
             lock.lock();
             try {
-                if (retired || disabled || registration == null || timed && registration.timer == null) {
-                    return null;
+                return !disabled && (!retired || !pending.isEmpty());
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        private void initialize(Registration acquired) {
+            Registration release = null;
+            List<Observation> replay = List.of();
+            lock.lock();
+            try {
+                initialized = true;
+                if (disabled || acquired == null) {
+                    pending.clear();
+                    release = acquired;
+                } else {
+                    registration = acquired;
+                    replay = List.copyOf(pending);
+                    pending.clear();
+                    if (!replay.isEmpty()) {
+                        activeCalls++;
+                    } else if (retired) {
+                        release = registration;
+                        registration = null;
+                    }
                 }
-                activeCalls++;
-                return registration;
+            } finally {
+                lock.unlock();
+            }
+            if (release != null) {
+                release.close();
+            }
+            if (!replay.isEmpty()) {
+                try {
+                    for (Observation observation : replay) {
+                        acquired.record(observation.nanos(), observation.failed());
+                    }
+                } catch (RuntimeException e) {
+                    disable(e);
+                } finally {
+                    end();
+                }
+            }
+        }
+
+        private void cancel() {
+            lock.lock();
+            try {
+                initialized = true;
+                disabled = true;
+                pending.clear();
             } finally {
                 lock.unlock();
             }
@@ -274,6 +378,7 @@ final class MessagingMetrics {
             lock.lock();
             try {
                 disabled = true;
+                pending.clear();
             } finally {
                 lock.unlock();
             }
@@ -292,6 +397,7 @@ final class MessagingMetrics {
                     release = registration;
                     registration = null;
                 }
+                // Preserve completed pending observations until initialization can publish them to shared meters.
             } finally {
                 lock.unlock();
             }
@@ -299,6 +405,9 @@ final class MessagingMetrics {
                 release.close();
             }
         }
+    }
+
+    private record Observation(long nanos, boolean failed) {
     }
 
     private record MeterKey(String name, Map<String, String> tags) {
@@ -337,6 +446,15 @@ final class MessagingMetrics {
             this.counter = counter;
         }
 
+        private void record(long nanos, boolean failed) {
+            if (timer != null) {
+                ((Timer) timer.meter).record(nanos, TimeUnit.NANOSECONDS);
+            }
+            if (failed && counter != null) {
+                ((Counter) counter.meter).increment();
+            }
+        }
+
         private void close() {
             state.release(timer, counter);
         }
@@ -345,24 +463,29 @@ final class MessagingMetrics {
     private static final class OwnedMeter {
         private final MeterKey key;
         private final Meter meter;
+        private final Object identity;
         private final boolean owned;
         private final FailureReporter failures;
         private int owners;
         private boolean queued;
 
-        private OwnedMeter(MeterKey key, Meter meter, boolean owned, FailureReporter failures) {
+        private OwnedMeter(MeterKey key, Meter meter, Object identity, boolean owned, FailureReporter failures) {
             this.key = key;
             this.meter = meter;
+            this.identity = identity;
             this.owned = owned;
             this.failures = failures;
         }
     }
 
+    private record Acquisition(String channel, Recorder recorder, FailureReporter failures) {
+    }
+
     private static final class RegistryState {
         private final MeterRegistry registry;
         private final ReentrantLock lock = new ReentrantLock();
-        private final Condition operationComplete = lock.newCondition();
         private final Map<MeterKey, OwnedMeter> meters = new HashMap<>();
+        private final ArrayDeque<Acquisition> acquisitions = new ArrayDeque<>();
         private final ArrayDeque<OwnedMeter> removals = new ArrayDeque<>();
         // Graphs and pending acquisitions, guarded by REGISTRIES_LOCK; provider work uses this state's lock instead.
         private int clients;
@@ -373,23 +496,55 @@ final class MessagingMetrics {
             this.registry = registry;
         }
 
-        private Registration acquire(String channel, FailureReporter failures) {
+        private void acquire(String channel, Recorder recorder, FailureReporter failures) {
             if (Boolean.TRUE.equals(PROVIDER_OPERATION.get())) {
+                recorder.cancel();
+                releaseRegistry(this);
                 failures.report(new IllegalStateException("Reentrant messaging metrics registration "
                                                                  + "from a metrics provider callback"));
-                return null;
+                return;
             }
+            Acquisition acquisition = new Acquisition(channel, recorder, failures);
+            boolean run = false;
+            boolean overflow = false;
             lock.lock();
             try {
-                while (operationOwner != null) {
-                    operationComplete.awaitUninterruptibly();
+                if (operationOwner == null) {
+                    operationOwner = Thread.currentThread();
+                    idle = false;
+                    run = true;
+                } else if (acquisitions.size() == MAX_PENDING_REGISTRATIONS) {
+                    overflow = true;
+                } else {
+                    acquisitions.addLast(acquisition);
                 }
-                operationOwner = Thread.currentThread();
-                idle = false;
             } finally {
                 lock.unlock();
             }
-            PROVIDER_OPERATION.set(true);
+            if (overflow) {
+                recorder.cancel();
+                releaseRegistry(this);
+                failures.report(new IllegalStateException("Messaging metrics pending registration queue is full"));
+            } else if (run) {
+                runOperation(acquisition);
+            }
+        }
+
+        private void completeAcquisition(Acquisition acquisition) {
+            try {
+                Registration registration = acquisition.recorder().needsInitialization()
+                        ? acquireNow(acquisition.channel(), acquisition.failures())
+                        : null;
+                acquisition.recorder().initialize(registration);
+            } catch (RuntimeException | Error e) {
+                acquisition.recorder().cancel();
+                throw e;
+            } finally {
+                releaseRegistry(this);
+            }
+        }
+
+        private Registration acquireNow(String channel, FailureReporter failures) {
             OwnedMeter timer = null;
             try {
                 Map<String, String> tags = Map.of("channel", channel);
@@ -418,12 +573,9 @@ final class MessagingMetrics {
                 release(timer, null);
                 failures.report(e);
                 return null;
-            } finally {
-                try {
-                    finishOperation();
-                } finally {
-                    PROVIDER_OPERATION.remove();
-                }
+            } catch (Error e) {
+                release(timer, null);
+                throw e;
             }
         }
 
@@ -435,15 +587,25 @@ final class MessagingMetrics {
             Meter meter;
             try {
                 meter = registry.getOrCreate(builder);
-            } catch (RuntimeException e) {
-                recoverRegistration(factory, builder, before, failures);
+            } catch (RuntimeException | Error e) {
+                try {
+                    recoverRegistration(factory, builder, before, failures);
+                } catch (RuntimeException | Error recoveryFailure) {
+                    if (recoveryFailure != e) {
+                        e.addSuppressed(recoveryFailure);
+                    }
+                }
                 throw e;
             }
             MeterKey key = MeterKey.create(meter);
+            Object identity = meterIdentity(meter);
             lock.lock();
             try {
-                OwnedMeter shared = meters.computeIfAbsent(key,
-                        _ -> new OwnedMeter(key, meter, !before.contains(key), failures));
+                OwnedMeter shared = meters.get(key);
+                if (shared == null || shared.identity != identity) {
+                    shared = new OwnedMeter(key, meter, identity, !before.contains(key), failures);
+                    meters.put(key, shared);
+                }
                 shared.owners++;
                 return shared;
             } finally {
@@ -466,10 +628,12 @@ final class MessagingMetrics {
                     if (before.contains(key)) {
                         return;
                     }
+                    Object identity = meterIdentity(meter);
                     lock.lock();
                     try {
-                        if (!meters.containsKey(key)) {
-                            OwnedMeter orphan = new OwnedMeter(key, meter, true, failures);
+                        OwnedMeter existing = meters.get(key);
+                        if (existing == null || existing.identity != identity) {
+                            OwnedMeter orphan = new OwnedMeter(key, meter, identity, true, failures);
                             meters.put(key, orphan);
                             enqueue(orphan);
                         }
@@ -492,23 +656,12 @@ final class MessagingMetrics {
                 if (cleanup) {
                     operationOwner = Thread.currentThread();
                 }
-                idle = operationOwner == null && meters.isEmpty();
+                idle = operationOwner == null && meters.isEmpty() && acquisitions.isEmpty();
             } finally {
                 lock.unlock();
             }
             if (cleanup) {
-                // Closing a graph during a provider callback only queues its removals; it never waits for the callback.
-                Boolean previous = PROVIDER_OPERATION.get();
-                PROVIDER_OPERATION.set(true);
-                try {
-                    finishOperation();
-                } finally {
-                    if (previous == null) {
-                        PROVIDER_OPERATION.remove();
-                    } else {
-                        PROVIDER_OPERATION.set(previous);
-                    }
-                }
+                runOperation(null);
             } else {
                 removeIdleRegistry(this);
             }
@@ -532,44 +685,89 @@ final class MessagingMetrics {
             }
         }
 
-        private void finishOperation() {
+        private void runOperation(Acquisition first) {
+            Boolean previous = PROVIDER_OPERATION.get();
+            PROVIDER_OPERATION.set(true);
             try {
-                while (true) {
-                    OwnedMeter meter;
-                    lock.lock();
-                    try {
+                if (first != null) {
+                    completeAcquisition(first);
+                }
+                finishOperation(null);
+            } catch (RuntimeException | Error e) {
+                // Cancel pending acquisitions and clean up partial registrations before propagating a fatal failure.
+                finishOperation(e);
+                throw e;
+            } finally {
+                if (previous == null) {
+                    PROVIDER_OPERATION.remove();
+                } else {
+                    PROVIDER_OPERATION.set(previous);
+                }
+                removeIdleRegistry(this);
+            }
+        }
+
+        private void finishOperation(Throwable failure) {
+            while (true) {
+                Acquisition acquisition;
+                OwnedMeter meter = null;
+                lock.lock();
+                try {
+                    acquisition = acquisitions.pollFirst();
+                    if (acquisition == null) {
                         meter = removals.pollFirst();
                         if (meter == null) {
                             operationOwner = null;
                             idle = meters.isEmpty();
-                            operationComplete.signalAll();
                             return;
                         }
                         meter.queued = false;
                         if (meter.owners != 0 || !meters.remove(meter.key, meter)) {
                             continue;
                         }
-                    } finally {
-                        lock.unlock();
-                    }
-                    try {
-                        registry.remove(meter.meter);
-                    } catch (RuntimeException e) {
-                        meter.failures.report(e);
-                    }
-                }
-            } finally {
-                lock.lock();
-                try {
-                    if (operationOwner == Thread.currentThread()) {
-                        operationOwner = null;
-                        idle = meters.isEmpty();
-                        operationComplete.signalAll();
                     }
                 } finally {
                     lock.unlock();
                 }
-                removeIdleRegistry(this);
+                if (acquisition != null) {
+                    if (failure == null) {
+                        completeAcquisition(acquisition);
+                    } else {
+                        acquisition.recorder().cancel();
+                        releaseRegistry(this);
+                    }
+                } else {
+                    try {
+                        removeCurrent(meter);
+                    } catch (RuntimeException | Error cleanupFailure) {
+                        if (failure == null) {
+                            throw cleanupFailure;
+                        }
+                        if (cleanupFailure != failure) {
+                            failure.addSuppressed(cleanupFailure);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void removeCurrent(OwnedMeter meter) {
+            try {
+                var factory = registry.metricsFactory();
+                List<Tag> tags = meter.key.tags().entrySet().stream()
+                        .map(entry -> factory.tagCreate(entry.getKey(), entry.getValue()))
+                        .toList();
+                var current = registry.meter(Meter.class, meter.key.name(), tags);
+                if (current.isPresent()) {
+                    if (meterIdentity(current.get()) == meter.identity) {
+                        registry.remove(current.get());
+                    }
+                } else if (!registry.isDeleted(meter.meter)) {
+                    // Disabled meters are absent from meter lookups, but the registry tracks their deletion state.
+                    registry.remove(meter.meter);
+                }
+            } catch (RuntimeException e) {
+                meter.failures.report(e);
             }
         }
     }

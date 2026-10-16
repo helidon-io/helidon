@@ -57,7 +57,7 @@ class MessagingMetricsTest {
             MessagingMetrics metrics = environment.observe(environment.registry);
             MessagingMetrics.Recorder recorder = metrics.channel("orders");
 
-            long started = recorder.start();
+            var started = recorder.start();
             environment.clock.advance(15);
             recorder.finish(started, false);
             started = recorder.start();
@@ -82,7 +82,7 @@ class MessagingMetricsTest {
             MessagingMetrics.Recorder retired = first.channel("orders");
             MessagingMetrics.Recorder surviving = second.channel("orders");
             retired.finish(retired.start(), false);
-            long late = retired.start();
+            var late = retired.start();
             first.close();
 
             retired.finish(late, true);
@@ -401,7 +401,7 @@ class MessagingMetricsTest {
             RegistryHandler handler = new RegistryHandler(environment.registry);
             MessagingMetrics metrics = environment.observe(handler.proxy);
             MessagingMetrics.Recorder recorder = metrics.channel("orders");
-            long started = recorder.start();
+            var started = recorder.start();
             Timer retainedTimer = environment.timer("orders");
             Counter retainedCounter = environment.counter("orders");
             handler.fault = Fault.REMOVE;
