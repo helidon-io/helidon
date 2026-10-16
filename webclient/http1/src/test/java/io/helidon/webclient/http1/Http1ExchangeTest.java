@@ -27,6 +27,7 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
@@ -119,6 +120,20 @@ class Http1ExchangeTest {
         assertThrows(IllegalArgumentException.class,
                      () -> client.method(Method.QUERY).uri("http://localhost/test").exchange(output -> output.close(),
                                                                                            response -> response.close()));
+    }
+
+    @Test
+    void consumedChunkedResponseExposesDeclaredTrailer() {
+        var connection = new Connection("HTTP/1.1 200 OK\r\n"
+                                                + "Transfer-Encoding: chunked\r\n"
+                                                + "Trailer: checksum\r\n\r\n"
+                                                + "4\r\nbody\r\n0\r\nchecksum: match\r\n\r\n");
+        request(connection).exchange(output -> output.close(), response -> {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.entity().as(String.class), is("body"));
+            assertThat("Consumed exchange response exposes the declared trailer",
+                       response.trailers().first(HeaderNames.create("checksum")), is(Optional.of("match")));
+        });
     }
 
     @Test
