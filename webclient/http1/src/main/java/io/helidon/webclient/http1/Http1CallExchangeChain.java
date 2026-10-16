@@ -103,6 +103,7 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
                                        DataReader reader,
                                        BufferData prologue) {
         exchangeConnection = new ExchangeConnection(connection, reader, writer);
+        responseConnection(exchangeConnection);
         if (transportObservation() != null) {
             transportObservation().startDuplex();
         }
