@@ -43,7 +43,7 @@ import io.helidon.config.ConfigValue;
 public final class EncryptionUtil {
     private static final System.Logger LOGGER = System.getLogger(EncryptionUtil.class.getName());
 
-    // SecureRandom instances cannot be in memory when building native image
+    // Initialize the entropy source only when it is needed.
     private static final LazyValue<SecureRandom> SECURE_RANDOM = LazyValue.create(SecureRandom::new);
 
     private static final int SALT_LENGTH = 16;

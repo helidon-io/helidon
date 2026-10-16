@@ -22,19 +22,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * A type annotated with this annotation will be added to native image with reflection support for all methods
- * and fields (including private).
- * A method or field annotated with this method will be added for reflection.
- * <p>
- * This is an alternative to GraalVM native-image's {@code reflect-config.json} file, specific to Helidon.
- * Processing of this annotation requires an extension for GraalVM that can handle it
- *  on the classpath when building native image.
- * <p>
- * Constructors annotated with this annotation would only be added for reflection if either a field
- * or a method is annotated as well (this is current limitation of API of native image).
+ * Legacy marker for reflection metadata in GraalVM native images.
+ * Helidon no longer processes this annotation.
+ *
+ * @deprecated GraalVM Native Image support is no longer provided. There is no replacement.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD, ElementType.CONSTRUCTOR})
 @Api.Stable
+@Deprecated(since = "28.0.0", forRemoval = true)
 public @interface Reflected {
 }

@@ -16,10 +16,7 @@
 package io.helidon.health.checks;
 
 import java.lang.management.ManagementFactory;
-import java.util.ArrayList;
-import java.util.List;
 
-import io.helidon.common.NativeImageHelper;
 import io.helidon.config.Config;
 import io.helidon.health.HealthCheck;
 
@@ -92,18 +89,11 @@ public final class HealthChecks {
      * @return built-in health checks
      */
     public static HealthCheck[] healthChecks() {
-        if (NativeImageHelper.isNativeImage()) {
-            return new HealthCheck[] {
-                    //diskSpaceCheck(), // - bug
-                    heapMemoryCheck()
-            };
-        } else {
-            return new HealthCheck[] {
-                    deadlockCheck(),
-                    diskSpaceCheck(),
-                    heapMemoryCheck()
-            };
-        }
+        return new HealthCheck[] {
+                deadlockCheck(),
+                diskSpaceCheck(),
+                heapMemoryCheck()
+        };
     }
 
     /**
@@ -113,13 +103,10 @@ public final class HealthChecks {
      * @return built-in health checks, set up using the provided configuration
      */
     public static HealthCheck[] healthChecks(Config config) {
-        List<HealthCheck> result = new ArrayList<>();
-        if (!NativeImageHelper.isNativeImage()) {
-            result.add(deadlockCheck());
-            result.add(diskSpaceCheck(config.get(DiskSpaceHealthCheck.CONFIG_KEY_DISKSPACE_PREFIX)));
-        }
-        result.add(heapMemoryCheck(config.get(HeapMemoryHealthCheck.CONFIG_KEY_HEAP_PREFIX)));
-
-        return result.toArray(new HealthCheck[0]);
+        return new HealthCheck[] {
+                deadlockCheck(),
+                diskSpaceCheck(config.get(DiskSpaceHealthCheck.CONFIG_KEY_DISKSPACE_PREFIX)),
+                heapMemoryCheck(config.get(HeapMemoryHealthCheck.CONFIG_KEY_HEAP_PREFIX))
+        };
     }
 }

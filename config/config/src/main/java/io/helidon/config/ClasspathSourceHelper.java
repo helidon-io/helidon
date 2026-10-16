@@ -57,7 +57,7 @@ final class ClasspathSourceHelper {
         URL resourceUrl = contextClassLoader().getResource(resourceName);
         if (resourceUrl != null) {
             // this can only work if we are using a file based classloader (which may not be always the case)
-            // we may load classes from http, or from specific loaders, such as in Graal native image
+            // we may load classes from http or from custom class loaders
             URI uri = resourceUrl.toURI();
             if ("file".equals(uri.getScheme())) {
                 return Paths.get(uri);

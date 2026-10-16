@@ -18,9 +18,12 @@ package io.helidon.common;
 import java.util.Optional;
 
 /**
- * Utility for GraalVM native image.
+ * Utility for detecting a GraalVM native image environment.
+ *
+ * @deprecated GraalVM Native Image support is no longer provided. There is no replacement.
  */
 @Api.Stable
+@Deprecated(since = "28.0.0", forRemoval = true)
 public final class NativeImageHelper {
     private static final String SYS_PROP_IMAGE_CODE = "org.graalvm.nativeimage.imagecode";
     private static final String BUILD_TIME = "buildtime";
@@ -33,7 +36,9 @@ public final class NativeImageHelper {
      * Check whether we are in native image runtime.
      *
      * @return {@code true} if we are in native image runtime at the time this method is called
+     * @deprecated GraalVM Native Image support is no longer provided. There is no replacement.
      */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     public static boolean isRuntime() {
         return property()
                 .map(RUNTIME::equals)
@@ -44,7 +49,9 @@ public final class NativeImageHelper {
      * Check whether we are in native image build time.
      *
      * @return {@code true} if we are in native image build time at the time this method is called
+     * @deprecated GraalVM Native Image support is no longer provided. There is no replacement.
      */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     public static boolean isBuildTime() {
         return property()
                 .map(BUILD_TIME::equals)
@@ -55,7 +62,9 @@ public final class NativeImageHelper {
      * Check whether we are in native image environment (either build time or runtime).
      *
      * @return {@code true} if we are in native image environment at the time this method is called
+     * @deprecated GraalVM Native Image support is no longer provided. There is no replacement.
      */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     public static boolean isNativeImage() {
         return property().isPresent();
     }

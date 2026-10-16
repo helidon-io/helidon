@@ -40,6 +40,7 @@ import static org.hamcrest.Matchers.is;
 class HelidonFeaturesLoggingTest {
     @Test
     void detailedTreeUsesLogger() throws Exception {
+        // The child fixture retains legacy aot metadata, which must not affect feature logging.
         // Features are scanned once per class loader. Isolate this catalog from the empty-catalog tests.
         ClassLoader original = Thread.currentThread().getContextClassLoader();
         try (var classLoader = new FeatureClassLoader()) {
@@ -85,7 +86,7 @@ class HelidonFeaturesLoggingTest {
                         "Detailed feature tree:",
                         "Test Root           Root description",
                         "  Undescribed",
-                        "    Test Child      Child description (NOT SUPPORTED in native image)"));
+                        "    Test Child      Child description"));
                 assertThat(records.stream().map(LogRecord::getLevel).toList(), everyItem(is(Level.INFO)));
             } finally {
                 logger.removeHandler(handler);

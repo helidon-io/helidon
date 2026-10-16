@@ -18,7 +18,6 @@ package io.helidon.health.checks;
 import java.lang.management.ManagementFactory;
 import java.util.List;
 
-import io.helidon.common.NativeImageHelper;
 import io.helidon.config.Config;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.spi.HealthCheckProvider;
@@ -35,11 +34,7 @@ public class BuiltInHealthCheckProvider implements HealthCheckProvider {
 
     @Override
     public List<HealthCheck> healthChecks(Config config) {
-        if (NativeImageHelper.isNativeImage()) {
-            return List.of(diskSpace(config), heapMemory(config));
-        } else {
-            return List.of(diskSpace(config), heapMemory(config), deadlock());
-        }
+        return List.of(diskSpace(config), heapMemory(config), deadlock());
     }
 
     private DeadlockHealthCheck deadlock() {

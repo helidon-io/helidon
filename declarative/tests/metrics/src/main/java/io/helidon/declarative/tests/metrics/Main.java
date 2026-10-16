@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import io.helidon.webserver.WebServer;
 @Service.GenerateBinding // annotation is required to generate application binding
 public final class Main {
     static {
-        // used when building with GraalVM native image to configure logging during build
+        // Initialize logging before starting the application.
         LogConfig.initClass();
     }
 
