@@ -286,6 +286,20 @@ WebServer configuration bean
 </tr>
 <tr>
 <td>
+<a id="error-log"></a>
+<a href="io.helidon.webserver.ErrorLogConfig.md">
+<code>error-<wbr>log</code>
+</a>
+</td>
+<td>
+<code>Error<wbr>LogConfig</code>
+</td>
+<td>
+</td>
+<td>Limits for internal server-error logging, shared across all listeners</td>
+</tr>
+<tr>
+<td>
 <code>shutdown-<wbr>hook</code>
 </td>
 <td>

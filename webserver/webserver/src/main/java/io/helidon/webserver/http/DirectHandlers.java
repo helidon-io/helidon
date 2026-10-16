@@ -27,6 +27,7 @@ import io.helidon.http.Method;
 import io.helidon.http.RequestException;
 import io.helidon.http.Status;
 import io.helidon.webserver.CloseConnectionException;
+import io.helidon.webserver.ListenerContext;
 
 import static java.lang.System.Logger.Level.WARNING;
 
@@ -83,6 +84,14 @@ public class DirectHandlers {
     }
 
     void handle(RequestException httpException,
+                DirectHandler.TransportRequest request,
+                ServerResponse res,
+                boolean keepAlive) {
+        handle(null, httpException, request, res, keepAlive);
+    }
+
+    void handle(ListenerContext listenerContext,
+                RequestException httpException,
                 DirectHandler.TransportRequest request,
                 ServerResponse res,
                 boolean keepAlive) {
@@ -170,8 +179,12 @@ public class DirectHandlers {
                     ex);
         }
 
-        if (response.status() == Status.INTERNAL_SERVER_ERROR_500) {
-            LOGGER.log(WARNING, "Internal server error", httpException);
+        if (response.status().code() == Status.INTERNAL_SERVER_ERROR_500.code()) {
+            if (listenerContext != null) {
+                listenerContext.logError(LOGGER, WARNING, "Internal server error", httpException);
+            } else {
+                LOGGER.log(WARNING, "Internal server error", httpException);
+            }
         }
     }
 

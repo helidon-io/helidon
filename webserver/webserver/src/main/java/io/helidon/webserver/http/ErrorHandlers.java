@@ -148,12 +148,25 @@ public final class ErrorHandlers {
                                         RoutingResponse response,
                                         RequestException e) {
         if (!response.resetEntity()) {
-            HttpPrologue prologue = request.prologue();
-            ctx.log(LOGGER, System.Logger.Level.WARNING,
-                    "Request failed: %s, cannot send error response, as response already sent",
-                    e, prologue.method()
-                            + " " + LogFormatter.escape(prologue.uriPath().rawPath())
-                            + " " + prologue.protocol() + "/" + prologue.protocolVersion());
+            if (e.status().code() == Status.INTERNAL_SERVER_ERROR_500.code()) {
+                ctx.listenerContext().logError(LOGGER, System.Logger.Level.WARNING,
+                                              "Request failed, cannot send error response, as response already sent", e);
+                if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                    HttpPrologue prologue = request.prologue();
+                    ctx.log(LOGGER, System.Logger.Level.TRACE,
+                            "Request failed: %s, cannot send error response, as response already sent",
+                            e, prologue.method()
+                                    + " " + LogFormatter.escape(prologue.uriPath().rawPath())
+                                    + " " + prologue.protocol() + "/" + prologue.protocolVersion());
+                }
+            } else {
+                HttpPrologue prologue = request.prologue();
+                ctx.log(LOGGER, System.Logger.Level.WARNING,
+                        "Request failed: %s, cannot send error response, as response already sent",
+                        e, prologue.method()
+                                + " " + LogFormatter.escape(prologue.uriPath().rawPath())
+                                + " " + prologue.protocol() + "/" + prologue.protocolVersion());
+            }
             throw new CloseConnectionException(
                     "Cannot send response of an error handler, status and headers already written");
         }
@@ -175,7 +188,8 @@ public final class ErrorHandlers {
         prepareContentEncoding(ctx, request, response);
         ctx.listenerContext()
                 .directHandlers()
-                .handle(e,
+                .handle(ctx.listenerContext(),
+                        e,
                         DirectTransportRequest.create(request.prologue(), request.headers()),
                         response,
                         keepAlive);
@@ -227,11 +241,19 @@ public final class ErrorHandlers {
                              Throwable e,
                              ErrorHandler<Throwable> it) {
         if (!response.resetEntity()) {
-            ctx.log(LOGGER,
-                    System.Logger.Level.WARNING,
-                    "Unable to reset response for error handler, at least part of entity already written. "
-                            + "Error handler cannot be invoked.",
-                    e);
+            if (!(e instanceof HttpException httpException)
+                    || httpException.status().code() == Status.INTERNAL_SERVER_ERROR_500.code()) {
+                ctx.listenerContext().logError(LOGGER,
+                                              System.Logger.Level.WARNING,
+                                              "Unable to reset response for error handler, at least part of entity already "
+                                                      + "written. Error handler cannot be invoked.", e);
+            } else {
+                ctx.log(LOGGER,
+                        System.Logger.Level.WARNING,
+                        "Unable to reset response for error handler, at least part of entity already written. "
+                                + "Error handler cannot be invoked.",
+                        e);
+            }
             throw new CloseConnectionException(
                     "Cannot send response of a simple handler, status and headers already written", e);
         }

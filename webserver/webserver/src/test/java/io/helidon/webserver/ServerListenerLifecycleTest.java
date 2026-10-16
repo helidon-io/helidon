@@ -1475,6 +1475,7 @@ class ServerListenerLifecycleTest {
                                                      MediaContext.create(),
                                                      ContentEncodingContext.create(),
                                                      DirectHandlers.create(),
+                                                     new ErrorLogLimiter(ErrorLogConfig.create(), System.nanoTime()),
                                                      List.of(),
                                                      (failedListener, _) -> failedListener.stop());
         AtomicReference<Throwable> firstStopFailure = new AtomicReference<>();
@@ -2293,6 +2294,7 @@ class ServerListenerLifecycleTest {
                                   MediaContext.create(),
                                   ContentEncodingContext.create(),
                                   DirectHandlers.create(),
+                                  new ErrorLogLimiter(config.errorLog(), System.nanoTime()),
                                   observerLifecycles,
                                   (failedListener, _) -> failedListener.stop());
     }
