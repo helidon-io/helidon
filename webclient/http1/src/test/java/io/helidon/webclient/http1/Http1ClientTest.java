@@ -95,6 +95,7 @@ import io.helidon.http.media.MediaContextConfig;
 import io.helidon.http.media.MediaSupport;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webclient.api.ClientConnection;
+import io.helidon.webclient.api.ClientConnectionTarget;
 import io.helidon.webclient.api.ClientRequestBase;
 import io.helidon.webclient.api.ClientRequestOrigin;
 import io.helidon.webclient.api.ClientUri;
@@ -517,6 +518,96 @@ class Http1ClientTest {
             } finally {
                 localClient.closeResource();
             }
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void earlyExpectRedirectKeepsServiceClientConnectionSeparateFromTransport(boolean consumeBody) {
+        AtomicInteger handlerInvocations = new AtomicInteger();
+        AtomicInteger sourceCompletions = new AtomicInteger();
+        AtomicInteger targetCompletions = new AtomicInteger();
+        CompletableFuture<WebClientServiceResponse> targetCompletion = new CompletableFuture<>();
+        FakeHttp1ClientConnection source = new FakeHttp1ClientConnection(
+                "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n",
+                "HTTP/1.1 307 Temporary Redirect\r\n"
+                        + "Location: /decorated-target\r\n"
+                        + "Content-Length: 0\r\n\r\n");
+        FakeHttp1ClientConnection targetTransport = new FakeHttp1ClientConnection(
+                "HTTP/1.1 200 OK\r\nContent-Length: 7\r\n\r\npayload");
+        FakeHttp1ClientConnection serviceResource = new FakeHttp1ClientConnection();
+        Http1ClientConfig config = Http1ClientConfig.builder()
+                .servicesDiscoverServices(false)
+                .sendExpectContinue(true)
+                .addService((chain, request) -> {
+                    if (request.uri().toUri().getPath().equals("/decorated-target")) {
+                        request.whenComplete().thenAccept(_ -> targetCompletions.incrementAndGet());
+                        return WebClientServiceResponse.builder(chain.proceed(request))
+                                .whenComplete(targetCompletion)
+                                .connection(serviceResource)
+                                .build();
+                    }
+                    request.whenComplete().thenAccept(_ -> sourceCompletions.incrementAndGet());
+                    return chain.proceed(request);
+                })
+                .buildPrototype();
+        Http1ConnectionCache cache = new Http1ConnectionCache(false) {
+            @Override
+            ClientConnection connection(Http1ClientImpl client,
+                                        ClientConnectionTarget target,
+                                        ClientRequestHeaders headers,
+                                        boolean keepAlive) {
+                return targetTransport;
+            }
+        };
+        Http1Client localClient = new Http1ClientImpl(WebClient.create(), config) {
+            @Override
+            Http1ConnectionCache connectionCache() {
+                return cache;
+            }
+        };
+
+        try (Http1ClientResponse response = localClient.post("http://localhost/early-expect-source")
+                .connection(source)
+                .followRedirects(true)
+                .outputStream(output -> {
+                    handlerInvocations.incrementAndGet();
+                    output.write("payload".getBytes(StandardCharsets.UTF_8));
+                    output.close();
+                })) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(handlerInvocations.get(), is(1));
+            assertThat(targetTransport.getPrologue(), startsWith("POST /decorated-target "));
+            assertThat(source.closeCount(), is(1));
+            assertThat(source.releaseCount(), is(0));
+            assertThat(targetTransport.releaseCount(), is(0));
+            assertThat(targetTransport.closeCount(), is(0));
+            assertThat(serviceResource.closeCount(), is(0));
+            assertThat(targetCompletion.isDone(), is(false));
+            assertThat(sourceCompletions.get(), is(0));
+            assertThat(targetCompletions.get(), is(0));
+
+            if (consumeBody) {
+                assertThat(response.as(String.class), is("payload"));
+            } else {
+                response.close();
+            }
+            response.close();
+            response.close();
+            assertThat("The actual target transport is released exactly once",
+                       targetTransport.releaseCount(), is(1));
+            assertThat(targetTransport.closeCount(), is(0));
+            assertThat("The distinct service ClientConnection is closed exactly once",
+                       serviceResource.closeCount(), is(1));
+            assertThat(serviceResource.releaseCount(), is(0));
+            assertThat(targetCompletion.isDone(), is(true));
+            assertThat(targetCompletion.isCompletedExceptionally(), is(false));
+            assertThat(sourceCompletions.get(), is(1));
+            assertThat(targetCompletions.get(), is(1));
+        } finally {
+            localClient.closeResource();
+            source.closeResource();
+            targetTransport.closeResource();
         }
     }
 
