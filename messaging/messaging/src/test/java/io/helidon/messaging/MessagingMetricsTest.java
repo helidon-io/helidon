@@ -402,6 +402,8 @@ class MessagingMetricsTest {
             MessagingMetrics metrics = environment.observe(handler.proxy);
             MessagingMetrics.Recorder recorder = metrics.channel("orders");
             long started = recorder.start();
+            Timer retainedTimer = environment.timer("orders");
+            Counter retainedCounter = environment.counter("orders");
             handler.fault = Fault.REMOVE;
             metrics.close();
             assertThat(handler.removals.get(), is(2));
@@ -413,7 +415,11 @@ class MessagingMetricsTest {
             MessagingMetrics.Recorder current = replacement.channel("orders");
             current.finish(current.start(), false);
             replacement.close();
-            assertThat(environment.registry.meters(), empty());
+            // Failed cleanup released internal ownership; a later graph borrows the pre-existing series.
+            assertThat(environment.timer("orders"), sameInstance(retainedTimer));
+            assertThat(environment.counter("orders"), sameInstance(retainedCounter));
+            assertThat(retainedTimer.count(), is(1L));
+            assertThat(retainedCounter.count(), is(0L));
         }
     }
 

@@ -692,15 +692,21 @@ payload conversion, and connector mapping failures reported through `startFailed
 processing metrics. Dead-letter processing records an attempt on its destination channel. Cancellation of a caller
 does not complete a sample before its running callback ends.
 
-Graphs using the same channel name and the same `MeterRegistry` instance share cumulative metrics. Closing one graph
-releases its ownership; the metrics remain until the last graph using them closes or finishes terminal rollback.
-Creating a graph after the last owner releases the metrics starts a new series. The shared registry itself remains open.
+Graphs using the same `MeterRegistry` instance share meters with matching final names and tags, including when a
+customizer makes different channels share one identity. Closing one graph releases its ownership; meters created by
+messaging remain until the last graph using them closes or finishes terminal rollback. Pre-existing application meters
+are borrowed and remain registered after the graphs close. Creating a graph after the last owner removes a messaging
+meter starts a new series. The shared registry itself remains open.
 Use the same registry instance when sharing meters; separate wrappers around one underlying provider registry are not
 treated as the same owner. A force-closed graph's late callbacks do not update surviving or replacement registrations.
+If a provider operation is in progress, cleanup is deferred until it returns, allowing its callbacks to close graphs
+without waiting for meter registration. Recording already in progress completes before its meter ownership is released.
 
 An ordinary metrics provider failure disables the affected recording and is logged once per graph without changing
-delivery or retry behavior. If a provider listener synchronously creates another graph during meter registration or
-removal, the nested registration uses no-op metrics and logs a warning to avoid sharing partially registered meters.
+delivery or retry behavior. If a provider listener creates another graph on the callback thread during meter registration
+or removal, the nested registration uses no-op metrics and logs a warning to avoid sharing partially registered meters.
+If meter removal fails, a later graph may reuse the retained series; it treats that series as pre-existing and does not
+remove it on close.
 
 ### Graph health
 
