@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,11 @@
 
 package io.helidon.config.spi;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.AbstractMap;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
@@ -38,32 +40,71 @@ import io.helidon.config.spi.ConfigNode.ValueNode;
 final class FallbackMergingStrategy implements MergingStrategy {
 
     @Override
-    public ObjectNode merge(List<ObjectNode> rootNodesParam) {
-        // we may get an immutable list
-        List<ObjectNode> rootNodes = new ArrayList<>(rootNodesParam);
-        Collections.reverse(rootNodes);
-
+    public ObjectNode merge(List<ObjectNode> rootNodes) {
         ObjectNode.Builder builder = ObjectNode.builder();
+        String description = "N/A";
+        boolean hasMembers = false;
+        boolean hasValue = false;
+        for (ObjectNode root : rootNodes.reversed()) {
+            String rootDescription = Objects.requireNonNullElse(root.description(), "N/A");
+            Optional<String> rootValue = root.value();
+            if (rootValue.isPresent()) {
+                builder.value(rootValue.get());
+                hasValue = true;
+                description = rootDescription;
+            } else if (!hasValue) {
+                if (!hasMembers) {
+                    description = rootDescription;
+                } else if (!root.isEmpty() && !description.equals(rootDescription)) {
+                    description = "N/A";
+                }
+            }
+            root.forEach((key, node) -> addNode(builder, key, node));
+            hasMembers |= !root.isEmpty();
+        }
 
-        rootNodes.forEach(root -> root.forEach((key, node) -> addNode(builder, key, node)));
-
-        return builder.build();
+        // Assign the root origin once, without repeatedly copying the growing merged tree.
+        return ObjectNode.wrap(new MergedRoot(builder.build(), description));
     }
 
     private static void addNode(ObjectNode.Builder builder, String key, ConfigNode node) {
         switch (node.nodeType()) {
         case OBJECT:
             builder.addObject(key, (ObjectNode) node);
-            return;
+            break;
         case LIST:
             builder.addList(key, (ListNode) node);
-            return;
+            break;
         case VALUE:
             builder.addValue(key, (ValueNode) node);
-            return;
+            break;
         default:
             throw new IllegalArgumentException("Unsupported node type: " + node.getClass().getName());
         }
     }
 
+    private static final class MergedRoot extends AbstractMap<String, ConfigNode> implements ObjectNode {
+        private final ObjectNode node;
+        private final String description;
+
+        private MergedRoot(ObjectNode node, String description) {
+            this.node = node;
+            this.description = description;
+        }
+
+        @Override
+        public Set<Entry<String, ConfigNode>> entrySet() {
+            return node.entrySet();
+        }
+
+        @Override
+        public Optional<String> value() {
+            return node.value();
+        }
+
+        @Override
+        public String description() {
+            return description;
+        }
+    }
 }

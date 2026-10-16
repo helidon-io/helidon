@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,56 +17,71 @@
 package io.helidon.config;
 
 import java.util.AbstractMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
-import io.helidon.config.AbstractNodeBuilderImpl.MergingKey;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 
 /**
  * Implements {@link ObjectNode}.
+ *
+ * @deprecated use {@link ObjectNode#builder()} or {@link ObjectNode#wrap(ObjectNode)};
+ *             this implementation will become package-private
  */
+@Deprecated(since = "28.0.0", forRemoval = true)
 public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements ObjectNode, MergeableNode {
 
     private final Map<String, ConfigNode> members;
     private final Function<String, String> resolveTokenFunction;
     private final String value;
-    private String description;
+    private volatile String description;
 
     ObjectNodeImpl(Map<String, ConfigNode> members, Function<String, String> resolveTokenFunction) {
         this(members, resolveTokenFunction, null);
     }
 
     ObjectNodeImpl(Map<String, ConfigNode> members, Function<String, String> resolveTokenFunction, String value) {
-        this.members = members;
+        this(members, resolveTokenFunction, value, "N/A");
+    }
+
+    ObjectNodeImpl(Map<String, ? extends ConfigNode> members, Function<String, String> resolveTokenFunction,
+                   String value, String description) {
+        this.members = Collections.unmodifiableMap(new LinkedHashMap<>(members));
         this.resolveTokenFunction = resolveTokenFunction;
         this.value = value;
+        this.description = Objects.requireNonNullElse(description, "N/A");
     }
 
     /**
-     * Wraps value node into mergeable value node.
+     * Copies an object node into a mergeable object node, retaining source descriptions.
      *
      * @param objectNode original node
-     * @return new instance of mergeable node or original node if already was mergeable.
+     * @return new mergeable object node
      */
     public static ObjectNodeImpl wrap(ObjectNode objectNode) {
         return wrap(objectNode, Function.identity());
     }
 
     /**
-     * Wraps value node into mergeable value node.
+     * Copies an object node into a mergeable object node, retaining source descriptions.
      *
      * @param objectNode           original node
      * @param resolveTokenFunction a token resolver
-     * @return new instance of mergeable node or original node if already was mergeable.
+     * @return new mergeable object node
      */
     public static ObjectNodeImpl wrap(ObjectNode objectNode, Function<String, String> resolveTokenFunction) {
+        Objects.requireNonNull(objectNode);
+        Objects.requireNonNull(resolveTokenFunction);
         return ObjectNodeBuilderImpl.create(objectNode, resolveTokenFunction)
                 .value(objectNode.value())
+                .description(objectNode.description())
                 .build();
     }
 
@@ -167,6 +182,7 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
     private MergeableNode mergeWithValueNode(ValueNodeImpl node) {
         ObjectNodeBuilderImpl builder = ObjectNodeBuilderImpl.create(members, resolveTokenFunction);
         builder.value(node.value());
+        builder.description(AbstractNodeBuilderImpl.mergedDescription(this, node));
 
         return builder.build();
     }
@@ -174,9 +190,12 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
     private MergeableNode mergeWithObjectNode(ObjectNodeImpl node) {
         //merge object 'node' with object this object members
         ObjectNodeBuilderImpl builder = ObjectNodeBuilderImpl.create(members, resolveTokenFunction);
-        node.forEach((name, member) -> builder.deepMerge(MergingKey.of(name), AbstractNodeBuilderImpl.wrap(member)));
+        node.forEach((name, member) -> builder.deepMerge(
+                AbstractNodeBuilderImpl.MergingKey.of(ObjectNodeBuilderImpl.encodeDotsInTokenReferences(name)),
+                AbstractNodeBuilderImpl.wrap(member)));
 
         node.value().or(this::value).ifPresent(builder::value);
+        builder.description(AbstractNodeBuilderImpl.mergedDescription(this, node));
 
         return builder.build();
     }
@@ -189,6 +208,7 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
         } else if (hasValue()) {
             builder.value(value);
         }
+        builder.description(AbstractNodeBuilderImpl.mergedDescription(this, node));
 
         AtomicInteger index = new AtomicInteger(0);
         node.forEach(configNode -> {
@@ -210,19 +230,19 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
     /**
      * Initialize diagnostics description of source of node instance.
      *
-     * @param description diagnostics description
+     * @param description diagnostics description; for legacy compatibility, {@code null} resets it to {@code "N/A"}
      * @return this instance
+     * @deprecated source descriptions are assigned by Helidon when loading nodes
      */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     public ObjectNodeImpl initDescription(String description) {
-        this.description = description;
+        // Retain the legacy nullable input during deprecation, without returning null from description().
+        this.description = Objects.requireNonNullElse(description, "N/A");
         members.values().forEach(node -> initDescription(node, description));
         return this;
     }
 
-    /**
-     * Description of this node.
-     * @return node description
-     */
+    @Override
     public String description() {
         return description;
     }

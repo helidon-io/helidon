@@ -34,6 +34,7 @@ import io.helidon.config.spi.MergingStrategy;
 /**
  * Runtime of all configured configuration sources.
  */
+@SuppressWarnings("removal")
 final class ConfigSourcesRuntime {
     private final List<RuntimeWithData> loadedData = new LinkedList<>();
 
@@ -79,7 +80,8 @@ final class ConfigSourcesRuntime {
         for (RuntimeWithData runtimeWithData : loadedData) {
             var source = runtimeWithData.runtime;
             if (source.isLazy()) {
-                Optional<ConfigNode> node = source.node(key);
+                Optional<ConfigNode> node = source.node(key)
+                        .map(it -> ConfigNodeHelper.fromSource(it, source.description()));
                 if (node.isPresent()) {
                     var data = runtimeWithData.data;
                     ObjectNode newNode = toRootNode(key, node.get());
@@ -120,19 +122,20 @@ final class ConfigSourcesRuntime {
     // update the runtime with the new data set
     private void processChange(RuntimeWithData runtimeWithData, String changedKey, ConfigNode changeNode) {
         ConfigKeyImpl key = ConfigKeyImpl.of(changedKey);
-        ObjectNode changeObjectNode = toObjectNode(changeNode);
+        ConfigNode describedNode = ConfigNodeHelper.fromSource(changeNode, runtimeWithData.runtime().description());
 
         if (key.isRoot()) {
             // we have a root, no merging with original data, just set it
-            runtimeWithData.data = Optional.of(changeObjectNode);
+            runtimeWithData.data = Optional.of(toObjectNode(describedNode));
             return;
         }
 
-        ObjectNode newRootNode = toRootNode(changedKey, changeNode);
+        ObjectNode newRootNode = toRootNode(changedKey, describedNode);
 
         // old data was empty, this is the only data we have
         if (runtimeWithData.data.isEmpty()) {
             runtimeWithData.data = Optional.of(newRootNode);
+            return;
         }
 
         // we had data, now we have new data (not on root), let's merge
@@ -158,13 +161,12 @@ final class ConfigSourcesRuntime {
         what we want to get:
             objectNode(app: objectNode(config: objectNode(greeting: valueNode("hello"))))
          */
-        var currentBuilder = ObjectNode.builder();
         var previousNode = configNode;
 
         for (String pathElement : path) {
+            var currentBuilder = ObjectNodeBuilderImpl.create().description(previousNode.description());
             currentBuilder.addNode(pathElement, previousNode);
             previousNode = currentBuilder.build();
-            currentBuilder = ObjectNode.builder();
         }
 
 
@@ -176,9 +178,15 @@ final class ConfigSourcesRuntime {
         case OBJECT:
             return (ObjectNode) changeNode;
         case LIST:
-            return ObjectNode.builder().addList("", (ConfigNode.ListNode) changeNode).build();
+            return ObjectNodeBuilderImpl.create()
+                    .description(changeNode.description())
+                    .addList("", (ConfigNode.ListNode) changeNode)
+                    .build();
         case VALUE:
-            return ObjectNode.builder().value(((ConfigNode.ValueNode) changeNode).get()).build();
+            return ObjectNodeBuilderImpl.create()
+                    .description(changeNode.description())
+                    .value(((ConfigNode.ValueNode) changeNode).get())
+                    .build();
         default:
             throw new IllegalArgumentException("Unsupported node type: " + changeNode.nodeType());
         }
@@ -197,8 +205,7 @@ final class ConfigSourcesRuntime {
 
         for (ConfigSourceRuntimeImpl source : allSources) {
             loadedData.add(new RuntimeWithData(source, source.load()
-                    .map(ObjectNodeImpl::wrap)
-                    .map(objectNode -> objectNode.initDescription(source.description()))));
+                    .map(objectNode -> (ObjectNode) ConfigNodeHelper.fromSource(objectNode, source.description()))));
         }
 
         Set<String> allKeys = loadedData.stream()
@@ -240,7 +247,7 @@ final class ConfigSourcesRuntime {
 
         nodes.forEach(builder::addNode);
 
-        return Optional.of(builder.build());
+        return Optional.of((ObjectNode) ConfigNodeHelper.fromSource(builder.build(), runtime.description()));
     }
 
     private Stream<String> streamKeys(ObjectNode objectNode) {

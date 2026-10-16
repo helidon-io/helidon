@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.config;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -28,11 +29,16 @@ import io.helidon.config.spi.ConfigNode.ValueNode;
 
 /**
  * Implementation of {@link ListNode.Builder}.
+ *
+ * @deprecated use {@link ListNode#builder()} or {@link ListNode#builder(Function)};
+ *             this implementation will become package-private
  */
+@Deprecated(since = "28.0.0", forRemoval = true)
 public class ListNodeBuilderImpl extends AbstractNodeBuilderImpl<Integer, ListNode.Builder> implements ListNode.Builder {
 
     private final List<MergeableNode> elements;
     private String value;
+    private String description = "N/A";
 
     /**
      * Initialize list builder.
@@ -47,7 +53,7 @@ public class ListNodeBuilderImpl extends AbstractNodeBuilderImpl<Integer, ListNo
      * @param resolveTokenFunctions a token resolver
      */
     public ListNodeBuilderImpl(Function<String, String> resolveTokenFunctions) {
-        super(resolveTokenFunctions);
+        super(Objects.requireNonNull(resolveTokenFunctions));
         elements = new LinkedList<>();
     }
 
@@ -80,8 +86,9 @@ public class ListNodeBuilderImpl extends AbstractNodeBuilderImpl<Integer, ListNo
      * @param node new node
      * @return modified builder
      */
+    @Override
     public ListNodeBuilderImpl addNode(ConfigNode node) {
-        elements.add(wrap(node));
+        elements.add(wrap(Objects.requireNonNull(node), tokenResolver()));
         return this;
     }
 
@@ -101,6 +108,11 @@ public class ListNodeBuilderImpl extends AbstractNodeBuilderImpl<Integer, ListNo
     // even though value is now optional
     ListNodeBuilderImpl value(Optional<String> value) {
         value.ifPresent(this::value);
+        return this;
+    }
+
+    ListNodeBuilderImpl description(String description) {
+        this.description = Objects.requireNonNullElse(description, "N/A");
         return this;
     }
 
@@ -159,7 +171,7 @@ public class ListNodeBuilderImpl extends AbstractNodeBuilderImpl<Integer, ListNo
 
     @Override
     public ListNodeImpl build() {
-        return new ListNodeImpl(elements, value);
+        return new ListNodeImpl(elements, value, description);
     }
 
     @Override
