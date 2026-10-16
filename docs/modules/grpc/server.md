@@ -222,6 +222,35 @@ given its *higher* weight of `Interceptor.USER + 100`.
 > mechanisms, it is recommended to use the `intercept` method on a `GrpcRouting`
 > builder, as shown above, to ensure correct ordering based on weights.
 
+### Deadlines
+
+The server reads the client's `grpc-timeout` header and makes the deadline
+available through `io.grpc.Context.current().getDeadline()` in server
+interceptors and service callbacks, including streaming callbacks. Calls
+without a timeout have no deadline.
+
+When the deadline expires, the server cancels the call's gRPC context and
+returns `DEADLINE_EXCEEDED`. Service code should observe context cancellation
+and stop any work it owns. An outbound Helidon gRPC call created within the
+handler inherits the remaining context deadline; see [Client Deadlines](client.md#deadlines).
+
+The server uses a shared deadline timer and writes responses on the thread
+calling the service's `ServerCall`. When a deadline expires, the timer starts
+a virtual thread to cancel that call's context. Calls that complete before
+their deadline create no additional deadline thread. Cancellation listeners
+run inline on the thread cancelling the context; a blocked expiry listener
+does not delay other calls' deadlines. Keep these listeners brief so they do
+not delay their own call's cancellation. When a transport reset or connection
+closure cancels a live call, a virtual thread cancels its context independently
+of any active service callback. A service callback waiting for context
+cancellation can therefore return even when the call has no deadline. Normal
+completion creates no transport cancellation thread. The service's `onCancel`
+callback remains serialized with other service callbacks.
+Deadline cancellation signals that stream thread to send the final status,
+keeping transport writes off the expiry thread. If a service callback or
+response write is already in progress, the final status waits for it to return; the server
+completes any current frame before sending the status.
+
 ### Metrics
 
 Helidon supports a few metrics that are specific to gRPC and are based on those

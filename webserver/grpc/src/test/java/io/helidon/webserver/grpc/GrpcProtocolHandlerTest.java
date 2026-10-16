@@ -22,15 +22,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Handler;
@@ -42,21 +48,29 @@ import java.util.zip.GZIPOutputStream;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.PeerInfo;
+import io.helidon.common.socket.SocketWriter;
+import io.helidon.common.socket.SocketWriterException;
 import io.helidon.common.uri.UriAuthority;
 import io.helidon.grpc.core.WeightedBag;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.http2.ConnectionFlowControl;
 import io.helidon.http.http2.FlowControl;
+import io.helidon.http.http2.Http2ConnectionWriter;
+import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2FrameHeader;
+import io.helidon.http.http2.Http2FrameType;
 import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2RstStream;
 import io.helidon.http.http2.Http2StreamState;
 import io.helidon.http.http2.Http2StreamWriter;
+import io.helidon.http.http2.StreamFlowControl;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.testing.junit5.Testing;
@@ -67,6 +81,8 @@ import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.SniContext;
 import io.helidon.webserver.SniMatchType;
 
+import io.grpc.Context;
+import io.grpc.Deadline;
 import io.grpc.Drainable;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
@@ -77,9 +93,11 @@ import io.grpc.Status;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -133,6 +151,983 @@ class GrpcProtocolHandlerTest {
     @Test
     void testUnsignedMessageSizeAboveIntegerMax() {
         assertOversizedMessage((long) Integer.MAX_VALUE + 1, 4 * 1024 * 1024);
+    }
+
+    @Test
+    void testDeadlineContextIsVisibleInEveryCallback() {
+        var contexts = new ArrayList<Context>();
+        var writer = new RecordingWriter();
+        var callReference = new AtomicReference<ServerCall<String, String>>();
+        Context previous = Context.current();
+        var handler = deadlineHandler("1H", (call, _) -> {
+            callReference.set(call);
+            contexts.add(Context.current());
+            call.request(1);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onReady() {
+                    contexts.add(Context.current());
+                }
+
+                @Override
+                public void onMessage(String message) {
+                    contexts.add(Context.current());
+                }
+
+                @Override
+                public void onHalfClose() {
+                    contexts.add(Context.current());
+                }
+
+                @Override
+                public void onComplete() {
+                    contexts.add(Context.current());
+                }
+            };
+        }, writer);
+        handler.init();
+        sendRequest(handler);
+        callReference.get().close(Status.OK, new Metadata());
+
+        assertThat(contexts.size(), is(5));
+        Deadline deadline = contexts.getFirst().getDeadline();
+        assertThat(deadline, notNullValue());
+        for (Context context : contexts) {
+            assertThat(context.getDeadline(), sameInstance(deadline));
+            assertThat(ServerContextKeys.CONNECTION_CONTEXT.get(context), notNullValue());
+            assertThat(context.isCancelled(), is(true));
+        }
+        assertThat(Context.current(), sameInstance(previous));
+        assertThat(writer.trailerWrites.get(), is(1));
+    }
+
+    @Test
+    @Timeout(20)
+    void testRequestFromWorkerWhileOnMessageIsActive() throws Exception {
+        requestFromWorkerWhileOnMessageIsActive(false, false);
+    }
+
+    @Test
+    @Timeout(20)
+    void testRequestFromWorkerWhileOnMessageIsActiveWithDeadline() throws Exception {
+        requestFromWorkerWhileOnMessageIsActive(false, true);
+    }
+
+    @Test
+    @Timeout(20)
+    void testRequestFromWorkerWithQueuedMessages() throws Exception {
+        requestFromWorkerWhileOnMessageIsActive(true, false);
+    }
+
+    @Test
+    @Timeout(20)
+    void testRequestFromWorkerWithQueuedMessagesAndDeadline() throws Exception {
+        requestFromWorkerWhileOnMessageIsActive(true, true);
+    }
+
+    @Test
+    @Timeout(20)
+    void testCloseFromWorkerWhileOnReadyIsActive() throws Exception {
+        closeFromWorkerWhileCallbackIsActive("ready", false);
+        closeFromWorkerWhileCallbackIsActive("ready", true);
+    }
+
+    @Test
+    @Timeout(20)
+    void testCloseFromWorkerWhileOnMessageIsActive() throws Exception {
+        closeFromWorkerWhileCallbackIsActive("message", false);
+        closeFromWorkerWhileCallbackIsActive("message", true);
+    }
+
+    @Test
+    @Timeout(20)
+    void testCloseFromWorkerWhileRequestedMessageIsActive() throws Exception {
+        closeFromWorkerWhileCallbackIsActive("requested message", false);
+        closeFromWorkerWhileCallbackIsActive("requested message", true);
+    }
+
+    @Test
+    @Timeout(20)
+    void testCloseFromWorkerWhileOnHalfCloseIsActive() throws Exception {
+        closeFromWorkerWhileCallbackIsActive("half-close", false);
+        closeFromWorkerWhileCallbackIsActive("half-close", true);
+    }
+
+    @Test
+    @Timeout(20)
+    void testRequestedMessagesPrecedeHalfClose() throws Exception {
+        requestedMessagesPrecedeHalfClose(false);
+    }
+
+    @Test
+    @Timeout(20)
+    void testRequestedMessagesPrecedeHalfCloseWithDeadline() throws Exception {
+        requestedMessagesPrecedeHalfClose(true);
+    }
+
+    @Test
+    @Timeout(20)
+    void testInboundDataWaitsForActiveMessageCallback() throws Exception {
+        inboundDataWaitsForActiveMessageCallback(false);
+    }
+
+    @Test
+    @Timeout(20)
+    void testInboundDataWaitsForActiveMessageCallbackWithDeadline() throws Exception {
+        inboundDataWaitsForActiveMessageCallback(true);
+    }
+
+    @Test
+    void testDeadlineExpiresWhileServiceCallbackIsBlocked() throws Exception {
+        var entered = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        var contextCancelled = new CompletableFuture<Context>();
+        var cancelled = new CompletableFuture<Context>();
+        var callReference = new AtomicReference<ServerCall<String, String>>();
+        var cancellations = new AtomicInteger();
+        var completions = new AtomicInteger();
+        var writer = new RecordingWriter();
+        var handler = deadlineHandler("1S", (call, _) -> {
+            Context.current().addListener(contextCancelled::complete, Runnable::run);
+            callReference.set(call);
+            call.request(1);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onMessage(String message) {
+                    entered.countDown();
+                    await(release);
+                    call.sendMessage("late response");
+                    call.close(Status.OK, new Metadata());
+                }
+
+                @Override
+                public void onCancel() {
+                    cancellations.incrementAndGet();
+                    cancelled.complete(Context.current());
+                }
+
+                @Override
+                public void onComplete() {
+                    completions.incrementAndGet();
+                }
+            };
+        }, writer);
+        handler.init();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var request = executor.submit(() -> sendRequest(handler));
+            try {
+                assertThat("service callback started", entered.await(5, TimeUnit.SECONDS), is(true));
+                assertThat("context cancellation does not wait for the service callback",
+                           contextCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
+                assertThat("terminal output waits for the existing stream callback", writer.trailers.isDone(), is(false));
+                assertThat("cancel callback waits for the active callback", cancelled.isDone(), is(false));
+                assertThat(callReference.get().isCancelled(), is(true));
+            } finally {
+                release.countDown();
+            }
+            request.get(5, TimeUnit.SECONDS);
+        }
+        assertThat(writer.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
+                           .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
+        Context context = cancelled.get(5, TimeUnit.SECONDS);
+        handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+        assertThat(context.isCancelled(), is(true));
+        assertThat(context.getDeadline().isExpired(), is(true));
+        assertThat(cancellations.get(), is(1));
+        assertThat(completions.get(), is(0));
+        assertThat(writer.trailerWrites.get(), is(1));
+        assertThat(writer.dataWrites.get(), is(0));
+    }
+
+    @Test
+    void testExpiredDeadlineDoesNotStartService() throws Exception {
+        var calls = new AtomicInteger();
+        var writer = new RecordingWriter();
+        var handler = deadlineHandler("0n", (_, _) -> {
+            calls.incrementAndGet();
+            return new ServerCall.Listener<>() { };
+        }, writer);
+        handler.init();
+
+        assertThat(writer.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
+                           .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
+        assertThat(calls.get(), is(0));
+        assertThat(writer.trailerWrites.get(), is(1));
+    }
+
+    @Test
+    void testDeadlineExpiresBeforeStartCallReturns() throws Exception {
+        var entered = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        var contextCancelled = new CompletableFuture<Context>();
+        var cancelled = new CompletableFuture<Context>();
+        var ready = new AtomicInteger();
+        var writer = new RecordingWriter();
+        var handler = deadlineHandler("1S", (_, _) -> {
+            Context.current().addListener(contextCancelled::complete, Runnable::run);
+            entered.countDown();
+            await(release);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onReady() {
+                    ready.incrementAndGet();
+                }
+
+                @Override
+                public void onCancel() {
+                    cancelled.complete(Context.current());
+                }
+            };
+        }, writer);
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var initialization = executor.submit(handler::init);
+            try {
+                assertThat(entered.await(5, TimeUnit.SECONDS), is(true));
+                assertThat("context cancellation does not wait for startCall",
+                           contextCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
+                assertThat("terminal output waits for startCall to return", writer.trailers.isDone(), is(false));
+            } finally {
+                release.countDown();
+            }
+            initialization.get(5, TimeUnit.SECONDS);
+        }
+        assertThat(writer.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
+                           .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
+        assertThat(cancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
+        assertThat(ready.get(), is(0));
+        assertThat(writer.trailerWrites.get(), is(1));
+    }
+
+    @Test
+    void testMalformedDeadlineRejectsCall() throws Exception {
+        var calls = new AtomicInteger();
+        var writer = new RecordingWriter();
+        var handler = deadlineHandler("1s", (_, _) -> {
+            calls.incrementAndGet();
+            return new ServerCall.Listener<>() { };
+        }, writer);
+        handler.init();
+
+        assertThat(writer.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
+                           .get(GrpcStatus.STATUS_NAME).asString().get(), is("3"));
+        assertThat(calls.get(), is(0));
+    }
+
+    @Test
+    void testResetCancelsContextWithoutDeadline() throws Exception {
+        var contextReference = new AtomicReference<Context>();
+        var cancellations = new AtomicInteger();
+        var cancelled = new CompletableFuture<Context>();
+        var writer = new RecordingWriter();
+        var handler = deadlineHandler(null, (_, _) -> {
+            contextReference.set(Context.current());
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onCancel() {
+                    cancellations.incrementAndGet();
+                    assertThat(Context.current().isCancelled(), is(true));
+                    cancelled.complete(Context.current());
+                }
+            };
+        }, writer);
+        handler.init();
+        assertThat(contextReference.get().getDeadline(), nullValue());
+        handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+        handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+
+        assertThat("reset defers application cancellation to stream teardown", cancelled.isDone(), is(false));
+        handler.streamFinished();
+        handler.streamFinished();
+
+        assertThat(cancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
+        assertThat(cancellations.get(), is(1));
+        assertThat(writer.trailerWrites.get(), is(0));
+    }
+
+    @Test
+    void testTransportCloseBeforeInitializationDoesNotStartService() {
+        var calls = new AtomicInteger();
+        var writer = new RecordingWriter();
+        var handler = deadlineHandler("1H", (_, _) -> {
+            calls.incrementAndGet();
+            return new ServerCall.Listener<>() { };
+        }, writer);
+
+        handler.close();
+        handler.init();
+        handler.close();
+        handler.streamFinished();
+
+        assertThat(handler.streamState(), is(Http2StreamState.CLOSED));
+        assertThat(calls.get(), is(0));
+        assertThat(writer.trailerWrites.get(), is(0));
+    }
+
+    @Test
+    void testTransportCloseBeforeStartCallReturnsCancelsListenerOnce() throws Exception {
+        var entered = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        var contextCancelled = new CompletableFuture<Context>();
+        var listenerCancelled = new CompletableFuture<Context>();
+        var cancellations = new AtomicInteger();
+        var ready = new AtomicInteger();
+        var writer = new RecordingWriter();
+        var handler = deadlineHandler("1H", (_, _) -> {
+            Context.current().addListener(contextCancelled::complete, Runnable::run);
+            entered.countDown();
+            await(release);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onReady() {
+                    ready.incrementAndGet();
+                }
+
+                @Override
+                public void onCancel() {
+                    cancellations.incrementAndGet();
+                    listenerCancelled.complete(Context.current());
+                }
+            };
+        }, writer);
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var initialization = executor.submit(() -> {
+                try {
+                    handler.init();
+                } finally {
+                    handler.streamFinished();
+                }
+            });
+            try {
+                assertThat(entered.await(5, TimeUnit.SECONDS), is(true));
+                handler.close();
+                assertThat("transport cancels the context while startCall is active",
+                           contextCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
+                assertThat("service cancellation waits for startCall to return", listenerCancelled.isDone(), is(false));
+                handler.close();
+            } finally {
+                release.countDown();
+            }
+            initialization.get(5, TimeUnit.SECONDS);
+        }
+
+        assertThat(contextCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
+        assertThat(listenerCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
+        assertThat(cancellations.get(), is(1));
+        assertThat(ready.get(), is(0));
+        assertThat(writer.trailerWrites.get(), is(0));
+    }
+
+    @Test
+    void testTransportClosePreservesSuccessfulCompletion() {
+        var cancellations = new AtomicInteger();
+        var completions = new AtomicInteger();
+        var contextCancellationThread = new AtomicReference<Thread>();
+        Thread caller = Thread.currentThread();
+        var writer = new RecordingWriter();
+        var handler = deadlineHandler("1H", (call, _) -> {
+            Context.current().addListener(_ -> contextCancellationThread.set(Thread.currentThread()), Runnable::run);
+            call.close(Status.OK, new Metadata());
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onCancel() {
+                    cancellations.incrementAndGet();
+                }
+
+                @Override
+                public void onComplete() {
+                    completions.incrementAndGet();
+                }
+            };
+        }, writer);
+        handler.init();
+        handler.close();
+        handler.streamFinished();
+
+        assertThat(cancellations.get(), is(0));
+        assertThat(completions.get(), is(1));
+        assertThat(writer.trailerWrites.get(), is(1));
+        assertThat("normal completion cancels context inline without a transport worker",
+                   contextCancellationThread.get(), is(caller));
+        handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+        handler.streamFinished();
+        assertThat("a late reset preserves successful completion", cancellations.get(), is(0));
+        assertThat(completions.get(), is(1));
+        assertThat("late reset creates no replacement cancellation worker", contextCancellationThread.get(), is(caller));
+    }
+
+    @Test
+    void testPeerResetDuringTrailersCancelsListenerOnce() throws Exception {
+        terminalWriteWithTransportClose(true, false);
+    }
+
+    @Test
+    void testStreamFinishBeforePeerResetDuringTrailersCancelsListenerOnce() throws Exception {
+        terminalWriteWithTransportClose(true, true);
+    }
+
+    @Test
+    void testStreamFinishDuringTrailersPreservesNormalCompletion() throws Exception {
+        terminalWriteWithTransportClose(false, true);
+    }
+
+    @Test
+    void testAsyncSocketFailureDuringTrailersCancelsListenerOnce() {
+        var socket = new FailingTrailerSocket();
+        var socketWriter = SocketWriter.create(EXECUTOR, socket, 2, false);
+        var writer = new Http2ConnectionWriter(socket, socketWriter, List.of());
+        var callReference = new AtomicReference<ServerCall<String, String>>();
+        var cancellations = new AtomicInteger();
+        var completions = new AtomicInteger();
+        var cancelledContext = new AtomicReference<Context>();
+        var connection = ConnectionFlowControl.serverBuilder((_, _) -> { }).build();
+        var flowControl = connection.createStreamFlowControl(1, 65535, 16384);
+        var handler = deadlineHandler("1H", (call, _) -> {
+            callReference.set(call);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onCancel() {
+                    cancellations.incrementAndGet();
+                    cancelledContext.set(Context.current());
+                }
+
+                @Override
+                public void onComplete() {
+                    completions.incrementAndGet();
+                }
+            };
+        }, writer, stringMethodDescriptor(), flowControl);
+        try {
+            handler.init();
+            var call = callReference.get();
+            call.sendHeaders(new Metadata());
+            var initialHeaders = Http2FrameHeader.create(socket.output);
+            assertThat("initial response headers reach the socket", initialHeaders.type(), is(Http2FrameType.HEADERS));
+            assertThat("initial response headers leave the stream open",
+                       initialHeaders.flags(Http2FrameTypes.HEADERS).endOfStream(), is(false));
+            socket.failWrites = true;
+
+            var failure = assertThrows(SocketWriterException.class, () -> call.close(Status.OK, new Metadata()));
+
+            assertThat("the real async writer retains the injected socket failure",
+                       failure.getCause(), sameInstance(socket.failure));
+            assertThat("failed trailers cannot complete the service call", completions.get(), is(0));
+            assertThat("failed trailers cancel the service call once", cancellations.get(), is(1));
+            assertThat("the cancellation callback sees a cancelled Context", cancelledContext.get().isCancelled(), is(true));
+            assertThat("transport failure preserves call cancellation", call.isCancelled(), is(true));
+            handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+            handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+            call.close(Status.OK, new Metadata());
+            assertThat("late resets cannot duplicate cancellation", cancellations.get(), is(1));
+            assertThat("late resets cannot convert failure to completion", completions.get(), is(0));
+        } finally {
+            handler.close();
+            socketWriter.close();
+        }
+    }
+
+    @Test
+    void testExistingConnectionWriterFailureDuringTrailersCancelsListenerOnce() {
+        var socket = new FailingTrailerSocket();
+        var socketWriter = SocketWriter.create(EXECUTOR, socket, 2, false);
+        var writer = new Http2ConnectionWriter(socket, socketWriter, List.of());
+        var callReference = new AtomicReference<ServerCall<String, String>>();
+        var cancellations = new AtomicInteger();
+        var completions = new AtomicInteger();
+        var cancelledContext = new AtomicReference<Context>();
+        var connection = ConnectionFlowControl.serverBuilder((_, _) -> { }).build();
+        var flowControl = connection.createStreamFlowControl(1, 65535, 16384);
+        var siblingFlowControl = connection.createStreamFlowControl(3, 65535, 16384);
+        var handler = deadlineHandler("1H", (call, _) -> {
+            callReference.set(call);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onCancel() {
+                    cancellations.incrementAndGet();
+                    cancelledContext.set(Context.current());
+                }
+
+                @Override
+                public void onComplete() {
+                    completions.incrementAndGet();
+                }
+            };
+        }, writer, stringMethodDescriptor(), flowControl);
+        try {
+            handler.init();
+            var call = callReference.get();
+            call.sendHeaders(new Metadata());
+            var initialHeaders = Http2FrameHeader.create(socket.output);
+            assertThat("initial response headers reach the socket", initialHeaders.type(), is(Http2FrameType.HEADERS));
+            assertThat("initial response headers belong to the live service call", initialHeaders.streamId(), is(1));
+            assertThat("initial response headers leave the stream open",
+                       initialHeaders.flags(Http2FrameTypes.HEADERS).endOfStream(), is(false));
+            socket.failWrites = true;
+            var physicalFailure = assertThrows(SocketWriterException.class,
+                                               () -> writer.writeHeaders(Http2Headers.create(WritableHeaders.create()),
+                                                                         3,
+                                                                         Http2Flag.HeaderFlags.create(4),
+                                                                         siblingFlowControl.outbound()));
+            assertThat("a sibling stream first encounters the physical socket failure",
+                       physicalFailure.getCause(), sameInstance(socket.failure));
+
+            var failure = assertThrows(IllegalStateException.class, () -> call.close(Status.OK, new Metadata()));
+
+            assertThat("the existing connection writer failure survives trailer publication",
+                       failure.getCause(), sameInstance(physicalFailure));
+            assertThat("failed trailers cannot complete the service call", completions.get(), is(0));
+            assertThat("failed trailers cancel the service call once", cancellations.get(), is(1));
+            assertThat("the cancellation callback sees a cancelled Context", cancelledContext.get().isCancelled(), is(true));
+            assertThat("transport failure preserves call cancellation", call.isCancelled(), is(true));
+            handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+            handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+            call.close(Status.OK, new Metadata());
+            call.close(Status.OK, new Metadata());
+            handler.streamFinished();
+            handler.streamFinished();
+            handler.close();
+            assertThat("late reset, close and stream finish cannot duplicate cancellation", cancellations.get(), is(1));
+            assertThat("late reset, close and stream finish cannot produce completion", completions.get(), is(0));
+        } finally {
+            handler.close();
+            socketWriter.close();
+        }
+    }
+
+    @Test
+    void testNormalStreamCleanupDuringTrailersPreservesCompletion() throws Exception {
+        terminalWriteWithTransportClose(false, false);
+    }
+
+    @Test
+    void testTransportCloseDoesNotInterruptSocketWriter() throws Exception {
+        var writing = new CountDownLatch(1);
+        var releaseWrite = new CountDownLatch(1);
+        var listenerCancelled = new CompletableFuture<Context>();
+        var callerInterrupted = new CompletableFuture<Boolean>();
+        var writerInterrupted = new CompletableFuture<Boolean>();
+        var contextCancelled = new CompletableFuture<Context>();
+        RecordingWriter writer = new RecordingWriter() {
+            @Override
+            public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
+                writing.countDown();
+                try {
+                    releaseWrite.await();
+                } catch (InterruptedException _) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    writerInterrupted.complete(Thread.currentThread().isInterrupted());
+                }
+            }
+        };
+        var handler = deadlineHandler("1H", (call, _) -> {
+            Context.current().addListener(contextCancelled::complete, Runnable::run);
+            call.request(1);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onMessage(String message) {
+                    call.sendMessage("response");
+                    callerInterrupted.complete(Thread.currentThread().isInterrupted());
+                }
+
+                @Override
+                public void onCancel() {
+                    listenerCancelled.complete(Context.current());
+                }
+            };
+        }, writer);
+        handler.init();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var request = executor.submit(() -> {
+                try {
+                    sendRequest(handler);
+                } finally {
+                    handler.streamFinished();
+                }
+            });
+            try {
+                assertThat(writing.await(5, TimeUnit.SECONDS), is(true));
+                handler.close();
+                assertThat("application cancellation waits for the stream writer", contextCancelled.isDone(), is(false));
+                releaseWrite.countDown();
+                request.get(5, TimeUnit.SECONDS);
+                assertThat(contextCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
+                assertThat(listenerCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
+            } finally {
+                releaseWrite.countDown();
+            }
+        }
+        assertThat(callerInterrupted.get(5, TimeUnit.SECONDS), is(false));
+        assertThat("transport closure must not interrupt a shared socket write",
+                   writerInterrupted.get(5, TimeUnit.SECONDS), is(false));
+        assertThat(writer.trailerWrites.get(), is(0));
+    }
+
+    @Test
+    void testOversizedMessageCompletesResourceExhaustedAndNotifiesServiceOnce() throws Exception {
+        var completed = new CompletableFuture<Context>();
+        var cancellations = new AtomicInteger();
+        var completions = new AtomicInteger();
+        var writer = new RecordingWriter();
+        var handler = deadlineHandler(null, (call, _) -> new ServerCall.Listener<>() {
+            @Override
+            public void onCancel() {
+                cancellations.incrementAndGet();
+            }
+
+            @Override
+            public void onComplete() {
+                completions.incrementAndGet();
+                call.close(Status.RESOURCE_EXHAUSTED, new Metadata());
+                completed.complete(Context.current());
+            }
+        }, writer);
+        handler.init();
+        BufferData data = BufferData.create(5);
+        data.write(0);
+        data.writeUnsignedInt32(GrpcConfig.create().maxReadBufferSize() + 1);
+
+        handler.data(Http2FrameHeader.create(data.available(), Http2FrameTypes.DATA,
+                                             Http2Flag.DataFlags.create(0), 1), data);
+
+        assertThat(writer.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
+                           .get(GrpcStatus.STATUS_NAME).asString().get(), is("8"));
+        assertThat(completed.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
+        assertThat(cancellations.get(), is(0));
+        assertThat(completions.get(), is(1));
+        assertThat(writer.trailerWrites.get(), is(1));
+    }
+
+    @Test
+    void testDeadlineFinishesSocketWriteBeforeSendingTrailers() throws Exception {
+        var writing = new CountDownLatch(1);
+        var releaseWrite = new CountDownLatch(1);
+        var writerExited = new CompletableFuture<Void>();
+        var callerInterrupted = new CompletableFuture<Boolean>();
+        var writerInterrupted = new CompletableFuture<Boolean>();
+        var contextCancelled = new CompletableFuture<Context>();
+        RecordingWriter writer = new RecordingWriter() {
+            @Override
+            public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
+                writing.countDown();
+                try {
+                    releaseWrite.await();
+                } catch (InterruptedException _) {
+                    Thread.currentThread().interrupt();
+                } finally {
+                    writerInterrupted.complete(Thread.currentThread().isInterrupted());
+                    writerExited.complete(null);
+                }
+            }
+
+            @Override
+            public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags,
+                                    FlowControl.Outbound flowControl) {
+                assertThat("writer exited before trailers", writerExited.isDone(), is(true));
+                return super.writeHeaders(headers, streamId, flags, flowControl);
+            }
+        };
+        var handler = deadlineHandler("1S", (call, _) -> {
+            Context.current().addListener(contextCancelled::complete, Runnable::run);
+            call.request(1);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onMessage(String message) {
+                    call.sendMessage("response");
+                    callerInterrupted.complete(Thread.currentThread().isInterrupted());
+                }
+            };
+        }, writer);
+        handler.init();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var request = executor.submit(() -> sendRequest(handler));
+            try {
+                assertThat(writing.await(5, TimeUnit.SECONDS), is(true));
+                contextCancelled.get(5, TimeUnit.SECONDS);
+                assertThat("Context listeners run before the blocked DATA writer is released",
+                           writerExited.isDone(), is(false));
+                assertThat("deadline trailers wait for the complete DATA frame", writer.trailers.isDone(), is(false));
+                releaseWrite.countDown();
+                assertThat(writer.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
+                                   .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
+            } finally {
+                releaseWrite.countDown();
+            }
+            request.get(5, TimeUnit.SECONDS);
+        }
+        assertThat(callerInterrupted.get(5, TimeUnit.SECONDS), is(false));
+        assertThat("deadline must not interrupt a shared socket write",
+                   writerInterrupted.get(5, TimeUnit.SECONDS), is(false));
+        assertThat(writer.trailerWrites.get(), is(1));
+    }
+
+    @Test
+    void testDeadlineFinishesHeadersBeforeSendingTrailers() throws Exception {
+        var writing = new CountDownLatch(1);
+        var releaseWrite = new CountDownLatch(1);
+        var contextCancelled = new CompletableFuture<Context>();
+        var headersExited = new AtomicBoolean();
+        var callReference = new AtomicReference<ServerCall<String, String>>();
+        RecordingWriter writer = new RecordingWriter() {
+            @Override
+            public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags,
+                                    FlowControl.Outbound flowControl) {
+                if (!flags.endOfStream()) {
+                    writing.countDown();
+                    await(releaseWrite);
+                    headersExited.set(true);
+                } else {
+                    assertThat("initial headers exited before trailers", headersExited.get(), is(true));
+                }
+                return super.writeHeaders(headers, streamId, flags, flowControl);
+            }
+        };
+        var handler = deadlineHandler("1S", (call, _) -> {
+            callReference.set(call);
+            Context.current().addListener(contextCancelled::complete, Runnable::run);
+            return new ServerCall.Listener<>() { };
+        }, writer);
+        handler.init();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var response = executor.submit(() -> callReference.get().sendHeaders(new Metadata()));
+            try {
+                assertThat("initial headers are blocked", writing.await(5, TimeUnit.SECONDS), is(true));
+                contextCancelled.get(5, TimeUnit.SECONDS);
+                assertThat("Context listeners run while the initial headers remain blocked", headersExited.get(), is(false));
+                assertThat("trailers wait for the complete headers frame", writer.trailers.isDone(), is(false));
+            } finally {
+                releaseWrite.countDown();
+            }
+            response.get(5, TimeUnit.SECONDS);
+        }
+        assertThat(writer.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
+                           .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
+        assertThat(writer.trailerWrites.get(), is(1));
+    }
+
+    @Test
+    void testInlineContextCancellationFinishesDataBeforeSendingTrailers() throws Exception {
+        try (var parent = Context.current().withCancellation()) {
+            var writerExited = new AtomicBoolean();
+            var trailersWritten = new AtomicBoolean();
+            var cancellationThread = new AtomicReference<Thread>();
+            var caller = Thread.currentThread();
+            RecordingWriter writer = new RecordingWriter() {
+                @Override
+                public void writeData(Http2FrameData frame, FlowControl.Outbound outbound) {
+                    parent.cancel(Status.CANCELLED.asRuntimeException());
+                    assertThat("Context cancellation listeners run inline before DATA returns",
+                               cancellationThread.get(), sameInstance(caller));
+                    assertThat("reentrant cancellation cannot publish trailers within DATA", trailersWritten.get(), is(false));
+                    writerExited.set(true);
+                }
+
+                @Override
+                public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags,
+                                        FlowControl.Outbound flowControl) {
+                    assertThat("DATA exited before trailers", writerExited.get(), is(true));
+                    trailersWritten.set(true);
+                    return super.writeHeaders(headers, streamId, flags, flowControl);
+                }
+            };
+            var handler = deadlineHandler("1H", (call, _) -> {
+                Context.current().addListener(_ -> cancellationThread.set(Thread.currentThread()), Runnable::run);
+                call.request(1);
+                return new ServerCall.Listener<>() {
+                    @Override
+                    public void onMessage(String message) {
+                        call.sendMessage("response");
+                    }
+                };
+            }, writer);
+            parent.run(handler::init);
+            sendRequest(handler);
+            assertThat(writer.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
+                               .get(GrpcStatus.STATUS_NAME).asString().get(), is("1"));
+            assertThat(writer.trailerWrites.get(), is(1));
+        }
+    }
+
+    @Test
+    void testDeadlineDataWritePreservesCallerInterrupt() throws Exception {
+        var output = BufferData.growing(128);
+        DataWriter dataWriter = new DataWriter() {
+            @Override
+            public void write(BufferData... buffers) {
+                writeNow(buffers);
+            }
+
+            @Override
+            public void write(BufferData buffer) {
+                writeNow(buffer);
+            }
+
+            @Override
+            public void writeNow(BufferData... buffers) {
+                for (var buffer : buffers) {
+                    writeNow(buffer);
+                }
+            }
+
+            @Override
+            public void writeNow(BufferData buffer) {
+                output.write(buffer);
+            }
+        };
+        var writer = new Http2ConnectionWriter(new UnimplementedGrpcConnectionContext(), dataWriter, List.of());
+        var callReference = new AtomicReference<ServerCall<String, String>>();
+        var handler = deadlineHandler("1H", (call, _) -> {
+            callReference.set(call);
+            return new ServerCall.Listener<>() { };
+        }, writer);
+        handler.init();
+        EXECUTOR.submit(() -> {
+            var call = callReference.get();
+            Thread.currentThread().interrupt();
+            try {
+                var failure = assertThrows(IllegalStateException.class, () -> call.sendMessage("response"));
+                assertThat("the real HTTP/2 writer rejects the interrupted DATA write",
+                           failure.getCause(), instanceOf(InterruptedException.class));
+                assertThat("DATA writing preserves an unrelated caller interrupt",
+                           Thread.currentThread().isInterrupted(), is(true));
+                assertThat("interruption prevents any DATA from reaching the transport", output.available(), is(0));
+            } finally {
+                Thread.interrupted();
+                call.close(Status.OK, new Metadata());
+            }
+        }).get(5, TimeUnit.SECONDS);
+    }
+
+    @Test
+    void testDeadlineCancelsStreamFlowControlWait() throws Exception {
+        assertDeadlineCancelsFlowControlWait(false);
+    }
+
+    @Test
+    void testDeadlineCancelsConnectionFlowControlWait() throws Exception {
+        assertDeadlineCancelsFlowControlWait(true);
+    }
+
+    @Test
+    void testBlockingCancellationListenerDoesNotDelayIndependentDeadline() throws Exception {
+        var release = new CountDownLatch(1);
+        var entered = new CountDownLatch(1);
+        var firstThread = new AtomicReference<Thread>();
+        var secondThread = new CompletableFuture<Thread>();
+        var secondDeadline = new AtomicReference<Deadline>();
+        var firstWriter = new RecordingWriter();
+        var first = deadlineHandler("1S", (_, _) -> {
+            Context.current().addListener(_ -> {
+                firstThread.set(Thread.currentThread());
+                entered.countDown();
+                await(release);
+            }, Runnable::run);
+            return new ServerCall.Listener<>() { };
+        }, firstWriter);
+        try {
+            first.init();
+            assertThat(entered.await(5, TimeUnit.SECONDS), is(true));
+            var secondWriter = new RecordingWriter();
+            var second = deadlineHandler("1S", (_, _) -> {
+                secondDeadline.set(Context.current().getDeadline());
+                Context.current().addListener(_ -> secondThread.complete(Thread.currentThread()), Runnable::run);
+                return new ServerCall.Listener<>() { };
+            }, secondWriter);
+            second.init();
+
+            var expiryWait = Deadline.after(5, TimeUnit.SECONDS);
+            while (!secondDeadline.get().isExpired() && !expiryWait.isExpired()) {
+                TimeUnit.MILLISECONDS.sleep(10);
+            }
+            assertThat("the second deadline expires while the first cancellation listener remains blocked",
+                       secondDeadline.get().isExpired(), is(true));
+            Thread independentCancellation = secondThread.get(5, TimeUnit.SECONDS);
+            assertThat("deadline cancellation uses an expiry-only virtual thread", firstThread.get().isVirtual(), is(true));
+            assertThat("independent deadline cancellation uses a virtual thread", independentCancellation.isVirtual(), is(true));
+            assertThat("the blocked cancellation does not occupy the other call's thread",
+                       independentCancellation == firstThread.get(), is(false));
+            // Model the existing stream runners processing their queued cancellation events.
+            first.streamEvent();
+            second.streamEvent();
+            assertThat(secondWriter.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
+                               .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
+            release.countDown();
+            assertThat(firstWriter.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
+                               .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
+        } finally {
+            release.countDown();
+        }
+    }
+
+    @Test
+    void testDeadlineRequestsStreamEventBeforePublishingTerminalStatus() throws Exception {
+        var notified = new CompletableFuture<Thread>();
+        var contextCancelled = new CompletableFuture<Thread>();
+        var listenerCancelled = new CompletableFuture<Thread>();
+        var callReference = new AtomicReference<ServerCall<String, String>>();
+        var writer = new RecordingWriter();
+        var handler = deadlineHandler("1S", (call, _) -> {
+            callReference.set(call);
+            Context.current().addListener(_ -> contextCancelled.complete(Thread.currentThread()), Runnable::run);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onCancel() {
+                    listenerCancelled.complete(Thread.currentThread());
+                }
+            };
+        }, writer);
+        handler.onStreamEvent(() -> notified.complete(Thread.currentThread()));
+        handler.init();
+
+        var expiryThread = notified.get(5, TimeUnit.SECONDS);
+        assertThat("deadline notification uses an expiry-only virtual thread", expiryThread.isVirtual(), is(true));
+        assertThat("application context cancellation stays inline",
+                   contextCancelled.get(5, TimeUnit.SECONDS), sameInstance(expiryThread));
+        assertThat("the cancelled call is visible before terminal output", callReference.get().isCancelled(), is(true));
+        assertThat("the expiry thread does not publish terminal output", writer.trailers.isDone(), is(false));
+        callReference.get().sendMessage("late response");
+        assertThat("cancelled calls ignore late DATA", writer.dataWrites.get(), is(0));
+
+        handler.streamEvent();
+        assertThat(writer.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
+                           .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
+        assertThat("terminal callback runs where the stream event is processed",
+                   listenerCancelled.get(5, TimeUnit.SECONDS), sameInstance(Thread.currentThread()));
+        handler.streamEvent();
+        assertThat("repeated event delivery preserves one terminal status", writer.trailerWrites.get(), is(1));
+    }
+
+    @Test
+    void testDeadlineReleasesInboundDemandWaitBeforeStreamEvent() throws Exception {
+        var contextCancelled = new CompletableFuture<Context>();
+        var requested = new CompletableFuture<Void>();
+        var messages = new AtomicInteger();
+        var writer = new RecordingWriter();
+        var handler = deadlineHandler("1S", (_, _) -> {
+            Context.current().addListener(contextCancelled::complete, Runnable::run);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onMessage(String message) {
+                    messages.incrementAndGet();
+                }
+            };
+        }, writer);
+        handler.onStreamEvent(() -> requested.complete(null));
+        handler.init();
+        var input = EXECUTOR.submit(() -> sendRequest(handler));
+        try {
+            assertThrows(TimeoutException.class, () -> input.get(100, TimeUnit.MILLISECONDS));
+            assertThat(contextCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
+            requested.get(5, TimeUnit.SECONDS);
+            input.get(5, TimeUnit.SECONDS);
+            assertThat("no message was delivered without demand", messages.get(), is(0));
+            assertThat("the timer only requested terminal output", writer.trailers.isDone(), is(false));
+            handler.streamEvent();
+            assertThat(writer.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
+                               .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
+        } finally {
+            handler.close();
+            input.get(5, TimeUnit.SECONDS);
+        }
     }
 
     @Test
@@ -436,6 +1431,7 @@ class GrpcProtocolHandlerTest {
 
         assertThat("request thread completed", requestThread.isAlive(), is(false));
         assertThat("data thread completed", dataThread.isAlive(), is(false));
+        handler.streamFinished();
         assertThat(events, is(List.of("message-start", "message-end", "cancel")));
     }
 
@@ -585,6 +1581,7 @@ class GrpcProtocolHandlerTest {
         handler.rstStream(new Http2RstStream(io.helidon.http.http2.Http2ErrorCode.CANCEL));
         assertThat("cancellation must release the data worker", dataFinished.await(10, TimeUnit.SECONDS), is(true));
         dataThread.join(TimeUnit.SECONDS.toMillis(10));
+        handler.streamFinished();
 
         assertThat(dataThread.isAlive(), is(false));
         assertThat(cancelCount.get(), is(1));
@@ -906,6 +1903,39 @@ class GrpcProtocolHandlerTest {
         assertThat(grpcConnectionContext.get().sniMatchedHost(), is(Optional.of("*.example.com")));
     }
 
+    private static void sendRequest(GrpcProtocolHandler<String, String> handler) {
+        byte[] message = "request".getBytes(StandardCharsets.UTF_8);
+        BufferData data = BufferData.create(5 + message.length);
+        data.write(0);
+        data.writeUnsignedInt32(message.length);
+        data.write(message);
+        handler.data(Http2FrameHeader.create(data.available(), Http2FrameTypes.DATA,
+                                             Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM), 1), data);
+    }
+
+    private static void sendStreamingRequest(GrpcProtocolHandler<String, String> handler, String message) {
+        sendStreamingRequest(handler, message, false);
+    }
+
+    private static void sendStreamingRequest(GrpcProtocolHandler<String, String> handler, String message, boolean endOfStream) {
+        byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
+        BufferData data = BufferData.create(5 + bytes.length);
+        data.write(0);
+        data.writeUnsignedInt32(bytes.length);
+        data.write(bytes);
+        handler.data(Http2FrameHeader.create(data.available(), Http2FrameTypes.DATA,
+                                             Http2Flag.DataFlags.create(endOfStream ? Http2Flag.END_OF_STREAM : 0), 1), data);
+    }
+
+    private static void await(CountDownLatch latch) {
+        try {
+            assertThat("callback released", latch.await(10, TimeUnit.SECONDS), is(true));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError(e);
+        }
+    }
+
     private static GrpcRouteHandler<String, String> route(ServerCall.Listener<String> listener) {
         return route(new ServerCallHandler<>() {
             @Override
@@ -1182,6 +2212,540 @@ class GrpcProtocolHandlerTest {
         }
     }
 
+    private void requestFromWorkerWhileOnMessageIsActive(boolean queuedMessages, boolean withDeadline) throws Exception {
+        var callReference = new AtomicReference<ServerCall<String, String>>();
+        var requested = new CompletableFuture<CompletableFuture<Void>>();
+        var release = new CompletableFuture<Void>();
+        var secondReceived = new CompletableFuture<Void>();
+        List<String> callbacks = new CopyOnWriteArrayList<>();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var handler = deadlineHandler(withDeadline ? "1H" : null, (call, _) -> {
+                callReference.set(call);
+                return new ServerCall.Listener<>() {
+                    @Override
+                    public void onMessage(String message) {
+                        callbacks.add("entered " + message);
+                        if (message.equals("first")) {
+                            var request = CompletableFuture.runAsync(() -> call.request(1), executor);
+                            requested.complete(request);
+                            // The release future also lets cleanup recover an implementation that deadlocks in request.
+                            CompletableFuture.anyOf(request, release).join();
+                            release.join();
+                        }
+                        callbacks.add("returned " + message);
+                        if (message.equals("second")) {
+                            secondReceived.complete(null);
+                        }
+                    }
+                };
+            }, new RecordingWriter());
+            handler.init();
+            ServerCall<String, String> call = callReference.get();
+            try {
+                Future<?> input = null;
+                if (queuedMessages) {
+                    input = executor.submit(() -> {
+                        sendStreamingRequest(handler, "first");
+                        sendStreamingRequest(handler, "second");
+                        sendStreamingRequest(handler, "third");
+                    });
+                    assertThat("messages wait for demand", callbacks, is(List.of()));
+                } else {
+                    call.request(1);
+                }
+                var delivery = executor.submit(() -> {
+                    if (queuedMessages) {
+                        call.request(1);
+                    } else {
+                        sendStreamingRequest(handler, "first");
+                    }
+                });
+
+                requested.get(5, TimeUnit.SECONDS).get(5, TimeUnit.SECONDS);
+                assertThat("request returns while the first callback remains active",
+                           callbacks, is(List.of("entered first")));
+                release.complete(null);
+                delivery.get(5, TimeUnit.SECONDS);
+
+                if (!queuedMessages) {
+                    sendStreamingRequest(handler, "second");
+                }
+                secondReceived.get(5, TimeUnit.SECONDS);
+                List<String> firstTwo = List.of("entered first", "returned first", "entered second", "returned second");
+                assertThat("worker demand delivers the second message after the first callback returns",
+                           callbacks, is(firstTwo));
+
+                if (!queuedMessages) {
+                    input = executor.submit(() -> sendStreamingRequest(handler, "third"));
+                }
+                assertThat("the third message still needs its own demand", callbacks, is(firstTwo));
+                call.request(1);
+                input.get(5, TimeUnit.SECONDS);
+                assertThat("demand is retained and callbacks remain ordered",
+                           callbacks,
+                           is(List.of("entered first", "returned first", "entered second", "returned second",
+                                      "entered third", "returned third")));
+            } finally {
+                release.complete(null);
+                call.close(Status.OK, new Metadata());
+            }
+        }
+    }
+
+    private void terminalWriteWithTransportClose(boolean peerReset, boolean finishFirst) throws Exception {
+        var writing = new CountDownLatch(1);
+        var release = new CountDownLatch(1);
+        var callReference = new AtomicReference<ServerCall<String, String>>();
+        var cancellations = new AtomicInteger();
+        var completions = new AtomicInteger();
+        var terminal = new CompletableFuture<Context>();
+        var writerInterrupted = new AtomicBoolean();
+        RecordingWriter writer = new RecordingWriter() {
+            @Override
+            public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags,
+                                    FlowControl.Outbound flowControl) {
+                if (flags.endOfStream()) {
+                    writing.countDown();
+                    await(release);
+                    writerInterrupted.set(Thread.currentThread().isInterrupted());
+                }
+                return super.writeHeaders(headers, streamId, flags, flowControl);
+            }
+        };
+        var handler = deadlineHandler("1H", (call, _) -> {
+            callReference.set(call);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onCancel() {
+                    cancellations.incrementAndGet();
+                    terminal.complete(Context.current());
+                }
+
+                @Override
+                public void onComplete() {
+                    completions.incrementAndGet();
+                    terminal.complete(Context.current());
+                }
+            };
+        }, writer);
+        handler.init();
+        if (peerReset && !finishFirst) {
+            // Emulate the stream runner finishing as soon as closure is published.
+            handler.onStreamClosed(handler::streamFinished);
+        }
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var closing = executor.submit(() -> callReference.get().close(Status.OK, new Metadata()));
+            var finishing = new CompletableFuture<Boolean>();
+            try {
+                assertThat("the terminal write is blocked", writing.await(5, TimeUnit.SECONDS), is(true));
+                if (finishFirst) {
+                    var finishingThread = new CompletableFuture<Thread>();
+                    executor.submit(() -> {
+                        Thread.currentThread().interrupt();
+                        finishingThread.complete(Thread.currentThread());
+                        try {
+                            handler.streamFinished();
+                            finishing.complete(Thread.currentThread().isInterrupted());
+                        } catch (Throwable failure) {
+                            finishing.completeExceptionally(failure);
+                        } finally {
+                            Thread.interrupted();
+                        }
+                    });
+                    Thread thread = finishingThread.get(5, TimeUnit.SECONDS);
+                    long waitDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+                    while (!finishing.isDone() && thread.getState() != Thread.State.WAITING
+                            && System.nanoTime() < waitDeadline) {
+                        Thread.yield();
+                    }
+                    assertThat("stream teardown waits for the in-flight terminal publication",
+                               finishing.isDone(), is(false));
+                    assertThat("stream teardown reached its terminal-state wait", thread.getState(), is(Thread.State.WAITING));
+                }
+                var transportClosed = executor.submit(() -> {
+                    if (peerReset) {
+                        handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+                    } else {
+                        // Normal HTTP/2 END_STREAM cleanup may close the sub-protocol inside writeHeaders.
+                        handler.close();
+                    }
+                });
+                transportClosed.get(5, TimeUnit.SECONDS);
+                if (peerReset) {
+                    assertThat("reset notifies cancellation before the shared writer is released",
+                               terminal.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
+                    assertThat(cancellations.get(), is(1));
+                    assertThat(completions.get(), is(0));
+                    if (finishFirst) {
+                        assertThat("stream teardown preserves its incoming interrupt after reset",
+                                   finishing.get(5, TimeUnit.SECONDS), is(true));
+                    }
+                } else {
+                    assertThat("normal cleanup waits for terminal publication", terminal.isDone(), is(false));
+                    if (finishFirst) {
+                        assertThat("normal cleanup leaves stream teardown waiting", finishing.isDone(), is(false));
+                    }
+                }
+            } finally {
+                release.countDown();
+            }
+            closing.get(5, TimeUnit.SECONDS);
+            if (finishFirst) {
+                assertThat("stream teardown preserves its incoming interrupt after terminal publication",
+                           finishing.get(5, TimeUnit.SECONDS), is(true));
+            }
+        }
+        terminal.get(5, TimeUnit.SECONDS);
+        handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+        callReference.get().close(Status.OK, new Metadata());
+        assertThat(cancellations.get(), is(peerReset ? 1 : 0));
+        assertThat(completions.get(), is(peerReset ? 0 : 1));
+        assertThat("reset does not interrupt the shared transport writer", writerInterrupted.get(), is(false));
+        assertThat(writer.trailerWrites.get(), is(1));
+        assertThat(handler.streamState(), is(Http2StreamState.CLOSED));
+    }
+
+    private void closeFromWorkerWhileCallbackIsActive(String callback, boolean withDeadline) throws Exception {
+        var callReference = new AtomicReference<ServerCall<String, String>>();
+        var closing = new CompletableFuture<CompletableFuture<Void>>();
+        var release = new CompletableFuture<Void>();
+        List<String> callbacks = new CopyOnWriteArrayList<>();
+        var writer = new RecordingWriter();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var handler = deadlineHandler(withDeadline ? "1H" : null, (call, _) -> {
+                callReference.set(call);
+                if (!callback.equals("requested message")) {
+                    call.request(1);
+                }
+                return new ServerCall.Listener<>() {
+                    @Override
+                    public void onReady() {
+                        if (callback.equals("ready")) {
+                            closeFromWorker();
+                        }
+                    }
+
+                    @Override
+                    public void onMessage(String message) {
+                        if (callback.equals("message") || callback.equals("requested message")) {
+                            closeFromWorker();
+                        }
+                    }
+
+                    @Override
+                    public void onHalfClose() {
+                        if (callback.equals("half-close")) {
+                            closeFromWorker();
+                        }
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        callbacks.add("complete");
+                    }
+
+                    @Override
+                    public void onCancel() {
+                        callbacks.add("cancel");
+                    }
+
+                    private void closeFromWorker() {
+                        callbacks.add("entered " + callback);
+                        var close = CompletableFuture.runAsync(() -> call.close(Status.OK, new Metadata()), executor);
+                        closing.complete(close);
+                        // Release also lets cleanup recover an implementation that deadlocks in close().
+                        CompletableFuture.anyOf(close, release).join();
+                        release.join();
+                        callbacks.add("returned " + callback);
+                    }
+                };
+            }, writer);
+            try {
+                var delivery = executor.submit(() -> {
+                    handler.init();
+                    if (callback.equals("requested message")) {
+                        callReference.get().request(1);
+                        sendStreamingRequest(handler, "request");
+                    } else if (!callback.equals("ready")) {
+                        sendRequest(handler);
+                    }
+                });
+                closing.get(5, TimeUnit.SECONDS).get(5, TimeUnit.SECONDS);
+                assertThat("close returns before the active callback returns",
+                           callbacks, is(List.of("entered " + callback)));
+                release.complete(null);
+                delivery.get(5, TimeUnit.SECONDS);
+
+                callReference.get().close(Status.OK, new Metadata());
+                handler.close();
+                assertThat("completion follows the active callback exactly once",
+                           callbacks, is(List.of("entered " + callback, "returned " + callback, "complete")));
+                assertThat("one set of trailers", writer.trailerWrites.get(), is(1));
+            } finally {
+                release.complete(null);
+                handler.close();
+            }
+        }
+    }
+
+    private void requestedMessagesPrecedeHalfClose(boolean withDeadline) throws Exception {
+        var callReference = new AtomicReference<ServerCall<String, String>>();
+        var requested = new CompletableFuture<CompletableFuture<Void>>();
+        var release = new CompletableFuture<Void>();
+        var writer = new RecordingWriter();
+        List<String> callbacks = new CopyOnWriteArrayList<>();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var handler = deadlineHandler(withDeadline ? "1H" : null, (call, _) -> {
+                callReference.set(call);
+                return new ServerCall.Listener<>() {
+                    @Override
+                    public void onMessage(String message) {
+                        callbacks.add("entered " + message);
+                        if (message.equals("first")) {
+                            var request = CompletableFuture.runAsync(() -> call.request(2), executor);
+                            requested.complete(request);
+                            CompletableFuture.anyOf(request, release).join();
+                            release.join();
+                        }
+                        callbacks.add("returned " + message);
+                    }
+
+                    @Override
+                    public void onHalfClose() {
+                        callbacks.add("half-close");
+                        call.close(Status.OK, new Metadata());
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        callbacks.add("complete");
+                    }
+                };
+            }, writer);
+            handler.init();
+            ServerCall<String, String> call = callReference.get();
+            try {
+                assertThat("messages wait for demand", callbacks, is(List.of()));
+                call.request(1);
+                BufferData messages = BufferData.create(grpcData("first"), grpcData("second"), grpcData("third"));
+                var delivery = executor.submit(() -> handler.data(
+                        Http2FrameHeader.create(messages.available(), Http2FrameTypes.DATA,
+                                               Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM), 1), messages));
+                requested.get(5, TimeUnit.SECONDS).get(5, TimeUnit.SECONDS);
+                assertThat("callbacks wait for the active message callback",
+                           callbacks, is(List.of("entered first")));
+                release.complete(null);
+                delivery.get(5, TimeUnit.SECONDS);
+
+                assertThat("requested messages precede half-close and survive completion",
+                           callbacks,
+                           is(List.of("entered first", "returned first", "entered second", "returned second",
+                                      "entered third", "returned third", "half-close", "complete")));
+                assertThat("half-close completes the call once", writer.trailerWrites.get(), is(1));
+                assertThat(handler.streamState(), is(Http2StreamState.CLOSED));
+            } finally {
+                release.complete(null);
+                call.close(Status.OK, new Metadata());
+            }
+        }
+    }
+
+    private void inboundDataWaitsForActiveMessageCallback(boolean withDeadline) throws Exception {
+        var callReference = new AtomicReference<ServerCall<String, String>>();
+        var entered = new CompletableFuture<Void>();
+        var release = new CompletableFuture<Void>();
+        List<String> parsed = new CopyOnWriteArrayList<>();
+        List<String> callbacks = new CopyOnWriteArrayList<>();
+        var descriptor = stringMethodDescriptor();
+        var marshaller = descriptor.getRequestMarshaller();
+        descriptor = descriptor.toBuilder()
+                .setType(MethodDescriptor.MethodType.BIDI_STREAMING)
+                .setRequestMarshaller(new MethodDescriptor.Marshaller<String>() {
+                    @Override
+                    public InputStream stream(String value) {
+                        return marshaller.stream(value);
+                    }
+
+                    @Override
+                    public String parse(InputStream stream) {
+                        String message = marshaller.parse(stream);
+                        parsed.add(message);
+                        return message;
+                    }
+                })
+                .build();
+        var writer = new RecordingWriter();
+        var handler = deadlineHandler(withDeadline ? "1H" : null, (call, _) -> {
+            callReference.set(call);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onMessage(String message) {
+                    callbacks.add("entered " + message);
+                    if (message.equals("first")) {
+                        entered.complete(null);
+                        release.join();
+                    }
+                    callbacks.add("returned " + message);
+                }
+
+                @Override
+                public void onComplete() {
+                    callbacks.add("complete");
+                }
+            };
+        }, writer, descriptor);
+        var executor = Executors.newVirtualThreadPerTaskExecutor();
+        try {
+            handler.init();
+            ServerCall<String, String> call = callReference.get();
+            call.request(1);
+            BufferData data = BufferData.create(grpcData("first"), grpcData("second"), grpcData("third"));
+            var inbound = executor.submit(() -> handler.data(
+                    Http2FrameHeader.create(data.available(), Http2FrameTypes.DATA, Http2Flag.DataFlags.create(0), 1), data));
+            entered.get(5, TimeUnit.SECONDS);
+            executor.submit(() -> call.request(2)).get(5, TimeUnit.SECONDS);
+            assertThat("request returns while the first callback remains active",
+                       callbacks, is(List.of("entered first")));
+
+            assertThrows(TimeoutException.class, () -> inbound.get(200, TimeUnit.MILLISECONDS),
+                         "DATA must wait for the active callback instead of queuing the remaining messages");
+            assertThat("the same DATA frame is not parsed ahead of the active callback",
+                       parsed, is(List.of("first")));
+            assertThat("message callbacks remain serialized", callbacks, is(List.of("entered first")));
+
+            release.complete(null);
+            inbound.get(5, TimeUnit.SECONDS);
+            assertThat("all messages are parsed after the callback returns", parsed, is(List.of("first", "second", "third")));
+            assertThat("outstanding demand delivers each message in order",
+                       callbacks,
+                       is(List.of("entered first", "returned first", "entered second", "returned second",
+                                  "entered third", "returned third")));
+            call.close(Status.OK, new Metadata());
+            assertThat("completion follows the final message", callbacks.getLast(), is("complete"));
+            assertThat("the call completes once", writer.trailerWrites.get(), is(1));
+        } finally {
+            release.complete(null);
+            executor.shutdownNow();
+            handler.close();
+            assertThat("DATA and demand workers stopped", executor.awaitTermination(5, TimeUnit.SECONDS), is(true));
+        }
+    }
+
+    private GrpcProtocolHandler<String, String> deadlineHandler(String timeout,
+                                                                       ServerCallHandler<String, String> callHandler,
+                                                                       Http2StreamWriter writer) {
+        return deadlineHandler(timeout, callHandler, writer, stringMethodDescriptor());
+    }
+
+    private GrpcProtocolHandler<String, String> deadlineHandler(String timeout,
+                                                                       ServerCallHandler<String, String> callHandler,
+                                                                       Http2StreamWriter writer,
+                                                                       MethodDescriptor<String, String> descriptor) {
+        return deadlineHandler(timeout, callHandler, writer, descriptor, null);
+    }
+
+    private GrpcProtocolHandler<String, String> deadlineHandler(String timeout,
+                                                                       ServerCallHandler<String, String> callHandler,
+                                                                       Http2StreamWriter writer,
+                                                                       MethodDescriptor<String, String> descriptor,
+                                                                       StreamFlowControl flowControl) {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        if (timeout != null) {
+            headers.add(HeaderNames.create("grpc-timeout"), timeout);
+        }
+        return new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                         Http2Headers.create(headers),
+                                         writer,
+                                         1,
+                                         flowControl,
+                                         Http2StreamState.OPEN,
+                                         GrpcRouteHandler.methodDefinition(ServerMethodDefinition.create(descriptor, callHandler),
+                                                                          null,
+                                                                          WeightedBag.create()),
+                                         GrpcConfig.create(), metrics);
+    }
+
+    private void assertDeadlineCancelsFlowControlWait(boolean connectionWindow) throws Exception {
+        var waiting = new CountDownLatch(1);
+        var siblingWaiting = new CountDownLatch(1);
+        var writerInterrupted = new CompletableFuture<Boolean>();
+        var callerInterrupted = new CompletableFuture<Boolean>();
+        var callerThread = new AtomicReference<Thread>();
+        var connection = ConnectionFlowControl.serverBuilder((_, _) -> { })
+                .blockTimeout(Duration.ofMinutes(1))
+                .build();
+        var flowControl = connection.createStreamFlowControl(1, 65535, 16384);
+        var sibling = connection.createStreamFlowControl(3, 65535, 16384);
+        if (connectionWindow) {
+            connection.outbound().decrementWindowSize(65535);
+        } else {
+            flowControl.outbound().resetStreamWindowSize(0);
+            sibling.outbound().resetStreamWindowSize(0);
+        }
+        RecordingWriter writer = new RecordingWriter() {
+            @Override
+            public void writeData(Http2FrameData frame, FlowControl.Outbound outbound) {
+                assertThat("DATA is written on the application caller thread",
+                           Thread.currentThread(), sameInstance(callerThread.get()));
+                assertThat("outbound window is exhausted", outbound.getRemainingWindowSize(), is(0));
+                waiting.countDown();
+                try {
+                    outbound.blockTillUpdate();
+                    throw new AssertionError("cancelled flow-control wait must not resume DATA writes");
+                } finally {
+                    writerInterrupted.complete(Thread.currentThread().isInterrupted());
+                }
+            }
+        };
+        var handler = deadlineHandler("1S", (call, _) -> {
+            call.request(1);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onMessage(String message) {
+                    callerThread.set(Thread.currentThread());
+                    call.sendMessage("response");
+                    callerInterrupted.complete(Thread.currentThread().isInterrupted());
+                }
+            };
+        }, writer, stringMethodDescriptor(), flowControl);
+        handler.init();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var siblingWrite = executor.submit(() -> {
+                siblingWaiting.countDown();
+                sibling.outbound().blockTillUpdate();
+                return Thread.currentThread().isInterrupted();
+            });
+            var request = executor.submit(() -> sendRequest(handler));
+            try {
+                assertThat("sibling reached exhausted flow control", siblingWaiting.await(5, TimeUnit.SECONDS), is(true));
+                assertThat("writer reached exhausted flow control", waiting.await(5, TimeUnit.SECONDS), is(true));
+                assertThat(writer.trailers.get(5, TimeUnit.SECONDS).httpHeaders()
+                                   .get(GrpcStatus.STATUS_NAME).asString().get(), is("4"));
+                request.get(5, TimeUnit.SECONDS);
+                assertThat("cancellation leaves sibling wait pending", siblingWrite.isDone(), is(false));
+                if (connectionWindow) {
+                    connection.incrementOutboundConnectionWindowSize(65535);
+                } else {
+                    sibling.outbound().incrementStreamWindowSize(65535);
+                }
+                assertThat("sibling resumes without an interrupt", siblingWrite.get(5, TimeUnit.SECONDS), is(false));
+                assertThat("sibling retains usable flow-control credit", sibling.outbound().getRemainingWindowSize(), is(65535));
+                sibling.outbound().decrementWindowSize(1);
+                assertThat("sibling can consume credit", sibling.outbound().getRemainingWindowSize(), is(65534));
+            } finally {
+                // Also release the real flow-control wait if an assertion fails before cancellation.
+                connection.incrementOutboundConnectionWindowSize(65535);
+                flowControl.outbound().incrementStreamWindowSize(65535);
+                sibling.outbound().incrementStreamWindowSize(65535);
+                handler.close();
+            }
+        }
+        assertThat("deadline cancellation does not interrupt the flow-control writer",
+                   writerInterrupted.get(5, TimeUnit.SECONDS), is(false));
+        assertThat("application caller is not interrupted", callerInterrupted.get(5, TimeUnit.SECONDS), is(false));
+        assertThat("one terminal status", writer.trailerWrites.get(), is(1));
+    }
+
     private ServerCall<String, String> createServerCall(Http2StreamWriter streamWriter) {
         GrpcProtocolHandler<String, String> handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
                                                                                 Http2Headers.create(WritableHeaders.create()),
@@ -1231,6 +2795,70 @@ class GrpcProtocolHandlerTest {
                 () -> assertThat(trailers.get().httpHeaders().first(GrpcStatus.MESSAGE_NAME),
                                  is(Optional.of("gRPC message exceeds maximum configured size")))
         );
+    }
+
+    private static class RecordingWriter implements Http2StreamWriter {
+        private final CompletableFuture<Http2Headers> trailers = new CompletableFuture<>();
+        private final AtomicInteger trailerWrites = new AtomicInteger();
+        private final AtomicInteger dataWrites = new AtomicInteger();
+
+        @Override
+        public void write(Http2FrameData frame) {
+        }
+
+        @Override
+        public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
+            dataWrites.incrementAndGet();
+        }
+
+        @Override
+        public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags,
+                                FlowControl.Outbound flowControl) {
+            if (flags.endOfStream()) {
+                trailerWrites.incrementAndGet();
+                trailers.complete(headers);
+            }
+            return 0;
+        }
+
+        @Override
+        public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags,
+                                Http2FrameData dataFrame, FlowControl.Outbound flowControl) {
+            throw new UnsupportedOperationException("Unused");
+        }
+    }
+
+    private static class FailingTrailerSocket extends UnimplementedGrpcConnectionContext implements HelidonSocket {
+        private final BufferData output = BufferData.growing(128);
+        private final UncheckedIOException failure = new UncheckedIOException(new IOException("terminal socket write failed"));
+        private boolean failWrites;
+
+        @Override
+        public void write(BufferData buffer) {
+            if (failWrites) {
+                throw failure;
+            }
+            output.write(buffer);
+        }
+
+        @Override
+        public void close() {
+        }
+
+        @Override
+        public void idle() {
+            throw new UnsupportedOperationException("Unused");
+        }
+
+        @Override
+        public boolean isConnected() {
+            return true;
+        }
+
+        @Override
+        public byte[] get() {
+            throw new UnsupportedOperationException("Unused");
+        }
     }
 
     @Nested
