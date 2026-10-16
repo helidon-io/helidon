@@ -35,12 +35,14 @@ class GrpcClientImpl implements GrpcClient {
     private static final ClientInterceptor[] NO_INTERCEPTORS = new ClientInterceptor[]{};
 
     private final WebClient webClient;
+    private final WebClient connectionWebClient;
     private final Http2Client http2Client;
     private final GrpcClientConfig clientConfig;
     private final HttpTransportConnectionCache<GrpcClientConnections> observedConnections;
 
     GrpcClientImpl(WebClient webClient, GrpcClientConfig clientConfig) {
         this.webClient = webClient;
+        this.connectionWebClient = GrpcBaseClientCall.connectionWebClient(webClient);
         this.http2Client = webClient.client(Http2Client.PROTOCOL);
         this.clientConfig = clientConfig;
         this.observedConnections = HttpTransportConnectionCache.create(GrpcClientConnections.class,
@@ -51,6 +53,10 @@ class GrpcClientImpl implements GrpcClient {
 
     WebClient webClient() {
         return webClient;
+    }
+
+    WebClient connectionWebClient() {
+        return connectionWebClient;
     }
 
     Http2Client http2Client() {

@@ -116,6 +116,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
     private final Http2StreamAdmissionGate streamAdmissionGate;
     private final HttpRouting routing;
     private final AtomicReference<Http2StreamWriteState> writeState = new AtomicReference<>(Http2StreamWriteState.INIT);
+    private final AtomicBoolean subProtocolClosed = new AtomicBoolean();
     private final ReentrantLock resetCompletionLock = new ReentrantLock();
     private final ReentrantLock runnerLock = new ReentrantLock();
     private boolean wasLastDataFrame = false;
@@ -338,6 +339,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             runner.interrupt();
         }
         resetSubProtocol(handler, new Http2RstStream(Http2ErrorCode.CANCEL));
+        closeSubProtocol(handler);
         inboundData.abortAndDrain();
     }
 
@@ -428,7 +430,6 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                     pendingSubProtocolReset = reset;
                 } else {
                     handler = subProtocolHandler;
-                    subProtocolHandler = null;
                 }
             }
         } finally {
@@ -686,7 +687,6 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                     throw writeFailure;
                 }
             }
-            // no sense in throwing an exception, as this is invoked from an executor service directly
         } catch (RequestException e) {
             requestFailed();
             if (!handleRequestException(e)) {
@@ -695,8 +695,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             completed = true;
         } catch (Http2Exception e) {
             ctx.log(LOGGER, DEBUG, "Intentional HTTP/2 stream exception, code: %s, message: %s",
-                    e.code(),
-                    e.getMessage());
+                    e.code(), e.getMessage());
             closeRejectedStream(e.code(), true);
             completed = true;
         } finally {
@@ -708,9 +707,8 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                     if (!connectionFailed && !resetSent) {
                         boolean sendReset = claimResetStreamSent();
                         if (sendReset) {
-                            Http2RstStream rst = new Http2RstStream(Http2ErrorCode.INTERNAL);
                             try {
-                                writeResetStream(rst, serverSettings);
+                                writeResetStream(new Http2RstStream(Http2ErrorCode.INTERNAL), serverSettings);
                                 resetSent = true;
                             } catch (SocketWriterException | UncheckedIOException writeFailure) {
                                 ctx.log(LOGGER, DEBUG, "Failed to reset stream %d after handler failure", streamId);
@@ -751,14 +749,23 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                 }
                 throw e;
             } finally {
-                runnerLock.lock();
+                closeSubProtocol(subProtocolHandler);
                 try {
-                    runnerThread = null;
-                    if (!ignoreInboundDataAfterReset || subProtocolTerminal) {
-                        subProtocolHandler = null;
+                    if (subProtocolHandler != null) {
+                        subProtocolHandler.streamFinished();
                     }
+                } catch (Throwable e) {
+                    LOGGER.log(System.Logger.Level.WARNING, "Failed to finish HTTP/2 sub-protocol handler", e);
                 } finally {
-                    runnerLock.unlock();
+                    runnerLock.lock();
+                    try {
+                        runnerThread = null;
+                        if (!ignoreInboundDataAfterReset || subProtocolTerminal) {
+                            subProtocolHandler = null;
+                        }
+                    } finally {
+                        runnerLock.unlock();
+                    }
                 }
             }
         }
@@ -1691,6 +1698,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         }
         resetSubProtocol(selectedSubProtocol, pendingReset);
         if (closed) {
+            closeSubProtocol(selectedSubProtocol);
             return;
         }
         selectedSubProtocol.onStreamClosed(() -> {
@@ -1704,6 +1712,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             streams.remove(streamId);
             abortInboundData();
         });
+        selectedSubProtocol.onStreamEvent(inboundData::requestEvent);
         runnerLock.lock();
         try {
             if (connectionAborted || state == Http2StreamState.CLOSED || subProtocolTerminal) {
@@ -1720,14 +1729,14 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             return;
         }
         while (this.state != Http2StreamState.CLOSED) {
-            DataFrame frame;
+            StreamEvent event;
             try {
-                frame = inboundData.take();
+                event = inboundData.takeEvent();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new ServerConnectionException("Interrupted while waiting for subprotocol data", e);
             }
-            if (frame == null) {
+            if (event == null) {
                 updateSubProtocolState(selectedSubProtocol);
                 return;
             }
@@ -1735,6 +1744,12 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                 abortInboundData();
                 return;
             }
+            if (event == ControlEvent.PENDING) {
+                selectedSubProtocol.streamEvent();
+                updateSubProtocolState(selectedSubProtocol);
+                continue;
+            }
+            DataFrame frame = (DataFrame) event;
             try {
                 selectedSubProtocol.data(frame.header(), frame.data());
                 updateSubProtocolState(selectedSubProtocol);
@@ -1745,6 +1760,16 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                     inboundData.complete(frame,
                                          () -> incrementInboundStreamWindowSize(frame.flowControlLength()));
                 }
+            }
+        }
+    }
+
+    private void closeSubProtocol(Http2SubProtocolSelector.SubProtocolHandler handler) {
+        if (handler != null && subProtocolClosed.compareAndSet(false, true)) {
+            try {
+                handler.close();
+            } catch (Throwable e) {
+                LOGGER.log(System.Logger.Level.WARNING, "Failed to close HTTP/2 sub-protocol handler", e);
             }
         }
     }
@@ -1768,6 +1793,13 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         if (transportObservation != null) {
             transportObservation.requestFailed();
         }
+    }
+
+    private enum ControlEvent implements StreamEvent {
+        PENDING
+    }
+
+    sealed interface StreamEvent permits DataFrame, ControlEvent {
     }
 
     interface LocallyResetStreamTracker {
@@ -1882,6 +1914,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         private boolean finished;
         private boolean terminalDelivered;
         private boolean aborted;
+        private boolean eventPending;
 
         InboundDataQueue(InboundDataBudget budget) {
             this.budget = budget;
@@ -1905,21 +1938,20 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         }
 
         DataFrame take() throws InterruptedException {
-            lock.lockInterruptibly();
+            return (DataFrame) take(false);
+        }
+
+        StreamEvent takeEvent() throws InterruptedException {
+            return take(true);
+        }
+
+        void requestEvent() {
+            lock.lock();
             try {
-                while (queue.isEmpty()) {
-                    if (aborted) {
-                        return null;
-                    }
-                    if (finished && !terminalDelivered) {
-                        terminalDelivered = true;
-                        return TERMINATING_FRAME;
-                    }
-                    dataAvailable.await();
+                if (!aborted) {
+                    eventPending = true;
+                    dataAvailable.signal();
                 }
-                DataFrame frame = queue.remove();
-                inFlight = frame;
-                return frame;
             } finally {
                 lock.unlock();
             }
@@ -1959,6 +1991,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                     return 0;
                 }
                 aborted = true;
+                eventPending = false;
                 long discarded = 0;
                 int permits = 0;
                 if (inFlight != null) {
@@ -1981,6 +2014,33 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             }
         }
 
+        private StreamEvent take(boolean includeEvents) throws InterruptedException {
+            lock.lockInterruptibly();
+            try {
+                while (true) {
+                    if (aborted) {
+                        return null;
+                    }
+                    if (includeEvents && eventPending) {
+                        eventPending = false;
+                        return ControlEvent.PENDING;
+                    }
+                    if (!queue.isEmpty()) {
+                        DataFrame frame = queue.remove();
+                        inFlight = frame;
+                        return frame;
+                    }
+                    if (finished && !terminalDelivered) {
+                        terminalDelivered = true;
+                        return TERMINATING_FRAME;
+                    }
+                    dataAvailable.await();
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+
         enum OfferResult {
             ACCEPTED,
             CLOSED,
@@ -1988,7 +2048,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         }
     }
 
-    record DataFrame(Http2FrameHeader header, BufferData data) {
+    record DataFrame(Http2FrameHeader header, BufferData data) implements StreamEvent {
         int flowControlLength() {
             return header.length();
         }
