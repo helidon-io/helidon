@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.config;
 import java.util.AbstractList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -34,27 +35,29 @@ import static io.helidon.config.AbstractNodeBuilderImpl.formatFrom;
 class ListNodeImpl extends AbstractList<ConfigNode> implements ListNode, MergeableNode {
 
     private final List<MergeableNode> elements;
-    private String description;
     private final String value;
+    private volatile String description;
 
     ListNodeImpl(List<MergeableNode> elements, String value) {
-        this.elements = elements;
-        this.description = null;
+        this(elements, value, "N/A");
+    }
+
+    ListNodeImpl(List<MergeableNode> elements, String value, String description) {
+        this.elements = List.copyOf(elements);
         this.value = value;
+        this.description = Objects.requireNonNullElse(description, "N/A");
     }
 
     /**
      * Wraps list node into mergeable list node.
      *
      * @param listNode original node
-     * @return new instance of mergeable node or original node if already was mergeable.
+     * @return new mergeable node retaining the original source descriptions
      */
     static ListNodeImpl wrap(ListNode listNode, Function<String, String> resolveTokenFunction) {
-        if (listNode instanceof ListNodeImpl) {
-            return (ListNodeImpl) listNode;
-        }
-        return ListNodeBuilderImpl.from(listNode)
+        return ListNodeBuilderImpl.from(listNode, resolveTokenFunction)
                 .value(listNode.value())
+                .description(listNode.description())
                 .build();
     }
 
@@ -76,7 +79,7 @@ class ListNodeImpl extends AbstractList<ConfigNode> implements ListNode, Mergeab
         case LIST:
             return mergeWithList((ListNodeImpl) node);
         case VALUE:
-            return new ListNodeImpl(elements, ((ValueNodeImpl) node).get());
+            return new ListNodeImpl(elements, ((ValueNodeImpl) node).get(), node.description());
         default:
             throw new IllegalArgumentException("Unsupported node type: " + node.getClass().getName());
         }
@@ -88,7 +91,7 @@ class ListNodeImpl extends AbstractList<ConfigNode> implements ListNode, Mergeab
         }
 
         if (hasValue()) {
-            return new ListNodeImpl(node.elements, value);
+            return new ListNodeImpl(node.elements, value, description);
         }
 
         return node;
@@ -110,6 +113,7 @@ class ListNodeImpl extends AbstractList<ConfigNode> implements ListNode, Mergeab
         } else if (hasValue()) {
             builder.value(value);
         }
+        builder.description(AbstractNodeBuilderImpl.mergedDescription(this, node));
 
         for (int i = 0; i < elements.size(); i++) {
             MergeableNode element = elements.get(i);
@@ -139,15 +143,18 @@ class ListNodeImpl extends AbstractList<ConfigNode> implements ListNode, Mergeab
     /**
      * Initialize diagnostics description of source of node instance.
      *
-     * @param description diagnostics description
+     * @param description diagnostics description; for legacy compatibility, {@code null} resets it to {@code "N/A"}
      * @return this instance
+     * @deprecated source descriptions are assigned by Helidon when loading nodes
      */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     public ListNodeImpl initDescription(String description) {
-        this.description = description;
+        this.description = Objects.requireNonNullElse(description, "N/A");
         elements.forEach(node -> ObjectNodeImpl.initDescription(node, description));
         return this;
     }
 
+    @Override
     public String description() {
         return description;
     }

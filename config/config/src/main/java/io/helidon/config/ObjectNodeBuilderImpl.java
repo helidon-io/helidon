@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,9 @@
 
 package io.helidon.config;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -28,12 +28,16 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
 
 /**
  * Implementation of {@link ObjectNode.Builder}.
- * This class is {@code public} for the time being, though it should not be.
+ *
+ * @deprecated use {@link ObjectNode#builder()} or {@link ObjectNode#builder(Function)};
+ *             this implementation will become package-private
  */
+@Deprecated(since = "28.0.0", forRemoval = true)
 public class ObjectNodeBuilderImpl extends AbstractNodeBuilderImpl<String, ObjectNode.Builder> implements ObjectNode.Builder {
 
     private final Map<String, MergeableNode> members;
     private String value;
+    private String description = "N/A";
 
     /**
      * Initialize object builder.
@@ -48,7 +52,7 @@ public class ObjectNodeBuilderImpl extends AbstractNodeBuilderImpl<String, Objec
      * @param tokenResolver a token resolver
      */
     public ObjectNodeBuilderImpl(Function<String, String> tokenResolver) {
-        super(tokenResolver);
+        super(Objects.requireNonNull(tokenResolver));
         this.members = new HashMap<>();
     }
 
@@ -82,6 +86,10 @@ public class ObjectNodeBuilderImpl extends AbstractNodeBuilderImpl<String, Objec
         return new ObjectNodeBuilderImpl(resolveTokenFunction).fromMap(members);
     }
 
+    static String encodeDotsInTokenReferences(String key) {
+        return key.replaceAll("\\.+(?=[^(\\$\\{)]*\\})", "~1");
+    }
+
     /**
      * Creates new instance of the builder initialized from original map of members.
      *
@@ -89,7 +97,7 @@ public class ObjectNodeBuilderImpl extends AbstractNodeBuilderImpl<String, Objec
      * @return new builder instance
      */
     private ObjectNodeBuilderImpl fromMap(Map<String, ConfigNode> members) {
-        members.forEach(this::addNode);
+        from(members);
         return this;
     }
 
@@ -102,6 +110,8 @@ public class ObjectNodeBuilderImpl extends AbstractNodeBuilderImpl<String, Objec
      */
     @Override
     public ObjectNodeBuilderImpl addNode(String name, ConfigNode node) {
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(node);
         members.put(tokenResolver().apply(name), wrap(node, tokenResolver()));
         return this;
     }
@@ -130,10 +140,6 @@ public class ObjectNodeBuilderImpl extends AbstractNodeBuilderImpl<String, Objec
         }
     }
 
-    private String encodeDotsInTokenReferences(String key) {
-        return key.replaceAll("\\.+(?=[^(\\$\\{)]*\\})", "~1");
-    }
-
     /**
      * Configure direct value of this node.
      *
@@ -150,6 +156,11 @@ public class ObjectNodeBuilderImpl extends AbstractNodeBuilderImpl<String, Objec
     // even though value is now optional
     ObjectNodeBuilderImpl value(Optional<String> value) {
         value.ifPresent(this::value);
+        return this;
+    }
+
+    ObjectNodeBuilderImpl description(String description) {
+        this.description = Objects.requireNonNullElse(description, "N/A");
         return this;
     }
 
@@ -172,7 +183,7 @@ public class ObjectNodeBuilderImpl extends AbstractNodeBuilderImpl<String, Objec
 
     @Override
     public ObjectNodeImpl build() {
-        return new ObjectNodeImpl(Collections.unmodifiableMap(members), tokenResolver(), value);
+        return new ObjectNodeImpl(Map.copyOf(members), tokenResolver(), value, description);
     }
 
     @Override

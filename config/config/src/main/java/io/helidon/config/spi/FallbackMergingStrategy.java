@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import io.helidon.config.spi.ConfigNode.ListNode;
+import io.helidon.config.ObjectNodeImpl;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
-import io.helidon.config.spi.ConfigNode.ValueNode;
 
 /**
  * An implementation of {@link MergingStrategy} in which nodes
@@ -35,6 +34,7 @@ import io.helidon.config.spi.ConfigNode.ValueNode;
  * containing a value for the key is it immediately returns that value,
  * disregarding other later config roots.
  */
+@SuppressWarnings("removal")
 final class FallbackMergingStrategy implements MergingStrategy {
 
     @Override
@@ -43,27 +43,12 @@ final class FallbackMergingStrategy implements MergingStrategy {
         List<ObjectNode> rootNodes = new ArrayList<>(rootNodesParam);
         Collections.reverse(rootNodes);
 
-        ObjectNode.Builder builder = ObjectNode.builder();
-
-        rootNodes.forEach(root -> root.forEach((key, node) -> addNode(builder, key, node)));
-
-        return builder.build();
-    }
-
-    private static void addNode(ObjectNode.Builder builder, String key, ConfigNode node) {
-        switch (node.nodeType()) {
-        case OBJECT:
-            builder.addObject(key, (ObjectNode) node);
-            return;
-        case LIST:
-            builder.addList(key, (ListNode) node);
-            return;
-        case VALUE:
-            builder.addValue(key, (ValueNode) node);
-            return;
-        default:
-            throw new IllegalArgumentException("Unsupported node type: " + node.getClass().getName());
+        ObjectNodeImpl merged = ObjectNodeImpl.wrap(ObjectNode.empty());
+        for (ObjectNode root : rootNodes) {
+            merged = (ObjectNodeImpl) merged.merge(ObjectNodeImpl.wrap(root));
         }
+
+        return merged;
     }
 
 }

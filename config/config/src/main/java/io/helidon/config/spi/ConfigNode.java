@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,17 @@ package io.helidon.config.spi;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
 import io.helidon.config.ListNodeBuilderImpl;
 import io.helidon.config.ObjectNodeBuilderImpl;
+import io.helidon.config.ObjectNodeImpl;
 import io.helidon.config.ValueNodeImpl;
 
 /**
- * Marker interface identifying a config node implementation.
+ * A configuration node and its source description.
  */
 public interface ConfigNode {
     /**
@@ -41,6 +44,19 @@ public interface ConfigNode {
      * @return a value if present, {@code empty} otherwise
      */
     Optional<String> value();
+
+    /**
+     * Human-readable description of the source from which this node was loaded.
+     * Returns {@code "N/A"} when the source is unknown or when a container combines different sources.
+     * For an object or list with a direct value, the description identifies the source of that value;
+     * its children retain their own source descriptions.
+     *
+     * @return source description, never {@code null}
+     * @since 28.0.0
+     */
+    default String description() {
+        return "N/A";
+    }
 
     /**
      * Base types of config nodes.
@@ -84,7 +100,7 @@ public interface ConfigNode {
          * @return new instance of the {@link ValueNode}
          */
         static ValueNode create(String value) {
-            return ValueNodeImpl.create(value);
+            return ValueNodeImpl.create(Objects.requireNonNull(value));
         }
     }
 
@@ -111,9 +127,36 @@ public interface ConfigNode {
         }
 
         /**
+         * Creates a builder using the provided resolver for object member names.
+         *
+         * @param tokenResolver function resolving member names
+         * @return new builder
+         * @since 28.0.0
+         */
+        static Builder builder(Function<String, String> tokenResolver) {
+            return new ListNodeBuilderImpl(Objects.requireNonNull(tokenResolver));
+        }
+
+        /**
          * Builder to build {@link ListNode} instance.
          */
         interface Builder extends io.helidon.common.Builder<Builder, ListNode> {
+            /**
+             * Adds a configuration node to the list.
+             *
+             * @param node node to add
+             * @return modified builder
+             * @since 28.0.0
+             */
+            default Builder addNode(ConfigNode node) {
+                Objects.requireNonNull(node);
+                return switch (node.nodeType()) {
+                    case VALUE -> addValue((ValueNode) node);
+                    case OBJECT -> addObject((ObjectNode) node);
+                    case LIST -> addList((ListNode) node);
+                };
+            }
+
             /**
              * Adds String value to the list.
              *
@@ -162,11 +205,10 @@ public interface ConfigNode {
      * Configuration node representing a hierarchical structure parsed by a
      * suitable {@link ConfigParser} if necessary.
      * <p>
-     * In the map exposed by this interface, the map keys are {@code String}s
-     * containing the fully-qualified dotted names of the config keys and the
-     * map values are the corresponding {@link ValueNode} or {@link ListNode}
-     * instances. The map never contains {@link ObjectNode} values because the
-     * {@link ObjectNode} is implemented as a flat map.
+     * The map contains this object's immediate children, keyed by their names. A child may be a
+     * {@link ValueNode}, {@link ListNode}, or another {@link ObjectNode}. Builder methods accepting
+     * dotted paths create nested objects, so adding {@code "server.port"} creates a {@code "server"}
+     * object containing a {@code "port"} child. A direct value may coexist with children.
      * <p>
      * NOTE: Do not implement this interface yourself but rather use
      * {@link #builder()}.
@@ -209,9 +251,58 @@ public interface ConfigNode {
         }
 
         /**
+         * Creates a builder using the provided resolver for object member names.
+         *
+         * @param tokenResolver function resolving member names
+         * @return new builder
+         * @since 28.0.0
+         */
+        static Builder builder(Function<String, String> tokenResolver) {
+            return new ObjectNodeBuilderImpl(Objects.requireNonNull(tokenResolver));
+        }
+
+        /**
+         * Copies an object node, preserving its direct value and source descriptions.
+         *
+         * @param node original node
+         * @return copied node
+         * @since 28.0.0
+         */
+        static ObjectNode wrap(ObjectNode node) {
+            return wrap(node, Function.identity());
+        }
+
+        /**
+         * Copies an object node using a resolver for object member names, preserving its direct value
+         * and source descriptions.
+         *
+         * @param node original node
+         * @param tokenResolver function resolving member names
+         * @return copied node
+         * @since 28.0.0
+         */
+        static ObjectNode wrap(ObjectNode node, Function<String, String> tokenResolver) {
+            return ObjectNodeImpl.wrap(Objects.requireNonNull(node), Objects.requireNonNull(tokenResolver));
+        }
+
+        /**
          * Builder to build {@link ObjectNode} instance.
          */
         interface Builder {
+
+            /**
+             * Adds the provided immediate members to this builder. Keys are member names, not dotted paths.
+             * This operation copies members only; use {@link ObjectNode#wrap(ObjectNode)} to also retain an
+             * object's direct value and source description.
+             *
+             * @param members members to add
+             * @return modified builder
+             * @since 28.0.0
+             */
+            default Builder from(Map<String, ConfigNode> members) {
+                Objects.requireNonNull(members).forEach(this::addNode);
+                return this;
+            }
 
             /**
              * Sets String value associated with specified {@code key}.
