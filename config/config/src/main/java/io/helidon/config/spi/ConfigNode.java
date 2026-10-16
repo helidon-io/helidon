@@ -151,9 +151,9 @@ public interface ConfigNode {
             default Builder addNode(ConfigNode node) {
                 Objects.requireNonNull(node);
                 return switch (node.nodeType()) {
-                    case VALUE -> addValue((ValueNode) node);
-                    case OBJECT -> addObject((ObjectNode) node);
-                    case LIST -> addList((ListNode) node);
+                case VALUE -> addValue((ValueNode) node);
+                case OBJECT -> addObject((ObjectNode) node);
+                case LIST -> addList((ListNode) node);
                 };
             }
 
