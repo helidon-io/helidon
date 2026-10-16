@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 
 import javax.net.ssl.SSLException;
@@ -60,12 +61,15 @@ import io.helidon.webserver.http.DirectHandlers;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -517,6 +521,244 @@ class Http1ServerResponseTest {
                     () -> assertThat(responseText, containsString("Transfer-Encoding: chunked\r\n")),
                     () -> assertThat(responseText, containsString("\r\nentity\r\n")),
                     () -> assertThat(responseText, endsWith("0\r\n\r\n"))
+            );
+        }
+    }
+
+    @ParameterizedTest(name = "transientStatus={0}, status={1}, intermediate304={2}, explicitLength={3}")
+    @MethodSource("entityStatusTransitions")
+    void noEntityToEntityStatusAllowsBufferedEntity(Status transientStatus,
+                                                    Status status,
+                                                    boolean intermediate304,
+                                                    boolean explicitLength) {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create());
+        if (explicitLength) {
+            response.contentLength(6);
+        }
+        response.status(transientStatus);
+        if (intermediate304) {
+            response.status(Status.NOT_MODIFIED_304);
+        }
+        response.status(status);
+        assertThat(response.headers().contentLength().orElse(-1), is(explicitLength ? 6L : -1L));
+        response.send("entity".getBytes(StandardCharsets.UTF_8));
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, startsWith("HTTP/1.1 " + status + "\r\n")),
+                () -> assertThat(responseText, containsString("Content-Length: 6\r\n")),
+                () -> assertThat(responseText, not(containsString("Transfer-Encoding:"))),
+                () -> assertThat(responseText, endsWith("\r\n\r\nentity"))
+        );
+    }
+
+    @ParameterizedTest(name = "transientStatus={0}, status={1}, intermediate304={2}, explicitLength={3}")
+    @MethodSource("entityStatusTransitions")
+    void noEntityToEntityStatusAllowsStreamingEntity(Status transientStatus,
+                                                     Status status,
+                                                     boolean intermediate304,
+                                                     boolean explicitLength) throws IOException {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create());
+        if (explicitLength) {
+            response.contentLength(6);
+        }
+        response.status(transientStatus);
+        if (intermediate304) {
+            response.status(Status.NOT_MODIFIED_304);
+        }
+        response.status(status);
+        response.outputStream().write("entity".getBytes(StandardCharsets.UTF_8));
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, startsWith("HTTP/1.1 " + status + "\r\n")),
+                () -> assertThat(responseText, explicitLength
+                        ? containsString("Content-Length: 6\r\n") : not(containsString("Content-Length:"))),
+                () -> assertThat(responseText, explicitLength
+                        ? not(containsString("Transfer-Encoding:")) : containsString("Transfer-Encoding: chunked\r\n")),
+                () -> assertThat(responseText, endsWith(explicitLength
+                                                              ? "\r\n\r\nentity" : "\r\n\r\n6\r\nentity\r\n0\r\n\r\n"))
+        );
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {204, 205, 304})
+    void temporaryNoEntityStatusPreservesForcedChunking(int code) {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create());
+        response.header(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+        response.status(Status.create(code));
+        response.status(Status.OK_200);
+        response.send("entity".getBytes(StandardCharsets.UTF_8));
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, startsWith("HTTP/1.1 200 OK\r\n")),
+                () -> assertThat(responseText, containsString("Transfer-Encoding: chunked\r\n")),
+                () -> assertThat(responseText, not(containsString("Content-Length:"))),
+                () -> assertThat(responseText, endsWith("\r\n\r\n6\r\nentity\r\n0\r\n\r\n"))
+        );
+    }
+
+    @ParameterizedTest(name = "transientStatus={0}, streamRequested={1}")
+    @CsvSource({"204, false", "204, true", "205, false", "205, true", "304, false", "304, true"})
+    void temporaryNoEntityStatusPreservesTrailers(int code, boolean streamRequested) throws IOException {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create());
+        response.header(HeaderNames.TRAILER, "test-trailer");
+        response.beforeTrailers(trailers -> trailers.set(HeaderNames.create("test-trailer"), "complete"));
+        OutputStream output = streamRequested ? response.outputStream() : null;
+        response.status(Status.create(code));
+        response.status(Status.OK_200);
+        byte[] entity = "entity".getBytes(StandardCharsets.UTF_8);
+        if (streamRequested) {
+            output.write(entity);
+        } else {
+            response.send(entity);
+        }
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, startsWith("HTTP/1.1 200 OK\r\n")),
+                () -> assertThat(responseText, containsString("Transfer-Encoding: chunked\r\n")),
+                () -> assertThat(responseText, containsString("Trailer: test-trailer\r\n")),
+                () -> assertThat(responseText, not(containsString("Content-Length:"))),
+                () -> assertThat(responseText, containsString("\r\n\r\n6\r\nentity\r\n0\r\n")),
+                () -> assertThat(responseText, containsString("\r\ntest-trailer: complete\r\n")),
+                () -> assertThat(responseText, endsWith("\r\n\r\n"))
+        );
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {204, 205, 304})
+    void temporaryNoEntityStatusPreservesStreamingLength(int code) throws IOException {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create());
+        response.contentLength(6);
+        OutputStream output = response.outputStream();
+        response.status(Status.create(code));
+        response.status(Status.OK_200);
+        output.write("entity".getBytes(StandardCharsets.UTF_8));
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, startsWith("HTTP/1.1 200 OK\r\n")),
+                () -> assertThat(responseText, containsString("Content-Length: 6\r\n")),
+                () -> assertThat(responseText, not(containsString("Transfer-Encoding:"))),
+                () -> assertThat(responseText, endsWith("\r\n\r\nentity"))
+        );
+    }
+
+    @Test
+    void entityStatusAfterResetContentAndNotModifiedAllowsStreamingEntity() throws IOException {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create());
+        response.status(Status.RESET_CONTENT_205);
+        response.status(Status.NOT_MODIFIED_304);
+        OutputStream output = response.outputStream();
+        response.status(Status.OK_200);
+        output.write("entity".getBytes(StandardCharsets.UTF_8));
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, startsWith("HTTP/1.1 200 OK\r\n")),
+                () -> assertThat(responseText, containsString("Transfer-Encoding: chunked\r\n")),
+                () -> assertThat(responseText, containsString("\r\nentity\r\n")),
+                () -> assertThat(responseText, endsWith("0\r\n\r\n"))
+        );
+    }
+
+    @ParameterizedTest(name = "streamRequested={0}, intermediate304={1}, contentLength={2}")
+    @CsvSource({"false, false, 0", "false, false, 6", "false, true, 0", "false, true, 6",
+                "true, false, 0", "true, false, 6", "true, true, 0", "true, true, 6"})
+    void resetContentToEntityStatusPreservesExplicitLength(boolean streamRequested, boolean intermediate304, long length)
+            throws IOException {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create());
+        response.status(Status.RESET_CONTENT_205);
+        OutputStream output = streamRequested ? response.outputStream() : null;
+        response.headers().contentLength(length);
+        if (intermediate304) {
+            response.status(Status.NOT_MODIFIED_304);
+        }
+        response.status(Status.OK_200);
+        assertThat(response.headers().contentLength().orElseThrow(), is(length));
+        if (!streamRequested) {
+            output = response.outputStream();
+        }
+        response.flushHeaders();
+        String entity = length == 0 ? "" : "entity";
+        output.write(entity.getBytes(StandardCharsets.UTF_8));
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, startsWith("HTTP/1.1 200 OK\r\n")),
+                () -> assertThat(responseText, containsString("Content-Length: " + length + "\r\n")),
+                () -> assertThat(responseText, not(containsString("Transfer-Encoding:"))),
+                () -> assertThat(responseText, endsWith("\r\n\r\n" + entity))
+        );
+    }
+
+    @Test
+    void resetContentToEntityStatusPreservesExplicitZeroHeader() {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create());
+        response.status(Status.RESET_CONTENT_205);
+        response.header(HeaderValues.CONTENT_LENGTH_ZERO);
+        response.status(Status.OK_200);
+        assertThat(response.headers().contentLength().orElseThrow(), is(0L));
+        response.send();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, startsWith("HTTP/1.1 200 OK\r\n")),
+                () -> assertThat(responseText, containsString("Content-Length: 0\r\n")),
+                () -> assertThat(responseText, endsWith("\r\n\r\n"))
+        );
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {200, 304})
+    void temporaryNoEntityStatusesPreserveHeadRepresentationLength(int code) {
+        for (Status transientStatus : NO_ENTITY_STATUSES) {
+            DataWriter writer = mock(DataWriter.class);
+            Http1ServerResponse response = createResponse(writer, Method.HEAD, ContentEncodingContext.create());
+            response.contentLength(6);
+            response.status(transientStatus);
+            Status status = Status.create(code);
+            response.status(status);
+            response.send();
+
+            var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+            verify(writer).write(responseBuffer.capture());
+            String responseText = responseText(responseBuffer);
+            assertAll(transientStatus.toString(),
+                    () -> assertThat(responseText, startsWith("HTTP/1.1 " + status + "\r\n")),
+                    () -> assertThat(responseText, containsString("Content-Length: 6\r\n")),
+                    () -> assertThat(responseText, endsWith("\r\n\r\n"))
             );
         }
     }
@@ -1099,8 +1341,9 @@ class Http1ServerResponseTest {
         verifyZeroInteractions(writer);
     }
 
-    @Test
-    void flushedStreamingHeadNoEntityStatusSendsHeadersOnce() throws IOException {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void flushedStreamingHeadNoEntityStatusSendsHeadersOnce(boolean flushHeaders) throws IOException {
         for (Status status : NO_ENTITY_STATUSES) {
             ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
             DataWriter writer = mock(DataWriter.class);
@@ -1111,7 +1354,11 @@ class Http1ServerResponseTest {
             response.status(status);
 
             OutputStream output = response.outputStream();
-            output.flush();
+            if (flushHeaders) {
+                response.flushHeaders();
+            } else {
+                output.flush();
+            }
             response.commit();
 
             var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
@@ -1295,6 +1542,17 @@ class Http1ServerResponseTest {
                 () -> assertThat(responseText, containsString("entity")),
                 () -> assertThat(responseText, endsWith(expectedEnding))
         );
+    }
+
+    private static Stream<Arguments> entityStatusTransitions() {
+        return NO_ENTITY_STATUSES.stream()
+                .flatMap(transientStatus -> Stream.of(Status.OK_200, Status.BAD_REQUEST_400,
+                                                     Status.NOT_FOUND_404, Status.INTERNAL_SERVER_ERROR_500)
+                        .flatMap(status -> (transientStatus == Status.RESET_CONTENT_205
+                                ? Stream.of(false, true) : Stream.of(false))
+                                .flatMap(intermediate304 -> Stream.of(false, true)
+                                        .map(explicitLength -> Arguments.of(transientStatus, status,
+                                                                            intermediate304, explicitLength)))));
     }
 
     private static void assertNoEntityHeaders(Status status, String responseText) {
