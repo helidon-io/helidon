@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -65,6 +66,7 @@ class DataWriterSseSink implements SseSink {
             createCached(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME);
     private static final byte[] SSE_NL = "\n".getBytes(StandardCharsets.UTF_8);
     private static final byte[] SSE_ID = "id:".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] SSE_RETRY = "retry:".getBytes(StandardCharsets.UTF_8);
     private static final byte[] SSE_DATA = "data:".getBytes(StandardCharsets.UTF_8);
     private static final byte[] SSE_EVENT = "event:".getBytes(StandardCharsets.UTF_8);
     private static final byte[] SSE_COMMENT = ":".getBytes(StandardCharsets.UTF_8);
@@ -139,6 +141,10 @@ class DataWriterSseSink implements SseSink {
             Optional<String> id = sseEvent.id();
             if (id.isPresent()) {
                 writeSseSingleLineField(SSE_ID, id.get());
+            }
+            Optional<Duration> reconnect = sseEvent.reconnectMillis();
+            if (reconnect.isPresent()) {
+                writeSseSingleLineField(SSE_RETRY, Long.toString(reconnect.get().toMillis()));
             }
             Optional<String> name = sseEvent.name();
             if (name.isPresent()) {
