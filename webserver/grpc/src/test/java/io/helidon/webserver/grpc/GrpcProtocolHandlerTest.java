@@ -85,7 +85,6 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Testing.Test
@@ -95,17 +94,17 @@ class GrpcProtocolHandlerTest {
     private static final HeaderName GRPC_ENCODING = HeaderNames.create("grpc-encoding");
     private static final ExecutorService EXECUTOR = Executors.newThreadPerTaskExecutor(Thread.ofVirtual().factory());
 
-    @AfterAll
-    static void closeExecutor() {
-        EXECUTOR.close();
-    }
-
     private final GrpcProtocolSelector.Metrics metrics;
 
     GrpcProtocolHandlerTest(MetricsFactory metricsFactory, MeterRegistry meterRegistry) {
         this.metrics = new GrpcProtocolSelector.Metrics(
                 new AtomicReference<>(new GrpcProtocolSelector.MetricsOwner(metricsFactory, meterRegistry)),
                 new ConcurrentHashMap<>());
+    }
+
+    @AfterAll
+    static void closeExecutor() {
+        EXECUTOR.close();
     }
 
     @Test
@@ -259,7 +258,7 @@ class GrpcProtocolHandlerTest {
                                                           Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
                                                           1);
 
-        assertDoesNotThrow(() -> handler.data(header, BufferData.empty()));
+        handler.data(header, BufferData.empty());
     }
 
     @Test
@@ -279,7 +278,7 @@ class GrpcProtocolHandlerTest {
                                                           Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
                                                           1);
 
-        assertDoesNotThrow(() -> handler.data(header, BufferData.empty()));
+        handler.data(header, BufferData.empty());
         assertThat(handler.streamState(), is(Http2StreamState.CLOSED));
     }
 
@@ -409,7 +408,7 @@ class GrpcProtocolHandlerTest {
                 events.add("cancel");
             }
         };
-        ServerCallHandler<String, String> callHandler = (call, ignored) -> {
+        ServerCallHandler<String, String> callHandler = (call, _) -> {
             callRef.set(call);
             return listener;
         };
@@ -449,7 +448,7 @@ class GrpcProtocolHandlerTest {
                 messageCount.incrementAndGet();
             }
         };
-        ServerCallHandler<String, String> callHandler = (call, ignored) -> {
+        ServerCallHandler<String, String> callHandler = (call, _) -> {
             callRef.set(call);
             return listener;
         };
@@ -607,7 +606,7 @@ class GrpcProtocolHandlerTest {
                 completeCount.incrementAndGet();
             }
         };
-        ServerCallHandler<String, String> callHandler = (call, ignored) -> {
+        ServerCallHandler<String, String> callHandler = (call, _) -> {
             callRef.set(call);
             return listener;
         };
@@ -653,7 +652,7 @@ class GrpcProtocolHandlerTest {
                 completeCount.incrementAndGet();
             }
         };
-        ServerCallHandler<String, String> callHandler = (call, ignored) -> {
+        ServerCallHandler<String, String> callHandler = (call, _) -> {
             call.close(Status.OK, new Metadata());
             return listener;
         };
@@ -689,7 +688,7 @@ class GrpcProtocolHandlerTest {
                 cancelCount.incrementAndGet();
             }
         };
-        ServerCallHandler<String, String> callHandler = (call, ignored) -> {
+        ServerCallHandler<String, String> callHandler = (call, _) -> {
             callRef.set(call);
             return listener;
         };
@@ -749,7 +748,7 @@ class GrpcProtocolHandlerTest {
                                                           Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
                                                           1);
 
-        assertDoesNotThrow(() -> handler.data(header, data));
+        handler.data(header, data);
 
         assertAll(
                 () -> assertThat(cancellations.get(), is(0)),
@@ -874,7 +873,7 @@ class GrpcProtocolHandlerTest {
         ServerCall<String, String> serverCall = createServerCall(closeFailingWriter());
         serverCall.sendHeaders(new Metadata());
 
-        assertDoesNotThrow(() -> serverCall.close(Status.OK, new Metadata()));
+        serverCall.close(Status.OK, new Metadata());
         assertThat(serverCall.isCancelled(), is(true));
     }
 
