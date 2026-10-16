@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -28,5 +28,23 @@
         -->
         <Class name="io.helidon.webclient.http1.Http1ClientConnection"/>
         <Bug pattern="UNENCRYPTED_SOCKET"/>
+    </Match>
+    <Match>
+        <!--
+        The producer owns this in-memory handoff stream. The legacy writer must close it on that thread;
+        the request thread cancels and joins the producer on failure instead of sending additional output.
+        -->
+        <Class name="io.helidon.webclient.http1.Http1EntityWriter"/>
+        <Method name="start"/>
+        <Bug pattern="OS_OPEN_STREAM"/>
+    </Match>
+    <Match>
+        <!--
+        Every caller invokes awaitChange from a predicate loop while holding the shared lock.
+        The helper centralizes interruption and cancellation propagation, not the wait predicate.
+        -->
+        <Class name="io.helidon.webclient.http1.Http1EntityWriter"/>
+        <Method name="awaitChange"/>
+        <Bug pattern="WA_AWAIT_NOT_IN_LOOP"/>
     </Match>
 </FindBugsFilter>

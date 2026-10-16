@@ -261,6 +261,10 @@ public interface ServerResponse {
 
     /**
      * Response trailers (mutable).
+     * For HTTP/1, trailer state belongs to the current response entity and is cleared by a successful
+     * {@link io.helidon.webserver.http.RoutingResponse#resetEntity()}, including when error handling replaces
+     * an unsent entity.
+     *
      * @return trailers
      * @throws java.lang.IllegalStateException if client didn't ask for trailers with {@code TE: trailers} header in request
      * or response doesn't contain trailer declaration headers {@code Trailer: <trailer-name>}
@@ -270,6 +274,9 @@ public interface ServerResponse {
     /**
      * Callback to update any last minute trailers before they are written to the
      * output stream.
+     * For HTTP/1, the callback belongs to the current response entity and is cleared by a successful
+     * {@link io.helidon.webserver.http.RoutingResponse#resetEntity()}, including when error handling replaces
+     * an unsent entity.
      *
      * @param beforeTrailers consumer of mutable trailers
      * @return this instance
@@ -282,7 +289,10 @@ public interface ServerResponse {
      * Description of the result of output stream processing.
      * In case an output stream was used, calling this method will immediately close the stream and return this
      * message as the reason for closing the response.
-     * In HTTP/1 this would be in a trailer header
+     * For HTTP/1, the result can be sent in a trailer header. It belongs to the current response entity and is cleared
+     * by a successful
+     * {@link io.helidon.webserver.http.RoutingResponse#resetEntity()}, including when error handling replaces
+     * an unsent entity.
      *
      * @param result result description
      */

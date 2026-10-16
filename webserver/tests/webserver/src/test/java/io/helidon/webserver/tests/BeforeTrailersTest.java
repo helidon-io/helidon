@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.webserver.tests;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.Status;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.http.HttpRouting;
@@ -26,6 +27,8 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -43,14 +46,23 @@ class BeforeTrailersTest {
     @SetUpRoute
     static void routing(HttpRouting.Builder builder) {
         builder.addFilter((chain, req, res) -> {
-                    if (req.path().path().equals("/trailers")) {
+                    if (req.path().path().equals("/trailers") || req.path().path().equals("/emptyTrailers")) {
                         res.header(HeaderNames.TRAILER, "helidon");
                         res.beforeTrailers(trailers -> {
                             trailers.add(HELIDON, "rocks");
                         });
+                    } else if (req.path().path().equals("/invalidTrailers")) {
+                        res.header(HeaderNames.TRAILER, "helidon");
+                        res.beforeTrailers(trailers -> trailers.add(HELIDON, "unencodable\u0100"));
+                    } else if (req.path().path().equals("/failedTrailers")) {
+                        res.header(HeaderNames.TRAILER, "helidon");
+                        res.beforeTrailers(ignored1 -> {
+                            throw new IllegalStateException("Trailer callback failed");
+                        });
                     }
                     chain.proceed();
                 })
+                .get("/emptyTrailers", (ignored2, res) -> res.send(""))
                 .any((req, res) -> res.send("hello"));
     }
 
@@ -69,6 +81,26 @@ class BeforeTrailersTest {
             assertThat(res.entity().as(String.class), is("hello"));     // need to read entity
             Header trailer = res.trailers().get(HELIDON);
             assertThat(trailer.get(), is("rocks"));
+        }
+    }
+
+    @Test
+    void testEmptyResponseTrailers() {
+        try (HttpClientResponse res = client.get("/emptyTrailers").request()) {
+            assertThat(res.status(), is(Status.OK_200));
+            assertThat(res.entity().as(String.class), is(""));
+            assertThat(res.trailers().get(HELIDON).get(), is("rocks"));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"/invalidTrailers", "/failedTrailers"})
+    void testTrailerFailureRecoversBeforeCommit(String path) {
+        try (HttpClientResponse res = client.get(path).request()) {
+            assertThat(res.status(), is(Status.INTERNAL_SERVER_ERROR_500));
+            assertThat(res.headers().contains(HeaderNames.TRAILER), is(false));
+            assertThat(res.entity().as(String.class), is("Internal Server Error"));
+            assertThat(res.trailers().contains(HELIDON), is(false));
         }
     }
 }

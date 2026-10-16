@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http;
 
+import io.helidon.common.Api;
 import io.helidon.http.HttpPrologue;
 
 /**
@@ -83,5 +84,29 @@ public interface RoutingResponse extends ServerResponse {
      */
     default boolean resetStream() {
         return reset();
+    }
+
+    /**
+     * Reset an unsent response entity so it can be replaced. The cleanup and preservation of response metadata depend
+     * on the implementation.
+     * <p>
+     * This method is intended for Helidon infrastructure that replaces a failed response entity.
+     * <p>
+     * The HTTP/1 implementation preserves metadata unrelated to the entity, such as CORS, cookies, cache controls, and
+     * {@code Vary} headers. It resets entity buffers and removes framing, representation, validator, range, and trailer
+     * headers, as well as separate trailer state and headers rejected by response-header validation or HTTP/1 serialization.
+     * This method does not change the response status. An error handler that replaces the entity is responsible for
+     * configuring or deliberately retaining an appropriate status before sending the replacement response.
+     * <p>
+     * For compatibility with existing {@link RoutingResponse} implementations, the default implementation calls
+     * {@link #resetStream()}. This fallback does not guarantee removal of entity-specific headers or trailer state;
+     * implementations that need that cleanup must override this method.
+     *
+     * @return {@code true} if reset was successful and a new entity can be created instead of the existing one,
+     *         {@code false} if reset failed and status and headers (and maybe entity bytes) were already sent
+     */
+    @Api.Internal
+    default boolean resetEntity() {
+        return resetStream();
     }
 }

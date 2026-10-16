@@ -16,6 +16,8 @@
 
 package io.helidon.webserver.http1;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
@@ -23,7 +25,10 @@ import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import javax.net.ssl.SSLException;
 
@@ -32,13 +37,20 @@ import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.SocketWriterException;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
-import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Headers;
+import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
 import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.ServerResponseTrailers;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.encoding.ContentEncoder;
 import io.helidon.http.encoding.ContentEncodingContext;
+import io.helidon.http.encoding.gzip.GzipEncoding;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.WebServer;
@@ -48,17 +60,18 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
+import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.endsWith;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -66,7 +79,9 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 class Http1ServerResponseTest {
@@ -236,7 +251,7 @@ class Http1ServerResponseTest {
 
     @ParameterizedTest
     @ValueSource(ints = {204, 205, 304})
-    void finalNoEntityStatusWithTrailersRetainsInvalidFramingHandling(int code) {
+    void finalNoEntityStatusDoesNotWriteTrailers(int code) {
         DataWriter writer = mock(DataWriter.class);
         Http1ServerResponse response = createResponse(writer, ContentEncodingContext.create());
         AtomicBoolean trailersCalled = new AtomicBoolean();
@@ -255,9 +270,523 @@ class Http1ServerResponseTest {
         verify(writer, atLeastOnce()).write(responseBuffer.capture());
         String responseText = responseText(responseBuffer);
         assertAll(
+                () -> assertThat(responseText, startsWith("HTTP/1.1 " + code + " ")),
+                () -> assertThat(trailersCalled.get(), is(false)),
+                () -> assertThat(responseText, not(containsString("Transfer-Encoding:"))),
+                () -> assertThat(responseText, not(containsString("test-trailer: complete\r\n"))),
+                () -> assertThat(responseText.substring(responseText.indexOf("\r\n\r\n") + 4), is("")),
+                () -> assertThat(responseText, endsWith("\r\n\r\n"))
+        );
+        if (code == 205) {
+            assertThat(responseText, containsString("Content-Length: 0\r\n"));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void resetStreamReencodesReplacementEntity(boolean streamingReplacement) throws IOException {
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
+        when(contentEncodingContext.encoder(any(Headers.class))).thenReturn(GzipEncoding.create().encoder());
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
+        response.header(HeaderNames.CONTENT_TYPE, "application/custom");
+        response.status(Status.ACCEPTED_202);
+        OutputStream original = response.outputStream();
+        original.write("original".getBytes(StandardCharsets.UTF_8));
+        verifyZeroInteractions(writer);
+
+        assertThat(response.resetStream(), is(true));
+        if (streamingReplacement) {
+            OutputStream replacement = response.outputStream();
+            replacement.write("replacement".getBytes(StandardCharsets.UTF_8));
+            replacement.close();
+            response.commit();
+        } else {
+            response.send("replacement".getBytes(StandardCharsets.UTF_8));
+        }
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        assertGzipReplacement(responseText(responseBuffer));
+    }
+
+    @Test
+    void resetStreamReencodesAfterUnsentByteResponseFailsValidation() throws IOException {
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
+        when(contentEncodingContext.encoder(any(Headers.class))).thenReturn(GzipEncoding.create().encoder());
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
+        response.header(HeaderNames.CONTENT_TYPE, "application/custom");
+        response.status(Status.ACCEPTED_202);
+        response.header("x-invalid", "bad\r\nvalue");
+
+        assertThrows(IllegalArgumentException.class,
+                     () -> response.send("original".getBytes(StandardCharsets.UTF_8)));
+        verifyZeroInteractions(writer);
+        response.headers().set(HeaderValues.create("x-invalid", "valid"));
+        response.headers().remove(HeaderNames.CONTENT_LENGTH);
+        assertThat(response.resetStream(), is(true));
+        response.send("replacement".getBytes(StandardCharsets.UTF_8));
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer).write(responseBuffer.capture());
+        assertGzipReplacement(responseText(responseBuffer));
+    }
+
+    @Test
+    void resetStreamReencodesAfterEncoderCreationFails() throws IOException {
+        ContentEncoder encoder = spy(GzipEncoding.create().encoder());
+        doThrow(new IllegalStateException("encoder creation failed")).when(encoder).apply(any(OutputStream.class));
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
+        when(contentEncodingContext.encoder(any(Headers.class))).thenReturn(encoder, GzipEncoding.create().encoder());
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
+        response.header(HeaderNames.CONTENT_TYPE, "application/custom");
+        response.status(Status.ACCEPTED_202);
+
+        assertThrows(IllegalStateException.class, response::outputStream);
+        verifyZeroInteractions(writer);
+        assertThat(response.resetStream(), is(true));
+        response.send("replacement".getBytes(StandardCharsets.UTF_8));
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer).write(responseBuffer.capture());
+        assertGzipReplacement(responseText(responseBuffer));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ExplicitContentEncoding.class)
+    void resetStreamPreservesExplicitContentEncoding(ExplicitContentEncoding configuration) throws IOException {
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
+        when(contentEncodingContext.encoder(any(Headers.class))).thenReturn(GzipEncoding.create().encoder());
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
+        response.header(HeaderNames.CONTENT_TYPE, "application/custom");
+        response.status(Status.ACCEPTED_202);
+        if (configuration == ExplicitContentEncoding.BEFORE_STREAM) {
+            response.header(HeaderNames.CONTENT_ENCODING, "gzip");
+        }
+        OutputStream original = response.outputStream();
+        original.write("original".getBytes(StandardCharsets.UTF_8));
+        switch (configuration) {
+        case BEFORE_STREAM -> {
+        }
+        case SAME_VALUE -> response.headers().set(HeaderValues.create(HeaderNames.CONTENT_ENCODING, "gzip"));
+        case CAPTURED_HEADER -> response.headers().set(response.headers().get(HeaderNames.CONTENT_ENCODING));
+        case SHARED_HEADER -> {
+            WritableHeaders<?> encodingHeaders = WritableHeaders.create();
+            GzipEncoding.create().encoder().headers(encodingHeaders);
+            response.headers().set(encodingHeaders.get(HeaderNames.CONTENT_ENCODING));
+        }
+        }
+        verifyZeroInteractions(writer);
+
+        assertThat(response.resetStream(), is(true));
+        byte[] encodedReplacement = gzipEntity("replacement".getBytes(StandardCharsets.UTF_8));
+        response.send(encodedReplacement);
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertGzipReplacement(responseText);
+        assertThat(responseText.substring(responseText.indexOf("\r\n\r\n") + 4)
+                           .getBytes(StandardCharsets.ISO_8859_1), is(encodedReplacement));
+    }
+
+    @Test
+    void resetStreamPreservesAppendedContentEncoding() throws IOException {
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
+        when(contentEncodingContext.encoder(any(Headers.class))).thenReturn(GzipEncoding.create().encoder());
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
+        response.outputStream().write("original".getBytes(StandardCharsets.UTF_8));
+        response.headers().add(HeaderValues.create(HeaderNames.CONTENT_ENCODING, "gzip"));
+        verifyZeroInteractions(writer);
+
+        assertThat(response.resetStream(), is(true));
+        assertThat(response.headers().get(HeaderNames.CONTENT_ENCODING).allValues(), is(List.of("gzip", "gzip")));
+        byte[] encodedReplacement = gzipEntity(gzipEntity("replacement".getBytes(StandardCharsets.UTF_8)));
+        response.send(encodedReplacement);
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, containsString("Content-Encoding: gzip\r\nContent-Encoding: gzip\r\n")),
+                () -> assertThat(responseText.substring(responseText.indexOf("\r\n\r\n") + 4)
+                                        .getBytes(StandardCharsets.ISO_8859_1), is(encodedReplacement))
+        );
+    }
+
+    @Test
+    void resetStreamRefusalPreservesGeneratedContentEncoding() throws IOException {
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
+        when(contentEncodingContext.encoder(any(Headers.class))).thenReturn(GzipEncoding.create().encoder());
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
+        OutputStream output = response.outputStream();
+        response.flushHeaders();
+
+        assertThat(response.resetStream(), is(false));
+        assertThat(response.headers().get(HeaderNames.CONTENT_ENCODING).get(), is("gzip"));
+        output.write("original".getBytes(StandardCharsets.UTF_8));
+        output.close();
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, startsWith("HTTP/1.1 200 OK\r\n")),
+                () -> assertThat(responseText, containsString("Content-Encoding: gzip\r\n")),
+                () -> assertThat(responseText, endsWith("\r\n0\r\n\r\n"))
+        );
+    }
+
+    @Test
+    void resetStreamPreservesConfiguredHeadersForReplacementEntity() throws IOException {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create());
+        response.status(Status.ACCEPTED_202);
+        response.header(HeaderNames.CONTENT_TYPE, "application/custom");
+        response.header(HeaderNames.CONTENT_LANGUAGE, "en");
+        response.header(HeaderNames.ETAG, "\"configured\"");
+        response.header("x-configured", "value");
+        OutputStream output = response.outputStream();
+        output.write("original".getBytes(StandardCharsets.UTF_8));
+        verifyZeroInteractions(writer);
+
+        assertThat(response.resetStream(), is(true));
+        response.send("replacement".getBytes(StandardCharsets.UTF_8));
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, startsWith("HTTP/1.1 202 Accepted\r\n")),
+                () -> assertThat(responseText, containsString("Content-Type: application/custom\r\n")),
+                () -> assertThat(responseText, containsString("Content-Language: en\r\n")),
+                () -> assertThat(responseText, containsString("ETag: \"configured\"\r\n")),
+                () -> assertThat(responseText, containsString("x-configured: value\r\n")),
+                () -> assertThat(responseText, not(containsString("original"))),
+                () -> assertThat(responseText, endsWith("\r\n\r\nreplacement"))
+        );
+    }
+
+    @Test
+    void resetEntityClearsEntityMetadata() {
+        Http1ServerResponse response = createResponse(new IllegalStateException("not used"));
+        var staleTrailer = HeaderNames.create("x-stale-trailer");
+        var contentDigest = HeaderNames.create("Content-Digest");
+        var contentMd5 = HeaderNames.create("Content-MD5");
+        var digest = HeaderNames.create("Digest");
+        var reprDigest = HeaderNames.create("Repr-Digest");
+
+        response.status(Status.PARTIAL_CONTENT_206);
+        response.header(HeaderNames.CONTENT_LENGTH, "1");
+        response.header(HeaderNames.TRANSFER_ENCODING, "chunked");
+        response.header(HeaderNames.TRAILER, staleTrailer.defaultCase());
+        response.header(HeaderNames.CONTENT_RANGE, "bytes 0-0/1");
+        response.header(HeaderNames.CONTENT_TYPE, "text/plain");
+        response.header(HeaderNames.CONTENT_ENCODING, "br");
+        response.header(HeaderNames.CONTENT_LANGUAGE, "en");
+        response.header(HeaderNames.CONTENT_LOCATION, "/stale");
+        response.header(HeaderNames.CONTENT_DISPOSITION, "attachment");
+        response.header(contentDigest, "sha-256=:YWJjZA==:");
+        response.header(contentMd5, "YWJjZA==");
+        response.header(digest, "SHA-256=YWJjZA==");
+        response.header(reprDigest, "sha-256=:YWJjZA==:");
+        response.header(HeaderNames.ETAG, "\"stale\"");
+        response.header(HeaderNames.LAST_MODIFIED, "stale");
+        response.header(HeaderNames.ACCEPT_RANGES, "bytes");
+        response.header(HeaderNames.CACHE_CONTROL, "no-store");
+        response.header(HeaderNames.VARY, "Origin");
+        response.header(HeaderNames.SET_COOKIE, "session=preserved");
+        ServerResponseTrailers trailers = response.trailers();
+        trailers.set(staleTrailer, "stale");
+
+        assertThat(response.resetEntity(), is(true));
+
+        assertAll(
+                () -> assertThat(response.status(), is(Status.PARTIAL_CONTENT_206)),
+                () -> assertThat(HeaderNames.CONTENT_LENGTH.defaultCase(),
+                                 response.headers().contains(HeaderNames.CONTENT_LENGTH), is(false)),
+                () -> assertThat(HeaderNames.TRANSFER_ENCODING.defaultCase(),
+                                 response.headers().contains(HeaderNames.TRANSFER_ENCODING), is(false)),
+                () -> assertThat(HeaderNames.TRAILER.defaultCase(),
+                                 response.headers().contains(HeaderNames.TRAILER), is(false)),
+                () -> assertThat(HeaderNames.CONTENT_RANGE.defaultCase(),
+                                 response.headers().contains(HeaderNames.CONTENT_RANGE), is(false)),
+                () -> assertThat(HeaderNames.CONTENT_TYPE.defaultCase(),
+                                 response.headers().contains(HeaderNames.CONTENT_TYPE), is(false)),
+                () -> assertThat(HeaderNames.CONTENT_ENCODING.defaultCase(),
+                                 response.headers().contains(HeaderNames.CONTENT_ENCODING), is(false)),
+                () -> assertThat(HeaderNames.CONTENT_LANGUAGE.defaultCase(),
+                                 response.headers().contains(HeaderNames.CONTENT_LANGUAGE), is(false)),
+                () -> assertThat(HeaderNames.CONTENT_LOCATION.defaultCase(),
+                                 response.headers().contains(HeaderNames.CONTENT_LOCATION), is(false)),
+                () -> assertThat(HeaderNames.CONTENT_DISPOSITION.defaultCase(),
+                                 response.headers().contains(HeaderNames.CONTENT_DISPOSITION), is(false)),
+                () -> assertThat(contentDigest.defaultCase(), response.headers().contains(contentDigest), is(false)),
+                () -> assertThat(contentMd5.defaultCase(), response.headers().contains(contentMd5), is(false)),
+                () -> assertThat(digest.defaultCase(), response.headers().contains(digest), is(false)),
+                () -> assertThat(reprDigest.defaultCase(), response.headers().contains(reprDigest), is(false)),
+                () -> assertThat(HeaderNames.ETAG.defaultCase(),
+                                 response.headers().contains(HeaderNames.ETAG), is(false)),
+                () -> assertThat(HeaderNames.LAST_MODIFIED.defaultCase(),
+                                 response.headers().contains(HeaderNames.LAST_MODIFIED), is(false)),
+                () -> assertThat(HeaderNames.ACCEPT_RANGES.defaultCase(),
+                                 response.headers().contains(HeaderNames.ACCEPT_RANGES), is(false)),
+                () -> assertThat(response.headers().get(HeaderNames.CACHE_CONTROL).get(), is("no-store")),
+                () -> assertThat(response.headers().get(HeaderNames.VARY).get(), is("Origin")),
+                () -> assertThat(response.headers().get(HeaderNames.SET_COOKIE).get(), is("session=preserved")),
+                () -> assertThat(staleTrailer.defaultCase(), trailers.contains(staleTrailer), is(false))
+        );
+    }
+
+    @Test
+    void resetEntityRemovesInvalidResponseHeaders() {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create());
+        response.header("invalid\nname", "value");
+        response.header("invalid-value", "value\r\ninjected: true");
+        response.header("unencodable-value", "\u0100");
+        response.header("x-preserved", "value");
+        response.header(HeaderNames.VARY, "Origin");
+        response.header(HeaderNames.SET_COOKIE, "session=preserved");
+
+        assertThrows(IllegalArgumentException.class,
+                     () -> response.send("original".getBytes(StandardCharsets.UTF_8)));
+        verifyZeroInteractions(writer);
+        assertThat(response.resetEntity(), is(true));
+        response.status(Status.INTERNAL_SERVER_ERROR_500);
+        response.send("recovered".getBytes(StandardCharsets.UTF_8));
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
                 () -> assertThat(responseText, startsWith("HTTP/1.1 500 Internal Server Error\r\n")),
-                () -> assertThat(trailersCalled.get(), is(true)),
-                () -> assertThat(responseText, containsString("test-trailer: complete\r\n"))
+                () -> assertThat(responseText, containsString("x-preserved: value\r\n")),
+                () -> assertThat(responseText, containsString("Vary: Origin\r\n")),
+                () -> assertThat(responseText, containsString("Set-Cookie: session=preserved\r\n")),
+                () -> assertThat(responseText, not(containsString("invalid"))),
+                () -> assertThat(responseText, not(containsString("unencodable"))),
+                () -> assertThat(responseText, endsWith("\r\n\r\nrecovered"))
+        );
+    }
+
+    @Test
+    void resetEntityRemovesUnencodableResponseHeaderWithoutValidation() {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer,
+                                                     Method.GET,
+                                                     ContentEncodingContext.create(),
+                                                     WebServer.builder().buildPrototype(),
+                                                     false);
+        response.header("unencodable-value", "\u0100");
+        response.header("x-preserved", "value");
+
+        assertThrows(IllegalArgumentException.class,
+                     () -> response.send("original".getBytes(StandardCharsets.UTF_8)));
+        verifyZeroInteractions(writer);
+        assertThat(response.resetEntity(), is(true));
+        response.status(Status.INTERNAL_SERVER_ERROR_500);
+        response.send("recovered".getBytes(StandardCharsets.UTF_8));
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, startsWith("HTTP/1.1 500 Internal Server Error\r\n")),
+                () -> assertThat(responseText, containsString("x-preserved: value\r\n")),
+                () -> assertThat(responseText, not(containsString("unencodable"))),
+                () -> assertThat(responseText, endsWith("\r\n\r\nrecovered"))
+        );
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void invalidBufferedTrailerCanRecoverBeforeCommit(boolean closeOutput) throws IOException {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create());
+        response.header(HeaderNames.TRAILER, "x-trailer");
+        response.beforeTrailers(trailers -> trailers.set(HeaderNames.create("x-trailer"), "bad\r\ninjected: true"));
+        OutputStream output = response.outputStream();
+        output.write("original".getBytes(StandardCharsets.UTF_8));
+        if (closeOutput) {
+            output.close();
+        }
+
+        assertThrows(IllegalArgumentException.class, response::commit);
+        output.close();
+        verifyZeroInteractions(writer);
+        assertThat(response.resetEntity(), is(true));
+        response.status(Status.INTERNAL_SERVER_ERROR_500);
+        response.send("recovered".getBytes(StandardCharsets.UTF_8));
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, startsWith("HTTP/1.1 500 Internal Server Error\r\n")),
+                () -> assertThat(responseText, not(containsString("Trailer:"))),
+                () -> assertThat(responseText, not(containsString("original"))),
+                () -> assertThat(responseText, endsWith("\r\n\r\nrecovered"))
+        );
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void invalidBufferedTrailerRecoveryReencodesErrorEntity(boolean closeOutput) throws IOException {
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
+        when(contentEncodingContext.encoder(any(Headers.class))).thenReturn(GzipEncoding.create().encoder());
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, contentEncodingContext);
+        response.header(HeaderNames.TRAILER, "x-trailer");
+        response.beforeTrailers(trailers -> trailers.set(HeaderNames.create("x-trailer"), "bad\r\ninjected: true"));
+        OutputStream output = response.outputStream();
+        output.write("original".getBytes(StandardCharsets.UTF_8));
+        if (closeOutput) {
+            output.close();
+        }
+        assertThat(response.headers().get(HeaderNames.CONTENT_ENCODING).get(), is("gzip"));
+
+        assertThrows(IllegalArgumentException.class, response::commit);
+        output.close();
+        verifyZeroInteractions(writer);
+        assertThat(response.resetEntity(), is(true));
+        response.status(Status.INTERNAL_SERVER_ERROR_500);
+        response.send("recovered".getBytes(StandardCharsets.UTF_8));
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        int entityStart = responseText.indexOf("\r\n\r\n") + 4;
+        String decodedEntity;
+        try (GZIPInputStream gzip = new GZIPInputStream(new ByteArrayInputStream(
+                responseText.substring(entityStart).getBytes(StandardCharsets.ISO_8859_1)))) {
+            decodedEntity = new String(gzip.readAllBytes(), StandardCharsets.UTF_8);
+        }
+        assertAll(
+                () -> assertThat(responseText, startsWith("HTTP/1.1 500 Internal Server Error\r\n")),
+                () -> assertThat(responseText, containsString("Content-Encoding: gzip\r\n")),
+                () -> assertThat(responseText, not(containsString("Trailer:"))),
+                () -> assertThat(decodedEntity, is("recovered"))
+        );
+    }
+
+    @Test
+    void invalidCommittedTrailerDoesNotTerminateResponse() throws IOException {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create());
+        response.header(HeaderNames.TRAILER, "x-trailer");
+        response.trailers().set(HeaderNames.create("x-trailer"), "bad\r\ninjected: true");
+        OutputStream output = response.outputStream();
+        response.flushHeaders();
+        output.write("hello".getBytes(StandardCharsets.UTF_8));
+        output.flush();
+
+        assertThrows(IllegalArgumentException.class, response::commit);
+        assertThat(response.resetEntity(), is(false));
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, startsWith("HTTP/1.1 200 OK\r\n")),
+                () -> assertThat(responseText, endsWith("\r\n5\r\nhello\r\n")),
+                () -> assertThat(responseText, not(containsString("\r\n0\r\n"))),
+                () -> assertThat(responseText, not(containsString("injected")))
+        );
+    }
+
+    @Test
+    void emptyForcedChunkedResponseRemovesContentLength() throws IOException {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create());
+        response.contentLength(0);
+        response.header(HeaderNames.TRANSFER_ENCODING, "chunked");
+        response.outputStream().close();
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(responseText, containsString("Transfer-Encoding: chunked\r\n")),
+                () -> assertThat(responseText, not(containsString("Content-Length:"))),
+                () -> assertThat(responseText, endsWith("\r\n\r\n0\r\n\r\n"))
+        );
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void emptyForcedChunkedResponseWritesTrailersAfterTerminalChunk(boolean lateContentLength) throws IOException {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create());
+        AtomicInteger beforeTrailersCalls = new AtomicInteger();
+        response.header(HeaderNames.TRAILER, "x-trailer");
+        response.beforeTrailers(trailers -> {
+            beforeTrailersCalls.incrementAndGet();
+            trailers.set(HeaderNames.create("x-trailer"), "value");
+            if (lateContentLength) {
+                response.headers().set(HeaderValues.CONTENT_LENGTH_ZERO);
+            }
+        });
+        response.outputStream().close();
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer, atLeastOnce()).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(beforeTrailersCalls.get(), is(1)),
+                () -> assertThat(responseText, containsString("Transfer-Encoding: chunked\r\n")),
+                () -> assertThat(responseText, not(containsString("Content-Length:"))),
+                () -> assertThat(responseText, containsString("\r\n\r\n0\r\n")),
+                () -> assertThat(responseText, containsString("x-trailer: value\r\n")),
+                () -> assertThat(responseText, endsWith("\r\n\r\n"))
+        );
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false, false", "false, true", "true, false", "true, true"})
+    void emptyChunkedHeadSendsHeadersOnly(boolean flushHeaders, boolean withTrailers) throws IOException {
+        DataWriter writer = mock(DataWriter.class);
+        Http1ServerResponse response = createResponse(writer, Method.HEAD, ContentEncodingContext.create());
+        AtomicInteger beforeTrailersCalls = new AtomicInteger();
+        response.header(HeaderNames.TRANSFER_ENCODING, "chunked");
+        if (withTrailers) {
+            response.header(HeaderNames.TRAILER, "x-trailer");
+            response.beforeTrailers(trailers -> {
+                beforeTrailersCalls.incrementAndGet();
+                trailers.set(HeaderNames.create("x-trailer"), "value");
+            });
+        }
+        OutputStream output = response.outputStream();
+        if (flushHeaders) {
+            response.flushHeaders();
+        }
+        output.close();
+        response.commit();
+
+        var responseBuffer = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer).write(responseBuffer.capture());
+        String responseText = responseText(responseBuffer);
+        assertAll(
+                () -> assertThat(beforeTrailersCalls.get(), is(withTrailers ? 1 : 0)),
+                () -> assertThat(responseText, startsWith("HTTP/1.1 200 OK\r\n")),
+                () -> assertThat(responseText, containsString("Transfer-Encoding: chunked\r\n")),
+                () -> assertThat(responseText, not(containsString("Content-Length:"))),
+                () -> assertThat(responseText.substring(responseText.indexOf("\r\n\r\n") + 4), is(""))
         );
     }
 
@@ -569,6 +1098,29 @@ class Http1ServerResponseTest {
         );
     }
 
+    private static byte[] gzipEntity(byte[] entity) throws IOException {
+        ByteArrayOutputStream encoded = new ByteArrayOutputStream();
+        try (GZIPOutputStream gzip = new GZIPOutputStream(encoded)) {
+            gzip.write(entity);
+        }
+        return encoded.toByteArray();
+    }
+
+    private static void assertGzipReplacement(String responseText) throws IOException {
+        String encodedEntity = responseText.substring(responseText.indexOf("\r\n\r\n") + 4);
+        assertAll(
+                () -> assertThat(responseText, startsWith("HTTP/1.1 202 Accepted\r\n")),
+                () -> assertThat(responseText, containsString("Content-Type: application/custom\r\n")),
+                () -> assertThat(responseText, containsString("Content-Encoding: gzip\r\n")),
+                () -> assertThat(responseText, containsString("Content-Length: " + encodedEntity.length() + "\r\n")),
+                () -> assertThat("gzip entity magic", encodedEntity, startsWith("\u001f\u008b"))
+        );
+        try (GZIPInputStream gzip = new GZIPInputStream(new ByteArrayInputStream(
+                encodedEntity.getBytes(StandardCharsets.ISO_8859_1)))) {
+            assertThat(new String(gzip.readAllBytes(), StandardCharsets.UTF_8), is("replacement"));
+        }
+    }
+
     private static String responseText(ArgumentCaptor<BufferData> responseBuffer) {
         StringBuilder responseText = new StringBuilder();
         for (BufferData buffer : responseBuffer.getAllValues()) {
@@ -609,40 +1161,46 @@ class Http1ServerResponseTest {
     private static Http1ServerResponse createResponse(DataWriter dataWriter,
                                                       ContentEncodingContext contentEncodingContext,
                                                       WebServerConfig config) {
-        Http1ServerRequest request = mock(Http1ServerRequest.class);
-        when(request.headers()).thenReturn(ServerRequestHeaders.create(WritableHeaders.create()));
-
-        ListenerContext listenerContext = mock(ListenerContext.class);
-        when(listenerContext.contentEncodingContext()).thenReturn(contentEncodingContext);
-        when(listenerContext.mediaContext()).thenReturn(MediaContext.create());
-        when(listenerContext.config()).thenReturn(config);
-
-        ConnectionContext ctx = mock(ConnectionContext.class);
-        when(ctx.listenerContext()).thenReturn(listenerContext);
-
-        return new Http1ServerResponse(ctx,
-                                       mock(Http1ConnectionListener.class),
-                                       dataWriter,
-                                       request,
-                                       true,
-                                       true,
-                                       true);
+        return createResponse(dataWriter, Method.GET, contentEncodingContext, config);
     }
 
     private static Http1ServerResponse createResponse(RuntimeException writerFailure) {
         DataWriter dataWriter = mock(DataWriter.class);
         doThrow(writerFailure).when(dataWriter).write(any(BufferData.class));
 
-        Http1ServerRequest request = mock(Http1ServerRequest.class);
-        when(request.headers()).thenReturn(ServerRequestHeaders.create(WritableHeaders.create()));
+        ContentEncodingContext contentEncodingContext = ContentEncodingContext.create();
 
-        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
-        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(false);
+        return createResponse(dataWriter, Method.GET, contentEncodingContext);
+    }
+
+    private static Http1ServerResponse createResponse(DataWriter dataWriter,
+                                                      Method method,
+                                                      ContentEncodingContext contentEncodingContext) {
+        return createResponse(dataWriter, method, contentEncodingContext, WebServer.builder().buildPrototype());
+    }
+
+    private static Http1ServerResponse createResponse(DataWriter dataWriter,
+                                                      Method method,
+                                                      ContentEncodingContext contentEncodingContext,
+                                                      ListenerConfig listenerConfig) {
+        return createResponse(dataWriter, method, contentEncodingContext, listenerConfig, true);
+    }
+
+    private static Http1ServerResponse createResponse(DataWriter dataWriter,
+                                                      Method method,
+                                                      ContentEncodingContext contentEncodingContext,
+                                                      ListenerConfig listenerConfig,
+                                                      boolean validateHeaders) {
+        Http1ServerRequest request = mock(Http1ServerRequest.class);
+        HttpPrologue prologue = mock(HttpPrologue.class);
+        when(prologue.method()).thenReturn(method);
+        when(request.headers()).thenReturn(ServerRequestHeaders.create(WritableHeaders.create()));
+        when(request.prologue()).thenReturn(prologue);
 
         ListenerContext listenerContext = mock(ListenerContext.class);
         when(listenerContext.contentEncodingContext()).thenReturn(contentEncodingContext);
         when(listenerContext.mediaContext()).thenReturn(MediaContext.create());
-        when(listenerContext.config()).thenReturn(WebServer.builder().buildPrototype());
+        when(listenerContext.config()).thenReturn(listenerConfig);
 
         ConnectionContext ctx = mock(ConnectionContext.class);
         when(ctx.listenerContext()).thenReturn(listenerContext);
@@ -653,6 +1211,13 @@ class Http1ServerResponseTest {
                                        request,
                                        true,
                                        true,
-                                       true);
+                                       validateHeaders);
+    }
+
+    private enum ExplicitContentEncoding {
+        BEFORE_STREAM,
+        SAME_VALUE,
+        CAPTURED_HEADER,
+        SHARED_HEADER
     }
 }

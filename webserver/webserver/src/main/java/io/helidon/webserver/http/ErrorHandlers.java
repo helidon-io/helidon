@@ -145,8 +145,8 @@ public final class ErrorHandlers {
                                         ServerRequest request,
                                         RoutingResponse response,
                                         RequestException e) {
-        // we are only interested in resetting the streams, headers are at the discretion of the error handler
-        if (!response.resetStream()) {
+        // Reset the unsent entity stream; metadata cleanup depends on the response implementation.
+        if (!response.resetEntity()) {
             HttpPrologue prologue = request.prologue();
             ctx.log(LOGGER, System.Logger.Level.WARNING,
                     "Request failed: %s, cannot send error response, as response already sent",
@@ -219,8 +219,8 @@ public final class ErrorHandlers {
                              RoutingResponse response,
                              Throwable e,
                              ErrorHandler<Throwable> it) {
-        // we are only interested in resetting the streams, headers are at the discretion of the error handler
-        if (!response.resetStream()) {
+        // Reset the unsent entity stream; metadata cleanup depends on the response implementation.
+        if (!response.resetEntity()) {
             ctx.log(LOGGER,
                     System.Logger.Level.WARNING,
                     "Unable to reset response for error handler, at least part of entity already written. "

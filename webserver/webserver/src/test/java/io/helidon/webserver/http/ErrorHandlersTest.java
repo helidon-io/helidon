@@ -47,8 +47,10 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -142,7 +144,7 @@ class ErrorHandlersTest {
         RoutingResponse res = mock(RoutingResponse.class);
         ListenerContext listenerContext = mock(ListenerContext.class);
 
-        when(res.resetStream()).thenReturn(true);
+        when(res.resetEntity()).thenReturn(true);
         when(req.prologue()).thenReturn(HttpPrologue.create("http/1.0",
                                                             "http",
                                                             "1.0",
@@ -170,6 +172,8 @@ class ErrorHandlersTest {
             throw new OtherException();
         });
 
+        verify(res).resetEntity();
+        verify(res, never()).resetStream();
         var status = ArgumentCaptor.forClass(Status.class);
         verify(res).status(status.capture());
         assertThat(status.getValue(), is(Status.INTERNAL_SERVER_ERROR_500));
@@ -184,24 +188,57 @@ class ErrorHandlersTest {
         ConnectionContext ctx = mock(ConnectionContext.class);
         RoutingRequest req = mock(RoutingRequest.class);
         RoutingResponse res = mock(RoutingResponse.class);
-        when(res.resetStream()).thenReturn(false);
+        when(res.resetEntity()).thenReturn(false);
         ErrorHandlers handlers = ErrorHandlers.create(Map.of(OtherException.class,
                 (request, response, t) -> res.send(t.getMessage())));
-        try {
-            handlers.runWithErrorHandling(ctx, req, res, () -> {
-                throw new OtherException();
-            });
-            fail("It is expected a CloseConnectionException");
-        } catch (CloseConnectionException e) {
-            assertThat(e.getCause(), instanceOf(OtherException.class));
-        }
+
+        CloseConnectionException exception = assertThrows(CloseConnectionException.class,
+                                                          () -> handlers.runWithErrorHandling(ctx, req, res, () -> {
+                                                              throw new OtherException();
+                                                          }));
+
+        assertThat(exception.getCause(), instanceOf(OtherException.class));
+        verify(res).resetEntity();
+        verify(res, never()).resetStream();
+        verify(res, never()).send(any(String.class));
+        verify(res, never()).commit();
+    }
+
+    @Test
+    void testDirectHandlerCannotRecoverAfterResponseIsSent() {
+        ConnectionContext ctx = mock(ConnectionContext.class);
+        RoutingRequest req = mock(RoutingRequest.class);
+        RoutingResponse res = mock(RoutingResponse.class);
+        ListenerContext listenerContext = mock(ListenerContext.class);
+        when(ctx.listenerContext()).thenReturn(listenerContext);
+        when(listenerContext.config()).thenReturn(ListenerConfig.builder().build());
+        when(res.resetEntity()).thenReturn(false);
+        when(req.prologue()).thenReturn(HttpPrologue.create("http/1.0",
+                                                            "http",
+                                                            "1.0",
+                                                            Method.GET,
+                                                            UriPath.create("/"),
+                                                            UriQuery.empty(),
+                                                            UriFragment.empty()));
+        ErrorHandlers handlers = ErrorHandlers.create(Map.of());
+
+        assertThrows(CloseConnectionException.class,
+                     () -> handlers.runWithErrorHandling(ctx, req, res, () -> {
+                         throw new OtherException();
+                     }));
+
+        verify(res).resetEntity();
+        verify(res, never()).resetStream();
+        verify(res, never()).status(any(Status.class));
+        verify(res, never()).send(any(byte[].class));
+        verify(res, never()).commit();
     }
 
     private void testNoHandler(ErrorHandlers handlers, Exception e, String message, boolean includeEntity) {
         ConnectionContext ctx = mock(ConnectionContext.class);
         RoutingRequest req = mock(RoutingRequest.class);
         RoutingResponse res = mock(RoutingResponse.class);
-        when(res.resetStream()).thenReturn(true);
+        when(res.resetEntity()).thenReturn(true);
 
         when(req.prologue()).thenReturn(HttpPrologue.create("http/1.0",
                                                             "http",
@@ -224,6 +261,8 @@ class ErrorHandlersTest {
             throw e;
         });
 
+        verify(res).resetEntity();
+        verify(res, never()).resetStream();
         var status = ArgumentCaptor.forClass(Status.class);
         verify(res).status(status.capture());
         assertThat(status.getValue(), is(Status.INTERNAL_SERVER_ERROR_500));
@@ -238,12 +277,14 @@ class ErrorHandlersTest {
         RoutingRequest req = mock(RoutingRequest.class);
         RoutingResponse res = mock(RoutingResponse.class);
         when(res.isSent()).thenReturn(true);
-        when(res.resetStream()).thenReturn(true);
+        when(res.resetEntity()).thenReturn(true);
 
         handlers.runWithErrorHandling(ctx, req, res, () -> {
             throw e;
         });
 
+        verify(res).resetEntity();
+        verify(res, never()).resetStream();
         ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
         verify(res).send(captor.capture());
         assertThat(captor.getValue(), is(message));

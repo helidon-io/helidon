@@ -29,6 +29,10 @@ import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.socket.SocketContext;
+import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
+import io.helidon.http.WritableHeaders;
 import io.helidon.http.http1.Http1ConnectionListener;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.WebClientServiceResponse;
@@ -68,8 +72,7 @@ class ChunkedInputStreamTest {
                 new TestConnection(reader, closes),
                 reader,
                 whenComplete,
-                new AtomicReference<>(),
-                false,
+                serviceResponse(),
                 listener);
         byte[] firstBytes = new byte[3];
 
@@ -99,8 +102,7 @@ class ChunkedInputStreamTest {
                 new TestConnection(reader, closes),
                 reader,
                 whenComplete,
-                new AtomicReference<>(),
-                false,
+                serviceResponse(),
                 Http1ConnectionListener.create(List.of()));
         byte[] firstByte = new byte[1];
 
@@ -126,8 +128,7 @@ class ChunkedInputStreamTest {
                 new TestConnection(reader, closes),
                 reader,
                 whenComplete,
-                new AtomicReference<>(),
-                false,
+                serviceResponse(),
                 Http1ConnectionListener.create(List.of()));
 
         assertThat(inputStream.read(), is((int) 'A'));
@@ -149,8 +150,7 @@ class ChunkedInputStreamTest {
                 new TestConnection(reader, closes),
                 reader,
                 whenComplete,
-                new AtomicReference<>(),
-                true,
+                serviceResponse(),
                 Http1ConnectionListener.create(List.of()));
 
         assertThat(inputStream.read(), is((int) 'A'));
@@ -172,7 +172,6 @@ class ChunkedInputStreamTest {
                 reader,
                 whenComplete,
                 new AtomicReference<>(),
-                false,
                 Http1ConnectionListener.create(List.of()));
 
         assertThat(inputStream.read(), is((int) 'A'));
@@ -195,7 +194,6 @@ class ChunkedInputStreamTest {
                 reader,
                 whenComplete,
                 new AtomicReference<>(),
-                false,
                 Http1ConnectionListener.create(List.of()));
 
         IllegalStateException firstFailure = assertThrows(IllegalStateException.class, inputStream::readAllBytes);
@@ -206,6 +204,11 @@ class ChunkedInputStreamTest {
         assertThat(secondFailure, not(sameInstance(firstFailure)));
         assertThat(closes.get(), is(1));
         assertThat(whenComplete.isCompletedExceptionally(), is(true));
+    }
+
+    private static AtomicReference<WebClientServiceResponse> serviceResponse() {
+        return new AtomicReference<>(Http1ClientResponseImplTest.serviceResponse(
+                Method.GET, Status.OK_200, ClientResponseHeaders.create(WritableHeaders.create())));
     }
 
     private static final class TestConnection implements ClientConnection {

@@ -12,11 +12,10 @@ retrieve corresponding responses in a programmatic way.
 
 Helidon WebClient provides the following features:
 
-- **Blocking approach** The WebClient uses the blocking approach to
-  synchronously process a request and its corresponding response. Both
-  `HTTP/1.1` and `HTTP/2` request and response will run in the thread of the
-  user. Additionally, for `HTTP/2`, virtual thread is employed to manage the
-  connection.
+- **Blocking approach** WebClient request methods execute synchronously.
+  This does not guarantee that every callback runs on the calling thread:
+  `HTTP/1.1` can use a helper virtual thread for streamed entity writers,
+  and `HTTP/2` uses a virtual thread to manage the connection.
 
 - **Builder-like setup and execution** Creates every client and request as a
   builder pattern. This improves readability and code maintenance.
@@ -191,6 +190,35 @@ ClientResponseTyped<String> response = client.get()
     .request(String.class);
 String entityString = response.entity();
 ```
+
+### Streaming Request Entities
+
+For `HTTP/1.1`, `submit(...)` can stream an entity using `InstanceWriter.write(...)`
+or an `EntityWriter` without instance-writer support. Entity writing can run on
+a helper virtual thread with the current Helidon context so the writer can
+prepare request headers before its first output. The call waits for the writer
+to terminate, including when an early response cancels the upload. Writers must
+release owned resources when output fails. Custom writers must not assume
+caller-thread affinity or propagation of arbitrary thread-local state.
+
+For `HTTP/1.1` `outputStream(...)`, configure request headers before calling
+the method, not inside its handler. When negotiating `Expect: 100-continue`,
+the client sends the headers before invoking the handler. An early final
+response or a redirect that discards the entity can bypass the handler
+entirely. A method-preserving redirect received after an upload can invoke
+the handler again to replay the entity, so account for both bypass and replay
+when the handler has side effects or consumes a one-shot source.
+
+A handler that writes no bytes can still trigger the `HTTP/1.1`
+`Expect: 100-continue` handshake when the content length is unknown. An explicit
+content length of zero bypasses that handshake.
+
+The `HTTP/1.1` client skips at most 32 informational responses while processing
+one request. This count spans both the `Expect: 100-continue` handshake and the
+final response read; the `100 Continue` response that completes the handshake
+does not count as skipped. If a peer sends a 33rd skipped informational response,
+the client closes the connection and fails the request with an
+`IllegalStateException`. `101 Switching Protocols` is handled separately.
 
 ### Protocol Used
 

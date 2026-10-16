@@ -19,30 +19,29 @@ package io.helidon.webclient.http1;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.context.Contexts;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
-import io.helidon.http.Headers;
-import io.helidon.http.Http1HeadersParser;
 import io.helidon.http.HttpPrologue;
-import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http1.Http1ConnectionListener;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientRequest;
-import io.helidon.webclient.api.ClientUri;
-import io.helidon.webclient.api.HttpClientConfig;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 
@@ -50,16 +49,25 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
     private final Http1ClientImpl http1Client;
     private final CompletableFuture<WebClientServiceRequest> whenSent;
     private final ClientRequest.OutputStreamHandler osHandler;
+    private final boolean allowEntity;
+    private final Http1EntityWriter entityWriter;
+
+    private boolean hasEntity;
+    private boolean handlerInvoked;
 
     Http1CallOutputStreamChain(Http1ClientImpl http1Client,
                                Http1ClientRequestImpl clientRequest,
                                CompletableFuture<WebClientServiceRequest> whenSent,
                                CompletableFuture<WebClientServiceResponse> whenComplete,
-                               ClientRequest.OutputStreamHandler osHandler) {
+                               ClientRequest.OutputStreamHandler osHandler,
+                               boolean allowEntity,
+                               Http1EntityWriter entityWriter) {
         super(http1Client, clientRequest, whenComplete);
         this.http1Client = http1Client;
         this.whenSent = whenSent;
         this.osHandler = osHandler;
+        this.allowEntity = allowEntity;
+        this.entityWriter = entityWriter;
     }
 
     @Override
@@ -70,100 +78,115 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                                        DataReader reader,
                                        BufferData writeBuffer) {
 
-        ClientConnectionOutputStream cos = new ClientConnectionOutputStream(connection,
+        handlerInvoked = false;
+        hasEntity = false;
+        boolean expectAllowed = connection.allowExpectContinue()
+                && originalRequest().sendExpectContinue().orElse(http1Client.clientConfig().sendExpectContinue());
+        if (entityWriter != null && !expectAllowed && entityWriter.canWriteInline()) {
+            handlerInvoked = true;
+            ClientConnectionOutputStream output = writeInline(connection, serviceRequest, headers, writer, writeBuffer);
+            return completeResponse(connection, serviceRequest, reader, output);
+        }
+
+        boolean legacyEntity = false;
+        if (entityWriter != null) {
+            try {
+                legacyEntity = entityWriter.prepare(headers, Contexts.context().orElse(serviceRequest.context()));
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+            // Header preparation must not reintroduce credentials removed for a redirected origin.
+            originalRequest().sanitizeRedirectHeaders(serviceRequest.uri(), headers);
+        }
+        ClientConnectionOutputStream cos = new ClientConnectionOutputStream(this,
+                                                                            connection,
                                                                             writer,
-                                                                            reader,
                                                                             writeBuffer,
                                                                             headers,
                                                                             http1Client,
                                                                             serviceRequest,
-                                                                            originalRequest(),
                                                                             whenSent,
-                                                                            whenComplete());
+                                                                            allowEntity);
 
-        boolean interrupted = false;
-        try {
-            osHandler.handle(cos);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        } catch (OutputStreamInterruptedException e) {
-            interrupted = true;
+        hasEntity = legacyEntity || headers.contentLength().orElse(0) > 0;
+        boolean expects100Continue = expectAllowed
+                && (entityWriter == null || legacyEntity)
+                && headers.contentLength().orElse(-1) != 0;
+        if (expects100Continue) {
+            // Explicit handlers start after negotiation; a legacy writer stays suspended at its first output.
+            headers.set(HeaderValues.EXPECT_100);
+            cos.sendPrologueAndHeader();
+            ResponseHead responseHead = awaitContinue(connection, reader, writer);
+            if (responseHead != null && responseHead.status().code() != Status.CONTINUE_100.code()) {
+                return createServiceResponse(http1Client,
+                                             serviceRequest,
+                                             Http1ClientResponseImpl.closeOnRelease(connection),
+                                             reader,
+                                             responseHead.status(),
+                                             responseHead.headers(),
+                                             whenComplete());
+            }
         }
 
-        if (interrupted || cos.interrupted()) {
-            //If cos is marked as interrupted, we know that our interrupted exception has been thrown, but
-            //it was intercepted by the user OutputStreamHandler and not rethrown.
-            //This is a fallback mechanism to correctly handle such a situations.
-            return cos.serviceResponse();
-        } else if (!cos.closed()) {
+        handlerInvoked = true;
+        try {
+            if (entityWriter == null) {
+                osHandler.handle(cos);
+            } else {
+                entityWriter.writeTo(cos);
+            }
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+
+        return completeResponse(connection, serviceRequest, reader, cos);
+    }
+
+    boolean hasEntity() {
+        return hasEntity;
+    }
+
+    boolean handlerInvoked() {
+        return handlerInvoked;
+    }
+
+    private ClientConnectionOutputStream writeInline(ClientConnection connection,
+                                                      WebClientServiceRequest serviceRequest,
+                                                      ClientRequestHeaders headers,
+                                                      DataWriter writer,
+                                                      BufferData writeBuffer) {
+        InlineEntityOutputStream output = new InlineEntityOutputStream(() -> {
+            // Legacy writers prepare headers during write, before their first output or empty close.
+            originalRequest().sanitizeRedirectHeaders(serviceRequest.uri(), headers);
+            return new ClientConnectionOutputStream(this,
+                                                     connection,
+                                                     writer,
+                                                     writeBuffer,
+                                                     headers,
+                                                     http1Client,
+                                                     serviceRequest,
+                                                     whenSent,
+                                                     allowEntity);
+        });
+        entityWriter.writeInline(output, headers);
+        if (output.delegate == null) {
+            throw new IllegalStateException("Output stream was not closed in entity writer");
+        }
+        return output.delegate;
+    }
+
+    private WebClientServiceResponse completeResponse(ClientConnection connection,
+                                                       WebClientServiceRequest serviceRequest,
+                                                       DataReader reader,
+                                                       ClientConnectionOutputStream output) {
+        hasEntity |= output.hasEntity();
+        if (!output.closed()) {
             throw new IllegalStateException("Output stream was not closed in handler");
         }
 
-        reader = cos.reader;
-        connection = cos.connection;
-
-        Status responseStatus;
-        try {
-            responseStatus = Http1StatusParser.readStatus(reader, http1Client.protocolConfig().maxStatusLineLength());
-            if (responseStatus == Status.CONTINUE_100) {
-                // skip the next empty end of line
-                readHeaders(reader);
-                responseStatus = Http1StatusParser.readStatus(reader, http1Client.protocolConfig().maxStatusLineLength());
-            }
-        } catch (RuntimeException e) {
-            // A connection cannot be reused after a malformed status or a response read failure.
-            try {
-                connection.closeResource();
-            } catch (Exception ex) {
-                e.addSuppressed(ex);
-            }
-            throw e;
-        }
-
-        recvListener().status(connection.helidonSocket(), responseStatus);
-
-        ClientResponseHeaders responseHeaders = readHeaders(reader);
-
-        recvListener().headers(connection.helidonSocket(), responseHeaders);
-
-        if (originalRequest().followRedirects()
-                && RedirectionProcessor.redirectionStatusCode(responseStatus)) {
-            checkRedirectHeaders(responseHeaders);
-            ClientUri redirectUri = cos.lastRequest.redirectUri(responseHeaders.get(HeaderNames.LOCATION).get());
-            boolean sendEntity = RedirectionProcessor.keepsMethodAndEntity(responseStatus);
-            ClientRequest.OutputStreamHandler handler = osHandler;
-            if (sendEntity && !cos.lastRequest.canReplayEntityTo(redirectUri)) {
-                // Replaying a 307/308 output-stream body to a new origin can leak credentials or form data.
-                if (cos.hasEntity()) {
-                    connection.closeResource();
-                    throw new IllegalStateException("Cross-origin redirect with request entity is disabled.");
-                }
-                handler = OutputStream::close;
-            }
-            int numberOfRedirects = cos.numberOfRedirects() + 1;
-            connection.closeResource();
-            if (numberOfRedirects > cos.lastRequest.maxRedirects()) {
-                throw RedirectionProcessor.maxRedirectsReached(cos.lastRequest.maxRedirects());
-            }
-            Http1ClientRequestImpl request = new Http1ClientRequestImpl(cos.lastRequest,
-                                                                        sendEntity ? cos.lastRequest.method() : Method.GET,
-                                                                        redirectUri,
-                                                                        cos.lastRequest.properties(),
-                                                                        sendEntity);
-            if (sendEntity) {
-                request.maxRedirects(cos.lastRequest.maxRedirects() - numberOfRedirects);
-            }
-            Http1ClientResponseImpl clientResponse = sendEntity
-                    ? (Http1ClientResponseImpl) request.outputStream(handler)
-                    : RedirectionProcessor.invokeWithFollowRedirects(request, numberOfRedirects, BufferData.EMPTY_BYTES);
-            return createServiceResponse(http1Client,
-                                         serviceRequest,
-                                         clientResponse.connection(),
-                                         clientResponse.connection().reader(),
-                                         clientResponse.status(),
-                                         clientResponse.headers(),
-                                         whenComplete());
-        }
+        ResponseHead responseHead = readResponseHead(connection, reader);
+        Status responseStatus = responseHead.status();
+        ClientResponseHeaders responseHeaders = responseHead.headers();
 
         return createServiceResponse(http1Client,
                                      serviceRequest,
@@ -174,11 +197,81 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                                      whenComplete());
     }
 
-    private static void checkRedirectHeaders(Headers headerValues) {
-        if (!headerValues.contains(HeaderNames.LOCATION)) {
-            throw new IllegalStateException("There is no " + HeaderNames.LOCATION + " header present in the"
-                                                    + " response! "
-                                                    + "It is not clear where to redirect.");
+    private ResponseHead awaitContinue(ClientConnection connection, DataReader reader, DataWriter writer) {
+        try {
+            writer.flush();
+            connection.readTimeout(originalRequest().readContinueTimeout());
+            while (true) {
+                boolean statusRead = false;
+                try {
+                    Status responseStatus = readResponseStatus(connection, reader, false);
+                    statusRead = true;
+                    ClientResponseHeaders responseHeaders = readResponseHeaders(connection, reader);
+                    if (!isPreContinueInterimResponse(responseStatus)) {
+                        return new ResponseHead(responseStatus, responseHeaders);
+                    }
+                    countSkippedInformationalResponse(connection);
+                } catch (UncheckedIOException e) {
+                    if (!statusRead && e.getCause() instanceof SocketTimeoutException) {
+                        connection.allowExpectContinue(false);
+                        return null;
+                    }
+                    throw e;
+                }
+            }
+        } catch (UncheckedIOException e) {
+            try {
+                connection.closeResource();
+            } catch (Exception ex) {
+                e.addSuppressed(ex);
+            }
+            throw e;
+        } finally {
+            if (connection.isConnected()) {
+                connection.readTimeout(originalRequest().readTimeout());
+            }
+        }
+    }
+
+    private static final class InlineEntityOutputStream extends OutputStream {
+        private final Supplier<ClientConnectionOutputStream> factory;
+
+        private ClientConnectionOutputStream delegate;
+
+        private InlineEntityOutputStream(Supplier<ClientConnectionOutputStream> factory) {
+            this.factory = factory;
+        }
+
+        @Override
+        public void write(int value) throws IOException {
+            stream().write(value);
+        }
+
+        @Override
+        public void write(byte[] bytes, int offset, int length) throws IOException {
+            Objects.checkFromIndexSize(offset, length, bytes.length);
+            if (length != 0 || delegate != null) {
+                stream().write(bytes, offset, length);
+            }
+        }
+
+        @Override
+        public void flush() throws IOException {
+            if (delegate != null) {
+                delegate.flush();
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            stream().close();
+        }
+
+        private ClientConnectionOutputStream stream() {
+            if (delegate == null) {
+                delegate = factory.get();
+            }
+            return delegate;
         }
     }
 
@@ -186,62 +279,48 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
         private static final byte[] TERMINATING_CHUNK = "0\r\n\r\n".getBytes(StandardCharsets.UTF_8);
 
         private final WebClientServiceRequest request;
-        private final Http1ClientRequestImpl originalRequest;
         private final CompletableFuture<WebClientServiceRequest> whenSent;
-        private final CompletableFuture<WebClientServiceResponse> whenComplete;
-        private final Http1ClientImpl http1Client;
+        private final Http1CallOutputStreamChain callChain;
         private final Http1ConnectionListener sendListener;
-        private final Http1ConnectionListener recvListener;
-        private final HttpClientConfig clientConfig;
         private final Http1ClientProtocolConfig protocolConfig;
         private final WritableHeaders<?> headers;
         private final BufferData prologue;
+        private final ClientConnection connection;
+        private final SocketContext ctx;
+        private final DataWriter writer;
+        private final boolean allowEntity;
 
         private boolean chunked;
         private BufferData firstPacket;
         private long bytesWritten;
         private long contentLength;
         private boolean hasEntity;
-        private int numberOfRedirects;
         private boolean noData = true;
         private boolean closed;
-        private boolean interrupted;
-        private ClientConnection connection;
-        private SocketContext ctx;
-        private DataWriter writer;
-        private DataReader reader;
-        private Http1ClientRequestImpl lastRequest;
-        private Http1ClientResponseImpl response;
-        private WebClientServiceResponse serviceResponse;
+        private boolean headersSent;
 
-        private ClientConnectionOutputStream(ClientConnection connection,
+        private ClientConnectionOutputStream(Http1CallOutputStreamChain callChain,
+                                             ClientConnection connection,
                                              DataWriter writer,
-                                             DataReader reader,
                                              BufferData prologue,
                                              WritableHeaders<?> headers,
                                              Http1ClientImpl http1Client,
                                              WebClientServiceRequest request,
-                                             Http1ClientRequestImpl originalRequest,
                                              CompletableFuture<WebClientServiceRequest> whenSent,
-                                             CompletableFuture<WebClientServiceResponse> whenComplete) {
+                                             boolean allowEntity) {
+            this.callChain = callChain;
             this.connection = connection;
             this.ctx = connection.helidonSocket();
             this.writer = writer;
-            this.reader = reader;
             this.headers = headers;
             this.prologue = prologue;
-            this.http1Client = http1Client;
-            this.clientConfig = http1Client.clientConfig();
             this.protocolConfig = http1Client.protocolConfig();
             this.contentLength = headers.contentLength().orElse(-1);
             this.chunked = contentLength == -1 || headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED);
             this.request = request;
-            this.originalRequest = originalRequest;
-            this.lastRequest = originalRequest;
             this.whenSent = whenSent;
-            this.whenComplete = whenComplete;
             this.sendListener = http1Client.sendListener();
-            this.recvListener = http1Client.recvListener();
+            this.allowEntity = allowEntity;
         }
 
         @Override
@@ -253,25 +332,23 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
 
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
-            if (interrupted) {
-                //If this OS was interrupted, it becomes NOOP.
-                return;
-            } else if (closed) {
+            if (closed) {
                 throw new IOException("Output stream already closed");
             }
             if (len == 0) {
                 return;
             }
             if (len > 0) {
+                if (!allowEntity) {
+                    throw new IllegalStateException("Cross-origin redirect with request entity is disabled.");
+                }
                 hasEntity = true;
             }
 
             // if not chunked and length known, write directly checking length at close
             if (!chunked && contentLength > 0) {
-                if (!whenSent.isDone()) {
-                    sendPrologueAndHeader();
-                    noData = false;
-                }
+                sendPrologueAndHeader();
+                noData = false;
                 writeContent(BufferData.create(b, off, len));
                 return;
             }
@@ -300,7 +377,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
 
         @Override
         public void close() throws IOException {
-            if (closed || interrupted) {
+            if (closed) {
                 return;
             }
             this.closed = true;
@@ -337,41 +414,12 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             super.close();
         }
 
-        WebClientServiceResponse serviceResponse() {
-            if (serviceResponse != null) {
-                return serviceResponse;
-            }
-
-            ClientConnection responseConnection = response.connection();
-            WebClientServiceResponse result = createServiceResponse(http1Client,
-                                                                    request,
-                                                                    responseConnection,
-                                                                    responseConnection.reader(),
-                                                                    response.status(),
-                                                                    response.headers(),
-                                                                    whenComplete);
-            response.completeIfNoEntityAfterConnectionTransfer();
-            return result;
-        }
-
         boolean closed() {
             return closed;
         }
 
-        boolean interrupted() {
-            return interrupted;
-        }
-
         boolean hasEntity() {
             return hasEntity;
-        }
-
-        int numberOfRedirects() {
-            return numberOfRedirects;
-        }
-
-        Http1ClientResponseImpl response() {
-            return response;
         }
 
         private void writeChunked(BufferData buffer) {
@@ -403,13 +451,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
         }
 
         private void sendPrologueAndHeader() {
-            // setting for expect 100 header, can be overridden for each request
-            boolean expects100Continue = connection.allowExpectContinue()
-                    && !noData
-                    && originalRequest.sendExpectContinue().orElse(clientConfig.sendExpectContinue());
-
-            if (expects100Continue) {
-                headers.add(HeaderValues.EXPECT_100);
+            if (headersSent) {
+                return;
             }
 
             if (chunked) {
@@ -448,159 +491,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                          sendListener);
             writer.write(buffer);
 
+            headersSent = true;
             whenSent.complete(request);
-
-            if (expects100Continue) {
-                Status responseStatus;
-
-                try {
-                    writer.flush();     // flush before a read
-                    connection.readTimeout(originalRequest.readContinueTimeout());
-                    responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
-
-                    recvListener.status(connection.helidonSocket(), responseStatus);
-                } catch (UncheckedIOException ignored) {
-                    // we assume this is a timeout exception, if the socket got closed, next read will throw appropriate exception
-                    // we treat this as receiving 100-Continue
-                    responseStatus = null;
-                    connection.allowExpectContinue(false);
-                } catch (RuntimeException e) {
-                    try {
-                        connection.closeResource();
-                    } catch (Exception ex) {
-                        e.addSuppressed(ex);
-                    }
-                    throw e;
-                } finally {
-                    if (connection.isConnected()) {
-                        connection.readTimeout(originalRequest.readTimeout());
-                    }
-                }
-                if (responseStatus == Status.CONTINUE_100) {
-                    // there is the status and (usually) empty headers. We ignore such headers
-                    Http1HeadersParser.readHeaders(reader,
-                                                   protocolConfig.maxHeaderSize(),
-                                                   protocolConfig.validateResponseHeaders());
-                }
-                if (responseStatus == null) {
-                    responseStatus = Status.CONTINUE_100;
-                }
-
-                if (responseStatus != Status.CONTINUE_100) {
-                    WritableHeaders<?> responseHeaders = Http1HeadersParser.readHeaders(reader,
-                                                                                        protocolConfig.maxHeaderSize(),
-                                                                                        protocolConfig.validateResponseHeaders());
-                    recvListener.headers(connection.helidonSocket(), responseHeaders);
-
-                    if (RedirectionProcessor.redirectionStatusCode(responseStatus) && originalRequest.followRedirects()) {
-                        // redirect as needed
-                        // Discard any remaining data from the response
-                        reader.skip(reader.available());
-                        checkRedirectHeaders(responseHeaders);
-                        redirect(responseStatus, responseHeaders);
-                    } else {
-                        //OS changed its state to interrupted, that means other usage of this OS will result in NOOP actions.
-                        this.interrupted = true;
-                        this.serviceResponse = createServiceResponse(http1Client,
-                                                                     request,
-                                                                     connection,
-                                                                     reader,
-                                                                     responseStatus,
-                                                                     ClientResponseHeaders.create(
-                                                                             responseHeaders,
-                                                                             clientConfig.mediaTypeParserMode()),
-                                                                     whenComplete);
-                        //we are not sending anything by this OS, we need to interrupt it.
-                        throw new OutputStreamInterruptedException();
-                    }
-                }
-            }
-        }
-
-        private void redirect(Status lastStatus, WritableHeaders<?> headerValues) {
-            String redirectedUri = headerValues.get(HeaderNames.LOCATION).get();
-            Method method;
-            boolean sendEntity;
-            if (RedirectionProcessor.keepsMethodAndEntity(lastStatus)) {
-                method = originalRequest.method();
-                sendEntity = true;
-            } else {
-                method = Method.GET;
-                sendEntity = false;
-            }
-            connection.closeResource();
-            while (numberOfRedirects < originalRequest.maxRedirects()) {
-                numberOfRedirects++;
-                ClientUri redirectUri = lastRequest.redirectUri(redirectedUri);
-                boolean sendEmptyEntity = false;
-                if (sendEntity && !lastRequest.canReplayEntityTo(redirectUri)) {
-                    // User code already provided bytes for the original origin; do not replay them across origins.
-                    if (hasEntity) {
-                        throw new IllegalStateException("Cross-origin redirect with request entity is disabled.");
-                    }
-                    sendEmptyEntity = true;
-                }
-                Http1ClientRequestImpl clientRequest = new Http1ClientRequestImpl(lastRequest,
-                                                                                  method,
-                                                                                  redirectUri,
-                                                                                  lastRequest.properties(),
-                                                                                  sendEntity);
-                clientRequest.followRedirects(false);
-                Http1ClientResponseImpl response;
-                if (sendEntity && !sendEmptyEntity) {
-                    response = (Http1ClientResponseImpl) clientRequest
-                            .outputStreamRedirect(true)
-                            .header(HeaderValues.EXPECT_100)
-                            .header(HeaderValues.TRANSFER_ENCODING_CHUNKED)
-                            .readTimeout(originalRequest.readContinueTimeout())
-                            .request();
-                    response.connection().readTimeout(originalRequest.readTimeout());
-                } else {
-                    response = (Http1ClientResponseImpl) clientRequest.request();
-                }
-                lastRequest = clientRequest;
-
-                connection = response.connection();
-                ctx = connection.helidonSocket();
-                reader = connection.reader();
-                writer = connection.writer();
-
-                if (RedirectionProcessor.redirectionStatusCode(response.status())) {
-                    boolean closeRedirectProbeConnection = sendEntity && !sendEmptyEntity;
-                    try {
-                        checkRedirectHeaders(response.headers());
-                        if (!RedirectionProcessor.keepsMethodAndEntity(response.status())) {
-                            method = Method.GET;
-                            sendEntity = false;
-                        }
-                        redirectedUri = response.headers().get(HeaderNames.LOCATION).get();
-                    } finally {
-                        if (closeRedirectProbeConnection) {
-                            // The probe sent chunked upload headers but intentionally did not complete the request body.
-                            // Response close only sees response-side state, so close first to avoid caching this connection.
-                            response.connection().closeResource();
-                        }
-                        response.close();
-                    }
-                } else {
-                    if (sendEntity
-                            && !sendEmptyEntity
-                            && response.status().code() == Status.CONTINUE_100.code()) {
-                        reader.skip(reader.available());
-                        return;
-                    }
-                    if (sendEntity && !sendEmptyEntity) {
-                        response.closeConnectionOnClose();
-                    }
-                    //OS changed its state to interrupted, that means other usage of this OS will result in NOOP actions.
-                    this.interrupted = true;
-                    this.response = response;
-                    //we are not sending anything by this OS, we need to interrupt it.
-                    throw new OutputStreamInterruptedException();
-                }
-
-            }
-            throw RedirectionProcessor.maxRedirectsReached(originalRequest.maxRedirects());
         }
 
         private void sendFirstChunk() {

@@ -33,13 +33,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -68,6 +72,10 @@ import io.helidon.http.HttpLogConfig;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
+import io.helidon.http.encoding.ContentDecoder;
+import io.helidon.http.encoding.ContentEncoder;
+import io.helidon.http.encoding.ContentEncoding;
+import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.http1.Http1LoggingConnectionListener;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.EntityWriter;
@@ -78,6 +86,7 @@ import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.Proxy;
+import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
 
 import org.junit.jupiter.api.Test;
@@ -118,6 +127,47 @@ class Http1ClientTest {
     private static final String TARGET_HOST = "www.oracle.com";
     private static final String TARGET_URI_PATH = "/test";
     private static final String CLIENT_SEND_LOGGER_NAME = Http1LoggingConnectionListener.class.getName() + ".cl-send";
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testDecoderConstructionFailureCompletesExceptionally(boolean readsEntity) {
+        AtomicReference<CompletionStage<WebClientServiceResponse>> completion = new AtomicReference<>();
+        IllegalStateException decoderFailure = new IllegalStateException("Cannot initialize response decoder");
+        Http1Client client = Http1Client.builder()
+                .contentEncoding(ContentEncodingContext.builder()
+                                         .addContentEncoding(new TestContentEncoding("broken", network -> {
+                                             if (readsEntity) {
+                                                 try {
+                                                     network.readAllBytes();
+                                                 } catch (IOException e) {
+                                                     throw new UncheckedIOException(e);
+                                                 }
+                                             }
+                                             throw decoderFailure;
+                                         }))
+                                         .build())
+                .addService((chain, request) -> {
+                    completion.set(request.whenComplete());
+                    return chain.proceed(request);
+                })
+                .build();
+        String rawResponse = "HTTP/1.1 200 OK\r\n"
+                + "Content-Length: 2\r\n"
+                + "Content-Encoding: broken\r\n\r\nOK";
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(rawResponse.getBytes(StandardCharsets.US_ASCII));
+
+        IllegalStateException requestFailure = assertThrows(IllegalStateException.class,
+                                                             () -> client.get("http://localhost:" + dummyPort + "/test")
+                                                                     .connection(connection)
+                                                                     .request());
+        var future = completion.get().toCompletableFuture();
+        assertThat("Request completion after decoder construction fails", future.isCompletedExceptionally(), is(true));
+        CompletionException completionFailure = assertThrows(CompletionException.class, future::join);
+
+        assertThat(requestFailure, sameInstance(decoderFailure));
+        assertThat(completionFailure.getCause(), sameInstance(decoderFailure));
+        assertThat(connection.releaseCount(), is(0));
+    }
 
     @Test
     @SuppressWarnings("deprecation")
@@ -553,6 +603,85 @@ class Http1ClientTest {
         assertThat(response.headers(), hasHeader(REQ_EXPECT_100_HEADER_NAME));
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testThirtyTwoInformationalResponsesBeforeFinalResponse(boolean expectContinue) {
+        String responseBytes = informationalResponses(32, 0, expectContinue);
+        FakeHttp1ClientConnection connection =
+                new FakeHttp1ClientConnection(responseBytes.getBytes(StandardCharsets.US_ASCII));
+        Http1Client testClient = Http1Client.builder().sendExpectContinue(expectContinue).build();
+        AtomicInteger handlerCalls = new AtomicInteger();
+        try {
+            try (Http1ClientResponse response = requestAfterInformationalResponses(testClient,
+                                                                                   connection,
+                                                                                   expectContinue,
+                                                                                   handlerCalls)) {
+                assertThat(response.status(), is(Status.OK_200));
+            }
+            assertThat(handlerCalls.get(), is(expectContinue ? 1 : 0));
+        } finally {
+            testClient.closeResource();
+            connection.closeResource();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void testThirtyThirdInformationalResponseClosesConnection(boolean expectContinue) {
+        String responseBytes = informationalResponses(33, 0, expectContinue);
+        FakeHttp1ClientConnection connection =
+                new FakeHttp1ClientConnection(responseBytes.getBytes(StandardCharsets.US_ASCII));
+        Http1Client testClient = Http1Client.builder().sendExpectContinue(expectContinue).build();
+        AtomicInteger handlerCalls = new AtomicInteger();
+        try {
+            IllegalStateException failure = assertThrows(IllegalStateException.class,
+                                                         () -> requestAfterInformationalResponses(testClient,
+                                                                                                  connection,
+                                                                                                  expectContinue,
+                                                                                                  handlerCalls));
+            assertThat(failure.getMessage(), is("Too many HTTP informational responses"));
+            assertThat(handlerCalls.get(), is(0));
+            assertThat(connection.closeCount(), is(1));
+            assertThat(connection.releaseCount(), is(0));
+        } finally {
+            testClient.closeResource();
+            connection.closeResource();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {16, 17})
+    void testInformationalResponseLimitSpansContinueProbeAndFinalRead(int afterContinue) {
+        String responseBytes = informationalResponses(16, afterContinue, true);
+        FakeHttp1ClientConnection connection =
+                new FakeHttp1ClientConnection(responseBytes.getBytes(StandardCharsets.US_ASCII));
+        Http1Client testClient = Http1Client.builder().sendExpectContinue(true).build();
+        AtomicInteger handlerCalls = new AtomicInteger();
+        try {
+            if (afterContinue == 16) {
+                try (Http1ClientResponse response = requestAfterInformationalResponses(testClient,
+                                                                                       connection,
+                                                                                       true,
+                                                                                       handlerCalls)) {
+                    assertThat(response.status(), is(Status.OK_200));
+                }
+            } else {
+                IllegalStateException failure = assertThrows(IllegalStateException.class,
+                                                             () -> requestAfterInformationalResponses(testClient,
+                                                                                                      connection,
+                                                                                                      true,
+                                                                                                      handlerCalls));
+                assertThat(failure.getMessage(), is("Too many HTTP informational responses"));
+                assertThat(connection.closeCount(), is(1));
+                assertThat(connection.releaseCount(), is(0));
+            }
+            assertThat(handlerCalls.get(), is(1));
+        } finally {
+            testClient.closeResource();
+            connection.closeResource();
+        }
+    }
+
     @Test
     void testEarlyResponseUsesConfiguredMediaTypeParserMode() {
         String earlyResponse = "HTTP/1.1 417 Expectation Failed\r\n"
@@ -634,10 +763,10 @@ class Http1ClientTest {
                 try {
                     assertThat(response.status().code(), is(Integer.parseInt(responseStatus.substring(0, 3))));
                     assertThat(response.entity().inputStream().readAllBytes().length, is(0));
-                    assertThat(redirectTarget.awaitConnectionClose(), is(true));
                 } finally {
                     response.close();
                 }
+                assertThat(redirectTarget.awaitConnectionClose(), is(true));
                 assertThat(serviceRequests.get(), is(2));
                 assertThat(serviceCompletions.get(), is(2));
             } finally {
@@ -1369,6 +1498,35 @@ class Http1ClientTest {
         assertThat(responseHeaderValue, is(headerValue.trim()));
     }
 
+    private static String informationalResponses(int beforeContinue, int afterContinue, boolean expectContinue) {
+        StringBuilder responses = new StringBuilder();
+        for (int i = 0; i < beforeContinue; i++) {
+            responses.append("HTTP/1.1 103 Early Hints\r\n\r\n");
+        }
+        if (expectContinue) {
+            responses.append("HTTP/1.1 100 Continue\r\n\r\n");
+        }
+        for (int i = 0; i < afterContinue; i++) {
+            responses.append("HTTP/1.1 103 Early Hints\r\n\r\n");
+        }
+        return responses.append("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n").toString();
+    }
+
+    private static Http1ClientResponse requestAfterInformationalResponses(Http1Client testClient,
+                                                                          FakeHttp1ClientConnection connection,
+                                                                          boolean expectContinue,
+                                                                          AtomicInteger handlerCalls) {
+        String uri = "http://localhost:" + dummyPort + "/test";
+        if (expectContinue) {
+            return testClient.put(uri).connection(connection).outputStream(output -> {
+                handlerCalls.incrementAndGet();
+                output.write('x');
+                output.close();
+            });
+        }
+        return testClient.get(uri).connection(connection).request();
+    }
+
     private static String readLine(InputStream inputStream) throws IOException {
         StringBuilder line = new StringBuilder();
         while (true) {
@@ -1686,6 +1844,51 @@ class Http1ClientTest {
 
     private enum ProxyConfiguration {
         UNSET, NO_PROXY, HTTP, HTTP_SET_NO_PROXY_HOST, SYSTEM_UNSET, SYSTEM_SET_PROXY, SYSTEM_SET_PROXY_AND_NON_PROXY_HOST
+    }
+
+    private static final class TestContentEncoding implements ContentEncoding {
+        private final String name;
+        private final ContentDecoder decoder;
+
+        private TestContentEncoding(String name, ContentDecoder decoder) {
+            this.name = name;
+            this.decoder = decoder;
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
+        @Override
+        public String type() {
+            return name;
+        }
+
+        @Override
+        public Set<String> ids() {
+            return Set.of(name);
+        }
+
+        @Override
+        public boolean supportsEncoding() {
+            return false;
+        }
+
+        @Override
+        public boolean supportsDecoding() {
+            return true;
+        }
+
+        @Override
+        public ContentDecoder decoder() {
+            return decoder;
+        }
+
+        @Override
+        public ContentEncoder encoder() {
+            return ContentEncoder.NO_OP;
+        }
     }
 
     private static class FakeHttp1ClientConnection implements ClientConnection {
