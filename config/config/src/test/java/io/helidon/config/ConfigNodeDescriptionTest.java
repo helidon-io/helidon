@@ -18,6 +18,7 @@ package io.helidon.config;
 
 import java.util.AbstractList;
 import java.util.AbstractMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -163,6 +164,22 @@ class ConfigNodeDescriptionTest {
         assertThat(((ObjectNode) first.get("server")).get("port").description(), is("first-source"));
         assertThat(((ObjectNode) second.get("server")).get("port").value(), is(Optional.of("9090")));
         assertThat(((ObjectNode) second.get("server")).get("port").description(), is("second-source"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void objectSnapshotsPreserveMemberEncounterOrder(boolean reverseOrder) {
+        List<String> names = reverseOrder ? List.of("third", "second", "first") : List.of("first", "second", "third");
+        Map<String, ConfigNode> members = new LinkedHashMap<>();
+        names.forEach(name -> members.put(name, new DescribedValue(name, name + "-source")));
+        ObjectNode snapshot = new ObjectNodeImpl(members, Function.identity());
+
+        assertThat(List.copyOf(snapshot.keySet()), is(names));
+        members.clear();
+
+        assertThat(List.copyOf(snapshot.keySet()), is(names));
+        names.forEach(name -> assertThat(snapshot.get(name).description(), is(name + "-source")));
+        assertThrows(UnsupportedOperationException.class, () -> snapshot.put("added", ValueNode.create("later")));
     }
 
     @Test

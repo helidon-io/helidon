@@ -17,6 +17,8 @@
 package io.helidon.config;
 
 import java.util.AbstractMap;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -49,9 +51,9 @@ public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements O
         this(members, resolveTokenFunction, value, "N/A");
     }
 
-    ObjectNodeImpl(Map<String, ConfigNode> members, Function<String, String> resolveTokenFunction,
+    ObjectNodeImpl(Map<String, ? extends ConfigNode> members, Function<String, String> resolveTokenFunction,
                    String value, String description) {
-        this.members = Map.copyOf(members);
+        this.members = Collections.unmodifiableMap(new LinkedHashMap<>(members));
         this.resolveTokenFunction = resolveTokenFunction;
         this.value = value;
         this.description = Objects.requireNonNullElse(description, "N/A");

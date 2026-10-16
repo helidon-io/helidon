@@ -183,7 +183,7 @@ public class ObjectNodeBuilderImpl extends AbstractNodeBuilderImpl<String, Objec
 
     @Override
     public ObjectNodeImpl build() {
-        return new ObjectNodeImpl(Map.copyOf(members), tokenResolver(), value, description);
+        return new ObjectNodeImpl(members, tokenResolver(), value, description);
     }
 
     @Override
