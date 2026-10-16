@@ -594,15 +594,15 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
                 responseSentRunnable.run();
                 return;
             }
-            if (headRequest) {
-                sendHeadHeaders(!Http2ServerResponse.sendTrailers(headers));
+            if (noEntityResponse) {
+                normalizeNoEntityHeaders(headers, status);
+                sendNoEntityHeaders();
                 firstByte = false;
                 responseSentRunnable.run();
                 return;
             }
-            if (noEntityResponse) {
-                normalizeNoEntityHeaders(headers, status);
-                sendNoEntityHeaders();
+            if (headRequest) {
+                sendHeadHeaders(!Http2ServerResponse.sendTrailers(headers));
                 firstByte = false;
                 responseSentRunnable.run();
                 return;
