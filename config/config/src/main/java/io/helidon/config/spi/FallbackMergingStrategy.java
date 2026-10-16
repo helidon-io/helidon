@@ -16,12 +16,15 @@
 
 package io.helidon.config.spi;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.AbstractMap;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 
-import io.helidon.config.ObjectNodeImpl;
+import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
+import io.helidon.config.spi.ConfigNode.ValueNode;
 
 /**
  * An implementation of {@link MergingStrategy} in which nodes
@@ -34,21 +37,74 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
  * containing a value for the key is it immediately returns that value,
  * disregarding other later config roots.
  */
-@SuppressWarnings("removal")
 final class FallbackMergingStrategy implements MergingStrategy {
 
     @Override
-    public ObjectNode merge(List<ObjectNode> rootNodesParam) {
-        // we may get an immutable list
-        List<ObjectNode> rootNodes = new ArrayList<>(rootNodesParam);
-        Collections.reverse(rootNodes);
-
-        ObjectNodeImpl merged = ObjectNodeImpl.wrap(ObjectNode.empty());
-        for (ObjectNode root : rootNodes) {
-            merged = (ObjectNodeImpl) merged.merge(ObjectNodeImpl.wrap(root));
+    public ObjectNode merge(List<ObjectNode> rootNodes) {
+        ObjectNode.Builder builder = ObjectNode.builder();
+        String description = "N/A";
+        boolean hasMembers = false;
+        boolean hasValue = false;
+        for (ObjectNode root : rootNodes.reversed()) {
+            String rootDescription = Objects.requireNonNullElse(root.description(), "N/A");
+            Optional<String> rootValue = root.value();
+            if (rootValue.isPresent()) {
+                builder.value(rootValue.get());
+                hasValue = true;
+                description = rootDescription;
+            } else if (!hasValue) {
+                if (!hasMembers) {
+                    description = rootDescription;
+                } else if (!root.isEmpty() && !description.equals(rootDescription)) {
+                    description = "N/A";
+                }
+            }
+            root.forEach((key, node) -> addNode(builder, key, node));
+            hasMembers |= !root.isEmpty();
         }
 
-        return merged;
+        // Assign the root origin once, without repeatedly copying the growing merged tree.
+        return ObjectNode.wrap(new MergedRoot(builder.build(), description));
     }
 
+    private static void addNode(ObjectNode.Builder builder, String key, ConfigNode node) {
+        switch (node.nodeType()) {
+        case OBJECT:
+            builder.addObject(key, (ObjectNode) node);
+            break;
+        case LIST:
+            builder.addList(key, (ListNode) node);
+            break;
+        case VALUE:
+            builder.addValue(key, (ValueNode) node);
+            break;
+        default:
+            throw new IllegalArgumentException("Unsupported node type: " + node.getClass().getName());
+        }
+    }
+
+    private static final class MergedRoot extends AbstractMap<String, ConfigNode> implements ObjectNode {
+        private final ObjectNode node;
+        private final String description;
+
+        private MergedRoot(ObjectNode node, String description) {
+            this.node = node;
+            this.description = description;
+        }
+
+        @Override
+        public Set<Entry<String, ConfigNode>> entrySet() {
+            return node.entrySet();
+        }
+
+        @Override
+        public Optional<String> value() {
+            return node.value();
+        }
+
+        @Override
+        public String description() {
+            return description;
+        }
+    }
 }

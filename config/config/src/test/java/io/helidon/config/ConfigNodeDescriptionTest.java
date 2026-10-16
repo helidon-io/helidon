@@ -18,6 +18,7 @@ package io.helidon.config;
 
 import java.util.AbstractList;
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -221,6 +222,84 @@ class ConfigNodeDescriptionTest {
 
         assertThat(merged.description(), is("common-source"));
         assertThat(merged.get("app").description(), is("common-source"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {3, 10})
+    void manySourcesRetainRootValuePriorityChildOriginsAndIsolation(int sourceCount) {
+        List<ObjectNode> sources = new ArrayList<>();
+        sources.add(ObjectNode.empty());
+        for (int i = 0; i < sourceCount; i++) {
+            ObjectNode.Builder builder = ObjectNode.builder()
+                    .addValue("shared", "value-" + i)
+                    .addValue("unique-" + i, "unique-value-" + i)
+                    .addValue("nested.entry-" + i, "nested-value-" + i);
+            if (i > 0) {
+                builder.value("root-value-" + i);
+            }
+            sources.add(described(builder.build(), "source-" + i));
+            sources.add(ObjectNode.empty());
+        }
+
+        ObjectNode merged = MergingStrategy.fallback().merge(sources);
+
+        assertThat(merged.value(), is(Optional.of("root-value-1")));
+        assertThat(merged.description(), is("source-1"));
+        assertThat(merged.get("shared").value(), is(Optional.of("value-0")));
+        assertThat(merged.get("shared").description(), is("source-0"));
+        ObjectNode nested = (ObjectNode) merged.get("nested");
+        assertThat(nested.description(), is("N/A"));
+        assertThat(nested.keySet(), hasSize(sourceCount));
+        for (int i = 0; i < sourceCount; i++) {
+            assertThat(merged.get("unique-" + i).value(), is(Optional.of("unique-value-" + i)));
+            assertThat(merged.get("unique-" + i).description(), is("source-" + i));
+            assertThat(nested.get("entry-" + i).value(), is(Optional.of("nested-value-" + i)));
+            assertThat(nested.get("entry-" + i).description(), is("source-" + i));
+            ObjectNode input = sources.get(i * 2 + 1);
+            assertThat(input.description(), is("source-" + i));
+            assertThat(input.get("shared").value(), is(Optional.of("value-" + i)));
+            assertThat(input.get("shared").description(), is("source-" + i));
+        }
+
+        ((ObjectNodeImpl) sources.get(1)).initDescription("changed-input");
+        assertThat(merged.get("shared").description(), is("source-0"));
+        assertThat(merged.get("unique-0").description(), is("source-0"));
+        assertThat(nested.get("entry-0").description(), is("source-0"));
+        ((ObjectNodeImpl) merged).initDescription("changed-result");
+        assertThat(sources.get(3).description(), is("source-1"));
+        assertThat(sources.get(3).get("shared").description(), is("source-1"));
+    }
+
+    @Test
+    void emptyRootsDoNotReplaceKnownContainerOrigin() {
+        ObjectNode known = described(ObjectNode.simple("server.port", "8080"), "application-source");
+        ObjectNode unrelatedEmpty = described(ObjectNode.builder().build(), "empty-source");
+
+        ObjectNode merged = MergingStrategy.fallback().merge(List.of(ObjectNode.empty(), unrelatedEmpty, known,
+                                                                    ObjectNode.empty(), unrelatedEmpty));
+
+        assertThat(merged.description(), is("application-source"));
+        assertThat(merged.get("server").description(), is("application-source"));
+        assertThat(((ObjectNode) merged.get("server")).get("port").description(), is("application-source"));
+        assertThat(known.description(), is("application-source"));
+        assertThat(unrelatedEmpty.description(), is("empty-source"));
+        assertThat(MergingStrategy.fallback().merge(List.of()).description(), is("N/A"));
+        assertThat(MergingStrategy.fallback().merge(List.of(unrelatedEmpty)).description(), is("empty-source"));
+    }
+
+    @Test
+    void valueOnlyRootContributesItsValueAndOrigin() {
+        ObjectNode valueOnly = described(ObjectNode.builder().value("selected-root").build(), "value-source");
+        ObjectNode lowerPriority = described(ObjectNode.builder().value("fallback-root").addValue("port", "8080").build(),
+                                             "fallback-source");
+
+        ObjectNode merged = MergingStrategy.fallback().merge(List.of(ObjectNode.empty(), valueOnly, lowerPriority,
+                                                                    ObjectNode.empty()));
+
+        assertThat(merged.value(), is(Optional.of("selected-root")));
+        assertThat(merged.description(), is("value-source"));
+        assertThat(merged.get("port").value(), is(Optional.of("8080")));
+        assertThat(merged.get("port").description(), is("fallback-source"));
     }
 
     @ParameterizedTest
