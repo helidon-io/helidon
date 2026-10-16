@@ -30,10 +30,38 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 
 class Http2ServerStreamInboundDataTest {
+
+    @Test
+    void controlEventsDoNotConsumeDataBudgetOrRestoreCredit() throws InterruptedException {
+        var budget = new Http2ServerStream.InboundDataBudget(1, 8);
+        var queue = new Http2ServerStream.InboundDataQueue(budget);
+        assertThat(queue.offer(header(8), BufferData.create(new byte[8])),
+                   is(Http2ServerStream.InboundDataQueue.OfferResult.ACCEPTED));
+        for (int i = 0; i < 10_000; i++) {
+            queue.requestEvent();
+        }
+
+        assertThat(queue.takeEvent(), not(instanceOf(Http2ServerStream.DataFrame.class)));
+        assertThat(budget.availableFrames(), is(0));
+        assertThat(budget.availableBytes(), is(0L));
+        var frame = (Http2ServerStream.DataFrame) queue.takeEvent();
+        assertThat(frame.flowControlLength(), is(8));
+        queue.requestEvent();
+        assertThat(queue.abortAndDrain(), is(8L));
+        queue.requestEvent();
+        assertThat(queue.takeEvent(), nullValue());
+        var credited = new AtomicBoolean();
+        queue.complete(frame, () -> credited.set(true));
+        assertThat("abort suppresses stale DATA credit", credited.get(), is(false));
+        assertThat(budget.availableFrames(), is(1));
+        assertThat(budget.availableBytes(), is(8L));
+    }
 
     @Test
     void frameBudgetIsConnectionWideNonBlockingAndPreservesFrames() throws InterruptedException {

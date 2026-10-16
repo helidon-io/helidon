@@ -17,6 +17,8 @@
 package io.helidon.grpc.core;
 
 import java.util.Base64;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
@@ -28,11 +30,69 @@ import io.grpc.Metadata;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
- * Utility class to map HTTP/2 headers to Metadata.
+ * Utility class for gRPC metadata and timeout headers.
  */
 public class GrpcHeadersUtil {
 
     private GrpcHeadersUtil() {
+    }
+
+    /**
+     * Encodes a timeout as a gRPC {@code grpc-timeout} header value.
+     * The value uses at most eight decimal digits and the finest unit that fits,
+     * rounding up when conversion to a coarser unit is necessary.
+     *
+     * @param timeoutNanos nonnegative timeout in nanoseconds
+     * @return encoded timeout
+     * @throws java.lang.IllegalArgumentException if the timeout is negative
+     */
+    public static String encodeTimeout(long timeoutNanos) {
+        if (timeoutNanos < 0) {
+            throw new IllegalArgumentException("Timeout must not be negative");
+        }
+        long value = timeoutNanos;
+        int unit = 0;
+        while (value > 99_999_999) {
+            value = Math.ceilDiv(value, unit < 3 ? 1000 : 60);
+            unit++;
+        }
+        return Long.toString(value) + "numSMH".charAt(unit);
+    }
+
+    /**
+     * Decodes a gRPC {@code grpc-timeout} header value.
+     * The value must contain one to eight ASCII decimal digits followed by
+     * {@code H}, {@code M}, {@code S}, {@code m}, {@code u}, or {@code n}.
+     * Timeouts exceeding the nanosecond range are saturated at {@link java.lang.Long#MAX_VALUE}.
+     *
+     * @param timeout encoded timeout
+     * @return nonnegative timeout in nanoseconds
+     * @throws java.lang.IllegalArgumentException if the timeout is malformed
+     */
+    public static long decodeTimeout(String timeout) {
+        Objects.requireNonNull(timeout);
+        int length = timeout.length();
+        if (length < 2 || length > 9) {
+            throw new IllegalArgumentException("Invalid gRPC timeout length");
+        }
+        long value = 0;
+        for (int i = 0; i < length - 1; i++) {
+            char digit = timeout.charAt(i);
+            if (digit < '0' || digit > '9') {
+                throw new IllegalArgumentException("Invalid gRPC timeout value");
+            }
+            value = value * 10 + digit - '0';
+        }
+        TimeUnit unit = switch (timeout.charAt(length - 1)) {
+            case 'H' -> TimeUnit.HOURS;
+            case 'M' -> TimeUnit.MINUTES;
+            case 'S' -> TimeUnit.SECONDS;
+            case 'm' -> TimeUnit.MILLISECONDS;
+            case 'u' -> TimeUnit.MICROSECONDS;
+            case 'n' -> TimeUnit.NANOSECONDS;
+            default -> throw new IllegalArgumentException("Invalid gRPC timeout unit");
+        };
+        return unit.toNanos(value);
     }
 
     /**
