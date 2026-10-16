@@ -191,8 +191,13 @@ final class Http1CallExchangeChain extends Http1CallChainBase {
         }
         successfulResponse = head.status().code() >= 200 && head.status().code() < 300;
         captureProtocolResponse(connection, head.status(), head.headers());
-        return createServiceResponse(client, request, exchangeConnection, head.status(), head.headers(),
-                                     whenComplete(), transportObservation());
+        return createServiceResponseWithTrailers(client,
+                                                 request,
+                                                 exchangeConnection,
+                                                 exchangeConnection.reader(),
+                                                 head.status(),
+                                                 head.headers(),
+                                                 whenComplete());
     }
 
     void awaitUpload() {
