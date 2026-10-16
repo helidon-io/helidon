@@ -123,10 +123,24 @@ final class MessagingMetrics {
         } finally {
             lock.unlock();
         }
+        Error closeFailure = null;
         try {
-            retiring.forEach(Recorder::close);
+            for (Recorder recorder : retiring) {
+                try {
+                    recorder.close();
+                } catch (Error e) {
+                    if (closeFailure == null) {
+                        closeFailure = e;
+                    } else if (closeFailure != e) {
+                        closeFailure.addSuppressed(e);
+                    }
+                }
+            }
         } finally {
             releaseRegistry(state);
+        }
+        if (closeFailure != null) {
+            throw closeFailure;
         }
     }
 
