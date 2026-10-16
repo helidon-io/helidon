@@ -245,8 +245,7 @@ closure cancels a live call, a virtual thread cancels its context independently
 of any active service callback. A service callback waiting for context
 cancellation can therefore return even when the call has no deadline. Normal
 completion creates no transport cancellation thread. The service's `onCancel`
-callback remains serialized with other service callbacks on the existing
-HTTP/2 stream thread.
+callback remains serialized with other service callbacks.
 Deadline cancellation signals that stream thread to send the final status,
 keeping transport writes off the expiry thread. If a service callback or
 response write is already in progress, the final status waits for it to return; the server
