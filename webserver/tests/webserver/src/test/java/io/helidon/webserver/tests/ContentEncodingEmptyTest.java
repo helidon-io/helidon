@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ServerTest
 class ContentEncodingEmptyTest {
@@ -52,6 +53,14 @@ class ContentEncodingEmptyTest {
             try (var out = res.outputStream()) {
                 res.status(Status.NO_CONTENT_204);
                 out.flush();
+            }
+        }).post("hello_stream_rejected", (req, res) -> {
+            try (var out = res.outputStream()) {
+                res.status(Status.NO_CONTENT_204);
+                assertThrows(IllegalStateException.class, () -> out.write('A'));
+                assertThrows(IllegalStateException.class, () -> out.write(new byte[] {'A'}));
+                assertThrows(IllegalStateException.class, () -> out.write(new byte[] {'A'}, 0, 1));
+                res.status(Status.OK_200);
             }
         });
     }
@@ -81,5 +90,14 @@ class ContentEncodingEmptyTest {
                 .header(HeaderNames.ACCEPT_ENCODING, "gzip")
                 .request();
         assertThat(res.status().code(), is(204));
+    }
+
+    @Test
+    void gzipRejectsBodyAfterNoEntityStatus() {
+        Http1ClientResponse res = client.post("hello_stream_rejected")
+                .header(HeaderNames.CONTENT_TYPE, "application/json")
+                .header(HeaderNames.ACCEPT_ENCODING, "gzip")
+                .request();
+        assertThat(res.status().code(), is(200));
     }
 }
