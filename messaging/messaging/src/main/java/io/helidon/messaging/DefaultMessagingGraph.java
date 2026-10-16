@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
+import io.helidon.health.HealthCheck;
 import io.helidon.messaging.spi.ChannelConnection;
 import io.helidon.messaging.spi.IncomingChannel;
 import io.helidon.messaging.spi.OutgoingChannel;
@@ -51,6 +52,8 @@ final class DefaultMessagingGraph implements MessagingGraph {
     private final ThreadLocal<Boolean> lifecycleCallback = new ThreadLocal<>();
     private final DeliveryEngine deliveryEngine;
     private final MessagingConfig config;
+    private final MessagingMetrics metrics;
+    private final MessagingHealth health;
     private final Map<String, MessagingChannel<?>> channels = new LinkedHashMap<>();
     private final Map<MessagingChannel<?>, Emitter<?>> emitters = new IdentityHashMap<>();
     private final Map<String, Set<String>> routes = new LinkedHashMap<>();
@@ -62,6 +65,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
     private final Set<ChannelConnection> connectorIdentities =
             Collections.newSetFromMap(new IdentityHashMap<>());
     private final AtomicBoolean shutdownOwner = new AtomicBoolean();
+    private final AtomicBoolean closeRequested = new AtomicBoolean();
     private final CompletableFuture<Void> preparationCompletion = new CompletableFuture<>();
     private final CompletableFuture<Void> startupCompletion = new CompletableFuture<>();
     private final CompletableFuture<Void> shutdownCompletion = new CompletableFuture<>();
@@ -74,11 +78,22 @@ final class DefaultMessagingGraph implements MessagingGraph {
     DefaultMessagingGraph(DeliveryEngine deliveryEngine) {
         this.deliveryEngine = Objects.requireNonNull(deliveryEngine);
         this.config = deliveryEngine.configuration();
+        this.metrics = MessagingMetrics.create(config);
+        this.health = MessagingHealth.create(config);
     }
 
     @Override
     public MessagingConfig prototype() {
         return config;
+    }
+
+    @Override
+    public List<HealthCheck> healthChecks() {
+        return health.checks();
+    }
+
+    MessagingMetrics.Recorder recorder(String channel) {
+        return metrics.channel(channel);
     }
 
     DeliveryEngine deliveryEngine() {
@@ -313,7 +328,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
                 if (state != State.PREPARED) {
                     throw illegalTransition("start");
                 }
-                state = State.STARTING;
+                changeState(State.STARTING);
                 startOwner = true;
             }
         } finally {
@@ -337,7 +352,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
             lifecycleLock.lock();
             try {
                 requireStarting();
-                state = State.RUNNING;
+                changeState(State.RUNNING);
                 sources.values().forEach(SourceBinding::activate);
                 startupCompletion.complete(null);
             } finally {
@@ -383,6 +398,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
 
     void abortPreparation(Throwable cause) {
         Objects.requireNonNull(cause);
+        removeHealthAfterShutdown();
         boolean cleanup;
         lifecycleLock.lock();
         try {
@@ -400,23 +416,24 @@ final class DefaultMessagingGraph implements MessagingGraph {
 
     @Override
     public void close() {
+        removeHealthAfterShutdown();
         boolean closeOwner;
         boolean graceful;
         lifecycleLock.lock();
         try {
             if (state == State.CLOSED) {
-                return;
-            }
-            if (state == State.RUNNING) {
+                graceful = false;
+                closeOwner = false;
+            } else if (state == State.RUNNING) {
                 deliveryEngine.beginDrain();
-                state = State.DRAINING;
+                changeState(State.DRAINING);
                 graceful = true;
                 closeOwner = shutdownOwner.compareAndSet(false, true);
             } else if (state == State.FAILED || state == State.DRAINING || state == State.FORCING) {
                 graceful = false;
                 closeOwner = false;
             } else {
-                state = State.FORCING;
+                changeState(State.FORCING);
                 graceful = false;
                 closeOwner = shutdownOwner.compareAndSet(false, true);
                 startupCompletion.completeExceptionally(new MessagingException("Messaging graph startup was cancelled"));
@@ -427,7 +444,13 @@ final class DefaultMessagingGraph implements MessagingGraph {
         boolean currentGraphTask = isCurrentGraphTask();
         if (!closeOwner) {
             if (!currentGraphTask || shutdownCompletion.isDone()) {
-                awaitShutdown();
+                try {
+                    awaitShutdown();
+                } finally {
+                    if (shutdownCompletion.isDone()) {
+                        health.close();
+                    }
+                }
             }
             return;
         }
@@ -522,7 +545,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
         try {
             if (preparationFailure == null) {
                 if (state == State.NEW) {
-                    state = State.PREPARED;
+                    changeState(State.PREPARED);
                 } else {
                     preparationFailure = new MessagingException("Messaging graph preparation was cancelled in state "
                                                                         + state);
@@ -574,19 +597,15 @@ final class DefaultMessagingGraph implements MessagingGraph {
             lifecycleLock.lock();
             try {
                 if (closeFailure == null) {
-                    state = State.CLOSED;
+                    changeState(State.CLOSED);
                 } else {
                     failure = closeFailure;
-                    state = State.FAILED;
+                    changeState(State.FAILED);
                 }
             } finally {
                 lifecycleLock.unlock();
             }
-            if (closeFailure == null) {
-                shutdownCompletion.complete(null);
-            } else {
-                shutdownCompletion.completeExceptionally(closeFailure);
-            }
+            publishShutdownCompletion(closeFailure);
         }
         return closeFailure;
     }
@@ -623,11 +642,11 @@ final class DefaultMessagingGraph implements MessagingGraph {
         lifecycleLock.lock();
         try {
             failure = closeFailure;
-            state = State.FAILED;
+            changeState(State.FAILED);
         } finally {
             lifecycleLock.unlock();
         }
-        shutdownCompletion.completeExceptionally(closeFailure);
+        publishShutdownCompletion(closeFailure);
     }
 
     private CleanupResult drainSources(RuntimeException current, long deadline) {
@@ -747,11 +766,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
         if (cleanupFailure != null && cleanupFailure != primary) {
             primary.addSuppressed(cleanupFailure);
         }
-        if (reportFailureOnClose) {
-            shutdownCompletion.completeExceptionally(primary);
-        } else {
-            shutdownCompletion.complete(null);
-        }
+        publishShutdownCompletion(reportFailureOnClose ? primary : null);
     }
 
     private void finalizeTopology() {
@@ -1161,9 +1176,49 @@ final class DefaultMessagingGraph implements MessagingGraph {
         }
     }
 
+    private void publishShutdownCompletion(Throwable shutdownFailure) {
+        Throwable completionFailure = shutdownFailure;
+        try {
+            invokeLifecycleCallback(metrics::close);
+        } catch (Error e) {
+            completionFailure = e;
+            lifecycleLock.lock();
+            try {
+                failure = e;
+                changeState(State.FAILED);
+            } finally {
+                lifecycleLock.unlock();
+            }
+            throw e;
+        } finally {
+            if (closeRequested.get()) {
+                health.close();
+            }
+            if (completionFailure == null) {
+                shutdownCompletion.complete(null);
+            } else {
+                shutdownCompletion.completeExceptionally(completionFailure);
+            }
+        }
+    }
+
+    private void removeHealthAfterShutdown() {
+        if (closeRequested.compareAndSet(false, true)) {
+            shutdownCompletion.whenComplete((_, _) -> health.close());
+        }
+        if (shutdownCompletion.isDone()) {
+            health.close();
+        }
+    }
+
+    private void changeState(State newState) {
+        state = newState;
+        health.state(newState, failure);
+    }
+
     private boolean transitionToFailed(Throwable cause) {
         failure = cause;
-        state = State.FAILED;
+        changeState(State.FAILED);
         startupCompletion.completeExceptionally(cause);
         return shutdownOwner.compareAndSet(false, true);
     }
@@ -1171,7 +1226,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
     private void transitionToForcing() {
         lifecycleLock.lock();
         try {
-            state = State.FORCING;
+            changeState(State.FORCING);
         } finally {
             lifecycleLock.unlock();
         }
