@@ -2631,7 +2631,6 @@ class GrpcProtocolHandlerTest {
         }
     }
 
-
     private GrpcProtocolHandler<String, String> deadlineHandler(String timeout,
                                                                        ServerCallHandler<String, String> callHandler,
                                                                        Http2StreamWriter writer) {
