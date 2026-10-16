@@ -565,7 +565,11 @@ class Http3QuicEvidenceManifestTest {
                 }
                 for (ProcessHandle handle : observedHandles) {
                     try {
-                        if (handle.pid() != process.pid() && handle.isAlive()) {
+                        // Keep parents alive until their children exit and are reaped. Killing the whole tree at
+                        // once can leave orphan zombies visible to a supervisor for the remainder of the Maven run.
+                        if (handle.pid() != process.pid()
+                                && handle.isAlive()
+                                && handle.descendants().noneMatch(ProcessHandle::isAlive)) {
                             handle.destroyForcibly();
                         }
                     } catch (RuntimeException destroyFailure) {
@@ -577,7 +581,7 @@ class Http3QuicEvidenceManifestTest {
                     }
                 }
                 try {
-                    if (process.isAlive()) {
+                    if (process.isAlive() && process.descendants().noneMatch(ProcessHandle::isAlive)) {
                         process.destroyForcibly();
                     }
                 } catch (RuntimeException destroyFailure) {
