@@ -168,15 +168,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         super.status(status);
         isNoEntityStatus = isNoEntityStatus(status);
 
-        // check consistency if status code should not include entity
-        if (isNoEntityStatus) {
-            if (!headers.contains(HeaderNames.CONTENT_LENGTH)) {
-                headers.set(HeaderValues.CONTENT_LENGTH_ZERO);
-            } else if (headers.contentLength().orElse(0) > 0L) {
-                throw new IllegalStateException("Cannot set status to " + status + " with header "
-                                                        + HeaderNames.CONTENT_LENGTH + " greater than zero");
-            }
-        }
         return this;
     }
 
@@ -503,8 +494,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                                                             request,
                                                             keepAlive,
                                                             sendKeepAliveHeader,
-                                                            validateHeaders,
-                                                            isNoEntityStatus);
+                                                            validateHeaders);
 
         int writeBufferSize = ctx.listenerContext().config().writeBufferSize();
         outputStream = new ClosingBufferedOutputStream(bos, writeBufferSize);
@@ -564,7 +554,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         private long responseBytesTotal;
         private boolean closing = false;
         private final boolean validateHeaders;
-        private final boolean isNoEntityStatus;
         private final Consumer<ServerResponseTrailers> beforeTrailers;
 
         private BlockingOutputStream(ServerResponseHeaders headers,
@@ -579,8 +568,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                                      Http1ServerRequest request,
                                      boolean keepAlive,
                                      boolean sendKeepAliveHeader,
-                                     boolean validateHeaders,
-                                     boolean isNoEntityStatus) {
+                                     boolean validateHeaders) {
             this.headers = headers;
             this.trailers = trailers;
             this.beforeTrailers = beforeTrailers;
@@ -595,7 +583,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             this.keepAlive = keepAlive;
             this.sendKeepAliveHeader = sendKeepAliveHeader;
             this.validateHeaders = validateHeaders;
-            this.isNoEntityStatus = isNoEntityStatus;
         }
 
         void checkResponseHeaders() {
@@ -756,7 +743,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             if (closed) {
                 throw new IOException("Stream already closed");
             }
-            if (isNoEntityStatus && buffer.available() > 0) {
+            if (isNoEntityStatus(status.get()) && buffer.available() > 0) {
                 throw new IllegalStateException("Attempting to write data on a response with status " + status);
             }
 
@@ -798,7 +785,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
                 }
                 // this is chunked encoding, if anybody managed to set content length, it would break everything
                 if (headers.contains(HeaderNames.CONTENT_LENGTH)
-                        && (isNoEntityStatus || buffer.available() > 0)) {
+                        && (isNoEntityStatus(status.get()) || buffer.available() > 0)) {
                     LOGGER.log(System.Logger.Level.WARNING, "Content length was set after stream was requested, "
                             + "the response is already chunked, cannot use content-length");
                     headers.remove(HeaderNames.CONTENT_LENGTH);
