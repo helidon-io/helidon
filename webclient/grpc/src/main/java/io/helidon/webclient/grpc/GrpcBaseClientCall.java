@@ -120,6 +120,10 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     private static final ThreadFactory DEADLINE_EXPIRY_THREAD_FACTORY = Thread.ofVirtual()
             .name("helidon-grpc-client-deadline-expiry-", 0)
             .factory();
+    private static final ThreadFactory GRACEFUL_CLOSE_THREAD_FACTORY = Thread.ofVirtual()
+            .name("helidon-grpc-client-close-", 0)
+            .factory();
+    private static final long GRACEFUL_CLOSE_TIMEOUT_MILLIS = 500;
     private static final ScopedValue<GrpcBaseClientCall<?, ?>> CONNECTING_CALL = ScopedValue.newInstance();
 
     private final GrpcClientImpl grpcClient;
@@ -358,11 +362,20 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
         context.removeListener(cancellationListener);
         boolean abortTransport = !status.isOk() || !canCloseGracefully();
+        ScheduledFuture<?> gracefulCloseTimeout = null;
         if (abortTransport) {
             // Each call owns its connection. Abort the raw socket before cleanup can wait for
             // an HTTP/2 writer blocked by the peer, including an early OK response while request
             // DATA is still being written, a heartbeat, a TLS write or a stream reset.
             closeTransport();
+        } else {
+            // Connection-level writes, including PING acknowledgements, bypass the call's writer.
+            // Bound graceful cleanup even when its own GOAWAY write blocks. Only a timeout creates
+            // a worker: closing transport must not block the shared deadline scheduler.
+            gracefulCloseTimeout = DEADLINE_SCHEDULER.schedule(
+                    () -> GRACEFUL_CLOSE_THREAD_FACTORY.newThread(this::closeTransport).start(),
+                    GRACEFUL_CLOSE_TIMEOUT_MILLIS,
+                    TimeUnit.MILLISECONDS);
         }
         try {
             closeStreamingThreads();
@@ -398,6 +411,9 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                 // A failed graceful shutdown, including an interrupted GOAWAY write, must not
                 // leave the dedicated raw connection open after the terminal callback.
                 closeTransport();
+                if (gracefulCloseTimeout != null) {
+                    gracefulCloseTimeout.cancel(false);
+                }
                 closeComplete = true;
                 notifyClose();
             }

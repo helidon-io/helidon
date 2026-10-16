@@ -62,6 +62,160 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Timeout(20)
 class GrpcClientBackpressureTest {
     @ParameterizedTest
+    @EnumSource(ConnectionCloseOutcome.class)
+    void successfulResponseCompletesWithBlockedConnectionWrite(ConnectionCloseOutcome outcome) throws Exception {
+        var transport = new CompletableFuture<BlockingConnection>();
+        var accepted = new CompletableFuture<Socket>();
+        var requestEnded = new CompletableFuture<Void>();
+        var messageReceived = new CompletableFuture<byte[]>();
+        var returnFromMessage = new CompletableFuture<Void>();
+        var status = new CompletableFuture<Status>();
+        var trailers = new CompletableFuture<Metadata>();
+        var closeCount = new AtomicInteger();
+        CallOptions options = outcome.deadline
+                ? CallOptions.DEFAULT.withDeadlineAfter(10, TimeUnit.SECONDS) : CallOptions.DEFAULT;
+        var peerExecutor = Executors.newVirtualThreadPerTaskExecutor();
+        try (peerExecutor;
+             var listening = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"))) {
+            listening.setSoTimeout(5000);
+            var peer = peerExecutor.submit(() -> {
+                try (Socket socket = listening.accept()) {
+                    accepted.complete(socket);
+                    socket.setSoTimeout(15000);
+                    var output = socket.getOutputStream();
+                    output.write(new byte[] {0, 0, 0, 4, 0, 0, 0, 0, 0});
+                    InputStream input = socket.getInputStream();
+                    readInitialHeaders(input);
+                    boolean endOfStream = false;
+                    while (!endOfStream) {
+                        byte[] bytes = input.readNBytes(Http2FrameHeader.LENGTH);
+                        assertThat("complete request frame header", bytes.length, is(Http2FrameHeader.LENGTH));
+                        Http2FrameHeader frame = Http2FrameHeader.create(BufferData.create(bytes));
+                        assertThat("complete request frame payload", input.readNBytes(frame.length()).length,
+                                   is(frame.length()));
+                        endOfStream = frame.type() == Http2FrameType.DATA
+                                && frame.flags(Http2FrameTypes.DATA).endOfStream();
+                    }
+                    // The default executor uses one virtual thread per task. Await that task's
+                    // exit so the idle control cannot race the request writer's final bookkeeping.
+                    Thread requestWriter = transport.get(5, TimeUnit.SECONDS).requestEndWritten.get(5, TimeUnit.SECONDS);
+                    assertThat("default executor request writer is virtual", requestWriter.isVirtual(), is(true));
+                    requestWriter.join(Duration.ofSeconds(5));
+                    assertThat("request writer has completed", requestWriter.isAlive(), is(false));
+                    requestEnded.complete(null);
+                    var headers = BufferData.create(256);
+                    headers.writeInt8(0x88); // HPACK static :status 200
+                    writeLiteralHeader(headers, "content-type", "application/grpc");
+                    output.write(new byte[] {0, 0, (byte) headers.available(), 1, 4, 0, 0, 0, 1});
+                    headers.writeTo(output);
+                    output.write(new byte[] {0, 0, 13, 0, 0, 0, 0, 0, 1});
+                    output.write(new byte[] {0, 0, 0, 0, 8});
+                    output.write("response".getBytes(StandardCharsets.US_ASCII));
+                    output.flush();
+                    messageReceived.get(5, TimeUnit.SECONDS);
+                    var connection = transport.get(5, TimeUnit.SECONDS);
+                    connection.blockHeartbeatWrites = outcome.blockPing;
+                    connection.blockGoAwayWrites = outcome.blockGoAway;
+                    var trailingHeaders = BufferData.create(256);
+                    writeLiteralHeader(trailingHeaders, "grpc-status", "0");
+                    writeLiteralHeader(trailingHeaders, "grpc-message", "completed");
+                    writeLiteralHeader(trailingHeaders, "response-detail", "custom trailers");
+                    output.write(new byte[] {0, 0, (byte) trailingHeaders.available(), 1, 5, 0, 0, 0, 1});
+                    trailingHeaders.writeTo(output);
+                    if (outcome.blockPing) {
+                        output.write(new byte[] {0, 0, 8, 6, 0, 0, 0, 0, 0});
+                        output.write(new byte[8]);
+                    }
+                    output.flush();
+                    // The peer never initiates disconnect: EOF must come from client cleanup.
+                    return input.readAllBytes();
+                } catch (Throwable t) {
+                    requestEnded.completeExceptionally(t);
+                    messageReceived.completeExceptionally(t);
+                    throw t;
+                }
+            });
+            var client = GrpcClient.builder()
+                    .baseUri("http://127.0.0.1:" + listening.getLocalPort())
+                    .tls(tls -> tls.enabled(false))
+                    .protocolConfig(config -> config.heartbeatPeriod(Duration.ZERO))
+                    .readTimeout(Duration.ofSeconds(10))
+                    .build();
+            var method = descriptor().toBuilder().setType(MethodDescriptor.MethodType.BIDI_STREAMING).build();
+            var call = new GrpcClientCall<byte[], byte[]>((GrpcChannel) client.channel(), method, options) {
+                @Override
+                protected ClientConnection clientConnection(ClientUri uri, String authority) {
+                    var connection = new BlockingConnection(super.clientConnection(uri, authority));
+                    transport.complete(connection);
+                    return connection;
+                }
+            };
+            try {
+                call.start(new ClientCall.Listener<>() {
+                    @Override
+                    public void onMessage(byte[] message) {
+                        messageReceived.complete(message);
+                        returnFromMessage.join();
+                    }
+
+                    @Override
+                    public void onClose(Status result, Metadata metadata) {
+                        closeCount.incrementAndGet();
+                        trailers.complete(metadata);
+                        status.complete(result);
+                    }
+                }, new Metadata());
+                call.request(1);
+                call.sendMessage(new byte[32]);
+                call.halfClose();
+                requestEnded.get(5, TimeUnit.SECONDS);
+                assertThat(new String(messageReceived.get(5, TimeUnit.SECONDS), StandardCharsets.US_ASCII), is("response"));
+                var connection = transport.get(5, TimeUnit.SECONDS);
+                if (outcome.blockPing) {
+                    connection.writeStarted.get(5, TimeUnit.SECONDS);
+                    assertThat("PING ACK is blocked before onMessage returns", connection.transportClosed.isDone(), is(false));
+                }
+                assertThat("onClose follows onMessage", status.isDone(), is(false));
+                returnFromMessage.complete(null);
+                if (outcome.blockGoAway) {
+                    connection.writeStarted.get(5, TimeUnit.SECONDS);
+                }
+                Status result = status.get(5, TimeUnit.SECONDS);
+                assertThat(result.getCode(), is(Status.Code.OK));
+                assertThat(result.getDescription(), is("completed"));
+                assertThat(trailers.get(5, TimeUnit.SECONDS)
+                                   .get(Metadata.Key.of("response-detail", Metadata.ASCII_STRING_MARSHALLER)),
+                           is("custom trailers"));
+                byte[] closingFrames = peer.get(5, TimeUnit.SECONDS);
+                assertThat("the client closes its transport", connection.transportClosed.isDone(), is(true));
+                boolean gracefulClose = false;
+                var frames = BufferData.create(closingFrames);
+                while (frames.available() >= Http2FrameHeader.LENGTH) {
+                    Http2FrameHeader frame = Http2FrameHeader.create(frames);
+                    if (frame.type() == Http2FrameType.GO_AWAY) {
+                        gracefulClose = true;
+                    }
+                    frames.skip(frame.length());
+                }
+                assertThat("idle completion sends GOAWAY; blocked connection writes require transport abort",
+                           gracefulClose, is(!outcome.blockPing && !outcome.blockGoAway));
+                call.cancel("repeated close", null);
+                assertThat(closeCount.get(), is(1));
+            } finally {
+                returnFromMessage.complete(null);
+                if (transport.isDone()) {
+                    transport.join().closeResource();
+                }
+                if (accepted.isDone()) {
+                    accepted.join().close();
+                }
+                call.cancel("test cleanup", null);
+            }
+        }
+        assertThat("all peer executor tasks have terminated", peerExecutor.isTerminated(), is(true));
+    }
+
+    @ParameterizedTest
     @EnumSource(HeartbeatOutcome.class)
     void successfulResponseCompletesAfterRequestEndWithBlockedHeartbeat(HeartbeatOutcome outcome) throws Exception {
         var transport = new CompletableFuture<BlockingConnection>();
@@ -500,14 +654,35 @@ class GrpcClientBackpressureTest {
         IDLE
     }
 
+    private enum ConnectionCloseOutcome {
+        IDLE(false, false, false),
+        IDLE_WITH_DEADLINE(false, false, true),
+        BLOCKED_PING_ACK(true, false, false),
+        BLOCKED_PING_ACK_WITH_DEADLINE(true, false, true),
+        BLOCKED_GOAWAY(false, true, false),
+        BLOCKED_GOAWAY_WITH_DEADLINE(false, true, true);
+
+        private final boolean blockPing;
+        private final boolean blockGoAway;
+        private final boolean deadline;
+
+        ConnectionCloseOutcome(boolean blockPing, boolean blockGoAway, boolean deadline) {
+            this.blockPing = blockPing;
+            this.blockGoAway = blockGoAway;
+            this.deadline = deadline;
+        }
+    }
+
     private static final class BlockingConnection implements ClientConnection {
         private final ClientConnection delegate;
         private final DataWriter writer;
         private final CompletableFuture<Thread> writeStarted = new CompletableFuture<>();
+        private final CompletableFuture<Thread> requestEndWritten = new CompletableFuture<>();
         private final CompletableFuture<Void> transportClosed = new CompletableFuture<>();
 
         private volatile boolean blockWrites;
         private volatile boolean blockHeartbeatWrites;
+        private volatile boolean blockGoAwayWrites;
 
         private BlockingConnection(ClientConnection delegate) {
             this.delegate = delegate;
@@ -580,10 +755,19 @@ class GrpcClientBackpressureTest {
         }
 
         private void awaitWritable(BufferData... buffers) {
+            if (buffers.length > 0
+                    && buffers[0].available() >= Http2FrameHeader.LENGTH
+                    && buffers[0].get(3) == 0
+                    && (buffers[0].get(4) & 1) != 0) {
+                requestEndWritten.complete(Thread.currentThread());
+            }
             boolean heartbeat = buffers.length > 0
                     && buffers[0].available() >= Http2FrameHeader.LENGTH
                     && buffers[0].get(3) == 6; // HTTP/2 PING frame type
-            if (blockWrites || (blockHeartbeatWrites && heartbeat)) {
+            boolean goAway = buffers.length > 0
+                    && buffers[0].available() >= Http2FrameHeader.LENGTH
+                    && buffers[0].get(3) == 7; // HTTP/2 GOAWAY frame type
+            if (blockWrites || (blockHeartbeatWrites && heartbeat) || (blockGoAwayWrites && goAway)) {
                 writeStarted.complete(Thread.currentThread());
                 // Model TCP backpressure while the HTTP/2 writer owns its lock. Closing the
                 // underlying transport releases the write without interrupting the application.
