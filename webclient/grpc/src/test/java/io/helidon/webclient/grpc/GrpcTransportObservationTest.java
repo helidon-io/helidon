@@ -16,7 +16,6 @@
 
 package io.helidon.webclient.grpc;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.time.Duration;
@@ -61,7 +60,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class GrpcTransportObservationTest {
     private static final Descriptors.FileDescriptor PROTO = descriptor();
@@ -119,7 +117,7 @@ class GrpcTransportObservationTest {
     }
 
     @Test
-    void failedDirectConnectDoesNotPublishPhysicalConnection() throws IOException {
+    void failedDirectConnectDoesNotPublishPhysicalConnection() throws Exception {
         int port;
         try (ServerSocket socket = new ServerSocket(0, 1, InetAddress.getLoopbackAddress())) {
             port = socket.getLocalPort();
@@ -128,7 +126,14 @@ class GrpcTransportObservationTest {
         GrpcClient client = client(port, provider);
         try {
             ClientCall<Empty, Empty> call = newCall(client);
-            assertThrows(RuntimeException.class, () -> call.start(new ClientCall.Listener<>() { }, new Metadata()));
+            CompletableFuture<Status> status = new CompletableFuture<>();
+            call.start(new ClientCall.Listener<>() {
+                @Override
+                public void onClose(Status receivedStatus, Metadata trailers) {
+                    status.complete(receivedStatus);
+                }
+            }, new Metadata());
+            assertThat(status.get(5, TimeUnit.SECONDS).getCode(), is(Status.Code.UNKNOWN));
             assertThat("refused connect did not establish a physical connection", provider.connections.size(), is(0));
             assertThat("observer lease was acquired for the connection attempt", provider.starts.get(), is(1));
             assertThat("client retains its observer lease after a failed attempt", provider.stops.get(), is(0));
