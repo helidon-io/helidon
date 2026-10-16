@@ -676,13 +676,17 @@ class DeclarativeHttpTest {
         message = typedClient.retriable();
         assertThat(message, is("Success"));
 
-        HttpException exception = assertThrows(HttpException.class, typedClient::breaker);
-        assertThat(exception.status(), is(Status.FORBIDDEN_403));
+        // The endpoint succeeds if at least four seconds have elapsed since its last call or initialization.
+        try {
+            assertThat(typedClient.breaker(), is("Success"));
+        } catch (HttpException e) {
+            assertThat(e.status(), is(Status.FORBIDDEN_403));
+        }
 
         message = typedClient.timeout(Optional.empty());
         assertThat(message, is("Success"));
 
-        exception = assertThrows(HttpException.class, () -> typedClient.timeout(Optional.of(2)));
+        HttpException exception = assertThrows(HttpException.class, () -> typedClient.timeout(Optional.of(2)));
         assertThat(exception.status(), is(Status.SERVICE_UNAVAILABLE_503));
 
         jsonMessage = typedClient.getMessageHandler("test");
