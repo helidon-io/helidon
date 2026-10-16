@@ -66,6 +66,7 @@ class GrpcClientBackpressureTest {
     void successfulResponseCompletesWithBlockedConnectionWrite(ConnectionCloseOutcome outcome) throws Exception {
         var transport = new CompletableFuture<BlockingConnection>();
         var accepted = new CompletableFuture<Socket>();
+        var headersReceived = new CompletableFuture<Void>();
         var requestEnded = new CompletableFuture<Void>();
         var messageReceived = new CompletableFuture<byte[]>();
         var returnFromMessage = new CompletableFuture<Void>();
@@ -86,6 +87,7 @@ class GrpcClientBackpressureTest {
                     output.write(new byte[] {0, 0, 0, 4, 0, 0, 0, 0, 0});
                     InputStream input = socket.getInputStream();
                     readInitialHeaders(input);
+                    headersReceived.complete(null);
                     boolean endOfStream = false;
                     while (!endOfStream) {
                         byte[] bytes = input.readNBytes(Http2FrameHeader.LENGTH);
@@ -130,6 +132,7 @@ class GrpcClientBackpressureTest {
                     // The peer never initiates disconnect: EOF must come from client cleanup.
                     return input.readAllBytes();
                 } catch (Throwable t) {
+                    headersReceived.completeExceptionally(t);
                     requestEnded.completeExceptionally(t);
                     messageReceived.completeExceptionally(t);
                     throw t;
@@ -165,6 +168,7 @@ class GrpcClientBackpressureTest {
                         status.complete(result);
                     }
                 }, new Metadata());
+                headersReceived.get(5, TimeUnit.SECONDS);
                 call.request(1);
                 call.sendMessage(new byte[32]);
                 call.halfClose();
