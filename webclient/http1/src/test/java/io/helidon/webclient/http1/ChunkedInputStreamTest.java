@@ -27,12 +27,17 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.HelidonSocket;
+import io.helidon.http.ClientResponseHeaders;
+import io.helidon.http.Method;
+import io.helidon.http.Status;
+import io.helidon.http.WritableHeaders;
 import io.helidon.http.http1.Http1ConnectionListener;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.WebClientServiceResponse;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -123,7 +128,9 @@ class ChunkedInputStreamTest {
         });
         var connection = new TestConnection(reader);
         var complete = new CompletableFuture<WebClientServiceResponse>();
-        var input = input(connection, complete);
+        // Decoder construction can fail before the service response has been published.
+        var input = new Http1CallChainBase.ChunkedInputStream(connection, reader, complete, new AtomicReference<>(),
+                                                            new Http1ConnectionListener() { }, null);
         assertThat(input.read(), is((int) 'a'));
         IllegalStateException failure = assertThrows(IllegalStateException.class, input::read);
         assertThat(failure.getMessage(), is("HTTP response chunk data is not followed by CRLF"));
@@ -131,42 +138,43 @@ class ChunkedInputStreamTest {
         assertThat(complete.isCompletedExceptionally(), is(true));
     }
 
-    @Test
-    void closingWithPendingMalformedDelimiterPreservesFramingFailure() throws Exception {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void closingWithPendingMalformedDelimiterPreservesFramingFailure(boolean published) throws Exception {
         var segments = new ArrayDeque<byte[]>();
         segments.add(bytes("1\r\nA"));
         segments.add(bytes("\rX0\r\n\r\n"));
         DataReader reader = DataReader.create(segments::poll);
         var connection = new TestConnection(reader);
         var complete = new CompletableFuture<WebClientServiceResponse>();
-        var input = input(connection, complete);
+        var input = published ? input(connection, complete) : unpublishedInput(connection, complete);
 
         assertThat(input.read(), is((int) 'A'));
         IllegalStateException failure = assertThrows(IllegalStateException.class, input::close);
         assertThat(failure.getMessage(), is("HTTP response chunk data is not followed by CRLF"));
-        CompletionException completion = assertThrows(CompletionException.class, complete::join);
-        assertThat(completion.getCause(), sameInstance(failure));
+        assertCompletion(complete, failure, published);
         assertThat(connection.closes, is(1));
         assertThat(assertThrows(IllegalStateException.class, input::read).getMessage(), is(failure.getMessage()));
     }
 
-    @Test
-    void rejectsBufferedMalformedDelimiterBeforeDeliveringPayload() throws Exception {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void rejectsBufferedMalformedDelimiterBeforeDeliveringPayload(boolean published) throws Exception {
         DataReader reader = DataReader.create(() -> bytes("1\r\nA\rX0\r\n\r\n"));
         var connection = new TestConnection(reader);
         var complete = new CompletableFuture<WebClientServiceResponse>();
 
-        try (var input = input(connection, complete)) {
+        try (var input = published ? input(connection, complete) : unpublishedInput(connection, complete)) {
             IllegalStateException failure = assertThrows(IllegalStateException.class, input::read);
             assertThat(failure.getMessage(), is("HTTP response chunk data is not followed by CRLF"));
             assertThat(connection.closes, is(1));
-            assertThat(complete.isCompletedExceptionally(), is(true));
+            assertCompletion(complete, failure, published);
         }
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void rejectsBufferedMalformedDelimiterBeforeLargeChunkPayload(boolean fragmented) throws Exception {
+    @CsvSource({"false, false", "false, true", "true, false", "true, true"})
+    void rejectsBufferedMalformedDelimiterBeforeLargeChunkPayload(boolean fragmented, boolean published) throws Exception {
         String payload = "A".repeat(8193);
         String header = Integer.toHexString(payload.length()) + "\r\n";
         var segments = new ArrayDeque<byte[]>();
@@ -186,11 +194,11 @@ class ChunkedInputStreamTest {
         var connection = new TestConnection(reader);
         var complete = new CompletableFuture<WebClientServiceResponse>();
 
-        try (var input = input(connection, complete)) {
+        try (var input = published ? input(connection, complete) : unpublishedInput(connection, complete)) {
             IllegalStateException failure = assertThrows(IllegalStateException.class, input::read);
             assertThat(failure.getMessage(), is("HTTP response chunk data is not followed by CRLF"));
             assertThat(connection.closes, is(1));
-            assertThat(complete.isCompletedExceptionally(), is(true));
+            assertCompletion(complete, failure, published);
         }
     }
 
@@ -253,14 +261,39 @@ class ChunkedInputStreamTest {
         assertThat(complete.isDone(), is(true));
     }
 
+    private static void assertCompletion(CompletableFuture<WebClientServiceResponse> complete,
+                                         IllegalStateException failure,
+                                         boolean published) {
+        assertThat(complete.isDone(), is(true));
+        if (published) {
+            assertThat(complete.join().status(), is(Status.OK_200));
+        } else {
+            CompletionException completion = assertThrows(CompletionException.class, complete::join);
+            assertThat(completion.getCause(), sameInstance(failure));
+        }
+    }
+
     private static Http1CallChainBase.ChunkedInputStream input(DataReader reader,
                                                              CompletableFuture<WebClientServiceResponse> complete) {
         return input(new TestConnection(reader), complete);
     }
 
+    private static Http1CallChainBase.ChunkedInputStream unpublishedInput(TestConnection connection,
+                                                                        CompletableFuture<WebClientServiceResponse> complete) {
+        return new Http1CallChainBase.ChunkedInputStream(connection, connection.reader(), complete, new AtomicReference<>(),
+                                                       new Http1ConnectionListener() { }, null);
+    }
+
     private static Http1CallChainBase.ChunkedInputStream input(TestConnection connection,
                                                              CompletableFuture<WebClientServiceResponse> complete) {
-        return new Http1CallChainBase.ChunkedInputStream(connection, connection.reader(), complete, new AtomicReference<>(), false,
+        var response = WebClientServiceResponse.builder()
+                .serviceRequest(new Http1ClientResponseImplTest.TestServiceRequest(Method.GET))
+                .connection(connection)
+                .status(Status.OK_200)
+                .headers(ClientResponseHeaders.create(WritableHeaders.create()))
+                .whenComplete(complete)
+                .build();
+        return new Http1CallChainBase.ChunkedInputStream(connection, connection.reader(), complete, new AtomicReference<>(response),
                                                        new Http1ConnectionListener() { }, null);
     }
 

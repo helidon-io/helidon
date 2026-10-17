@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
+import io.helidon.common.Size;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -40,12 +41,14 @@ import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.ReadableEntity;
 import io.helidon.webclient.api.HttpClient;
 import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webclient.http1.Http1ClientProtocolConfig;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientProtocolConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequestEntity;
+import io.helidon.webserver.http1.Http1Config;
 import io.helidon.webserver.http2.Http2Config;
 import io.helidon.webserver.http2.Http2ServerRequestEntity;
 import io.helidon.webserver.testing.junit5.ServerTest;
@@ -63,6 +66,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ServerTest
 class EntityByteArrayLengthTest {
+    private static final int MAX_BUFFERED_ENTITY_SIZE = 2 * 1024 * 1024;
     private static final byte[] PAYLOAD = new byte[16384];
     private static final byte[] PREFIX = {7, 8, 9};
 
@@ -77,17 +81,31 @@ class EntityByteArrayLengthTest {
 
     EntityByteArrayLengthTest(WebServer server) {
         var baseUri = URI.create("http://localhost:" + server.port());
-        http1 = Http1Client.builder().baseUri(baseUri).shareConnectionCache(false).build();
+        http1 = Http1Client.builder()
+                .baseUri(baseUri)
+                .protocolConfig(Http1ClientProtocolConfig.builder()
+                        .maxBufferedEntitySize(Size.create(MAX_BUFFERED_ENTITY_SIZE))
+                        .build())
+                .shareConnectionCache(false)
+                .build();
         http2 = Http2Client.builder()
                 .baseUri(baseUri)
-                .protocolConfig(Http2ClientProtocolConfig.builder().priorKnowledge(true).build())
+                .protocolConfig(Http2ClientProtocolConfig.builder()
+                        .priorKnowledge(true)
+                        .maxBufferedEntitySize(Size.create(MAX_BUFFERED_ENTITY_SIZE))
+                        .build())
                 .shareConnectionCache(false)
                 .build();
     }
 
     @SetUpServer
     static void server(WebServerConfig.Builder server) {
-        server.addProtocol(Http2Config.create());
+        server.addProtocol(Http1Config.builder()
+                        .maxBufferedEntitySize(Size.create(MAX_BUFFERED_ENTITY_SIZE))
+                        .build())
+                .addProtocol(Http2Config.builder()
+                        .maxBufferedEntitySize(Size.create(MAX_BUFFERED_ENTITY_SIZE))
+                        .build());
     }
 
     @SetUpRoute
@@ -246,15 +264,15 @@ class EntityByteArrayLengthTest {
             if (http2) {
                 entity = legacy
                         ? Http2ServerRequestEntity.create(filter, decoder, reading, processed::incrementAndGet,
-                                                          headers, context, maxPayloadSize, 1024)
+                                                          headers, context, maxPayloadSize, MAX_BUFFERED_ENTITY_SIZE)
                         : Http2ServerRequestEntity.create(filter, decoder, reading, processed::incrementAndGet,
-                                                          headers, context, maxPayloadSize, 1024, exactLength);
+                                                          headers, context, maxPayloadSize, MAX_BUFFERED_ENTITY_SIZE, exactLength);
             } else {
                 entity = legacy
                         ? ServerRequestEntity.create(_ -> { }, filter, decoder, reading, processed::incrementAndGet,
-                                                     headers, context, maxPayloadSize, 1024)
+                                                     headers, context, maxPayloadSize, MAX_BUFFERED_ENTITY_SIZE)
                         : ServerRequestEntity.create(_ -> { }, filter, decoder, reading, processed::incrementAndGet,
-                                                     headers, context, maxPayloadSize, 1024, exactLength);
+                                                     headers, context, maxPayloadSize, MAX_BUFFERED_ENTITY_SIZE, exactLength);
             }
         }
     }

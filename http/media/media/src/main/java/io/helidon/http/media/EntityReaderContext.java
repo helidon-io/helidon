@@ -18,6 +18,7 @@ package io.helidon.http.media;
 
 import java.io.InputStream;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.http.Headers;
 
@@ -32,6 +33,7 @@ import io.helidon.http.Headers;
  * Streaming readers bypass that limit; other limits already applied to the supplied stream remain effective.
  * The selected reader retains responsibility for stream ownership as described by {@link EntityReader#streaming()}.
  */
+@Api.Stable
 public interface EntityReaderContext {
     /**
      * Read a nested entity using the selected reader's server-request read overload.

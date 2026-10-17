@@ -637,7 +637,6 @@ class Http1ClientResponseImplTest {
                                                                         reader,
                                                                         new CompletableFuture<>(),
                                                                         new AtomicReference<>(),
-                                                                        false,
                                                                         new Http1ConnectionListener() {
                                                                         }, null);
         ReadBufferTrackingInputStream inputStream = new ReadBufferTrackingInputStream(chunked);
@@ -673,7 +672,6 @@ class Http1ClientResponseImplTest {
                                                                            reader,
                                                                            new CompletableFuture<>(),
                                                                            new AtomicReference<>(),
-                                                                           false,
                                                                            new Http1ConnectionListener() {
                                                                            }, null);
         WritableHeaders<?> headers = WritableHeaders.create();
@@ -859,7 +857,7 @@ class Http1ClientResponseImplTest {
     }
 
     @Test
-    void rejectsFirstChunkDelimiterByteWithoutReadingAgain() {
+    void rejectsFirstChunkDelimiterByteWithoutReadingAgain() throws IOException {
         AtomicInteger reads = new AtomicInteger();
         DataReader reader = DataReader.create(() -> {
             if (reads.getAndIncrement() == 0) {
@@ -871,6 +869,7 @@ class Http1ClientResponseImplTest {
         var whenComplete = new CompletableFuture<WebClientServiceResponse>();
         InputStream stream = responseStream("chunked", connection, whenComplete);
 
+        assertThat(stream.read(), is((int) 'a'));
         IllegalStateException failure = assertThrows(IllegalStateException.class, stream::read);
 
         assertThat(failure.getMessage(), containsString("chunk data is not followed by CRLF"));
@@ -1297,7 +1296,7 @@ class Http1ClientResponseImplTest {
         }
     }
 
-    private static final class TestServiceRequest implements WebClientServiceRequest {
+    static final class TestServiceRequest implements WebClientServiceRequest {
         private final Method method;
         private final ClientRequestHeaders headers = ClientRequestHeaders.create(WritableHeaders.create());
         private final Context context = Context.create();
@@ -1306,7 +1305,7 @@ class Http1ClientResponseImplTest {
         private final CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
         private String requestId = "test";
 
-        private TestServiceRequest(Method method) {
+        TestServiceRequest(Method method) {
             this.method = method;
         }
 

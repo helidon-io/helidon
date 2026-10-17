@@ -691,7 +691,7 @@ class ReadableEntityBaseTest {
         private final long exactLength;
 
         private ExactLengthStreamReadableEntity(InputStream stream, long exactLength) {
-            super(stream);
+            super(stream, Integer.MAX_VALUE);
             this.exactLength = exactLength;
         }
 
@@ -705,7 +705,11 @@ class ReadableEntityBaseTest {
         private final InputStream stream;
 
         private StreamReadableEntity(InputStream stream) {
-            super(_ -> BufferData.empty(), 1024);
+            this(stream, 1024);
+        }
+
+        private StreamReadableEntity(InputStream stream, int maxBufferedEntityLength) {
+            super(_ -> BufferData.empty(), maxBufferedEntityLength);
             this.stream = stream;
         }
 
