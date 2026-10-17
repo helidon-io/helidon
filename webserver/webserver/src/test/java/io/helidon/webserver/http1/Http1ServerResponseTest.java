@@ -143,6 +143,9 @@ class Http1ServerResponseTest {
     void finalNoEntityStatusWithPositiveLengthRejectsClosedEmptyBuffer(int code) throws IOException {
         DataWriter writer = mock(DataWriter.class);
         Http1ServerRequest request = mock(Http1ServerRequest.class);
+        HttpPrologue prologue = mock(HttpPrologue.class);
+        when(prologue.method()).thenReturn(Method.GET);
+        when(request.prologue()).thenReturn(prologue);
         when(request.headers()).thenReturn(ServerRequestHeaders.create(WritableHeaders.create()));
         ContentEncodingContext encodingContext = mock(ContentEncodingContext.class);
         when(encodingContext.contentEncodingEnabled()).thenReturn(false);
