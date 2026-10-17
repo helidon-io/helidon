@@ -54,6 +54,24 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="jsonp"></a>
+<a href="io.helidon.http.media.jsonp.JsonpSupport.md">
+<code>jsonp</code>
+</a>
+</td>
+<td>Configuration of the <code>Jsonp<wbr>Support</code></td>
+</tr>
+<tr>
+<td>
+<a id="multipart"></a>
+<a href="io.helidon.http.media.multipart.MultiPartSupport.md">
+<code>multipart</code>
+</a>
+</td>
+<td>Media support implementation for support of multipart</td>
+</tr>
+<tr>
+<td>
 <a id="smile"></a>
 <a href="io.helidon.http.media.json.smile.SmileSupport.md">
 <code>smile</code>

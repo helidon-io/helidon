@@ -55,6 +55,7 @@ A set of configurable options expected to be used by each media support
 - [io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>json.<wbr>binding.<wbr>Json<wbr>Binding<wbr>Support](io.helidon.http.media.json.binding.JsonBindingSupport.md)
 - [io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>json.<wbr>smile.<wbr>Smile<wbr>Support](io.helidon.http.media.json.smile.SmileSupport.md)
 - [io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>jsonb.<wbr>Jsonb<wbr>Support](io.helidon.http.media.jsonb.JsonbSupport.md)
+- [io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>jsonp.<wbr>Jsonp<wbr>Support](io.helidon.http.media.jsonp.JsonpSupport.md)
 
 ---
 
