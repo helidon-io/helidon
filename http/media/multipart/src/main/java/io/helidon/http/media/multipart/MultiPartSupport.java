@@ -23,6 +23,7 @@ import java.util.Optional;
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
+import io.helidon.config.metadata.Configured;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.WritableHeaders;
@@ -35,6 +36,7 @@ import io.helidon.http.media.MediaSupport;
  * Media support implementation for support of multipart.
  */
 @SuppressWarnings("unchecked")
+@Configured(prefix = "multipart", provides = MediaSupport.class)
 public class MultiPartSupport implements MediaSupport {
     /**
      * The default boundary used for encoding multipart messages.

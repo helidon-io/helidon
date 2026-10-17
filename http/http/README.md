@@ -8,28 +8,30 @@ Abstraction of a single header name (`Connection`), or a header value (`Connecti
 
 ## Types
 
-- `Http.HeaderName` - abstraction of a name of a header (such as `Content-Length`)
-- `Http.HeaderNames` - constants with "known" header names (such as `HeaderNames.CONTENT_LENGTH`)
-- `Http.Header` - abstraction of a header with a value (such as `Content-Length: 0`)
-- `Http.Headers` - constants with commonly used headers with values (such as `Headers.CONTENT_LENGTH_ZERO`)
+- `HeaderName` - abstraction of a name of a header (such as `Content-Length`)
+- `HeaderNames` - constants with "known" header names (such as `HeaderNames.CONTENT_LENGTH`)
+- `Header` - abstraction of a header with a value (such as `Content-Length: 0`)
+- `HeaderValues` - constants with commonly used headers with values (such as `HeaderValues.CONTENT_LENGTH_ZERO`)
+
+These public types are in the `io.helidon.http` package.
 
 Internal types:
-- `Http.HeaderNameEnum` - "known" headers, optimized for performance in header containers
-- `Http.HeaderNameImpl` - custom headers 
+- `HeaderNameEnum` - "known" headers, optimized for performance in header containers
+- `HeaderNameImpl` - custom headers
 
 ## Factory methods
 
 Factory methods to create header names and values are located on their relevant type that contains constants (aligned
-   with how we treat `MediaTypes`:
+with how we treat `MediaTypes`):
 
 Header names:
-1. `Http.HeaderNames.create(String)` - create a header name from the provided name (uses known header if possible)
-2. `Http.HeaderNames.create(String, String)` - create a header name (optimized) with lower case and name
-3. `Http.HeaderNames.createFromLowercase(String)` - create a header name when we have a guaranteed lowercase name (such as in HTTP/2)
+1. `HeaderNames.create(String)` - create a header name from the provided name (uses known header if possible)
+2. `HeaderNames.create(String, String)` - create a header name (optimized) with lower case and name
+3. `HeaderNames.createFromLowercase(String)` - create a header name when we have a guaranteed lowercase name (such as in HTTP/2)
 
 Headers (name and value):
-1. `Http.Headers.create(....)` - create a header with the provided name and value
-2. `Http.Headers.createCached(...)` - create a header that caches its HTTP/1.1 bytes (optimization for heavily used headers)
+1. `HeaderValues.create(...)` - create a header with the provided name and value
+2. `HeaderValues.createCached(...)` - create a header that caches its HTTP/1.1 bytes (optimization for heavily used headers)
 
 Methods with `changing` and `sensitive` - these options are used for HTTP/2 (and HTTP/3) to correctly cache names/values when talking over the network
 
@@ -42,7 +44,7 @@ The containers are optimized for read and write speed by using an array for "kno
 ## Types
 
 - `Headers` - a collection of HTTP headers that is read-only
-- `WritableHeader` - a collection of HTTP headers that is mutable
+- `WritableHeaders` - a collection of HTTP headers that is mutable
 - `ClientRequestHeaders` - writable headers to create client request
 - `ClientResponseHeaders` - read-only headers with response from the server
 - `ServerRequestHeaders` - read-only headers with request from client
