@@ -135,8 +135,9 @@ class SymmetricCipherRawKeyTest {
         assertThat(SymmetricCipher.decrypt(algorithm, null, key, (AlgorithmParameterSpec) null, encrypted).toBytes(),
                    is(MESSAGE.toBytes()));
         assertThat(cipher.decrypt(encrypted).toBytes(), is(MESSAGE.toBytes()));
-        assertThat(cipher.encrypt(MESSAGE).toBytes(), is(encrypted.toBytes()));
-        assertThat(cipher.decrypt(cipher.encrypt(MESSAGE)).toBytes(), is(MESSAGE.toBytes()));
+        Base64Value builtEncrypted = cipher.encrypt(MESSAGE);
+        assertThat(builtEncrypted.toBytes(), is(encrypted.toBytes()));
+        assertThat(cipher.decrypt(builtEncrypted).toBytes(), is(MESSAGE.toBytes()));
         assertThrows(NullPointerException.class,
                      () -> SymmetricCipher.encrypt(algorithm, null, key, (AlgorithmParameterSpec) null, MESSAGE));
     }
@@ -184,7 +185,9 @@ class SymmetricCipherRawKeyTest {
                 .key(key()).iv(iv(SymmetricCipher.ALGORITHM_AES_CBC)).build();
         Base64Value block = Base64Value.create(new byte[16]);
         assertThat(noPadding.decrypt(noPadding.encrypt(block)).toBytes(), is(block.toBytes()));
-        assertThrows(CryptoException.class, () -> noPadding.encrypt(Base64Value.create(new byte[15])));
+        SymmetricCipher invalidLength = SymmetricCipher.builder().algorithm("AES/CBC/NoPadding")
+                .key(key()).iv(iv(SymmetricCipher.ALGORITHM_AES_CBC)).build();
+        assertThrows(CryptoException.class, () -> invalidLength.encrypt(Base64Value.create(new byte[15])));
         assertThrows(CryptoException.class, () -> noPadding.decrypt(Base64Value.create(new byte[15])));
 
         SymmetricCipher authenticated = SymmetricCipher.builder()
@@ -272,11 +275,12 @@ class SymmetricCipherRawKeyTest {
         jca.updateAAD(aad);
         Base64Value encrypted = Base64Value.create(jca.doFinal(MESSAGE.toBytes()));
 
-        assertThat(cipher.encrypt(MESSAGE).toBytes(), is(encrypted.toBytes()));
+        Base64Value builtEncrypted = cipher.encrypt(MESSAGE);
+        assertThat(builtEncrypted.toBytes(), is(encrypted.toBytes()));
         assertThat(cipher.decrypt(encrypted).toBytes(), is(MESSAGE.toBytes()));
         jca.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"), parameters);
         jca.updateAAD(aad);
-        assertThat(jca.doFinal(cipher.encrypt(MESSAGE).toBytes()), is(MESSAGE.toBytes()));
+        assertThat(jca.doFinal(builtEncrypted.toBytes()), is(MESSAGE.toBytes()));
         SymmetricCipher mismatched = SymmetricCipher.builder()
                 .key(key).parameters(parameters).additionalAuthenticatedData(new byte[] {1}).build();
         assertThrows(CryptoException.class, () -> mismatched.decrypt(encrypted));

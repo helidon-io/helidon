@@ -27,6 +27,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,7 +44,7 @@ import io.helidon.common.Base64Value;
 import io.helidon.common.LazyValue;
 
 /**
- * This class provides simple and stateless way to encrypt and decrypt messages using selected symmetric cipher.
+ * This class provides encryption and decryption using a selected symmetric cipher.
  * <p>
  * A password-based cipher derives a key using a fresh random salt for each encryption and includes the salt and
  * initialization vector in the encrypted message.
@@ -63,9 +64,11 @@ import io.helidon.common.LazyValue;
  *         .build();
  * Base64Value encrypted = cipher.encrypt(message);
  * }</pre>
+ * A raw-key instance permits only one encryption attempt, including a failed attempt, and can decrypt repeatedly.
+ * This limit also applies to algorithms that do not require initialization parameters.
  * For algorithms requiring a fresh initialization vector or nonce for each encryption with the same key, configure
- * a new cipher with a fresh value for each message. A raw-key instance retains its configured parameters and does not
- * generate a fresh initialization vector for subsequent encryptions.
+ * a new cipher with a fresh value for each message. Each raw-key instance retains its configured parameters;
+ * creating another instance does not make reusing the same key and initialization vector safe.
  */
 @Api.Stable
 public class SymmetricCipher implements CommonCipher {
@@ -124,6 +127,7 @@ public class SymmetricCipher implements CommonCipher {
     private final int numberOfIterations;
     private final byte[] additionalAuthenticatedData;
     private final AlgorithmParameterSpec parameters;
+    private final AtomicBoolean rawKeyEncryptionUsed;
 
     private SymmetricCipher(Builder builder) {
         this.algorithm = builder.algorithm;
@@ -133,6 +137,7 @@ public class SymmetricCipher implements CommonCipher {
         this.keySize = builder.keySize;
         this.numberOfIterations = builder.numberOfIterations;
         this.additionalAuthenticatedData = builder.additionalAuthenticatedData;
+        this.rawKeyEncryptionUsed = key == null ? null : new AtomicBoolean();
         try {
             this.parameters = builder.iv == null ? builder.parameters : createAlgorithmParameter(algorithm, builder.iv);
             validateConfiguration();
@@ -271,10 +276,22 @@ public class SymmetricCipher implements CommonCipher {
         return decryptMessage(algorithm, provider, key, params, null, encrypted);
     }
 
+    /**
+     * Encrypt a message. Password-based instances generate fresh per-message key material and can be reused.
+     * A raw-key instance permits only one encryption attempt, even if that attempt fails.
+     *
+     * @param message plain content
+     * @return encrypted content
+     * @throws NullPointerException if message is {@code null}
+     * @throws CryptoException if a raw-key instance has already attempted encryption, or encryption fails
+     */
     @Override
     public Base64Value encrypt(Base64Value message) {
         Objects.requireNonNull(message, "Plain content cannot be null");
         if (key != null) {
+            if (!rawKeyEncryptionUsed.compareAndSet(false, true)) {
+                throw new CryptoException("Raw-key cipher can only be used for one encryption attempt");
+            }
             return encryptMessage(algorithm, provider, key, parameters, additionalAuthenticatedData, message);
         }
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -550,6 +567,7 @@ public class SymmetricCipher implements CommonCipher {
         /**
          * Set the raw key used directly for encryption and decryption, without key derivation or a salt/IV envelope.
          * A raw key cannot be combined with a password.
+         * The built instance permits only one encryption attempt and can decrypt repeatedly.
          * <p>
          * To remove the key, call {@link #clearKey()} instead of passing {@code null}.
          *
