@@ -323,41 +323,6 @@ public class SymmetricCipher implements CommonCipher {
         }
     }
 
-    private void validateConfiguration() {
-        byte[] validationKey = key == null
-                ? PasswordKeyDerivation.deriveKey(password, new byte[SALT_LENGTH], numberOfIterations, keySize)
-                : key;
-        try {
-            Cipher encrypt;
-            Cipher decrypt;
-            if (key == null) {
-                encrypt = cipher(algorithm, provider, validationKey, null, Cipher.ENCRYPT_MODE);
-                byte[] iv = encrypt.getIV();
-                if (iv == null) {
-                    throw new CryptoException("Password-based encryption requires an algorithm with an initialization vector");
-                }
-                decrypt = cipher(algorithm, provider, validationKey, createAlgorithmParameter(algorithm, iv),
-                                 Cipher.DECRYPT_MODE);
-            } else {
-                // Check decryption first: encryption may silently generate missing parameters.
-                decrypt = cipher(algorithm, provider, validationKey, parameters, Cipher.DECRYPT_MODE);
-                encrypt = cipher(algorithm, provider, validationKey, parameters, Cipher.ENCRYPT_MODE);
-                if (parameters == null && (encrypt.getIV() != null || encrypt.getParameters() != null)) {
-                    throw new CryptoException("Raw-key encryption requires explicit initialization parameters"
-                                                      + " for this algorithm");
-                }
-            }
-            if (additionalAuthenticatedData != null) {
-                encrypt.updateAAD(additionalAuthenticatedData);
-                decrypt.updateAAD(additionalAuthenticatedData);
-            }
-        } finally {
-            if (key == null) {
-                Arrays.fill(validationKey, (byte) 0);
-            }
-        }
-    }
-
     private static Base64Value encryptWithIv(String algorithm, String provider, byte[] key, byte[] iv, Base64Value plain) {
         Objects.requireNonNull(algorithm, "Algorithm cannot be null");
         Objects.requireNonNull(iv, "Initialization vector cannot be null");
@@ -444,6 +409,41 @@ public class SymmetricCipher implements CommonCipher {
             return new ChaCha20ParameterSpec(iv, 1);
         default:
             return new IvParameterSpec(iv);
+        }
+    }
+
+    private void validateConfiguration() {
+        byte[] validationKey = key == null
+                ? PasswordKeyDerivation.deriveKey(password, new byte[SALT_LENGTH], numberOfIterations, keySize)
+                : key;
+        try {
+            Cipher encrypt;
+            Cipher decrypt;
+            if (key == null) {
+                encrypt = cipher(algorithm, provider, validationKey, null, Cipher.ENCRYPT_MODE);
+                byte[] iv = encrypt.getIV();
+                if (iv == null) {
+                    throw new CryptoException("Password-based encryption requires an algorithm with an initialization vector");
+                }
+                decrypt = cipher(algorithm, provider, validationKey, createAlgorithmParameter(algorithm, iv),
+                                 Cipher.DECRYPT_MODE);
+            } else {
+                // Check decryption first: encryption may silently generate missing parameters.
+                decrypt = cipher(algorithm, provider, validationKey, parameters, Cipher.DECRYPT_MODE);
+                encrypt = cipher(algorithm, provider, validationKey, parameters, Cipher.ENCRYPT_MODE);
+                if (parameters == null && (encrypt.getIV() != null || encrypt.getParameters() != null)) {
+                    throw new CryptoException("Raw-key encryption requires explicit initialization parameters"
+                                                      + " for this algorithm");
+                }
+            }
+            if (additionalAuthenticatedData != null) {
+                encrypt.updateAAD(additionalAuthenticatedData);
+                decrypt.updateAAD(additionalAuthenticatedData);
+            }
+        } finally {
+            if (key == null) {
+                Arrays.fill(validationKey, (byte) 0);
+            }
         }
     }
 
