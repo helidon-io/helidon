@@ -186,8 +186,14 @@ try (Http1ClientResponse r = client.get("/sseString")
 The Client API is also integrated with media type support. The data received as
 part of an event can be deserialized using any of the media converters available
 in your class path. There are special methods in `SseEvent` for this purpose.
-Without a parameter, the method `data()` in `SseEvent` will always return a
-string. Other types can be requested using `data(Class<T>)` and `data(Class<T>,
+For events containing a `data:` field, the method `data()` in `SseEvent` returns
+a string, including an empty string for an empty `data:` field. The client also
+delivers metadata-only blocks, such as `retry:2000` followed by a blank line, to
+`SseSource.onEvent`. These events retain their metadata and return
+`SseEvent.NO_DATA` from `data()`. Check for this value before requesting a typed
+conversion, which throws `IllegalStateException` when data is absent.
+
+Other types can be requested using `data(Class<T>)` and `data(Class<T>,
 MediaType)`. The latter is necessary to select the correct media converter given
 that there is no (standard) content type available as part of each event --but
 only a single `text/event-stream` content type for the whole response.

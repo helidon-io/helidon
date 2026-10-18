@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,10 @@ import io.helidon.webclient.spi.Source;
 
 /**
  * A source for {@link SseEvent}s.
+ * <p>
+ * Events can contain only metadata, such as a reconnection delay or a comment. These events are delivered to
+ * {@link #onEvent(SseEvent)} with {@link SseEvent#NO_DATA} as their data. An explicit empty {@code data:} field
+ * instead produces an event whose data is the empty string.
  */
 @FunctionalInterface
 public interface SseSource extends Source<SseEvent> {
