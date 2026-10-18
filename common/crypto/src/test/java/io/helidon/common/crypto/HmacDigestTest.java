@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,20 +19,28 @@ package io.helidon.common.crypto;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HexFormat;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
 import io.helidon.common.Base64Value;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class HmacDigestTest {
 
@@ -80,6 +88,96 @@ public class HmacDigestTest {
         Base64Value digest = correct.digest(DATA_TO_SIGN);
 
         assertThat(incorrect.verify(DATA_TO_SIGN, digest), is(false));
+    }
+
+    @Test
+    void testBuilderDefaultsAndRequiredSecret() {
+        HmacDigest.Builder builder = HmacDigest.builder();
+
+        assertThat(builder.algorithm(), is(HmacDigest.ALGORITHM_SHA_256));
+        assertThat(builder.provider(), is(Optional.empty()));
+        assertThat(builder.hmacSecret(), is(Optional.empty()));
+        assertThrows(CryptoException.class, builder::build);
+    }
+
+    @Test
+    void testKnownDigestAndFactoryParity() {
+        byte[] secret = new byte[20];
+        Arrays.fill(secret, (byte) 0x0b);
+        Base64Value message = Base64Value.create("Hi There");
+        byte[] expected = HexFormat.of().parseHex("b0344c61d8db38535ca8afceaf0bf12b881dc200c9833da726e9376c2e32cff7");
+
+        assertThat(HmacDigest.create(secret).digest(message).toBytes(), is(expected));
+        assertThat(HmacDigest.builder().hmacSecret(secret).build().digest(message).toBytes(), is(expected));
+    }
+
+    @Test
+    void testExplicitProviderAndClearProvider() throws GeneralSecurityException {
+        byte[] secret = "someCorrectSecret".getBytes(StandardCharsets.UTF_8);
+        Mac mac = Mac.getInstance(HmacDigest.ALGORITHM_SHA_256);
+        mac.init(new SecretKeySpec(secret, HmacDigest.ALGORITHM_SHA_256));
+        byte[] expected = mac.doFinal(DATA_TO_SIGN.toBytes());
+        HmacDigest.Builder builder = HmacDigest.builder()
+                .hmacSecret(secret)
+                .provider(mac.getProvider().getName());
+
+        assertThat(builder.build().digest(DATA_TO_SIGN).toBytes(), is(expected));
+        builder.provider("HelidonMissingHmacTestProvider").algorithm(HmacDigest.ALGORITHM_SHA_256);
+        assertThat(builder.provider(), is(Optional.of("HelidonMissingHmacTestProvider")));
+        assertThrows(CryptoException.class, builder::build);
+        builder.clearProvider();
+        assertThat(builder.provider(), is(Optional.empty()));
+        assertThat(builder.build().digest(DATA_TO_SIGN).toBytes(), is(expected));
+    }
+
+    @Test
+    void testNullSettersPreserveConfiguration() {
+        byte[] secret = "someCorrectSecret".getBytes(StandardCharsets.UTF_8);
+        HmacDigest.Builder builder = HmacDigest.builder()
+                .algorithm(HmacDigest.ALGORITHM_SHA_512)
+                .provider("HelidonMissingHmacTestProvider")
+                .hmacSecret(secret);
+
+        assertThrows(NullPointerException.class, () -> builder.algorithm(null));
+        assertThrows(NullPointerException.class, () -> builder.provider(null));
+        assertThrows(NullPointerException.class, () -> builder.hmacSecret(null));
+        assertThat(builder.algorithm(), is(HmacDigest.ALGORITHM_SHA_512));
+        assertThat(builder.provider(), is(Optional.of("HelidonMissingHmacTestProvider")));
+        assertThat(builder.hmacSecret().orElseThrow(), is(secret));
+        assertThat(builder.clearProvider().build().digest(DATA_TO_SIGN).toBytes(),
+                   is(HmacDigest.builder().algorithm(HmacDigest.ALGORITHM_SHA_512)
+                              .hmacSecret(secret).build().digest(DATA_TO_SIGN).toBytes()));
+    }
+
+    @Test
+    void testSecretCopiesAndBuilderReuse() throws GeneralSecurityException {
+        byte[] originalSecret = "someCorrectSecret".getBytes(StandardCharsets.UTF_8);
+        byte[] secret = originalSecret.clone();
+        HmacDigest.Builder builder = HmacDigest.builder().hmacSecret(secret);
+        HmacDigest digest = builder.build();
+        Mac mac = Mac.getInstance(HmacDigest.ALGORITHM_SHA_256);
+        mac.init(new SecretKeySpec(originalSecret, HmacDigest.ALGORITHM_SHA_256));
+        byte[] expected = mac.doFinal(DATA_TO_SIGN.toBytes());
+
+        Arrays.fill(secret, (byte) 0);
+        Arrays.fill(builder.hmacSecret().orElseThrow(), (byte) 0);
+        assertThat(builder.hmacSecret().orElseThrow(), is(originalSecret));
+        assertThat(builder.build().digest(DATA_TO_SIGN).toBytes(), is(expected));
+        builder.hmacSecret("anotherSecret".getBytes(StandardCharsets.UTF_8));
+        assertThat(digest.digest(DATA_TO_SIGN).toBytes(), is(expected));
+        assertThat(builder.build().digest(DATA_TO_SIGN).toBytes(), not(expected));
+    }
+
+    @Test
+    void testInvalidConfigurationFailsAtBuild() {
+        byte[] secret = "someCorrectSecret".getBytes(StandardCharsets.UTF_8);
+
+        assertThrows(CryptoException.class, () -> HmacDigest.builder()
+                .hmacSecret(secret).algorithm("HelidonMissingHmacTestAlgorithm").build());
+        assertThrows(CryptoException.class, () -> HmacDigest.builder()
+                .hmacSecret(secret).provider("HelidonMissingHmacTestProvider").build());
+        assertThrows(CryptoException.class, () -> HmacDigest.builder().hmacSecret(secret).provider("").build());
+        assertThrows(CryptoException.class, () -> HmacDigest.builder().hmacSecret(new byte[0]).build());
     }
 
     private static class ParameterWrapper {
