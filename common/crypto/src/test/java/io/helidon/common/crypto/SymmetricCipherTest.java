@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -178,6 +179,109 @@ public class SymmetricCipherTest {
                 .build();
         CryptoException ex = assertThrows(CryptoException.class, () -> previousDefault.decrypt(encrypted));
         assertThat(ex.getMessage(), is("Failed to decrypt the message"));
+    }
+
+    @Test
+    public void testBuilderDefaultsAndRequiredPassword() {
+        SymmetricCipher.Builder builder = SymmetricCipher.builder();
+
+        assertThat(builder.algorithm(), is(SymmetricCipher.ALGORITHM_AES_GCM));
+        assertThat(builder.provider(), is(Optional.empty()));
+        assertThat(builder.keySize(), is(256));
+        assertThat(builder.numberOfIterations(), is(DEFAULT_NUMBER_OF_ITERATIONS));
+        assertThat(builder.password(), is(Optional.empty()));
+        assertThat(builder.additionalAuthenticatedData(), is(Optional.empty()));
+        assertThrows(CryptoException.class, builder::build);
+    }
+
+    @Test
+    public void testBuilderClearProviderRestoresDefaultLookup() {
+        String missingProvider = "HelidonMissingSymmetricCipherTestProvider";
+        SymmetricCipher.Builder builder = SymmetricCipher.builder()
+                .password(DEFAULT_PASSWORD)
+                .numberOfIterations(TEST_NUMBER_OF_ITERATIONS)
+                .provider(missingProvider)
+                .algorithm(SymmetricCipher.ALGORITHM_AES_GCM);
+        SymmetricCipher explicitProvider = builder.build();
+
+        assertThat(builder.provider().orElseThrow(), is(missingProvider));
+        assertThrows(CryptoException.class, () -> explicitProvider.encrypt(Base64Value.create(TEST_VALUE)));
+
+        builder.clearProvider();
+        assertThat(builder.provider(), is(Optional.empty()));
+        SymmetricCipher defaultProvider = builder.build();
+        Base64Value encrypted = defaultProvider.encrypt(Base64Value.create(TEST_VALUE));
+        assertThat(defaultProvider.decrypt(encrypted).toDecodedString(), is(TEST_VALUE));
+        assertThrows(CryptoException.class, () -> explicitProvider.decrypt(encrypted));
+    }
+
+    @Test
+    public void testBuilderArraysAreCopiedAndAuthenticatedDataCanBeCleared() {
+        char[] password = DEFAULT_PASSWORD.clone();
+        byte[] aad = "envelope header".getBytes(StandardCharsets.UTF_8);
+        byte[] expectedAad = aad.clone();
+        SymmetricCipher.Builder builder = SymmetricCipher.builder()
+                .password(password)
+                .numberOfIterations(TEST_NUMBER_OF_ITERATIONS)
+                .additionalAuthenticatedData(aad);
+        SymmetricCipher original = builder.build();
+
+        password[0] = 'X';
+        aad[0] = 'X';
+        builder.password().orElseThrow()[0] = 'Y';
+        builder.additionalAuthenticatedData().orElseThrow()[0] = 'Y';
+        assertThat(builder.password().orElseThrow(), is(DEFAULT_PASSWORD));
+        assertThat(builder.additionalAuthenticatedData().orElseThrow(), is(expectedAad));
+
+        SymmetricCipher expected = SymmetricCipher.builder()
+                .password(DEFAULT_PASSWORD)
+                .numberOfIterations(TEST_NUMBER_OF_ITERATIONS)
+                .additionalAuthenticatedData(expectedAad)
+                .build();
+        Base64Value encrypted = original.encrypt(Base64Value.create(TEST_VALUE));
+        assertThat(expected.decrypt(encrypted).toDecodedString(), is(TEST_VALUE));
+        assertThat(builder.build().decrypt(encrypted).toDecodedString(), is(TEST_VALUE));
+
+        builder.clearAdditionalAuthenticatedData();
+        assertThat(builder.additionalAuthenticatedData(), is(Optional.empty()));
+        SymmetricCipher cleared = builder.build();
+        SymmetricCipher withoutAad = SymmetricCipher.builder()
+                .password(DEFAULT_PASSWORD)
+                .numberOfIterations(TEST_NUMBER_OF_ITERATIONS)
+                .build();
+        Base64Value withoutAadEncrypted = cleared.encrypt(Base64Value.create(TEST_VALUE));
+        assertThat(withoutAad.decrypt(withoutAadEncrypted).toDecodedString(), is(TEST_VALUE));
+        assertThrows(CryptoException.class, () -> cleared.decrypt(encrypted));
+        assertThat(original.decrypt(encrypted).toDecodedString(), is(TEST_VALUE));
+
+        builder.password(INCORRECT_PASSWORD)
+                .additionalAuthenticatedData("different header".getBytes(StandardCharsets.UTF_8));
+        assertThat(original.decrypt(encrypted).toDecodedString(), is(TEST_VALUE));
+    }
+
+    @Test
+    public void testBuilderNullSettersPreserveConfiguration() {
+        byte[] aad = "envelope header".getBytes(StandardCharsets.UTF_8);
+        SymmetricCipher.Builder builder = SymmetricCipher.builder()
+                .algorithm(SymmetricCipher.ALGORITHM_AES_GCM)
+                .provider("HelidonMissingSymmetricCipherTestProvider")
+                .password(DEFAULT_PASSWORD)
+                .numberOfIterations(TEST_NUMBER_OF_ITERATIONS)
+                .additionalAuthenticatedData(aad);
+
+        assertThrows(NullPointerException.class, () -> builder.algorithm(null));
+        assertThrows(NullPointerException.class, () -> builder.provider(null));
+        assertThrows(NullPointerException.class, () -> builder.password(null));
+        assertThrows(NullPointerException.class, () -> builder.additionalAuthenticatedData(null));
+
+        assertThat(builder.algorithm(), is(SymmetricCipher.ALGORITHM_AES_GCM));
+        assertThat(builder.provider().orElseThrow(), is("HelidonMissingSymmetricCipherTestProvider"));
+        assertThat(builder.password().orElseThrow(), is(DEFAULT_PASSWORD));
+        assertThat(builder.additionalAuthenticatedData().orElseThrow(), is(aad));
+        builder.clearProvider();
+        SymmetricCipher cipher = builder.build();
+        Base64Value encrypted = cipher.encrypt(Base64Value.create(TEST_VALUE));
+        assertThat(cipher.decrypt(encrypted).toDecodedString(), is(TEST_VALUE));
     }
 
     private static class ParameterWrapper {

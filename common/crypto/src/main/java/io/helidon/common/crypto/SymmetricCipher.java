@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -328,13 +329,14 @@ public class SymmetricCipher implements CommonCipher {
 
     /**
      * Builder of the {@link SymmetricCipher}.
+     * Optional values can be removed using the corresponding {@code clear} methods; setters do not accept {@code null}.
      */
     public static class Builder implements io.helidon.common.Builder<Builder, SymmetricCipher> {
 
         private String algorithm = ALGORITHM_AES_GCM;
-        private String provider = null;
-        private Integer numberOfIterations = DEFAULT_NUMBER_OF_ITERATIONS;
-        private Integer keySize = 256;
+        private String provider;
+        private int numberOfIterations = DEFAULT_NUMBER_OF_ITERATIONS;
+        private int keySize = 256;
         private char[] password;
         private byte[] additionalAuthenticatedData;
 
@@ -348,19 +350,36 @@ public class SymmetricCipher implements CommonCipher {
          *
          * @param algorithm algorithm to be used
          * @return updated builder instance
+         * @throws NullPointerException if algorithm is {@code null}
          */
         public Builder algorithm(String algorithm) {
-            this.algorithm = Objects.requireNonNull(algorithm, "Algorithm cannot be null");
+            Objects.requireNonNull(algorithm);
+            this.algorithm = algorithm;
+            return this;
+        }
+
+        /**
+         * Clear the explicit provider selection and use normal JCA provider selection.
+         *
+         * @return updated builder instance
+         * @since 28.0.0
+         */
+        public Builder clearProvider() {
+            this.provider = null;
             return this;
         }
 
         /**
          * Set provider of the algorithm.
+         * <p>
+         * To use normal JCA provider selection, call {@link #clearProvider()} instead of passing {@code null}.
          *
          * @param provider provider to be used
          * @return updated builder instance
+         * @throws NullPointerException if provider is {@code null}
          */
         public Builder provider(String provider) {
+            Objects.requireNonNull(provider);
             this.provider = provider;
             return this;
         }
@@ -370,9 +389,10 @@ public class SymmetricCipher implements CommonCipher {
          *
          * @param password base password
          * @return updated builder instance
+         * @throws NullPointerException if password is {@code null}
          */
         public Builder password(char[] password) {
-            Objects.requireNonNull(password, "Password cannot be null");
+            Objects.requireNonNull(password);
             this.password = password.clone();
             return this;
         }
@@ -404,18 +424,93 @@ public class SymmetricCipher implements CommonCipher {
         }
 
         /**
+         * Clear the additional authenticated data.
+         *
+         * @return updated builder instance
+         * @since 28.0.0
+         */
+        public Builder clearAdditionalAuthenticatedData() {
+            this.additionalAuthenticatedData = null;
+            return this;
+        }
+
+        /**
          * Set additional authenticated data for authenticated encryption algorithms.
          * <p>
          * The configured data is authenticated, but not encrypted. The same value must be configured for decryption.
          * This is supported by authenticated encryption algorithms, such as {@link #ALGORITHM_AES_GCM}.
+         * <p>
+         * To remove the additional authenticated data, call {@link #clearAdditionalAuthenticatedData()}
+         * instead of passing {@code null}.
          *
          * @param additionalAuthenticatedData additional authenticated data
          * @return updated builder instance
+         * @throws NullPointerException if additional authenticated data is {@code null}
          */
         public Builder additionalAuthenticatedData(byte[] additionalAuthenticatedData) {
-            Objects.requireNonNull(additionalAuthenticatedData, "Additional authenticated data cannot be null");
+            Objects.requireNonNull(additionalAuthenticatedData);
             this.additionalAuthenticatedData = additionalAuthenticatedData.clone();
             return this;
+        }
+
+        /**
+         * Algorithm used for encryption and decryption.
+         *
+         * @return algorithm name
+         * @since 28.0.0
+         */
+        public String algorithm() {
+            return algorithm;
+        }
+
+        /**
+         * Explicit provider selection, if configured.
+         *
+         * @return provider name, or empty for normal JCA provider selection
+         * @since 28.0.0
+         */
+        public Optional<String> provider() {
+            return Optional.ofNullable(provider);
+        }
+
+        /**
+         * Password used for key derivation, if configured.
+         *
+         * @return a copy of the password, or empty if not configured
+         * @since 28.0.0
+         */
+        public Optional<char[]> password() {
+            return Optional.ofNullable(password).map(value -> value.clone());
+        }
+
+        /**
+         * Size of the derived key in bits.
+         *
+         * @return key size
+         * @since 28.0.0
+         */
+        public int keySize() {
+            return keySize;
+        }
+
+        /**
+         * Number of iterations used for key derivation.
+         *
+         * @return number of iterations
+         * @since 28.0.0
+         */
+        public int numberOfIterations() {
+            return numberOfIterations;
+        }
+
+        /**
+         * Additional authenticated data, if configured.
+         *
+         * @return a copy of the additional authenticated data, or empty if not configured
+         * @since 28.0.0
+         */
+        public Optional<byte[]> additionalAuthenticatedData() {
+            return Optional.ofNullable(additionalAuthenticatedData).map(value -> value.clone());
         }
 
         @Override
