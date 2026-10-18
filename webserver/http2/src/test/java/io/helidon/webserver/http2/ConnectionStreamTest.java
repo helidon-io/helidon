@@ -617,7 +617,7 @@ class ConnectionStreamTest {
                                                         Http2Settings.builder().build(),
                                                         writer,
                                                         flowControl,
-                                                        new Http2ServerStream.InboundDataBudget(
+                                                        new InboundDataBudget(
                                                                 1024,
                                                                 2L * config.initialWindowSize()),
                                                         new Http2ConnectionChecks(config, mock(Http2Connection.class)));
@@ -669,7 +669,8 @@ class ConnectionStreamTest {
             dataReceived.countDown();
         }
 
-        private void close() {
+        @Override
+        public void close() {
             state = Http2StreamState.CLOSED;
             closeListener.run();
         }

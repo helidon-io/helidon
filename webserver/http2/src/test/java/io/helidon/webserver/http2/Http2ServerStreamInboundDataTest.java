@@ -30,14 +30,42 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 
 class Http2ServerStreamInboundDataTest {
 
     @Test
+    void controlEventsDoNotConsumeDataBudgetOrRestoreCredit() throws InterruptedException {
+        var budget = new InboundDataBudget(1, 8);
+        var queue = new Http2ServerStream.InboundDataQueue(budget);
+        assertThat(queue.offer(header(8), BufferData.create(new byte[8])),
+                   is(Http2ServerStream.InboundDataQueue.OfferResult.ACCEPTED));
+        for (int i = 0; i < 10_000; i++) {
+            queue.requestEvent();
+        }
+
+        assertThat(queue.takeEvent(), not(instanceOf(Http2ServerStream.DataFrame.class)));
+        assertThat(budget.availableFrames(), is(0));
+        assertThat(budget.availableBytes(), is(0L));
+        var frame = (Http2ServerStream.DataFrame) queue.takeEvent();
+        assertThat(frame.flowControlLength(), is(8));
+        queue.requestEvent();
+        assertThat(queue.abortAndDrain(), is(8L));
+        queue.requestEvent();
+        assertThat(queue.takeEvent(), nullValue());
+        var credited = new AtomicBoolean();
+        queue.complete(frame, () -> credited.set(true));
+        assertThat("abort suppresses stale DATA credit", credited.get(), is(false));
+        assertThat(budget.availableFrames(), is(1));
+        assertThat(budget.availableBytes(), is(8L));
+    }
+
+    @Test
     void frameBudgetIsConnectionWideNonBlockingAndPreservesFrames() throws InterruptedException {
-        var budget = new Http2ServerStream.InboundDataBudget(2, 100);
+        var budget = new InboundDataBudget(2, 100);
         var queue = new Http2ServerStream.InboundDataQueue(budget);
         var peerQueue = new Http2ServerStream.InboundDataQueue(budget);
         Http2FrameHeader firstHeader = header(8);
@@ -75,7 +103,7 @@ class Http2ServerStreamInboundDataTest {
 
     @Test
     void byteBudgetIsWeightedAndReleasedForPeers() {
-        var budget = new Http2ServerStream.InboundDataBudget(10, 8);
+        var budget = new InboundDataBudget(10, 8);
         var queue = new Http2ServerStream.InboundDataQueue(budget);
         var peerQueue = new Http2ServerStream.InboundDataQueue(budget);
         Http2FrameHeader fullBudget = header(8);
@@ -96,7 +124,7 @@ class Http2ServerStreamInboundDataTest {
 
     @Test
     void abortOwnsQueuedAndInFlightCredit() throws InterruptedException {
-        var budget = new Http2ServerStream.InboundDataBudget(2, 20);
+        var budget = new InboundDataBudget(2, 20);
         var queue = new Http2ServerStream.InboundDataQueue(budget);
         Http2FrameHeader first = header(8);
         Http2FrameHeader second = header(12);
@@ -121,7 +149,7 @@ class Http2ServerStreamInboundDataTest {
 
     @Test
     void completionCallbackDoesNotHoldQueueLock() throws InterruptedException {
-        var budget = new Http2ServerStream.InboundDataBudget(1, 8);
+        var budget = new InboundDataBudget(1, 8);
         var queue = new Http2ServerStream.InboundDataQueue(budget);
         assertThat(queue.offer(header(8), BufferData.create(new byte[8])),
                    is(Http2ServerStream.InboundDataQueue.OfferResult.ACCEPTED));
@@ -168,7 +196,7 @@ class Http2ServerStreamInboundDataTest {
 
     @Test
     void terminalIsDeliveredOnceAndAbortWakesWaiter() throws InterruptedException {
-        var queue = new Http2ServerStream.InboundDataQueue(new Http2ServerStream.InboundDataBudget(1, 1));
+        var queue = new Http2ServerStream.InboundDataQueue(new InboundDataBudget(1, 1));
         queue.finish();
 
         Http2ServerStream.DataFrame terminal = queue.take();
@@ -201,7 +229,7 @@ class Http2ServerStreamInboundDataTest {
 
     @Test
     void connectionWideAbortDrainsStreamsAndWakesWorkers() throws InterruptedException {
-        var budget = new Http2ServerStream.InboundDataBudget(2, 20);
+        var budget = new InboundDataBudget(2, 20);
         var firstQueue = new Http2ServerStream.InboundDataQueue(budget);
         var secondQueue = new Http2ServerStream.InboundDataQueue(budget);
         assertThat(firstQueue.offer(header(8), BufferData.create(new byte[8])),
