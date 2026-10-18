@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,14 @@ import io.helidon.config.spi.ConfigNode.ValueNode;
 
 /**
  * Implements {@link ValueNode}.
+ *
+ * @deprecated use {@link ValueNode#create(String)}; this implementation will become package-private
  */
+@Deprecated(since = "28.0.0", forRemoval = true)
 public class ValueNodeImpl implements ValueNode, MergeableNode {
 
     private final String value;
-    private String description;
+    private volatile String description;
 
     /**
      * Initialize node.
@@ -35,8 +38,12 @@ public class ValueNodeImpl implements ValueNode, MergeableNode {
      * @param value node value
      */
     protected ValueNodeImpl(String value) {
-        this.value = value;
-        this.description = null;
+        this(value, "N/A");
+    }
+
+    ValueNodeImpl(String value, String description) {
+        this.value = Objects.requireNonNull(value);
+        this.description = Objects.requireNonNullElse(description, "N/A");
     }
 
     @Override
@@ -63,13 +70,10 @@ public class ValueNodeImpl implements ValueNode, MergeableNode {
      * Wraps value node into mergeable value node.
      *
      * @param valueNode original node
-     * @return new instance of mergeable node or original node if already was mergeable.
+     * @return new mergeable node retaining the original source description
      */
     static ValueNodeImpl wrap(ValueNode valueNode) {
-        if (valueNode instanceof ValueNodeImpl) {
-            return (ValueNodeImpl) valueNode;
-        }
-        return ValueNodeImpl.create(valueNode.get());
+        return new ValueNodeImpl(valueNode.get(), valueNode.description());
     }
 
     @Override
@@ -104,6 +108,7 @@ public class ValueNodeImpl implements ValueNode, MergeableNode {
                 .deepMerge(AbstractNodeBuilderImpl.MergingKey.of(name), AbstractNodeBuilderImpl.wrap(member)));
 
         node.value().or(this::value).ifPresent(builder::value);
+        builder.description(AbstractNodeBuilderImpl.mergedDescription(this, node));
 
         return builder.build();
     }
@@ -133,18 +138,18 @@ public class ValueNodeImpl implements ValueNode, MergeableNode {
     /**
      * Initialize diagnostics description of source of node instance.
      *
-     * @param description diagnostics description
+     * @param description diagnostics description; for legacy compatibility, {@code null} resets it to {@code "N/A"}
      * @return this instance
+     * @deprecated source descriptions are assigned by Helidon when loading nodes
      */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     public ValueNodeImpl initDescription(String description) {
-        this.description = description;
+        // Retain the legacy nullable input during deprecation, without returning null from description().
+        this.description = Objects.requireNonNullElse(description, "N/A");
         return this;
     }
 
-    /**
-     * Description of this node.
-     * @return description of the node.
-     */
+    @Override
     public String description() {
         return description;
     }

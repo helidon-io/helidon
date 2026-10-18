@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,10 @@ import io.helidon.config.spi.ConfigNode.ValueNode;
  *
  * @param <ID> type of id
  * @param <B>  type of builder implementation
+ * @deprecated use {@link ListNode#builder()} or {@link ObjectNode#builder()};
+ *             this implementation will become package-private
  */
+@Deprecated(since = "28.0.0", forRemoval = true)
 public abstract class AbstractNodeBuilderImpl<ID, B> {
 
     private final B thisBuilder;
@@ -46,7 +49,7 @@ public abstract class AbstractNodeBuilderImpl<ID, B> {
      * Wraps node into mergeable one.
      *
      * @param node original node
-     * @return new instance of mergeable node or original node if already was mergeable.
+     * @return new mergeable node retaining the original source descriptions
      */
     static MergeableNode wrap(ConfigNode node) {
         return wrap(node, Function.identity());
@@ -57,7 +60,7 @@ public abstract class AbstractNodeBuilderImpl<ID, B> {
      *
      * @param node                 original node
      * @param resolveTokenFunction a token resolver
-     * @return new instance of mergeable node or original node if already was mergeable.
+     * @return new mergeable node retaining the original source descriptions
      */
     static MergeableNode wrap(ConfigNode node, Function<String, String> resolveTokenFunction) {
         switch (node.nodeType()) {
@@ -73,11 +76,31 @@ public abstract class AbstractNodeBuilderImpl<ID, B> {
     }
 
     static String formatFrom(String from) {
-        if (from != null) {
+        if (from != null && !"N/A".equals(from)) {
             return " from " + from;
         } else {
             return "";
         }
+    }
+
+    static String mergedDescription(ConfigNode lowerPriority, ConfigNode higherPriority) {
+        if (higherPriority.value().isPresent()) {
+            return higherPriority.description();
+        }
+        if (lowerPriority.value().isPresent()) {
+            return lowerPriority.description();
+        }
+        return sharedDescription(lowerPriority, higherPriority);
+    }
+
+    static String sharedDescription(ConfigNode first, ConfigNode second) {
+        if (first instanceof ObjectNode object && object.isEmpty() && first.value().isEmpty()) {
+            return second.description();
+        }
+        if (second instanceof ObjectNode object && object.isEmpty() && second.value().isEmpty()) {
+            return first.description();
+        }
+        return Objects.equals(first.description(), second.description()) ? first.description() : "N/A";
     }
 
     /**
@@ -148,10 +171,14 @@ public abstract class AbstractNodeBuilderImpl<ID, B> {
     }
 
     private void mergeValueMember(ValueNode member, MergingKey key, MergeableNode node, ID id) {
-        ObjectNode on = ObjectNodeBuilderImpl.create(Map.of(), tokenResolver).value(member.value()).build();
+        ObjectNode on = ObjectNodeBuilderImpl.create(Map.of(), tokenResolver)
+                .value(member.value())
+                .description(member.description())
+                .build();
         ConfigNode merged = ObjectNodeBuilderImpl
                 .create(on, tokenResolver) // make copy of member
                 .value(on.value())
+                .description(member.description())
                 .deepMerge(key.rest(), node) // merge it with specified node
                 .build();
 
@@ -163,6 +190,7 @@ public abstract class AbstractNodeBuilderImpl<ID, B> {
             // deep merge of list with specified node
             ConfigNode merged = ListNodeBuilderImpl.from(member, tokenResolver) // make copy of member
                     .value(member.value())
+                    .description(member.value().isPresent() ? member.description() : sharedDescription(member, node))
                     .deepMerge(key.rest(), node) // merge it with specified node
                     .build();
             // updates/replaces original member associated by id with new merged value
@@ -178,6 +206,7 @@ public abstract class AbstractNodeBuilderImpl<ID, B> {
             ConfigNode merged = ObjectNodeBuilderImpl
                     .create(member, tokenResolver) // make copy of member
                     .value(member.value())
+                    .description(member.value().isPresent() ? member.description() : sharedDescription(member, node))
                     .deepMerge(key.rest(), node) // merge it with specified node
                     .build();
             // updates/replaces original member associated by id with new merged value
