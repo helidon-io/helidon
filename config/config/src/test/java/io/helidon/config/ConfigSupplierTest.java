@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.util.function.Supplier;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.config.ConfigTest.waitForAssert;
@@ -188,14 +187,8 @@ public class ConfigSupplierTest {
                       is(ConfigValues.simpleValue("NEW item 1")));
     }
 
-    @Disabled
     @Test
-    // TODO cause of intermittent test failures:
-    /*
-    Tests in error:
-    ConfigSupplierTest.testSupplierFromMissingToListNode:209->lambda$testSupplierFromMissingToListNode$16:216 » IllegalState
-     */
-    public void testSupplierFromMissingToListNode() throws InterruptedException {
+    public void testSupplierFromMissingToListNode() {
         // config source
         TestingConfigSource configSource = TestingConfigSource.builder()
                 .testingPollingStrategy()
@@ -207,28 +200,29 @@ public class ConfigSupplierTest {
                 .sources(configSource)
                 .disableEnvironmentVariablesSource()
                 .disableSystemPropertiesSource()
+                .changesExecutor(Runnable::run)
                 .build();
 
-        // key does not exist
-        assertThat(config.get("key1").exists(), is(false));
-
-        // register subscriber
         Supplier<Optional<Config>> nodeSupplier = config.get("key1").asNode().optionalSupplier();
+        try {
+            assertThat("Supplier before the node exists", nodeSupplier.get(), is(Optional.empty()));
 
-        // change config source
-        TimeUnit.MILLISECONDS.sleep(TEST_DELAY_MS); // Make sure time changes to trigger notification.
-        configSource.changeLoadedObjectNode(
-                ObjectNode.builder()
-                        .addList("key1", ConfigNode.ListNode.builder()
-                                .addValue("item 1")
-                                .addValue("item 2")
-                                .build())
-                        .build());
+            configSource.changeLoadedObjectNode(
+                    ObjectNode.builder()
+                            .addList("key1", ConfigNode.ListNode.builder()
+                                    .addValue("item 1")
+                                    .addValue("item 2")
+                                    .build())
+                            .build());
 
-        // new: key exists
-        waitForAssert(() -> nodeSupplier.get().isPresent(), is(true));
-        waitForAssert(() -> nodeSupplier.get().get().type(), is(Config.Type.LIST));
-        waitForAssert(() -> nodeSupplier.get().get().asList(String.class).get(), contains("item 1", "item 2"));
+            Optional<Config> supplied = nodeSupplier.get();
+            assertThat("Supplier after the list was published", supplied.isPresent(), is(true));
+            Config list = supplied.orElseThrow();
+            assertThat(list.type(), is(Config.Type.LIST));
+            assertThat(list.asList(String.class).get(), contains("item 1", "item 2"));
+        } finally {
+            config.context().stopChangeSupport();
+        }
     }
 
 }
