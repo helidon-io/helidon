@@ -24,6 +24,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -46,6 +47,10 @@ import io.helidon.common.LazyValue;
  * <p>
  * A password-based cipher derives a key using a fresh random salt for each encryption and includes the salt and
  * initialization vector in the encrypted message.
+ * <p>
+ * Construction validates the configuration for both encryption and decryption using JCA initialization.
+ * Password-based construction also performs one key derivation with the configured settings for validation.
+ * Message-dependent errors, such as invalid block lengths or failed authentication, are reported during operations.
  * <p>
  * A raw-key cipher, configured using {@link Builder#key(byte[])}, uses the supplied key and initialization vector or
  * algorithm parameters directly. Its output contains only the ciphertext, without a salt or initialization-vector envelope.
@@ -128,7 +133,14 @@ public class SymmetricCipher implements CommonCipher {
         this.keySize = builder.keySize;
         this.numberOfIterations = builder.numberOfIterations;
         this.additionalAuthenticatedData = builder.additionalAuthenticatedData;
-        this.parameters = builder.iv == null ? builder.parameters : createAlgorithmParameter(algorithm, builder.iv);
+        try {
+            this.parameters = builder.iv == null ? builder.parameters : createAlgorithmParameter(algorithm, builder.iv);
+            validateConfiguration();
+        } catch (CryptoException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new CryptoException("Invalid symmetric cipher configuration", e);
+        }
     }
 
     /**
@@ -201,6 +213,9 @@ public class SymmetricCipher implements CommonCipher {
                                       byte[] key,
                                       AlgorithmParameterSpec params,
                                       Base64Value plain) {
+        Objects.requireNonNull(algorithm, "Algorithm cannot be null");
+        Objects.requireNonNull(key, "Key cannot be null");
+        Objects.requireNonNull(params, "Algorithm parameters cannot be null");
         return encryptMessage(algorithm, provider, key, params, null, plain);
     }
 
@@ -260,9 +275,6 @@ public class SymmetricCipher implements CommonCipher {
     public Base64Value encrypt(Base64Value message) {
         Objects.requireNonNull(message, "Plain content cannot be null");
         if (key != null) {
-            if (parameters == null) {
-                throw new CryptoException("Initialization vector or algorithm parameters must be set for raw-key encryption");
-            }
             return encryptMessage(algorithm, provider, key, parameters, additionalAuthenticatedData, message);
         }
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -311,6 +323,41 @@ public class SymmetricCipher implements CommonCipher {
         }
     }
 
+    private void validateConfiguration() {
+        byte[] validationKey = key == null
+                ? PasswordKeyDerivation.deriveKey(password, new byte[SALT_LENGTH], numberOfIterations, keySize)
+                : key;
+        try {
+            Cipher encrypt;
+            Cipher decrypt;
+            if (key == null) {
+                encrypt = cipher(algorithm, provider, validationKey, null, Cipher.ENCRYPT_MODE);
+                byte[] iv = encrypt.getIV();
+                if (iv == null) {
+                    throw new CryptoException("Password-based encryption requires an algorithm with an initialization vector");
+                }
+                decrypt = cipher(algorithm, provider, validationKey, createAlgorithmParameter(algorithm, iv),
+                                 Cipher.DECRYPT_MODE);
+            } else {
+                // Check decryption first: encryption may silently generate missing parameters.
+                decrypt = cipher(algorithm, provider, validationKey, parameters, Cipher.DECRYPT_MODE);
+                encrypt = cipher(algorithm, provider, validationKey, parameters, Cipher.ENCRYPT_MODE);
+                if (parameters == null && (encrypt.getIV() != null || encrypt.getParameters() != null)) {
+                    throw new CryptoException("Raw-key encryption requires explicit initialization parameters"
+                                                      + " for this algorithm");
+                }
+            }
+            if (additionalAuthenticatedData != null) {
+                encrypt.updateAAD(additionalAuthenticatedData);
+                decrypt.updateAAD(additionalAuthenticatedData);
+            }
+        } finally {
+            if (key == null) {
+                Arrays.fill(validationKey, (byte) 0);
+            }
+        }
+    }
+
     private static Base64Value encryptWithIv(String algorithm, String provider, byte[] key, byte[] iv, Base64Value plain) {
         Objects.requireNonNull(algorithm, "Algorithm cannot be null");
         Objects.requireNonNull(iv, "Initialization vector cannot be null");
@@ -331,7 +378,6 @@ public class SymmetricCipher implements CommonCipher {
                                             Base64Value plain) {
         Objects.requireNonNull(algorithm, "Algorithm cannot be null");
         Objects.requireNonNull(key, "Key cannot be null");
-        Objects.requireNonNull(params, "Algorithm parameters cannot be null");
         Objects.requireNonNull(plain, "Plain content cannot be null");
         Cipher cipher = cipher(algorithm, provider, key, params, Cipher.ENCRYPT_MODE);
         try {
@@ -565,8 +611,7 @@ public class SymmetricCipher implements CommonCipher {
          * The parameter object is retained; custom mutable implementations must not be modified after configuration.
          * <p>
          * To remove the parameters, call {@link #clearParameters()} instead of passing {@code null}.
-         * Raw-key decryption can omit both parameters and IV when the algorithm needs neither; raw-key encryption
-         * always requires one of them.
+         * Raw-key operations can omit both parameters and IV when the algorithm needs neither for encryption or decryption.
          *
          * @param parameters algorithm parameters
          * @return updated builder instance
@@ -727,6 +772,13 @@ public class SymmetricCipher implements CommonCipher {
             return Optional.ofNullable(additionalAuthenticatedData).map(value -> value.clone());
         }
 
+        /**
+         * Build a cipher after validating its configuration for encryption and decryption.
+         * Password-based validation performs one key derivation with the configured iteration count and key size.
+         *
+         * @return configured cipher
+         * @throws CryptoException if the configuration cannot support both operations
+         */
         @Override
         public SymmetricCipher build() {
             if (password == null && key == null) {

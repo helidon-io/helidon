@@ -202,17 +202,48 @@ public class SymmetricCipherTest {
                 .numberOfIterations(TEST_NUMBER_OF_ITERATIONS)
                 .provider(missingProvider)
                 .algorithm(SymmetricCipher.ALGORITHM_AES_GCM);
-        SymmetricCipher explicitProvider = builder.build();
-
         assertThat(builder.provider().orElseThrow(), is(missingProvider));
-        assertThrows(CryptoException.class, () -> explicitProvider.encrypt(Base64Value.create(TEST_VALUE)));
+        assertThrows(CryptoException.class, builder::build);
 
         builder.clearProvider();
         assertThat(builder.provider(), is(Optional.empty()));
         SymmetricCipher defaultProvider = builder.build();
         Base64Value encrypted = defaultProvider.encrypt(Base64Value.create(TEST_VALUE));
         assertThat(defaultProvider.decrypt(encrypted).toDecodedString(), is(TEST_VALUE));
-        assertThrows(CryptoException.class, () -> explicitProvider.decrypt(encrypted));
+    }
+
+    @Test
+    public void testInvalidPasswordConfigurationFailsDuringBuild() {
+        assertThrows(CryptoException.class,
+                     () -> SymmetricCipher.builder().password(DEFAULT_PASSWORD)
+                             .numberOfIterations(0).build(),
+                     "Zero iterations");
+        assertThrows(CryptoException.class,
+                     () -> SymmetricCipher.builder().password(DEFAULT_PASSWORD)
+                             .numberOfIterations(-1).build(),
+                     "Negative iterations");
+        assertThrows(CryptoException.class,
+                     () -> SymmetricCipher.builder().password(DEFAULT_PASSWORD)
+                             .numberOfIterations(TEST_NUMBER_OF_ITERATIONS).keySize(0).build(),
+                     "Zero key size");
+        assertThrows(CryptoException.class,
+                     () -> SymmetricCipher.builder().password(DEFAULT_PASSWORD)
+                             .numberOfIterations(TEST_NUMBER_OF_ITERATIONS).keySize(120).build(),
+                     "Derived key has an unsupported AES key size");
+        assertThrows(CryptoException.class,
+                     () -> SymmetricCipher.builder().password(DEFAULT_PASSWORD)
+                             .numberOfIterations(TEST_NUMBER_OF_ITERATIONS).algorithm("HelidonMissingCipher").build(),
+                     "Unknown algorithm");
+        assertThrows(CryptoException.class,
+                     () -> SymmetricCipher.builder().password(DEFAULT_PASSWORD)
+                             .numberOfIterations(TEST_NUMBER_OF_ITERATIONS).algorithm("AES/ECB/PKCS5Padding").build(),
+                     "Password envelope requires an IV");
+        assertThrows(CryptoException.class,
+                     () -> SymmetricCipher.builder().password(DEFAULT_PASSWORD)
+                             .numberOfIterations(TEST_NUMBER_OF_ITERATIONS)
+                             .algorithm(SymmetricCipher.ALGORITHM_AES_CBC)
+                             .additionalAuthenticatedData(new byte[] {1}).build(),
+                     "CBC does not support additional authenticated data");
     }
 
     @Test

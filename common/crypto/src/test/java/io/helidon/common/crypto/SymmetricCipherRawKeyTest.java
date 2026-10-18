@@ -92,9 +92,7 @@ class SymmetricCipherRawKeyTest {
         assertThat(explicitParameters.decrypt(encrypted).toBytes(), is(MESSAGE.toBytes()));
 
         builder.provider("HelidonMissingRawKeyTestProvider");
-        SymmetricCipher missing = builder.build();
-        assertThrows(CryptoException.class, () -> missing.encrypt(MESSAGE));
-        assertThrows(CryptoException.class, () -> missing.decrypt(encrypted));
+        assertThrows(CryptoException.class, builder::build);
         SymmetricCipher cleared = builder.clearProvider().build();
         assertThat(cleared.encrypt(MESSAGE).toBytes(), is(encrypted.toBytes()));
         assertThat(cleared.decrypt(encrypted).toBytes(), is(MESSAGE.toBytes()));
@@ -126,7 +124,7 @@ class SymmetricCipherRawKeyTest {
 
     @Test
     @SuppressWarnings("removal")
-    void testParameterlessDecryptionAndMissingEncryptionParameters() throws Exception {
+    void testParameterlessEncryptionAndDecryption() throws Exception {
         String algorithm = "AES/ECB/PKCS5Padding";
         byte[] key = key();
         Cipher jca = Cipher.getInstance(algorithm);
@@ -137,8 +135,63 @@ class SymmetricCipherRawKeyTest {
         assertThat(SymmetricCipher.decrypt(algorithm, null, key, (AlgorithmParameterSpec) null, encrypted).toBytes(),
                    is(MESSAGE.toBytes()));
         assertThat(cipher.decrypt(encrypted).toBytes(), is(MESSAGE.toBytes()));
-        assertThrows(CryptoException.class, () -> cipher.encrypt(MESSAGE));
-        assertThrows(CryptoException.class, () -> SymmetricCipher.builder().key(key).build().encrypt(MESSAGE));
+        assertThat(cipher.encrypt(MESSAGE).toBytes(), is(encrypted.toBytes()));
+        assertThat(cipher.decrypt(cipher.encrypt(MESSAGE)).toBytes(), is(MESSAGE.toBytes()));
+        assertThrows(NullPointerException.class,
+                     () -> SymmetricCipher.encrypt(algorithm, null, key, (AlgorithmParameterSpec) null, MESSAGE));
+    }
+
+    @Test
+    void testInvalidRawKeyConfigurationFailsDuringBuild() {
+        assertThrows(CryptoException.class, () -> SymmetricCipher.builder().key(key()).build(),
+                     "GCM requires explicit parameters for both operations");
+        assertThrows(CryptoException.class,
+                     () -> SymmetricCipher.builder().algorithm("HelidonMissingCipher").key(key()).build(),
+                     "Unknown algorithm");
+        assertThrows(CryptoException.class,
+                     () -> SymmetricCipher.builder().key(new byte[15]).iv(iv(SymmetricCipher.ALGORITHM_AES_GCM)).build(),
+                     "Invalid AES key size");
+        assertThrows(CryptoException.class,
+                     () -> SymmetricCipher.builder().algorithm(SymmetricCipher.ALGORITHM_AES_CBC)
+                             .key(key()).iv(new byte[12]).build(),
+                     "CBC requires a block-sized IV");
+        assertThrows(CryptoException.class,
+                     () -> SymmetricCipher.builder().key(key()).parameters(new IvParameterSpec(new byte[12])).build(),
+                     "GCM requires GCM parameters");
+        assertThrows(CryptoException.class,
+                     () -> SymmetricCipher.builder().algorithm(SymmetricCipher.ALGORITHM_AES_CBC)
+                             .key(key()).iv(iv(SymmetricCipher.ALGORITHM_AES_CBC))
+                             .additionalAuthenticatedData(new byte[] {1}).build(),
+                     "CBC does not support additional authenticated data");
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void testLegacyInvalidConfigurationFailsDuringStaticCall() {
+        assertThrows(CryptoException.class,
+                     () -> SymmetricCipher.encrypt(SymmetricCipher.ALGORITHM_AES_GCM,
+                                                   "HelidonMissingRawKeyTestProvider", key(),
+                                                   iv(SymmetricCipher.ALGORITHM_AES_GCM), MESSAGE));
+        assertThrows(CryptoException.class,
+                     () -> SymmetricCipher.decrypt(SymmetricCipher.ALGORITHM_AES_GCM,
+                                                   "HelidonMissingRawKeyTestProvider", key(),
+                                                   iv(SymmetricCipher.ALGORITHM_AES_GCM), MESSAGE));
+    }
+
+    @Test
+    void testInputDependentErrorsRemainOperationFailures() {
+        SymmetricCipher noPadding = SymmetricCipher.builder().algorithm("AES/CBC/NoPadding")
+                .key(key()).iv(iv(SymmetricCipher.ALGORITHM_AES_CBC)).build();
+        Base64Value block = Base64Value.create(new byte[16]);
+        assertThat(noPadding.decrypt(noPadding.encrypt(block)).toBytes(), is(block.toBytes()));
+        assertThrows(CryptoException.class, () -> noPadding.encrypt(Base64Value.create(new byte[15])));
+        assertThrows(CryptoException.class, () -> noPadding.decrypt(Base64Value.create(new byte[15])));
+
+        SymmetricCipher authenticated = SymmetricCipher.builder()
+                .key(key()).iv(iv(SymmetricCipher.ALGORITHM_AES_GCM)).build();
+        byte[] tampered = authenticated.encrypt(MESSAGE).toBytes();
+        tampered[0] ^= 1;
+        assertThrows(CryptoException.class, () -> authenticated.decrypt(Base64Value.create(tampered)));
     }
 
     @Test
