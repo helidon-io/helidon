@@ -34,6 +34,7 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import java.util.regex.PatternSyntaxException;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
@@ -59,11 +60,23 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OverrideReloadTest {
     @Test
-    void definitionChangesRequestReloadOnlyWhileChangeSupportIsActive() {
+    void failedInitialFilterCreationStopsDefinitionMonitoring() {
+        var source = new MutableSource(Map.of("services.[.endpoint", "https://invalid.example/api"));
+
+        assertThrows(PatternSyntaxException.class, () -> targetBuilder(source).build());
+
+        assertThat("Definition monitoring starts while the provider is constructed", source.starts.get(), is(1));
+        assertThat("A failed initial filter releases definition monitoring", source.stops.get(), is(1));
+        assertThrows(IllegalStateException.class, source::poll);
+    }
+
+    @Test
+    void failedStopListenerRegistrationStopsDefinitionMonitoring() {
         var source = new MutableSource(Map.of("services.*.endpoint", "https://initial.example/api"));
-        var notifications = new AtomicInteger();
         var provider = OverrideConfigFilterProvider.builder().addConfigSource(source).build();
-        ConfigFilterFactory factory = provider.create(new ConfigFilterContext() {
+        var failure = new IllegalStateException("Cannot register listener");
+
+        var thrown = assertThrows(IllegalStateException.class, () -> provider.create(new ConfigFilterContext() {
             @Override
             public Config initialConfig() {
                 return Config.empty();
@@ -71,29 +84,45 @@ class OverrideReloadTest {
 
             @Override
             public void reload() {
-                notifications.incrementAndGet();
             }
-        });
+
+            @Override
+            public void onChange(Config.ChangeListener listener) {
+                throw failure;
+            }
+        }));
+
+        assertThat(thrown, is(failure));
+        assertThat(source.starts.get(), is(1));
+        assertThat("Resources remain the provider's responsibility until registration succeeds", source.stops.get(), is(1));
+        assertThrows(IllegalStateException.class, source::poll);
+    }
+
+    @Test
+    void definitionChangesRequestReloadAndStopRetainsLastSnapshot() {
+        var source = new MutableSource(Map.of("services.*.endpoint", "https://initial.example/api"));
+        var notifications = new AtomicInteger();
+        var provider = OverrideConfigFilterProvider.builder().addConfigSource(source).build();
+        var context = new TestContext(notifications::incrementAndGet);
+        ConfigFilterFactory factory = provider.create(context);
         var key = Config.Key.create("services.orders.endpoint");
         ConfigFilter original = factory.create(Config.empty());
         try {
             source.values(Map.of("services.*.endpoint", "https://updated.example/api"));
             source.poll();
-            assertThat("The construction-time context must not reload before startup", notifications.get(), is(0));
-            assertThat(factory.startChangeSupport(), is(true));
-            assertThat("Startup reconciles the definition change", notifications.get(), is(1));
+            assertThat("Definition changes request a reload as soon as the factory exists", notifications.get(), is(1));
             assertThat(factory.create(Config.empty()).apply(key, "https://primary.example/orders"),
                        is("https://updated.example/api"));
             assertThat(original.apply(key, "https://primary.example/orders"), is("https://initial.example/api"));
-            factory.stopChangeSupport();
-            assertThat("A stopped factory cannot restart change support", factory.startChangeSupport(), is(false));
+            context.stop();
+            assertThrows(IllegalStateException.class, source::poll);
             assertThat("A stopped factory must not request another reload", notifications.get(), is(1));
             assertThat(factory.create(Config.empty()).apply(key, "https://primary.example/orders"),
                        is("https://updated.example/api"));
             assertThat(source.starts.get(), is(1));
             assertThat(source.stops.get(), is(1));
         } finally {
-            factory.stopChangeSupport();
+            context.stop();
         }
     }
 
@@ -104,34 +133,21 @@ class OverrideReloadTest {
         var callbackEntered = new CountDownLatch(1);
         var releaseCallback = new CountDownLatch(1);
         var notifications = new AtomicInteger();
-        ConfigFilterFactory factory = provider.create(new ConfigFilterContext() {
-            @Override
-            public Config initialConfig() {
-                return Config.empty();
-            }
-
-            @Override
-            public void reload() {
-                if (notifications.incrementAndGet() == 1) {
-                    // Starting change support reconciles the initial snapshot before the source changes.
-                    return;
-                }
-                callbackEntered.countDown();
-                try {
-                    assertThat("The definition callback must be released",
-                               releaseCallback.await(10, TimeUnit.SECONDS), is(true));
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new IllegalStateException("Interrupted while publishing definition changes", e);
-                }
+        var context = new TestContext(() -> {
+            notifications.incrementAndGet();
+            callbackEntered.countDown();
+            try {
+                assertThat("The definition callback must be released",
+                           releaseCallback.await(10, TimeUnit.SECONDS), is(true));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Interrupted while publishing definition changes", e);
             }
         });
+        ConfigFilterFactory factory = provider.create(context);
         ConfigFilter original = factory.create(Config.empty());
         try {
             assertThat("Creating the factory and initial filter must not request a reload", notifications.get(), is(0));
-            assertThat(factory.startChangeSupport(), is(true));
-            assertThat("Startup reconciliation publishes the initial snapshot", notifications.get(), is(1));
-
             source.values(Map.of("services.*.endpoint", "https://updated.example/api"));
             try (var executor = Executors.newSingleThreadExecutor()) {
                 Future<?> polling = executor.submit(source::poll);
@@ -149,10 +165,10 @@ class OverrideReloadTest {
             ConfigFilter updated = factory.create(Config.empty());
             assertThat(updated.apply(key, "https://primary.example/orders"), is("https://updated.example/api"));
             assertThat(original.apply(key, "https://primary.example/orders"), is("https://initial.example/api"));
-            assertThat("A completed poll publishes one definition change", notifications.get(), is(2));
+            assertThat("A completed poll publishes one definition change", notifications.get(), is(1));
         } finally {
             releaseCallback.countDown();
-            factory.stopChangeSupport();
+            context.stop();
         }
     }
 
@@ -183,36 +199,25 @@ class OverrideReloadTest {
     }
 
     @Test
-    void startupReconcilesChangesBeforeChangeSupportStarts() throws Exception {
+    void startupCapturesDefinitionChangesDuringInitialFilterCreation() throws Exception {
         var source = new MutableSource(Map.of("services.*.endpoint", "https://initial.example/api"));
         var reconciled = new CountDownLatch(1);
+        var creations = new AtomicInteger();
         var provider = OverrideConfigFilterProvider.builder().addConfigSource(source).build();
         Config target = baseBuilder().disableCaching().addSource(ConfigSources.create(targetValues()))
                 .addFilterProvider(context -> {
                     ConfigFilterFactory factory = provider.create(context);
-                    return new ConfigFilterFactory() {
-                        @Override
-                        public ConfigFilter create(Config raw) {
-                            ConfigFilter filter = factory.create(raw);
-                            if (filter.apply(Config.Key.create("services.orders.endpoint"),
-                                             "https://primary.example/api")
-                                    .equals("https://updated.example/api")) {
-                                reconciled.countDown();
-                            }
-                            return filter;
-                        }
-
-                        @Override
-                        public boolean startChangeSupport() {
+                    return raw -> {
+                        ConfigFilter filter = factory.create(raw);
+                        if (creations.incrementAndGet() == 1) {
                             source.values(Map.of("services.*.endpoint", "https://updated.example/api"));
                             source.poll();
-                            return factory.startChangeSupport();
+                        } else if (filter.apply(Config.Key.create("services.orders.endpoint"),
+                                                "https://primary.example/api")
+                                .equals("https://updated.example/api")) {
+                            reconciled.countDown();
                         }
-
-                        @Override
-                        public void stopChangeSupport() {
-                            factory.stopChangeSupport();
-                        }
+                        return filter;
                     };
                 }).build();
         try {
@@ -491,6 +496,34 @@ class OverrideReloadTest {
     private static Map<String, String> targetValues() {
         return Map.of("services.orders.endpoint", "https://primary.example/orders",
                       "services.payments.endpoint", "https://primary.example/payments");
+    }
+
+    private static final class TestContext implements ConfigFilterContext {
+        private final Runnable reload;
+        private Config.ChangeListener listener;
+
+        private TestContext(Runnable reload) {
+            this.reload = reload;
+        }
+
+        @Override
+        public Config initialConfig() {
+            return Config.empty();
+        }
+
+        @Override
+        public void reload() {
+            reload.run();
+        }
+
+        @Override
+        public void onChange(Config.ChangeListener listener) {
+            this.listener = listener;
+        }
+
+        void stop() {
+            listener.onStop();
+        }
     }
 
     private static final class MutableSource implements NodeConfigSource, PollableSource<Map<String, String>> {

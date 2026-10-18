@@ -38,7 +38,6 @@ import java.util.logging.Logger;
 import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ConfigContent.NodeContent;
 import io.helidon.config.spi.ConfigFilter;
-import io.helidon.config.spi.ConfigFilterFactory;
 import io.helidon.config.spi.ConfigFilterProvider;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
@@ -102,16 +101,9 @@ public final class ConfigFilterReloadWarningScenario {
     }
 
     private static ConfigFilterProvider monitoredProvider() {
-        return _ -> new ConfigFilterFactory() {
-            @Override
-            public ConfigFilter create(Config config) {
-                return (_, value) -> value;
-            }
-
-            @Override
-            public boolean startChangeSupport() {
-                return true;
-            }
+        return context -> {
+            context.reload();
+            return _ -> IDENTITY;
         };
     }
 
@@ -169,9 +161,11 @@ public final class ConfigFilterReloadWarningScenario {
         }
     }
 
-    private static void automatic(WarningHandler warnings, Config.Builder builder) {
+    private static void automatic(WarningHandler warnings, Config.Builder builder) throws InterruptedException {
         Config config = builder.addFilter(IDENTITY).build();
         try {
+            assertThat("An automatic reload warns about shared filters", warnings.firstWarning.await(10, TimeUnit.SECONDS),
+                       is(true));
             warnings.assertCount(1);
             config.context().reload();
             warnings.assertCount(1);
@@ -249,10 +243,12 @@ public final class ConfigFilterReloadWarningScenario {
 
     private static final class WarningHandler extends Handler {
         private final List<LogRecord> records = new CopyOnWriteArrayList<>();
+        private final CountDownLatch firstWarning = new CountDownLatch(1);
 
         @Override
         public void publish(LogRecord record) {
             records.add(record);
+            firstWarning.countDown();
         }
 
         @Override

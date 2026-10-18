@@ -49,7 +49,12 @@ import io.helidon.config.ConfigException;
  * The config override mechanism affects existing {@code Config} nodes that come
  * from a {@link ConfigSource}. The override mechanism cannot create additional
  * {@code Config} nodes, only modify existing ones.
- * <h2>Replacement</h2>
+ *
+ * @see OverrideData
+ * @deprecated Since 28.0.0, use the optional overrides filter module instead. No removal release or timing
+ * has been decided. If you use overrides, please report your usage in
+ * <a href="https://github.com/helidon-io/helidon/issues/10415">issue 10415</a>.
+ * <p>
  * Add the {@code io.helidon.config:helidon-config-overrides} dependency and register its
  * {@code io.helidon.config.overrides.OverrideConfigFilterProvider} instead of calling
  * {@link Config.Builder#overrides(Supplier)}. For example, replace a file override source with:
@@ -99,9 +104,6 @@ import io.helidon.config.ConfigException;
  * The definition file contains expression/value entries directly, without an {@code overrides.expressions} prefix.
  * Remove the corresponding legacy registration. The new filter runs after source merging and before value resolution;
  * it replaces only existing values. Ordinary source precedence can add nodes and does not interpret wildcard keys.
- *
- * @see OverrideData
- * @deprecated use {@code OverrideConfigFilterProvider} from the {@code helidon-config-overrides} module instead
  */
 @Deprecated(since = "28.0.0", forRemoval = true)
 public interface OverrideSource extends Source, Supplier<OverrideSource> {
@@ -131,7 +133,22 @@ public interface OverrideSource extends Source, Supplier<OverrideSource> {
      * any {@code Config} value node with a key that matches the wildcard
      * expression.
      *
-     * @deprecated use the replacement documented in {@link OverrideSource}
+     * @deprecated Since 28.0.0, use the {@code io.helidon.config:helidon-config-overrides} module instead.
+     * Register wildcard rules directly, in priority order:
+     * <pre>{@code
+     * import io.helidon.config.Config;
+     * import io.helidon.config.overrides.OverrideConfigFilterProvider;
+     *
+     * Config config = Config.builder()
+     *         .disableFilterServices()
+     *         .addFilterProvider(OverrideConfigFilterProvider.builder()
+     *                 .putOverrideExpression("service.*.port", "8080")
+     *                 .build())
+     *         .build();
+     * }</pre>
+     * Use a custom {@link ConfigFilterProvider} for arbitrary predicates. This disables filter discovery;
+     * register any other required filters explicitly. See {@link OverrideSource} for further migration
+     * considerations. No removal release or timing has been decided.
      */
     @Deprecated(since = "28.0.0", forRemoval = true)
     final class OverrideData {

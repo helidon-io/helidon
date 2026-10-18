@@ -153,13 +153,17 @@ abstract class AbstractConfigImpl implements Config {
         if (factory.snapshot()) {
             return;
         }
-        factory.provider()
-                .onChange(event -> {
-                    // check if change contains this node
-                    if (event.changedKeys().contains(realKey)) {
-                        onChangeConsumer.accept(contextConfig(event.config()));
-                    }
-                });
+        Consumer<ConfigDiff> onChange = event -> {
+            // check if change contains this node
+            if (event.changedKeys().contains(realKey)) {
+                onChangeConsumer.accept(contextConfig(event.config()));
+            }
+        };
+        if (onChangeConsumer instanceof ChangeListener listener) {
+            factory.provider().onChange(onChange, listener::onStop);
+        } else {
+            factory.provider().onChange(onChange);
+        }
     }
 
     @Override

@@ -28,7 +28,21 @@ import io.helidon.config.spi.OverrideSource;
  * Class provides access to built-in {@link io.helidon.config.spi.OverrideSource} implementations.
  *
  * @see io.helidon.config.spi.OverrideSource
- * @deprecated use the replacement documented in {@link OverrideSource}
+ * @deprecated Since 28.0.0, use the {@code io.helidon.config:helidon-config-overrides} module instead.
+ * Replace legacy source registration with a filter provider:
+ * <pre>{@code
+ * import io.helidon.config.Config;
+ * import io.helidon.config.overrides.OverrideConfigFilterProvider;
+ *
+ * Config config = Config.builder()
+ *         .disableFilterServices()
+ *         .addFilterProvider(OverrideConfigFilterProvider.builder()
+ *                 .putOverrideExpression("service.*.port", "8080")
+ *                 .build())
+ *         .build();
+ * }</pre>
+ * This disables filter discovery; register any other required filters explicitly.
+ * See {@link OverrideSource} for further migration considerations. No removal release or timing has been decided.
  */
 @Deprecated(since = "28.0.0", forRemoval = true)
 public final class OverrideSources {

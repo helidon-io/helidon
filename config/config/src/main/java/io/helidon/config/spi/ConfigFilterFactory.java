@@ -20,11 +20,6 @@ import io.helidon.config.Config;
 /**
  * {@link ConfigFilter} factory.
  * A factory is created for each independently built configuration and reused when that configuration is reloaded.
- * Calls to {@link #create(Config)} on the same factory do not overlap, including during manual and automatic reloads.
- * <p>
- * {@link ConfigFilterContext#reload()} may be invoked from monitoring threads while
- * {@link #create(Config)} or {@link #stopChangeSupport()} is running.
- * Calls to {@link #stopChangeSupport()} may overlap {@link #create(Config)} during manual reload.
  *
  * @see ConfigFilterProvider
  */
@@ -43,24 +38,4 @@ public interface ConfigFilterFactory {
      * @return fully initialized filter scoped to this configuration snapshot
      */
     ConfigFilter create(Config config);
-
-    /**
-     * Starts optional independent change monitoring after the first configuration is built.
-     * Called at most once. Monitoring may request asynchronous, coalesced configuration rebuilds through
-     * {@link ConfigFilterContext#reload()}, including during this method.
-     * Stop change support must also clean up a partially failed start.
-     *
-     * @return whether automatic change monitoring is active
-     */
-    default boolean startChangeSupport() {
-        return false;
-    }
-
-    /**
-     * Stops monitoring and releases its resources, including after failed initial construction.
-     * Must be safe before start and after a partial start. Already admitted callbacks may complete; subsequent callbacks
-     * must not request new rebuilds. Filter creation remains usable for manual reload and must not restart monitoring.
-     */
-    default void stopChangeSupport() {
-    }
 }

@@ -52,6 +52,7 @@ class ProviderImpl implements Config.Context {
     private static final AtomicBoolean FILTER_RELOAD_WARNING = new AtomicBoolean();
 
     private final List<Consumer<ConfigDiff>> listeners = new LinkedList<>();
+    private final List<Runnable> stopListeners = new ArrayList<>();
 
     private final ConfigMapperManager configMapperManager;
     private final ConfigSourcesRuntime configSource;
@@ -116,11 +117,7 @@ class ProviderImpl implements Config.Context {
                     configSource.startChanges();
                     overrideSource.changeListener(() -> rebuild(configSource.latest(), false));
                     overrideSource.startChanges();
-                    boolean changesSupported = configSource.changesSupported() || overrideSource.changesSupported();
-                    for (ConfigFilterFactory factory : filterFactories) {
-                        changesSupported |= factory.startChangeSupport();
-                    }
-                    if (changesSupported) {
+                    if (configSource.changesSupported() || overrideSource.changesSupported()) {
                         warnFixedFilters();
                     }
                     listening = true;
@@ -204,6 +201,23 @@ class ProviderImpl implements Config.Context {
         }
     }
 
+    void onChange(Consumer<ConfigDiff> listener, Runnable onStop) {
+        boolean notifyStop;
+        lock.lock();
+        try {
+            listeners.add(listener);
+            notifyStop = stopped;
+            if (!notifyStop) {
+                stopListeners.add(onStop);
+            }
+        } finally {
+            lock.unlock();
+        }
+        if (notifyStop) {
+            onStop.run();
+        }
+    }
+
     private Config lastConfigInstance() {
         return lastConfigImpl == null ? lastConfig : lastConfigImpl;
     }
@@ -217,7 +231,8 @@ class ProviderImpl implements Config.Context {
                 ? Config.empty()
                 : new ConfigFactory(configMapperManager, node, (_, value) -> value, this, true).config();
         if (!factoriesCreated) {
-            var context = new FilterContext(raw, this::requestReload);
+            var context = new FilterContext(raw, this::requestReload,
+                                            listener -> onChange(diff -> listener.onChange(diff.config()), listener::onStop));
             for (ConfigFilterProvider provider : runtimeFilterProviders) {
                 filterFactories.add(Objects.requireNonNull(provider.create(context), "Config filter factory"));
             }
@@ -408,6 +423,7 @@ class ProviderImpl implements Config.Context {
         try {
             while (!stopped && reloadPending.getAndSet(false)) {
                 try {
+                    warnFixedFilters();
                     rebuild(configSource.latest(), false);
                 } catch (RuntimeException _) {
                     LOGGER.log(Level.WARNING, "Cannot reload configuration after a config filter change; "
@@ -425,14 +441,20 @@ class ProviderImpl implements Config.Context {
         List<Runnable> stops = new ArrayList<>();
         stops.add(configSource::stopChanges);
         stops.add(overrideSource::stopChanges);
-        filterFactories.forEach(factory -> stops.add(factory::stopChangeSupport));
+        lock.lock();
+        try {
+            stops.addAll(stopListeners);
+            stopListeners.clear();
+        } finally {
+            lock.unlock();
+        }
         for (Runnable stop : stops) {
             try {
                 stop.run();
             } catch (RuntimeException | Error e) {
                 if (failure == null) {
                     failure = e;
-                } else {
+                } else if (failure != e) {
                     failure.addSuppressed(e);
                 }
             }
@@ -453,10 +475,17 @@ class ProviderImpl implements Config.Context {
         return Boolean.parseBoolean(value);
     }
 
-    private record FilterContext(Config initialConfig, Runnable requestReload) implements ConfigFilterContext {
+    private record FilterContext(Config initialConfig,
+                                 Runnable requestReload,
+                                 Consumer<Config.ChangeListener> registerListener) implements ConfigFilterContext {
         @Override
         public void reload() {
             requestReload.run();
+        }
+
+        @Override
+        public void onChange(Config.ChangeListener listener) {
+            registerListener.accept(Objects.requireNonNull(listener));
         }
     }
 

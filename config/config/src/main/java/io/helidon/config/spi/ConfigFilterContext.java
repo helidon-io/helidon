@@ -39,12 +39,14 @@ public interface ConfigFilterContext {
 
     /**
      * Requests an asynchronous configuration rebuild using the latest known source data.
-     * All filter factories in this runtime create new filters for the rebuilt snapshot.
-     * Concurrent requests are coalesced, and resulting rebuilds are serialized.
-     * This method does not wait for filter creation or configuration change delivery.
-     * <p>
-     * Requests made during initial construction are deferred until initialization completes.
-     * Requests after change support is stopped or initial construction fails have no effect.
      */
     void reload();
+
+    /**
+     * Registers a listener for changes to this runtime's configuration and for stopping its change support.
+     * The listener also receives stop notification if initial construction fails.
+     *
+     * @param listener runtime listener
+     */
+    void onChange(Config.ChangeListener listener);
 }

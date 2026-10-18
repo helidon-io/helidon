@@ -18,7 +18,6 @@ package io.helidon.config.overrides;
 
 import java.util.ArrayList;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.config.Config;
 import io.helidon.config.MetaConfig;
@@ -26,25 +25,25 @@ import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigFilterContext;
 import io.helidon.config.spi.ConfigFilterFactory;
 import io.helidon.config.spi.ConfigSource;
-import io.helidon.config.spi.EventConfigSource;
-import io.helidon.config.spi.PollableSource;
-import io.helidon.config.spi.WatchableSource;
 
 final class OverrideFilterFactory implements ConfigFilterFactory {
     private final OverrideConfig config;
     private final Config definitions;
-    private final boolean changesSupported;
-    private final ConfigFilterContext context;
-    private final AtomicBoolean started = new AtomicBoolean();
-    private final AtomicBoolean stopped = new AtomicBoolean();
 
-    private OverrideFilterFactory(OverrideConfig config, Config definitions, boolean changesSupported,
-                                  ConfigFilterContext context) {
+    private OverrideFilterFactory(OverrideConfig config, Config definitions, ConfigFilterContext context) {
         this.config = config;
         this.definitions = definitions;
-        this.changesSupported = changesSupported;
-        this.context = context;
-        definitions.onChange(_ -> changed());
+        definitions.onChange(_ -> context.reload());
+        context.onChange(new Config.ChangeListener() {
+            @Override
+            public void onChange(Config changed) {
+            }
+
+            @Override
+            public void onStop() {
+                definitions.context().stopChangeSupport();
+            }
+        });
     }
 
     static OverrideFilterFactory create(OverrideConfig config, ConfigFilterContext context) {
@@ -66,10 +65,13 @@ final class OverrideFilterFactory implements ConfigFilterFactory {
             definitions = builder.build();
         }
         try {
-            boolean changesSupported = sources.stream().anyMatch(OverrideFilterFactory::changesSupported);
-            return new OverrideFilterFactory(config, definitions, changesSupported, context);
-        } catch (RuntimeException e) {
-            definitions.context().stopChangeSupport();
+            return new OverrideFilterFactory(config, definitions, context);
+        } catch (RuntimeException | Error e) {
+            try {
+                definitions.context().stopChangeSupport();
+            } catch (RuntimeException | Error cleanup) {
+                e.addSuppressed(cleanup);
+            }
             throw e;
         }
     }
@@ -81,39 +83,5 @@ final class OverrideFilterFactory implements ConfigFilterFactory {
         // After stop, a manual target reload can still use this last known snapshot.
         Config snapshot = definitions.context().last();
         return new OverrideConfigFilter(config, snapshot);
-    }
-
-    @Override
-    public boolean startChangeSupport() {
-        if (stopped.get() || !started.compareAndSet(false, true)) {
-            return false;
-        }
-        if (changesSupported) {
-            if (stopped.get()) {
-                return false;
-            }
-            // Reconcile a definition change between the initial filter capture and starting change support.
-            changed();
-        }
-        return changesSupported;
-    }
-
-    @Override
-    public void stopChangeSupport() {
-        if (stopped.compareAndSet(false, true)) {
-            definitions.context().stopChangeSupport();
-        }
-    }
-
-    private static boolean changesSupported(ConfigSource source) {
-        return source instanceof EventConfigSource
-                || source instanceof PollableSource<?> pollable && pollable.pollingStrategy().isPresent()
-                || source instanceof WatchableSource<?> watchable && watchable.changeWatcher().isPresent();
-    }
-
-    private void changed() {
-        if (changesSupported && started.get() && !stopped.get()) {
-            context.reload();
-        }
     }
 }

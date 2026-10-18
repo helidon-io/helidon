@@ -29,9 +29,23 @@ import io.helidon.config.spi.OverrideSource;
 /**
  * In-memory implementation of override source.
  *
- * @deprecated Since 28.0.0, this legacy core API is deprecated for removal in favor of the optional overrides
- * filter module. See {@link OverrideSource} for migration
- * guidance and the usage feedback request. No removal release or timing has been decided.
+ * @deprecated Since 28.0.0, use the {@code io.helidon.config:helidon-config-overrides} module instead.
+ * Replace the legacy source registration with ordered filter rules:
+ * <pre>{@code
+ * import io.helidon.config.Config;
+ * import io.helidon.config.overrides.OverrideConfigFilterProvider;
+ *
+ * Config config = Config.builder()
+ *         .disableFilterServices()
+ *         .addFilterProvider(OverrideConfigFilterProvider.builder()
+ *                 .putOverrideExpression("service.*.port", "8080")
+ *                 .build())
+ *         .build();
+ * }</pre>
+ * Use a custom {@code ConfigFilterProvider} for arbitrary predicates.
+ * This disables filter discovery; register any other required filters explicitly.
+ * See {@link OverrideSource} for further migration considerations and the usage feedback request.
+ * No removal release or timing has been decided.
  */
 @Deprecated(since = "28.0.0", forRemoval = true)
 public class InMemoryOverrideSource implements OverrideSource {
@@ -59,9 +73,23 @@ public class InMemoryOverrideSource implements OverrideSource {
     /**
      * Fluent API builder for {@link io.helidon.config.InMemoryOverrideSource}.
      *
-     * @deprecated Since 28.0.0, this legacy core API is deprecated for removal in favor of the optional overrides
-     * filter module. See {@link OverrideSource} for migration
-     * guidance and the usage feedback request. No removal release or timing has been decided.
+     * @deprecated Since 28.0.0, use the {@code io.helidon.config:helidon-config-overrides} module instead.
+     * Replace the legacy source registration with ordered filter rules:
+     * <pre>{@code
+     * import io.helidon.config.Config;
+     * import io.helidon.config.overrides.OverrideConfigFilterProvider;
+     *
+     * Config config = Config.builder()
+     *         .disableFilterServices()
+     *         .addFilterProvider(OverrideConfigFilterProvider.builder()
+     *                 .putOverrideExpression("service.*.port", "8080")
+     *                 .build())
+     *         .build();
+     * }</pre>
+     * Use a custom {@code ConfigFilterProvider} for arbitrary predicates.
+     * This disables filter discovery; register any other required filters explicitly.
+     * See {@link OverrideSource} for further migration considerations and the usage feedback request.
+     * No removal release or timing has been decided.
      */
     @Deprecated(since = "28.0.0", forRemoval = true)
     public static final class Builder implements io.helidon.common.Builder<Builder, InMemoryOverrideSource> {

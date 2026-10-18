@@ -110,6 +110,11 @@ change, or `target.context().last()` to obtain the latest configuration.
 Previous Config instances retain their original rules. Rapid definition
 changes may be combined into one reload.
 
+Each Config runtime has its own factory and definition monitoring. Monitoring
+starts when the provider creates that factory; each configuration generation
+gets a new immutable filter. A context listener stops definition monitoring
+when change support stops or configuration initialization fails.
+
 Call `target.context().stopChangeSupport()` to stop automatic updates, including
 definition monitoring. Manual reload remains available afterwards, using the
 latest source data already known to Config. It does not restart monitoring or

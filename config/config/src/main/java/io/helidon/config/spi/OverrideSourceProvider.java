@@ -18,7 +18,21 @@ package io.helidon.config.spi;
 /**
  * Java service loader service to provide a override source based on meta configuration.
  *
- * @deprecated use the replacement documented in {@link OverrideSource}
+ * @deprecated Since 28.0.0, use the {@code io.helidon.config:helidon-config-overrides} module instead.
+ * Implement {@link ConfigFilterProvider} for custom loading, or register built-in override rules:
+ * <pre>{@code
+ * import io.helidon.config.Config;
+ * import io.helidon.config.overrides.OverrideConfigFilterProvider;
+ *
+ * Config config = Config.builder()
+ *         .disableFilterServices()
+ *         .addFilterProvider(OverrideConfigFilterProvider.builder()
+ *                 .putOverrideExpression("service.*.port", "8080")
+ *                 .build())
+ *         .build();
+ * }</pre>
+ * This disables filter discovery; register any other required filters explicitly.
+ * See {@link OverrideSource} for further migration considerations. No removal release or timing has been decided.
  */
 @Deprecated(since = "28.0.0", forRemoval = true)
 public interface OverrideSourceProvider extends MetaConfigurableProvider<OverrideSource> {

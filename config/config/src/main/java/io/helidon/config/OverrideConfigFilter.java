@@ -33,8 +33,21 @@ import io.helidon.config.spi.ConfigFilter;
  *             overrides filter module. Overrides functionality is being replaced, not discontinued.
  *             If you use config overrides, please report your usage in
  *             <a href="https://github.com/helidon-io/helidon/issues/10415">issue 10415</a>.
- *             Removal timing has not been decided. See {@link io.helidon.config.spi.OverrideSource}
- *             for migration considerations.
+ *             Removal timing has not been decided. Add the
+ *             {@code io.helidon.config:helidon-config-overrides} dependency and replace the legacy registration:
+ * <pre>{@code
+ * import io.helidon.config.Config;
+ * import io.helidon.config.overrides.OverrideConfigFilterProvider;
+ *
+ * Config config = Config.builder()
+ *         .disableFilterServices()
+ *         .addFilterProvider(OverrideConfigFilterProvider.builder()
+ *                 .putOverrideExpression("service.*.port", "8080")
+ *                 .build())
+ *         .build();
+ * }</pre>
+ * This disables filter discovery; register any other required filters explicitly.
+ * See {@link io.helidon.config.spi.OverrideSource} for further migration considerations.
  */
 @Deprecated(since = "28.0.0", forRemoval = true)
 public class OverrideConfigFilter implements ConfigFilter {
