@@ -19,19 +19,81 @@ package io.helidon.service.test.registry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import io.helidon.common.Weight;
 import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceInstance;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 
 class ShutdownOrderTest {
+    @Test
+    void emptyOptionalFactoryCanUseRetainedConsumerDuringCleanup() {
+        var state = new GraphState();
+        var config = ServiceRegistryConfig.builder()
+                .discoverServices(false)
+                .discoverServicesFromServiceLoader(false)
+                .addServiceDescriptor(ShutdownOrderTest_EventSink__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(ShutdownOrderTest_EmptyFactory__ServiceDescriptor.INSTANCE)
+                .putServiceInstance(ShutdownOrderTest_GraphState__ServiceDescriptor.INSTANCE, state)
+                .build();
+        var manager = ServiceRegistryManager.create(config);
+        try {
+            var sink = manager.registry().get(EventSink.class);
+            assertThat("the factory supplies no injected dependency", sink.plugin.isEmpty(), is(true));
+            var factory = manager.registry().get(EmptyFactory.class);
+            factory.sink = factory.sinkSupplier.get();
+            assertThat("empty factory retains the sink before shutdown", factory.sink, notNullValue());
+
+            manager.shutdown();
+            manager.shutdown();
+
+            assertThat("empty factory keeps its run-level priority and each cleanup runs once",
+                       state.events,
+                       contains("sink used", "empty factory stopped", "sink stopped"));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void unselectedServiceInstanceProviderCanUseRetainedConsumerDuringCleanup() {
+        var state = new GraphState();
+        var config = ServiceRegistryConfig.builder()
+                .discoverServices(false)
+                .discoverServicesFromServiceLoader(false)
+                .addServiceDescriptor(ShutdownOrderTest_InstanceSink__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(ShutdownOrderTest_SelectedPlugin__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(ShutdownOrderTest_UnselectedPlugin__ServiceDescriptor.INSTANCE)
+                .putServiceInstance(ShutdownOrderTest_GraphState__ServiceDescriptor.INSTANCE, state)
+                .build();
+        var manager = ServiceRegistryManager.create(config);
+        try {
+            manager.registry().get(InstanceSink.class);
+            var unselected = manager.registry().get(UnselectedPlugin.class);
+            unselected.sink = unselected.sinkSupplier.get();
+            assertThat("unselected provider retains the consumer before shutdown", unselected.sink, notNullValue());
+
+            manager.shutdown();
+            manager.shutdown();
+
+            assertThat("only the selected provider constrains shutdown and each cleanup runs once",
+                       state.events,
+                       contains("instance sink used", "unselected plugin stopped", "selected plugin used",
+                                "instance sink stopped", "selected plugin stopped"));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
     @Test
     void inheritedInjectionTracksDependenciesOfEachConcreteOwner() {
         var state = new GraphState();
@@ -201,6 +263,141 @@ class ShutdownOrderTest {
 
     interface DriverContract {
         void use();
+    }
+
+    interface Plugin {
+        void use();
+    }
+
+    @Service.Singleton
+    @Service.RunLevel(Service.RunLevel.NORMAL)
+    static class EventSink {
+        private final GraphState state;
+        private final Optional<Plugin> plugin;
+        private boolean open = true;
+
+        @Service.Inject
+        EventSink(GraphState state, Optional<Plugin> plugin) {
+            this.state = state;
+            this.plugin = plugin;
+        }
+
+        void use() {
+            assertThat("sink remains usable during empty factory cleanup", open, is(true));
+            state.events.add("sink used");
+        }
+
+        @Service.PreDestroy
+        void stop() {
+            open = false;
+            state.events.add("sink stopped");
+        }
+    }
+
+    @Service.Singleton
+    @Service.RunLevel(Service.RunLevel.NORMAL + 1)
+    static class EmptyFactory implements Service.ServicesFactory<Plugin> {
+        private final GraphState state;
+        private final Supplier<EventSink> sinkSupplier;
+        private EventSink sink;
+
+        @Service.Inject
+        EmptyFactory(GraphState state, Supplier<EventSink> sinkSupplier) {
+            this.state = state;
+            this.sinkSupplier = sinkSupplier;
+        }
+
+        @Override
+        public List<Service.QualifiedInstance<Plugin>> services() {
+            return List.of();
+        }
+
+        @Service.PreDestroy
+        void stop() {
+            if (sink != null) {
+                sink.use();
+            }
+            state.events.add("empty factory stopped");
+        }
+    }
+
+    @Service.Singleton
+    @Service.RunLevel(Service.RunLevel.NORMAL)
+    static class InstanceSink {
+        private final GraphState state;
+        private final Plugin plugin;
+        private boolean open = true;
+
+        @Service.Inject
+        InstanceSink(GraphState state, ServiceInstance<Plugin> plugin) {
+            this.state = state;
+            this.plugin = plugin.get();
+        }
+
+        void use() {
+            assertThat("consumer remains usable during unselected provider cleanup", open, is(true));
+            state.events.add("instance sink used");
+        }
+
+        @Service.PreDestroy
+        void stop() {
+            plugin.use();
+            open = false;
+            state.events.add("instance sink stopped");
+        }
+    }
+
+    @Service.Singleton
+    @Service.RunLevel(Service.RunLevel.NORMAL + 2)
+    @Weight(100)
+    static class SelectedPlugin implements Plugin {
+        private final GraphState state;
+        private boolean open = true;
+
+        @Service.Inject
+        SelectedPlugin(GraphState state) {
+            this.state = state;
+        }
+
+        @Override
+        public void use() {
+            assertThat("selected provider remains usable during consumer cleanup", open, is(true));
+            state.events.add("selected plugin used");
+        }
+
+        @Service.PreDestroy
+        void stop() {
+            open = false;
+            state.events.add("selected plugin stopped");
+        }
+    }
+
+    @Service.Singleton
+    @Service.RunLevel(Service.RunLevel.NORMAL + 1)
+    @Weight(1)
+    static class UnselectedPlugin implements Plugin {
+        private final GraphState state;
+        private final Supplier<InstanceSink> sinkSupplier;
+        private InstanceSink sink;
+
+        @Service.Inject
+        UnselectedPlugin(GraphState state, Supplier<InstanceSink> sinkSupplier) {
+            this.state = state;
+            this.sinkSupplier = sinkSupplier;
+        }
+
+        @Override
+        public void use() {
+            throw new AssertionError("the lower-weight provider must not be injected");
+        }
+
+        @Service.PreDestroy
+        void stop() {
+            if (sink != null) {
+                sink.use();
+            }
+            state.events.add("unselected plugin stopped");
+        }
     }
 
     @Service.Singleton

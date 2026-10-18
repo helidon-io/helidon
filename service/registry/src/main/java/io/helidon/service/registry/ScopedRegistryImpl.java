@@ -179,18 +179,14 @@ class ScopedRegistryImpl implements ScopedRegistry {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    <T> Activator<T> activator(ServiceInfo descriptor, Supplier<Activator<T>> activatorSupplier, ServiceInfo dependent) {
+    void dependency(ServiceInfo descriptor, ServiceInfo dependent) {
         try {
             serviceProvidersLock.writeLock().lock();
             checkActive();
-            Activator<?> activator = activators.computeIfAbsent(descriptor,
-                                                               _ -> scopedActivator(activatorSupplier.get()));
             // Keep the owning descriptor, since inherited injection points can resolve differently for each subclass.
-            // Registration and recording must be atomic with respect to the shutdown snapshot.
+            // A selected value must not be injected if shutdown has already taken its dependency snapshot.
             injectedDependencies.computeIfAbsent(dependent, _ -> Collections.newSetFromMap(new IdentityHashMap<>()))
                     .add(descriptor);
-            return (Activator<T>) activator;
         } finally {
             serviceProvidersLock.writeLock().unlock();
         }
