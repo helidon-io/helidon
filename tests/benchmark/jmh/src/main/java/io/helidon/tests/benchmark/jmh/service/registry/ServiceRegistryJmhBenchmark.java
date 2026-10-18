@@ -218,6 +218,10 @@ public class ServiceRegistryJmhBenchmark {
         }
     }
 
+    private interface DirectContract {
+        int value();
+    }
+
     @State(Scope.Benchmark)
     public static class RegistryState {
         private ServiceRegistryManager noCacheManager;
@@ -414,10 +418,6 @@ public class ServiceRegistryJmhBenchmark {
             servicesFactoryWrapper = new ServicesFactoryWrapper(new BenchmarkServicesFactory());
             qualifiedFactoryWrapper = new QualifiedFactoryWrapper(new BenchmarkQualifiedFactory());
         }
-    }
-
-    private interface DirectContract {
-        int value();
     }
 
     private record DirectService(int value) implements DirectContract {
