@@ -179,6 +179,33 @@ class ScopedRegistryImpl implements ScopedRegistry {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    <T> Optional<List<QualifiedInstance<T>>> instances(ServiceInfo descriptor,
+                                                    Supplier<Activator<T>> activatorSupplier,
+                                                    Lookup lookup,
+                                                    ServiceInfo dependent) {
+        Activator<T> activator;
+        boolean dependencyRecorded;
+        try {
+            serviceProvidersLock.readLock().lock();
+            checkActive();
+            activator = (Activator<T>) activators.get(descriptor);
+            dependencyRecorded = injectedDependencies.getOrDefault(dependent, Set.of()).contains(descriptor);
+        } finally {
+            serviceProvidersLock.readLock().unlock();
+        }
+
+        if (activator == null) {
+            activator = activator(descriptor, activatorSupplier);
+        }
+        Optional<List<QualifiedInstance<T>>> instances = activator.instances(lookup);
+        // An existing edge will be included in the shutdown snapshot; only new edges need recording after resolution.
+        if (!dependencyRecorded && instances.map(it -> !it.isEmpty()).orElse(false)) {
+            dependency(descriptor, dependent);
+        }
+        return instances;
+    }
+
     void dependency(ServiceInfo descriptor, ServiceInfo dependent) {
         try {
             serviceProvidersLock.writeLock().lock();
