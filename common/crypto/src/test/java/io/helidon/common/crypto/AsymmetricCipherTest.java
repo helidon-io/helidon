@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,19 +21,23 @@ import java.lang.reflect.Modifier;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
 
 import io.helidon.common.Base64Value;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -113,6 +117,131 @@ public class AsymmetricCipherTest {
         CryptoException cryptoException = assertThrows(CryptoException.class, () -> incorrect.decrypt(encrypted));
         assertThat(cryptoException.getMessage(), is("Message could not be decrypted"));
         assertThat(cryptoException.getCause(), instanceOf(BadPaddingException.class));
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void testDefaultProviderInteroperability() {
+        KeyPair keys = GENERATED_KEYS.get(2048).first;
+        String algorithm = AsymmetricCipher.ALGORITHM_RSA_ECB_OAEP256;
+        AsymmetricCipher cipher = AsymmetricCipher.builder()
+                .algorithm(algorithm)
+                .privateKey(keys.getPrivate())
+                .publicKey(keys.getPublic())
+                .build();
+
+        Base64Value shortcutEncrypted = AsymmetricCipher.encrypt(algorithm, keys.getPublic(), DATA);
+        assertThat(AsymmetricCipher.decrypt(algorithm, null, keys.getPrivate(), shortcutEncrypted).toBytes(),
+                   is(DATA.toBytes()));
+
+        Base64Value legacyEncrypted = AsymmetricCipher.encrypt(algorithm, null, keys.getPublic(), DATA);
+        assertThat(cipher.decrypt(legacyEncrypted).toBytes(), is(DATA.toBytes()));
+
+        Base64Value builderEncrypted = cipher.encrypt(DATA);
+        assertThat(AsymmetricCipher.decrypt(algorithm, keys.getPrivate(), builderEncrypted).toBytes(), is(DATA.toBytes()));
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void testExplicitProviderInteroperability() throws Exception {
+        KeyPair keys = GENERATED_KEYS.get(2048).first;
+        String algorithm = AsymmetricCipher.ALGORITHM_RSA_ECB_OAEP256;
+        String provider = Cipher.getInstance(algorithm).getProvider().getName();
+        AsymmetricCipher cipher = AsymmetricCipher.builder()
+                .provider(provider)
+                .algorithm(algorithm)
+                .privateKey(keys.getPrivate())
+                .publicKey(keys.getPublic())
+                .build();
+
+        Base64Value legacyEncrypted = AsymmetricCipher.encrypt(algorithm, provider, keys.getPublic(), DATA);
+        assertThat(cipher.decrypt(legacyEncrypted).toBytes(), is(DATA.toBytes()));
+        assertThat(AsymmetricCipher.decrypt(algorithm, provider, keys.getPrivate(), cipher.encrypt(DATA)).toBytes(),
+                   is(DATA.toBytes()));
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void testLegacyInvalidProviderDoesNotFallBack() {
+        KeyPair keys = GENERATED_KEYS.get(2048).first;
+        String algorithm = AsymmetricCipher.ALGORITHM_RSA_ECB_OAEP256;
+        Base64Value encrypted = AsymmetricCipher.encrypt(algorithm, keys.getPublic(), DATA);
+
+        CryptoException encryptFailure = assertThrows(CryptoException.class,
+                () -> AsymmetricCipher.encrypt(algorithm, "nonexistent-test-provider", keys.getPublic(), DATA));
+        assertThat(encryptFailure.getCause(), instanceOf(NoSuchProviderException.class));
+        CryptoException decryptFailure = assertThrows(CryptoException.class,
+                () -> AsymmetricCipher.decrypt(algorithm, "nonexistent-test-provider", keys.getPrivate(), encrypted));
+        assertThat(decryptFailure.getCause(), instanceOf(NoSuchProviderException.class));
+    }
+
+    @Test
+    void testAlgorithmPreservesProviderUntilCleared() {
+        KeyPair keys = GENERATED_KEYS.get(2048).first;
+        AsymmetricCipher.Builder builder = AsymmetricCipher.builder()
+                .provider("nonexistent-test-provider")
+                .algorithm(AsymmetricCipher.ALGORITHM_RSA_ECB_OAEP256)
+                .privateKey(keys.getPrivate())
+                .publicKey(keys.getPublic());
+
+        assertThat(builder.provider(), is(Optional.of("nonexistent-test-provider")));
+        CryptoException failure = assertThrows(CryptoException.class, () -> builder.build().encrypt(DATA));
+        assertThat(failure.getCause(), instanceOf(NoSuchProviderException.class));
+
+        builder.clearProvider();
+        assertThat(builder.provider(), is(Optional.empty()));
+        AsymmetricCipher cipher = builder.build();
+        assertThat(cipher.decrypt(cipher.encrypt(DATA)).toBytes(), is(DATA.toBytes()));
+    }
+
+    @Test
+    void testClearKeysRestrictsOperations() {
+        KeyPair keys = GENERATED_KEYS.get(2048).first;
+        AsymmetricCipher.Builder builder = AsymmetricCipher.builder();
+        assertThat(builder.algorithm(), is(AsymmetricCipher.ALGORITHM_RSA_ECB_OAEP256));
+        assertThat(builder.provider(), is(Optional.empty()));
+        assertThat(builder.privateKey(), is(Optional.empty()));
+        assertThat(builder.publicKey(), is(Optional.empty()));
+
+        builder.privateKey(keys.getPrivate()).publicKey(keys.getPublic());
+        Base64Value encrypted = builder.build().encrypt(DATA);
+        builder.clearPublicKey();
+        assertThat(builder.publicKey(), is(Optional.empty()));
+        AsymmetricCipher decryptOnly = builder.build();
+        assertThat(decryptOnly.decrypt(encrypted).toBytes(), is(DATA.toBytes()));
+        assertThrows(CryptoException.class, () -> decryptOnly.encrypt(DATA));
+
+        builder.publicKey(keys.getPublic()).clearPrivateKey();
+        assertThat(builder.privateKey(), is(Optional.empty()));
+        AsymmetricCipher encryptOnly = builder.build();
+        assertThat(decryptOnly.decrypt(encryptOnly.encrypt(DATA)).toBytes(), is(DATA.toBytes()));
+        assertThrows(CryptoException.class, () -> encryptOnly.decrypt(encrypted));
+
+        builder.clearPublicKey();
+        assertThrows(CryptoException.class, builder::build);
+    }
+
+    @Test
+    void testNullSettersPreserveConfiguredState() throws Exception {
+        KeyPair keys = GENERATED_KEYS.get(2048).first;
+        String algorithm = AsymmetricCipher.ALGORITHM_RSA_ECB_OAEP256;
+        String provider = Cipher.getInstance(algorithm).getProvider().getName();
+        AsymmetricCipher.Builder builder = AsymmetricCipher.builder()
+                .algorithm(algorithm)
+                .provider(provider)
+                .privateKey(keys.getPrivate())
+                .publicKey(keys.getPublic());
+
+        assertThrows(NullPointerException.class, () -> builder.algorithm(null));
+        assertThrows(NullPointerException.class, () -> builder.provider(null));
+        assertThrows(NullPointerException.class, () -> builder.privateKey(null));
+        assertThrows(NullPointerException.class, () -> builder.publicKey(null));
+        assertThat(builder.algorithm(), is(algorithm));
+        assertThat(builder.provider(), is(Optional.of(provider)));
+        assertThat(builder.privateKey(), is(Optional.of(keys.getPrivate())));
+        assertThat(builder.publicKey(), is(Optional.of(keys.getPublic())));
+        AsymmetricCipher cipher = builder.build();
+        assertThat(cipher.decrypt(cipher.encrypt(DATA)).toBytes(), is(DATA.toBytes()));
     }
 
     private static final class ParameterWrapper {
