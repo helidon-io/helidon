@@ -124,6 +124,13 @@ class ServiceManager<T> {
         }
     }
 
+    void dependency(ServiceInstance<?> instance, Lookup lookup, ServiceInfo dependent) {
+        if (instance instanceof ServiceInstanceImpl<?> serviceInstance
+                && serviceInstance.descriptor == provider.descriptor()) {
+            dependency(lookup, dependent);
+        }
+    }
+
     Optional<List<ServiceInstance<T>>> activeInstances(Lookup lookup) {
         ServiceDescriptor<T> descriptor = provider.descriptor();
         if (Service.PerLookup.TYPE.equals(descriptor.scope())) {

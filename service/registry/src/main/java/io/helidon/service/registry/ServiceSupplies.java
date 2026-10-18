@@ -33,13 +33,14 @@ final class ServiceSupplies {
     private ServiceSupplies() {
     }
 
-    private static <T> Optional<ResolvedInstance<T>> oneInstance(Lookup lookup,
-                                                                 List<ServiceManager<T>> serviceManagers) {
+    private static <T> Optional<ServiceInstance<T>> oneInstance(Lookup lookup,
+                                                                List<ServiceManager<T>> serviceManagers,
+                                                                ServiceInfo dependent) {
         // we may have more than one service manager, as the first one(s) may not provide a value
         traceLookup(lookup, "explode, filter, and sort");
 
         for (ServiceManager<T> serviceManager : serviceManagers) {
-            Optional<ServiceInstance<T>> thisManager = serviceManager.instances(lookup)
+            Optional<ServiceInstance<T>> thisManager = serviceManager.instances(lookup, dependent)
                     .stream()
                     .flatMap(List::stream)
                     .map(it -> serviceManager.registryInstance(lookup, it))
@@ -48,21 +49,22 @@ final class ServiceSupplies {
             traceLookupInstance(lookup, serviceManager, thisManager.map(List::of).orElseGet(List::of));
 
             if (thisManager.isPresent()) {
-                return thisManager.map(it -> new ResolvedInstance<>(serviceManager, it));
+                return thisManager;
             }
         }
 
         return Optional.empty();
     }
 
-    private static <T> List<ResolvedInstance<T>> explodeFilterAndSort(Lookup lookup,
-                                                                      List<ServiceManager<T>> serviceManagers) {
+    private static <T> List<ServiceInstance<T>> explodeFilterAndSort(Lookup lookup,
+                                                                     List<ServiceManager<T>> serviceManagers,
+                                                                     ServiceInfo dependent) {
         traceLookup(lookup, "explode, filter, and sort");
-        List<ResolvedInstance<T>> result = new ArrayList<>();
+        List<ServiceInstance<T>> result = new ArrayList<>();
 
         for (ServiceManager<T> serviceManager : serviceManagers) {
             List<ServiceInstance<T>> thisManager = new ArrayList<>();
-            serviceManager.instances(lookup)
+            serviceManager.instances(lookup, dependent)
                     .stream()
                     .flatMap(List::stream)
                     .map(it -> serviceManager.registryInstance(lookup, it))
@@ -70,13 +72,11 @@ final class ServiceSupplies {
 
             traceLookupInstance(lookup, serviceManager, thisManager);
 
-            thisManager.stream()
-                    .map(it -> new ResolvedInstance<>(serviceManager, it))
-                    .forEach(result::add);
+            result.addAll(thisManager);
         }
 
         if (result.isEmpty() || result.size() == 1) {
-            traceLookupInstances(lookup, result.stream().map(ResolvedInstance::instance).toList());
+            traceLookupInstances(lookup, result);
             return List.copyOf(result);
         }
 
@@ -86,10 +86,10 @@ final class ServiceSupplies {
         We cannot re-order them using the usual comparator, as the weight of the instance is never set
          */
         if (lookup.qualifiers().isEmpty()) {
-            List<ResolvedInstance<T>> unqualified = new ArrayList<>();
-            List<ResolvedInstance<T>> qualified = new ArrayList<>();
-            for (ResolvedInstance<T> instance : result) {
-                if (instance.instance().qualifiers().isEmpty()) {
+            List<ServiceInstance<T>> unqualified = new ArrayList<>();
+            List<ServiceInstance<T>> qualified = new ArrayList<>();
+            for (ServiceInstance<T> instance : result) {
+                if (instance.qualifiers().isEmpty()) {
                     unqualified.add(instance);
                 } else {
                     qualified.add(instance);
@@ -99,16 +99,9 @@ final class ServiceSupplies {
             result = unqualified;
         }
 
-        traceLookupInstances(lookup, result.stream().map(ResolvedInstance::instance).toList());
+        traceLookupInstances(lookup, result);
 
         return List.copyOf(result);
-    }
-
-    private record ResolvedInstance<T>(ServiceManager<T> manager, ServiceInstance<T> instance) {
-        ServiceInstance<T> injected(Lookup lookup, ServiceInfo dependent) {
-            manager.dependency(lookup, dependent);
-            return instance;
-        }
     }
 
     private static class ServiceSupplyBase<T> {
@@ -143,13 +136,20 @@ final class ServiceSupplies {
             super(lookup, managers, dependent);
             Supplier<ServiceInstance<T>> supplier;
 
-            supplier = () -> explodeFilterAndSort(lookup, managers)
-                    .stream()
-                    .findFirst()
-                    .map(it -> it.injected(lookup, dependent))
-                    .orElseThrow(() -> new ServiceRegistryException(
-                            "Neither of matching services could provide a value. Descriptors: " + managers + ", "
-                                    + "lookup: " + super.lookup));
+            supplier = () -> {
+                ServiceInstance<T> instance = explodeFilterAndSort(lookup, managers, null)
+                        .stream()
+                        .findFirst()
+                        .orElseThrow(() -> new ServiceRegistryException(
+                                "Neither of matching services could provide a value. Descriptors: " + managers + ", "
+                                        + "lookup: " + super.lookup));
+                if (dependent != null) {
+                    for (ServiceManager<T> manager : managers) {
+                        manager.dependency(instance, lookup, dependent);
+                    }
+                }
+                return instance;
+            };
 
             this.value = supplier;
         }
@@ -173,8 +173,7 @@ final class ServiceSupplies {
 
             Supplier<T> supplier;
 
-            supplier = () -> oneInstance(lookup, managers)
-                    .map(it -> it.injected(lookup, dependent))
+            supplier = () -> oneInstance(lookup, managers, dependent)
                     .map(ServiceInstance::get)
                     .orElseThrow(() -> new ServiceRegistryException(
                             "Neither of matching services could provide a value. Descriptors: " + managers + ", "
@@ -201,8 +200,7 @@ final class ServiceSupplies {
 
         @Override
         public Optional<T> get() {
-            Optional<ServiceInstance<T>> first = oneInstance(super.lookup, super.managers)
-                    .map(it -> it.injected(super.lookup, super.dependent));
+            Optional<ServiceInstance<T>> first = oneInstance(super.lookup, super.managers, super.dependent);
             return first.map(Supplier::get);
         }
     }
@@ -219,8 +217,7 @@ final class ServiceSupplies {
 
         @Override
         public Optional<ServiceInstance<T>> get() {
-            return oneInstance(super.lookup, super.managers)
-                    .map(it -> it.injected(super.lookup, super.dependent));
+            return oneInstance(super.lookup, super.managers, super.dependent);
         }
     }
 
@@ -236,9 +233,8 @@ final class ServiceSupplies {
 
         @Override
         public List<T> get() {
-            Stream<ServiceInstance<T>> stream = explodeFilterAndSort(super.lookup, super.managers)
-                    .stream()
-                    .map(it -> it.injected(super.lookup, super.dependent));
+            Stream<ServiceInstance<T>> stream = explodeFilterAndSort(super.lookup, super.managers, super.dependent)
+                    .stream();
 
             return stream.map(Supplier::get)
                     .toList();
@@ -257,9 +253,8 @@ final class ServiceSupplies {
 
         @Override
         public List<ServiceInstance<T>> get() {
-            return explodeFilterAndSort(super.lookup, super.managers)
+            return explodeFilterAndSort(super.lookup, super.managers, super.dependent)
                     .stream()
-                    .map(it -> it.injected(super.lookup, super.dependent))
                     .collect(Collectors.toUnmodifiableList());
         }
     }
