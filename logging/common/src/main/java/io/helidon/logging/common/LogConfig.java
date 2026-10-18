@@ -17,20 +17,18 @@ package io.helidon.logging.common;
 
 import java.util.List;
 import java.util.ServiceLoader;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.logging.common.spi.LoggingProvider;
 
 /**
  * Logging configuration utility.
- * This utility looks for a logging provider and configures it during class initialization and runtime startup.
+ * This utility looks for a logging provider and configures it once during class initialization.
  * <p>
  * Initialization is done automatically when using a container (such as Helidon MP). For Helidon SE (and programmatic API),
  * invoke {@link #configureRuntime()} as the first thing in your application, so all logs are correctly handled.
  */
 public final class LogConfig {
-    private static final AtomicBoolean RUNTIME_CONFIGURED = new AtomicBoolean();
     private static final LoggingProvider PROVIDER;
 
     static {
@@ -56,14 +54,11 @@ public final class LogConfig {
     }
 
     /**
-     * Ensures this class is initialized and applies runtime logging configuration once.
+     * Ensures logging is configured by initializing this class.
      * Subsequent calls do not reconfigure logging.
      */
     public static void configureRuntime() {
-        if (RUNTIME_CONFIGURED.compareAndSet(false, true)) {
-            // only do this once
-            PROVIDER.runTime();
-        }
+        // Invoking this method triggers class initialization.
     }
 
     /**

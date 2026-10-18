@@ -16,7 +16,7 @@
 package io.helidon.logging.common.spi;
 
 /**
- * Used by Helidon to initialize logging during class initialization and during the runtime phase.
+ * Used by Helidon to initialize logging during class initialization.
  *
  * @see io.helidon.logging.common.LogConfig
  */
@@ -27,7 +27,7 @@ public interface LoggingProvider {
     void initialization();
 
     /**
-     * Configures logging during the first call to {@link io.helidon.logging.common.LogConfig#configureRuntime()}.
+     * Legacy runtime reconfiguration hook. Helidon no longer invokes this method.
      */
     void runTime();
 }

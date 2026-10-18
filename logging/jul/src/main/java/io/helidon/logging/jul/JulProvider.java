@@ -44,8 +44,6 @@ public class JulProvider implements LoggingProvider {
     private static final String SYS_PROP_DISABLE_CONFIG = "io.helidon.logging.config.disabled";
     private static final String SYS_PROP_LOGGING_CLASS = "java.util.logging.config.class";
     private static final String SYS_PROP_LOGGING_FILE = "java.util.logging.config.file";
-    private static final String WHEN_INIT = "initialization";
-    private static final String WHEN_RUNTIME = "runtime";
 
     /**
      * Default constructor required by {@link java.util.ServiceLoader}.
@@ -55,25 +53,24 @@ public class JulProvider implements LoggingProvider {
 
     @Override
     public void initialization() {
-        configureLogging(false);
+        configureLogging();
     }
 
     @Override
     public void runTime() {
-        configureLogging(true);
+        configureLogging();
     }
 
-    // Configure logging for either the initialization phase or the runtime phase.
-    private static void configureLogging(boolean runtime) {
+    private static void configureLogging() {
         try {
-            doConfigureLogging(runtime);
+            doConfigureLogging();
         } catch (IOException e) {
             System.err.println("Failed to configure logging");
             e.printStackTrace();
         }
     }
 
-    private static void doConfigureLogging(boolean runtime) throws IOException {
+    private static void doConfigureLogging() throws IOException {
         String disableConfigProperty = System.getProperty(SYS_PROP_DISABLE_CONFIG);
         if (Boolean.parseBoolean(disableConfigProperty)) {
             // we are explicitly request to disable this feature
@@ -93,8 +90,7 @@ public class JulProvider implements LoggingProvider {
             source = findAndConfigureLogging();
         }
 
-        String when = runtime ? WHEN_RUNTIME : WHEN_INIT;
-        Logger.getLogger(JulProvider.class.getName()).info("Logging at " + when + " configured using " + source);
+        Logger.getLogger(JulProvider.class.getName()).info("Logging at runtime configured using " + source);
     }
 
     private static String findAndConfigureLogging() throws IOException {
