@@ -1029,6 +1029,45 @@ response as follows:
 - Otherwise, the exceptions are translated to an Internal Server Error HTTP
   error code `500`.
 
+### Limiting Internal Error Logs
+
+WebServer limits its own logs for unexpected failures, including application
+exceptions that produce `500 Internal Server Error`. Application logs, access
+logs, expected HTTP errors, and explicit status-only `500` responses are
+unaffected. Request handling and responses stay the same.
+
+By default, each one-hour collection window allows one detailed entry per error
+and at most 100 overall, shared by all listeners. Entries include the original
+diagnostic and an `error-id`. Errors are grouped by logging site, exception type
+and stack locations, excluding exception messages and request values.
+
+Newly suppressed counts are reported every ten minutes when nonzero, even if
+traffic stops, and remaining counts are reported at shutdown. Reporting does
+not renew the detailed-log allowances. `max-errors` bounds memory use by
+limiting tracked error identities; no exceptions or requests are retained.
+
+Configure `server.error-log` with these defaults:
+
+```yaml [application.yaml]
+server:
+  error-log:
+    enabled: true
+    window: PT1H
+    report-interval: PT10M
+    max-per-error: 1
+    max-total: 100
+    max-errors: 100
+```
+
+For programmatic configuration, use `WebServer.builder().errorLog(...)`:
+
+```java
+WebServer.builder()
+        .errorLog(it -> it.maxPerError(2));
+```
+
+Durations and limits must be positive. Set `enabled: false` to disable limiting.
+
 ## Direct Error Handling
 
 There are a number of scenarios where errors can be detected before the request

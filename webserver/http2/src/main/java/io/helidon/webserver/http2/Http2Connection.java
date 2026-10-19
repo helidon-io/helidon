@@ -1528,10 +1528,12 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                     handlerThread.interrupt();
                     LOGGER.log(DEBUG, "Socket error on writer thread", e);
                 } else {
-                    LOGGER.log(ERROR, "Unhandled exception on HTTP/2 stream thread", e);
+                    stream.connectionContext().listenerContext()
+                            .logError(LOGGER, ERROR, "Unhandled exception on HTTP/2 stream thread", e);
                 }
             } catch (Throwable e) {
-                LOGGER.log(ERROR, "Unhandled exception on HTTP/2 stream thread", e);
+                stream.connectionContext().listenerContext()
+                        .logError(LOGGER, ERROR, "Unhandled exception on HTTP/2 stream thread", e);
             } finally {
                 // 5.1 - In HALF-CLOSED state we need to wait for either RST-STREAM or DATA with endStream flag
                 if (stream.streamState() == Http2StreamState.CLOSED) {

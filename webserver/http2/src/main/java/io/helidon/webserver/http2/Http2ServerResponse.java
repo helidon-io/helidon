@@ -290,7 +290,7 @@ class Http2ServerResponse extends ServerResponseBase<Http2ServerResponse> {
             preparingResponse = false;
         }
         if (status().family() == Status.Family.INFORMATIONAL) {
-            LOGGER.log(System.Logger.Level.ERROR,
+            ctx.listenerContext().logError(LOGGER, System.Logger.Level.ERROR,
                        "Attempt to send a final informational response. "
                                + "Server responded with Internal Server Error.");
             status(Status.INTERNAL_SERVER_ERROR_500);

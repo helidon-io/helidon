@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
@@ -67,6 +68,7 @@ class LoomServer implements WebServer, Resumable {
     private static final AtomicInteger WEBSERVER_COUNTER = new AtomicInteger(1);
 
     private final Map<String, ServerListener> listeners;
+    private final ErrorLogLimiter errorLogLimiter;
     private final AtomicBoolean running = new AtomicBoolean();
     private final AtomicBoolean fatalListenerFailureReported = new AtomicBoolean();
     private final Lock lifecycleLock = new ReentrantLock();
@@ -78,6 +80,7 @@ class LoomServer implements WebServer, Resumable {
     private volatile HelidonShutdownHandler shutdownHandler;
     private volatile List<ListenerFuture> startFutures;
     private volatile boolean alreadyStarted = false;
+    private Timer errorLogTimer;
 
     @Service.Inject
     LoomServer(WebServerService service,
@@ -103,6 +106,7 @@ class LoomServer implements WebServer, Resumable {
                        Supplier<MetricsFactory> metricsFactory,
                        Supplier<MeterRegistry> meterRegistry) {
         this.registerShutdownHook = serverConfig.shutdownHook();
+        this.errorLogLimiter = new ErrorLogLimiter(serverConfig.errorLog(), System.nanoTime());
         this.context = serverConfig.serverContext()
                 .orElseGet(() -> Context.builder()
                         .id("web-" + WEBSERVER_COUNTER.getAndIncrement())
@@ -136,6 +140,7 @@ class LoomServer implements WebServer, Resumable {
                                                serverConfig.mediaContext().orElseGet(MediaContext::create),
                                                serverConfig.contentEncoding().orElseGet(ContentEncodingContext::create),
                                                serverConfig.directHandlers().orElseGet(DirectHandlers::create),
+                                               errorLogLimiter,
                                                metricsFactory,
                                                meterRegistry,
                                                featureContext.httpTransportObservers(name),
@@ -341,6 +346,11 @@ class LoomServer implements WebServer, Resumable {
 
     private void stopIt() {
         Throwable failure = stopListeners();
+        try {
+            stopErrorLog();
+        } catch (RuntimeException | Error e) {
+            failure = LifecycleFailures.add(failure, e);
+        }
         running.set(false);
         LOGGER.log(System.Logger.Level.INFO, "Helidon WebServer stopped all channels.");
         try {
@@ -419,6 +429,7 @@ class LoomServer implements WebServer, Resumable {
             LifecycleFailures.throwIfFailedAsIllegalState(failure, "Failed to start Helidon WebServer");
         }
         try {
+            startErrorLog();
             if (registerShutdownHook) {
                 registerShutdownHook();
             }
@@ -454,8 +465,30 @@ class LoomServer implements WebServer, Resumable {
         listeners.values().forEach(l -> l.router().afterStart(this));
     }
 
+    private void startErrorLog() {
+        if (!serverConfig.errorLog().enabled()) {
+            return;
+        }
+        long periodMillis = (serverConfig.errorLog().reportInterval().toNanos() - 1) / 1_000_000 + 1;
+        errorLogTimer = new Timer("helidon-error-log-timer", true);
+        errorLogTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                errorLogLimiter.report(System.nanoTime());
+            }
+        }, periodMillis, periodMillis);
+    }
+
+    private void stopErrorLog() {
+        if (errorLogTimer != null) {
+            errorLogTimer.cancel();
+        }
+        errorLogLimiter.flush();
+    }
+
     private void registerShutdownHook() {
-        this.shutdownHandler = new ServerShutdownHandler(listeners, startFutures, running, context.id());
+        this.shutdownHandler = new ServerShutdownHandler(listeners, startFutures, running, context.id(),
+                                                         errorLogLimiter, errorLogTimer);
         Main.addShutdownHandler(this.shutdownHandler);
     }
 
@@ -635,15 +668,21 @@ class LoomServer implements WebServer, Resumable {
         private final List<ListenerFuture> startFutures;
         private final AtomicBoolean running;
         private final String id;
+        private final ErrorLogLimiter errorLogLimiter;
+        private final Timer errorLogTimer;
 
         private ServerShutdownHandler(Map<String, ServerListener> listeners,
                                       List<ListenerFuture> startFutures,
                                       AtomicBoolean running,
-                                      String id) {
+                                      String id,
+                                      ErrorLogLimiter errorLogLimiter,
+                                      Timer errorLogTimer) {
             this.listeners = listeners;
             this.startFutures = startFutures;
             this.running = running;
             this.id = id;
+            this.errorLogLimiter = errorLogLimiter;
+            this.errorLogTimer = errorLogTimer;
         }
 
         @Override
@@ -658,6 +697,15 @@ class LoomServer implements WebServer, Resumable {
             }
             if (startFutures != null) {
                 cancelStartFutures(startFutures);
+            }
+
+            if (errorLogTimer != null) {
+                errorLogTimer.cancel();
+            }
+            try {
+                errorLogLimiter.flush();
+            } catch (RuntimeException | Error e) {
+                failure = LifecycleFailures.add(failure, e);
             }
 
             running.set(false);

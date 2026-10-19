@@ -542,10 +542,14 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         return keepConnectionOpen;
     }
 
-    private static Status noEntityInternalError(Status status) {
-        LOGGER.log(System.Logger.Level.ERROR, "Attempt to send status " + status.text() + " with entity."
-                + " Server responded with Internal Server Error. Please fix your routing, this is not allowed "
-                + "by HTTP specification, such responses MUST NOT contain an entity.");
+    private Status noEntityInternalError(Status attemptedStatus) {
+        ctx.listenerContext().logError(LOGGER,
+                                      System.Logger.Level.ERROR, "Attempt to send a no-entity status with entity."
+                                              + " Server responded with Internal Server Error. Please fix your routing, "
+                                              + "this is not allowed by HTTP specification, "
+                                              + "such responses MUST NOT contain an entity.",
+                                      new IllegalStateException("Attempt to send status " + attemptedStatus.text()
+                                                                        + " with entity."));
         return Status.INTERNAL_SERVER_ERROR_500;
     }
 

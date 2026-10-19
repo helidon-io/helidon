@@ -778,10 +778,10 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         ErrorHandling errorHandling = ctx.listenerContext()
                 .config()
                 .errorHandling();
-        if (LOGGER.isLoggable(DEBUG) && (exception.safeMessage() || errorHandling.logAllMessages())) {
+        if (exception.status().code() != Status.INTERNAL_SERVER_ERROR_500.code()
+                && LOGGER.isLoggable(DEBUG) && (exception.safeMessage() || errorHandling.logAllMessages())) {
             LOGGER.log(DEBUG, exception);
         }
-
         String message = null;
         if (errorHandling.includeEntity()) {
             message = exception.safeMessage()
@@ -804,7 +804,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         Status responseStatus = response.status();
         boolean finalInformationalResponse = responseStatus.family() == Status.Family.INFORMATIONAL;
         if (finalInformationalResponse) {
-            LOGGER.log(ERROR,
+            ctx.listenerContext().logError(LOGGER, ERROR,
                        "Attempt to send a final informational response. "
                                + "Server responded with Internal Server Error.");
             responseStatus = Status.INTERNAL_SERVER_ERROR_500;
@@ -896,6 +896,10 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                 writeFailure.addSuppressed(cleanupFailure);
             }
             throw writeFailure;
+        }
+        if (!finalInformationalResponse && responseStatus.code() == Status.INTERNAL_SERVER_ERROR_500.code()
+                && (exception.safeMessage() || errorHandling.logAllMessages())) {
+            ctx.listenerContext().logError(LOGGER, System.Logger.Level.WARNING, "Internal server error", exception);
         }
         return true;
     }

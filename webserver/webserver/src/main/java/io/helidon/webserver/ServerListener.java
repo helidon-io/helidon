@@ -69,6 +69,7 @@ class ServerListener implements TransportBindingContext, ListenerContext {
     private final Router router;
     private final ExecutorService sharedExecutor;
     private final DirectHandlers directHandlers;
+    private final ErrorLogLimiter errorLogLimiter;
     private final Tls tls;
     private final VirtualHostRegistry virtualHosts;
     private final SocketAddress configuredAddress;
@@ -96,6 +97,7 @@ class ServerListener implements TransportBindingContext, ListenerContext {
                    MediaContext defaultMediaContext,
                    ContentEncodingContext defaultContentEncodingContext,
                    DirectHandlers defaultDirectHandlers,
+                   ErrorLogLimiter errorLogLimiter,
                    List<ObserverLifecycle> httpTransportObserverLifecycles,
                    FatalListenerFailureHandler fatalListenerFailureHandler) {
         this(socketName,
@@ -106,6 +108,7 @@ class ServerListener implements TransportBindingContext, ListenerContext {
              defaultMediaContext,
              defaultContentEncodingContext,
              defaultDirectHandlers,
+             errorLogLimiter,
              () -> Services.get(MetricsFactory.class),
              () -> Services.get(MeterRegistry.class),
              httpTransportObserverLifecycles,
@@ -120,6 +123,7 @@ class ServerListener implements TransportBindingContext, ListenerContext {
                    MediaContext defaultMediaContext,
                    ContentEncodingContext defaultContentEncodingContext,
                    DirectHandlers defaultDirectHandlers,
+                   ErrorLogLimiter errorLogLimiter,
                    Supplier<MetricsFactory> metricsFactory,
                    Supplier<MeterRegistry> meterRegistry,
                    List<ObserverLifecycle> httpTransportObserverLifecycles,
@@ -153,6 +157,7 @@ class ServerListener implements TransportBindingContext, ListenerContext {
         this.tls = listenerConfig.tls().orElseGet(() -> Tls.builder().enabled(false).build());
         this.virtualHosts = VirtualHostRegistry.create(socketName, listenerConfig, tls);
         this.directHandlers = listenerConfig.directHandlers().orElse(defaultDirectHandlers);
+        this.errorLogLimiter = errorLogLimiter;
         this.mediaContext = listenerConfig.mediaContext().orElse(defaultMediaContext);
         this.contentEncodingContext = listenerConfig.contentEncoding().orElse(defaultContentEncodingContext);
         this.context = listenerConfig.listenerContext().orElseGet(() -> Context.builder()
@@ -204,6 +209,17 @@ class ServerListener implements TransportBindingContext, ListenerContext {
     @Override
     public DirectHandlers directHandlers() {
         return directHandlers;
+    }
+
+    @Override
+    public void logError(System.Logger logger, System.Logger.Level level, String message, Throwable failure) {
+        Objects.requireNonNull(failure, "failure");
+        errorLogLimiter.log(logger, level, message, failure, System.nanoTime());
+    }
+
+    @Override
+    public void logError(System.Logger logger, System.Logger.Level level, String message) {
+        errorLogLimiter.log(logger, level, message, null, System.nanoTime());
     }
 
     @Override
