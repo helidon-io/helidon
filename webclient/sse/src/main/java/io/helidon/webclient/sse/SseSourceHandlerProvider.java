@@ -63,6 +63,7 @@ public class SseSourceHandlerProvider implements SourceHandlerProvider<SseEvent>
             String line;
             boolean emit = false;
             boolean first = true;
+            boolean dataPresent = false;
             StringBuilder data = new StringBuilder();
             SseEvent.Builder sseBuilder = SseEvent.builder().mediaContext(mediaContext);
 
@@ -75,9 +76,12 @@ public class SseSourceHandlerProvider implements SourceHandlerProvider<SseEvent>
                 first = false;
                 if (line.isBlank()) {
                     if (emit) {
-                        sseBuilder.data(data.toString());
+                        if (dataPresent) {
+                            sseBuilder.data(data.toString());
+                        }
                         source.onEvent(sseBuilder.build());
                         data.setLength(0);
+                        dataPresent = false;
                         sseBuilder = SseEvent.builder().mediaContext(mediaContext);
                         emit = false;
                     }
@@ -85,10 +89,11 @@ public class SseSourceHandlerProvider implements SourceHandlerProvider<SseEvent>
                 }
                 emit = true;
                 if (line.startsWith(DATA)) {
-                    if (!data.isEmpty()) {
+                    if (dataPresent) {
                         data.append("\n");      // multi-line string data
                     }
                     data.append(skipPrefix(line));
+                    dataPresent = true;
                 } else if (line.startsWith(EVENT)) {
                     sseBuilder.name(skipPrefix(line));
                 } else if (line.startsWith(ID)) {
