@@ -29,6 +29,11 @@
                 <exclude>.*/**</exclude>
                 <exclude>etc/**</exclude>
             </projectFilesExcludes>
+            <executionsExcludes>
+                <!-- Regenerate fixture classpaths with local paths on each machine. -->
+                <exclude>*@fixture-runtime-classpath</exclude>
+                <exclude>*@fixture-tool-classpath</exclude>
+            </executionsExcludes>
         </project>
         <executionsExcludes>
             <!-- exclude target/libs -->
