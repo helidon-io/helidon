@@ -19,8 +19,6 @@ package io.helidon.declarative.tests.http;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -65,7 +63,6 @@ import io.helidon.webserver.http.ServerResponse;
 class GreetServiceEndpoint implements GreetService {
 
     private static final AtomicInteger RETRY_CALLS = new AtomicInteger();
-    private static volatile Instant lastCall = Instant.now();
 
     /**
      * The config value for the key {@code greeting}.
@@ -202,12 +199,6 @@ class GreetServiceEndpoint implements GreetService {
     @Ft.CircuitBreaker(name = "named")
     @Override
     public String breaker() {
-        Instant now = Instant.now();
-        Duration duration = Duration.between(lastCall, now);
-        lastCall = Instant.now();
-        if (duration.getSeconds() > 3) {
-            return "Success";
-        }
         throw new HttpException("Failed", Status.FORBIDDEN_403);
     }
 
