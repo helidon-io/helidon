@@ -51,6 +51,8 @@ See the [root type](config_reference.md).
 - [io.<wbr>helidon.<wbr>messaging.<wbr>Messaging<wbr>Execution<wbr>Config](io.helidon.messaging.MessagingExecutionConfig.md)
 - [io.<wbr>helidon.<wbr>messaging.<wbr>Messaging<wbr>Failure<wbr>Config](io.helidon.messaging.MessagingFailureConfig.md)
 - [io.<wbr>helidon.<wbr>messaging.<wbr>Messaging<wbr>Graph](io.helidon.messaging.MessagingGraph.md)
+- [io.<wbr>helidon.<wbr>messaging.<wbr>Messaging<wbr>Health<wbr>Config](io.helidon.messaging.MessagingHealthConfig.md)
+- [io.<wbr>helidon.<wbr>messaging.<wbr>Messaging<wbr>Metrics<wbr>Config](io.helidon.messaging.MessagingMetricsConfig.md)
 - [io.<wbr>helidon.<wbr>messaging.<wbr>spi.<wbr>Messaging<wbr>Channel<wbr>Config](io.helidon.messaging.spi.MessagingChannelConfig.md)
 - [io.<wbr>helidon.<wbr>messaging.<wbr>spi.<wbr>Messaging<wbr>Connector<wbr>Provider<wbr>Config](io.helidon.messaging.spi.MessagingConnectorProviderConfig.md)
 - [io.<wbr>helidon.<wbr>messaging.<wbr>spi.<wbr>Messaging<wbr>Incoming<wbr>Config](io.helidon.messaging.spi.MessagingIncomingConfig.md)

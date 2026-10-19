@@ -33,6 +33,8 @@ import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -45,95 +47,96 @@ class MessagingMetricsLifecycleTest {
     private static final String DURATION = "messaging.processing.duration";
     private static final String FAILURES = "messaging.processing.failures";
 
-    @Test
-    void addListenerCanAwaitConcurrentGraphClose() throws InterruptedException {
-        for (boolean sharedRegistry : List.of(false, true)) {
-            CountDownLatch listenerEntered = new CountDownLatch(1);
-            CountDownLatch closeEntered = new CountDownLatch(1);
-            AtomicBoolean first = new AtomicBoolean(true);
-            AtomicReference<MessagingGraph> newGraph = new AtomicReference<>();
-            try (Environment registering = new Environment(); Environment independent = new Environment()) {
-                Environment closing = sharedRegistry ? registering : independent;
-                MessagingChannel<String> existingChannel = MessagingChannel.create("existing", String.class);
-                try (MessagingGraph existing = closing.builder().channel(existingChannel)
-                        .outgoingChannel(existingChannel, new CloseSignal(closeEntered)).build().start()) {
-                    registering.meters.onMeterAdded(_ -> {
-                        if (first.compareAndSet(true, false)) {
-                            listenerEntered.countDown();
-                            await(closeEntered, "Existing graph did not reach connector close");
-                            existing.close();
-                        }
-                    });
-                    Task builder = new Task(() -> {
-                        MessagingChannel<String> channel = MessagingChannel.create("new", String.class);
-                        newGraph.set(registering.builder().channel(channel).payloadSink(channel, _ -> { }).build());
-                    });
-                    Task closer = new Task(existing::close);
-                    try {
-                        builder.start();
-                        await(listenerEntered, "New graph did not register its meters");
-                        closer.start();
-                        builder.awaitCompletion("Graph construction blocked in its meter listener");
-                        closer.awaitCompletion("Graph close blocked while retiring its meters");
-                    } finally {
-                        // Release a listener waiting for shutdown if the lock-cycle regression returns.
-                        builder.interrupt();
-                        builder.join();
-                        closer.join();
-                        if (newGraph.get() != null) {
-                            newGraph.get().close();
-                        }
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void addListenerCanAwaitConcurrentGraphClose(boolean sharedRegistry) throws InterruptedException {
+        // The add callback waits for shutdown on another thread, with both shared and independent registry ownership.
+        CountDownLatch listenerEntered = new CountDownLatch(1);
+        CountDownLatch closeEntered = new CountDownLatch(1);
+        AtomicBoolean first = new AtomicBoolean(true);
+        AtomicReference<MessagingGraph> newGraph = new AtomicReference<>();
+        try (Environment registering = new Environment(); Environment independent = new Environment()) {
+            Environment closing = sharedRegistry ? registering : independent;
+            MessagingChannel<String> existingChannel = MessagingChannel.create("existing", String.class);
+            try (MessagingGraph existing = closing.graph(closing.builder().channel(existingChannel)
+                    .outgoingChannel(existingChannel, new CloseSignal(closeEntered))).start()) {
+                registering.meters.onMeterAdded(_ -> {
+                    if (first.compareAndSet(true, false)) {
+                        listenerEntered.countDown();
+                        await(closeEntered, "Existing graph did not reach connector close");
+                        existing.close();
+                    }
+                });
+                Task builder = new Task(() -> {
+                    MessagingChannel<String> channel = MessagingChannel.create("new", String.class);
+                    newGraph.set(registering.graph(registering.builder().channel(channel).payloadSink(channel, _ -> { })));
+                });
+                Task closer = new Task(existing::close);
+                try {
+                    builder.start();
+                    await(listenerEntered, "New graph did not register its meters");
+                    closer.start();
+                    builder.awaitCompletion("Graph construction blocked in its meter listener");
+                    closer.awaitCompletion("Graph close blocked while retiring its meters");
+                } finally {
+                    // Release a listener waiting for shutdown if the lock-cycle regression returns.
+                    builder.interrupt();
+                    builder.join();
+                    closer.join();
+                    if (newGraph.get() != null) {
+                        newGraph.get().close();
                     }
                 }
-                assertThat(registering.meters.meters(), empty());
-                assertThat(closing.meters.meters(), empty());
             }
+            assertThat(registering.meters.meters(), empty());
+            assertThat(closing.meters.meters(), empty());
         }
     }
 
-    @Test
-    void customizedChannelsRetainSharedMetersUntilTheLastGraphCloses() {
-        for (boolean closeFirst : List.of(true, false)) {
-            HelidonMetricsFactory factory = HelidonMetricsFactory.create(builder -> builder
-                    .addMeterBuilderCustomizer(meter -> meter.tags(List.of())));
-            try (Environment environment = new Environment(factory)) {
-                MessagingChannel<String> orders = MessagingChannel.create("orders", String.class);
-                MessagingChannel<String> payments = MessagingChannel.create("payments", String.class);
-                AtomicInteger deliveries = new AtomicInteger();
-                try (MessagingGraph first = environment.builder().channel(orders)
-                        .payloadSink(orders, payload -> handle(payload, deliveries)).build().start();
-                     MessagingGraph second = environment.builder().channel(payments)
-                        .payloadSink(payments, payload -> handle(payload, deliveries)).build().start()) {
-                    first.emitter(orders).emit("first");
-                    second.emitter(payments).emit("second");
-                    Timer sharedTimer = environment.meters.timer(DURATION, List.of()).orElseThrow();
-                    Counter sharedFailures = environment.meters.counter(FAILURES, List.of()).orElseThrow();
-                    assertThat(sharedTimer.count(), is(2L));
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void customizedChannelsRetainSharedMetersUntilTheLastGraphCloses(boolean closeFirst) {
+        // Removing channel tags makes distinct channels share meters; neither close order may retire a surviving owner.
+        HelidonMetricsFactory factory = HelidonMetricsFactory.create(builder -> builder
+                .addMeterBuilderCustomizer(meter -> meter.tags(List.of())));
+        try (Environment environment = new Environment(factory)) {
+            MessagingChannel<String> orders = MessagingChannel.create("orders", String.class);
+            MessagingChannel<String> payments = MessagingChannel.create("payments", String.class);
+            AtomicInteger deliveries = new AtomicInteger();
+            try (MessagingGraph first = environment.graph(environment.builder().channel(orders)
+                    .payloadSink(orders, payload -> handle(payload, deliveries))).start();
+                 MessagingGraph second = environment.graph(environment.builder().channel(payments)
+                    .payloadSink(payments, payload -> handle(payload, deliveries))).start()) {
+                first.emitter(orders).emit("first");
+                second.emitter(payments).emit("second");
+                Timer sharedTimer = environment.meters.timer(DURATION, List.of()).orElseThrow();
+                Counter sharedFailures = environment.meters.counter(FAILURES, List.of()).orElseThrow();
+                assertThat(sharedTimer.count(), is(2L));
 
-                    Emitter<String> surviving;
-                    if (closeFirst) {
-                        first.close();
-                        surviving = second.emitter(payments);
-                    } else {
-                        second.close();
-                        surviving = first.emitter(orders);
-                    }
-                    surviving.emit("third");
-                    assertThrows(BatchDeliveryException.class, () -> surviving.emit("fail"));
-
-                    assertThat(environment.meters.timer(DURATION, List.of()).orElseThrow(), sameInstance(sharedTimer));
-                    assertThat(environment.meters.counter(FAILURES, List.of()).orElseThrow(), sameInstance(sharedFailures));
-                    assertThat(sharedTimer.count(), is(4L));
-                    assertThat(sharedFailures.count(), is(1L));
-                    assertThat(deliveries.get(), is(4));
+                Emitter<String> surviving;
+                if (closeFirst) {
+                    first.close();
+                    surviving = second.emitter(payments);
+                } else {
+                    second.close();
+                    surviving = first.emitter(orders);
                 }
-                assertThat(environment.meters.meters(), empty());
+                surviving.emit("third");
+                assertThrows(BatchDeliveryException.class, () -> surviving.emit("fail"));
+
+                assertThat(environment.meters.timer(DURATION, List.of()).orElseThrow(), sameInstance(sharedTimer));
+                assertThat(environment.meters.counter(FAILURES, List.of()).orElseThrow(), sameInstance(sharedFailures));
+                assertThat(sharedTimer.count(), is(4L));
+                assertThat(sharedFailures.count(), is(1L));
+                assertThat(deliveries.get(), is(4));
             }
+            assertThat(environment.meters.meters(), empty());
         }
     }
 
     @Test
     void sharedTimerDoesNotMergeOwnershipOfDistinctFailureCounters() {
+        // Only the timer loses its channel tag; failure counters still have independent owners and lifetimes.
         HelidonMetricsFactory factory = HelidonMetricsFactory.create(builder -> builder
                 .addMeterBuilderCustomizer(meter -> {
                     if (meter.name().equals(DURATION)) {
@@ -146,10 +149,10 @@ class MessagingMetricsLifecycleTest {
             var ordersTags = List.of(factory.tagCreate("channel", orders.name()));
             var paymentsTags = List.of(factory.tagCreate("channel", payments.name()));
             AtomicInteger deliveries = new AtomicInteger();
-            try (MessagingGraph first = environment.builder().channel(orders)
-                    .payloadSink(orders, payload -> handle(payload, deliveries)).build().start();
-                 MessagingGraph second = environment.builder().channel(payments)
-                    .payloadSink(payments, payload -> handle(payload, deliveries)).build().start()) {
+            try (MessagingGraph first = environment.graph(environment.builder().channel(orders)
+                    .payloadSink(orders, payload -> handle(payload, deliveries))).start();
+                 MessagingGraph second = environment.graph(environment.builder().channel(payments)
+                    .payloadSink(payments, payload -> handle(payload, deliveries))).start()) {
                 first.emitter(orders).emit("first");
                 second.emitter(payments).emit("second");
                 Timer sharedTimer = environment.meters.timer(DURATION, List.of()).orElseThrow();
@@ -171,14 +174,15 @@ class MessagingMetricsLifecycleTest {
 
     @Test
     void registrationTypeMismatchPreservesTheExistingMeterAndDelivery() {
+        // An application already owns a counter with the timer's name; failed observation must preserve it and delivery.
         try (Environment environment = new Environment()) {
             var tags = List.of(environment.factory.tagCreate("channel", "orders"));
             Counter existing = environment.meters.getOrCreate(environment.factory.counterBuilder(DURATION).tags(tags));
             existing.increment();
             MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
             AtomicInteger deliveries = new AtomicInteger();
-            try (MessagingGraph graph = environment.builder().channel(channel)
-                    .payloadSink(channel, _ -> deliveries.incrementAndGet()).build().start()) {
+            try (MessagingGraph graph = environment.graph(environment.builder().channel(channel)
+                    .payloadSink(channel, _ -> deliveries.incrementAndGet())).start()) {
                 graph.emitter(channel).emit("first");
 
                 assertThat(deliveries.get(), is(1));
@@ -193,16 +197,17 @@ class MessagingMetricsLifecycleTest {
 
     @Test
     void graphClosePreservesABorrowedTimerAfterItsLastMessagingOwner() {
+        // The application created this timer before messaging, so closing the last graph must leave it usable.
         try (Environment environment = new Environment()) {
             var tags = List.of(environment.factory.tagCreate("channel", "orders"));
             Timer existing = environment.meters.getOrCreate(environment.factory.timerBuilder(DURATION).tags(tags));
             existing.record(10, TimeUnit.NANOSECONDS);
             MessagingChannel<String> firstChannel = MessagingChannel.create("orders", String.class);
             MessagingChannel<String> secondChannel = MessagingChannel.create("orders", String.class);
-            try (MessagingGraph first = environment.builder().channel(firstChannel)
-                    .payloadSink(firstChannel, _ -> { }).build().start();
-                 MessagingGraph second = environment.builder().channel(secondChannel)
-                    .payloadSink(secondChannel, _ -> { }).build().start()) {
+            try (MessagingGraph first = environment.graph(environment.builder().channel(firstChannel)
+                    .payloadSink(firstChannel, _ -> { })).start();
+                 MessagingGraph second = environment.graph(environment.builder().channel(secondChannel)
+                    .payloadSink(secondChannel, _ -> { })).start()) {
                 first.emitter(firstChannel).emit("first");
                 first.close();
                 second.emitter(secondChannel).emit("second");
@@ -219,6 +224,7 @@ class MessagingMetricsLifecycleTest {
 
     @Test
     void failedCounterRegistrationPreservesBorrowedAndConflictingMeters() {
+        // Counter registration fails after borrowing an application timer; neither application meter belongs to rollback.
         try (Environment environment = new Environment()) {
             var tags = List.of(environment.factory.tagCreate("channel", "orders"));
             Timer borrowed = environment.meters.getOrCreate(environment.factory.timerBuilder(DURATION).tags(tags));
@@ -227,8 +233,8 @@ class MessagingMetricsLifecycleTest {
             conflicting.record(20, TimeUnit.NANOSECONDS);
             MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
             AtomicInteger deliveries = new AtomicInteger();
-            try (MessagingGraph graph = environment.builder().channel(channel)
-                    .payloadSink(channel, _ -> deliveries.incrementAndGet()).build().start()) {
+            try (MessagingGraph graph = environment.graph(environment.builder().channel(channel)
+                    .payloadSink(channel, _ -> deliveries.incrementAndGet())).start()) {
                 graph.emitter(channel).emit("first");
 
                 assertThat(deliveries.get(), is(1));
@@ -320,6 +326,11 @@ class MessagingMetricsLifecycleTest {
             } finally {
                 factory.close();
             }
+        }
+
+        private MessagingGraph graph(MessagingConfig.Builder config) {
+            // The fixture owns this registry; graph close releases only this graph's observers.
+            return MessagingGraph.create(config.buildPrototype(), manager.registry());
         }
 
         private MessagingConfig.Builder builder() {

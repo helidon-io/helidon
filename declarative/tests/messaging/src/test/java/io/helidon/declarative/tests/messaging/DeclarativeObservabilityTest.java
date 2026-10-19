@@ -53,6 +53,7 @@ class DeclarativeObservabilityTest {
 
     @Test
     void generatedBatchHandlerAndFanOutCountOneAttempt() {
+        // Generated consumers and fan-out still share the runtime dispatch boundary for one emitted batch.
         try (Fixture fixture = new Fixture()) {
             ChannelMessagingTypes.Producer producer = fixture.registry.get(ChannelMessagingTypes.Producer.class);
             producer.emitChannelOneBatch("first", "second");
@@ -66,14 +67,15 @@ class DeclarativeObservabilityTest {
 
     @Test
     void imperativeAndGeneratedGraphsShareTheSelectedRegistryAndChannelMeters() {
+        // Both graph APIs use the selected application registry, so closing the imperative graph preserves shared meters.
         try (Fixture fixture = new Fixture()) {
             ChannelMessagingTypes.Producer producer = fixture.registry.get(ChannelMessagingTypes.Producer.class);
             producer.emitChannelTwo("declarative first");
 
             MessagingChannel<String> channel = MessagingChannel.create(ChannelMessagingTypes.CHANNEL_TWO, String.class);
             List<String> imperative = new ArrayList<>();
-            try (MessagingGraph graph = MessagingGraph.builder().serviceRegistry(fixture.registry)
-                    .channel(channel).payloadSink(channel, imperative::add).build().start()) {
+            try (MessagingGraph graph = MessagingGraph.create(MessagingGraph.builder().serviceRegistry(fixture.registry)
+                    .channel(channel).payloadSink(channel, imperative::add).buildPrototype(), fixture.registry).start()) {
                 graph.emitter(channel).emit("imperative");
 
                 assertThat(imperative, is(List.of("imperative")));
@@ -90,6 +92,7 @@ class DeclarativeObservabilityTest {
 
     @Test
     void generatedHandlerFailureCountsAndPreservesApplicationFailure() {
+        // Generated adapters may wrap the delivery exception; observation must preserve the original application cause.
         try (Fixture fixture = new Fixture()) {
             ChannelMessagingTypes.Producer producer = fixture.registry.get(ChannelMessagingTypes.Producer.class);
             ChannelMessagingTypes.FailingConsumer consumer = fixture.registry.get(ChannelMessagingTypes.FailingConsumer.class);
@@ -111,6 +114,7 @@ class DeclarativeObservabilityTest {
 
     @Test
     void previouslyDiscoveredHealthChecksObserveImperativeAndGeneratedGraphs() {
+        // Discover checks before either graph exists, then verify that they observe later graph membership and startup.
         try (Fixture fixture = new Fixture()) {
             List<HealthCheck> checks = fixture.checks();
             assertThat(checks, hasSize(2));
@@ -119,8 +123,8 @@ class DeclarativeObservabilityTest {
             HealthCheck readiness = checks.stream().filter(check -> check.type() == HealthCheckType.READINESS)
                     .findFirst().orElseThrow();
             MessagingChannel<String> channel = MessagingChannel.create("late-graph", String.class);
-            try (MessagingGraph graph = MessagingGraph.builder().serviceRegistry(fixture.registry)
-                    .channel(channel).payloadSink(channel, _ -> { }).build()) {
+            try (MessagingGraph graph = MessagingGraph.create(MessagingGraph.builder().serviceRegistry(fixture.registry)
+                    .channel(channel).payloadSink(channel, _ -> { }).buildPrototype(), fixture.registry)) {
                 assertThat(readiness.call().status(), is(HealthCheckResponse.Status.DOWN));
                 fixture.registry.get(ChannelMessagingTypes.Producer.class).emitChannelTwo("start graph");
                 assertThat(readiness.call().status(), is(HealthCheckResponse.Status.DOWN));
@@ -134,8 +138,9 @@ class DeclarativeObservabilityTest {
 
     @Test
     void declarativeConfigurationCanDisableMetricsAndHealth() {
-        Config config = Config.just(ConfigSources.create(Map.of("messaging.enable-metrics", "false",
-                                                                "messaging.enable-health", "false")));
+        // Declarative bootstrap must apply the same nested observer configuration as programmatic graph creation.
+        Config config = Config.just(ConfigSources.create(Map.of("messaging.metrics.enabled", "false",
+                                                                "messaging.health.enabled", "false")));
         try (Fixture fixture = new Fixture(config)) {
             List<HealthCheck> checks = fixture.checks();
             fixture.registry.get(ChannelMessagingTypes.Producer.class).emitChannelTwo("delivered");
@@ -158,6 +163,7 @@ class DeclarativeObservabilityTest {
         }
 
         private Fixture(Config config) {
+            // Each fixture owns an isolated application registry, including the generated graph's lifecycle.
             manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
                     .putContractInstance(Config.class, config)
                     .putContractInstance(MeterRegistry.class, meters)

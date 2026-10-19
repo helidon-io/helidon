@@ -41,6 +41,8 @@ import io.helidon.messaging.spi.MessagingConnector;
 import io.helidon.messaging.spi.MessagingIncomingConfig;
 import io.helidon.messaging.spi.MessagingOutgoingConfig;
 import io.helidon.messaging.spi.OutgoingChannel;
+import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.ServiceRegistry;
 
 /**
  * Shared graph assembly from programmatic and generated registrations.
@@ -53,8 +55,12 @@ final class MessagingGraphAssembler {
     private final DefaultMessagingGraph graph;
 
     MessagingGraphAssembler(MessagingConfig config) {
+        this(config, GlobalServiceRegistry.registry());
+    }
+
+    MessagingGraphAssembler(MessagingConfig config, ServiceRegistry registry) {
         this.config = Objects.requireNonNull(config);
-        this.graph = new DefaultMessagingGraph(new DeliveryEngine(config));
+        this.graph = new DefaultMessagingGraph(new DeliveryEngine(config), Objects.requireNonNull(registry));
         List<ConsumerRegistration> consumers = config.consumerRegistrations();
         List<EmitterRegistration> emitters = config.emitterRegistrations();
         try {

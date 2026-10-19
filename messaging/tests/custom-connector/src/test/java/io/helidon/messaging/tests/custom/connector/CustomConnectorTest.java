@@ -57,14 +57,16 @@ class CustomConnectorTest {
 
     @Test
     void observabilityWithoutMetricsProviderPreservesProcessingAndHealth() {
+        // This module intentionally has no metrics provider; optional observation must leave processing and health usable.
         ServiceRegistryManager manager = ServiceRegistryManager.create();
         try {
             MeterRegistry meters = manager.registry().get(MeterRegistry.class);
             assertThat(meters.isMeterEnabled("messaging.processing.duration"), is(false));
             AtomicInteger deliveries = new AtomicInteger();
             MessagingChannel<String> channel = MessagingChannel.create("without-provider", String.class);
-            try (MessagingGraph graph = MessagingGraph.builder().serviceRegistry(manager.registry())
-                    .channel(channel).payloadSink(channel, _ -> deliveries.incrementAndGet()).build().start()) {
+            try (MessagingGraph graph = MessagingGraph.create(MessagingGraph.builder().serviceRegistry(manager.registry())
+                    .channel(channel).payloadSink(channel, _ -> deliveries.incrementAndGet()).buildPrototype(),
+                    manager.registry()).start()) {
                 graph.emitter(channel).emit("first");
 
                 assertThat(deliveries.get(), is(1));
@@ -79,6 +81,7 @@ class CustomConnectorTest {
 
     @Test
     void observabilityWorksWithServiceDiscoveryDisabled() {
+        // Explicit graph checks remain available when both provider discovery and service discovery are disabled.
         ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
                 .discoverServices(false)
                 .discoverServicesFromServiceLoader(false)
@@ -87,8 +90,9 @@ class CustomConnectorTest {
             assertThat(manager.registry().first(MeterRegistry.class).isEmpty(), is(true));
             AtomicInteger deliveries = new AtomicInteger();
             MessagingChannel<String> channel = MessagingChannel.create("without-discovery", String.class);
-            try (MessagingGraph graph = MessagingGraph.builder().serviceRegistry(manager.registry())
-                    .channel(channel).payloadSink(channel, _ -> deliveries.incrementAndGet()).build().start()) {
+            try (MessagingGraph graph = MessagingGraph.create(MessagingGraph.builder().serviceRegistry(manager.registry())
+                    .channel(channel).payloadSink(channel, _ -> deliveries.incrementAndGet()).buildPrototype(),
+                    manager.registry()).start()) {
                 graph.emitter(channel).emit("first");
 
                 assertThat(deliveries.get(), is(1));

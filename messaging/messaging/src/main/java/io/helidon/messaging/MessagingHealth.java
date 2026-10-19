@@ -23,10 +23,12 @@ import java.util.function.Supplier;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.health.HealthCheckType;
-import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.ServiceRegistry;
 
 /**
  * Graph-owned health membership whose checks retain only detached status.
+ * This integration lives beside the graph to keep lifecycle state and membership package-private;
+ * separating it would require a public lifecycle registration SPI in addition to the graph's health-check API.
  */
 final class MessagingHealth {
     private static final System.Logger LOGGER = System.getLogger(MessagingHealth.class.getName());
@@ -56,12 +58,11 @@ final class MessagingHealth {
         }
     }
 
-    static MessagingHealth create(MessagingConfig config) {
-        if (!config.enableHealth()) {
+    static MessagingHealth create(MessagingConfig config, ServiceRegistry registry) {
+        if (!config.health().enabled()) {
             return DISABLED;
         }
         try {
-            var registry = config.serviceRegistry().orElseGet(GlobalServiceRegistry::registry);
             return new MessagingHealth(registry.first(MessagingHealthProvider.class).orElse(null));
         } catch (RuntimeException e) {
             LOGGER.log(System.Logger.Level.WARNING, "Cannot register messaging health; using explicit graph checks", e);

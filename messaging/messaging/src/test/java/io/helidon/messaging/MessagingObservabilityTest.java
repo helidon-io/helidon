@@ -63,12 +63,13 @@ class MessagingObservabilityTest {
 
     @Test
     void singletonAndBatchEachCountAsOneProcessingAttempt() {
+        // Meter counts follow dispatches, so a multi-message batch contributes one sample rather than its message count.
         try (Fixture fixture = new Fixture()) {
             MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
             List<List<String>> received = new ArrayList<>();
-            try (MessagingGraph graph = fixture.builder().channel(channel).batchSink(channel, batch -> {
+            try (MessagingGraph graph = fixture.graph(fixture.builder().channel(channel).batchSink(channel, batch -> {
                 received.add(batch.payloads());
-            }).build().start()) {
+            })).start()) {
                 graph.emitter(channel).emit("first");
                 graph.emitter(channel).emit(batch("second", "third", "fourth"));
 
@@ -81,15 +82,16 @@ class MessagingObservabilityTest {
 
     @Test
     void durationIncludesSuccessfulAndFailedCallbacksAndExcludesTimeBetweenEmissions() {
+        // Controlled clock advances separate callback time from idle time, for successful and failed deliveries.
         TestClock clock = new TestClock();
         try (Fixture fixture = new Fixture(Optional.of(clock))) {
             MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
-            try (MessagingGraph graph = fixture.builder().channel(channel).payloadSink(channel, payload -> {
+            try (MessagingGraph graph = fixture.graph(fixture.builder().channel(channel).payloadSink(channel, payload -> {
                 clock.advance(7);
                 if (payload.equals("fail")) {
                     throw new IllegalStateException("failed processing");
                 }
-            }).buildPrototype().build().start()) {
+            })).start()) {
                 clock.advance(1_000);
                 graph.emitter(channel).emit("success");
                 clock.advance(2_000);
@@ -104,12 +106,13 @@ class MessagingObservabilityTest {
 
     @Test
     void runtimeExceptionCountsAsFailedAttemptAndPreservesCause() {
+        // Observing a failed dispatch must preserve the application exception reported by the emitter.
         try (Fixture fixture = new Fixture()) {
             MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
             IllegalStateException expected = new IllegalStateException("failed processing");
-            try (MessagingGraph graph = fixture.builder().channel(channel).batchSink(channel, _ -> {
+            try (MessagingGraph graph = fixture.graph(fixture.builder().channel(channel).batchSink(channel, _ -> {
                 throw expected;
-            }).build().start()) {
+            })).start()) {
                 BatchDeliveryException actual = assertThrows(BatchDeliveryException.class,
                                                              () -> graph.emitter(channel).emit(batch("first", "second")));
 
@@ -123,12 +126,13 @@ class MessagingObservabilityTest {
 
     @Test
     void errorCountsAsFailedAttemptAndPreservesIdentity() {
+        // Fatal application errors are measured without replacing the original Error instance.
         try (Fixture fixture = new Fixture()) {
             MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
             AssertionError expected = new AssertionError("failed processing");
-            try (MessagingGraph graph = fixture.builder().channel(channel).batchSink(channel, _ -> {
+            try (MessagingGraph graph = fixture.graph(fixture.builder().channel(channel).batchSink(channel, _ -> {
                 throw expected;
-            }).build().start()) {
+            })).start()) {
                 AssertionError actual = assertThrows(AssertionError.class, () -> graph.emitter(channel).emit("first"));
 
                 assertThat(actual, sameInstance(expected));
@@ -139,16 +143,16 @@ class MessagingObservabilityTest {
 
     @Test
     void fanOutCountsOnceWhileRoutingCountsBothChannels() {
+        // Multiple consumers share one dispatch; routing to a second channel creates a second measured dispatch.
         try (Fixture fixture = new Fixture()) {
             MessagingChannel<String> source = MessagingChannel.create("source", String.class);
             MessagingChannel<String> target = MessagingChannel.create("target", String.class);
             AtomicInteger deliveries = new AtomicInteger();
-            try (MessagingGraph graph = fixture.builder().channel(source).channel(target)
+            try (MessagingGraph graph = fixture.graph(fixture.builder().channel(source).channel(target)
                     .payloadSink(source, _ -> deliveries.incrementAndGet())
                     .payloadSink(source, _ -> deliveries.incrementAndGet())
                     .route(source, target)
-                    .payloadSink(target, _ -> deliveries.incrementAndGet())
-                    .build().start()) {
+                    .payloadSink(target, _ -> deliveries.incrementAndGet())).start()) {
                 graph.emitter(source).emit(batch("first", "second"));
 
                 assertThat(deliveries.get(), is(6));
@@ -160,11 +164,12 @@ class MessagingObservabilityTest {
 
     @Test
     void rejectionBeforeDispatchDoesNotCountAsProcessing() {
+        // Admission rejection happens before processing starts and must not create a duration or failure sample.
         try (Fixture fixture = new Fixture()) {
             MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
             AtomicInteger deliveries = new AtomicInteger();
-            try (MessagingGraph graph = fixture.builder().maxInFlightMessages(1).channel(channel)
-                    .payloadSink(channel, _ -> deliveries.incrementAndGet()).build()) {
+            try (MessagingGraph graph = fixture.graph(fixture.builder().maxInFlightMessages(1).channel(channel)
+                    .payloadSink(channel, _ -> deliveries.incrementAndGet()))) {
                 assertThrows(IllegalStateException.class, () -> graph.emitter(channel).emit("before start"));
                 graph.start();
                 assertThrows(MessagingRejectedException.class, () -> graph.emitter(channel).emit(batch("first", "second")));
@@ -180,9 +185,11 @@ class MessagingObservabilityTest {
     @Test
     @SuppressWarnings({"rawtypes", "unchecked"})
     void payloadConversionBeforeDispatchDoesNotCountAsProcessing() {
+        // Invalid input rejected while converting payloads never reaches the measured dispatch boundary.
         try (Fixture fixture = new Fixture()) {
             MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
-            try (MessagingGraph graph = fixture.builder().channel(channel).payloadSink(channel, _ -> { }).build().start()) {
+            try (MessagingGraph graph = fixture.graph(fixture.builder().channel(channel)
+                    .payloadSink(channel, _ -> { })).start()) {
                 Emitter emitter = graph.emitter(channel);
                 assertThrows(IllegalArgumentException.class, () -> emitter.emit(42));
 
@@ -193,6 +200,7 @@ class MessagingObservabilityTest {
 
     @Test
     void messageEnvelopeValidationInsideDispatchCountsAsFailure() {
+        // Envelope validation runs inside consumer dispatch, so this rejection is a completed failed attempt.
         try (Fixture fixture = new Fixture()) {
             MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
             AtomicInteger deliveries = new AtomicInteger();
@@ -217,7 +225,8 @@ class MessagingObservabilityTest {
                     deliveries.incrementAndGet();
                 }
             };
-            try (MessagingGraph graph = fixture.builder().channel(channel).addConsumerRegistration(consumer).build().start()) {
+            try (MessagingGraph graph = fixture.graph(fixture.builder().channel(channel)
+                    .addConsumerRegistration(consumer)).start()) {
                 assertThrows(IllegalArgumentException.class, () -> graph.emitter(channel).emit("ordinary envelope"));
 
                 assertThat(deliveries.get(), is(0));
@@ -228,6 +237,7 @@ class MessagingObservabilityTest {
 
     @Test
     void callerCancellationDoesNotCompleteTimingBeforeCallbackReturns() throws InterruptedException {
+        // Cancelling the waiting caller does not end a still-running callback or complete its timing sample early.
         TestClock clock = new TestClock();
         CountDownLatch entered = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
@@ -235,7 +245,7 @@ class MessagingObservabilityTest {
         AtomicBoolean callerInterrupted = new AtomicBoolean();
         try (Fixture fixture = new Fixture(Optional.of(clock))) {
             MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
-            try (MessagingGraph graph = fixture.builder().maxInFlightMessages(1).channel(channel)
+            try (MessagingGraph graph = fixture.graph(fixture.builder().maxInFlightMessages(1).channel(channel)
                     .payloadSink(channel, payload -> {
                         if (payload.equals("blocked")) {
                             entered.countDown();
@@ -249,7 +259,7 @@ class MessagingObservabilityTest {
                                 }
                             }
                         }
-                    }).build().start()) {
+                    })).start()) {
                 Thread caller = Thread.ofVirtual().start(() -> {
                     try {
                         graph.emitter(channel).emit("blocked");
@@ -285,15 +295,17 @@ class MessagingObservabilityTest {
 
     @Test
     void failedThenSuccessfulRetryRecordsBothAttempts() {
+        // Connector retries are separate dispatches, including the successful attempt after the initial failure.
         try (Fixture fixture = new Fixture()) {
             TestIncoming incoming = new TestIncoming();
             MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
             AtomicInteger attempts = new AtomicInteger();
-            try (MessagingGraph graph = fixture.incomingBuilder(incoming, 2).channel(channel).batchSink(channel, _ -> {
-                if (attempts.incrementAndGet() == 1) {
-                    throw new IllegalStateException("retry this batch");
-                }
-            }).build().start()) {
+            try (MessagingGraph graph = fixture.graph(fixture.incomingBuilder(incoming, 2).channel(channel)
+                    .batchSink(channel, _ -> {
+                        if (attempts.incrementAndGet() == 1) {
+                            throw new IllegalStateException("retry this batch");
+                        }
+                    })).start()) {
                 incoming.deliver(batch("first", "second"));
 
                 assertThat(attempts.get(), is(2));
@@ -304,14 +316,16 @@ class MessagingObservabilityTest {
 
     @Test
     void retryExhaustionCountsEveryFailedAttempt() {
+        // Exhaustion handling must not add an extra sample beyond the attempts actually dispatched.
         try (Fixture fixture = new Fixture()) {
             TestIncoming incoming = new TestIncoming();
             MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
             AtomicInteger attempts = new AtomicInteger();
-            try (MessagingGraph graph = fixture.incomingBuilder(incoming, 3).channel(channel).batchSink(channel, _ -> {
-                attempts.incrementAndGet();
-                throw new IllegalStateException("always fails");
-            }).build().start()) {
+            try (MessagingGraph graph = fixture.graph(fixture.incomingBuilder(incoming, 3).channel(channel)
+                    .batchSink(channel, _ -> {
+                        attempts.incrementAndGet();
+                        throw new IllegalStateException("always fails");
+                    })).start()) {
                 incoming.deliver(batch("first", "second"));
 
                 assertThat(attempts.get(), is(3));
@@ -324,20 +338,22 @@ class MessagingObservabilityTest {
 
     @Test
     void failedAndDeferredSubsetsEachCountWhenDispatched() {
+        // Retrying subsets of one original batch contributes one sample for each actual subset dispatch.
         try (Fixture fixture = new Fixture()) {
             TestIncoming incoming = new TestIncoming();
             MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
             List<List<String>> attempts = new ArrayList<>();
             IllegalStateException failure = new IllegalStateException("retry second message");
-            try (MessagingGraph graph = fixture.incomingBuilder(incoming, 2).channel(channel).batchSink(channel, current -> {
-                attempts.add(current.payloads());
-                if (attempts.size() == 1) {
-                    throw new BatchDeliveryException("partial failure", failure, current,
-                                                     List.of(BatchItemOutcome.succeeded(0),
-                                                             BatchItemOutcome.failed(1, failure),
-                                                             BatchItemOutcome.notAttempted(2)));
-                }
-            }).build().start()) {
+            try (MessagingGraph graph = fixture.graph(fixture.incomingBuilder(incoming, 2).channel(channel)
+                    .batchSink(channel, current -> {
+                        attempts.add(current.payloads());
+                        if (attempts.size() == 1) {
+                            throw new BatchDeliveryException("partial failure", failure, current,
+                                                             List.of(BatchItemOutcome.succeeded(0),
+                                                                     BatchItemOutcome.failed(1, failure),
+                                                                     BatchItemOutcome.notAttempted(2)));
+                        }
+                    })).start()) {
                 incoming.deliver(batch("first", "second", "third"));
 
                 assertThat(attempts, is(List.of(List.of("first", "second", "third"), List.of("second"), List.of("third"))));
@@ -348,12 +364,13 @@ class MessagingObservabilityTest {
 
     @Test
     void connectorMappingFailureDoesNotCountAsProcessing() {
+        // Connector mapping fails before dispatch, so observation must not report a handler attempt.
         try (Fixture fixture = new Fixture()) {
             TestIncoming incoming = new TestIncoming();
             MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
             AtomicInteger deliveries = new AtomicInteger();
-            try (MessagingGraph graph = fixture.incomingBuilder(incoming, 2).channel(channel)
-                    .payloadSink(channel, _ -> deliveries.incrementAndGet()).build().start()) {
+            try (MessagingGraph graph = fixture.graph(fixture.incomingBuilder(incoming, 2).channel(channel)
+                    .payloadSink(channel, _ -> deliveries.incrementAndGet())).start()) {
                 try (ConnectorDeliveryReservation reservation = incoming.context.reserveDelivery();
                      ConnectorDelivery delivery = reservation.startFailed(batch("first"),
                                                                            new IllegalArgumentException("mapping"))) {
@@ -368,16 +385,18 @@ class MessagingObservabilityTest {
 
     @Test
     void disablingMetricsPreservesDeliveryAndFailuresWhileHealthRemainsEnabled() {
+        // The metrics flag is independent: ordinary delivery, failure propagation, and health checks still work.
         try (Fixture fixture = new Fixture()) {
             MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
             List<String> received = new ArrayList<>();
             IllegalStateException expected = new IllegalStateException("rejected");
-            try (MessagingGraph graph = fixture.builder().enableMetrics(false).channel(channel).payloadSink(channel, message -> {
-                received.add(message);
-                if (message.equals("fail")) {
-                    throw expected;
-                }
-            }).build().start()) {
+            try (MessagingGraph graph = fixture.graph(fixture.builder().metrics(m -> m.enabled(false)).channel(channel)
+                    .payloadSink(channel, message -> {
+                        received.add(message);
+                        if (message.equals("fail")) {
+                            throw expected;
+                        }
+                    })).start()) {
                 graph.emitter(channel).emit("success");
                 BatchDeliveryException actual = assertThrows(BatchDeliveryException.class,
                                                              () -> graph.emitter(channel).emit("fail"));
@@ -392,10 +411,11 @@ class MessagingObservabilityTest {
 
     @Test
     void disablingHealthLeavesMetricsEnabled() {
+        // Disabling health removes checks without suppressing metrics for the same graph.
         try (Fixture fixture = new Fixture()) {
             MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
-            try (MessagingGraph graph = fixture.builder().enableHealth(false).channel(channel).payloadSink(channel, _ -> { })
-                    .build().start()) {
+            try (MessagingGraph graph = fixture.graph(fixture.builder().health(h -> h.enabled(false)).channel(channel)
+                    .payloadSink(channel, _ -> { })).start()) {
                 graph.emitter(channel).emit("first");
 
                 assertThat(graph.healthChecks(), empty());
@@ -406,12 +426,13 @@ class MessagingObservabilityTest {
 
     @Test
     void configurationCanDisableBothObservers() {
-        Config config = Config.just(ConfigSources.create(Map.of("enable-metrics", "false", "enable-health", "false")));
+        // The nested configuration keys must disable observation while retaining normal payload delivery.
+        Config config = Config.just(ConfigSources.create(Map.of("metrics.enabled", "false", "health.enabled", "false")));
         try (Fixture fixture = new Fixture()) {
             MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
             AtomicInteger deliveries = new AtomicInteger();
-            try (MessagingGraph graph = fixture.builder().config(config).channel(channel)
-                    .payloadSink(channel, _ -> deliveries.incrementAndGet()).build().start()) {
+            try (MessagingGraph graph = fixture.graph(fixture.builder().config(config).channel(channel)
+                    .payloadSink(channel, _ -> deliveries.incrementAndGet())).start()) {
                 graph.emitter(channel).emit("first");
 
                 assertThat(deliveries.get(), is(1));
@@ -450,6 +471,11 @@ class MessagingObservabilityTest {
             } finally {
                 factory.close();
             }
+        }
+
+        private MessagingGraph graph(MessagingConfig.Builder config) {
+            // The fixture owns this registry; graph close releases only this graph's observers.
+            return MessagingGraph.create(config.buildPrototype(), services.registry());
         }
 
         private MessagingConfig.Builder builder() {

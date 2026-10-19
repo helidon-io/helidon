@@ -40,6 +40,8 @@ import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -52,28 +54,23 @@ class MessagingMetricsCallbackTest {
     private static final String DURATION = "messaging.processing.duration";
     private static final String FAILURES = "messaging.processing.failures";
 
-    @Test
-    void addListenerCanAwaitChildGraphDelivery() throws Exception {
-        assertCallbackCanAwaitDelivery(false);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void listenerCanAwaitChildGraphDelivery(boolean removal) throws Exception {
+        // The listener waits for another thread, so metrics registration must not block that thread's graph construction.
+        assertCallbackCanAwaitDelivery(removal);
     }
 
-    @Test
-    void removalListenerCanAwaitChildGraphDelivery() throws Exception {
-        assertCallbackCanAwaitDelivery(true);
-    }
-
-    @Test
-    void addListenerCanAwaitChildGraphClose() throws Exception {
-        assertCallbackCanAwaitClose(false);
-    }
-
-    @Test
-    void removalListenerCanAwaitChildGraphClose() throws Exception {
-        assertCallbackCanAwaitClose(true);
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void listenerCanAwaitChildGraphClose(boolean removal) throws Exception {
+        // A child closed before registration completes must neither deadlock the listener nor retain meters afterward.
+        assertCallbackCanAwaitClose(removal);
     }
 
     @Test
     void deliverySpanningInitializationKeepsItsOriginalClock() throws Exception {
+        // Delivery starts with a pending recorder and ends after initialization; its sample must keep one clock origin.
         TestClock clock = new TestClock();
         try (Environment environment = new Environment(clock)) {
             MessagingChannel<String> channel = MessagingChannel.create("child", String.class);
@@ -83,7 +80,7 @@ class MessagingMetricsCallbackTest {
             AtomicBoolean listenerEntered = new AtomicBoolean();
             AtomicBoolean deliveryStartedInsideListener = new AtomicBoolean();
             FutureTask<Void> delivery = new FutureTask<>(() -> {
-                MessagingGraph graph = environment.builder().channel(channel)
+                MessagingGraph graph = environment.graph(environment.builder().channel(channel)
                         .payloadSink(channel, payload -> {
                             if (payload.equals("spanning-initialization")) {
                                 handlerEntered.countDown();
@@ -91,7 +88,7 @@ class MessagingMetricsCallbackTest {
                             } else {
                                 clock.nanos.addAndGet(7);
                             }
-                        }).build();
+                        }));
                 child.set(graph);
                 graph.start();
                 graph.emitter(channel).emit("spanning-initialization");
@@ -148,6 +145,7 @@ class MessagingMetricsCallbackTest {
 
     @Test
     void pendingSampleOverflowPreservesDeliveryAndParentMetrics() throws Exception {
+        // Bounded deferred observations may be discarded, but processing and the parent's metrics must keep working.
         try (Environment environment = new Environment();
              ChildCallback callback = new ChildCallback(environment, false, 2_000)) {
             try (MessagingGraph parent = environment.trigger(false, callback).start()) {
@@ -169,6 +167,7 @@ class MessagingMetricsCallbackTest {
 
     @Test
     void pendingRegistrationOverflowPreservesDelivery() throws Exception {
+        // More child graphs than the registration queue permits must still deliver without deadlocking the callback.
         try (Environment environment = new Environment()) {
             List<MessagingGraph> children = new ArrayList<>();
             List<MessagingChannel<String>> channels = new ArrayList<>();
@@ -178,8 +177,8 @@ class MessagingMetricsCallbackTest {
             FutureTask<Void> task = new FutureTask<>(() -> {
                 for (int i = 0; i < 65; i++) {
                     MessagingChannel<String> channel = MessagingChannel.create("queued-" + i, String.class);
-                    MessagingGraph child = environment.builder().channel(channel)
-                            .payloadSink(channel, _ -> deliveries.incrementAndGet()).build();
+                    MessagingGraph child = environment.graph(environment.builder().channel(channel)
+                            .payloadSink(channel, _ -> deliveries.incrementAndGet()));
                     children.add(child);
                     channels.add(channel);
                     child.start().emitter(channel).emit("before-registration");
@@ -237,6 +236,7 @@ class MessagingMetricsCallbackTest {
 
     @Test
     void childClosedBeforeInitializationReplaysCompletedSamplesIntoSharedMeters() throws Exception {
+        // A retired child's completed attempts still contribute when customization gives the parent the same series.
         try (Environment environment = new Environment();
              ChildCallback callback = new ChildCallback(environment, true, 2, "parent")) {
             try (MessagingGraph parent = environment.trigger(false, callback).start()) {
@@ -288,8 +288,8 @@ class MessagingMetricsCallbackTest {
                 environment.assertAbsent("child");
 
                 MessagingChannel<String> replacementChannel = MessagingChannel.create("child", String.class);
-                try (MessagingGraph replacement = environment.builder().channel(replacementChannel)
-                        .payloadSink(replacementChannel, _ -> { }).build().start()) {
+                try (MessagingGraph replacement = environment.graph(environment.builder().channel(replacementChannel)
+                        .payloadSink(replacementChannel, _ -> { })).start()) {
                     replacement.emitter(replacementChannel).emit("fresh-generation");
                     environment.assertCounts("child", 1, 0);
                 }
@@ -376,13 +376,13 @@ class MessagingMetricsCallbackTest {
         }
 
         private void runChild() {
-            MessagingGraph graph = environment.builder().channel(channel)
+            MessagingGraph graph = environment.graph(environment.builder().channel(channel)
                     .payloadSink(channel, payload -> {
                         deliveries.incrementAndGet();
                         if (payload.equals("fail")) {
                             throw new IllegalStateException("Child processing failed");
                         }
-                    }).build();
+                    }));
             child.set(graph);
             graph.start();
             for (int i = 1; i < deliveriesBeforeRegistration; i++) {
@@ -441,6 +441,11 @@ class MessagingMetricsCallbackTest {
             }
         }
 
+        private MessagingGraph graph(MessagingConfig.Builder config) {
+            // The fixture owns this registry; graph close releases only this graph's observers.
+            return MessagingGraph.create(config.buildPrototype(), manager.registry());
+        }
+
         private MessagingConfig.Builder builder() {
             return MessagingGraph.builder().serviceRegistry(manager.registry());
         }
@@ -449,7 +454,7 @@ class MessagingMetricsCallbackTest {
             if (!removal) {
                 meters.onMeterAdded(callback);
             }
-            MessagingGraph graph = builder().channel(parentChannel).payloadSink(parentChannel, _ -> { }).build();
+            MessagingGraph graph = graph(builder().channel(parentChannel).payloadSink(parentChannel, _ -> { }));
             if (removal) {
                 meters.onMeterRemoved(callback);
                 graph.close();
