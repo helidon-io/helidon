@@ -159,7 +159,7 @@ class ConfigChangeListenerTest {
                     return _ -> {
                         String nestedValue = nested.get();
                         String otherValue = other.get();
-                        return (key, value) -> key.toString().startsWith("nested.") ? nestedValue : otherValue;
+                        return (key, _) -> key.toString().startsWith("nested.") ? nestedValue : otherValue;
                     };
                 }).build();
         try {
