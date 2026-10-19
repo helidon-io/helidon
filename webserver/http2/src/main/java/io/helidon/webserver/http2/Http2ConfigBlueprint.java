@@ -78,7 +78,8 @@ interface Http2ConfigBlueprint extends ProtocolConfig, HttpConfig {
 
     /**
      * This setting indicates the sender's maximum window size in bytes for stream-level flow control.
-     * Default and maximum value is 2<sup>31</sup>-1 = 2147483647 bytes. This setting affects the window size
+     * Defaults to {@code 1048576} bytes. The maximum value is 2<sup>31</sup>-1 = 2147483647 bytes.
+     * This setting affects the window size
      * of HTTP/2 connection.
      * Any value greater than 2147483647 causes an error. Any value smaller than initial window size causes an error.
      * See RFC 9113 section 6.9.1 for details.
