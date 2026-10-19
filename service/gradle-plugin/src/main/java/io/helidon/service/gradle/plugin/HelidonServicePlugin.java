@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.util.Objects;
 import java.util.Properties;
 
+import io.helidon.common.Api;
+
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
@@ -36,6 +38,7 @@ import org.gradle.language.jvm.tasks.ProcessResources;
  * Application and test outputs contain completed bindings before packaging or execution.
  * The public constructor and JavaBean managed properties implement Gradle's plugin integration contract.
  */
+@Api.Incubating
 public final class HelidonServicePlugin implements Plugin<Project> {
     /**
      * Constructor used by Gradle plugin instantiation.

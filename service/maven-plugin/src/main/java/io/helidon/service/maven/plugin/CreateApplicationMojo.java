@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.File;
 import java.nio.file.Path;
 
 import io.helidon.codegen.CodegenScope;
+import io.helidon.common.Api;
 import io.helidon.service.codegen.ServiceBindingCodegenProvider;
 
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -31,6 +32,7 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
  * Maven goal to create application bindings (a mapping of services that satisfy injection points),
  * and to create application main class (reflection-free registration of services).
  */
+@Api.Incubating
 @Mojo(name = "create-application",
       defaultPhase = LifecyclePhase.COMPILE,
       threadSafe = true,

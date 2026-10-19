@@ -15,6 +15,8 @@
  */
 package io.helidon.service.gradle.plugin;
 
+import io.helidon.common.Api;
+
 import org.gradle.api.provider.Property;
 
 /**
@@ -22,6 +24,7 @@ import org.gradle.api.provider.Property;
  * using Gradle's {@code annotationProcessor} and {@code testAnnotationProcessor} configurations.
  * The JavaBean accessors and public constructor support Gradle managed properties and DSL decoration.
  */
+@Api.Incubating
 public abstract class HelidonServiceExtension extends BindingOptions {
     /**
      * Constructor for Gradle managed instantiation.

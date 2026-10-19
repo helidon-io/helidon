@@ -18,6 +18,7 @@
  * Native Gradle integration for build-time declarative application bindings.
  */
 module io.helidon.service.gradle.plugin {
+    requires io.helidon.common;
     requires transitive gradle.api;
 
     exports io.helidon.service.gradle.plugin;

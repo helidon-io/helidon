@@ -107,7 +107,7 @@ interface ApplicationGeneratorConfigBlueprint {
      *
      * @return scope
      */
-    @Option.DefaultCode("@io.helidon.codegen.CodegenScope@.PRODUCTION")
+    @Option.Default("PRODUCTION")
     CodegenScope scope();
 
     /**

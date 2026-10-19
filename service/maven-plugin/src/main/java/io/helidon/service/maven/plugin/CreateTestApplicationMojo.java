@@ -22,6 +22,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 
 import io.helidon.codegen.CodegenScope;
+import io.helidon.common.Api;
 import io.helidon.service.codegen.ServiceBindingCodegenProvider;
 
 import org.apache.maven.artifact.Artifact;
@@ -35,6 +36,7 @@ import org.apache.maven.project.MavenProject;
  * A mojo wrapper for application binding generation for test specific types.
  * For test scope, we only generate binding, as main class would not be useful.
  */
+@Api.Incubating
 @Mojo(name = "test-application-create",
       defaultPhase = LifecyclePhase.TEST_COMPILE,
       threadSafe = true,

@@ -18,6 +18,7 @@
  * Maven integration for build-time declarative application binding generation.
  */
 module io.helidon.service.maven.plugin {
+    requires io.helidon.common;
     requires io.helidon.service.application.codegen;
     requires io.helidon.codegen;
     requires io.helidon.service.codegen;

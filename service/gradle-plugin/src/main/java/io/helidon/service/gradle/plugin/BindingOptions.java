@@ -15,6 +15,8 @@
  */
 package io.helidon.service.gradle.plugin;
 
+import io.helidon.common.Api;
+
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
@@ -23,6 +25,7 @@ import org.gradle.api.tasks.Optional;
  * Options shared by application and test binding generation.
  * The JavaBean accessors and public constructor support Gradle managed properties and DSL decoration.
  */
+@Api.Incubating
 public abstract class BindingOptions {
     /**
      * Constructor for Gradle managed instantiation.

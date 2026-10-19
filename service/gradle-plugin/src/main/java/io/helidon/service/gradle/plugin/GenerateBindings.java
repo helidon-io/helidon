@@ -24,6 +24,8 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import io.helidon.common.Api;
+
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.file.ConfigurableFileCollection;
@@ -50,6 +52,7 @@ import org.gradle.work.DisableCachingByDefault;
  * Each execution replaces its own output, so deleted services and renamed bindings cannot remain in application artifacts.
  * JavaBean accessors and the injected constructor are Gradle task and managed-property contracts.
  */
+@Api.Incubating
 @DisableCachingByDefault(because = "Only local up-to-date checking is supported for the isolated compiler and classpath scan")
 public abstract class GenerateBindings extends DefaultTask {
     private final BindingOptions options;
