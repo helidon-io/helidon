@@ -81,6 +81,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <inherited>false</inherited>
                 <dependencies>
                     <!-- Order reactor builds before compiling applications with the inherited processors. -->
                     <dependency>
