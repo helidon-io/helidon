@@ -271,7 +271,7 @@ Config SPI Interfaces for filtering:
 <tr>
 <td><code>ConfigFilterProvider</code></td>
 <td><code>ConfigFilterFactory create(ConfigFilterContext context);</code></td>
-<td>Creates a factory for each Config builder invocation. Starts any monitoring specific to that runtime and registers its cleanup listener with the context.</td>
+<td>Creates a factory for each Config builder invocation. Starts any monitoring specific to that runtime and registers its cleanup listener through the initial Config view.</td>
 </tr>
 <tr>
 <td><code>ConfigFilterFactory</code></td>
@@ -280,8 +280,8 @@ Config SPI Interfaces for filtering:
 </tr>
 <tr>
 <td><code>ConfigFilterContext</code></td>
-<td><code>Config initialConfig();</code><br><code>void reload();</code><br><code>void onChange(Config.ChangeListener listener);</code></td>
-<td>Provides the initial construction view, requests asynchronous rebuilds, and registers listeners for changes and the end of change support in this configuration runtime.</td>
+<td><code>Config initialConfig();</code><br><code>void reload();</code></td>
+<td>Provides the initial unfiltered construction view and requests asynchronous rebuilds of this configuration runtime.</td>
 </tr>
 </tbody>
 </table>
@@ -293,7 +293,8 @@ receives a `ConfigFilterContext` and creates one `ConfigFilterFactory`
 for each `Config.Builder.build()` invocation. The factory receives an unfiltered Config view on every build
 or reload, and returns a fully constructed immutable filter. These views do not
 apply legacy overrides, ordinary filters, or value-reference resolution. They
-are construction inputs, not handles for subscribing to or reloading the target.
+are construction inputs whose context methods retain the snapshot without
+reloading or stopping the target runtime.
 Provider-created filters are ready to use without `ConfigFilter.init(Config)`.
 
 The context's `initialConfig()` supplies the initial unfiltered view. Retain
@@ -306,10 +307,13 @@ Keep monitoring resources independent for each built configuration; the provider
 itself can be shared. Start monitoring in
 `ConfigFilterProvider.create(ConfigFilterContext)` and request reloads through
 the retained context when filter rules change. Register a `Config.ChangeListener`
-using `context.onChange(listener)` to release those resources in `onStop()`.
+once during provider creation using `context.initialConfig().onChange(listener)`
+to release those resources in `onStop()`.
 The listener's `onChange(Config)` observes changes to the owning runtime, and
 `onStop()` runs once when change support stops, including cleanup if initial
 construction fails. A listener registered after stopping is notified immediately.
+The initial unfiltered snapshot does not emit changes; callbacks receive the
+published filtered configuration when its effective values change.
 
 The factory only creates filters. Stopping change support does not prevent
 manual reloads or filter creation, and creating a filter must not restart

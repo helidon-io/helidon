@@ -34,7 +34,7 @@ final class OverrideFilterFactory implements ConfigFilterFactory {
         this.config = config;
         this.definitions = definitions;
         definitions.onChange(_ -> context.reload());
-        context.onChange(new Config.ChangeListener() {
+        context.initialConfig().onChange(new Config.ChangeListener() {
             @Override
             public void onChange(Config changed) {
             }

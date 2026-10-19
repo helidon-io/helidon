@@ -90,30 +90,95 @@ class ConfigChangeListenerTest {
     }
 
     @Test
-    void filterContextObservesRootChangesWhileRawSnapshotListenersRemainInert() {
+    void rawSnapshotListenersObserveFilteredChangesAndStopWithoutChangingRawViews() {
         AtomicInteger generation = new AtomicInteger();
         AtomicReference<ConfigFilterContext> context = new AtomicReference<>();
-        RecordingListener runtime = new RecordingListener();
-        RecordingListener raw = new RecordingListener();
+        RecordingListener root = new RecordingListener();
+        RecordingListener child = new RecordingListener();
+        RecordingListener detached = new RecordingListener();
         Config config = builder().addFilterProvider(initial -> {
             context.set(initial);
-            initial.onChange(runtime);
-            initial.initialConfig().onChange(raw);
+            Config raw = initial.initialConfig();
+            raw.onChange(root);
+            raw.get("nested").onChange(child);
+            raw.get("nested").detach().onChange(detached);
             return _ -> {
                 int current = generation.incrementAndGet();
                 return (_, value) -> value + current;
             };
         }).build();
         try {
-            context.get().initialConfig().context().stopChangeSupport();
+            assertThat("Building the initial config does not publish a change", root.changes.get(), is(0));
+            assertThat(child.changes.get(), is(0));
+            assertThat(detached.changes.get(), is(0));
+            Config raw = context.get().initialConfig();
+            Config rawChild = raw.get("nested");
+            Config rawDetached = rawChild.detach();
+            assertThat(raw.context().reload(), sameInstance(raw));
+            assertThat(rawChild.context().reload(), sameInstance(rawChild));
+            assertThat(rawDetached.context().reload(), sameInstance(rawDetached));
+            raw.context().stopChangeSupport();
+            rawChild.context().stopChangeSupport();
+            rawDetached.context().stopChangeSupport();
             Config next = config.context().reload();
-            assertThat(runtime.changed.get(), sameInstance(next));
-            assertThat(runtime.changed.get().get("nested.value").asString().get(), is("raw2"));
-            assertThat("Stopping raw snapshot did not stop runtime", runtime.stopped.get(), is(0));
+            assertThat(root.changed.get(), sameInstance(next));
+            assertThat(root.changed.get().get("nested.value").asString().get(), is("raw2"));
+            assertThat(child.changed.get().key().toString(), is("nested"));
+            assertThat(child.changed.get().get("value").asString().get(), is("raw2"));
+            assertThat(detached.changed.get().key().isRoot(), is(true));
+            assertThat(detached.changed.get().get("value").asString().get(), is("raw2"));
+            assertThat(raw.get("nested.value").asString().get(), is("raw"));
+            assertThat(rawChild.get("value").asString().get(), is("raw"));
+            assertThat(rawDetached.get("value").asString().get(), is("raw"));
+            assertThat("Stopping raw views did not stop runtime listeners", root.stopped.get(), is(0));
+            assertThat(child.stopped.get(), is(0));
+            assertThat(detached.stopped.get(), is(0));
             config.context().stopChangeSupport();
-            assertThat(runtime.stopped.get(), is(1));
-            assertThat(raw.changes.get(), is(0));
-            assertThat(raw.stopped.get(), is(0));
+            config.context().stopChangeSupport();
+            assertThat(root.stopped.get(), is(1));
+            assertThat(child.stopped.get(), is(1));
+            assertThat(detached.stopped.get(), is(1));
+        } finally {
+            config.context().stopChangeSupport();
+        }
+    }
+
+    @Test
+    void rawSnapshotListenersOnlyReceiveEffectiveChangesToTheirNode() {
+        AtomicReference<String> nested = new AtomicReference<>("first");
+        AtomicReference<String> other = new AtomicReference<>("first");
+        RecordingListener root = new RecordingListener();
+        RecordingListener child = new RecordingListener();
+        RecordingListener detached = new RecordingListener();
+        Config config = builder().addSource(ConfigSources.create(Map.of("other.value", "raw")))
+                .addFilterProvider(initial -> {
+                    Config raw = initial.initialConfig();
+                    raw.onChange(root);
+                    raw.get("nested").onChange(child);
+                    raw.get("nested").detach().onChange(detached);
+                    return _ -> {
+                        String nestedValue = nested.get();
+                        String otherValue = other.get();
+                        return (key, value) -> key.toString().startsWith("nested.") ? nestedValue : otherValue;
+                    };
+                }).build();
+        try {
+            config.context().reload();
+            assertThat("Equivalent filtered generation does not publish a root change", root.changes.get(), is(0));
+            assertThat(child.changes.get(), is(0));
+            assertThat(detached.changes.get(), is(0));
+            other.set("second");
+            config.context().reload();
+            assertThat(root.changes.get(), is(1));
+            assertThat("Unrelated changes do not notify a raw child registration", child.changes.get(), is(0));
+            assertThat(detached.changes.get(), is(0));
+            nested.set("second");
+            config.context().reload();
+            assertThat(root.changes.get(), is(2));
+            assertThat(child.changes.get(), is(1));
+            assertThat(detached.changes.get(), is(1));
+            assertThat(child.changed.get().get("value").asString().get(), is("second"));
+            assertThat(detached.changed.get().get("value").asString().get(), is("second"));
         } finally {
             config.context().stopChangeSupport();
         }
@@ -131,7 +196,7 @@ class ConfigChangeListenerTest {
 
         config.onChange(listener);
         assertThat(listener.stopped.get(), is(1));
-        context.get().onChange(listener);
+        context.get().initialConfig().onChange(listener);
         assertThat(listener.stopped.get(), is(2));
         config.context().stopChangeSupport();
         assertThat(listener.stopped.get(), is(2));
@@ -203,10 +268,10 @@ class ConfigChangeListenerTest {
             }
         };
         try {
-            context.get().onChange(listener);
+            context.get().initialConfig().onChange(listener);
             config.context().stopChangeSupport();
             assertThat(callbacks.get(), is(1));
-            context.get().onChange(listener);
+            context.get().initialConfig().onChange(listener);
             assertThat("Late stop callback also runs outside runtime lock", callbacks.get(), is(2));
         } finally {
             executor.shutdownNow();
@@ -303,7 +368,7 @@ class ConfigChangeListenerTest {
         AtomicInteger stopped = new AtomicInteger();
         IllegalStateException thrown = assertThrows(IllegalStateException.class, () -> builder().addFilterProvider(initial -> {
             context.set(initial);
-            initial.onChange(new RecordingListener() {
+            initial.initialConfig().onChange(new RecordingListener() {
                 @Override
                 public void onStop() {
                     stopped.incrementAndGet();
@@ -318,7 +383,7 @@ class ConfigChangeListenerTest {
         assertThat(thrown.getSuppressed()[0], sameInstance(cleanup));
         assertThat(stopped.get(), is(1));
         RecordingListener late = new RecordingListener();
-        context.get().onChange(late);
+        context.get().initialConfig().onChange(late);
         assertThat("Failed runtime immediately stops late listeners", late.stopped.get(), is(1));
         context.get().reload();
         assertThat(stopped.get(), is(1));
@@ -332,7 +397,7 @@ class ConfigChangeListenerTest {
         RecordingListener second = new RecordingListener();
         IllegalStateException thrown = assertThrows(IllegalStateException.class, () -> builder()
                 .addFilterProvider(initial -> {
-                    initial.onChange(new RecordingListener() {
+                    initial.initialConfig().onChange(new RecordingListener() {
                         @Override
                         public void onStop() {
                             stopped.incrementAndGet();
@@ -344,7 +409,7 @@ class ConfigChangeListenerTest {
                     };
                 })
                 .addFilterProvider(initial -> {
-                    initial.onChange(second);
+                    initial.initialConfig().onChange(second);
                     return _ -> (_, value) -> value;
                 })
                 .build());
@@ -354,6 +419,7 @@ class ConfigChangeListenerTest {
         assertThat(thrown.getSuppressed()[0], sameInstance(cleanup));
         assertThat(stopped.get(), is(1));
         assertThat("Later provider was stopped even though its filter was never created", second.stopped.get(), is(1));
+        assertThat("Failed initialization never publishes a configuration", second.changes.get(), is(0));
     }
 
     private static void await(CountDownLatch latch) {

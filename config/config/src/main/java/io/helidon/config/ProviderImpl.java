@@ -231,8 +231,7 @@ class ProviderImpl implements Config.Context {
                 ? Config.empty()
                 : new ConfigFactory(configMapperManager, node, (_, value) -> value, this, true).config();
         if (!factoriesCreated) {
-            var context = new FilterContext(raw, this::requestReload,
-                                            listener -> onChange(diff -> listener.onChange(diff.config()), listener::onStop));
+            var context = new FilterContext(raw, this::requestReload);
             for (ConfigFilterProvider provider : runtimeFilterProviders) {
                 filterFactories.add(Objects.requireNonNull(provider.create(context), "Config filter factory"));
             }
@@ -475,17 +474,10 @@ class ProviderImpl implements Config.Context {
         return Boolean.parseBoolean(value);
     }
 
-    private record FilterContext(Config initialConfig,
-                                 Runnable requestReload,
-                                 Consumer<Config.ChangeListener> registerListener) implements ConfigFilterContext {
+    private record FilterContext(Config initialConfig, Runnable requestReload) implements ConfigFilterContext {
         @Override
         public void reload() {
             requestReload.run();
-        }
-
-        @Override
-        public void onChange(Config.ChangeListener listener) {
-            registerListener.accept(Objects.requireNonNull(listener));
         }
     }
 

@@ -150,9 +150,6 @@ abstract class AbstractConfigImpl implements Config {
     @Override
     public void onChange(Consumer<Config> onChangeConsumer) {
         Objects.requireNonNull(onChangeConsumer, "onChangeConsumer");
-        if (factory.snapshot()) {
-            return;
-        }
         Consumer<ConfigDiff> onChange = event -> {
             // check if change contains this node
             if (event.changedKeys().contains(realKey)) {

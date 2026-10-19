@@ -129,7 +129,6 @@ class FilterFactoryLifecycleTest {
         assertThat(snapshot.get("nested").detach().get("value").asString().get(), is("raw"));
         assertThat(snapshot.context().reload(), sameInstance(snapshot));
         assertThat(snapshot.get("nested").context().last(), sameInstance(snapshot.get("nested")));
-        snapshot.onChange(_ -> { throw new AssertionError("Raw view received a change"); });
         snapshot.context().stopChangeSupport();
         Config next = config.context().reload();
         assertThat(next.get("nested.value").asString().get(), is("raw2"));
@@ -179,7 +178,7 @@ class FilterFactoryLifecycleTest {
         Config config = builder().addFilterProvider(context -> {
             starts.incrementAndGet();
             signal.set(context);
-            context.onChange(new Config.ChangeListener() {
+            context.initialConfig().onChange(new Config.ChangeListener() {
                 @Override
                 public void onChange(Config config) {
                 }
@@ -214,7 +213,7 @@ class FilterFactoryLifecycleTest {
         AtomicInteger stopped = new AtomicInteger();
         IllegalStateException failure = assertThrows(IllegalStateException.class,
                                                     () -> builder().addFilterProvider(context -> {
-                                                        context.onChange(new Config.ChangeListener() {
+                                                        context.initialConfig().onChange(new Config.ChangeListener() {
                                                             @Override
                                                             public void onChange(Config config) {
                                                             }

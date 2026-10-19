@@ -28,7 +28,11 @@ public interface ConfigFilterContext {
      * The configuration contains merged source values before value filtering.
      * {@link Config#get(String)} and {@link Config#detach()} return nodes in this unfiltered view.
      * {@link Config.Context#last()} and {@link Config.Context#reload()} return the same unfiltered node;
-     * {@link Config.Context#stopChangeSupport()} and {@link Config#onChange(java.util.function.Consumer)} have no effect.
+     * {@link Config.Context#stopChangeSupport()} has no effect.
+     * This snapshot does not emit changes, but {@link Config#onChange(java.util.function.Consumer)} registers listeners
+     * with the owning runtime. They receive published filtered configurations; a {@link Config.ChangeListener} also
+     * receives stop notification, including if initial construction fails. Register listeners once during
+     * {@link ConfigFilterProvider#create(ConfigFilterContext) provider creation}.
      * <p>
      * Values from lazy sources are read on demand. Capture the values needed by a filter during its creation so later
      * source changes cannot affect that filter.
@@ -41,12 +45,4 @@ public interface ConfigFilterContext {
      * Requests an asynchronous configuration rebuild using the latest known source data.
      */
     void reload();
-
-    /**
-     * Registers a listener for changes to this runtime's configuration and for stopping its change support.
-     * The listener also receives stop notification if initial construction fails.
-     *
-     * @param listener runtime listener
-     */
-    void onChange(Config.ChangeListener listener);
 }

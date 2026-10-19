@@ -545,7 +545,7 @@ current unfiltered configuration for every generation, including reloads.
 The provider itself can be shared across independent Config instances; its
 factories and their monitoring resources must remain independent. Start any
 monitoring in `create(ConfigFilterContext)` and register a
-`Config.ChangeListener` using `context.onChange(listener)` to release those
+`Config.ChangeListener` using `context.initialConfig().onChange(listener)` to release those
 resources in `onStop()`. The listener observes changes to the owning runtime;
 its `onStop()` callback runs when change support stops, including cleanup if
 initialization fails. The factory only creates filters.

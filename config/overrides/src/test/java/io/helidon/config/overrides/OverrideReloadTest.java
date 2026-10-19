@@ -71,24 +71,19 @@ class OverrideReloadTest {
     }
 
     @Test
-    void failedStopListenerRegistrationStopsDefinitionMonitoring() {
+    void failedListenerConfigurationLookupStopsDefinitionMonitoring() {
         var source = new MutableSource(Map.of("services.*.endpoint", "https://initial.example/api"));
         var provider = OverrideConfigFilterProvider.builder().addConfigSource(source).build();
-        var failure = new IllegalStateException("Cannot register listener");
+        var failure = new IllegalStateException("Cannot access listener configuration");
 
         var thrown = assertThrows(IllegalStateException.class, () -> provider.create(new ConfigFilterContext() {
             @Override
             public Config initialConfig() {
-                return Config.empty();
+                throw failure;
             }
 
             @Override
             public void reload() {
-            }
-
-            @Override
-            public void onChange(Config.ChangeListener listener) {
-                throw failure;
             }
         }));
 
@@ -104,10 +99,10 @@ class OverrideReloadTest {
         var notifications = new AtomicInteger();
         var provider = OverrideConfigFilterProvider.builder().addConfigSource(source).build();
         var context = new TestContext(notifications::incrementAndGet);
-        ConfigFilterFactory factory = provider.create(context);
-        var key = Config.Key.create("services.orders.endpoint");
-        ConfigFilter original = factory.create(Config.empty());
         try {
+            ConfigFilterFactory factory = provider.create(context);
+            var key = Config.Key.create("services.orders.endpoint");
+            ConfigFilter original = factory.create(Config.empty());
             source.values(Map.of("services.*.endpoint", "https://updated.example/api"));
             source.poll();
             assertThat("Definition changes request a reload as soon as the factory exists", notifications.get(), is(1));
@@ -144,9 +139,9 @@ class OverrideReloadTest {
                 throw new IllegalStateException("Interrupted while publishing definition changes", e);
             }
         });
-        ConfigFilterFactory factory = provider.create(context);
-        ConfigFilter original = factory.create(Config.empty());
         try {
+            ConfigFilterFactory factory = provider.create(context);
+            ConfigFilter original = factory.create(Config.empty());
             assertThat("Creating the factory and initial filter must not request a reload", notifications.get(), is(0));
             source.values(Map.of("services.*.endpoint", "https://updated.example/api"));
             try (var executor = Executors.newSingleThreadExecutor()) {
@@ -499,8 +494,8 @@ class OverrideReloadTest {
     }
 
     private static final class TestContext implements ConfigFilterContext {
+        private final Config config = baseBuilder().addSource(ConfigSources.create(targetValues())).build();
         private final Runnable reload;
-        private Config.ChangeListener listener;
 
         private TestContext(Runnable reload) {
             this.reload = reload;
@@ -508,7 +503,7 @@ class OverrideReloadTest {
 
         @Override
         public Config initialConfig() {
-            return Config.empty();
+            return config;
         }
 
         @Override
@@ -516,13 +511,8 @@ class OverrideReloadTest {
             reload.run();
         }
 
-        @Override
-        public void onChange(Config.ChangeListener listener) {
-            this.listener = listener;
-        }
-
         void stop() {
-            listener.onStop();
+            config.context().stopChangeSupport();
         }
     }
 
