@@ -37,8 +37,9 @@ application using Data JDBC.
 
 The following dependencies provide Data JDBC, YAML configuration support, and
 the MySQL JDBC driver. Projects that use the Helidon application parent or
-import `helidon-dependencies` receive the corresponding dependency versions from
-Helidon. For other dependency management options, see
+import `helidon-dependencies` receive the Helidon dependency versions from
+Helidon. MySQL driver versions must be selected explicitly by the application.
+For other dependency management options, see
 [Managing Dependencies](../../guides/maven.md#dependency-management).
 
 <!--@mdc ::code-callout -->
@@ -55,6 +56,7 @@ Helidon. For other dependency management options, see
   <dependency>
     <groupId>com.mysql</groupId>
     <artifactId>mysql-connector-j</artifactId> <!-- MySQL JDBC driver -->
+    <version>26.7.0</version>
     <scope>runtime</scope>
   </dependency>
 </dependencies>
@@ -119,7 +121,7 @@ When several components need to share a data source or connection pool, the
 JDBC client can refer to an SQL data source registered with the Service
 Registry. The following example uses the HikariCP provider. Its dependency
 version is supplied by the Helidon application parent or
-`helidon-dependencies`, just like the dependencies shown in
+`helidon-dependencies`, just like the Helidon dependencies shown in
 [Maven Coordinates](#maven-coordinates).
 
 ```xml [pom.xml]

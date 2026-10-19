@@ -28,10 +28,6 @@
     <packaging>pom</packaging>
     <name>Helidon Tests Integration Data JDBC Imperative Project</name>
 
-    <modules>
-        <module>h2</module>
-    </modules>
-
     <profiles>
         <profile>
             <id>long-tests</id>

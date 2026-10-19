@@ -20,48 +20,21 @@
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="https://helidon.io/archetype/2.0 https://helidon.io/xsd/archetype-2.0.xsd">
     <methods>
-        <method name="h2">
-            <output if="${db.server} == 'h2'">
-                <model>
-                    <value key="readme-description">Helidon SE application that uses the dbclient API with an in-memory H2 database.</value>
-                    <value key="db">H2</value>
-                    <list key="dependencies">
-                        <map>
-                            <value key="groupId">com.h2database</value>
-                            <value key="artifactId">h2</value>
-                        </map>
-                    </list>
-                    <value key="db-health-check-stmt" if="${health}">SELECT 0</value>
-                    <list key="db-connection">
-                        <value><![CDATA[    url: "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE"
-    username: sa
-    password:]]></value>
-                    </list>
-                    <value key="start-db" template="mustache"><![CDATA[
-H2:
-```
-docker run --rm --name h2 -p 9092:9082 -p 8082:8082 nemerosa/h2
-```
-For details, see https://www.h2database.com/html/cheatSheet.html
-]]></value>
-                </model>
-            </output>
-        </method>
         <method name="mysql">
             <output if="${db.server} == 'mysql'">
                 <model>
-                    <value key="helidon-test">false</value>
                     <value key="readme-description">Helidon SE application that uses the dbclient API with MySQL database.</value>
                     <value key="db">MySQL</value>
                     <list key="dependencies">
                         <map>
                             <value key="groupId">com.mysql</value>
                             <value key="artifactId">mysql-connector-j</value>
+                            <value key="version">26.7.0</value>
                         </map>
                     </list>
                     <value key="db-health-check-stmt" if="${health}">SELECT 0</value>
                     <list key="db-connection">
-                        <value><![CDATA[    url: jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false
+                        <value><![CDATA[    url: jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false&allowPublicKeyRetrieval=true
     username: user
     password: changeit]]></value>
                     </list>
@@ -73,7 +46,7 @@ docker run --rm --name mysql -p 3306:3306 \
     -e MYSQL_DATABASE=pokemon \
     -e MYSQL_USER=user \
     -e MYSQL_PASSWORD=changeit \
-    mysql:5.7
+    container-registry.oracle.com/mysql/community-server:9.7.3
 ```
 ]]></value>
                 </model>
@@ -82,7 +55,6 @@ docker run --rm --name mysql -p 3306:3306 \
         <method name="oracle">
             <output if="${db.server} == 'oracledb'">
                 <model>
-                    <value key="helidon-test">false</value>
                     <value key="readme-description">Helidon se application that uses the dbclient API with OracleDB database.</value>
                     <value key="integration-artifactId">ojdbc</value>
                     <value key="db">OracleDB</value>
@@ -210,7 +182,6 @@ docker run --rm --name mongo -p 27017:27017 mongo
             </output>
         </method>
     </methods>
-    <call method="h2" />
     <call method="mysql" />
     <call method="oracle" />
     <call method="mongo" />
@@ -259,9 +230,20 @@ docker run --rm --name mongo -p 27017:27017 mongo
                     <value key="groupId">org.slf4j</value>
                     <value key="artifactId">slf4j-jdk14</value>
                 </map>
-                <map if="${db.server} != 'h2'">
-                    <value key="groupId">com.h2database</value>
-                    <value key="artifactId">h2</value>
+                <map if="${db.server} != 'mysql'">
+                    <value key="groupId">com.mysql</value>
+                    <value key="artifactId">mysql-connector-j</value>
+                    <value key="version">26.7.0</value>
+                    <value key="scope">test</value>
+                </map>
+                <map>
+                    <value key="groupId">org.testcontainers</value>
+                    <value key="artifactId">mysql</value>
+                    <value key="scope">test</value>
+                </map>
+                <map>
+                    <value key="groupId">org.testcontainers</value>
+                    <value key="artifactId">junit-jupiter</value>
                     <value key="scope">test</value>
                 </map>
             </list>
@@ -283,6 +265,10 @@ docker run --rm --name mongo -p 27017:27017 mongo
                 <value>java.util.Map</value>
             </list>
             <list key="MainTest-other-imports">
+                <value>org.junit.jupiter.api.AfterAll</value>
+                <value>org.testcontainers.containers.MySQLContainer</value>
+                <value>org.testcontainers.junit.jupiter.Testcontainers</value>
+                <value>org.testcontainers.utility.DockerImageName</value>
                 <value>jakarta.json.Json</value>
                 <value>jakarta.json.JsonArray</value>
                 <value if="${media} contains 'json' &amp;&amp; ${media.json-lib} != 'jsonp'">jakarta.json.JsonObject</value>
@@ -291,6 +277,65 @@ docker run --rm --name mongo -p 27017:27017 mongo
             </list>
             <list key="MainTest-static-fields">
                 <value>JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Map.of())</value>
+                <value><![CDATA[MySQLContainer<?> DATABASE = new MySQLContainer<>(
+            DockerImageName.parse("container-registry.oracle.com/mysql/community-server:9.7.3")
+                    .asCompatibleSubstituteFor("mysql"))
+            .withDatabaseName("pokemon")
+            .withUsername("user")
+            .withPassword("changeit")]]></value>
+            </list>
+            <list key="MainTest-helidon-imports">
+                <value>io.helidon.common.context.Contexts</value>
+                <value>io.helidon.config.Config</value>
+                <value>io.helidon.config.ConfigSources</value>
+                <value>io.helidon.dbclient.DbClient</value>
+            </list>
+            <list key="MainTest-fields">
+                <value>private static DbClient dbClient</value>
+            </list>
+            <list key="MainTest-routing">
+                <value><![CDATA[DATABASE.start();
+            Config config = Config.builder(
+                    ConfigSources.create(Map.of("db.connection.url", DATABASE.getJdbcUrl(),
+                                                "db.connection.username", DATABASE.getUsername(),
+                                                "db.connection.password", DATABASE.getPassword())),
+                    ConfigSources.classpath("application-test.yaml"),
+                    ConfigSources.classpath("application.yaml"))
+                    .disableEnvironmentVariablesSource()
+                    .disableSystemPropertiesSource()
+                    .build();
+            dbClient = DbClient.create(config.get("db"));
+            Contexts.globalContext().register(dbClient);]]></value>
+            </list>
+            <list key="MainTest-methods">
+                <value><![CDATA[
+    @AfterAll
+    static void stopDatabase() {
+        Throwable failure = null;
+        try {
+            if (dbClient != null) {
+                Contexts.globalContext().unregister(dbClient);
+                try {
+                    dbClient.close();
+                } finally {
+                    dbClient = null;
+                }
+            }
+        } catch (RuntimeException | Error cleanupFailure) {
+            failure = cleanupFailure;
+            throw cleanupFailure;
+        } finally {
+            try {
+                DATABASE.stop();
+            } catch (RuntimeException | Error cleanupFailure) {
+                if (failure == null) {
+                    throw cleanupFailure;
+                }
+                failure.addSuppressed(cleanupFailure);
+            }
+        }
+    }
+]]></value>
             </list>
             <list key="Abstract-tests">
                 <value><![CDATA[
@@ -414,6 +459,11 @@ This example requires a database, see [Database Setup](#database-setup).
 
 In the `pom.xml` and `application.yaml` we provide configuration needed for {{server}} database.
 Start your database before running this example.
+
+The generated tests start and stop a separate MySQL database using Testcontainers.
+A Docker-compatible container runtime is required to run them, including when
+the application is configured for Oracle DB or MongoDB. These tests are skipped
+when Docker is unavailable.
 
 Example docker commands to start databases in temporary containers:
 {{start-db}}

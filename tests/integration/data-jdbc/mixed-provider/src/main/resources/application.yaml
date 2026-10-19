@@ -22,10 +22,10 @@ data:
     sql:
       - name: "mixed"
         provider.hikari:
-          username: "sa"
-          password: ""
-          url: "jdbc:h2:mem:mixed-provider-runtime;DATABASE_TO_UPPER=FALSE;DB_CLOSE_DELAY=-1"
-          jdbc-driver-class-name: "org.h2.Driver"
+          username: "test"
+          password: "mysql123"
+          url: "jdbc:mysql://localhost:3306/test"
+          jdbc-driver-class-name: "com.mysql.cj.jdbc.Driver"
   clients:
     jdbc:
       - name: "mixed"
@@ -37,6 +37,6 @@ data:
         provider-class-name: "org.eclipse.persistence.jpa.PersistenceProvider"
         init-script: "init.sql"
         properties:
-          eclipselink.target-database: "org.eclipse.persistence.platform.database.H2Platform"
+          eclipselink.target-database: "org.eclipse.persistence.platform.database.MySQLPlatform"
           eclipselink.target-server: "None"
           eclipselink.weaving: false

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -407,10 +407,6 @@ public final class TransactionTestImpl extends AbstractTestImpl implements Trans
                     assertThat(columnsCount.get(), equalTo(1));
                     keyByName = keysRow.column("_id");
                     break;
-                case "jdbc:h2":
-                    assertThat(columnsCount.get(), equalTo(1));
-                    keyByName = keysRow.column("id");
-                    break;
                 case "jdbc:mysql":
                     assertThat(columnsCount.get(), equalTo(1));
                     keyByName = keysRow.column("GENERATED_KEY");
@@ -459,15 +455,6 @@ public final class TransactionTestImpl extends AbstractTestImpl implements Trans
             // Result is vendor dependent
             switch(db.dbType()) {
                 case "mongoDb":
-                    break;
-                case "jdbc:h2":
-                    assertThat(columnsCount.get(), equalTo(2));
-                    idByName = keysRow.column("id");
-                    idByIndex = keysRow.column(1);
-                    assertThat(idByName, equalTo(idByIndex));
-                    redByName = keysRow.column("red");
-                    redByIndex = keysRow.column(2);
-                    assertThat(redByName, equalTo(redByIndex));
                     break;
                 case "jdbc:mysql":
                     assertThat(columnsCount.get(), equalTo(1));

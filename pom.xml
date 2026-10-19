@@ -68,6 +68,9 @@
         <version.lib.eclipselink>5.0.2</version.lib.eclipselink>
         <version.lib.hibernate.family>7.4</version.lib.hibernate.family>
         <version.lib.hibernate>${version.lib.hibernate.family}.11.Final</version.lib.hibernate>
+        <!-- Database drivers used only by repository tests. -->
+        <version.lib.mysql-connector-j>26.7.0</version.lib.mysql-connector-j>
+        <version.lib.postgresql>42.7.13</version.lib.postgresql>
         <!-- Dependencies convergence via jinjava -->
         <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mockserver>5.15.0</version.lib.mockserver>
@@ -783,6 +786,17 @@
                 <groupId>org.hibernate.orm</groupId>
                 <artifactId>hibernate-core</artifactId>
                 <version>${version.lib.hibernate}</version>
+            </dependency>
+            <!-- Database drivers used only by repository tests. -->
+            <dependency>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
+                <version>${version.lib.mysql-connector-j}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${version.lib.postgresql}</version>
             </dependency>
             <dependency>
                 <groupId>com.github.akarnokd</groupId>
