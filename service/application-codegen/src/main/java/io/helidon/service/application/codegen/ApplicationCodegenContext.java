@@ -92,4 +92,3 @@ class ApplicationCodegenContext extends CodegenContextBase implements CodegenCon
         return scanResult;
     }
 }
-

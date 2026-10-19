@@ -180,4 +180,3 @@ interface ApplicationGeneratorConfigBlueprint {
     @Option.DefaultBoolean(false)
     boolean failOnWarning();
 }
-

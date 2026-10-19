@@ -141,4 +141,3 @@ class WrappedServices implements AutoCloseable {
                                            + ", yet more than one was found: " + services);
     }
 }
-

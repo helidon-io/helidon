@@ -33,4 +33,3 @@ module io.helidon.service.application.codegen {
 
     exports io.helidon.service.application.codegen;
 }
-

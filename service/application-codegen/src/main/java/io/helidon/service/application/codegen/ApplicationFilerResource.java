@@ -62,4 +62,3 @@ class ApplicationFilerResource implements FilerResource {
         }
     }
 }
-

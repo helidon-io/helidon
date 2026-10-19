@@ -104,4 +104,3 @@ class ApplicationRoundContext implements RegistryRoundContext {
         return descriptors;
     }
 }
-

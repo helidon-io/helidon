@@ -151,4 +151,3 @@ class ApplicationFiler implements CodegenFiler {
         }
     }
 }
-

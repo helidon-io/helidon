@@ -18,4 +18,3 @@
  * Shared generation and compilation of declarative application bindings.
  */
 package io.helidon.service.application.codegen;
-

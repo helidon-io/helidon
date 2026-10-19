@@ -632,4 +632,3 @@ class BindingGenerator {
                    List<ServiceInfo> descriptors) {
     }
 }
-

@@ -91,4 +91,3 @@ class ApplicationOptions implements CodegenOptions {
         return API_OPTION.equals(option) || option.startsWith(API_OPTION + ".");
     }
 }
-

@@ -65,4 +65,3 @@ class ApplicationFilerTextResource implements FilerTextResource {
         }
     }
 }
-

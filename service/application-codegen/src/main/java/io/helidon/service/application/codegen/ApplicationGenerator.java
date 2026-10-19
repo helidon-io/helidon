@@ -446,4 +446,3 @@ public final class ApplicationGenerator {
         return options;
     }
 }
-
