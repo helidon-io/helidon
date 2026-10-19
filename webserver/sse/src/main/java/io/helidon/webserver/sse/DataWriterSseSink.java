@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Optional;
 
 import io.helidon.common.GenericType;
@@ -56,6 +57,7 @@ class DataWriterSseSink implements SseSink {
     private static final Header CACHE_NO_CACHE_ONLY = create(HeaderNames.CACHE_CONTROL, "no-cache");
     private static final byte[] SSE_NL = "\n".getBytes(StandardCharsets.UTF_8);
     private static final byte[] SSE_ID = "id:".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] SSE_RETRY = "retry:".getBytes(StandardCharsets.UTF_8);
     private static final byte[] SSE_DATA = "data:".getBytes(StandardCharsets.UTF_8);
     private static final byte[] SSE_EVENT = "event:".getBytes(StandardCharsets.UTF_8);
     private static final byte[] SSE_COMMENT = ":".getBytes(StandardCharsets.UTF_8);
@@ -102,6 +104,10 @@ class DataWriterSseSink implements SseSink {
             Optional<String> id = sseEvent.id();
             if (id.isPresent()) {
                 SseFields.writeSingleLineField(outputStream, SSE_ID, id.get());
+            }
+            Optional<Duration> reconnect = sseEvent.reconnectMillis();
+            if (reconnect.isPresent()) {
+                SseFields.writeSingleLineField(outputStream, SSE_RETRY, Long.toString(reconnect.get().toMillis()));
             }
             Optional<String> name = sseEvent.name();
             if (name.isPresent()) {
