@@ -213,6 +213,28 @@ class GradlePluginTest {
         assertThat(failure.getOutput(), containsString("Broken"));
     }
 
+    private static List<Path> classpath(String name) throws IOException {
+        String value = Files.readString(Path.of(System.getProperty("fixture.classpaths"), name)).trim();
+        return Arrays.stream(value.split(Pattern.quote(File.pathSeparator))).map(Path::of).toList();
+    }
+
+    private static String files(List<Path> paths) {
+        return paths.stream()
+                .map(path -> "'" + path.toAbsolutePath().toString().replace("\\", "/").replace("'", "\\'") + "'")
+                .collect(Collectors.joining(", "));
+    }
+
+    private static boolean isGradleArtifact(Path path) {
+        String name = path.getFileName().toString();
+        return name.startsWith("gradle-") || name.startsWith("groovy-")
+                || name.startsWith("helidon-service-gradle-plugin-");
+    }
+
+    private static void assertTask(BuildResult result, String name, TaskOutcome expected) {
+        assertThat("Missing task " + name + " in:\n" + result.getOutput(), result.task(name), notNullValue());
+        assertThat(name + " in:\n" + result.getOutput(), result.task(name).getOutcome(), is(expected));
+    }
+
     private void fixture() throws IOException {
         List<Path> tools = classpath("fixture-tool-classpath.txt");
         List<Path> runtime = classpath("fixture-runtime-classpath.txt");
@@ -402,27 +424,5 @@ class GradlePluginTest {
         Path path = directory.resolve(name);
         Files.createDirectories(path.getParent());
         Files.writeString(path, contents);
-    }
-
-    private static List<Path> classpath(String name) throws IOException {
-        String value = Files.readString(Path.of(System.getProperty("fixture.classpaths"), name)).trim();
-        return Arrays.stream(value.split(Pattern.quote(File.pathSeparator))).map(Path::of).toList();
-    }
-
-    private static String files(List<Path> paths) {
-        return paths.stream()
-                .map(path -> "'" + path.toAbsolutePath().toString().replace("\\", "/").replace("'", "\\'") + "'")
-                .collect(Collectors.joining(", "));
-    }
-
-    private static boolean isGradleArtifact(Path path) {
-        String name = path.getFileName().toString();
-        return name.startsWith("gradle-") || name.startsWith("groovy-")
-                || name.startsWith("helidon-service-gradle-plugin-");
-    }
-
-    private static void assertTask(BuildResult result, String name, TaskOutcome expected) {
-        assertThat("Missing task " + name + " in:\n" + result.getOutput(), result.task(name), notNullValue());
-        assertThat(name + " in:\n" + result.getOutput(), result.task(name).getOutcome(), is(expected));
     }
 }

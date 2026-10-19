@@ -398,7 +398,7 @@ public final class ApplicationGenerator {
                             .filter(Predicate.not(String::isBlank))
                             .forEach(found::add);
                 }
-            } catch (IOException e) {
+            } catch (IOException _) {
                 logger.log(System.Logger.Level.DEBUG, "Failed to walk source root: " + sourceRoot.toAbsolutePath());
             }
         }
