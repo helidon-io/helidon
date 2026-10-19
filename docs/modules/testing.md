@@ -23,7 +23,11 @@ project’s `pom.xml` (see [Managing Dependencies](../dependency-management.md))
 ```
 
 The examples below also use JUnit Jupiter and Hamcrest. Add them to the test
-classpath, including the JUnit engine used to run the tests:
+classpath, including the JUnit engine used to run the tests.
+
+The following snippet assumes that JUnit Jupiter and Hamcrest versions are
+managed in your project's dependency management. The Helidon application parent
+POM provides this management; importing only `helidon-bom` does not.
 
 ```xml [pom.xml]
 <dependency>
