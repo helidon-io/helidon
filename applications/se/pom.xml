@@ -103,7 +103,6 @@
                             <path>
                                 <groupId>io.helidon.bundles</groupId>
                                 <artifactId>helidon-bundles-apt</artifactId>
-                                <version>${helidon.version}</version>
                             </path>
                         </annotationProcessorPaths>
                     </configuration>
