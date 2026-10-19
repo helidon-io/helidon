@@ -76,6 +76,7 @@ class LoomServer implements WebServer, Resumable {
     private final Context context;
     private final WebServerConfig serverConfig;
     private final boolean registerShutdownHook;
+    private final Timer idleConnectionTimer;
 
     private volatile HelidonShutdownHandler shutdownHandler;
     private volatile List<ListenerFuture> startFutures;
@@ -127,7 +128,7 @@ class LoomServer implements WebServer, Resumable {
             featureContext.setUpFeature(feature);
         }
 
-        Timer idleConnectionTimer = new Timer("helidon-idle-connection-timer", true);
+        this.idleConnectionTimer = new Timer("helidon-idle-connection-timer", true);
         Map<String, ServerListener> listenerMap = new HashMap<>();
         sockets.forEach((name, socketConfig) -> {
             Router socketRouter = featureContext.router(name);
@@ -354,6 +355,14 @@ class LoomServer implements WebServer, Resumable {
         running.set(false);
         LOGGER.log(System.Logger.Level.INFO, "Helidon WebServer stopped all channels.");
         try {
+            // The idle-connection timer is owned by this server instance: stopping the server must
+            // also stop its timer. cancel() is idempotent; the JDK implementation clears the task
+            // queue and wakes the daemon thread, so the timer thread exits promptly.
+            idleConnectionTimer.cancel();
+        } catch (RuntimeException | Error e) {
+            failure = LifecycleFailures.add(failure, e);
+        }
+        try {
             deregisterShutdownHook();
         } catch (RuntimeException | Error e) {
             failure = LifecycleFailures.add(failure, e);
@@ -488,7 +497,8 @@ class LoomServer implements WebServer, Resumable {
 
     private void registerShutdownHook() {
         this.shutdownHandler = new ServerShutdownHandler(listeners, startFutures, running, context.id(),
-                                                         errorLogLimiter, errorLogTimer);
+                                                         errorLogLimiter, errorLogTimer,
+                                                         idleConnectionTimer);
         Main.addShutdownHandler(this.shutdownHandler);
     }
 
@@ -670,19 +680,22 @@ class LoomServer implements WebServer, Resumable {
         private final String id;
         private final ErrorLogLimiter errorLogLimiter;
         private final Timer errorLogTimer;
+        private final Timer idleConnectionTimer;
 
         private ServerShutdownHandler(Map<String, ServerListener> listeners,
                                       List<ListenerFuture> startFutures,
                                       AtomicBoolean running,
                                       String id,
                                       ErrorLogLimiter errorLogLimiter,
-                                      Timer errorLogTimer) {
+                                      Timer errorLogTimer,
+                                      Timer idleConnectionTimer) {
             this.listeners = listeners;
             this.startFutures = startFutures;
             this.running = running;
             this.id = id;
             this.errorLogLimiter = errorLogLimiter;
             this.errorLogTimer = errorLogTimer;
+            this.idleConnectionTimer = idleConnectionTimer;
         }
 
         @Override
@@ -709,6 +722,13 @@ class LoomServer implements WebServer, Resumable {
             }
 
             running.set(false);
+            // Same ownership rule as stopIt(): the shutdown path must not leave the
+            // idle-connection timer thread running either.
+            try {
+                idleConnectionTimer.cancel();
+            } catch (RuntimeException | Error e) {
+                failure = LifecycleFailures.add(failure, e);
+            }
             if (failure != null) {
                 LOGGER.log(System.Logger.Level.ERROR, "Failed to stop Helidon WebServer from shutdown hook", failure);
             }
