@@ -185,6 +185,60 @@ class GradlePluginTest {
     }
 
     @Test
+    void generatorProjectDependencySelectsRuntimeVariant() throws IOException {
+        fixture();
+        write("settings.gradle", Files.readString(directory.resolve("settings.gradle")) + "\ninclude 'generator'\n");
+        List<Path> generator = classpath("fixture-tool-classpath.txt").stream()
+                .filter(path -> !isGradleArtifact(path))
+                .toList();
+        write("generator/build.gradle", """
+                configurations {
+                    generatorApiElements {
+                        canBeConsumed = true
+                        canBeResolved = false
+                        attributes {
+                            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_API))
+                            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
+                            attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
+                                      objects.named(LibraryElements, LibraryElements.JAR))
+                            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
+                        }
+                    }
+                    generatorRuntimeElements {
+                        canBeConsumed = true
+                        canBeResolved = false
+                        attributes {
+                            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
+                            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
+                            attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
+                                      objects.named(LibraryElements, LibraryElements.JAR))
+                            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
+                        }
+                    }
+                }
+                files(%s).each { artifact ->
+                    configurations.generatorRuntimeElements.outgoing.artifact(artifact)
+                }
+                """.formatted(files(generator)));
+        write("build.gradle", Files.readString(directory.resolve("build.gradle"))
+                .replace("helidonServiceGenerator files(" + files(generator) + ")",
+                         "helidonServiceGenerator project(':generator')") + """
+
+                def generatorUsage = configurations.helidonServiceGenerator.attributes.getAttribute(Usage.USAGE_ATTRIBUTE)
+                if (generatorUsage?.name != Usage.JAVA_RUNTIME) {
+                    throw new GradleException('helidonServiceGenerator must explicitly request java-runtime usage; found '
+                                              + generatorUsage)
+                }
+                """);
+
+        BuildResult result = runner("packagedRun").build();
+        assertTask(result, ":generateApplicationBindings", TaskOutcome.SUCCESS);
+        assertTask(result, ":jar", TaskOutcome.SUCCESS);
+        assertTask(result, ":packagedRun", TaskOutcome.SUCCESS);
+        assertThat(result.getOutput(), containsString("APPLICATION:chosen:library"));
+    }
+
+    @Test
     void regeneratesAfterServiceChangesAndRemovesOldBinding() throws IOException {
         fixture();
         runner("jar").build();

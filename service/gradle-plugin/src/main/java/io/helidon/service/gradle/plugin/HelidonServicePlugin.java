@@ -25,6 +25,10 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.attributes.Bundling;
+import org.gradle.api.attributes.Category;
+import org.gradle.api.attributes.LibraryElements;
+import org.gradle.api.attributes.Usage;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.SourceSet;
@@ -55,6 +59,13 @@ public final class HelidonServicePlugin implements Plugin<Project> {
             configuration.setDescription("Isolated Helidon application binding generator");
             configuration.setCanBeConsumed(false);
             configuration.setCanBeResolved(true);
+            configuration.attributes(attributes -> {
+                attributes.attribute(Usage.USAGE_ATTRIBUTE, project.getObjects().named(Usage.class, Usage.JAVA_RUNTIME));
+                attributes.attribute(Category.CATEGORY_ATTRIBUTE, project.getObjects().named(Category.class, Category.LIBRARY));
+                attributes.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
+                                     project.getObjects().named(LibraryElements.class, LibraryElements.JAR));
+                attributes.attribute(Bundling.BUNDLING_ATTRIBUTE, project.getObjects().named(Bundling.class, Bundling.EXTERNAL));
+            });
             configuration.defaultDependencies(dependencies -> dependencies.add(project.getDependencies().create(
                     "io.helidon.service:helidon-service-application-codegen:" + extension.getToolVersion().get())));
         });
