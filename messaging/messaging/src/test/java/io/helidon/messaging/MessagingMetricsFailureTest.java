@@ -16,12 +16,10 @@
 
 package io.helidon.messaging;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Meter;
@@ -32,8 +30,9 @@ import io.helidon.metrics.providers.helidon.HelidonMetricsFactory;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
@@ -47,17 +46,10 @@ class MessagingMetricsFailureTest {
     private static final String DURATION = "messaging.processing.duration";
     private static final String FAILURES = "messaging.processing.failures";
 
-    @Test
-    void fatalCounterRegistrationReleasesThePreviouslyRegisteredTimer() {
-        assertFatalRegistrationCleanup(true);
-    }
-
-    @Test
-    void fatalCounterListenerReleasesBothInsertedMeters() {
-        assertFatalRegistrationCleanup(false);
-    }
-
-    private static void assertFatalRegistrationCleanup(boolean beforeInsertion) {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void fatalCounterRegistrationReleasesInsertedMeters(boolean beforeInsertion) {
+        // Both a provider failure and an add-listener failure must roll back this graph's partial registration.
         try (Environment environment = new Environment(beforeInsertion)) {
             AssertionError thrown = assertThrows(AssertionError.class, environment::graph);
 
@@ -75,14 +67,6 @@ class MessagingMetricsFailureTest {
                 assertThat(environment.meters.counter(FAILURES, environment.tags).orElseThrow().count(), is(0L));
             }
             assertThat(environment.meters.meters(), empty());
-        }
-    }
-
-    private static Object invoke(Method method, Object target, Object[] args) throws Throwable {
-        try {
-            return method.invoke(target, args);
-        } catch (InvocationTargetException e) {
-            throw e.getCause();
         }
     }
 
@@ -104,17 +88,21 @@ class MessagingMetricsFailureTest {
                 }
             });
             MeterRegistry selected = beforeInsertion
-                    ? (MeterRegistry) Proxy.newProxyInstance(MeterRegistry.class.getClassLoader(),
-                                                            new Class<?>[] {MeterRegistry.class},
-                                                            (_, method, args) -> {
-                                                                if (method.getName().equals("getOrCreate")
-                                                                        && args[0] instanceof Counter.Builder builder
-                                                                        && builder.name().equals(FAILURES)
-                                                                        && fail.compareAndSet(true, false)) {
-                                                                    throw failure;
-                                                                }
-                                                                return invoke(method, meters, args);
-                                                            })
+                    ? new DelegatingMeterRegistry(meters) {
+                        @Override
+                        public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder) {
+                            return getOrCreate(builder, _ -> { });
+                        }
+
+                        @Override
+                        public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder, Consumer<M> onCreate) {
+                            if (builder instanceof Counter.Builder && builder.name().equals(FAILURES)
+                                    && fail.compareAndSet(true, false)) {
+                                throw failure;
+                            }
+                            return super.getOrCreate(builder, onCreate);
+                        }
+                    }
                     : meters;
             manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
                     .discoverServices(false)
@@ -133,12 +121,12 @@ class MessagingMetricsFailureTest {
         }
 
         private MessagingGraph graph() {
-            return MessagingGraph.builder()
+            return MessagingGraph.create(MessagingGraph.builder()
                     .serviceRegistry(manager.registry())
-                    .enableHealth(false)
+                    .health(h -> h.enabled(false))
                     .channel(channel)
                     .payloadSink(channel, _ -> { })
-                    .build();
+                    .buildPrototype(), manager.registry());
         }
     }
 }

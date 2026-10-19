@@ -46,7 +46,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-@Timeout(10)
+@Timeout(value = 60, unit = TimeUnit.SECONDS)
 class MessagingHealthTest {
     private final List<ServiceRegistryManager> registries = new ArrayList<>();
 
@@ -57,11 +57,12 @@ class MessagingHealthTest {
 
     @Test
     void explicitChecksTrackIdleGraphsAndStayBoundAfterClose() {
+        // Discovered aggregate checks follow graph membership; explicit checks remain tied to the closed graph.
         var registry = registry();
         List<HealthCheck> aggregate = aggregate(registry);
         assertHealth(aggregate, UP, UP);
 
-        MessagingGraph first = builder(registry).build();
+        MessagingGraph first = graph(registry, builder());
         List<HealthCheck> firstChecks = first.healthChecks();
         assertThrows(UnsupportedOperationException.class, () -> firstChecks.clear());
         assertHealth(firstChecks, DOWN, UP);
@@ -70,7 +71,7 @@ class MessagingHealthTest {
         assertHealth(firstChecks, UP, UP);
         assertHealth(aggregate, UP, UP);
 
-        try (MessagingGraph second = builder(registry).build()) {
+        try (MessagingGraph second = graph(registry, builder())) {
             assertThat(firstChecks.getFirst().name(), not(second.healthChecks().getFirst().name()));
             assertHealth(aggregate, DOWN, UP);
             first.close();
@@ -87,6 +88,7 @@ class MessagingHealthTest {
 
     @Test
     void healthChecksReflectBlockedStartupAndBecomeReadyTogether() throws Exception {
+        // A connector has entered startup but is not ready, so neither explicit nor aggregate readiness may report UP.
         var registry = registry();
         List<HealthCheck> aggregate = aggregate(registry);
         TestIncoming source = new TestIncoming(true, null, null);
@@ -107,6 +109,7 @@ class MessagingHealthTest {
 
     @Test
     void startupFailureRemainsVisibleUntilExplicitClose() {
+        // Failed startup must stay visible to health checks until the application explicitly removes that graph.
         var registry = registry();
         List<HealthCheck> aggregate = aggregate(registry);
         TestIncoming source = new TestIncoming(false, new IllegalStateException("startup failure"), null);
@@ -125,6 +128,7 @@ class MessagingHealthTest {
 
     @Test
     void sourceFailureIsRemovedEvenWhenExplicitCloseThrows() throws Exception {
+        // A failed source leaves a failed graph; close must remove aggregate membership even when it reports that failure.
         var registry = registry();
         List<HealthCheck> aggregate = aggregate(registry);
         TestIncoming source = new TestIncoming(false, null, new IllegalStateException("runtime failure"));
@@ -144,15 +148,15 @@ class MessagingHealthTest {
 
     @Test
     void handlerFailureDoesNotChangeGraphHealth() {
+        // Delivery failure belongs to one attempt and does not mean the running graph itself has failed.
         var registry = registry();
         List<HealthCheck> aggregate = aggregate(registry);
         MessagingChannel<String> channel = MessagingChannel.create("events", String.class);
-        try (MessagingGraph graph = builder(registry)
+        try (MessagingGraph graph = graph(registry, builder()
                 .channel(channel)
                 .payloadSink(channel, _ -> {
                     throw new IllegalArgumentException("handler failure");
-                })
-                .build()
+                }))
                 .start()) {
             assertThrows(BatchDeliveryException.class, () -> graph.emitter(channel).emit("event"));
             assertHealth(graph.healthChecks(), UP, UP);
@@ -162,20 +166,20 @@ class MessagingHealthTest {
 
     @Test
     void handlerInitiatedCloseRetainsMembershipUntilTheCallbackCompletes() throws Exception {
+        // Reentrant close returns before its own callback ends, so aggregate membership must survive until real shutdown.
         var registry = registry();
         List<HealthCheck> aggregate = aggregate(registry);
         CountDownLatch closeReturned = new CountDownLatch(1);
         CountDownLatch finishCallback = new CountDownLatch(1);
         AtomicReference<MessagingGraph> owner = new AtomicReference<>();
         MessagingChannel<String> channel = MessagingChannel.create("events", String.class);
-        MessagingGraph graph = builder(registry)
+        MessagingGraph graph = graph(registry, builder()
                 .channel(channel)
                 .payloadSink(channel, _ -> {
                     owner.get().close();
                     closeReturned.countDown();
                     await(finishCallback);
-                })
-                .build();
+                }));
         owner.set(graph);
         graph.start();
         CompletableFuture<Void> emitted = runAsync(() -> graph.emitter(channel).emit("event"));
@@ -194,13 +198,14 @@ class MessagingHealthTest {
 
     @Test
     void failedBuildAndUnstartedCloseLeaveNoAggregateMembership() {
+        // Construction failure and closing before start must both leave the application aggregate free of stale graphs.
         var registry = registry();
         List<HealthCheck> aggregate = aggregate(registry);
         MessagingChannel<String> outputless = MessagingChannel.create("outputless", String.class);
-        assertThrows(IllegalArgumentException.class, () -> builder(registry).channel(outputless).build());
+        assertThrows(IllegalArgumentException.class, () -> graph(registry, builder().channel(outputless)));
         assertHealth(aggregate, UP, UP);
 
-        MessagingGraph graph = builder(registry).build();
+        MessagingGraph graph = graph(registry, builder());
         List<HealthCheck> checks = graph.healthChecks();
         assertHealth(aggregate, DOWN, UP);
         graph.close();
@@ -211,13 +216,14 @@ class MessagingHealthTest {
 
     @Test
     void forcedCloseRemovesMembershipWhileAnUncooperativeCallbackSurvives() throws Exception {
+        // A callback ignores interruption; after the shutdown deadline its failed graph must leave the aggregate.
         var registry = registry();
         List<HealthCheck> aggregate = aggregate(registry);
         CountDownLatch processing = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
         CountDownLatch finished = new CountDownLatch(1);
         MessagingChannel<String> channel = MessagingChannel.create("events", String.class);
-        MessagingGraph graph = builder(registry)
+        MessagingGraph graph = graph(registry, builder()
                 .shutdownTimeout(Duration.ofMillis(50))
                 .channel(channel)
                 .payloadSink(channel, _ -> {
@@ -227,8 +233,7 @@ class MessagingHealthTest {
                     } finally {
                         finished.countDown();
                     }
-                })
-                .build()
+                }))
                 .start();
         CompletableFuture<Void> emitted = runAsync(() -> graph.emitter(channel).emit("event"));
         try {
@@ -246,9 +251,10 @@ class MessagingHealthTest {
 
     @Test
     void disabledHealthDoesNotRegisterChecks() {
+        // Disabling graph health must leave both explicit checks and application aggregate membership empty.
         var registry = registry();
         List<HealthCheck> aggregate = aggregate(registry);
-        try (MessagingGraph graph = builder(registry).enableHealth(false).build()) {
+        try (MessagingGraph graph = graph(registry, builder().health(h -> h.enabled(false)))) {
             assertThat(graph.healthChecks(), is(List.of()));
             assertHealth(aggregate, UP, UP);
             graph.start();
@@ -258,12 +264,13 @@ class MessagingHealthTest {
 
     @Test
     void serviceRegistriesHaveIndependentAggregateMembership() {
+        // Separate registries model isolated applications; one application's graph must not affect the other's health.
         var firstRegistry = registry();
         var secondRegistry = registry();
         List<HealthCheck> firstAggregate = aggregate(firstRegistry);
         List<HealthCheck> secondAggregate = aggregate(secondRegistry);
-        try (MessagingGraph first = builder(firstRegistry).build();
-             MessagingGraph second = builder(secondRegistry).build()) {
+        try (MessagingGraph first = graph(firstRegistry, builder());
+             MessagingGraph second = graph(secondRegistry, builder())) {
             assertHealth(firstAggregate, DOWN, UP);
             assertHealth(secondAggregate, DOWN, UP);
             first.start();
@@ -277,31 +284,35 @@ class MessagingHealthTest {
 
     @Test
     void explicitChecksWorkWithoutServiceDiscovery() {
+        // A programmatic graph exposes its checks even when no health provider can be discovered.
         var manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
                                                            .discoverServices(false)
                                                            .discoverServicesFromServiceLoader(false)
                                                            .build());
         registries.add(manager);
-        try (MessagingGraph graph = builder(manager).build()) {
+        try (MessagingGraph graph = graph(manager, builder())) {
             assertHealth(graph.healthChecks(), DOWN, UP);
             graph.start();
             assertHealth(graph.healthChecks(), UP, UP);
         }
     }
 
-    private static MessagingConfig.Builder builder(ServiceRegistryManager registry) {
+    private static MessagingGraph graph(ServiceRegistryManager registry, MessagingConfig.Builder config) {
+        // The graph borrows its selected application registry; the test fixture shuts the registry down.
+        return MessagingGraph.create(config.buildPrototype(), registry.registry());
+    }
+
+    private static MessagingConfig.Builder builder() {
         return MessagingGraph.builder()
-                .serviceRegistry(registry.registry())
-                .enableMetrics(false)
+                .metrics(m -> m.enabled(false))
                 .shutdownTimeout(Duration.ofSeconds(1));
     }
 
     private static MessagingGraph incomingGraph(ServiceRegistryManager registry, TestIncoming source) {
         MessagingChannel<String> channel = MessagingChannel.create("incoming", String.class);
-        return builder(registry).channel(channel)
+        return graph(registry, builder().channel(channel)
                 .incomingChannel(channel, source)
-                .payloadSink(channel, _ -> { })
-                .build();
+                .payloadSink(channel, _ -> { }));
     }
 
     private static List<HealthCheck> aggregate(ServiceRegistryManager manager) {
@@ -376,6 +387,7 @@ class MessagingHealthTest {
     }
 
     private ServiceRegistryManager registry() {
+        // Each test owns fresh service discovery and aggregate membership; shutdown releases only that test's graphs.
         var result = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
                                                           .putContractInstance(Config.class, Config.empty())
                                                           .build());

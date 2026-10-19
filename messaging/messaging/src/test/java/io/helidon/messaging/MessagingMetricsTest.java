@@ -16,22 +16,21 @@
 
 package io.helidon.messaging;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.Tag;
@@ -41,6 +40,8 @@ import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
@@ -53,6 +54,7 @@ class MessagingMetricsTest {
 
     @Test
     void recordsCompletedAttemptsUsingOwningClock() {
+        // Advance only the selected registry's clock, so elapsed time cannot come from a global clock.
         try (Environment environment = new Environment(MetricsConfig.create())) {
             MessagingMetrics metrics = environment.observe(environment.registry);
             MessagingMetrics.Recorder recorder = metrics.channel("orders");
@@ -76,6 +78,7 @@ class MessagingMetricsTest {
 
     @Test
     void sharesMetersAcrossServiceRegistriesAndRetiresEachOwner() {
+        // Two application registries borrow the same meter registry; a surviving graph must retain the shared series.
         try (Environment environment = new Environment(MetricsConfig.create())) {
             MessagingMetrics first = environment.observe(environment.registry);
             MessagingMetrics second = environment.observe(environment.registry);
@@ -106,6 +109,7 @@ class MessagingMetricsTest {
 
     @Test
     void separateMeterRegistriesRemainIndependent() {
+        // Equal channel names in different meter registries must not share counts or cleanup ownership.
         try (Environment first = new Environment(MetricsConfig.create());
              Environment second = new Environment(MetricsConfig.create())) {
             MessagingMetrics firstMetrics = first.observe(first.registry);
@@ -123,6 +127,7 @@ class MessagingMetricsTest {
 
     @Test
     void registrationListenerCannotCreateCompetingOwnership() {
+        // A same-thread registration callback cannot acquire the series whose registration is still in progress.
         try (Environment environment = new Environment(MetricsConfig.create())) {
             AtomicBoolean entered = new AtomicBoolean();
             AtomicReference<MessagingMetrics> nested = new AtomicReference<>();
@@ -148,6 +153,7 @@ class MessagingMetricsTest {
 
     @Test
     void removalListenerCannotAcquireRetiringGeneration() {
+        // A reentrant listener must not give a nested graph ownership of meters that the outer close is removing.
         try (Environment environment = new Environment(MetricsConfig.create())) {
             MessagingMetrics outer = environment.observe(environment.registry);
             outer.channel("orders");
@@ -176,6 +182,7 @@ class MessagingMetricsTest {
 
     @Test
     void registrationListenerCanCloseAnotherChannelOwner() {
+        // Closing an unrelated owner from a provider callback must not keep its retired meters registered.
         try (Environment environment = new Environment(MetricsConfig.create())) {
             MessagingMetrics previous = environment.observe(environment.registry);
             previous.channel("previous");
@@ -197,14 +204,15 @@ class MessagingMetricsTest {
 
     @Test
     void disabledMetricsNeedNoRegistryOrClock() {
+        // Explicitly disabled observation works even when the selected registry has no metrics service.
         ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
                                                                               .discoverServices(false)
                                                                               .build());
         try {
             MessagingMetrics metrics = MessagingMetrics.create(MessagingConfig.builder()
                                                                        .serviceRegistry(manager.registry())
-                                                                       .enableMetrics(false)
-                                                                       .buildPrototype());
+                                                                       .metrics(m -> m.enabled(false))
+                                                                       .buildPrototype(), manager.registry());
             MessagingMetrics.Recorder recorder = metrics.channel("orders");
             recorder.finish(recorder.start(), true);
             metrics.close();
@@ -216,14 +224,15 @@ class MessagingMetricsTest {
 
     @Test
     void registryWithoutMetricsServiceUsesNoopRecorder() {
+        // Metrics are enabled by default, but an application without a provider must still be able to process messages.
         ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
                                                                               .discoverServices(false)
                                                                               .build());
         try {
             MessagingMetrics metrics = MessagingMetrics.create(MessagingConfig.builder()
                                                                        .serviceRegistry(manager.registry())
-                                                                       .enableMetrics(true)
-                                                                       .buildPrototype());
+                                                                       .metrics(m -> m.enabled(true))
+                                                                       .buildPrototype(), manager.registry());
             MessagingMetrics.Recorder recorder = metrics.channel("orders");
             recorder.finish(recorder.start(), true);
             metrics.close();
@@ -235,9 +244,10 @@ class MessagingMetricsTest {
 
     @Test
     void globalDisableAvoidsClockAndRegistration() {
+        // Provider-wide disablement must avoid both registration and timing work in messaging.
         try (Environment environment = new Environment(MetricsConfig.builder().enabled(false).build())) {
-            RegistryHandler handler = new RegistryHandler(environment.registry);
-            MessagingMetrics.Recorder recorder = environment.observe(handler.proxy).channel("orders");
+            FaultyRegistry handler = new FaultyRegistry(environment.registry);
+            MessagingMetrics.Recorder recorder = environment.observe(handler).channel("orders");
             recorder.finish(recorder.start(), true);
             assertThat(environment.registry.meters(), empty());
             assertThat(handler.clockRequests.get(), is(0));
@@ -246,12 +256,13 @@ class MessagingMetricsTest {
 
     @Test
     void disabledTimerDoesNotReadClockAndFailureCounterRemainsIndependent() {
+        // Disabling duration alone removes clock reads without also disabling the failure counter.
         MetricsConfig config = MetricsConfig.builder()
                 .addMeter(builder -> builder.namePattern(Pattern.compile(Pattern.quote(DURATION))).enabled(false))
                 .build();
         try (Environment environment = new Environment(config)) {
-            RegistryHandler handler = new RegistryHandler(environment.registry);
-            MessagingMetrics.Recorder recorder = environment.observe(handler.proxy).channel("orders");
+            FaultyRegistry handler = new FaultyRegistry(environment.registry);
+            MessagingMetrics.Recorder recorder = environment.observe(handler).channel("orders");
             int clockReads = environment.clock.reads.get();
             recorder.finish(recorder.start(), true);
 
@@ -263,7 +274,48 @@ class MessagingMetricsTest {
     }
 
     @Test
+    void hiddenWrappedTimerReleasesItsNativeCreationHandle() {
+        // The adapter defers enablement to registration and wraps the hidden timer; cleanup still owns its native handle.
+        MetricsConfig config = MetricsConfig.builder()
+                .addMeter(builder -> builder.namePattern(Pattern.compile(Pattern.quote(DURATION))).enabled(false))
+                .build();
+        try (Environment environment = new Environment(config)) {
+            MeterRegistry wrapped = new DelegatingMeterRegistry(environment.registry) {
+                @Override
+                public boolean isMeterEnabled(String name) {
+                    return true;
+                }
+
+                @Override
+                public boolean isMeterEnabled(String name, Map<String, String> tags) {
+                    return true;
+                }
+
+                @Override
+                @SuppressWarnings("unchecked")
+                public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder, Consumer<M> onCreate) {
+                    M meter = super.getOrCreate(builder, onCreate);
+                    return meter instanceof Timer timer ? (M) new DelegatingTimer(timer) : meter;
+                }
+            };
+            MessagingMetrics metrics = environment.observe(wrapped);
+            MessagingMetrics.Recorder recorder = metrics.channel("orders");
+            Timer hidden = environment.registry.getOrCreate(environment.factory.timerBuilder(DURATION)
+                    .tags(environment.tags("orders")));
+            assertThat(environment.registry.timer(DURATION, environment.tags("orders")).isEmpty(), is(true));
+            assertThat(environment.registry.isDeleted(hidden), is(false));
+
+            recorder.finish(recorder.start(), false);
+            metrics.close();
+
+            assertThat(environment.registry.isDeleted(hidden), is(true));
+            assertThat(environment.registry.meters(), empty());
+        }
+    }
+
+    @Test
     void disabledFailureCounterPreservesProcessingCount() {
+        // A failed attempt still contributes to the timer when only the failure counter is disabled.
         MetricsConfig config = MetricsConfig.builder()
                 .addMeter(builder -> builder.namePattern(Pattern.compile(Pattern.quote(FAILURES))).enabled(false))
                 .build();
@@ -278,10 +330,11 @@ class MessagingMetricsTest {
 
     @Test
     void tagFiltersApplyBeforeAcquiringMeters() {
+        // The provider can exclude one channel; messaging must apply that decision before registering or timing it.
         try (Environment environment = new Environment(MetricsConfig.create())) {
-            RegistryHandler handler = new RegistryHandler(environment.registry);
+            FaultyRegistry handler = new FaultyRegistry(environment.registry);
             handler.filteredChannel = "ignored";
-            MessagingMetrics metrics = environment.observe(handler.proxy);
+            MessagingMetrics metrics = environment.observe(handler);
             MessagingMetrics.Recorder ignored = metrics.channel("ignored");
             ignored.finish(ignored.start(), true);
             assertThat(environment.registry.meters(), empty());
@@ -296,61 +349,63 @@ class MessagingMetricsTest {
 
     @Test
     void partialRegistrationFailureRollsBackAndDoesNotPreventLaterAcquisition() {
+        // Failure of the second meter registration must release the first and leave later graph construction usable.
         try (Environment environment = new Environment(MetricsConfig.create())) {
-            RegistryHandler handler = new RegistryHandler(environment.registry);
+            FaultyRegistry handler = new FaultyRegistry(environment.registry);
             handler.fault = Fault.REGISTER;
-            MessagingMetrics first = environment.observe(handler.proxy);
+            MessagingMetrics first = environment.observe(handler);
             MessagingMetrics.Recorder failed = first.channel("orders");
             failed.finish(failed.start(), true);
             assertThat(environment.registry.meters(), empty());
 
             handler.fault = Fault.NONE;
-            MessagingMetrics.Recorder subsequent = environment.observe(handler.proxy).channel("orders");
+            MessagingMetrics.Recorder subsequent = environment.observe(handler).channel("orders");
             first.close();
             subsequent.finish(subsequent.start(), false);
             assertThat(environment.timer("orders").count(), is(1L));
         }
     }
 
-    @Test
-    void throwingAddListenerRemovesOnlyAttemptedIdentitiesWithGlobalTags() {
-        for (String failingMeter : List.of(DURATION, FAILURES)) {
-            HelidonMetricsFactory factory = HelidonMetricsFactory.create();
-            MetricsConfig config = MetricsConfig.builder()
-                    .appName("messaging-tests")
-                    .tags(List.of(factory.tagCreate("region", "test")))
-                    .build();
-            try (Environment environment = new Environment(config, factory)) {
-                MessagingMetrics existing = environment.observe(environment.registry);
-                existing.channel("payments");
-                AtomicBoolean failed = new AtomicBoolean();
-                environment.registry.onMeterAdded(meter -> {
-                    if (meter.id().name().equals(failingMeter) && failed.compareAndSet(false, true)) {
-                        throw new IllegalStateException("Listener failed after registration");
-                    }
-                });
+    @ParameterizedTest
+    @ValueSource(strings = {DURATION, FAILURES})
+    void throwingAddListenerRemovesOnlyAttemptedIdentitiesWithGlobalTags(String failingMeter) {
+        // Global tags change the registered ID; rollback must remove this attempt while preserving another channel.
+        HelidonMetricsFactory factory = HelidonMetricsFactory.create();
+        MetricsConfig config = MetricsConfig.builder()
+                .appName("messaging-tests")
+                .tags(List.of(factory.tagCreate("region", "test")))
+                .build();
+        try (Environment environment = new Environment(config, factory)) {
+            MessagingMetrics existing = environment.observe(environment.registry);
+            existing.channel("payments");
+            AtomicBoolean failed = new AtomicBoolean();
+            environment.registry.onMeterAdded(meter -> {
+                if (meter.id().name().equals(failingMeter) && failed.compareAndSet(false, true)) {
+                    throw new IllegalStateException("Listener failed after registration");
+                }
+            });
 
-                MessagingMetrics broken = environment.observe(environment.registry);
-                broken.channel("orders");
-                assertThat(failingMeter, environment.registry.meters().size(), is(2));
-                assertThat(environment.registry.timer(DURATION, environment.tags("orders")).isEmpty(), is(true));
-                assertThat(environment.registry.counter(FAILURES, environment.tags("orders")).isEmpty(), is(true));
+            MessagingMetrics broken = environment.observe(environment.registry);
+            broken.channel("orders");
+            assertThat(failingMeter, environment.registry.meters().size(), is(2));
+            assertThat(environment.registry.timer(DURATION, environment.tags("orders")).isEmpty(), is(true));
+            assertThat(environment.registry.counter(FAILURES, environment.tags("orders")).isEmpty(), is(true));
 
-                MessagingMetrics replacement = environment.observe(environment.registry);
-                MessagingMetrics.Recorder recorder = replacement.channel("orders");
-                recorder.finish(recorder.start(), false);
-                assertThat(environment.timer("orders").count(), is(1L));
-                broken.close();
-                replacement.close();
-                assertThat(environment.registry.meters().size(), is(2));
-                existing.close();
-                assertThat(environment.registry.meters(), empty());
-            }
+            MessagingMetrics replacement = environment.observe(environment.registry);
+            MessagingMetrics.Recorder recorder = replacement.channel("orders");
+            recorder.finish(recorder.start(), false);
+            assertThat(environment.timer("orders").count(), is(1L));
+            broken.close();
+            replacement.close();
+            assertThat(environment.registry.meters().size(), is(2));
+            existing.close();
+            assertThat(environment.registry.meters(), empty());
         }
     }
 
     @Test
     void throwingAddListenerCleanupUsesCustomizerTags() {
+        // A customizer removes the channel tag, so rollback must use the returned meter rather than the requested tags.
         HelidonMetricsFactory factory = HelidonMetricsFactory.create(builder -> builder
                 .addMeterBuilderCustomizer(meter -> meter.tags(List.of())));
         try (Environment environment = new Environment(MetricsConfig.create(), factory)) {
@@ -364,11 +419,12 @@ class MessagingMetricsTest {
 
     @Test
     void recordingFailureDisablesOnlyAffectedRecorder() {
+        // One graph's recording failure must not disable another graph that shares its meter registry and channel.
         try (Environment environment = new Environment(MetricsConfig.create())) {
-            RegistryHandler handler = new RegistryHandler(environment.registry);
-            MessagingMetrics first = environment.observe(handler.proxy);
+            FaultyRegistry handler = new FaultyRegistry(environment.registry);
+            MessagingMetrics first = environment.observe(handler);
             MessagingMetrics.Recorder broken = first.channel("orders");
-            MessagingMetrics.Recorder surviving = environment.observe(handler.proxy).channel("orders");
+            MessagingMetrics.Recorder surviving = environment.observe(handler).channel("orders");
             handler.fault = Fault.RECORD;
             broken.finish(broken.start(), true);
             handler.fault = Fault.NONE;
@@ -382,6 +438,7 @@ class MessagingMetricsTest {
 
     @Test
     void clockFailureDisablesRecorderAndStillReleasesMeters() {
+        // Clock failure stops further observation but must not lose the ownership needed for graph cleanup.
         try (Environment environment = new Environment(MetricsConfig.create())) {
             MessagingMetrics metrics = environment.observe(environment.registry);
             MessagingMetrics.Recorder recorder = metrics.channel("orders");
@@ -397,9 +454,10 @@ class MessagingMetricsTest {
 
     @Test
     void removalFailureStillRetiresLeaseAndAttemptsBothMeters() {
+        // A provider that rejects removal retains its meters; messaging must retire its lease and attempt both removals.
         try (Environment environment = new Environment(MetricsConfig.create())) {
-            RegistryHandler handler = new RegistryHandler(environment.registry);
-            MessagingMetrics metrics = environment.observe(handler.proxy);
+            FaultyRegistry handler = new FaultyRegistry(environment.registry);
+            MessagingMetrics metrics = environment.observe(handler);
             MessagingMetrics.Recorder recorder = metrics.channel("orders");
             var started = recorder.start();
             Timer retainedTimer = environment.timer("orders");
@@ -411,7 +469,7 @@ class MessagingMetricsTest {
             assertThat(environment.timer("orders").count(), is(0L));
 
             handler.fault = Fault.NONE;
-            MessagingMetrics replacement = environment.observe(handler.proxy);
+            MessagingMetrics replacement = environment.observe(handler);
             MessagingMetrics.Recorder current = replacement.channel("orders");
             current.finish(current.start(), false);
             replacement.close();
@@ -420,19 +478,6 @@ class MessagingMetricsTest {
             assertThat(environment.counter("orders"), sameInstance(retainedCounter));
             assertThat(retainedTimer.count(), is(1L));
             assertThat(retainedCounter.count(), is(0L));
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T> T proxy(Class<T> type, InvocationHandler handler) {
-        return (T) Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[] {type}, handler);
-    }
-
-    private static Object invoke(Method method, Object target, Object[] args) throws Throwable {
-        try {
-            return method.invoke(target, args);
-        } catch (InvocationTargetException e) {
-            throw e.getCause();
         }
     }
 
@@ -475,8 +520,8 @@ class MessagingMetricsTest {
             managers.add(manager);
             MessagingMetrics metrics = MessagingMetrics.create(MessagingConfig.builder()
                                                                        .serviceRegistry(manager.registry())
-                                                                       .enableMetrics(true)
-                                                                       .buildPrototype());
+                                                                       .metrics(m -> m.enabled(true))
+                                                                       .buildPrototype(), manager.registry());
             observations.add(metrics);
             return metrics;
         }
@@ -518,47 +563,60 @@ class MessagingMetricsTest {
         }
     }
 
-    private static final class RegistryHandler implements InvocationHandler {
-        private final MeterRegistry delegate;
-        private final MeterRegistry proxy = MessagingMetricsTest.proxy(MeterRegistry.class, this);
+    private static final class FaultyRegistry extends DelegatingMeterRegistry {
         private final AtomicInteger clockRequests = new AtomicInteger();
         private final AtomicInteger removals = new AtomicInteger();
         private Fault fault = Fault.NONE;
         private String filteredChannel;
 
-        private RegistryHandler(MeterRegistry delegate) {
-            this.delegate = delegate;
+        private FaultyRegistry(MeterRegistry delegate) {
+            super(delegate);
         }
 
         @Override
-        public Object invoke(Object instance, Method method, Object[] args) throws Throwable {
-            String name = method.getName();
-            if (name.equals("clock")) {
-                clockRequests.incrementAndGet();
-            }
-            if (name.equals("isMeterEnabled") && args.length == 2
-                    && args[1] instanceof Map<?, ?> tags && tags.get("channel").equals(filteredChannel)) {
-                return false;
-            }
-            if (name.equals("getOrCreate") && args[0] instanceof Counter.Builder && fault == Fault.REGISTER) {
+        public Clock clock() {
+            clockRequests.incrementAndGet();
+            return super.clock();
+        }
+
+        @Override
+        public boolean isMeterEnabled(String name, Map<String, String> tags) {
+            return !tags.get("channel").equals(filteredChannel) && super.isMeterEnabled(name, tags);
+        }
+
+        @Override
+        public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder) {
+            return getOrCreate(builder, _ -> { });
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder, Consumer<M> onCreate) {
+            if (builder instanceof Counter.Builder && fault == Fault.REGISTER) {
                 throw new IllegalStateException("Counter registration unavailable");
             }
-            if (name.equals("remove")) {
-                removals.incrementAndGet();
-                if (fault == Fault.REMOVE) {
-                    throw new IllegalStateException("Removal unavailable");
-                }
-            }
-            Object result = MessagingMetricsTest.invoke(method, delegate, args);
-            if (name.equals("getOrCreate") && result instanceof Timer timer) {
-                return MessagingMetricsTest.proxy(Timer.class, (_, timerMethod, timerArgs) -> {
-                    if (timerMethod.getName().equals("record") && fault == Fault.RECORD) {
-                        throw new IllegalStateException("Recording unavailable");
+            M result = super.getOrCreate(builder, onCreate);
+            if (result instanceof Timer timer) {
+                return (M) new DelegatingTimer(timer) {
+                    @Override
+                    public void record(long amount, TimeUnit unit) {
+                        if (fault == Fault.RECORD) {
+                            throw new IllegalStateException("Recording unavailable");
+                        }
+                        super.record(amount, unit);
                     }
-                    return MessagingMetricsTest.invoke(timerMethod, timer, timerArgs);
-                });
+                };
             }
             return result;
+        }
+
+        @Override
+        public Optional<Meter> remove(Meter meter) {
+            removals.incrementAndGet();
+            if (fault == Fault.REMOVE) {
+                throw new IllegalStateException("Removal unavailable");
+            }
+            return super.remove(meter);
         }
     }
 }

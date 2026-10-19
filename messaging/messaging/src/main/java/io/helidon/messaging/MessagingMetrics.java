@@ -19,7 +19,6 @@ package io.helidon.messaging;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +26,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.Wrapper;
@@ -37,7 +37,7 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
-import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.ServiceRegistry;
 
 import static java.lang.System.Logger.Level.WARNING;
 
@@ -66,13 +66,12 @@ final class MessagingMetrics {
         this.failures = failures;
     }
 
-    static MessagingMetrics create(MessagingConfig config) {
-        if (!config.enableMetrics()) {
+    static MessagingMetrics create(MessagingConfig config, ServiceRegistry registry) {
+        if (!config.metrics().enabled()) {
             return NOOP;
         }
         FailureReporter failures = new FailureReporter();
         try {
-            var registry = config.serviceRegistry().orElseGet(GlobalServiceRegistry::registry);
             return registry.first(MeterRegistry.class)
                     .map(meterRegistry -> new MessagingMetrics(acquireRegistry(meterRegistry), failures))
                     .orElse(NOOP);
@@ -477,15 +476,22 @@ final class MessagingMetrics {
     private static final class OwnedMeter {
         private final MeterKey key;
         private final Meter meter;
+        private final Meter removalTarget;
         private final Object identity;
         private final boolean owned;
         private final FailureReporter failures;
         private int owners;
         private boolean queued;
 
-        private OwnedMeter(MeterKey key, Meter meter, Object identity, boolean owned, FailureReporter failures) {
+        private OwnedMeter(MeterKey key,
+                           Meter meter,
+                           Meter removalTarget,
+                           Object identity,
+                           boolean owned,
+                           FailureReporter failures) {
             this.key = key;
             this.meter = meter;
+            this.removalTarget = removalTarget;
             this.identity = identity;
             this.owned = owned;
             this.failures = failures;
@@ -571,13 +577,13 @@ final class MessagingMetrics {
                 List<Tag> meterTags = List.of(factory.tagCreate("channel", channel));
                 Clock clock = timed ? registry.clock() : null;
                 if (timed) {
-                    timer = register(factory, factory.timerBuilder(DURATION)
+                    timer = register(factory.timerBuilder(DURATION)
                             .tags(meterTags)
                             .description("Duration of completed channel batch processing attempts")
                             .origin(ORIGIN), failures);
                 }
                 OwnedMeter counter = counted
-                        ? register(factory, factory.counterBuilder(FAILURES)
+                        ? register(factory.counterBuilder(FAILURES)
                                 .tags(meterTags)
                                 .description("Failed channel batch processing attempts")
                                 .origin(ORIGIN), failures)
@@ -593,17 +599,17 @@ final class MessagingMetrics {
             }
         }
 
-        private <B extends Meter.Builder<B, M>, M extends Meter> OwnedMeter register(MetricsFactory factory,
-                                                                                    B builder,
-                                                                                    FailureReporter failures) {
-            Set<MeterKey> before = new HashSet<>();
-            registry.meters().forEach(meter -> before.add(MeterKey.create(meter)));
+        private <B extends Meter.Builder<B, M>, M extends Meter> OwnedMeter register(B builder,
+                                                                                   FailureReporter failures) {
+            AtomicReference<M> created = new AtomicReference<>();
             Meter meter;
             try {
-                meter = registry.getOrCreate(builder);
+                meter = registry.getOrCreate(builder, created::set);
             } catch (RuntimeException | Error e) {
                 try {
-                    recoverRegistration(factory, builder, before, failures);
+                    if (created.get() != null) {
+                        recoverRegistration(created.get(), failures);
+                    }
                 } catch (RuntimeException | Error recoveryFailure) {
                     if (recoveryFailure != e) {
                         e.addSuppressed(recoveryFailure);
@@ -613,11 +619,12 @@ final class MessagingMetrics {
             }
             MeterKey key = MeterKey.create(meter);
             Object identity = meterIdentity(meter);
+            boolean owned = created.get() != null && meterIdentity(created.get()) == identity;
             lock.lock();
             try {
                 OwnedMeter shared = meters.get(key);
                 if (shared == null || shared.identity != identity) {
-                    shared = new OwnedMeter(key, meter, identity, !before.contains(key), failures);
+                    shared = new OwnedMeter(key, meter, owned ? created.get() : meter, identity, owned, failures);
                     meters.put(key, shared);
                 }
                 shared.owners++;
@@ -627,36 +634,20 @@ final class MessagingMetrics {
             }
         }
 
-        private void recoverRegistration(MetricsFactory factory,
-                                         Meter.Builder<?, ?> builder,
-                                         Set<MeterKey> before,
-                                         FailureReporter failures) {
+        private void recoverRegistration(Meter meter, FailureReporter failures) {
+            // A registration callback identifies exactly the instance created before a later listener failed.
+            MeterKey key = MeterKey.create(meter);
+            Object identity = meterIdentity(meter);
+            lock.lock();
             try {
-                List<Tag> tags = builder.tags().entrySet().stream()
-                        .map(entry -> factory.tagCreate(entry.getKey(), entry.getValue()))
-                        .toList();
-                // getOrCreate can throw either before registration or from a listener after inserting the meter.
-                // Recover only a newly appearing identity; a pre-existing meter is never rollback-owned.
-                registry.meter(Meter.class, builder.name(), tags).ifPresent(meter -> {
-                    MeterKey key = MeterKey.create(meter);
-                    if (before.contains(key)) {
-                        return;
-                    }
-                    Object identity = meterIdentity(meter);
-                    lock.lock();
-                    try {
-                        OwnedMeter existing = meters.get(key);
-                        if (existing == null || existing.identity != identity) {
-                            OwnedMeter orphan = new OwnedMeter(key, meter, identity, true, failures);
-                            meters.put(key, orphan);
-                            enqueue(orphan);
-                        }
-                    } finally {
-                        lock.unlock();
-                    }
-                });
-            } catch (RuntimeException recoveryFailure) {
-                failures.report(recoveryFailure);
+                OwnedMeter existing = meters.get(key);
+                if (existing == null || existing.identity != identity) {
+                    OwnedMeter orphan = new OwnedMeter(key, meter, meter, identity, true, failures);
+                    meters.put(key, orphan);
+                    enqueue(orphan);
+                }
+            } finally {
+                lock.unlock();
             }
         }
 
@@ -767,19 +758,8 @@ final class MessagingMetrics {
 
         private void removeCurrent(OwnedMeter meter) {
             try {
-                var factory = registry.metricsFactory();
-                List<Tag> tags = meter.key.tags().entrySet().stream()
-                        .map(entry -> factory.tagCreate(entry.getKey(), entry.getValue()))
-                        .toList();
-                var current = registry.meter(Meter.class, meter.key.name(), tags);
-                if (current.isPresent()) {
-                    if (meterIdentity(current.get()) == meter.identity) {
-                        registry.remove(current.get());
-                    }
-                } else if (!registry.isDeleted(meter.meter)) {
-                    // Disabled meters are absent from meter lookups, but the registry tracks their deletion state.
-                    registry.remove(meter.meter);
-                }
+                // Providers compare this exact creation handle atomically; a same-ID replacement is never removed.
+                registry.remove(meter.removalTarget);
             } catch (RuntimeException e) {
                 meter.failures.report(e);
             }

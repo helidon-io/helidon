@@ -663,13 +663,18 @@ Both features are enabled by default and can be disabled independently:
 
 ```yaml
 messaging:
-  enable-metrics: false
-  enable-health: false
+  metrics:
+    enabled: false
+  health:
+    enabled: false
 ```
 
-The equivalent builder options are `enableMetrics(false)` and `enableHealth(false)`. The builder's
-`serviceRegistry(registry)` selects the registry used for providers and observation services; declarative messaging
-uses its owning Service Registry. An imperative builder without an explicit registry uses the global Service Registry.
+The equivalent builder options are `metrics(metrics -> metrics.enabled(false))` and
+`health(health -> health.enabled(false))`. Declarative messaging uses the Service Registry that constructs the runtime,
+including when the application supplies its own messaging configuration. Imperative construction uses the global registry
+by default; use `MessagingGraph.create(config, registry)` to select another registry for runtime services.
+The configuration builder's `serviceRegistry(registry)` selects providers during configuration and is not retained in
+the immutable configuration.
 
 ### Channel metrics
 
@@ -695,7 +700,8 @@ does not complete a sample before its running callback ends.
 Graphs using the same `MeterRegistry` instance share meters with matching final names and tags, including when a
 customizer makes different channels share one identity. Closing one graph releases its ownership; meters created by
 messaging remain until the last graph using them closes or finishes terminal rollback. Pre-existing application meters
-are borrowed and remain registered after the graphs close. Creating a graph after the last owner removes a messaging
+are borrowed and remain registered after the graphs close. Providers report creation atomically; meters returned without
+a creation notification are treated as borrowed. Creating a graph after the last owner removes a messaging
 meter starts a new series. If application code removes and replaces a meter while a graph is alive, later graphs use
 the replacement; closing an owner of the removed meter preserves the replacement. The shared registry itself remains open.
 Use the same registry instance when sharing meters; separate wrappers around one underlying provider registry are not

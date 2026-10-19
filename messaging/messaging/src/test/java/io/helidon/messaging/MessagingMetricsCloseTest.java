@@ -18,22 +18,22 @@ package io.helidon.messaging;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
-import io.helidon.config.Config;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
-import io.helidon.metrics.api.MetricsFactory;
-import io.helidon.metrics.providers.micrometer.MicrometerMetricsFactoryProvider;
+import io.helidon.metrics.providers.helidon.HelidonMetricsFactory;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 
-import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
@@ -48,40 +48,41 @@ class MessagingMetricsCloseTest {
     private static final String DURATION = "messaging.processing.duration";
     private static final String FAILURES = "messaging.processing.failures";
 
-    @Test
-    void fatalRemovalRetiresEveryChannelAndPreservesFailure() {
-        for (int channelCount : List.of(1, 2)) {
-            try (Environment environment = new Environment(channelCount)) {
-                MessagingGraph graph = environment.graph();
-                List<Meter> originalMeters = List.copyOf(environment.meters.meters());
-                assertThat(originalMeters, hasSize(channelCount * 2));
-                AtomicBoolean fail = new AtomicBoolean(true);
-                AssertionError failure = new AssertionError("Fatal meter removal failure");
-                environment.meters.onMeterRemoved(_ -> {
-                    if (fail.compareAndSet(true, false)) {
-                        throw failure;
-                    }
-                });
+    @ParameterizedTest
+    @ValueSource(ints = {1, 2})
+    void fatalRemovalRetiresEveryChannelAndPreservesFailure(int channelCount) {
+        // A fatal provider failure must not prevent the remaining channel recorders from releasing their meters.
+        try (Environment environment = new Environment(channelCount)) {
+            MessagingGraph graph = environment.graph();
+            List<Meter> originalMeters = List.copyOf(environment.meters.meters());
+            assertThat(originalMeters, hasSize(channelCount * 2));
+            AtomicBoolean fail = new AtomicBoolean(true);
+            AssertionError failure = new AssertionError("Fatal meter removal failure");
+            environment.afterRemoval = _ -> {
+                if (fail.compareAndSet(true, false)) {
+                    throw failure;
+                }
+            };
 
-                assertFatalClose(graph, failure);
-                environment.assertRetired(originalMeters);
-                environment.assertFreshGraph();
-            }
+            assertFatalClose(graph, failure);
+            environment.assertRetired(originalMeters);
+            environment.assertFreshGraph();
         }
     }
 
     @Test
     void runtimeRemovalFailureRetiresEveryChannel() {
+        // An ordinary provider failure is swallowed after all leases have been retired.
         try (Environment environment = new Environment(2)) {
             MessagingGraph graph = environment.graph();
             List<Meter> originalMeters = List.copyOf(environment.meters.meters());
             assertThat(originalMeters, hasSize(4));
             AtomicBoolean fail = new AtomicBoolean(true);
-            environment.meters.onMeterRemoved(_ -> {
+            environment.afterRemoval = _ -> {
                 if (fail.compareAndSet(true, false)) {
                     throw new IllegalStateException("Ordinary meter removal failure");
                 }
-            });
+            };
 
             graph.close();
             graph.close();
@@ -91,22 +92,10 @@ class MessagingMetricsCloseTest {
         }
     }
 
-    @Test
-    void distinctFatalFailuresAreSuppressedAfterEveryChannelIsRetired() {
-        assertMultipleFailures(false);
-    }
-
-    @Test
-    void repeatedFatalFailureIsNotSuppressedOnItself() {
-        assertMultipleFailures(true);
-    }
-
-    private static void assertFatalClose(MessagingGraph graph, AssertionError failure) {
-        assertThat(assertThrows(AssertionError.class, graph::close), sameInstance(failure));
-        assertThat(assertThrows(AssertionError.class, graph::close), sameInstance(failure));
-    }
-
-    private static void assertMultipleFailures(boolean sameFailure) {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void multipleFatalFailuresRetireEveryChannel(boolean sameFailure) {
+        // Preserve the first failure, suppress distinct later failures, and avoid self-suppression.
         try (Environment environment = new Environment(2)) {
             MessagingGraph graph = environment.graph();
             List<Meter> originalMeters = List.copyOf(environment.meters.meters());
@@ -116,11 +105,11 @@ class MessagingMetricsCloseTest {
             List<AssertionError> failures = List.of(first, second);
             AtomicInteger failuresThrown = new AtomicInteger();
             AtomicBoolean fail = new AtomicBoolean(true);
-            environment.meters.onMeterRemoved(meter -> {
+            environment.afterRemoval = meter -> {
                 if (fail.get() && meter.id().name().equals(DURATION)) {
                     throw failures.get(failuresThrown.getAndIncrement());
                 }
-            });
+            };
 
             try {
                 assertFatalClose(graph, first);
@@ -138,24 +127,31 @@ class MessagingMetricsCloseTest {
         }
     }
 
+    private static void assertFatalClose(MessagingGraph graph, AssertionError failure) {
+        assertThat(assertThrows(AssertionError.class, graph::close), sameInstance(failure));
+        assertThat(assertThrows(AssertionError.class, graph::close), sameInstance(failure));
+    }
+
     private static final class Environment implements AutoCloseable {
-        private final ServiceRegistryManager factoryServices = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
-                .discoverServices(false)
-                .discoverServicesFromServiceLoader(false)
-                .build());
-        private final MetricsConfig config = MetricsConfig.create();
-        private final MetricsFactory factory = new MicrometerMetricsFactoryProvider()
-                .create(Config.empty(), config, List.of(), factoryServices.registry());
-        private final MeterRegistry meters = factory.createMeterRegistry(config);
+        private final HelidonMetricsFactory factory = HelidonMetricsFactory.create();
+        private final MeterRegistry meters = new DelegatingMeterRegistry(factory.createMeterRegistry(MetricsConfig.create())) {
+            @Override
+            public Optional<Meter> remove(Meter meter) {
+                Optional<Meter> removed = super.remove(meter);
+                // Inject at the public provider boundary; native removal listeners intentionally suppress failures.
+                removed.ifPresent(afterRemoval);
+                return removed;
+            }
+        };
         private final ServiceRegistryManager graphServices = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
                 .discoverServices(false)
                 .discoverServicesFromServiceLoader(false)
                 .putContractInstance(MeterRegistry.class, meters)
                 .build());
         private final List<MessagingChannel<String>> channels;
+        private Consumer<Meter> afterRemoval = _ -> { };
 
         private Environment(int channelCount) {
-            meters.unwrap(CompositeMeterRegistry.class).add(new SimpleMeterRegistry());
             List<MessagingChannel<String>> configuredChannels = new ArrayList<>();
             for (int i = 0; i < channelCount; i++) {
                 configuredChannels.add(MessagingChannel.create("channel-" + i, String.class));
@@ -168,18 +164,14 @@ class MessagingMetricsCloseTest {
             try {
                 graphServices.shutdown();
             } finally {
-                try {
-                    factory.close();
-                } finally {
-                    factoryServices.shutdown();
-                }
+                factory.close();
             }
         }
 
         private MessagingGraph graph() {
             MessagingConfig.Builder builder = MessagingGraph.builder()
                     .serviceRegistry(graphServices.registry())
-                    .enableHealth(false);
+                    .health(h -> h.enabled(false));
             for (MessagingChannel<String> channel : channels) {
                 builder.channel(channel).payloadSink(channel, payload -> {
                     if (payload.equals("fail")) {
@@ -187,7 +179,7 @@ class MessagingMetricsCloseTest {
                     }
                 });
             }
-            return builder.build().start();
+            return MessagingGraph.create(builder.buildPrototype(), graphServices.registry()).start();
         }
 
         private void assertRetired(List<Meter> retiredMeters) {

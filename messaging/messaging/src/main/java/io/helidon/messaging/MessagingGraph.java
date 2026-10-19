@@ -17,12 +17,14 @@
 package io.helidon.messaging;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.health.HealthCheck;
+import io.helidon.service.registry.ServiceRegistry;
 
 /**
  * One messaging topology and lifecycle.
@@ -61,6 +63,18 @@ public interface MessagingGraph extends RuntimeType.Api<MessagingConfig>, AutoCl
      */
     static MessagingGraph create(MessagingConfig config) {
         return new MessagingGraphAssembler(config).graph();
+    }
+
+    /**
+     * Create a graph using the specified service registry for runtime services, including metrics and health.
+     * The configuration builder's registry selects providers during configuration and is not retained by the configuration.
+     *
+     * @param config messaging configuration
+     * @param registry service registry that owns the graph's runtime services
+     * @return messaging graph
+     */
+    static MessagingGraph create(MessagingConfig config, ServiceRegistry registry) {
+        return new MessagingGraphAssembler(Objects.requireNonNull(config), Objects.requireNonNull(registry)).graph();
     }
 
     /**

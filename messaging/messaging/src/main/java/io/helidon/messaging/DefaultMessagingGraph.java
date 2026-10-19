@@ -40,6 +40,8 @@ import io.helidon.health.HealthCheck;
 import io.helidon.messaging.spi.ChannelConnection;
 import io.helidon.messaging.spi.IncomingChannel;
 import io.helidon.messaging.spi.OutgoingChannel;
+import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.ServiceRegistry;
 
 /**
  * One validated messaging topology and lifecycle.
@@ -76,10 +78,15 @@ final class DefaultMessagingGraph implements MessagingGraph {
     private volatile Throwable failure;
 
     DefaultMessagingGraph(DeliveryEngine deliveryEngine) {
+        this(deliveryEngine, GlobalServiceRegistry.registry());
+    }
+
+    DefaultMessagingGraph(DeliveryEngine deliveryEngine, ServiceRegistry registry) {
         this.deliveryEngine = Objects.requireNonNull(deliveryEngine);
         this.config = deliveryEngine.configuration();
-        this.metrics = MessagingMetrics.create(config);
-        this.health = MessagingHealth.create(config);
+        Objects.requireNonNull(registry);
+        this.metrics = MessagingMetrics.create(config, registry);
+        this.health = MessagingHealth.create(config, registry);
     }
 
     @Override

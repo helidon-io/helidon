@@ -85,18 +85,6 @@ Messaging configuration
 </tr>
 <tr>
 <td>
-<code>enable-<wbr>health</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-<code>true</code>
-</td>
-<td>Whether to expose graph readiness and liveness checks</td>
-</tr>
-<tr>
-<td>
 <code>max-<wbr>pending-<wbr>admissions</code>
 </td>
 <td>
@@ -118,6 +106,20 @@ Messaging configuration
 <code>false</code>
 </td>
 <td>Whether to enable automatic service discovery for <code>connector</code></td>
+</tr>
+<tr>
+<td>
+<a id="health"></a>
+<a href="io.helidon.messaging.MessagingHealthConfig.md">
+<code>health</code>
+</a>
+</td>
+<td>
+<code>Messaging<wbr>Health<wbr>Config</code>
+</td>
+<td>
+</td>
+<td>Graph readiness and liveness configuration</td>
 </tr>
 <tr>
 <td>
@@ -144,15 +146,17 @@ Messaging configuration
 </tr>
 <tr>
 <td>
-<code>enable-<wbr>metrics</code>
+<a id="metrics"></a>
+<a href="io.helidon.messaging.MessagingMetricsConfig.md">
+<code>metrics</code>
+</a>
 </td>
 <td>
-<code>Boolean</code>
+<code>Messaging<wbr>Metrics<wbr>Config</code>
 </td>
 <td>
-<code>true</code>
 </td>
-<td>Whether to record channel processing counts, failures, and duration using the metrics registry</td>
+<td>Channel processing metrics configuration</td>
 </tr>
 <tr>
 <td>
