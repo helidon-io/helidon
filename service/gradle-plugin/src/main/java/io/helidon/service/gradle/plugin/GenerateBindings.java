@@ -226,7 +226,9 @@ public abstract class GenerateBindings extends DefaultTask {
         request.setProperty("classpath", classes.getAbsolutePath()
                 + (dependencies.isEmpty() ? "" : File.pathSeparator + dependencies));
         request.setProperty("modulepath", request.getProperty("classpath"));
-        request.setProperty("sourceRoots", paths(getSourceRoots()));
+        String sourceRoots = paths(getSourceRoots());
+        request.setProperty("sourceRoots", sources.getAbsolutePath()
+                + (sourceRoots.isEmpty() ? "" : File.pathSeparator + sourceRoots));
         request.setProperty("mainSourceRoots", paths(getMainSourceRoots()));
         request.setProperty("testSourceRoots", paths(getTestSourceRoots()));
         request.setProperty("generatedSourceDirectory", sources.getAbsolutePath());

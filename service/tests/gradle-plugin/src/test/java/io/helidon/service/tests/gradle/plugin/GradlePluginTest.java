@@ -138,6 +138,53 @@ class GradlePluginTest {
     }
 
     @Test
+    void modularApplicationBindingsArePackagedAndRun() throws IOException {
+        fixture();
+        write("library/src/main/java/module-info.java", """
+                module example.library {
+                    requires io.helidon.service.registry;
+                    exports library;
+                }
+                """);
+        write("src/main/java/module-info.java", """
+                module example.app {
+                    requires io.helidon.service.registry;
+                    requires example.library;
+                    exports example;
+                }
+                """);
+        write("build.gradle", Files.readString(directory.resolve("build.gradle"))
+                .replace("id 'java'", "id 'application'") + """
+
+                application {
+                    mainModule = 'example.app'
+                    mainClass = 'example.Main'
+                }
+                tasks.named('run') {
+                    dependsOn tasks.named('jar')
+                    classpath = files(tasks.named('jar').flatMap { it.archiveFile }) + configurations.runtimeClasspath
+                }
+                """);
+
+        BuildResult result = runner("jar", "run").build();
+        assertTask(result, ":generateApplicationBindings", TaskOutcome.SUCCESS);
+        assertTask(result, ":jar", TaskOutcome.SUCCESS);
+        assertTask(result, ":run", TaskOutcome.SUCCESS);
+        // Main rejects the annotation processor's EmptyBinding placeholder and disables runtime discovery.
+        assertThat(result.getOutput(), containsString("APPLICATION:chosen:library"));
+        String binding = Files.readString(directory.resolve(
+                "build/generated/sources/helidon/main/example/ApplicationBinding.java"));
+        assertThat(binding, containsString("Greeting__ServiceDescriptor"));
+        assertThat(binding, containsString("LibraryService__ServiceDescriptor"));
+        try (var jar = new ZipFile(directory.resolve("build/libs/application.jar").toFile())) {
+            assertThat(jar.getEntry("module-info.class"), notNullValue());
+            assertThat(jar.getEntry("example/ApplicationBinding.class"), notNullValue());
+            assertThat(jar.getEntry("example/ApplicationMain.class"), notNullValue());
+            assertThat(jar.getEntry("example/Greeting__ServiceDescriptor.class"), notNullValue());
+        }
+    }
+
+    @Test
     void regeneratesAfterServiceChangesAndRemovesOldBinding() throws IOException {
         fixture();
         runner("jar").build();
