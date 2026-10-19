@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.security.providers.httpauth;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -22,6 +23,10 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
+import java.util.logging.StreamHandler;
 
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.Security;
@@ -35,7 +40,9 @@ import jakarta.ws.rs.core.MultivaluedHashMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.endsWith;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -81,12 +88,39 @@ public class BasicAuthOutboundOverrideTest {
                 EndpointConfig.PROPERTY_OUTBOUND_SECRET
         ));
 
-        ClientSecurityFilter csf = new ClientSecurityFilter();
-        csf.filter(requestContext);
+        Logger logger = Logger.getLogger(ClientSecurityFilter.class.getName());
+        Level previousLevel = logger.getLevel();
+        boolean previousUseParentHandlers = logger.getUseParentHandlers();
+        ByteArrayOutputStream logOutput = new ByteArrayOutputStream();
+        StreamHandler handler = new StreamHandler(logOutput, new SimpleFormatter());
+        handler.setEncoding(StandardCharsets.UTF_8.name());
+        handler.setLevel(Level.ALL);
 
-        assertThat(jerseyHeaders.getFirst("Authorization"), notNullValue());
-        assertThat(jerseyHeaders.getFirst("Authorization").toString().toLowerCase(), startsWith("basic "));
-        assertThat(jerseyHeaders.getFirst("Authorization").toString(), endsWith(base64Encoded));
+        try {
+            logger.addHandler(handler);
+            logger.setLevel(Level.ALL);
+            logger.setUseParentHandlers(false);
+
+            ClientSecurityFilter csf = new ClientSecurityFilter();
+            csf.filter(requestContext);
+
+            assertThat(jerseyHeaders.getFirst("Authorization"), notNullValue());
+            String authorizationHeader = jerseyHeaders.getFirst("Authorization").toString();
+            assertThat(authorizationHeader.toLowerCase(), startsWith("basic "));
+            assertThat(authorizationHeader, endsWith(base64Encoded));
+
+            handler.flush();
+            String messages = logOutput.toString(StandardCharsets.UTF_8);
+            assertThat(messages, containsString("Client filter header(s). SIZE: 1"));
+            assertThat(messages, containsString("    + Header: Authorization: <redacted>"));
+            assertThat(messages, not(containsString(authorizationHeader)));
+            assertThat(messages, not(containsString(base64Encoded)));
+        } finally {
+            logger.removeHandler(handler);
+            logger.setLevel(previousLevel);
+            logger.setUseParentHandlers(previousUseParentHandlers);
+            handler.close();
+        }
 
     }
 }
