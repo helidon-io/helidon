@@ -1128,6 +1128,13 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         int streamId = frameHeader.streamId();
         receiveFrameListener.frame(ctx, streamId, rstStream);
 
+        if (streamId % 2 != 0 && streamId <= lastStreamId && streams.get(streamId) == null) {
+            // A reset can arrive after a closed stream has been removed and a newer stream has opened.
+            // Do not recreate the closed stream or fail unrelated requests on the connection.
+            state = State.READ_FRAME;
+            return;
+        }
+
         try {
             StreamContext streamContext = stream(streamId);
             boolean rapidReset = streamContext.stream().rstStream(rstStream);
