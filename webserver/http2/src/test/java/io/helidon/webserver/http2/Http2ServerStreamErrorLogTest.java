@@ -111,7 +111,7 @@ class Http2ServerStreamErrorLogTest {
                                                         Http2Settings.builder().build(),
                                                         writer,
                                                         flowControl,
-                                                        new Http2ServerStream.InboundDataBudget(1, 8192),
+                                                        new InboundDataBudget(1, 8192),
                                                         new Http2ConnectionChecks(config, mock(Http2Connection.class)));
         streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
         stream.prologue(HttpPrologue.create(Http2Connection.FULL_PROTOCOL,
