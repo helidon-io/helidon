@@ -10,6 +10,54 @@ For previous releases of Helidon please see:
 * [Helidon 2.x CHANGELOG.md](https://github.com/helidon-io/helidon/blob/helidon-2.x/CHANGELOG.md)
 * [Helidon 1.x CHANGELOG.md](https://github.com/helidon-io/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [27.0.1]
+
+This patch release of Helidon contains important bug fixes and is strongly recommended for all users of Helidon 27.
+
+A minimum of Java 27 is required to use Helidon 27.
+
+### CHANGES
+
+- Archetypes: Update archetype option descriptions [12612](https://github.com/helidon-io/helidon/pull/12612)
+- Build: Cache JDK installations across CI jobs [12632](https://github.com/helidon-io/helidon/pull/12632)
+- Build: Update release scripts to be more portable [12622](https://github.com/helidon-io/helidon/pull/12622)
+- Build: Update scripts to unset CDPATH [12624](https://github.com/helidon-io/helidon/pull/12624)
+- Build: Upgrade Helidon build-tools to 4.0.31 [12762](https://github.com/helidon-io/helidon/pull/12762)
+- Codegen: Escape generated annotation string literals [12804](https://github.com/helidon-io/helidon/pull/12804)
+- Common: Enforce throughput token-bucket capacity [ca9750dda1](https://github.com/helidon-io/helidon/commit/ca9750dda1c68b3ef284e5d0e88679d57e313c99)
+- Common: Remove built-in String-to-Class mapping [9188150f57](https://github.com/helidon-io/helidon/commit/9188150f579a4bc8d55e6025960343e1bff063ea)
+- Data: Update MySQL integration test image to 9.7.3 [12639](https://github.com/helidon-io/helidon/pull/12639)
+- Data: Update Oracle and MySQL Testcontainer images used by data tests [12662](https://github.com/helidon-io/helidon/pull/12662)
+- Dependencies: Upgrade Jackson to 2.21.7 [12620](https://github.com/helidon-io/helidon/pull/12620)
+- Dependencies: Upgrade jaxb to 4.0.9 [12636](https://github.com/helidon-io/helidon/pull/12636)
+- Docs: Apply documentation fixes [12608](https://github.com/helidon-io/helidon/pull/12608)
+- Docs: Complete generated OIDC configuration reference [f242509772](https://github.com/helidon-io/helidon/commit/f242509772ff2e053956c48fd50593260928c328)
+- Docs: Update tracing documentation to Jaeger 2.21.0 [12640](https://github.com/helidon-io/helidon/pull/12640)
+- gRPC: Align gRPC transport cancellation test with asynchronous cleanup [b8699eab2f](https://github.com/helidon-io/helidon/commit/b8699eab2f20de342aa52d1fe7a2ac5f4ecfc949)
+- gRPC: Fix gRPC retry test and failed-start cancellation [12663](https://github.com/helidon-io/helidon/pull/12663)
+- gRPC: Propagate gRPC deadlines [12752](https://github.com/helidon-io/helidon/pull/12752)
+- gRPC: Stabilize gRPC security and HTTP/2 retirement tests [12755](https://github.com/helidon-io/helidon/pull/12755)
+- Health: Omit sensitive details from health responses [fd13f9ab3b](https://github.com/helidon-io/helidon/commit/fd13f9ab3b5d3a69b96b307b04731a8ad59ad506)
+- HTTP: Fix malformed HTTP method error handling [12766](https://github.com/helidon-io/helidon/pull/12766)
+- HTTP: Preserve absolute-form scheme and authority in HTTP/1 requested URI [b6cfa5fb8f](https://github.com/helidon-io/helidon/commit/b6cfa5fb8f93fbd16a281005499a841962403426)
+- HTTP: Prevent internal details in error responses [49ef745f54](https://github.com/helidon-io/helidon/commit/49ef745f54f91f6c53dca24b383a91e641eab7dc)
+- HTTP/2: Fix Windows HTTP/2 client and PROXY protocol tests [12593](https://github.com/helidon-io/helidon/pull/12593)
+- HTTP/2: Limit HTTP/2 header table growth [fd32ef19c1](https://github.com/helidon-io/helidon/commit/fd32ef19c12ec5b9f025e4ddd296cb5c50afd435)
+- HTTP/2: Wait for h2spec report generation before copying results [12646](https://github.com/helidon-io/helidon/pull/12646)
+- JSON: Preserve delimiters after JSON double parsing [12793](https://github.com/helidon-io/helidon/pull/12793)
+- Security: Avoid exposing authentication credentials in diagnostics [f2f8ed389f](https://github.com/helidon-io/helidon/commit/f2f8ed389f2cc3d1896b00e4edbe3c6ba69baee3)
+- Security: Avoid exposing mismatched authorization headers [d9e06fa81c](https://github.com/helidon-io/helidon/commit/d9e06fa81c0c86296652d23ce40e9107f0554481)
+- Security: Restrict dynamically discovered OIDC frontend origins [900f2fc996](https://github.com/helidon-io/helidon/commit/900f2fc9968d485eec274cddcde263122c01b27e)
+- WebClient: Fix WebClient telemetry request duration units [12739](https://github.com/helidon-io/helidon/pull/12739)
+- WebClient: Make round-robin DNS cache bounded and thread safe [b7b5f8257d](https://github.com/helidon-io/helidon/commit/b7b5f8257d1e95feae2f6d581c1d25918aaf27d2)
+- WebClient: Preserve WebClient registered-name authorities [8824130af3](https://github.com/helidon-io/helidon/commit/8824130af314182b39494d61887d47cf29f6fa2b)
+- WebClient: Stream HTTP/1 response chunks incrementally [7b8b95c92e](https://github.com/helidon-io/helidon/commit/7b8b95c92e4436fc2abf6cc7bd685d8ce6d9a9a8)
+- WebClient: Validate HTTP/1 response chunk delimiters [0df0b97941](https://github.com/helidon-io/helidon/commit/0df0b979410e1b3244b3fa4ffb22206c99032ba5)
+- WebServer: Avoid duplex deadlock in output stream framing tests [12669](https://github.com/helidon-io/helidon/pull/12669)
+- WebServer: Preserve response headers across status changes [12817](https://github.com/helidon-io/helidon/pull/12817)
+- WebSocket: Bound WebSocket client frame payloads [a60ba1066a](https://github.com/helidon-io/helidon/commit/a60ba1066a949515ce9bb5fb69e23fef68e8cde5)
+- WebSocket: Keep WebSocket listener errors out of close reasons [d6d1e44103](https://github.com/helidon-io/helidon/commit/d6d1e441033aedf5bcdec2e34410e6814d92a69f)
+
 ## [27.0.0]
 
 This is a major release of Helidon. Helidon 27 is the first Helidon release to fully adopt the 
@@ -497,5 +545,5 @@ For more information see the [27 upgrade guide](docs/guides/upgrade/27.md).
 - Tests: Stabilize HTTP/2 window update writer test [12579](https://github.com/helidon-io/helidon/pull/12579)
 - Tests: Stabilize listener port refusal lifecycle test [12198](https://github.com/helidon-io/helidon/pull/12198)
 
-[27.0.0]: https://github.com/oracle/helidon/compare/4.4.0...27.0.0
-
+[27.0.1]: https://github.com/helidon-io/helidon/compare/27.0.0...27.0.1
+[27.0.0]: https://github.com/helidon-io/helidon/compare/4.4.0...27.0.0
