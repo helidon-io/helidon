@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.service.maven.plugin;
+package io.helidon.service.application.codegen;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,12 +26,12 @@ import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenOptions;
 import io.helidon.codegen.Option;
 
-class MavenOptions implements CodegenOptions {
+class ApplicationOptions implements CodegenOptions {
     private static final String API_OPTION = "helidon.api";
 
     private final Map<String, String> options;
 
-    private MavenOptions(Map<String, String> options) {
+    private ApplicationOptions(Map<String, String> options) {
         this.options = options;
     }
 
@@ -40,7 +40,7 @@ class MavenOptions implements CodegenOptions {
 
         compilerArgs.forEach(it -> addInjectOption(options, it));
 
-        return new MavenOptions(Map.copyOf(options));
+        return new ApplicationOptions(Map.copyOf(options));
     }
 
     @Override
@@ -67,7 +67,7 @@ class MavenOptions implements CodegenOptions {
         helidonOptions.remove(INDENT_TYPE.name());
         helidonOptions.remove(INDENT_COUNT.name());
         helidonOptions.remove(CREATE_META_INF_SERVICES.name());
-        helidonOptions.removeIf(MavenOptions::supportedByOtherHelidonProcessor);
+        helidonOptions.removeIf(ApplicationOptions::supportedByOtherHelidonProcessor);
 
         if (!helidonOptions.isEmpty()) {
             throw new CodegenException("Unrecognized/unsupported Helidon option configured: " + helidonOptions);
@@ -91,3 +91,4 @@ class MavenOptions implements CodegenOptions {
         return API_OPTION.equals(option) || option.startsWith(API_OPTION + ".");
     }
 }
+

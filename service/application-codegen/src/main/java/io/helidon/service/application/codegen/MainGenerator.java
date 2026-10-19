@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.service.maven.plugin;
+package io.helidon.service.application.codegen;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -37,9 +37,9 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_REGISTRY_MA
 class MainGenerator {
     private static final TypeName GENERATOR = TypeName.create(MainGenerator.class);
 
-    private final MavenCodegenContext ctx;
+    private final ApplicationCodegenContext ctx;
 
-    MainGenerator(MavenCodegenContext ctx) {
+    MainGenerator(ApplicationCodegenContext ctx) {
         this.ctx = ctx;
     }
 
@@ -111,3 +111,4 @@ class MainGenerator {
     }
 
 }
+

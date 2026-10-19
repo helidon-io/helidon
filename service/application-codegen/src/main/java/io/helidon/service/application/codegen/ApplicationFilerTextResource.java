@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,40 +14,43 @@
  * limitations under the License.
  */
 
-package io.helidon.service.maven.plugin;
+package io.helidon.service.application.codegen;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 
 import io.helidon.codegen.CodegenException;
-import io.helidon.codegen.FilerResource;
+import io.helidon.codegen.FilerTextResource;
 
-class MavenFilerResource implements FilerResource {
+class ApplicationFilerTextResource implements FilerTextResource {
     private final Path resourcePath;
+    private final ArrayList<String> currentLines;
 
-    private byte[] currentBytes;
     private boolean modified;
 
-    MavenFilerResource(Path resourcePath) {
-        this(resourcePath, new byte[0]);
-    }
-
-    MavenFilerResource(Path resourcePath, byte[] bytes) {
+    ApplicationFilerTextResource(Path resourcePath) {
         this.resourcePath = resourcePath;
-        this.currentBytes = bytes;
+        this.currentLines = new ArrayList<>();
+    }
+
+    ApplicationFilerTextResource(Path resourcePath, List<String> lines) {
+        this.resourcePath = resourcePath;
+        this.currentLines = new ArrayList<>(lines);
     }
 
     @Override
-    public byte[] bytes() {
-        return Arrays.copyOf(currentBytes, currentBytes.length);
+    public List<String> lines() {
+        return List.copyOf(currentLines);
     }
 
     @Override
-    public void bytes(byte[] newBytes) {
-        currentBytes = Arrays.copyOf(newBytes, newBytes.length);
+    public void lines(List<String> newLines) {
+        currentLines.clear();
+        currentLines.addAll(newLines);
         modified = true;
     }
 
@@ -55,10 +58,11 @@ class MavenFilerResource implements FilerResource {
     public void write() {
         if (modified) {
             try {
-                Files.write(resourcePath, currentBytes, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
+                Files.write(resourcePath, currentLines, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
             } catch (IOException e) {
                 throw new CodegenException("Failed to write resource " + resourcePath.toAbsolutePath(), e);
             }
         }
     }
 }
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.service.maven.plugin;
+package io.helidon.service.application.codegen;
 
 import java.nio.file.Path;
 import java.util.Optional;
@@ -34,17 +34,17 @@ import io.helidon.common.types.TypedElementInfo;
 
 import io.github.classgraph.ScanResult;
 
-class MavenCodegenContext extends CodegenContextBase implements CodegenContext, ScanContext {
+class ApplicationCodegenContext extends CodegenContextBase implements CodegenContext, ScanContext {
     private final ModuleInfo module;
-    private final MavenFiler filer;
+    private final ApplicationFiler filer;
     private final ScanResult scanResult;
 
-    protected MavenCodegenContext(CodegenOptions options,
-                                  MavenFiler filer,
-                                  CodegenLogger logger,
-                                  CodegenScope scope,
-                                  ScanResult scanResult,
-                                  ModuleInfo module) {
+    protected ApplicationCodegenContext(CodegenOptions options,
+                                        ApplicationFiler filer,
+                                        CodegenLogger logger,
+                                        CodegenScope scope,
+                                        ScanResult scanResult,
+                                        ModuleInfo module) {
         super(options, Set.of(), filer, logger, scope);
 
         this.module = module;
@@ -52,19 +52,19 @@ class MavenCodegenContext extends CodegenContextBase implements CodegenContext, 
         this.scanResult = scanResult;
     }
 
-    static MavenCodegenContext create(CodegenOptions options,
-                                      ScanResult scanResult,
-                                      CodegenScope scope,
-                                      Path generatedSourceDir,
-                                      Path outputDirectory,
-                                      MavenLogger logger,
-                                      ModuleInfo module /* may be null*/) {
-        return new MavenCodegenContext(options,
-                                       MavenFiler.create(generatedSourceDir, outputDirectory),
-                                       logger,
-                                       scope,
-                                       scanResult,
-                                       module);
+    static ApplicationCodegenContext create(CodegenOptions options,
+                                            ScanResult scanResult,
+                                            CodegenScope scope,
+                                            Path generatedSourceDir,
+                                            Path outputDirectory,
+                                            CodegenLogger logger,
+                                            ModuleInfo module /* may be null*/) {
+        return new ApplicationCodegenContext(options,
+                                             ApplicationFiler.create(generatedSourceDir, outputDirectory),
+                                             logger,
+                                             scope,
+                                             scanResult,
+                                             module);
     }
 
     @Override
@@ -73,7 +73,7 @@ class MavenCodegenContext extends CodegenContextBase implements CodegenContext, 
     }
 
     @Override
-    public MavenFiler filer() {
+    public ApplicationFiler filer() {
         return filer;
     }
 
@@ -92,3 +92,4 @@ class MavenCodegenContext extends CodegenContextBase implements CodegenContext, 
         return scanResult;
     }
 }
+

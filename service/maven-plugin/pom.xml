@@ -63,42 +63,21 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- normal dependencies -->
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-types</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.codegen</groupId>
-            <artifactId>helidon-codegen-class-model</artifactId>
-        </dependency>
         <dependency>
             <groupId>io.helidon.service</groupId>
-            <artifactId>helidon-service-codegen</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.service</groupId>
-            <artifactId>helidon-service-metadata</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.service</groupId>
-            <artifactId>helidon-service-registry</artifactId>
+            <artifactId>helidon-service-application-codegen</artifactId>
         </dependency>
         <dependency>
             <groupId>io.helidon.codegen</groupId>
             <artifactId>helidon-codegen</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.codegen</groupId>
-            <artifactId>helidon-codegen-scan</artifactId>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-codegen</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.codegen</groupId>
-            <artifactId>helidon-codegen-compiler</artifactId>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-types</artifactId>
         </dependency>
         <dependency>
             <groupId>io.github.classgraph</groupId>
@@ -123,6 +102,16 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <configuration>
+                    <usedDependencies>
+                        <!-- Binding class defaults reference compile-time constants from this module. -->
+                        <usedDependency>io.helidon.service:helidon-service-codegen</usedDependency>
+                    </usedDependencies>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.service.maven.plugin;
+package io.helidon.service.application.codegen;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -70,10 +70,10 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_PLAN_BINDER
 class BindingGenerator {
     private static final TypeName GENERATOR = TypeName.create(BindingGenerator.class);
 
-    private final MavenCodegenContext ctx;
+    private final ApplicationCodegenContext ctx;
     private final boolean failOnError;
 
-    BindingGenerator(MavenCodegenContext scanContext, boolean failOnError) {
+    BindingGenerator(ApplicationCodegenContext scanContext, boolean failOnError) {
         this.ctx = scanContext;
         this.failOnError = failOnError;
     }
@@ -84,7 +84,7 @@ class BindingGenerator {
      * @param injectionServices injection services to use
      * @param serviceTypes      types to process
      * @param typeName          generated binding type name
-     * @param moduleName        name of the module of this maven module
+     * @param moduleName        name of the module of this application module
      * @param sourcesToCompile  list of sources to compile
      */
     void createBinding(WrappedServices injectionServices,
@@ -187,7 +187,7 @@ class BindingGenerator {
         Path generated = ctx.filer()
                 .writeSourceFile(classModel.build());
 
-        MavenRoundContext roundContext = new MavenRoundContext(ctx);
+        ApplicationRoundContext roundContext = new ApplicationRoundContext(ctx);
 
         sourcesToCompile.add(generated);
 
@@ -632,3 +632,4 @@ class BindingGenerator {
                    List<ServiceInfo> descriptors) {
     }
 }
+

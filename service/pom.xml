@@ -45,7 +45,10 @@
         <module>metadata</module>
         <module>codegen</module>
         <module>registry</module>
+        <module>application-codegen</module>
         <module>maven-plugin</module>
+        <module>gradle-plugin</module>
+        <module>gradle-plugin-marker</module>
         <module>jndi</module>
     </modules>
 

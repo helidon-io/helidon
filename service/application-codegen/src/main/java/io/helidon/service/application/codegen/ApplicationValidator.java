@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.service.maven.plugin;
+package io.helidon.service.application.codegen;
 
 import java.lang.System.Logger.Level;
 import java.util.HashMap;
@@ -34,10 +34,10 @@ import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceInfo;
 
 class ApplicationValidator {
-    private final MavenCodegenContext scanContext;
+    private final ApplicationCodegenContext scanContext;
     private final boolean failOnWarning;
 
-    ApplicationValidator(MavenCodegenContext scanContext, boolean failOnWarning) {
+    ApplicationValidator(ApplicationCodegenContext scanContext, boolean failOnWarning) {
         this.scanContext = scanContext;
         this.failOnWarning = failOnWarning;
     }
@@ -119,3 +119,4 @@ class ApplicationValidator {
         }
     }
 }
+

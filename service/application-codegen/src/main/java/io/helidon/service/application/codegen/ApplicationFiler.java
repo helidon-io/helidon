@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.service.maven.plugin;
+package io.helidon.service.application.codegen;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -34,20 +34,20 @@ import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.common.LazyValue;
 import io.helidon.common.types.TypeName;
 
-class MavenFiler implements CodegenFiler {
+class ApplicationFiler implements CodegenFiler {
     private final LazyValue<ManifestResource> manifestResource;
     private final Path generatedSourceDir;
     private final Path outputDirectory;
     private boolean generatedSources;
 
-    MavenFiler(Path generatedSourceDir, Path outputDirectory) {
+    ApplicationFiler(Path generatedSourceDir, Path outputDirectory) {
         this.generatedSourceDir = generatedSourceDir;
         this.outputDirectory = outputDirectory;
         this.manifestResource = LazyValue.create(() -> ManifestResource.create(this));
     }
 
-    static MavenFiler create(Path generatedSourceDir, Path outputDirectory) {
-        return new MavenFiler(generatedSourceDir, outputDirectory);
+    static ApplicationFiler create(Path generatedSourceDir, Path outputDirectory) {
+        return new ApplicationFiler(generatedSourceDir, outputDirectory);
     }
 
     @Override
@@ -107,12 +107,12 @@ class MavenFiler implements CodegenFiler {
         }
         if (Files.exists(resourcePath)) {
             try {
-                return new MavenFilerTextResource(resourcePath, Files.readAllLines(resourcePath));
+                return new ApplicationFilerTextResource(resourcePath, Files.readAllLines(resourcePath));
             } catch (IOException e) {
                 throw new CodegenException("Failed to read existing text resource: " + resourcePath.toAbsolutePath(), e);
             }
         } else {
-            return new MavenFilerTextResource(resourcePath);
+            return new ApplicationFilerTextResource(resourcePath);
         }
     }
 
@@ -125,12 +125,12 @@ class MavenFiler implements CodegenFiler {
         }
         if (Files.exists(resourcePath)) {
             try {
-                return new MavenFilerResource(resourcePath, Files.readAllBytes(resourcePath));
+                return new ApplicationFilerResource(resourcePath, Files.readAllBytes(resourcePath));
             } catch (IOException e) {
                 throw new CodegenException("Failed to read existing resource: " + resourcePath.toAbsolutePath(), e);
             }
         } else {
-            return new MavenFilerResource(resourcePath);
+            return new ApplicationFilerResource(resourcePath);
         }
     }
 
@@ -151,3 +151,4 @@ class MavenFiler implements CodegenFiler {
         }
     }
 }
+

@@ -16,39 +16,16 @@
 
 package io.helidon.service.maven.plugin;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
-import io.helidon.codegen.CodegenException;
-import io.helidon.codegen.CodegenOptions;
 import io.helidon.codegen.CodegenScope;
-import io.helidon.codegen.ModuleInfo;
-import io.helidon.codegen.ModuleInfoSourceParser;
-import io.helidon.codegen.compiler.Compiler;
-import io.helidon.codegen.compiler.CompilerOptions;
-import io.helidon.common.types.TypeName;
-import io.helidon.service.registry.ServiceInfo;
+import io.helidon.service.application.codegen.ApplicationGenerator;
+import io.helidon.service.application.codegen.ApplicationGeneratorConfig;
 
-import io.github.classgraph.ClassGraph;
-import io.github.classgraph.ScanResult;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
@@ -105,146 +82,27 @@ abstract class CreateApplicationAbstractMojo extends CodegenAbstractMojo {
 
     @Override
     void innerExecute() {
-        MavenLogger mavenLogger = MavenLogger.create(getLog(), failOnWarning());
-
-        boolean hasModuleInfo = hasModuleInfo();
-        Set<Path> modulepath = hasModuleInfo ? getModulepathElements() : Set.of();
-        Set<Path> classpath = getClasspathElements();
-        ClassLoader prev = Thread.currentThread().getContextClassLoader();
-        URLClassLoader loader = createClassLoader(classpath, prev);
-        getLog().debug("Service registry classpath: " + classpath);
-
-        Optional<ModuleInfo> nonTestModuleInfo = findModuleInfo(nonTestSourceRootPaths())
-                .map(ModuleInfoSourceParser::parse);
-
-        /*
-        We may have module info both in sources and in tests
-         */
-        Optional<ModuleInfo> myModuleInfo = findModuleInfo(sourceRootPaths())
-                .map(ModuleInfoSourceParser::parse);
-        CodegenOptions codegenOptions = MavenOptions.create(toOptions());
-        CodegenScope scope = scope();
-        codegenOptions.validate(Set.of());
-
-        // package name to use (should be the same as ModuleComponent package)
-        String packageName = packageName(codegenOptions, myModuleInfo, nonTestModuleInfo);
-        // module name to use to define application name (should be the same as ModuleComponent uses for this module)
-        String moduleName = moduleName(loader, codegenOptions, myModuleInfo, packageName, scope);
-
-        try (ScanResult scan = new ClassGraph()
-                .overrideClasspath(classpath)
-                .enableAllInfo()
-                .scan()) {
-            MavenCodegenContext scanContext = MavenCodegenContext.create(codegenOptions,
-                                                                         scan,
-                                                                         scope,
-                                                                         generatedSourceDirectory(),
-                                                                         outputDirectory(),
-                                                                         mavenLogger,
-                                                                         myModuleInfo.orElse(null));
-
-            Thread.currentThread().setContextClassLoader(loader);
-
-            CompilerOptions compilerOptions = CompilerOptions.builder()
-                    .classpath(List.copyOf(classpath))
-                    .modulepath(List.copyOf(modulepath))
-                    .sourcepath(sourceRootPaths())
-                    .release(javaRelease())
-                    .commandLineArguments(getCompilerArgs())
-                    .outputDirectory(outputDirectory())
-                    .build();
-
-            applicationBinding(loader,
-                               mavenLogger,
-                               scanContext,
-                               compilerOptions,
-                               moduleName,
-                               packageName);
-        } finally {
-            Thread.currentThread().setContextClassLoader(prev);
-        }
-    }
-
-    void applicationBinding(ClassLoader loader,
-                            MavenLogger mavenLogger,
-                            MavenCodegenContext scanContext,
-                            CompilerOptions compilerOptions,
-                            String moduleName,
-                            String packageName) {
-        try (WrappedServices services = WrappedServices.create(loader, mavenLogger, false)) {
-            applicationBinding(scanContext,
-                               services,
-                               compilerOptions,
-                               moduleName,
-                               packageName);
-        } catch (CodegenException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new CodegenException("An error occurred creating the binding in " + getClass().getName(), e);
-        }
-    }
-
-    void applicationBinding(MavenCodegenContext scanContext,
-                            WrappedServices services,
-                            CompilerOptions compilerOptions,
-                            String moduleName,
-                            String packageName) {
-
-        // retrieves all the services in the registry
-        Set<TypeName> allServices = services.all()
-                .stream()
-                .map(ServiceInfo::serviceType)
-                .collect(Collectors.toCollection(TreeSet::new));
-
-        if (allServices.isEmpty()) {
-            warn("Binding generator found no services to process");
-            return;
-        }
-
-        getLog().debug("All services to be processed: " + allServices);
-
-        String className = bindingClassName();
-
-        if (validate) {
-            // validate the application
-            ApplicationValidator validator = new ApplicationValidator(scanContext, failOnWarning());
-            validator.validate(services);
-        }
-
-        TypeName bindingTypeName = TypeName.create(packageName + "." + className);
-        List<Path> sourcesToCompile = new ArrayList<>();
-
-        if (generateBinding) {
-            // get the binding generator only after services are initialized (we need to ignore any existing apps)
-            BindingGenerator generator = new BindingGenerator(scanContext, failOnError());
-
-            getLog().info("Generating application binding: " + bindingTypeName.fqName());
-
-            generator.createBinding(services,
-                                    allServices,
-                                    bindingTypeName,
-                                    moduleName,
-                                    sourcesToCompile);
-        }
-
-        if (generateMain()) {
-            TypeName mainTypeName = TypeName.builder()
-                    .packageName(packageName)
-                    .className(mainClassName)
-                    .build();
-
-            MainGenerator generator = new MainGenerator(scanContext);
-            generator.createMain(services,
-                                 generateBinding,
-                                 bindingTypeName,
-                                 mainTypeName,
-                                 sourcesToCompile);
-        }
-
-        if (!sourcesToCompile.isEmpty()) {
-            Compiler.compile(compilerOptions, sourcesToCompile.toArray(new Path[0]));
-        }
-
+        ApplicationGeneratorConfig.Builder builder = ApplicationGeneratorConfig.builder()
+                .classpath(List.copyOf(getClasspathElements()))
+                .modulepath(List.copyOf(getModulepathElements()))
+                .sourceRoots(sourceRootPaths())
+                .mainSourceRoots(nonTestSourceRootPaths())
+                .testSourceRoots(testSourceRootPaths())
+                .generatedSourceDirectory(generatedSourceDirectory())
+                .outputDirectory(outputDirectory())
+                .release(release)
+                .scope(scope())
+                .bindingClassName(bindingClassName())
+                .mainClassName(mainClassName)
+                .generateBinding(generateBinding)
+                .generateMain(generateMain())
+                .validate(validate)
+                .failOnError(failOnError())
+                .failOnWarning(failOnWarning())
+                .compilerArgs(getCompilerArgs());
+        moduleNameFromMavenConfig().ifPresent(builder::moduleName);
+        packageNameFromMavenConfig().ifPresent(builder::packageName);
+        ApplicationGenerator.generate(builder.build(), MavenLogger.create(getLog(), failOnWarning()));
     }
 
     /**
@@ -320,63 +178,12 @@ abstract class CreateApplicationAbstractMojo extends CodegenAbstractMojo {
         return getSourceClasspathElements();
     }
 
-    boolean hasModuleInfo() {
-        return sourceRootPaths()
-                .stream()
-                .anyMatch(p -> Files.exists(p.resolve(ModuleInfo.FILE_NAME)));
-    }
-
-    Optional<Path> findModuleInfo(List<Path> sourcePaths) {
-        return sourcePaths.stream()
-                .map(it -> it.resolve(ModuleInfo.FILE_NAME))
-                .filter(Files::exists)
-                .findFirst();
-    }
-
-    void warn(String msg) {
-        getLog().warn(msg);
-
-        if (failOnWarning()) {
-            throw new CodegenException(msg);
-        }
-    }
-
     /**
      * The scope of the code generation (production, test etc.).
      *
      * @return codegen scope
      */
     abstract CodegenScope scope();
-
-    /**
-     * Creates a new classloader.
-     *
-     * @param classPath the classpath to use
-     * @param parent    the parent loader
-     * @return the loader
-     */
-    URLClassLoader createClassLoader(Collection<Path> classPath,
-                                     ClassLoader parent) {
-        List<URL> urls = new ArrayList<>(classPath.size());
-        for (Path dependency : classPath) {
-            try {
-                urls.add(dependency.toUri().toURL());
-            } catch (MalformedURLException e) {
-                throw new CodegenException("Unable to build the classpath. Dependency cannot be converted to URL: "
-                                                   + dependency,
-                                           e);
-            }
-        }
-
-        if (parent == null) {
-            parent = Thread.currentThread().getContextClassLoader();
-        }
-        return new URLClassLoader(urls.toArray(new URL[0]), parent);
-    }
-
-    String javaRelease() {
-        return release;
-    }
 
     LinkedHashSet<Path> getSourceClasspathElements() {
         // the application biding must use runtime classpath
@@ -396,92 +203,4 @@ abstract class CreateApplicationAbstractMojo extends CodegenAbstractMojo {
         return getSourceClasspathElements();
     }
 
-    // to dot separated path
-    private static String toDotSeparated(Path relativePath) {
-        return StreamSupport.stream(relativePath.spliterator(), false)
-                .map(Path::toString)
-                .collect(Collectors.joining("."));
-    }
-
-    private String packageName(CodegenOptions codegenOptions,
-                               Optional<ModuleInfo> myModuleInfo,
-                               Optional<ModuleInfo> srcModuleInfo) {
-        return CodegenOptions.CODEGEN_PACKAGE
-                .findValue(codegenOptions)
-                .or(() -> myModuleInfo.flatMap(this::exportedPackage))
-                .or(() -> srcModuleInfo.flatMap(this::exportedPackage))
-                .or(this::firstUsedPackage)
-                .orElseThrow(() -> new CodegenException("Unable to determine package for binding class."));
-    }
-
-    private Optional<String> firstUsedPackage() {
-        // we expect at least some source code. If none found, try test source, if none found, must be configured
-        return firstUsedPackage(nonTestSourceRootPaths())
-                .or(() -> firstUsedPackage(testSourceRootPaths()));
-    }
-
-    private Optional<String> firstUsedPackage(List<Path> sourceRoots) {
-        Set<String> found = new TreeSet<>(Comparator.comparing(String::length));
-
-        for (Path sourceRoot : sourceRoots) {
-            try {
-                try (Stream<Path> pathStream = Files.walk(sourceRoot)) {
-                    pathStream
-                            .filter(it -> {
-                                Path fileName = it.getFileName();
-                                return fileName != null && fileName.toString().endsWith(".java");
-                            })
-                            .map(it -> packageName(sourceRoot, it))
-                            .filter(Predicate.not(String::isBlank))
-                            .forEach(found::add);
-                }
-            } catch (IOException e) {
-                getLog().debug("Failed to walk path tree for source root: " + sourceRoot.toAbsolutePath(),
-                               e);
-            }
-        }
-        return found.stream()
-                .findFirst();
-    }
-
-    private Optional<String> exportedPackage(ModuleInfo moduleInfo) {
-        Set<String> unqualifiedExports = new TreeSet<>(Comparator.comparing(String::length));
-        moduleInfo.exports()
-                .forEach((export, to) -> {
-                    if (to.isEmpty()) {
-                        unqualifiedExports.add(export);
-                    }
-                });
-        return unqualifiedExports.stream().findFirst();
-    }
-
-    private String moduleName(ClassLoader loader,
-                              CodegenOptions codegenOptions,
-                              Optional<ModuleInfo> myModuleInfo,
-                              String packageName,
-                              CodegenScope scope) {
-        return CodegenOptions.CODEGEN_MODULE
-                .findValue(codegenOptions)
-                .or(() -> myModuleInfo.map(ModuleInfo::name))
-                .orElseGet(() -> "unnamed/"
-                        + packageName
-                        + (scope.isProduction() ? "" : "/" + scope.name()));
-    }
-
-    private String packageName(Path rootPath, Path filePath) {
-        Path parent = filePath.getParent();
-        if (parent == null) {
-            return "";
-        }
-        return toDotSeparated(rootPath.relativize(parent));
-    }
-
-    private Set<String> toOptions() {
-        Set<String> options = new HashSet<>(getCompilerArgs());
-
-        moduleNameFromMavenConfig().ifPresent(it -> options.add("-A" + CodegenOptions.TAG_CODEGEN_MODULE + "=" + it));
-        packageNameFromMavenConfig().ifPresent(it -> options.add("-A" + CodegenOptions.TAG_CODEGEN_PACKAGE + "=" + it));
-
-        return options;
-    }
 }
