@@ -542,8 +542,8 @@ context with the initial unfiltered configuration and returns a
 method requests an asynchronous rebuild when filter rules change.
 The factory creates a new immutable filter from the
 current unfiltered configuration for every generation, including reloads.
-The provider itself can be shared across independent Config instances; its
-factories and their monitoring resources must remain independent. Start any
+The provider itself can be shared across Config instances; monitoring resources
+created for each runtime must remain independent. Start any
 monitoring in `create(ConfigFilterContext)` and register a
 `Config.ChangeListener` using `context.initialConfig().onChange(listener)` to release those
 resources in `onStop()`. The listener observes changes to the owning runtime;
