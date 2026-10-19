@@ -5,13 +5,71 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-For Helidon 3.x releases please see [Helidon 3.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-3.x/CHANGELOG.md)
+For Helidon 3.x releases please see [Helidon 3.x CHANGELOG.md](https://github.com/helidon-io/helidon/blob/helidon-3.x/CHANGELOG.md)
 
-For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-2.x/CHANGELOG.md)
+For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.com/helidon-io/helidon/blob/helidon-2.x/CHANGELOG.md)
 
-For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
+For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/helidon-io/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## 4.5.5
+## [4.5.6]
+
+This patch release of Helidon contains important bug fixes and is strongly recommended for all users of Helidon 4.
+
+A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
+
+### CHANGES
+
+- Archetypes: Update archetype option descriptions [12611](https://github.com/helidon-io/helidon/pull/12611)
+- Build: Add Dependabot updates for Jackson, Netty, and SnakeYAML [12568](https://github.com/helidon-io/helidon/pull/12568)
+- Build: Cache JDK installations across CI jobs [12631](https://github.com/helidon-io/helidon/pull/12631)
+- Build: Update scripts to unset CDPATH [12629](https://github.com/helidon-io/helidon/pull/12629)
+- Build: Upgrade Helidon build-tools to 4.0.31 [12763](https://github.com/helidon-io/helidon/pull/12763)
+- Codegen: Escape generated annotation string literals [12803](https://github.com/helidon-io/helidon/pull/12803)
+- Common: Enforce throughput token-bucket capacity [e03f7f9fa7](https://github.com/helidon-io/helidon/commit/e03f7f9fa782ecbba918a1423e5a92d168bdf08f)
+- Common: Remove built-in String-to-Class mapping [f41687e231](https://github.com/helidon-io/helidon/commit/f41687e2314d673dfe75a71ed9b03dae0f590cae)
+- CORS: Apply CORS rules to opaque origins [0961a044a0](https://github.com/helidon-io/helidon/commit/0961a044a0edb1bfce886004ec4a9e41e5bb7fed)
+- Dependencies: Bump io.netty:netty-bom in /dependencies [12757](https://github.com/helidon-io/helidon/pull/12757)
+- Dependencies: Bump org.yaml:snakeyaml from 2.6 to 2.7 in /dependencies [12723](https://github.com/helidon-io/helidon/pull/12723)
+- Dependencies: Upgrade Jackson, MongoDB driver, OpenNLP override, and Micrometer Prometheus [12619](https://github.com/helidon-io/helidon/pull/12619)
+- Dependencies: Upgrade jaxb to 4.0.9 [12635](https://github.com/helidon-io/helidon/pull/12635)
+- Docs: Complete generated OIDC configuration reference [c68b5220c1](https://github.com/helidon-io/helidon/commit/c68b5220c1387085f2a15d3ac773c2d598d459f2)
+- Docs: Update Jaeger 2 OTLP documentation [12638](https://github.com/helidon-io/helidon/pull/12638)
+- Eureka: Fix Eureka registration readiness [12745](https://github.com/helidon-io/helidon/pull/12745)
+- Fault Tolerance: Fix fault tolerance config bootstrap [12749](https://github.com/helidon-io/helidon/pull/12749)
+- gRPC: Fix gRPC URI retry test and failed-start cancellation [12664](https://github.com/helidon-io/helidon/pull/12664)
+- gRPC: Propagate gRPC deadlines [12652](https://github.com/helidon-io/helidon/pull/12652)
+- Health: Omit sensitive details from health responses [865ed2d25f](https://github.com/helidon-io/helidon/commit/865ed2d25f4963792a5c3d834a5b28d9608c0e27)
+- HTTP: Fix malformed HTTP method error handling [12767](https://github.com/helidon-io/helidon/pull/12767)
+- HTTP: Preserve absolute-form scheme and authority in HTTP/1 requested URI [f1127cd137](https://github.com/helidon-io/helidon/commit/f1127cd137e533b7fd9b1ebce13e4080efb0b67a)
+- HTTP: Prevent internal details in error responses [d9fc57120e](https://github.com/helidon-io/helidon/commit/d9fc57120e778f0d41d2394209ebc98f86c3146b)
+- HTTP/2: Limit HTTP/2 header table growth [c8a0e75b75](https://github.com/helidon-io/helidon/commit/c8a0e75b75c6d605f584b5202199cbfe7f752f23)
+- HTTP/2: Prevent reuse of HTTP/2 connection window credit [6096ac1415](https://github.com/helidon-io/helidon/commit/6096ac1415190402f6b809510c28e7945db7e533)
+- HTTP/2: Wait for h2spec report generation before copying results [12645](https://github.com/helidon-io/helidon/pull/12645)
+- JSON: Preserve delimiters after JSON double parsing [12792](https://github.com/helidon-io/helidon/pull/12792)
+- LRA: Avoid serializing unexpected LRA participant errors [664f801c1b](https://github.com/helidon-io/helidon/commit/664f801c1b9ccba0d4fa1d3adbe6f488ceab937f)
+- LRA: Make IPv6 coordinator test deterministic [25a0337929](https://github.com/helidon-io/helidon/commit/25a03379299564e10f6640688f3d560e4c817834)
+- LRA: Require canonical LRA participant callback URL [00cb3575f9](https://github.com/helidon-io/helidon/commit/00cb3575f913a151542ac8e42916a14eb8768b06)
+- Security: Avoid exposing authentication credentials in diagnostics [401e09cd75](https://github.com/helidon-io/helidon/commit/401e09cd75e3ef8747cd098857ec78bcdce1368c)
+- Security: Avoid exposing Google token verification details [92d7b94e49](https://github.com/helidon-io/helidon/commit/92d7b94e499db5efce46783d345ed9b1a5b52bdc)
+- Security: Avoid exposing mismatched authorization headers [f2311352ce](https://github.com/helidon-io/helidon/commit/f2311352ce9748ccb699adc66a8fc5b5deb11d32)
+- Security: Honor security annotations on resource implementations [b0ab862ba0](https://github.com/helidon-io/helidon/commit/b0ab862ba0691202ca2649f4814cd8162b84ce79)
+- Security: Preserve discovered OIDC URIs in the security environment [fc5210e3b6](https://github.com/helidon-io/helidon/commit/fc5210e3b64936a89ec6b2550f94ef90bacbb78e)
+- Security: Restrict dynamically discovered OIDC frontend origins [678c089d66](https://github.com/helidon-io/helidon/commit/678c089d663982465993b3a79fc85c238308a9ef)
+- Socket: Preserve first application write during TLS handshake [12756](https://github.com/helidon-io/helidon/pull/12756)
+- Telemetry: Correct OpenTelemetry module metadata [12661](https://github.com/helidon-io/helidon/pull/12661)
+- Vault: Prevent Vault credentials from crossing redirect origins [e47e0b481d](https://github.com/helidon-io/helidon/commit/e47e0b481d744b631eb9c26851fb61ca3b80f5ab)
+- WebClient: Fix WebClient telemetry request duration units [12740](https://github.com/helidon-io/helidon/pull/12740)
+- WebClient: Make round-robin DNS cache bounded and thread safe [a3866f5c59](https://github.com/helidon-io/helidon/commit/a3866f5c590fb69bd606d2fe72a7cb294e581c4f)
+- WebClient: Preserve WebClient registered-name authorities [4cc1428ce5](https://github.com/helidon-io/helidon/commit/4cc1428ce5a54b5e71430885b74b924432bee279)
+- WebClient: Stream HTTP/1 response chunks incrementally [46ebf5629a](https://github.com/helidon-io/helidon/commit/46ebf5629ab7bf5b00f0e156df6f7bede7541fb6)
+- WebClient: Validate HTTP/1 response chunk delimiters [f98712b99b](https://github.com/helidon-io/helidon/commit/f98712b99b114ca4023d4c80540ae4bca136ec08)
+- WebServer: Avoid duplex deadlock in output stream framing tests [12670](https://github.com/helidon-io/helidon/pull/12670)
+- WebServer: Preserve response headers across status changes [12818](https://github.com/helidon-io/helidon/pull/12818)
+- WebSocket: Bound WebSocket client frame payloads [2ce346bcb5](https://github.com/helidon-io/helidon/commit/2ce346bcb537c9b8b7667a471f327d8645696012)
+- WebSocket: Keep WebSocket listener errors out of close reasons [72a0749871](https://github.com/helidon-io/helidon/commit/72a0749871f905f23324956d29f3a26e52e9f0ee)
+- WebSocket: Use typed WebSocket client frame sizes [abeb809cc2](https://github.com/helidon-io/helidon/commit/abeb809cc24be06bb8230b9529b8b421d4adb36b)
+
+## [4.5.5]
 
 This patch release of Helidon contains important bug fixes and is strongly recommended for all users of Helidon 4.
 
@@ -62,7 +120,7 @@ A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
 - Build: Fix SCM connection URL in parent pom [12563](https://github.com/helidon-io/helidon/pull/12563)
 - Build: When building examples use helidon-N.x branch and update version [12474](https://github.com/helidon-io/helidon/pull/12474)
 
-## 4.5.4
+## [4.5.4]
 
 This patch release of Helidon contains important bug fixes and is strongly recommended for all users of Helidon 4.
 
@@ -84,7 +142,7 @@ Helidon's OpenTelemetry Zipkin exporter integration is deprecated. Users should 
 - Dependencies: Upgrade OCI SDK to 3.95.0 [12336](https://github.com/helidon-io/helidon/pull/12336)
 - Tests: IDCS startup test module version [12311](https://github.com/helidon-io/helidon/pull/12311)
 
-## 4.5.3
+## [4.5.3]
 
 This patch release of Helidon contains important bug fixes and is strongly recommended for all users of Helidon 4.
 
@@ -115,7 +173,7 @@ A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
 - WebClient: Fix resolved URI query parameters [12228](https://github.com/helidon-io/helidon/pull/12228)
 - WebServer: Require trusted proxies for PROXY protocol support
 
-## 4.5.2
+## [4.5.2]
 
 This patch release of Helidon contains important bug fixes and is strongly recommended for all users of Helidon 4.
 
@@ -135,7 +193,7 @@ see [PR 12218](https://github.com/helidon-io/helidon/pull/12218).
 - Security: Use request scheme for WebClient security transport [12203](https://github.com/helidon-io/helidon/pull/12203)
 - Tests: Use stable Eclipse URLs for Jakarta EE TCK downloads [12191](https://github.com/helidon-io/helidon/pull/12191)
 
-## 4.5.1
+## [4.5.1]
 
 This patch release of Helidon contains important bug and security fixes and is strongly recommended for all users of Helidon 4.
 
@@ -178,7 +236,7 @@ A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
 - WebClient: Block cross-origin redirect entity replay by default [a5f602d463](https://github.com/helidon-io/helidon/commit/a5f602d46326216e39ccc46cda5b2c3578071e9c)
 - WebClient: Stop propagating cookies across redirect origins [76a48d6c49](https://github.com/helidon-io/helidon/commit/76a48d6c492c4ccf3917bd8c3552a4d96fa933e3)
 
-## 4.5.0
+## [4.5.0]
 
 This release of Helidon contains important bug, security and performance fixes and is strongly recommended for all users of Helidon 4.
 
@@ -2862,72 +2920,73 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 
 ### CHANGES
 
-- Nima: [4748](https://github.com/oracle/helidon/pull/4748)
-- Nima: a few optimizations [4809](https://github.com/oracle/helidon/pull/4809)
-- Nima: Config and name [4802](https://github.com/oracle/helidon/pull/4802)
-- Nima: Use a single SocketHttpClient. [4794](https://github.com/oracle/helidon/pull/4794)
-- Nima: Http exception refactoring [4804](https://github.com/oracle/helidon/pull/4804)
-- Nima: Cleaner stack when running HTTP requests. [4768](https://github.com/oracle/helidon/pull/4768)
-- Nima: Fix query params being lost on upgrade requests. [4796](https://github.com/oracle/helidon/pull/4796)
-- Common: Move DirectHandler to HTTP common and refactor reactive and Nima [4782](https://github.com/oracle/helidon/pull/4782)
-- Common: Updates to Helidon Common, Part 1 [4693](https://github.com/oracle/helidon/pull/4693)
-- Common: Updates to Helidon Common, Part 2 [4718](https://github.com/oracle/helidon/pull/4718)
-- Config: Unescape the keys when config is returned as a map in Main branch (#4678) [4716](https://github.com/oracle/helidon/pull/4716)
-- Dependencies: Upgrade Postgre driver to 42.4.1 [4779](https://github.com/oracle/helidon/pull/4779)
-- Docs: Adopt review comments on doc updates (#4627) [4721](https://github.com/oracle/helidon/pull/4721)
-- Docs: update old K8s deployment yaml (#4760) [4762](https://github.com/oracle/helidon/pull/4762)
-- Examples: Fix intermittent failure - archetype build (FT timeout) [4690](https://github.com/oracle/helidon/pull/4690)
-- MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/oracle/helidon/pull/4737)
-- Build: 4.0 version and poms [4655](https://github.com/oracle/helidon/pull/4655)
+- Nima: [4748](https://github.com/helidon-io/helidon/pull/4748)
+- Nima: a few optimizations [4809](https://github.com/helidon-io/helidon/pull/4809)
+- Nima: Config and name [4802](https://github.com/helidon-io/helidon/pull/4802)
+- Nima: Use a single SocketHttpClient. [4794](https://github.com/helidon-io/helidon/pull/4794)
+- Nima: Http exception refactoring [4804](https://github.com/helidon-io/helidon/pull/4804)
+- Nima: Cleaner stack when running HTTP requests. [4768](https://github.com/helidon-io/helidon/pull/4768)
+- Nima: Fix query params being lost on upgrade requests. [4796](https://github.com/helidon-io/helidon/pull/4796)
+- Common: Move DirectHandler to HTTP common and refactor reactive and Nima [4782](https://github.com/helidon-io/helidon/pull/4782)
+- Common: Updates to Helidon Common, Part 1 [4693](https://github.com/helidon-io/helidon/pull/4693)
+- Common: Updates to Helidon Common, Part 2 [4718](https://github.com/helidon-io/helidon/pull/4718)
+- Config: Unescape the keys when config is returned as a map in Main branch (#4678) [4716](https://github.com/helidon-io/helidon/pull/4716)
+- Dependencies: Upgrade Postgre driver to 42.4.1 [4779](https://github.com/helidon-io/helidon/pull/4779)
+- Docs: Adopt review comments on doc updates (#4627) [4721](https://github.com/helidon-io/helidon/pull/4721)
+- Docs: update old K8s deployment yaml (#4760) [4762](https://github.com/helidon-io/helidon/pull/4762)
+- Examples: Fix intermittent failure - archetype build (FT timeout) [4690](https://github.com/helidon-io/helidon/pull/4690)
+- MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/helidon-io/helidon/pull/4737)
+- Build: 4.0 version and poms [4655](https://github.com/helidon-io/helidon/pull/4655)
 
-[4.5.5]: https://github.com/oracle/helidon/compare/4.5.4...4.5.5
-[4.5.4]: https://github.com/oracle/helidon/compare/4.5.3...4.5.4
-[4.5.3]: https://github.com/oracle/helidon/compare/4.5.2...4.5.3
-[4.5.2]: https://github.com/oracle/helidon/compare/4.5.1...4.5.2
-[4.5.1]: https://github.com/oracle/helidon/compare/4.5.0...4.5.1
-[4.5.0]: https://github.com/oracle/helidon/compare/4.4.1...4.5.0
-[4.4.1]: https://github.com/oracle/helidon/compare/4.4.0...4.4.1
-[4.4.0]: https://github.com/oracle/helidon/compare/4.3.4...4.4.0
-[4.3.4]: https://github.com/oracle/helidon/compare/4.3.3...4.3.4
-[4.3.3]: https://github.com/oracle/helidon/compare/4.3.2...4.3.3
-[4.3.2]: https://github.com/oracle/helidon/compare/4.3.1...4.3.2
-[4.3.1]: https://github.com/oracle/helidon/compare/4.3.0...4.3.1
-[4.3.0]: https://github.com/oracle/helidon/compare/4.2.7...4.3.0
-[4.2.7]: https://github.com/oracle/helidon/compare/4.2.6...4.2.7
-[4.2.6]: https://github.com/oracle/helidon/compare/4.2.5...4.2.6
-[4.2.5]: https://github.com/oracle/helidon/compare/4.2.4...4.2.5
-[4.2.4]: https://github.com/oracle/helidon/compare/4.2.3...4.2.4
-[4.2.3]: https://github.com/oracle/helidon/compare/4.2.2...4.2.3
-[4.2.2]: https://github.com/oracle/helidon/compare/4.2.1...4.2.2
-[4.2.1]: https://github.com/oracle/helidon/compare/4.2.0...4.2.1
-[4.2.0]: https://github.com/oracle/helidon/compare/4.1.7...4.2.0
-[4.1.7]: https://github.com/oracle/helidon/compare/4.1.6...4.1.7
-[4.1.6]: https://github.com/oracle/helidon/compare/4.1.5...4.1.6
-[4.1.5]: https://github.com/oracle/helidon/compare/4.1.4...4.1.5
-[4.1.4]: https://github.com/oracle/helidon/compare/4.1.3...4.1.4
-[4.1.3]: https://github.com/oracle/helidon/compare/4.1.2...4.1.3
-[4.1.2]: https://github.com/oracle/helidon/compare/4.1.1...4.1.2
-[4.1.1]: https://github.com/oracle/helidon/compare/4.1.0...4.1.1
-[4.1.0]: https://github.com/oracle/helidon/compare/4.0.11...4.1.0
-[4.0.11]: https://github.com/oracle/helidon/compare/4.0.10...4.0.11
-[4.0.10]: https://github.com/oracle/helidon/compare/4.0.9...4.0.10
-[4.0.9]: https://github.com/oracle/helidon/compare/4.0.8...4.0.9
-[4.0.8]: https://github.com/oracle/helidon/compare/4.0.7...4.0.8
-[4.0.7]: https://github.com/oracle/helidon/compare/4.0.6...4.0.7
-[4.0.6]: https://github.com/oracle/helidon/compare/4.0.5...4.0.6
-[4.0.5]: https://github.com/oracle/helidon/compare/4.0.4...4.0.5
-[4.0.4]: https://github.com/oracle/helidon/compare/4.0.3...4.0.4
-[4.0.3]: https://github.com/oracle/helidon/compare/4.0.2...4.0.3
-[4.0.2]: https://github.com/oracle/helidon/compare/4.0.1...4.0.2
-[4.0.1]: https://github.com/oracle/helidon/compare/4.0.0...4.0.1
-[4.0.0]: https://github.com/oracle/helidon/compare/4.0.0-RC2...4.0.0
-[4.0.0-RC2]: https://github.com/oracle/helidon/compare/4.0.0-RC1...4.0.0-RC2
-[4.0.0-RC1]: https://github.com/oracle/helidon/compare/4.0.0-M2...4.0.0-RC1
-[4.0.0-M2]: https://github.com/oracle/helidon/compare/4.0.0-M1...4.0.0-M2
-[4.0.0-M1]: https://github.com/oracle/helidon/compare/4.0.0-ALPHA6...4.0.0-M1
-[4.0.0-ALPHA6]: https://github.com/oracle/helidon/compare/4.0.0-ALPHA5...4.0.0-ALPHA6
-[4.0.0-ALPHA5]: https://github.com/oracle/helidon/compare/4.0.0-ALPHA4...4.0.0-ALPHA5
-[4.0.0-ALPHA4]: https://github.com/oracle/helidon/compare/4.0.0-ALPHA3...4.0.0-ALPHA4
-[4.0.0-ALPHA3]: https://github.com/oracle/helidon/compare/4.0.0-ALPHA2...4.0.0-ALPHA3
-[4.0.0-ALPHA2]: https://github.com/oracle/helidon/compare/4.0.0-ALPHA1...4.0.0-ALPHA2
-[4.0.0-ALPHA1]: https://github.com/oracle/helidon/compare/main...4.0.0-ALPHA1
+[4.5.6]: https://github.com/helidon-io/helidon/compare/4.5.5...4.5.6
+[4.5.5]: https://github.com/helidon-io/helidon/compare/4.5.4...4.5.5
+[4.5.4]: https://github.com/helidon-io/helidon/compare/4.5.3...4.5.4
+[4.5.3]: https://github.com/helidon-io/helidon/compare/4.5.2...4.5.3
+[4.5.2]: https://github.com/helidon-io/helidon/compare/4.5.1...4.5.2
+[4.5.1]: https://github.com/helidon-io/helidon/compare/4.5.0...4.5.1
+[4.5.0]: https://github.com/helidon-io/helidon/compare/4.4.1...4.5.0
+[4.4.1]: https://github.com/helidon-io/helidon/compare/4.4.0...4.4.1
+[4.4.0]: https://github.com/helidon-io/helidon/compare/4.3.4...4.4.0
+[4.3.4]: https://github.com/helidon-io/helidon/compare/4.3.3...4.3.4
+[4.3.3]: https://github.com/helidon-io/helidon/compare/4.3.2...4.3.3
+[4.3.2]: https://github.com/helidon-io/helidon/compare/4.3.1...4.3.2
+[4.3.1]: https://github.com/helidon-io/helidon/compare/4.3.0...4.3.1
+[4.3.0]: https://github.com/helidon-io/helidon/compare/4.2.7...4.3.0
+[4.2.7]: https://github.com/helidon-io/helidon/compare/4.2.6...4.2.7
+[4.2.6]: https://github.com/helidon-io/helidon/compare/4.2.5...4.2.6
+[4.2.5]: https://github.com/helidon-io/helidon/compare/4.2.4...4.2.5
+[4.2.4]: https://github.com/helidon-io/helidon/compare/4.2.3...4.2.4
+[4.2.3]: https://github.com/helidon-io/helidon/compare/4.2.2...4.2.3
+[4.2.2]: https://github.com/helidon-io/helidon/compare/4.2.1...4.2.2
+[4.2.1]: https://github.com/helidon-io/helidon/compare/4.2.0...4.2.1
+[4.2.0]: https://github.com/helidon-io/helidon/compare/4.1.7...4.2.0
+[4.1.7]: https://github.com/helidon-io/helidon/compare/4.1.6...4.1.7
+[4.1.6]: https://github.com/helidon-io/helidon/compare/4.1.5...4.1.6
+[4.1.5]: https://github.com/helidon-io/helidon/compare/4.1.4...4.1.5
+[4.1.4]: https://github.com/helidon-io/helidon/compare/4.1.3...4.1.4
+[4.1.3]: https://github.com/helidon-io/helidon/compare/4.1.2...4.1.3
+[4.1.2]: https://github.com/helidon-io/helidon/compare/4.1.1...4.1.2
+[4.1.1]: https://github.com/helidon-io/helidon/compare/4.1.0...4.1.1
+[4.1.0]: https://github.com/helidon-io/helidon/compare/4.0.11...4.1.0
+[4.0.11]: https://github.com/helidon-io/helidon/compare/4.0.10...4.0.11
+[4.0.10]: https://github.com/helidon-io/helidon/compare/4.0.9...4.0.10
+[4.0.9]: https://github.com/helidon-io/helidon/compare/4.0.8...4.0.9
+[4.0.8]: https://github.com/helidon-io/helidon/compare/4.0.7...4.0.8
+[4.0.7]: https://github.com/helidon-io/helidon/compare/4.0.6...4.0.7
+[4.0.6]: https://github.com/helidon-io/helidon/compare/4.0.5...4.0.6
+[4.0.5]: https://github.com/helidon-io/helidon/compare/4.0.4...4.0.5
+[4.0.4]: https://github.com/helidon-io/helidon/compare/4.0.3...4.0.4
+[4.0.3]: https://github.com/helidon-io/helidon/compare/4.0.2...4.0.3
+[4.0.2]: https://github.com/helidon-io/helidon/compare/4.0.1...4.0.2
+[4.0.1]: https://github.com/helidon-io/helidon/compare/4.0.0...4.0.1
+[4.0.0]: https://github.com/helidon-io/helidon/compare/4.0.0-RC2...4.0.0
+[4.0.0-RC2]: https://github.com/helidon-io/helidon/compare/4.0.0-RC1...4.0.0-RC2
+[4.0.0-RC1]: https://github.com/helidon-io/helidon/compare/4.0.0-M2...4.0.0-RC1
+[4.0.0-M2]: https://github.com/helidon-io/helidon/compare/4.0.0-M1...4.0.0-M2
+[4.0.0-M1]: https://github.com/helidon-io/helidon/compare/4.0.0-ALPHA6...4.0.0-M1
+[4.0.0-ALPHA6]: https://github.com/helidon-io/helidon/compare/4.0.0-ALPHA5...4.0.0-ALPHA6
+[4.0.0-ALPHA5]: https://github.com/helidon-io/helidon/compare/4.0.0-ALPHA4...4.0.0-ALPHA5
+[4.0.0-ALPHA4]: https://github.com/helidon-io/helidon/compare/4.0.0-ALPHA3...4.0.0-ALPHA4
+[4.0.0-ALPHA3]: https://github.com/helidon-io/helidon/compare/4.0.0-ALPHA2...4.0.0-ALPHA3
+[4.0.0-ALPHA2]: https://github.com/helidon-io/helidon/compare/4.0.0-ALPHA1...4.0.0-ALPHA2
+[4.0.0-ALPHA1]: https://github.com/helidon-io/helidon/compare/main...4.0.0-ALPHA1
