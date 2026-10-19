@@ -33,6 +33,8 @@ import io.helidon.common.Api;
 /**
  * Represents a JSON object value containing key-value pairs.
  * Keys must not be {@code null}.
+ * Parsed member names are resolved lazily. When duplicate names are resolved, the last value is retained.
+ * Discarded values are validated recursively so duplicate names cannot hide malformed string data.
  */
 @Api.Preview
 public final class JsonObject extends JsonValue {
@@ -41,7 +43,7 @@ public final class JsonObject extends JsonValue {
 
     private final List<Pair> pairs;
     private final LinkedHashMap<String, JsonValue> content;
-    private final boolean resolved;
+    private boolean resolved;
 
     private JsonObject(List<Pair> pairs) {
         this.pairs = pairs;
@@ -557,6 +559,25 @@ public final class JsonObject extends JsonValue {
         return this.content.values().containsAll(that.content.values());
     }
 
+    private static void validateDiscardedValue(JsonValue value) {
+        Iterable<JsonValue> children = switch (value.type()) {
+            case STRING -> {
+                value.asString().value();
+                yield List.of();
+            }
+            case OBJECT -> {
+                JsonObject object = value.asObject();
+                object.ensureResolvedKeys();
+                yield object.content.values();
+            }
+            case ARRAY -> value.asArray().values();
+            case NUMBER, BOOLEAN, NULL, UNKNOWN -> List.of();
+        };
+        for (JsonValue child : children) {
+            validateDiscardedValue(child);
+        }
+    }
+
     private JsonValue valueForKey(String key) {
         Objects.requireNonNull(key, "key cannot be null");
         ensureResolvedKeys();
@@ -565,9 +586,15 @@ public final class JsonObject extends JsonValue {
 
     private void ensureResolvedKeys() {
         if (!resolved) {
+            content.clear();
             for (Pair pair : pairs) {
-                content.put(pair.key.value(), pair.value);
+                JsonValue previous = content.put(pair.key.value(), pair.value);
+                if (previous != null) {
+                    // Do not let duplicate keys hide malformed strings in discarded values.
+                    validateDiscardedValue(previous);
+                }
             }
+            resolved = true;
         }
     }
 
