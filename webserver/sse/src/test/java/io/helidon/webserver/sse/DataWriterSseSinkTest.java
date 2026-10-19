@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -55,6 +56,83 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 class DataWriterSseSinkTest {
+
+    @Test
+    void shouldWriteReconnectDelayWithOtherFields() {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        SseEvent event = SseEvent.builder()
+                .comment("first\r\nsecond")
+                .id("event1")
+                .name("update")
+                .reconnectDelay(Duration.ofSeconds(2))
+                .data("hello\r\nworld".getBytes(StandardCharsets.UTF_8))
+                .build();
+
+        try (DataWriterSseSink sink = createSink(output)) {
+            sink.emit(event);
+            assertThat(output.toString(StandardCharsets.UTF_8),
+                       equalTo(":first\n:second\nid:event1\nretry:2000\nevent:update\ndata:hello\ndata:world\n\n"));
+        }
+    }
+
+    @Test
+    void shouldOmitUnsetReconnectDelay() {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        SseEvent event = SseEvent.create("hello".getBytes(StandardCharsets.UTF_8));
+
+        assertThat(event.reconnectMillis(), is(Optional.empty()));
+        try (DataWriterSseSink sink = createSink(output)) {
+            sink.emit(event);
+            assertThat(output.toString(StandardCharsets.UTF_8), equalTo("data:hello\n\n"));
+        }
+    }
+
+    @Test
+    void shouldWriteZeroReconnectDelay() {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        SseEvent event = SseEvent.builder()
+                .reconnectDelay(Duration.ZERO)
+                .data("hello".getBytes(StandardCharsets.UTF_8))
+                .build();
+
+        try (DataWriterSseSink sink = createSink(output)) {
+            sink.emit(event);
+            assertThat(output.toString(StandardCharsets.UTF_8), equalTo("retry:0\ndata:hello\n\n"));
+        }
+    }
+
+    @Test
+    void shouldWriteReconnectDelayInWholeMilliseconds() {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try (DataWriterSseSink sink = createSink(output)) {
+            sink.emit(SseEvent.builder().reconnectDelay(Duration.ofNanos(1_999_999)).build());
+            sink.emit(SseEvent.builder().reconnectDelay(Duration.ofNanos(999_999)).build());
+            assertThat(output.toString(StandardCharsets.UTF_8), equalTo("retry:1\n\nretry:0\n\n"));
+        }
+    }
+
+    @Test
+    void shouldWriteReconnectDelayWithoutIntegerTruncation() {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        SseEvent event = SseEvent.builder()
+                .reconnectDelay(Duration.ofMillis(3_000_000_000L))
+                .build();
+
+        try (DataWriterSseSink sink = createSink(output)) {
+            sink.emit(event);
+            assertThat(output.toString(StandardCharsets.UTF_8), equalTo("retry:3000000000\n\n"));
+        }
+    }
+
+    @Test
+    void shouldWriteRetryOnlyEventWithoutRepeatingDelayOnNextEvent() {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try (DataWriterSseSink sink = createSink(output)) {
+            sink.emit(SseEvent.builder().reconnectDelay(Duration.ofSeconds(2)).build());
+            sink.emit(SseEvent.create("next".getBytes(StandardCharsets.UTF_8)));
+            assertThat(output.toString(StandardCharsets.UTF_8), equalTo("retry:2000\n\ndata:next\n\n"));
+        }
+    }
 
     @Test
     void shouldCloseEntityOutputStreamBeforeCommit() {
@@ -407,6 +485,23 @@ class DataWriterSseSinkTest {
 
         assertThrows(IllegalStateException.class, () -> new DataWriterSseSink(context));
         assertThat("entity stream created after invalid response", entityStreamCreated.get(), is(false));
+    }
+
+    private static DataWriterSseSink createSink(OutputStream output) {
+        SinkProviderContext context = mock(SinkProviderContext.class);
+        ServerResponse response = mock(ServerResponse.class);
+        ConnectionContext connectionContext = mock(ConnectionContext.class);
+        ListenerContext listenerContext = mock(ListenerContext.class);
+
+        when(context.serverResponse()).thenReturn(response);
+        when(context.connectionContext()).thenReturn(connectionContext);
+        when(context.entityOutputStream(any())).thenReturn(Optional.of(output));
+        when(context.closeRunnable()).thenReturn(() -> { });
+        when(response.status()).thenReturn(Status.OK_200);
+        when(response.headers()).thenReturn(ServerResponseHeaders.create());
+        when(connectionContext.listenerContext()).thenReturn(listenerContext);
+        enableBuffering(listenerContext);
+        return new DataWriterSseSink(context);
     }
 
     private static void enableBuffering(ListenerContext listenerContext) {
