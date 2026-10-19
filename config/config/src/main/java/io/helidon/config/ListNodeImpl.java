@@ -27,8 +27,6 @@ import java.util.function.Function;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ListNode;
 
-import static io.helidon.config.AbstractNodeBuilderImpl.formatFrom;
-
 /**
  * Implements {@link ListNode}.
  */
@@ -128,8 +126,8 @@ class ListNodeImpl extends AbstractList<ConfigNode> implements ListNode, Mergeab
             throw new ConfigException(
                     String.format("Cannot merge OBJECT members %s%s with an LIST node%s.",
                                   unprocessedPeerNames,
-                                  formatFrom(node.description()),
-                                  formatFrom(description)));
+                                  AbstractNodeBuilderImpl.formatFrom(node.description()),
+                                  AbstractNodeBuilderImpl.formatFrom(description)));
         } else {
             return builder.build();
         }
