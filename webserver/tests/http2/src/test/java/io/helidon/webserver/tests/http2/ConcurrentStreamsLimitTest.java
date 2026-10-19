@@ -51,6 +51,8 @@ import io.helidon.webserver.testing.junit5.http2.Http2TestConnection;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.helidon.http.Method.POST;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -116,6 +118,62 @@ class ConcurrentStreamsLimitTest {
 
             h2conn.request(3, POST, BLOCKING_PATH, WritableHeaders.create(), BufferData.create(new byte[0]));
             assertOkResponse(h2conn, 3);
+        }
+    }
+
+    @Test
+    void delayedResetForClosedStreamDoesNotCloseConnection(Http2TestClient client) throws InterruptedException {
+        try (Http2TestConnection h2conn = client.createConnection()) {
+            h2conn.request(1, POST, BLOCKING_PATH, WritableHeaders.create(), BufferData.create(new byte[0]));
+            assertThat("Initial stream did not start",
+                       requestsStarted.await(TIMEOUT.toSeconds(), TimeUnit.SECONDS),
+                       is(true));
+            releaseHandlers.countDown();
+            assertOkResponse(h2conn, 1);
+
+            requestsStarted = new CountDownLatch(MAX_CONCURRENT_STREAMS);
+            releaseHandlers = new CountDownLatch(1);
+            h2conn.request(3, POST, BLOCKING_PATH, WritableHeaders.create(), BufferData.create(new byte[0]));
+            assertThat("Second stream did not start",
+                       requestsStarted.await(TIMEOUT.toSeconds(), TimeUnit.SECONDS),
+                       is(true));
+
+            h2conn.writer().write(new Http2RstStream(Http2ErrorCode.CANCEL)
+                                         .toFrameData(null, 1, Http2Flag.NoFlags.create()));
+            releaseHandlers.countDown();
+            assertOkResponse(h2conn, 3);
+            h2conn.request(5, POST, BLOCKING_PATH, WritableHeaders.create(), BufferData.create(new byte[0]));
+            assertOkResponse(h2conn, 5);
+        } finally {
+            releaseHandlers.countDown();
+        }
+    }
+
+    @Test
+    void resetForImplicitlyClosedStreamDoesNotCloseConnection(Http2TestClient client) {
+        try (Http2TestConnection h2conn = client.createConnection()) {
+            releaseHandlers.countDown();
+            h2conn.request(3, POST, BLOCKING_PATH, WritableHeaders.create(), BufferData.create(new byte[0]));
+            assertOkResponse(h2conn, 3);
+
+            h2conn.writer().write(new Http2RstStream(Http2ErrorCode.CANCEL)
+                                         .toFrameData(null, 1, Http2Flag.NoFlags.create()));
+            h2conn.request(5, POST, BLOCKING_PATH, WritableHeaders.create(), BufferData.create(new byte[0]));
+            assertOkResponse(h2conn, 5);
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 2, 4, 5})
+    void resetForIdleOrInvalidStreamClosesConnection(int streamId, Http2TestClient client) {
+        try (Http2TestConnection h2conn = client.createConnection()) {
+            releaseHandlers.countDown();
+            h2conn.request(3, POST, BLOCKING_PATH, WritableHeaders.create(), BufferData.create(new byte[0]));
+            assertOkResponse(h2conn, 3);
+
+            h2conn.writer().write(new Http2RstStream(Http2ErrorCode.CANCEL)
+                                         .toFrameData(null, streamId, Http2Flag.NoFlags.create()));
+            assertGoAwayError(h2conn, Http2ErrorCode.PROTOCOL);
         }
     }
 
@@ -304,6 +362,21 @@ class ConcurrentStreamsLimitTest {
                 assertThat(goAway.errorCode(), is(Http2ErrorCode.ENHANCE_YOUR_CALM));
                 return;
             }
+        }
+    }
+
+    private void assertGoAwayError(Http2TestConnection h2conn, Http2ErrorCode errorCode) {
+        for (;;) {
+            Http2FrameData frame = h2conn.awaitNextFrame(TIMEOUT);
+            assertThat("Timed out waiting for GOAWAY", frame, notNullValue());
+
+            if (frame.header().type() != Http2FrameType.GO_AWAY) {
+                continue;
+            }
+
+            Http2GoAway goAway = Http2GoAway.create(frame.data());
+            assertThat(goAway.errorCode(), is(errorCode));
+            return;
         }
     }
 
