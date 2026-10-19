@@ -52,14 +52,16 @@ the features they use and configure the binding plugin described in
 [Injection: Startup](injection.md#startup).
 
 Applications already using `helidon-se` can remove their repeated
-`helidon-bundles-apt` processor path. Keep any other compiler configuration.
+`helidon-bundles-apt` processor path. Keep any other compiler configuration,
+and use the explicit append configuration below when retaining additional
+processors.
 
 #### Additional annotation processors
 
-The application parent appends application-supplied processor paths to the
-inherited Helidon bundle. Declare only the additional processors. For example,
-an application using Helidon Data with Jakarta Persistence adds its integration
-processor as follows:
+To retain the inherited Helidon bundle when declaring additional processors,
+set `combine.children="append"` on the application's `annotationProcessorPaths`.
+Declare only the additional processors. For example, an application using
+Helidon Data with Jakarta Persistence adds its integration processor as follows:
 
 ```xml [pom.xml]
 <build>
@@ -68,7 +70,7 @@ processor as follows:
       <groupId>org.apache.maven.plugins</groupId>
       <artifactId>maven-compiler-plugin</artifactId>
       <configuration>
-        <annotationProcessorPaths>
+        <annotationProcessorPaths combine.children="append">
           <path>
             <groupId>io.helidon.data.jakarta.persistence</groupId>
             <artifactId>helidon-data-jakarta-persistence-codegen</artifactId>
@@ -83,9 +85,10 @@ processor as follows:
 
 As with any explicit Maven compiler processor path, additional processors must
 be listed there; they are not discovered from ordinary application dependencies.
-The inherited `combine.children="append"` preserves both sets of paths. Use
-`combine.self="override"` on `annotationProcessorPaths` only when intentionally
-replacing the entire inherited processor path, including the Helidon processors.
+Without `combine.children="append"`, Maven uses its normal child-dominant
+configuration merging. Use `combine.self="override"` on `annotationProcessorPaths`
+to explicitly replace the entire inherited processor path, including the Helidon
+processors.
 
 #### Applications using another parent
 

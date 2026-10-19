@@ -98,8 +98,7 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${version.plugin.compiler}</version>
                     <configuration>
-                        <!-- Preserve the Helidon processors when applications add their own paths. -->
-                        <annotationProcessorPaths combine.children="append">
+                        <annotationProcessorPaths>
                             <path>
                                 <groupId>io.helidon.bundles</groupId>
                                 <artifactId>helidon-bundles-apt</artifactId>
