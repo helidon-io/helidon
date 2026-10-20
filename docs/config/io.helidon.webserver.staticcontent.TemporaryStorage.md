@@ -39,7 +39,8 @@ Configuration of temporary storage for classpath based handlers
 <td>
 <code>true</code>
 </td>
-<td>Whether temporary files should be deleted on JVM exit</td>
+<td>Whether temporary files should also be deleted on JVM exit; cache retirement and service shutdown delete
+extracted files independently of this setting, after active requests release them</td>
 </tr>
 <tr>
 <td>

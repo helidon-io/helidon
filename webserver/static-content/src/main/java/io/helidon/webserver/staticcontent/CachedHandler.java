@@ -25,6 +25,27 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 interface CachedHandler {
+    /**
+     * Retain resources needed while handling a request.
+     */
+    default void acquire() {
+        sidecarCache().acquire();
+    }
+
+    /**
+     * Release resources retained for a request.
+     */
+    default void release() {
+        sidecarCache().release();
+    }
+
+    /**
+     * Retire resources owned by this cache entry.
+     */
+    default void dispose() {
+        sidecarCache().dispose();
+    }
+
     default boolean handle(LruCache<String, CachedHandler> cache,
                            Method method,
                            ServerRequest request,

@@ -199,13 +199,25 @@ public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
     }
 
     Optional<CachedHandlerInMemory> get(StaticContentHandler handler, String resource) {
+        return get(handler, resource, false);
+    }
+
+    Optional<CachedHandlerInMemory> acquire(StaticContentHandler handler, String resource) {
+        return get(handler, resource, true);
+    }
+
+    private Optional<CachedHandlerInMemory> get(StaticContentHandler handler, String resource, boolean acquire) {
         try {
             cacheLock.readLock().lock();
             Map<String, CachedHandlerInMemory> resourceCache = cache.get(handler);
             if (resourceCache == null) {
                 return Optional.empty();
             }
-            return Optional.ofNullable(resourceCache.get(resource));
+            CachedHandlerInMemory cached = resourceCache.get(resource);
+            if (acquire && cached != null) {
+                cached.acquire();
+            }
+            return Optional.ofNullable(cached);
         } finally {
             cacheLock.readLock().unlock();
         }
@@ -288,6 +300,7 @@ public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
         }
         if (count == 1) {
             handlerReferences.remove(handler);
+            handler.dispose();
             return handler.contentLength();
         }
         handlerReferences.put(handler, count - 1);

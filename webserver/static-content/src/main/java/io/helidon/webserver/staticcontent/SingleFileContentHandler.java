@@ -44,7 +44,7 @@ class SingleFileContentHandler extends FileBasedContentHandler {
     }
 
     @Override
-    public void beforeStart() {
+    void populateCacheOnStart() {
         try {
             Optional<Path> maybeResolvedPath = contentPath(path);
             if (cacheInMemory) {
@@ -87,7 +87,7 @@ class SingleFileContentHandler extends FileBasedContentHandler {
         } catch (ForbiddenException e) {
             LOGGER.log(System.Logger.Level.WARNING, "Failed to resolve static content file during startup: " + path, e);
         }
-        super.beforeStart();
+        super.populateCacheOnStart();
     }
 
     @Override

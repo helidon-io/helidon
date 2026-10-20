@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,9 +19,9 @@ package io.helidon.webserver.staticcontent;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
@@ -32,11 +32,12 @@ class TemporaryStorageImpl implements TemporaryStorage {
     private static final System.Logger LOGGER = System.getLogger(TemporaryStorage.class.getName());
 
     private final TemporaryStorageConfig config;
+    private final DeleteFilesHandler deleteFilesHandler = new DeleteFilesHandler();
     private final Supplier<Optional<Path>> tmpFile;
 
     TemporaryStorageImpl(TemporaryStorageConfig config) {
         this.config = config;
-        this.tmpFile = tempFileSupplier(config);
+        this.tmpFile = tempFileSupplier(config, deleteFilesHandler);
     }
 
     @Override
@@ -49,12 +50,16 @@ class TemporaryStorageImpl implements TemporaryStorage {
         return tmpFile.get();
     }
 
-    private static Supplier<Optional<Path>> tempFileSupplier(TemporaryStorageConfig config) {
+    void deleteFile(Path path) {
+        deleteFilesHandler.delete(path);
+    }
+
+    private static Supplier<Optional<Path>> tempFileSupplier(TemporaryStorageConfig config,
+                                                             DeleteFilesHandler deleteFilesHandler) {
         if (!config.enabled()) {
             return Optional::empty;
         }
 
-        DeleteFilesHandler deleteFilesHandler = new DeleteFilesHandler();
         if (config.deleteOnExit()) {
             Main.addShutdownHandler(deleteFilesHandler);
         }
@@ -89,7 +94,7 @@ class TemporaryStorageImpl implements TemporaryStorage {
 
     private static class DeleteFilesHandler implements HelidonShutdownHandler {
 
-        private final List<Path> tempFiles = new ArrayList<>();
+        private final Set<Path> tempFiles = new HashSet<>();
         private final ReentrantLock tempFilesLock = new ReentrantLock();
 
         private volatile boolean closed;
@@ -110,6 +115,22 @@ class TemporaryStorageImpl implements TemporaryStorage {
                 }
 
                 tempFiles.clear();
+            } finally {
+                tempFilesLock.unlock();
+            }
+        }
+
+        private void delete(Path path) {
+            tempFilesLock.lock();
+            try {
+                try {
+                    Files.deleteIfExists(path);
+                    tempFiles.remove(path);
+                } catch (IOException e) {
+                    LOGGER.log(System.Logger.Level.WARNING,
+                               "Failed to delete temporary file: " + path.toAbsolutePath(),
+                               e);
+                }
             } finally {
                 tempFilesLock.unlock();
             }
