@@ -42,9 +42,11 @@ import org.gradle.language.jvm.tasks.ProcessResources;
 /**
  * Native Gradle integration for declarative application binding generation.
  * Application and test outputs contain completed bindings before packaging or execution.
- * The public constructor and JavaBean managed properties implement Gradle's plugin integration contract.
+ * Apply the plugin using the {@code io.helidon.service} plugin ID and configure the
+ * {@link HelidonServiceExtension helidonService extension}. This implementation type is internal;
+ * its public visibility and constructor support Gradle plugin instantiation.
  */
-@Api.Incubating
+@Api.Internal
 public final class HelidonServicePlugin implements Plugin<Project> {
     /**
      * Constructor used by Gradle plugin instantiation.

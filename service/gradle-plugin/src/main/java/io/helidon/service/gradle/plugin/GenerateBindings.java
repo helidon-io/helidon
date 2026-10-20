@@ -50,9 +50,11 @@ import org.gradle.work.DisableCachingByDefault;
 /**
  * Stages compiled classes and generates application bindings in a separate JVM using the Java toolchain.
  * Each execution replaces its own output, so deleted services and renamed bindings cannot remain in application artifacts.
- * JavaBean accessors and the injected constructor are Gradle task and managed-property contracts.
+ * Configure generation through the {@link HelidonServiceExtension helidonService extension}.
+ * This task implementation is internal; its public visibility, JavaBean accessors and injected constructor
+ * support Gradle task instantiation and managed properties.
  */
-@Api.Incubating
+@Api.Internal
 @DisableCachingByDefault(because = "Only local up-to-date checking is supported for the isolated compiler and classpath scan")
 public abstract class GenerateBindings extends DefaultTask {
     private final BindingOptions options;

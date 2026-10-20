@@ -22,6 +22,7 @@ import org.gradle.api.provider.Property;
 /**
  * Gradle {@code helidonService} extension. Annotation processors must be configured separately
  * using Gradle's {@code annotationProcessor} and {@code testAnnotationProcessor} configurations.
+ * This extension and its inherited options form the plugin's incubating build configuration API.
  * The JavaBean accessors and public constructor support Gradle managed properties and DSL decoration.
  */
 @Api.Incubating

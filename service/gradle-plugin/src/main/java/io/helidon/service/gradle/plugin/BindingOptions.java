@@ -23,6 +23,7 @@ import org.gradle.api.tasks.Optional;
 
 /**
  * Options shared by application and test binding generation.
+ * These properties form part of the incubating {@link HelidonServiceExtension helidonService} configuration API.
  * The JavaBean accessors and public constructor support Gradle managed properties and DSL decoration.
  */
 @Api.Incubating
