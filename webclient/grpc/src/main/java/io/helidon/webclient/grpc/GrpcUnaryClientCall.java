@@ -17,12 +17,13 @@
 package io.helidon.webclient.grpc;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.http.Header;
+import io.helidon.grpc.core.GrpcHeadersUtil;
 import io.helidon.http.Headers;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.webclient.http2.StreamTimeoutException;
 
 import io.grpc.CallOptions;
+import io.grpc.InternalStatus;
 import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
@@ -70,15 +71,14 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
             if (trailers.isDone() && !trailers.isCompletedExceptionally()) {
                 Headers headers = trailers.join();
                 if (headers.contains(STATUS_NAME)) {
-                    closeResponse(Status.fromCodeValue(headers.get(STATUS_NAME).getInt()));
+                    closeResponse(headers);
                     return;
                 }
             }
             if (responseHeaders != null) {
                 Headers headers = responseHeaders.httpHeaders();
                 if (headers.contains(STATUS_NAME)) {
-                    Header status = headers.get(STATUS_NAME);
-                    closeResponse(Status.fromCodeValue(status.getInt()));
+                    closeResponse(headers);
                     return;
                 }
             }
@@ -113,6 +113,21 @@ class GrpcUnaryClientCall<ReqT, ResT> extends GrpcBaseClientCall<ReqT, ResT> {
     @Override
     protected void closeStreamingThreads() {
         // no-op
+    }
+
+    private void closeResponse(Headers headers) {
+        Metadata metadata;
+        try {
+            metadata = GrpcHeadersUtil.toMetadata(headers);
+        } catch (RuntimeException e) {
+            close(Status.INTERNAL.withDescription("Invalid gRPC response trailers").withCause(e));
+            return;
+        }
+        Status status = metadata.get(InternalStatus.CODE_KEY);
+        String description = metadata.get(InternalStatus.MESSAGE_KEY);
+        metadata.discardAll(InternalStatus.CODE_KEY);
+        metadata.discardAll(InternalStatus.MESSAGE_KEY);
+        closeResponse(description == null ? status : status.withDescription(description), metadata);
     }
 
     private void sendRequest(ReqT message) {
