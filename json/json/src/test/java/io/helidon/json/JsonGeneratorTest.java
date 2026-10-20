@@ -95,6 +95,39 @@ class JsonGeneratorTest {
 
     @ParameterizedTest
     @EnumSource(GeneratorMethod.class)
+    void signedZerosAsArrayValues(GeneratorMethod generatorMethod) {
+        GeneratorMethod.Target target = generatorMethod.createTarget();
+        try (JsonGenerator generator = target.createGenerator()) {
+            generator.writeArrayStart()
+                    .write(-0.0f)
+                    .write(-0.0d)
+                    .write(0.0f)
+                    .write(0.0d)
+                    .writeArrayEnd();
+        }
+
+        assertThat(target.generatedJson(), is("[-0.0,-0.0,0.0,0.0]"));
+    }
+
+    @ParameterizedTest
+    @EnumSource(GeneratorMethod.class)
+    void signedZerosAsObjectMembers(GeneratorMethod generatorMethod) {
+        GeneratorMethod.Target target = generatorMethod.createTarget();
+        try (JsonGenerator generator = target.createGenerator()) {
+            generator.writeObjectStart()
+                    .write("negativeFloat", -0.0f)
+                    .write("negativeDouble", -0.0d)
+                    .write("positiveFloat", 0.0f)
+                    .write("positiveDouble", 0.0d)
+                    .writeObjectEnd();
+        }
+
+        assertThat(target.generatedJson(),
+                   is("{\"negativeFloat\":-0.0,\"negativeDouble\":-0.0,\"positiveFloat\":0.0,\"positiveDouble\":0.0}"));
+    }
+
+    @ParameterizedTest
+    @EnumSource(GeneratorMethod.class)
     public void testWriteBooleanTrue(GeneratorMethod generatorMethod) throws Exception {
         GeneratorMethod.Target target = generatorMethod.createTarget();
         try (JsonGenerator generator = target.createGenerator()) {
