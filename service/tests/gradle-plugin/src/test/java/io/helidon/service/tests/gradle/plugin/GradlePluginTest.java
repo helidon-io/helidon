@@ -163,6 +163,16 @@ class GradlePluginTest {
     }
 
     @Test
+    void preservesClassOutputsRegisteredBeforeHelidonPlugin() throws IOException {
+        extraClassOutputs(true);
+    }
+
+    @Test
+    void preservesClassOutputsRegisteredAfterHelidonPlugin() throws IOException {
+        extraClassOutputs(false);
+    }
+
+    @Test
     void modularApplicationBindingsArePackagedAndRun() throws IOException {
         fixture();
         write("library/src/main/java/module-info.java", """
@@ -359,6 +369,95 @@ class GradlePluginTest {
     private static void assertTask(BuildResult result, String name, TaskOutcome expected) {
         assertThat("Missing task " + name + " in:\n" + result.getOutput(), result.task(name), notNullValue());
         assertThat(name + " in:\n" + result.getOutput(), result.task(name).getOutcome(), is(expected));
+    }
+
+    private void extraClassOutputs(boolean registerBeforePlugin) throws IOException {
+        fixture();
+        String producers = """
+                def extraMainCompile = tasks.register('compileExtraMain', JavaCompile) {
+                    source = fileTree('src/extraMain/java')
+                    classpath = files()
+                    destinationDirectory = layout.buildDirectory.dir('classes/extra/main')
+                }
+                def extraMainClasses = objects.directoryProperty()
+                extraMainClasses.set(extraMainCompile.flatMap { it.destinationDirectory })
+                sourceSets.main.output.classesDirs.from(extraMainClasses)
+
+                def extraTestClasses = layout.buildDirectory.dir('classes/extra/test')
+                def extraTestCompile = tasks.register('compileExtraTest', JavaCompile) {
+                    source = fileTree('src/extraTest/java')
+                    classpath = files()
+                    destinationDirectory = extraTestClasses
+                }
+                sourceSets.test.output.classesDirs.from(extraTestClasses)
+                sourceSets.test.output.classesDirs.builtBy(extraTestCompile)
+                """;
+        String applyPlugin = "apply plugin: 'io.helidon.service'\n";
+        write("build.gradle", Files.readString(directory.resolve("build.gradle"))
+                .replace("id 'io.helidon.service'", "id 'io.helidon.service' apply false")
+                .replace("java { toolchain", (registerBeforePlugin ? producers + applyPlugin : applyPlugin + producers)
+                        + "java { toolchain"));
+        write("src/extraMain/java/extra/MainOutput.java", """
+                package extra;
+                public class MainOutput {
+                    public static String marker() { return "extra-main"; }
+                }
+                """);
+        write("src/extraTest/java/extra/TestOutput.java", """
+                package extra;
+                public class TestOutput {
+                    public static String marker() { return "extra-test"; }
+                }
+                """);
+        write("src/main/java/example/Main.java", Files.readString(directory.resolve("src/main/java/example/Main.java"))
+                .replace("main(String[] args) {", "main(String[] args) throws Exception {")
+                .replace("manager.shutdown();", """
+                        manager.shutdown();
+                        System.out.println("EXTRA:" + Class.forName("extra.MainOutput").getMethod("marker").invoke(null));
+                        """));
+        write("src/test/java/example/ExtraOutputTest.java", """
+                package example;
+                import org.junit.jupiter.api.Test;
+                public class ExtraOutputTest {
+                    @Test
+                    void extraClassesAreOnTestRuntimeClasspath() throws Exception {
+                        Object main = Class.forName("extra.MainOutput").getMethod("marker").invoke(null);
+                        Object test = Class.forName("extra.TestOutput").getMethod("marker").invoke(null);
+                        if (!"extra-main".equals(main) || !"extra-test".equals(test)) {
+                            throw new AssertionError("Unexpected extra class markers: " + main + ", " + test);
+                        }
+                    }
+                }
+                """);
+
+        BuildResult result = runner("test", "packagedRun", "--configuration-cache").build();
+        assertTask(result, ":compileExtraMain", TaskOutcome.SUCCESS);
+        assertTask(result, ":compileExtraTest", TaskOutcome.SUCCESS);
+        assertTask(result, ":test", TaskOutcome.SUCCESS);
+        assertTask(result, ":packagedRun", TaskOutcome.SUCCESS);
+        assertThat(result.getOutput(), containsString("EXTRA:extra-main"));
+        assertThat(Files.readString(directory.resolve("build/test-results/test/TEST-example.ExtraOutputTest.xml")),
+                   containsString("tests=\"1\""));
+        assertThat("Extra main class must be staged with completed application bindings",
+                   Files.exists(directory.resolve("build/classes/helidon/main/extra/MainOutput.class")), is(true));
+        assertThat("Extra test class must be staged with completed test bindings",
+                   Files.exists(directory.resolve("build/classes/helidon/test/extra/TestOutput.class")), is(true));
+        try (var jar = new ZipFile(directory.resolve("build/libs/application.jar").toFile())) {
+            assertThat(jar.stream().filter(entry -> entry.getName().equals("extra/MainOutput.class")).count(), is(1L));
+            assertThat(jar.getEntry("extra/TestOutput.class"), nullValue());
+        }
+
+        BuildResult repeated = runner("test", "packagedRun", "--configuration-cache").build();
+        assertThat(repeated.getOutput(), containsString("Reusing configuration cache"));
+        assertThat(repeated.getOutput(), containsString("EXTRA:extra-main"));
+        assertTask(repeated, ":compileJava", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":compileTestJava", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":compileExtraMain", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":compileExtraTest", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":generateApplicationBindings", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":generateTestApplicationBindings", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":jar", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":test", TaskOutcome.UP_TO_DATE);
     }
 
     private void fixture() throws IOException {

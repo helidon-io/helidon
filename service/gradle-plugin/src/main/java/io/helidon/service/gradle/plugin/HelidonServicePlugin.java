@@ -16,6 +16,8 @@
 package io.helidon.service.gradle.plugin;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -100,17 +102,24 @@ public final class HelidonServicePlugin implements Plugin<Project> {
             task.getOptions().getPackageName().convention(extension.getTestPackageName());
             task.getTestSourceRoots().from(test.getAllJava().getSourceDirectories());
         });
-        classes(main, application);
-        classes(test, tests);
+        project.afterEvaluate(_ -> {
+            classes(project, main, application);
+            classes(project, test, tests);
+        });
         project.getTasks().named(main.getClassesTaskName()).configure(task -> task.dependsOn(application));
         project.getTasks().named(test.getClassesTaskName()).configure(task -> task.dependsOn(tests));
     }
 
-    private static void classes(SourceSet sourceSet, TaskProvider<GenerateBindings> generator) {
+    private static void classes(Project project, SourceSet sourceSet, TaskProvider<GenerateBindings> generator) {
         // Gradle's Java plugin exposes a configurable collection through the read-only SourceSetOutput interface.
-        // Using the public configurable contract preserves the compiler's original destination and task ownership.
+        // Capture all compiler outputs after plugins and build scripts have configured the source set.
         if (sourceSet.getOutput().getClassesDirs() instanceof ConfigurableFileCollection classes) {
+            // Copy the source objects to retain lazy paths and producer dependencies without following our replacement.
+            var originalClasses = project.files(new ArrayList<>(classes.getFrom()))
+                    .builtBy(new ArrayList<>(classes.getBuiltBy()));
+            generator.configure(task -> task.getRawClasses().from(originalClasses));
             classes.setFrom(generator.flatMap(GenerateBindings::getClassesDirectory));
+            classes.setBuiltBy(List.of());
         } else {
             throw new GradleException("The Helidon service plugin requires configurable Java source set class directories: "
                                               + sourceSet.getName());
@@ -133,7 +142,6 @@ public final class HelidonServicePlugin implements Plugin<Project> {
             task.setGroup("build");
             task.setDescription("Generates Helidon declarative bindings for " + sourceSet.getName());
             task.dependsOn(compile, resources);
-            task.getRawClasses().from(compile.flatMap(JavaCompile::getDestinationDirectory));
             task.getApplicationClasspath().from(resources.map(ProcessResources::getDestinationDir), runtime);
             task.getGeneratorClasspath().from(generator);
             task.getSourceRoots().from(sourceSet.getAllJava().getSourceDirectories());
