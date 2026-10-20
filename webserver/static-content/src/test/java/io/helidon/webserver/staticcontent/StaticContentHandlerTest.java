@@ -26,7 +26,7 @@ import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.common.configurable.LruCache;
+import io.helidon.common.LruCache;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriPath;

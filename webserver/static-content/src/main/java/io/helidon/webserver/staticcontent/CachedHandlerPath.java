@@ -26,7 +26,7 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-import io.helidon.common.configurable.LruCache;
+import io.helidon.common.LruCache;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.ForbiddenException;
 import io.helidon.http.HeaderNames;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
@@ -49,9 +50,11 @@ import io.helidon.webserver.http.ServerResponse;
  * Handles static content from the classpath.
  */
 class ClassPathContentHandler extends FileBasedContentHandler {
+    private static final int CACHE_LOCK_COUNT = 64;
     private static final System.Logger LOGGER = System.getLogger(ClassPathContentHandler.class.getName());
 
     private final AtomicBoolean populatedInMemoryCache = new AtomicBoolean();
+    private final ReentrantLock[] cacheLocks = createCacheLocks();
     private final ClassLoader classLoader;
     private final String root;
     private final String rootWithTrailingSlash;
@@ -79,8 +82,23 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         return new ClassPathContentHandler(config);
     }
 
+    static String cleanRoot(String location) {
+        String cleanRoot = location;
+        if (cleanRoot.startsWith("/")) {
+            cleanRoot = cleanRoot.substring(1);
+        }
+        while (cleanRoot.endsWith("/")) {
+            cleanRoot = cleanRoot.substring(0, cleanRoot.length() - 1);
+        }
+
+        if (cleanRoot.isEmpty()) {
+            throw new IllegalArgumentException("Cannot serve full classpath, please configure a classpath prefix");
+        }
+        return cleanRoot;
+    }
+
     @Override
-    public void beforeStart() {
+    void populateCacheOnStart() {
         if (populatedInMemoryCache.compareAndSet(false, true)) {
             for (String resource : cacheInMemory) {
                 try {
@@ -90,12 +108,13 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                 }
             }
         }
-        super.beforeStart();
+        super.populateCacheOnStart();
     }
 
     @Override
     void releaseCache() {
         populatedInMemoryCache.set(false);
+        super.releaseCache();
     }
 
     @Override
@@ -110,16 +129,75 @@ class ClassPathContentHandler extends FileBasedContentHandler {
             return false;
         }
 
-        // we have a resource that we support, let's try to use one from the cache
-        Optional<CachedHandler> cached = cacheHandler(requestedResource);
-
+        Optional<CachedHandler> cached = acquireHandler(requestedResource);
         if (cached.isPresent()) {
-            // this requested resource is cached and can be safely returned
-            return cached.get().handle(handlerCache(), method, request, response, requestedResource);
+            return handleAcquired(cached.get(), method, request, response, requestedResource);
         }
 
-        // if it is not cached, find the resource and cache it (or return 404 and do not cache)
+        ReentrantLock cacheLock = cacheLock(requestedResource);
+        cacheLock.lock();
+        try {
+            cached = acquireHandler(requestedResource);
+            if (cached.isEmpty()) {
+                cached = findHandler(rawPath, requestedResource);
+                if (cached.isPresent()) {
+                    CachedHandler handler = cached.get();
+                    handler.acquire();
+                    cacheHandler(requestedResource, handler);
+                }
+            }
+        } finally {
+            cacheLock.unlock();
+        }
 
+        if (cached.isEmpty()) {
+            return false;
+        }
+        return handleAcquired(cached.get(), method, request, response, requestedResource);
+    }
+
+    Optional<CachedHandler> cachedHandler(String requestedResource, URL url) throws IOException, URISyntaxException {
+        return switch (url.getProtocol()) {
+        case "file" -> fileHandler(Paths.get(url.toURI()));
+        case "jar" -> jarHandler(requestedResource, url);
+        default -> urlStreamHandler(url);
+        };
+    }
+
+    void addToInMemoryCache(String requestedResource, URL url) throws IOException {
+        // now we do have a resource, and we want to load it into memory
+        // we are not checking the size, as this is explicitly configured by the user, and if we run out of memory, we just do...
+        Optional<Instant> lastModified = lastModified(url);
+        MediaType contentType = detectType(fileName(url));
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (InputStream in = ResourceConnections.openStream(url)) {
+            in.transferTo(baos);
+        }
+        byte[] entityBytes = baos.toByteArray();
+
+        cacheInMemory(requestedResource, contentType, entityBytes, lastModified);
+    }
+
+    private static ReentrantLock[] createCacheLocks() {
+        ReentrantLock[] locks = new ReentrantLock[CACHE_LOCK_COUNT];
+        for (int i = 0; i < locks.length; i++) {
+            locks[i] = new ReentrantLock();
+        }
+        return locks;
+    }
+
+    private static String fileName(URL url) {
+        String path = url.getPath();
+        int index = path.lastIndexOf('/');
+        if (index > -1) {
+            return path.substring(index + 1);
+        }
+
+        return path;
+    }
+
+    private Optional<CachedHandler> findHandler(String rawPath, String requestedResource)
+            throws IOException, URISyntaxException {
         // try to find the resource on classpath (cannot use root URL and then resolve, as root and sub-resource
         // may be from different jar files/directories
         URL url = classLoader.getResource(requestedResource);
@@ -140,20 +218,14 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                     if (inMemoryMaybe.isPresent()) {
                         // reference to the same definition, never times out
                         cacheInMemory(requestedResource, inMemoryMaybe.get());
-                        return inMemoryMaybe.get().handle(handlerCache(),
-                                                          method,
-                                                          request,
-                                                          response,
-                                                          requestedResource);
+                        return Optional.of(inMemoryMaybe.get());
                     }
 
                     url = welcomeUrl;
                 } else {
                     // must redirect
                     String redirectLocation = rawPath + "/";
-                    CachedHandlerRedirect handler = new CachedHandlerRedirect(redirectLocation);
-                    cacheHandler(requestedResource, handler);
-                    return handler.handle(handlerCache(), method, request, response, requestedResource);
+                    return Optional.of(new CachedHandlerRedirect(redirectLocation));
                 }
             }
         }
@@ -164,7 +236,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                         + " does not exist or is a directory without welcome file.");
             }
             // not caching 404, to prevent intentional cache pollution by users
-            return false;
+            return Optional.empty();
         }
 
         if (LOGGER.isLoggable(Level.TRACE)) {
@@ -172,63 +244,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         }
 
         // now read the URL - we have direct support for files and jar files, others are handled by stream only
-        Optional<CachedHandler> handler = cachedHandler(requestedResource, url);
-
-        if (handler.isEmpty()) {
-            return false;
-        }
-
-        CachedHandler cachedHandler = handler.get();
-        cacheHandler(requestedResource, cachedHandler);
-
-        return cachedHandler.handle(handlerCache(), method, request, response, requestedResource);
-    }
-
-    Optional<CachedHandler> cachedHandler(String requestedResource, URL url) throws IOException, URISyntaxException {
-        return switch (url.getProtocol()) {
-        case "file" -> fileHandler(Paths.get(url.toURI()));
-        case "jar" -> jarHandler(requestedResource, url);
-        default -> urlStreamHandler(url);
-        };
-    }
-
-    static String cleanRoot(String location) {
-        String cleanRoot = location;
-        if (cleanRoot.startsWith("/")) {
-            cleanRoot = cleanRoot.substring(1);
-        }
-        while (cleanRoot.endsWith("/")) {
-            cleanRoot = cleanRoot.substring(0, cleanRoot.length() - 1);
-        }
-
-        if (cleanRoot.isEmpty()) {
-            throw new IllegalArgumentException("Cannot serve full classpath, please configure a classpath prefix");
-        }
-        return cleanRoot;
-    }
-
-    void addToInMemoryCache(String requestedResource, URL url) throws IOException {
-        // now we do have a resource, and we want to load it into memory
-        // we are not checking the size, as this is explicitly configured by the user, and if we run out of memory, we just do...
-        Optional<Instant> lastModified = lastModified(url);
-        MediaType contentType = detectType(fileName(url));
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (InputStream in = url.openStream()) {
-            in.transferTo(baos);
-        }
-        byte[] entityBytes = baos.toByteArray();
-
-        cacheInMemory(requestedResource, contentType, entityBytes, lastModified);
-    }
-
-    private static String fileName(URL url) {
-        String path = url.getPath();
-        int index = path.lastIndexOf('/');
-        if (index > -1) {
-            return path.substring(index + 1);
-        }
-
-        return path;
+        return cachedHandler(requestedResource, url);
     }
 
     private String requestedResource(String rawPath, String requestedPath, boolean mapped) throws URISyntaxException {
@@ -249,26 +265,24 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         return rawPath.endsWith("/") ? result + "/" : result;
     }
 
+    private ReentrantLock cacheLock(String resource) {
+        return cacheLocks[Math.floorMod(resource.hashCode(), cacheLocks.length)];
+    }
+
     private Optional<CachedHandler> jarHandler(String requestedResource, URL url) throws IOException {
-        JarURLConnection jarUrlConnection = (JarURLConnection) url.openConnection();
-        JarEntry jarEntry = jarUrlConnection.getJarEntry();
-
-        if (jarEntry.isDirectory()) {
-            // we cannot cache this - as we consider this to be 404
-            return Optional.empty();
-        }
-
-        var contentLength = jarEntry.getSize();
+        JarURLConnection jarUrlConnection = ResourceConnections.openJarConnection(url);
+        long contentLength;
         var contentType = detectType(fileName(url));
         Optional<Instant> lastModified;
 
-        JarFile jarFile = jarUrlConnection.getJarFile();
-        try {
-            lastModified = lastModified(jarFile.getName());
-        } finally {
-            if (!jarUrlConnection.getUseCaches()) {
-                jarFile.close();
+        try (JarFile jarFile = jarUrlConnection.getJarFile()) {
+            JarEntry jarEntry = jarUrlConnection.getJarEntry();
+            if (jarEntry.isDirectory()) {
+                // we cannot cache this - as we consider this to be 404
+                return Optional.empty();
             }
+            contentLength = jarEntry.getSize();
+            lastModified = lastModified(jarFile.getName());
         }
 
         var lastModifiedHandler = lastModifiedHandler(lastModified);
@@ -327,7 +341,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                                                          contentLength);
         return () -> {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            try (InputStream in = url.openStream()) {
+            try (InputStream in = ResourceConnections.openStream(url)) {
                 in.transferTo(baos);
             } catch (IOException e) {
                 throw new InternalServerException("Cannot load resource", e);
@@ -396,9 +410,10 @@ class ClassPathContentHandler extends FileBasedContentHandler {
     }
 
     private Optional<Instant> lastModifiedFromJar(URL url) throws IOException {
-        JarURLConnection jarUrlConnection = (JarURLConnection) url.openConnection();
-        JarFile jarFile = jarUrlConnection.getJarFile();
-        return lastModified(jarFile.getName());
+        JarURLConnection jarUrlConnection = ResourceConnections.openJarConnection(url);
+        try (JarFile jarFile = jarUrlConnection.getJarFile()) {
+            return lastModified(jarFile.getName());
+        }
     }
 
     private Optional<Instant> lastModified(String path) throws IOException {

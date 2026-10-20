@@ -26,11 +26,12 @@ import java.time.chrono.ChronoZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import io.helidon.common.configurable.LruCache;
+import io.helidon.common.LruCache;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.DateTime;
 import io.helidon.http.Header;
@@ -56,18 +57,17 @@ import io.helidon.webserver.http.ServerResponse;
 abstract class StaticContentHandler implements StaticContentService {
     private static final System.Logger LOGGER = System.getLogger(StaticContentHandler.class.getName());
 
-    private final LruCache<String, CachedHandler> handlerCache;
+    private final CachedHandlerCache handlerCache;
     private final String welcomeFilename;
     private final Function<String, String> resolvePathFunction;
     private final AtomicInteger webServerCounter = new AtomicInteger();
+    private final ReentrantLock lifecycleLock = new ReentrantLock();
     private final MemoryCache memoryCache;
 
     StaticContentHandler(BaseHandlerConfig config) {
         this.welcomeFilename = config.welcome().orElse(null);
         this.resolvePathFunction = config.pathMapper();
-        this.handlerCache = LruCache.<String, CachedHandler>builder()
-                .update(it -> config.recordCacheCapacity().ifPresent(it::capacity))
-                .build();
+        this.handlerCache = new CachedHandlerCache(config.recordCacheCapacity().orElse(LruCache.DEFAULT_CAPACITY));
         this.memoryCache = config.memoryCache().orElseGet(MemoryCache::create);
     }
 
@@ -192,18 +192,33 @@ abstract class StaticContentHandler implements StaticContentService {
     }
 
     @Override
-    public void beforeStart() {
-        webServerCounter.incrementAndGet();
+    public final void beforeStart() {
+        lifecycleLock.lock();
+        try {
+            populateCacheOnStart();
+            webServerCounter.incrementAndGet();
+        } finally {
+            lifecycleLock.unlock();
+        }
     }
 
     @Override
-    public void afterStop() {
-        int i = webServerCounter.decrementAndGet();
+    public final void afterStop() {
+        lifecycleLock.lock();
+        try {
+            int i = webServerCounter.decrementAndGet();
 
-        if (i <= 0) {
-            webServerCounter.set(0);
-            releaseCache();
+            if (i <= 0) {
+                webServerCounter.set(0);
+                releaseCache();
+            }
+        } finally {
+            lifecycleLock.unlock();
         }
+    }
+
+    void populateCacheOnStart() {
+        // Subclasses populate caches while the lifecycle lock prevents concurrent final shutdown.
     }
 
     @Override
@@ -327,8 +342,30 @@ abstract class StaticContentHandler implements StaticContentService {
                 .or(() -> handlerCache.get(resource));
     }
 
+    Optional<CachedHandler> acquireHandler(String resource) {
+        Optional<CachedHandlerInMemory> inMemory = cacheInMemory(resource);
+        if (inMemory.isPresent()) {
+            CachedHandler handler = inMemory.get();
+            handler.acquire();
+            return Optional.of(handler);
+        }
+        return handlerCache.acquire(resource);
+    }
+
     void cacheHandler(String resource, CachedHandler cachedResource) {
         handlerCache.put(resource, cachedResource);
+    }
+
+    boolean handleAcquired(CachedHandler cachedHandler,
+                           Method method,
+                           ServerRequest request,
+                           ServerResponse response,
+                           String requestedResource) throws IOException {
+        try {
+            return cachedHandler.handle(handlerCache, method, request, response, requestedResource);
+        } finally {
+            cachedHandler.release();
+        }
     }
 
     LruCache<String, CachedHandler> handlerCache() {

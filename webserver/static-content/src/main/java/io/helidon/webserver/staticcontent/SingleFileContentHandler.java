@@ -42,7 +42,7 @@ class SingleFileContentHandler extends FileBasedContentHandler {
     }
 
     @Override
-    public void beforeStart() {
+    void populateCacheOnStart() {
         try {
             Optional<Path> maybeResolvedPath = contentPath(path);
             if (cacheInMemory) {
@@ -71,7 +71,7 @@ class SingleFileContentHandler extends FileBasedContentHandler {
             LOGGER.log(System.Logger.Level.WARNING, "Failed to add file to in-memory cache, path: " + path, e);
             cacheFileHandler();
         }
-        super.beforeStart();
+        super.populateCacheOnStart();
     }
 
     @Override

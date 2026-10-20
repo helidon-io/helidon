@@ -25,9 +25,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 
-import io.helidon.common.configurable.LruCache;
+import io.helidon.common.LruCache;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
@@ -47,19 +48,27 @@ import static io.helidon.webserver.staticcontent.StaticContentHandler.processMod
  */
 class CachedHandlerJar implements CachedHandler {
     private static final System.Logger LOGGER = System.getLogger(CachedHandlerJar.class.getName());
+
+    private final ReentrantLock lifecycleLock = new ReentrantLock();
     private final MediaType mediaType;
     private final Header contentLength;
     private final Instant lastModified;
     private final BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader;
     private final Path path;
+    private final TemporaryStorage temporaryStorage;
     private final URL url;
 
-    private CachedHandlerJar(MediaType mediaType,
+    private int users;
+    private boolean disposed;
+
+    private CachedHandlerJar(TemporaryStorage temporaryStorage,
+                             MediaType mediaType,
                              URL url,
                              long contentLength,
                              Instant lastModified,
                              BiConsumer<ServerResponseHeaders, Instant> setLastModifiedHeader,
                              Path path) {
+        this.temporaryStorage = temporaryStorage;
         this.mediaType = mediaType;
         this.url = url;
         this.contentLength = HeaderValues.create(HeaderNames.CONTENT_LENGTH, true, false, contentLength);
@@ -80,16 +89,71 @@ class CachedHandlerJar implements CachedHandler {
         if (createdTmpFile.isPresent()) {
             // extract entry
             Path tmpFile = createdTmpFile.get();
-            try (InputStream is = fileUrl.openStream()) {
+            try (InputStream is = ResourceConnections.openStream(fileUrl)) {
                 Files.copy(is, tmpFile, StandardCopyOption.REPLACE_EXISTING);
             } catch (IOException e) {
                 // silently consume the exception, as the tmp file may have been removed, we may throw when reading the file
                 LOGGER.log(Level.TRACE, "Failed to create temporary extracted file for " + fileUrl, e);
             }
-            return new CachedHandlerJar(mediaType, fileUrl, contentLength, lastModified, headerHandler, tmpFile);
+            return new CachedHandlerJar(tmpStorage,
+                                        mediaType,
+                                        fileUrl,
+                                        contentLength,
+                                        lastModified,
+                                        headerHandler,
+                                        tmpFile);
         } else {
             // use the entry always
-            return new CachedHandlerJar(mediaType, fileUrl, contentLength, lastModified, headerHandler, null);
+            return new CachedHandlerJar(tmpStorage,
+                                        mediaType,
+                                        fileUrl,
+                                        contentLength,
+                                        lastModified,
+                                        headerHandler,
+                                        null);
+        }
+    }
+
+    @Override
+    public void acquire() {
+        lifecycleLock.lock();
+        try {
+            users++;
+        } finally {
+            lifecycleLock.unlock();
+        }
+    }
+
+    @Override
+    public void release() {
+        boolean delete;
+        lifecycleLock.lock();
+        try {
+            users--;
+            delete = disposed && users == 0;
+        } finally {
+            lifecycleLock.unlock();
+        }
+        if (delete) {
+            deleteTemporaryFile();
+        }
+    }
+
+    @Override
+    public void dispose() {
+        boolean delete;
+        lifecycleLock.lock();
+        try {
+            if (disposed) {
+                return;
+            }
+            disposed = true;
+            delete = users == 0;
+        } finally {
+            lifecycleLock.unlock();
+        }
+        if (delete) {
+            deleteTemporaryFile();
         }
     }
 
@@ -132,7 +196,7 @@ class CachedHandlerJar implements CachedHandler {
                                e);
                 }
             }
-            try (var in = url.openStream(); var out = response.outputStream()) {
+            try (var in = ResourceConnections.openStream(url); var out = response.outputStream()) {
                 // no support for ranges when using jar stream
                 in.transferTo(out);
             }
@@ -154,5 +218,20 @@ class CachedHandlerJar implements CachedHandler {
                                                    false,
                                                    formatLastModified(lastModified));
         return (headers, instant) -> headers.set(instantHeader);
+    }
+
+    private void deleteTemporaryFile() {
+        if (path == null) {
+            return;
+        }
+        if (temporaryStorage instanceof TemporaryStorageImpl storage) {
+            storage.deleteFile(path);
+            return;
+        }
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            LOGGER.log(Level.WARNING, "Failed to delete temporary file: " + path.toAbsolutePath(), e);
+        }
     }
 }

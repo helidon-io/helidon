@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,7 +43,7 @@ class SingleFileClassPathContentHandler extends ClassPathContentHandler {
     }
 
     @Override
-    public void beforeStart() {
+    void populateCacheOnStart() {
         try {
             // directly cache in memory
             URL resourceUrl = classLoader.getResource(location);
@@ -70,21 +70,22 @@ class SingleFileClassPathContentHandler extends ClassPathContentHandler {
                        "Failed to add classpath resource to in-memory cache, location: " + location,
                        e);
         }
-        super.beforeStart();
+        super.populateCacheOnStart();
     }
 
     @Override
     void releaseCache() {
         populatedInMemoryCache.set(false);
+        super.releaseCache();
     }
 
     @Override
     boolean doHandle(Method method, String requestedPath, ServerRequest request, ServerResponse response, boolean mapped)
             throws IOException {
 
-        var handler = cacheHandler(location)
+        var handler = acquireHandler(location)
                 .orElseThrow(() -> new IllegalStateException("Handler must be cached during startup " + location));
 
-        return handler.handle(handlerCache(), method, request, response, requestedPath);
+        return handleAcquired(handler, method, request, response, requestedPath);
     }
 }

@@ -21,7 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiConsumer;
 
-import io.helidon.common.configurable.LruCache;
+import io.helidon.common.LruCache;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
