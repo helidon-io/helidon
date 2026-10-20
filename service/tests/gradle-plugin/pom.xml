@@ -27,7 +27,9 @@
     <artifactId>helidon-service-tests-gradle-plugin</artifactId>
     <name>Helidon Service Tests Gradle Plugin</name>
     <properties>
-        <published.plugin.repository>${project.build.directory}/it-repo</published.plugin.repository>
+        <!-- Exercise repository URI quoting in every publication test. -->
+        <published.plugin.repository.base>${project.build.directory}/it-repo/published-plugin's-repository</published.plugin.repository.base>
+        <published.plugin.repository>${published.plugin.repository.base}</published.plugin.repository>
         <published.plugin.repository.prefix>installed</published.plugin.repository.prefix>
     </properties>
     <dependencies>
@@ -127,6 +129,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-invoker-plugin</artifactId>
                 <configuration>
+                    <localRepositoryPath>${published.plugin.repository.base}</localRepositoryPath>
                     <scope>runtime</scope>
                     <extraArtifacts>
                         <extraArtifact>io.helidon.service:io.helidon.service.gradle.plugin:${project.version}:pom</extraArtifact>
@@ -189,7 +192,7 @@
                 </property>
             </activation>
             <properties>
-                <published.plugin.repository>${project.build.directory}/it-repo/${published.plugin.repository.prefix}</published.plugin.repository>
+                <published.plugin.repository>${published.plugin.repository.base}/${published.plugin.repository.prefix}</published.plugin.repository>
             </properties>
         </profile>
         <profile>

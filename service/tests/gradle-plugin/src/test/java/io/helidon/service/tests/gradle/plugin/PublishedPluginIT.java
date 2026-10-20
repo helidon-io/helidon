@@ -39,7 +39,8 @@ class PublishedPluginIT {
         directory = Files.createTempDirectory(fixtures, "published-plugin-");
         Path source = Path.of(PublishedPluginIT.class.getResource("/gradle/published-plugin").toURI());
         String version = System.getProperty("fixture.version");
-        String repository = Path.of(System.getProperty("fixture.repository")).toAbsolutePath().toUri().toASCIIString();
+        String repository = Path.of(System.getProperty("fixture.repository")).toAbsolutePath().toUri().toASCIIString()
+                .replace("'", "%27");
         try (var paths = Files.walk(source)) {
             for (Path path : paths.toList()) {
                 Path destination = directory.resolve(source.relativize(path));
