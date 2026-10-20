@@ -10,7 +10,7 @@ This guide describes Helidon’s support for Gradle projects.
 ## Introduction
 
 While most of Helidon’s examples use Maven, you can also use Helidon with a
-Gradle project. Helidon 28 requires Java 27. Use Gradle 9.8 or later, which
+Gradle project. Helidon 28 requires Java 27. Use Gradle 9.8.1 or later, which
 supports Java 27 for both the Gradle runtime and Java toolchains. See
 [Gradle's Java compatibility matrix](https://docs.gradle.org/current/userguide/compatibility.html).
 
