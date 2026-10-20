@@ -18,11 +18,14 @@ package io.helidon.service.registry;
 
 import java.lang.System.Logger.Level;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.PriorityQueue;
+import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
@@ -43,6 +46,7 @@ class ScopedRegistryImpl implements ScopedRegistry {
 
     private final ReadWriteLock serviceProvidersLock = new ReentrantReadWriteLock();
     private final Map<ServiceInfo, Activator<?>> activators = new IdentityHashMap<>();
+    private final Map<ServiceInfo, Set<ServiceInfo>> injectedDependencies = new IdentityHashMap<>();
 
     private final TypeName scope;
     private final String id;
@@ -97,11 +101,10 @@ class ScopedRegistryImpl implements ScopedRegistry {
             activationAllowed = false;
             state = RegistryState.DEACTIVATING;
             // Include INIT activators that may already have been handed to a lookup before this snapshot.
-            toShutdown = activators.values()
+            toShutdown = shutdownOrder(activators.values()
                     .stream()
                     .filter(it -> it.phase() != ActivationPhase.DESTROYED)
-                    .sorted(shutdownComparator())
-                    .toList();
+                    .toList());
         } finally {
             serviceProvidersLock.writeLock().unlock();
         }
@@ -177,6 +180,46 @@ class ScopedRegistryImpl implements ScopedRegistry {
     }
 
     @SuppressWarnings("unchecked")
+    <T> Optional<List<QualifiedInstance<T>>> instances(ServiceInfo descriptor,
+                                                    Supplier<Activator<T>> activatorSupplier,
+                                                    Lookup lookup,
+                                                    ServiceInfo dependent) {
+        Activator<T> activator;
+        boolean dependencyRecorded;
+        try {
+            serviceProvidersLock.readLock().lock();
+            checkActive();
+            activator = (Activator<T>) activators.get(descriptor);
+            dependencyRecorded = injectedDependencies.getOrDefault(dependent, Set.of()).contains(descriptor);
+        } finally {
+            serviceProvidersLock.readLock().unlock();
+        }
+
+        if (activator == null) {
+            activator = activator(descriptor, activatorSupplier);
+        }
+        Optional<List<QualifiedInstance<T>>> instances = activator.instances(lookup);
+        // An existing edge will be included in the shutdown snapshot; only new edges need recording after resolution.
+        if (!dependencyRecorded && instances.map(it -> !it.isEmpty()).orElse(false)) {
+            dependency(descriptor, dependent);
+        }
+        return instances;
+    }
+
+    void dependency(ServiceInfo descriptor, ServiceInfo dependent) {
+        try {
+            serviceProvidersLock.writeLock().lock();
+            checkActive();
+            // Keep the owning descriptor, since inherited injection points can resolve differently for each subclass.
+            // A selected value must not be injected if shutdown has already taken its dependency snapshot.
+            injectedDependencies.computeIfAbsent(dependent, _ -> Collections.newSetFromMap(new IdentityHashMap<>()))
+                    .add(descriptor);
+        } finally {
+            serviceProvidersLock.writeLock().unlock();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     <T> Optional<Activator<T>> existingActivator(ServiceInfo descriptor) {
         try {
             serviceProvidersLock.readLock().lock();
@@ -237,6 +280,47 @@ class ScopedRegistryImpl implements ScopedRegistry {
                 .<Activator<?>>comparingDouble(it -> it.descriptor().runLevel().orElse(Service.RunLevel.NORMAL))
                 .reversed()
                 .thenComparing(it -> it.descriptor().weight());
+    }
+
+    private List<Activator<?>> shutdownOrder(List<Activator<?>> services) {
+        Map<Activator<?>, Set<Activator<?>>> dependencies = new IdentityHashMap<>();
+        Map<Activator<?>, Integer> dependents = new IdentityHashMap<>();
+        services.forEach(it -> dependents.put(it, 0));
+        for (Activator<?> service : services) {
+            Set<Activator<?>> targets = Collections.newSetFromMap(new IdentityHashMap<>());
+            for (ServiceInfo descriptor : injectedDependencies.getOrDefault(service.descriptor(), Set.of())) {
+                Activator<?> target = activators.get(descriptor);
+                if (target != service && dependents.containsKey(target) && targets.add(target)) {
+                    dependents.compute(target, (_, count) -> count + 1);
+                }
+            }
+            dependencies.put(service, targets);
+        }
+
+        // Preserve run-level and weight ordering among services whose dependents have already shut down.
+        var ready = new PriorityQueue<Activator<?>>(shutdownComparator());
+        dependents.forEach((service, count) -> {
+            if (count == 0) {
+                ready.add(service);
+            }
+        });
+        List<Activator<?>> result = new ArrayList<>(services.size());
+        while (!ready.isEmpty()) {
+            Activator<?> service = ready.remove();
+            result.add(service);
+            dependents.remove(service);
+            for (Activator<?> dependency : dependencies.get(service)) {
+                if (dependents.compute(dependency, (_, count) -> count - 1) == 0) {
+                    ready.add(dependency);
+                }
+            }
+        }
+        if (!dependents.isEmpty()) {
+            // A cyclic graph cannot satisfy dependency ordering; still attempt cleanup of every remaining service.
+            LOGGER.log(Level.WARNING, "[" + id + "] Cyclic service dependencies during shutdown: " + dependents.keySet());
+            dependents.keySet().stream().sorted(shutdownComparator()).forEach(result::add);
+        }
+        return result;
     }
 
     private void checkActive() {
