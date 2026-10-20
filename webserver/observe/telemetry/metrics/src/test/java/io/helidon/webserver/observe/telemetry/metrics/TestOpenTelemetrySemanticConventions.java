@@ -44,7 +44,6 @@ import org.hamcrest.FeatureMatcher;
 import org.hamcrest.Matcher;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasArray;
 import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasAttributes;
 import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasDouble;
 import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasString;
@@ -215,13 +214,12 @@ class TestOpenTelemetrySemanticConventions {
                         .map(JsonValue::asObject)
                         .toList();
 
-                assertThat("Metrics entry", metricsEntry, allOf(
-                        hasString("name", is(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME)),
-                        hasArray("dataPoints",
-                                              hasItem(allOf(hasString("count", is("1")),
-                                                            hasDouble("sum", greaterThan(0.0D)),
-                                                            hasAttributes(
-                                                       hasEntry(HTTP_ROUTE, notNullValue())))))));
+                assertThat("Metrics entry", metricsEntry,
+                           hasString("name", is(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME)));
+                assertThat("HTTP histogram data points", dataPoints,
+                           hasItem(allOf(hasString("count", is("1")),
+                                         hasDouble("sum", greaterThan(0.0D)),
+                                         hasAttributes(hasEntry(is(HTTP_ROUTE), notNullValue())))));
 
 
                 dataPoints.forEach(dataPoint -> {

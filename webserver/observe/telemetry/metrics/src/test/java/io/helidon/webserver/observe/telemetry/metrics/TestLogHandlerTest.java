@@ -82,6 +82,16 @@ class TestLogHandlerTest {
     }
 
     @Test
+    void rejectsHttpDataPointWithoutAttributes() {
+        String missingAttributes = httpMetrics("{\"count\":\"1\",\"sum\":0.01}");
+        String emptyAttributes = httpMetrics("{\"count\":\"1\",\"sum\":0.01,\"attributes\":[]}");
+        var ready = TestOpenTelemetrySemanticConventions.hasExpectedHttpMeasurements();
+
+        assertThat("A data point without attributes is incomplete", missingAttributes, not(ready));
+        assertThat("A data point without either expected attribute pair is incomplete", emptyAttributes, not(ready));
+    }
+
+    @Test
     void readinessLeavesCountsAndExcludedMeasurementsForAssertions() {
         var ready = TestOpenTelemetrySemanticConventions.hasExpectedHttpMeasurements();
         String invalidCounts = httpMetrics(dataPoint("@default", "/greet/{name}", 2),
