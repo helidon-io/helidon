@@ -375,15 +375,19 @@ class GradlePluginTest {
                         """));
         write("src/test/java/example/ExtraOutputTest.java", """
                 package example;
+
                 import org.junit.jupiter.api.Test;
+
+                import static org.hamcrest.CoreMatchers.is;
+                import static org.hamcrest.MatcherAssert.assertThat;
+
                 public class ExtraOutputTest {
                     @Test
                     void extraClassesAreOnTestRuntimeClasspath() throws Exception {
                         Object main = Class.forName("extra.MainOutput").getMethod("marker").invoke(null);
                         Object test = Class.forName("extra.TestOutput").getMethod("marker").invoke(null);
-                        if (!"extra-main".equals(main) || !"extra-test".equals(test)) {
-                            throw new AssertionError("Unexpected extra class markers: " + main + ", " + test);
-                        }
+                        assertThat("Extra main class marker", main, is("extra-main"));
+                        assertThat("Extra test class marker", test, is("extra-test"));
                     }
                 }
                 """);
@@ -422,9 +426,10 @@ class GradlePluginTest {
         List<Path> tools = classpath("fixture-tool-classpath.txt");
         List<Path> runtime = classpath("fixture-runtime-classpath.txt");
         List<Path> generator = tools.stream().filter(path -> !isGradleArtifact(path)).toList();
-        List<Path> junit = tools.stream().filter(path -> {
+        List<Path> testLibraries = tools.stream().filter(path -> {
             String name = path.getFileName().toString();
-            return name.startsWith("junit-") || name.startsWith("apiguardian-") || name.startsWith("opentest4j-");
+            return name.startsWith("junit-") || name.startsWith("apiguardian-") || name.startsWith("opentest4j-")
+                    || name.startsWith("hamcrest-all-");
         }).toList();
         write("settings.gradle", """
                 rootProject.name = 'application'
@@ -470,7 +475,7 @@ class GradlePluginTest {
                     classpath = files(tasks.named('jar').flatMap { it.archiveFile }) + configurations.runtimeClasspath
                     mainClass = 'example.ApplicationMain'
                 }
-                """.formatted(files(runtime), files(generator), files(generator), files(junit), files(generator)));
+                """.formatted(files(runtime), files(generator), files(generator), files(testLibraries), files(generator)));
         write("library/src/main/java/library/LibraryService.java", """
                 package library;
                 import io.helidon.service.registry.Service;
