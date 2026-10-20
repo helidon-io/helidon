@@ -40,6 +40,8 @@ import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webserver.testing.junit5.Socket;
 
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingMetricExporter;
+import org.hamcrest.FeatureMatcher;
+import org.hamcrest.Matcher;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasArray;
@@ -51,6 +53,7 @@ import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetric
 import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.SOCKET_NAME;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
@@ -128,6 +131,29 @@ class TestOpenTelemetrySemanticConventions {
 
     }
 
+    static Matcher<String> hasExpectedHttpMeasurements() {
+        return allOf(containsString(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME),
+                     new FeatureMatcher<String, List<JsonObject>>(
+                             allOf(hasItem(hasAttributes(allOf(hasEntry(SOCKET_NAME, "@default"),
+                                                               hasEntry(HTTP_ROUTE, "/greet/{name}")))),
+                                   hasItem(hasAttributes(allOf(hasEntry(SOCKET_NAME, "private"),
+                                                               hasEntry(HTTP_ROUTE, "/greet"))))),
+                             "HTTP duration data points for both expected socket/route pairs",
+                             "HTTP duration data points") {
+                         @Override
+                         protected List<JsonObject> featureValueOf(String jsonText) {
+                             return metricsEntries(JsonParser.create(jsonText).readJsonObject()).stream()
+                                     .filter(entry -> entry.stringValue("name")
+                                             .filter(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME::equals)
+                                             .isPresent())
+                                     .flatMap(entry -> entry.objectValue("histogram").orElseThrow()
+                                             .arrayValue("dataPoints").orElseThrow().values().stream())
+                                     .map(JsonValue::asObject)
+                                     .toList();
+                         }
+                     });
+    }
+
     @Test
     void checkAutoMetrics() {
 
@@ -163,8 +189,7 @@ class TestOpenTelemetrySemanticConventions {
             and the timer's count is 1.
              */
 
-            String jsonText =
-                    testLogHandler.lastMessageContaining(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME);
+            String jsonText = testLogHandler.lastMessageMatching(hasExpectedHttpMeasurements());
 
             var root = JsonParser.create(jsonText).readJsonObject();
 

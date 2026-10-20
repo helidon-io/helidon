@@ -79,9 +79,13 @@ class TestLogHandler extends Handler implements AutoCloseable {
     }
 
     String lastMessageContaining(String text) {
-        return messages(hasItem(containsString(text))).stream()
-                .filter(message -> message.contains(text))
+        return lastMessageMatching(containsString(text));
+    }
+
+    String lastMessageMatching(Matcher<? super String> matcher) {
+        return messages(hasItem(matcher)).stream()
+                .filter(matcher::matches)
                 .reduce((_, second) -> second)
-                .orElseThrow(() -> new IllegalStateException("No logged message containing: " + text));
+                .orElseThrow(() -> new IllegalStateException("No logged message matching: " + matcher));
     }
 }
