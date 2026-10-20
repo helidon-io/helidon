@@ -26,6 +26,10 @@
     </parent>
     <artifactId>helidon-service-tests-gradle-plugin</artifactId>
     <name>Helidon Service Tests Gradle Plugin</name>
+    <properties>
+        <published.plugin.repository>${project.build.directory}/it-repo</published.plugin.repository>
+        <published.plugin.repository.prefix>installed</published.plugin.repository.prefix>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>io.helidon.service</groupId>
@@ -34,6 +38,13 @@
         <dependency>
             <groupId>io.helidon.service</groupId>
             <artifactId>helidon-service-gradle-plugin</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>io.helidon.service.gradle.plugin</artifactId>
+            <version>${project.version}</version>
+            <type>pom</type>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -112,6 +123,85 @@
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-invoker-plugin</artifactId>
+                <configuration>
+                    <scope>runtime</scope>
+                    <extraArtifacts>
+                        <extraArtifact>io.helidon.service:io.helidon.service.gradle.plugin:${project.version}:pom</extraArtifact>
+                        <extraArtifact>io.helidon.service:helidon-service-gradle-plugin:${project.version}</extraArtifact>
+                        <extraArtifact>io.helidon.service:helidon-service-application-codegen:${project.version}</extraArtifact>
+                        <extraArtifact>io.helidon.service:helidon-service-codegen:${project.version}</extraArtifact>
+                        <extraArtifact>io.helidon.codegen:helidon-codegen-apt:${project.version}</extraArtifact>
+                        <!-- Gradle parses imported BOM metadata from Helidon's parent POMs even for
+                             unused managed dependencies; Invoker does not stage these imports automatically. -->
+                        <extraArtifact>com.google.protobuf:protobuf-bom:${version.lib.google-protobuf}:pom</extraArtifact>
+                        <extraArtifact>io.grpc:grpc-bom:${version.lib.grpc}:pom</extraArtifact>
+                        <extraArtifact>com.oracle.database.jdbc:ojdbc-bom:${version.lib.ojdbc}:pom</extraArtifact>
+                        <extraArtifact>com.fasterxml.jackson:jackson-bom:${version.lib.jackson}:pom</extraArtifact>
+                        <extraArtifact>io.opentelemetry:opentelemetry-bom:${version.lib.opentelemetry}:pom</extraArtifact>
+                        <extraArtifact>io.prometheus:prometheus-metrics-bom:${version.lib.prometheus}:pom</extraArtifact>
+                        <extraArtifact>org.apache.logging.log4j:log4j-bom:${version.lib.log4j}:pom</extraArtifact>
+                        <extraArtifact>org.slf4j:slf4j-bom:${version.lib.slf4j}:pom</extraArtifact>
+                        <extraArtifact>org.junit:junit-bom:${version.lib.junit}:pom</extraArtifact>
+                        <extraArtifact>io.smallrye.common:smallrye-common-bom:${version.lib.smallrye.common}:pom</extraArtifact>
+                    </extraArtifacts>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>published-plugin-repository</id>
+                        <phase>pre-integration-test</phase>
+                        <goals><goal>install</goal></goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <fixture.version>${project.version}</fixture.version>
+                        <fixture.repository>${published.plugin.repository}</fixture.repository>
+                        <fixture.directory>${project.build.directory}/gradle-it</fixture.directory>
+                    </systemPropertyVariables>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
+    <profiles>
+        <!-- Invoker installs with the enclosing Maven session's repository layout. Expose its
+             installed-artifact root to Gradle without changing that session or its repositories. -->
+        <profile>
+            <id>published-plugin-split-repository</id>
+            <activation>
+                <property>
+                    <name>aether.enhancedLocalRepository.split</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <properties>
+                <published.plugin.repository>${project.build.directory}/it-repo/${published.plugin.repository.prefix}</published.plugin.repository>
+            </properties>
+        </profile>
+        <profile>
+            <id>published-plugin-repository-prefix</id>
+            <activation>
+                <property>
+                    <name>aether.enhancedLocalRepository.localPrefix</name>
+                </property>
+            </activation>
+            <properties>
+                <published.plugin.repository.prefix>${aether.enhancedLocalRepository.localPrefix}</published.plugin.repository.prefix>
+            </properties>
+        </profile>
+    </profiles>
 </project>

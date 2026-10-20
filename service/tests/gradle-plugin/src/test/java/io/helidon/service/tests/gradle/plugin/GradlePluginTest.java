@@ -20,10 +20,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
@@ -43,8 +41,6 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class GradlePluginTest {
-    private static final String GRADLE_VERSION = "9.8.1";
-
     private Path directory;
 
     @BeforeEach
@@ -54,45 +50,7 @@ class GradlePluginTest {
 
     @AfterEach
     void stopFixtureDaemons() throws Exception {
-        Path registry = directory.resolve("test-kit/test-kit-daemon");
-        if (!Files.isDirectory(registry)) {
-            return;
-        }
-        Path installation = Path.of(Files.readString(directory.resolve("gradle-installation.txt")).trim());
-        Path launcher;
-        try (var libraries = Files.list(installation.resolve("lib"))) {
-            launcher = libraries.filter(path -> path.getFileName().toString().startsWith("gradle-gradle-cli-main-")
-                            && path.toString().endsWith(".jar"))
-                    .findFirst().orElseThrow();
-        }
-        List<Long> daemonPids;
-        try (var logs = Files.walk(registry)) {
-            daemonPids = logs.map(path -> path.getFileName().toString())
-                    .filter(name -> name.matches("daemon-[0-9]+\\.out\\.log"))
-                    .map(name -> Long.parseLong(name.substring(7, name.length() - 8)))
-                    .toList();
-        }
-        Path output = directory.resolve("daemon-stop.log");
-        String executable = System.getProperty("os.name").startsWith("Windows") ? "java.exe" : "java";
-        var process = new ProcessBuilder(Path.of(System.getProperty("java.home"), "bin", executable).toString(),
-                                         "-Dorg.gradle.daemon.registry.base=" + registry,
-                                         "-jar", launcher.toString(),
-                                         "--stop", "--gradle-user-home", directory.resolve("test-kit").toString())
-                .redirectErrorStream(true)
-                .redirectOutput(output.toFile())
-                .start();
-        if (!process.waitFor(30, TimeUnit.SECONDS)) {
-            process.destroyForcibly();
-            process.waitFor(30, TimeUnit.SECONDS);
-            throw new AssertionError("Timed out stopping fixture Gradle daemons: " + Files.readString(output));
-        }
-        assertThat(Files.readString(output), process.exitValue(), is(0));
-        for (long pid : daemonPids) {
-            var daemon = ProcessHandle.of(pid);
-            if (daemon.isPresent()) {
-                daemon.get().onExit().get(30, TimeUnit.SECONDS);
-            }
-        }
+        GradleFixtureSupport.stopDaemons(directory);
     }
 
     @Test
@@ -629,20 +587,12 @@ class GradlePluginTest {
     }
 
     private GradleRunner runner(String... tasks) throws IOException {
-        var arguments = new ArrayList<>(List.of(tasks));
-        arguments.addAll(List.of("--stacktrace", "--offline", "--console=plain", "--parallel"));
-        var runner = GradleRunner.create()
-                .withProjectDir(directory.toFile())
-                .withTestKitDir(directory.resolve("test-kit").toFile())
+        return GradleFixtureSupport.runner(directory, tasks)
                 .withPluginClasspath(classpath("fixture-tool-classpath.txt").stream()
                                              .filter(path -> path.getFileName().toString()
                                                      .startsWith("helidon-service-gradle-plugin-"))
                                              .map(Path::toFile)
-                                             .toList())
-                .withArguments(arguments);
-        String installation = System.getProperty("gradle.home");
-        return installation == null ? runner.withGradleVersion(GRADLE_VERSION)
-                : runner.withGradleInstallation(new File(installation));
+                                             .toList());
     }
 
     private void write(String name, String contents) throws IOException {
