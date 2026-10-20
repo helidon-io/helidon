@@ -60,7 +60,6 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -153,6 +152,19 @@ class TestOpenTelemetrySemanticConventions {
                      });
     }
 
+    static void assertExpectedHttpMeasurementValues(List<JsonObject> dataPoints) {
+        assertThat("HTTP histogram data point for @default /greet/{name}", dataPoints,
+                   hasItem(allOf(hasString("count", is("1")),
+                                 hasDouble("sum", greaterThan(0.0D)),
+                                 hasAttributes(allOf(hasEntry(SOCKET_NAME, "@default"),
+                                                     hasEntry(HTTP_ROUTE, "/greet/{name}"))))));
+        assertThat("HTTP histogram data point for private /greet", dataPoints,
+                   hasItem(allOf(hasString("count", is("1")),
+                                 hasDouble("sum", greaterThan(0.0D)),
+                                 hasAttributes(allOf(hasEntry(SOCKET_NAME, "private"),
+                                                     hasEntry(HTTP_ROUTE, "/greet"))))));
+    }
+
     @Test
     void checkAutoMetrics() {
 
@@ -216,10 +228,7 @@ class TestOpenTelemetrySemanticConventions {
 
                 assertThat("Metrics entry", metricsEntry,
                            hasString("name", is(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME)));
-                assertThat("HTTP histogram data points", dataPoints,
-                           hasItem(allOf(hasString("count", is("1")),
-                                         hasDouble("sum", greaterThan(0.0D)),
-                                         hasAttributes(hasEntry(is(HTTP_ROUTE), notNullValue())))));
+                assertExpectedHttpMeasurementValues(dataPoints);
 
 
                 dataPoints.forEach(dataPoint -> {

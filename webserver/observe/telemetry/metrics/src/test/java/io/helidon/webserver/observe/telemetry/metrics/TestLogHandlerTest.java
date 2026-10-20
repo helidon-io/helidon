@@ -21,12 +21,16 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import io.helidon.json.JsonParser;
+import io.helidon.json.JsonValue;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TestLogHandlerTest {
 
@@ -104,6 +108,45 @@ class TestLogHandlerTest {
         assertThat("Excluded measurements must reach the exclusion assertions", excludedMeasurement, ready);
     }
 
+    @Test
+    void acceptsExpectedMeasurementValues() {
+        assertExpectedHttpMeasurementValues(dataPoint("@default", "/greet/{name}", 1),
+                                            dataPoint("private", "/greet", 1));
+    }
+
+    @Test
+    void rejectsInvalidCountForEitherSocket() {
+        assertThrows(AssertionError.class,
+                     () -> assertExpectedHttpMeasurementValues(dataPoint("@default", "/greet/{name}", 1),
+                                                               dataPoint("private", "/greet", 2)));
+        assertThrows(AssertionError.class,
+                     () -> assertExpectedHttpMeasurementValues(dataPoint("@default", "/greet/{name}", 2),
+                                                               dataPoint("private", "/greet", 1)));
+    }
+
+    @Test
+    void rejectsNonPositiveSumForEitherSocket() {
+        for (double sum : List.of(0.0D, -0.01D)) {
+            assertThrows(AssertionError.class,
+                         () -> assertExpectedHttpMeasurementValues(dataPoint("@default", "/greet/{name}", 1),
+                                                                   dataPoint("private", "/greet", 1, sum)));
+            assertThrows(AssertionError.class,
+                         () -> assertExpectedHttpMeasurementValues(dataPoint("@default", "/greet/{name}", 1, sum),
+                                                                   dataPoint("private", "/greet", 1)));
+        }
+    }
+
+    private static void assertExpectedHttpMeasurementValues(String... dataPoints) {
+        var metric = TestOpenTelemetrySemanticConventions.metricsEntries(
+                JsonParser.create(httpMetrics(dataPoints)).readJsonObject()).getFirst();
+        var actual = metric.objectValue("histogram").orElseThrow()
+                .arrayValue("dataPoints").orElseThrow().values().stream()
+                .map(JsonValue::asObject)
+                .toList();
+
+        TestOpenTelemetrySemanticConventions.assertExpectedHttpMeasurementValues(actual);
+    }
+
     private static String httpMetrics(String... dataPoints) {
         return """
                 {"scopeMetrics":[{"metrics":[{"name":"http.server.request.duration",
@@ -112,10 +155,14 @@ class TestLogHandlerTest {
     }
 
     private static String dataPoint(String socket, String route, int count) {
+        return dataPoint(socket, route, count, 0.01D);
+    }
+
+    private static String dataPoint(String socket, String route, int count, double sum) {
         return """
-                {"count":"%d","sum":0.01,"attributes":[
+                {"count":"%d","sum":%s,"attributes":[
                   {"key":"socket.name","value":{"stringValue":"%s"}},
                   {"key":"http.route","value":{"stringValue":"%s"}}]}
-                """.formatted(count, socket, route);
+                """.formatted(count, sum, socket, route);
     }
 }
