@@ -51,7 +51,6 @@ import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetric
 import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.SOCKET_NAME;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
@@ -164,10 +163,10 @@ class TestOpenTelemetrySemanticConventions {
             and the timer's count is 1.
              */
 
-            List<String> jsonText =
-                    testLogHandler.messages(hasItem(containsString(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME)));
+            String jsonText =
+                    testLogHandler.lastMessageContaining(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME);
 
-            var root = JsonParser.create(jsonText.getFirst()).readJsonObject();
+            var root = JsonParser.create(jsonText).readJsonObject();
 
             Set<String> routesSeen = new HashSet<>();
             var metricsEntries = metricsEntries(root);
@@ -272,8 +271,8 @@ class TestOpenTelemetrySemanticConventions {
             }
 
             var beforeJsonText =
-                    testLogHandler.messages(hasItem(containsString(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME)));
-            var beforeMeasurement = personalizedGreetingMeasurement(beforeJsonText);
+                    testLogHandler.lastMessageContaining(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME);
+            var beforeMeasurement = personalizedGreetingMeasurement(JsonParser.create(beforeJsonText).readJsonObject());
 
             var startTime = System.nanoTime();
             try (Http1ClientResponse defaultResponse = defaultClient.get("/greet/Joe")
@@ -284,8 +283,8 @@ class TestOpenTelemetrySemanticConventions {
             var elapsedTimeFromClient = System.nanoTime() - startTime;
 
             var afterJsonText =
-                    testLogHandler.messages(hasItem(containsString(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME)));
-            var afterMeasurement = personalizedGreetingMeasurement(afterJsonText);
+                    testLogHandler.lastMessageContaining(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME);
+            var afterMeasurement = personalizedGreetingMeasurement(JsonParser.create(afterJsonText).readJsonObject());
 
             var personalizedGreetingCount = afterMeasurement.count() - beforeMeasurement.count();
             var personalizedGreetingTimeNanos = afterMeasurement.timeNanos() - beforeMeasurement.timeNanos();
@@ -295,15 +294,6 @@ class TestOpenTelemetrySemanticConventions {
                        personalizedGreetingTimeNanos,
                        allOf(greaterThan(0L), lessThanOrEqualTo(elapsedTimeFromClient)));
         }
-    }
-
-    private static PersonalizedGreetingMeasurement personalizedGreetingMeasurement(List<String> jsonText) {
-        var timerJson = jsonText.stream()
-                .filter(it -> it.contains(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME))
-                .reduce((first, second) -> second)
-                .orElseThrow();
-
-        return personalizedGreetingMeasurement(JsonParser.create(timerJson).readJsonObject());
     }
 
     private static PersonalizedGreetingMeasurement personalizedGreetingMeasurement(JsonObject root) {

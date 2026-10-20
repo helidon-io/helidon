@@ -82,12 +82,11 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
 
     @Service.Inject
     OpenTelemetryMetricsHttpSemanticConventions(OpenTelemetry openTelemetry, Config config) {
-        HelidonOpenTelemetry helidonOpenTelemetry = HelidonOpenTelemetry.builder()
-                .config(config.get(HelidonOpenTelemetry.CONFIG_KEY))
-                .global(false) // we just need the service name; we do not need to assign the global instance
-                .build();
+        String serviceName = config.get(HelidonOpenTelemetry.CONFIG_KEY).get("service")
+                .asString()
+                .orElseThrow(() -> new IllegalStateException("Missing required telemetry.service setting"));
 
-        httpRequestDuration = httpRequestDuration(openTelemetry.meterBuilder(helidonOpenTelemetry.prototype().service())
+        httpRequestDuration = httpRequestDuration(openTelemetry.meterBuilder(serviceName)
                 .build());
     }
 
