@@ -55,7 +55,7 @@ Import Helidon Dependency Management:
     <dependency>
       <groupId>io.helidon</groupId>
       <artifactId>helidon-dependencies</artifactId>
-      <version>27.0.1-SNAPSHOT</version>
+      <version>27.0.1</version>
       <type>pom</type>
       <scope>import</scope>
     </dependency>
