@@ -1301,7 +1301,13 @@ lowest.
 
 When the service manager shuts down it destroys services in the opposite order,
 from highest run-level value to lowest and, within a single run level, from
-lowest weight to highest.
+lowest weight to highest. Direct injection dependencies take precedence over
+this ordering: a service is destroyed before its dependencies within the same
+scope, so it can use them to release resources in its `@Service.PreDestroy`
+method. This also applies to dependencies without a run level and dependencies
+activated outside the selected run levels. Injecting a `Supplier` does not
+establish this cleanup ordering; directly inject dependencies that must remain
+available during cleanup.
 
 We can also add methods which are executed after service construction and before
 service destruction, respectively.

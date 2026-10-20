@@ -82,8 +82,18 @@ class ServiceManager<T> {
     }
 
     Optional<List<QualifiedInstance<T>>> instances(Lookup lookup) {
+        return instances(lookup, null);
+    }
+
+    Optional<List<QualifiedInstance<T>>> instances(Lookup lookup, ServiceInfo dependent) {
         ScopedRegistry scopedRegistry = scopeSupplier.get().registry();
         try {
+            if (dependent != null
+                    && dependent.scope().equals(provider.descriptor().scope())
+                    && lookup.dependency().map(it -> !it.isSupplier()).orElse(true)
+                    && scopedRegistry instanceof ScopedRegistryImpl scopedRegistryImpl) {
+                return scopedRegistryImpl.instances(provider.descriptor(), activatorSupplier, lookup, dependent);
+            }
             return scopedRegistry.activator(provider.descriptor(), activatorSupplier).instances(lookup);
         } catch (ScopeNotActiveException e) {
             // Older generated lifecycle callbacks resolve injected suppliers while their owning scope is shutting down.
@@ -104,6 +114,22 @@ class ServiceManager<T> {
                 }
             }
             throw e;
+        }
+    }
+
+    void dependency(Lookup lookup, ServiceInfo dependent) {
+        if (dependent != null
+                && dependent.scope().equals(provider.descriptor().scope())
+                && lookup.dependency().map(it -> !it.isSupplier()).orElse(true)
+                && scopeSupplier.get().registry() instanceof ScopedRegistryImpl scopedRegistry) {
+            scopedRegistry.dependency(provider.descriptor(), dependent);
+        }
+    }
+
+    void dependency(ServiceInstance<?> instance, Lookup lookup, ServiceInfo dependent) {
+        if (instance instanceof ServiceInstanceImpl<?> serviceInstance
+                && serviceInstance.descriptor == provider.descriptor()) {
+            dependency(lookup, dependent);
         }
     }
 
