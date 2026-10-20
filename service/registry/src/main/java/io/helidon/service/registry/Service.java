@@ -205,6 +205,10 @@ public final class Service {
      * This also implies that instances that are NOT created within a scope cannot have their pre-destroy methods
      * invoked, as we do not control their lifecycle.
      * <p>
+     * A pre-destroy method is intended to release resources held by the service instance.
+     * Within a scope, directly injected dependencies remain available until the dependent service's cleanup completes.
+     * Dependency ordering takes precedence over run levels and weights during shutdown.
+     * <p>
      * The method must not have any parameters and must be accessible (not {@code private}).
      */
     @Documented

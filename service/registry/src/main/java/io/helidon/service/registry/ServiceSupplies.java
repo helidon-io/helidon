@@ -34,13 +34,13 @@ final class ServiceSupplies {
     }
 
     private static <T> Optional<ServiceInstance<T>> oneInstance(Lookup lookup,
-                                                                List<ServiceManager<T>> serviceManagers) {
+                                                                List<ServiceManager<T>> serviceManagers,
+                                                                ServiceInfo dependent) {
         // we may have more than one service manager, as the first one(s) may not provide a value
         traceLookup(lookup, "explode, filter, and sort");
 
         for (ServiceManager<T> serviceManager : serviceManagers) {
-            Optional<ServiceInstance<T>> thisManager = serviceManager.activator()
-                    .instances(lookup)
+            Optional<ServiceInstance<T>> thisManager = serviceManager.instances(lookup, dependent)
                     .stream()
                     .flatMap(List::stream)
                     .map(it -> serviceManager.registryInstance(lookup, it))
@@ -57,15 +57,14 @@ final class ServiceSupplies {
     }
 
     private static <T> List<ServiceInstance<T>> explodeFilterAndSort(Lookup lookup,
-                                                                     List<ServiceManager<T>> serviceManagers) {
-        // this method is called when we resolve instances, so we can safely assume any scope is active
+                                                                     List<ServiceManager<T>> serviceManagers,
+                                                                     ServiceInfo dependent) {
         traceLookup(lookup, "explode, filter, and sort");
         List<ServiceInstance<T>> result = new ArrayList<>();
 
         for (ServiceManager<T> serviceManager : serviceManagers) {
             List<ServiceInstance<T>> thisManager = new ArrayList<>();
-            serviceManager.activator()
-                    .instances(lookup)
+            serviceManager.instances(lookup, dependent)
                     .stream()
                     .flatMap(List::stream)
                     .map(it -> serviceManager.registryInstance(lookup, it))
@@ -108,10 +107,12 @@ final class ServiceSupplies {
     private static class ServiceSupplyBase<T> {
         private final Lookup lookup;
         private final List<ServiceManager<T>> managers;
+        private final ServiceInfo dependent;
 
-        private ServiceSupplyBase(Lookup lookup, List<ServiceManager<T>> managers) {
+        private ServiceSupplyBase(Lookup lookup, List<ServiceManager<T>> managers, ServiceInfo dependent) {
             this.managers = managers;
             this.lookup = lookup;
+            this.dependent = dependent;
         }
 
         @Override
@@ -128,15 +129,27 @@ final class ServiceSupplies {
         private final Supplier<ServiceInstance<T>> value;
 
         ServiceInstanceSupply(Lookup lookup, List<ServiceManager<T>> managers) {
-            super(lookup, managers);
+            this(lookup, managers, null);
+        }
+
+        ServiceInstanceSupply(Lookup lookup, List<ServiceManager<T>> managers, ServiceInfo dependent) {
+            super(lookup, managers, dependent);
             Supplier<ServiceInstance<T>> supplier;
 
-            supplier = () -> explodeFilterAndSort(lookup, managers)
-                    .stream()
-                    .findFirst()
-                    .orElseThrow(() -> new ServiceRegistryException(
-                            "Neither of matching services could provide a value. Descriptors: " + managers + ", "
-                                    + "lookup: " + super.lookup));
+            supplier = () -> {
+                ServiceInstance<T> instance = explodeFilterAndSort(lookup, managers, null)
+                        .stream()
+                        .findFirst()
+                        .orElseThrow(() -> new ServiceRegistryException(
+                                "Neither of matching services could provide a value. Descriptors: " + managers + ", "
+                                        + "lookup: " + super.lookup));
+                if (dependent != null) {
+                    for (ServiceManager<T> manager : managers) {
+                        manager.dependency(instance, lookup, dependent);
+                    }
+                }
+                return instance;
+            };
 
             this.value = supplier;
         }
@@ -152,11 +165,15 @@ final class ServiceSupplies {
 
         // supply a single instance at runtime based on the manager
         ServiceSupply(Lookup lookup, List<ServiceManager<T>> managers) {
-            super(lookup, managers);
+            this(lookup, managers, null);
+        }
+
+        ServiceSupply(Lookup lookup, List<ServiceManager<T>> managers, ServiceInfo dependent) {
+            super(lookup, managers, dependent);
 
             Supplier<T> supplier;
 
-            supplier = () -> oneInstance(lookup, managers)
+            supplier = () -> oneInstance(lookup, managers, dependent)
                     .map(ServiceInstance::get)
                     .orElseThrow(() -> new ServiceRegistryException(
                             "Neither of matching services could provide a value. Descriptors: " + managers + ", "
@@ -174,12 +191,16 @@ final class ServiceSupplies {
     static class ServiceSupplyOptional<T> extends ServiceSupplyBase<T> implements Supplier<Optional<T>> {
         // supply a single instance at runtime based on the manager
         ServiceSupplyOptional(Lookup lookup, List<ServiceManager<T>> managers) {
-            super(lookup, managers);
+            this(lookup, managers, null);
+        }
+
+        ServiceSupplyOptional(Lookup lookup, List<ServiceManager<T>> managers, ServiceInfo dependent) {
+            super(lookup, managers, dependent);
         }
 
         @Override
         public Optional<T> get() {
-            Optional<ServiceInstance<T>> first = oneInstance(super.lookup, super.managers);
+            Optional<ServiceInstance<T>> first = oneInstance(super.lookup, super.managers, super.dependent);
             return first.map(Supplier::get);
         }
     }
@@ -187,24 +208,32 @@ final class ServiceSupplies {
     static class ServiceInstanceSupplyOptional<T> extends ServiceSupplyBase<T> implements Supplier<Optional<ServiceInstance<T>>> {
         // supply a single instance at runtime based on the manager
         ServiceInstanceSupplyOptional(Lookup lookup, List<ServiceManager<T>> managers) {
-            super(lookup, managers);
+            this(lookup, managers, null);
+        }
+
+        ServiceInstanceSupplyOptional(Lookup lookup, List<ServiceManager<T>> managers, ServiceInfo dependent) {
+            super(lookup, managers, dependent);
         }
 
         @Override
         public Optional<ServiceInstance<T>> get() {
-            return oneInstance(super.lookup, super.managers);
+            return oneInstance(super.lookup, super.managers, super.dependent);
         }
     }
 
     static class ServiceSupplyList<T> extends ServiceSupplyBase<T> implements Supplier<List<T>> {
         // supply a single instance at runtime based on the manager
         ServiceSupplyList(Lookup lookup, List<ServiceManager<T>> managers) {
-            super(lookup, managers);
+            this(lookup, managers, null);
+        }
+
+        ServiceSupplyList(Lookup lookup, List<ServiceManager<T>> managers, ServiceInfo dependent) {
+            super(lookup, managers, dependent);
         }
 
         @Override
         public List<T> get() {
-            Stream<ServiceInstance<T>> stream = explodeFilterAndSort(super.lookup, super.managers)
+            Stream<ServiceInstance<T>> stream = explodeFilterAndSort(super.lookup, super.managers, super.dependent)
                     .stream();
 
             return stream.map(Supplier::get)
@@ -215,12 +244,16 @@ final class ServiceSupplies {
     static class ServiceInstanceSupplyList<T> extends ServiceSupplyBase<T> implements Supplier<List<ServiceInstance<T>>> {
         // supply a single instance at runtime based on the manager
         ServiceInstanceSupplyList(Lookup lookup, List<ServiceManager<T>> managers) {
-            super(lookup, managers);
+            this(lookup, managers, null);
+        }
+
+        ServiceInstanceSupplyList(Lookup lookup, List<ServiceManager<T>> managers, ServiceInfo dependent) {
+            super(lookup, managers, dependent);
         }
 
         @Override
         public List<ServiceInstance<T>> get() {
-            return explodeFilterAndSort(super.lookup, super.managers)
+            return explodeFilterAndSort(super.lookup, super.managers, super.dependent)
                     .stream()
                     .collect(Collectors.toUnmodifiableList());
         }
