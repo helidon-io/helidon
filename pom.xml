@@ -65,6 +65,8 @@
         <version.lib.asm>9.11.1</version.lib.asm>
         <version.lib.checkstyle>14.1.0</version.lib.checkstyle>
         <version.lib.handlebars>4.5.5</version.lib.handlebars>
+        <!-- Gradle plugin build and test inputs. -->
+        <version.lib.gradle>8.11.1</version.lib.gradle>
         <!-- Persistence providers used only by tests. -->
         <version.lib.eclipselink>5.0.2</version.lib.eclipselink>
         <version.lib.hibernate.family>7.4</version.lib.hibernate.family>
@@ -911,6 +913,17 @@
                 <artifactId>maven-project</artifactId>
                 <version>${version.lib.maven.plugin.project}</version>
                 <scope>provided</scope>
+            </dependency>
+            <!-- Gradle plugin build and test inputs, excluded from application dependency management. -->
+            <dependency>
+                <groupId>dev.gradleplugins</groupId>
+                <artifactId>gradle-api</artifactId>
+                <version>${version.lib.gradle}</version>
+            </dependency>
+            <dependency>
+                <groupId>dev.gradleplugins</groupId>
+                <artifactId>gradle-test-kit</artifactId>
+                <version>${version.lib.gradle}</version>
             </dependency>
             <!-- For JWE testing -->
             <dependency>
