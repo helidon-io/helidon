@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.data.jakarta.persistence;
 
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
+import java.util.Locale;
 import java.util.Map;
 
 import io.helidon.common.Functions;
@@ -85,8 +86,14 @@ class JpaRepositoryExecutorImpl implements JpaRepositoryExecutor {
     public <R, E extends Throwable> R call(Functions.CheckedFunction<EntityManager, R, E> task) {
         // Jakarta Persistence 3.2 compliant code disabled, using Jakarta Persistence 3.1 workaround
         if (LOGGER.isLoggable(Level.DEBUG)) {
-            for (Map.Entry<String, Object> entry : factory.getProperties().entrySet()) {
-                LOGGER.log(Level.DEBUG, String.format("Property %s :: %s", entry.getKey(), entry.getValue()));
+            for (Map.Entry<String, Object> mapEntry : factory.getProperties().entrySet()) {
+                String key = mapEntry.getKey();
+                var lower = key.toLowerCase(Locale.ROOT);
+                if (lower.contains("secret") || lower.contains("password")) {
+                    LOGGER.log(Level.DEBUG, String.format("Property %s :: <redacted>", key));
+                } else {
+                    LOGGER.log(Level.DEBUG, String.format("Property %s :: %s", key, mapEntry.getValue()));
+                }
             }
         }
         if (isTransactionActive()) {
