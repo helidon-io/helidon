@@ -138,6 +138,31 @@ class GradlePluginTest {
     }
 
     @Test
+    void testBindingsCanBeGeneratedWithoutApplicationBindings() throws IOException {
+        fixture();
+        write("build.gradle", Files.readString(directory.resolve("build.gradle")) + """
+
+                helidonService {
+                    generateBinding = false
+                    generateMain = false
+                }
+                """);
+
+        BuildResult result = runner("test").build();
+        assertTask(result, ":generateTestApplicationBindings", TaskOutcome.SUCCESS);
+        assertTask(result, ":test", TaskOutcome.SUCCESS);
+        assertThat(Files.readString(directory.resolve("build/test-results/test/TEST-example.BindingTest.xml")),
+                   containsString("tests=\"1\""));
+        assertThat(Files.exists(directory.resolve("build/generated/sources/helidon/main/example/ApplicationBinding.java")),
+                   is(false));
+        String testBinding = Files.readString(directory.resolve(
+                "build/generated/sources/helidon/test/example/TestApplicationBinding.java"));
+        assertThat(testBinding, containsString("TestOnly__ServiceDescriptor"));
+        assertThat(testBinding, containsString("Greeting__ServiceDescriptor"));
+        assertThat(testBinding, containsString("LibraryService__ServiceDescriptor"));
+    }
+
+    @Test
     void modularApplicationBindingsArePackagedAndRun() throws IOException {
         fixture();
         write("library/src/main/java/module-info.java", """

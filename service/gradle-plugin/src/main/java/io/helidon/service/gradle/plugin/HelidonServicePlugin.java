@@ -94,6 +94,7 @@ public final class HelidonServicePlugin implements Plugin<Project> {
         tests.configure(task -> {
             task.getApplicationClasspath().from(main.getOutput());
             task.getGenerateApplication().convention(extension.getGenerateTestBinding());
+            task.getOptions().getGenerateBinding().convention(extension.getGenerateTestBinding());
             task.getOptions().getGenerateMain().set(false);
             task.getOptions().getBindingClassName().convention(extension.getTestBindingClassName());
             task.getOptions().getPackageName().convention(extension.getTestPackageName());
