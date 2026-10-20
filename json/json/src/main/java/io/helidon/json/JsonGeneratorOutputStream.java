@@ -190,7 +190,7 @@ class JsonGeneratorOutputStream extends JsonGeneratorBase {
             buffer[index++] = (byte) 'y';
             buffer[index++] = (byte) '"';
             return;
-        } else if (value == 0.0) {
+        } else if (Float.floatToRawIntBits(value) == 0) {
             ensureCapacity(3);
             buffer[index++] = (byte) '0';
             buffer[index++] = (byte) '.';
@@ -238,7 +238,7 @@ class JsonGeneratorOutputStream extends JsonGeneratorBase {
             buffer[index++] = (byte) 'y';
             buffer[index++] = (byte) '"';
             return;
-        } else if (value == 0.0) {
+        } else if (Double.doubleToRawLongBits(value) == 0L) {
             ensureCapacity(3);
             buffer[index++] = (byte) '0';
             buffer[index++] = (byte) '.';
