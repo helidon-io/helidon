@@ -20,8 +20,12 @@ import java.nio.charset.StandardCharsets;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.Map;
 import java.util.Optional;
+
+import javax.crypto.Cipher;
 
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
@@ -38,6 +42,7 @@ import com.nimbusds.jose.JWEObject;
 import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.crypto.RSADecrypter;
 import com.nimbusds.jose.crypto.RSAEncrypter;
+import com.nimbusds.jose.util.Base64URL;
 import com.nimbusds.jwt.SignedJWT;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -143,6 +148,116 @@ public class EncryptedJwtTest {
         SignedJwt decryptedTwo = encryptedJwt2.decrypt(jwkKeys);
 
         assertThat(decryptedOne.headerJson(), is(decryptedTwo.headerJson()));
+    }
+
+    @Test
+    void testCbcHmacRejectsModifiedProtectedHeaderRepresentation() {
+        Base64.Decoder decoder = Base64.getUrlDecoder();
+        Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
+        EncryptedJwt encryptedJwt = builder(signedJwt)
+                .jwks(jwkKeys, "RS_512")
+                .algorithm(SupportedAlgorithm.RSA_OAEP)
+                .encryption(SupportedEncryption.A128CBC_HS256)
+                .build();
+        String[] tokenParts = encryptedJwt.token().split("\\.", -1);
+        String protectedHeader = new String(decoder.decode(tokenParts[0]), StandardCharsets.UTF_8);
+        tokenParts[0] = encoder.encodeToString((" " + protectedHeader).getBytes(StandardCharsets.UTF_8));
+
+        JwtException exception = assertThrows(JwtException.class,
+                                              () -> parseToken(String.join(".", tokenParts)).decrypt(jwkKeys));
+        assertThat(exception.getMessage(), containsString("HMAC signature does not match"));
+    }
+
+    @Test
+    void testNimbusProtectedHeaderEncodingIsPreserved() throws ParseException, JOSEException {
+        JwkRSA jwk = (JwkRSA) jwkKeys.forKeyId("RS_512").orElseThrow();
+        RSAPublicKey publicKey = (RSAPublicKey) jwk.publicKey();
+        Payload payload = new Payload(SignedJWT.parse(signedJwt.tokenContent()));
+        for (SupportedEncryption encryption : SupportedEncryption.values()) {
+            String headerJson = " {\"enc\":\"" + encryption
+                    + "\", \"alg\":\"RSA-OAEP-256\", \"kid\":\"RS_512\", \"cty\":\"JWT\"} ";
+            Base64URL encodedHeader = Base64URL.encode(headerJson);
+            JWEObject jweObject = new JWEObject(JWEHeader.parse(encodedHeader), payload);
+            jweObject.encrypt(new RSAEncrypter(publicKey));
+            String token = jweObject.serialize();
+            assertThat(token.split("\\.", -1)[0], is(encodedHeader.toString()));
+
+            SignedJwt decrypted = parseToken(token).decrypt(jwk);
+            assertThat(encryption.toString(), decrypted.tokenContent(), is(signedJwt.tokenContent()));
+
+            JwtHeaders headers = JwtHeaders.parseToken(token);
+            SignedJwt decryptedWithHeaders = parseToken(headers, token).decrypt(jwk);
+            assertThat(encryption.toString(), decryptedWithHeaders.tokenContent(), is(signedJwt.tokenContent()));
+        }
+    }
+
+    @Test
+    void testPreparsedHeadersCannotChangeContentType() {
+        for (SupportedEncryption encryption : SupportedEncryption.values()) {
+            EncryptedJwt encryptedJwt = builder(signedJwt)
+                    .jwks(jwkKeys, "RS_512")
+                    .encryption(encryption)
+                    .build();
+            JwtHeaders headers = JwtHeaders.builder()
+                    .algorithm(SupportedAlgorithm.RSA_OAEP.toString())
+                    .encryption(encryption.toString())
+                    .keyId("RS_512")
+                    .contentType("text/plain")
+                    .build();
+
+            JwtException exception = assertThrows(JwtException.class,
+                                                  () -> parseToken(headers, encryptedJwt.token()).decrypt(jwkKeys),
+                                                  encryption.toString());
+            assertThat(exception.getMessage(), is("Provided JWT header does not match the token protected header"));
+        }
+    }
+
+    @Test
+    void testPreparsedHeadersCannotAddClaims() {
+        EncryptedJwt encryptedJwt = builder(signedJwt).jwks(jwkKeys, "RS_512").build();
+        JwtHeaders headers = JwtHeaders.builder()
+                .algorithm(SupportedAlgorithm.RSA_OAEP.toString())
+                .encryption(SupportedEncryption.A256GCM.toString())
+                .keyId("RS_512")
+                .contentType("JWT")
+                .addHeaderClaim("custom", "unauthenticated")
+                .build();
+
+        JwtException exception = assertThrows(JwtException.class,
+                                              () -> parseToken(headers, encryptedJwt.token()).decrypt(jwkKeys));
+        assertThat(exception.getMessage(), is("Provided JWT header does not match the token protected header"));
+    }
+
+    @Test
+    void testCbcHmacRejectsInvalidContentEncryptionKeyLengths() throws Exception {
+        Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
+        JwkRSA jwk = (JwkRSA) jwkKeys.forKeyId("RS_512").orElseThrow();
+        Map<SupportedEncryption, Integer> keyLengths = Map.of(SupportedEncryption.A128CBC_HS256, 32,
+                                                              SupportedEncryption.A192CBC_HS384, 48,
+                                                              SupportedEncryption.A256CBC_HS512, 64);
+        for (Map.Entry<SupportedEncryption, Integer> entry : keyLengths.entrySet()) {
+            EncryptedJwt encryptedJwt = builder(signedJwt)
+                    .jwk(jwk)
+                    .algorithm(SupportedAlgorithm.RSA_OAEP)
+                    .encryption(entry.getKey())
+                    .build();
+            String[] tokenParts = encryptedJwt.token().split("\\.", -1);
+            Cipher rsaCipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-1AndMGF1Padding");
+            rsaCipher.init(Cipher.DECRYPT_MODE, jwk.privateKey().orElseThrow());
+            byte[] contentEncryptionKey = rsaCipher.doFinal(encryptedJwt.encryptedKey());
+            int expectedKeyLength = entry.getValue();
+
+            for (int keyLength : new int[] {expectedKeyLength - 1, expectedKeyLength + 1}) {
+                Cipher cipher = Cipher.getInstance("RSA/ECB/OAEPWithSHA-1AndMGF1Padding");
+                cipher.init(Cipher.ENCRYPT_MODE, jwk.publicKey());
+                tokenParts[1] = encoder.encodeToString(cipher.doFinal(Arrays.copyOf(contentEncryptionKey, keyLength)));
+
+                JwtException exception = assertThrows(JwtException.class,
+                                                      () -> parseToken(String.join(".", tokenParts)).decrypt(jwk),
+                                                      keyLength + "-byte content encryption key");
+                assertThat(exception.getMessage(), containsString("Invalid content encryption key length"));
+            }
+        }
     }
 
     @Test
