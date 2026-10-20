@@ -31,6 +31,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
 import io.helidon.common.types.TypeName;
+import io.helidon.service.registry.Service.QualifiedInstance;
 
 /**
  * Services for a specific scope.
