@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,6 +63,7 @@ class LoomServer implements WebServer, Resumable {
     private final Context context;
     private final WebServerConfig serverConfig;
     private final boolean registerShutdownHook;
+    private final Timer idleConnectionTimer;
 
     private volatile HelidonShutdownHandler shutdownHandler;
     private volatile List<ListenerFuture> startFutures;
@@ -98,7 +99,7 @@ class LoomServer implements WebServer, Resumable {
             featureContext.setUpFeature(feature);
         }
 
-        Timer idleConnectionTimer = new Timer("helidon-idle-connection-timer", true);
+        this.idleConnectionTimer = new Timer("helidon-idle-connection-timer", true);
         Map<String, ServerListener> listenerMap = new HashMap<>();
         sockets.forEach((name, socketConfig) -> {
             Router socketRouter = featureContext.router(name);
@@ -241,6 +242,10 @@ class LoomServer implements WebServer, Resumable {
         running.set(false);
 
         LOGGER.log(System.Logger.Level.INFO, "Helidon WebServer stopped all channels.");
+        // The idle-connection timer is owned by this server instance: stopping the server must
+        // also stop its timer. cancel() is idempotent; the JDK implementation clears the task
+        // queue and wakes the daemon thread, so the timer thread exits promptly.
+        idleConnectionTimer.cancel();
         deregisterShutdownHook();
     }
 
@@ -291,7 +296,7 @@ class LoomServer implements WebServer, Resumable {
     }
 
     private void registerShutdownHook() {
-        this.shutdownHandler = new ServerShutdownHandler(listeners, startFutures, running, context.id());
+        this.shutdownHandler = new ServerShutdownHandler(listeners, startFutures, running, context.id(), idleConnectionTimer);
         Main.addShutdownHandler(this.shutdownHandler);
     }
 
@@ -383,15 +388,18 @@ class LoomServer implements WebServer, Resumable {
         private final List<ListenerFuture> startFutures;
         private final AtomicBoolean running;
         private final String id;
+        private final Timer idleConnectionTimer;
 
         private ServerShutdownHandler(Map<String, ServerListener> listeners,
                                       List<ListenerFuture> startFutures,
                                       AtomicBoolean running,
-                                      String id) {
+                                      String id,
+                                      Timer idleConnectionTimer) {
             this.listeners = listeners;
             this.startFutures = startFutures;
             this.running = running;
             this.id = id;
+            this.idleConnectionTimer = idleConnectionTimer;
         }
 
         @Override
@@ -402,6 +410,9 @@ class LoomServer implements WebServer, Resumable {
             }
 
             running.set(false);
+            // Same ownership rule as stopIt(): the shutdown path must not leave the
+            // idle-connection timer thread running either.
+            idleConnectionTimer.cancel();
         }
 
         @Override
