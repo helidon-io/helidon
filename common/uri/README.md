@@ -50,9 +50,9 @@ with an equals and parameter values may be separated by a comma.
 
 Example: `/hello;version=1.0;supper/world;version=2.0;colors=blue,green,brown`
 Such a path will be resolved into:
-- path: `/hello`
+- path: `/hello/world`
 - parameter `version=1.0,2.0` (2 values)
-- parameter `colors=blue,green,brow` (3 values)
+- parameter `colors=blue,green,brown` (3 values)
 - parameter `supper=` (1 value, empty string)
 
 Path parameters are resolved in order (from left to right) and values are appended

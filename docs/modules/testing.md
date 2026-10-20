@@ -22,6 +22,26 @@ project’s `pom.xml` (see [Managing Dependencies](../dependency-management.md))
 </dependency>
 ```
 
+The examples below also use JUnit Jupiter and Hamcrest. Add them to the test
+classpath, including the JUnit engine used to run the tests.
+
+The following snippet assumes that JUnit Jupiter and Hamcrest versions are
+managed in your project's dependency management. The Helidon application parent
+POM provides this management; importing only `helidon-bom` does not.
+
+```xml [pom.xml]
+<dependency>
+  <groupId>org.junit.jupiter</groupId>
+  <artifactId>junit-jupiter</artifactId>
+  <scope>test</scope>
+</dependency>
+<dependency>
+  <groupId>org.hamcrest</groupId>
+  <artifactId>hamcrest-all</artifactId>
+  <scope>test</scope>
+</dependency>
+```
+
 ## Usage
 
 Helidon provides a rich set of extensions based on JUnit 5 for Helidon WebServer
@@ -58,9 +78,10 @@ Parameters for the `@SetUpRoute` annotated methods.
 |----------------------------|-------------------------------|-----------|---------------------------------------------------|
 | `HttpRouting.Builder`      | `@ServerTest`, `@RoutingTest` |           |                                                   |
 | `HttpRules`                | `@ServerTest`, `@RoutingTest` |           | Same as `HttpRouting.Builder`, only routing setup |
-| `Router.RouterBuilder<?>`  | `@ServerTest`, `@RoutingTest` |           |                                                   |
-| `SocketListener.Builder`   | `@ServerTest`                 |           |                                                   |
-| `WebSocketRouting.Builder` | `@ServerTest`, `@RoutingTest` | websocket |                                                   |
+| `Router.RouterBuilder<?>`  | `@ServerTest`                 |           |                                                   |
+| `ListenerConfig.Builder`   | `@ServerTest`                 |           |                                                   |
+| `WsRouting.Builder`        | `@ServerTest`, `@RoutingTest` | websocket |                                                   |
+| `GrpcRouting.Builder`      | `@ServerTest`                 | grpc      |                                                   |
 
 In addition:
 
@@ -92,9 +113,17 @@ Injectable types.
 | `DirectClient`     | x       | `@RoutingTest` |           | Implements `Http1Client` API                                                               |
 | `WsClient`         | x       | `@ServerTest`  | websocket |                                                                                            |
 | `DirectWsClient`   | x       | `@RoutingTest` | websocket | Implements `WsClient` API                                                                  |
+| `Http2Client`      | x       | `@ServerTest`  | http2     | HTTP/2 client                                                                              |
+| `Http2TestClient`  | x       | `@ServerTest`  | http2     | Low-level HTTP/2 frame testing                                                              |
+| `GrpcClient`       | x       | `@ServerTest`  | grpc      | gRPC client                                                                                |
+| `JsonRpcClient`    | x       | `@ServerTest`  | jsonrpc   | JSON-RPC client                                                                            |
 
 Extensions can enhance the features for the module
-`helidon-testing-junit5-webserver` to support additional protocols.
+`helidon-webserver-testing-junit5` to support additional protocols. The extension
+modules below are discovered automatically when present on the test classpath;
+no additional JUnit annotation is needed. Each extension depends on the base
+testing module and its protocol's server and client modules. HTTP/2, gRPC, and
+JSON-RPC extensions support `@ServerTest`; WebSocket also supports `@RoutingTest`.
 
 ## Examples
 
@@ -105,6 +134,18 @@ Basic Helidon test framework usage:
 
 <!--@mdc ::code-callout -->
 ```java
+import io.helidon.http.Status;
+import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 @ServerTest // <1>
 class MyServerTest {
 
@@ -116,7 +157,7 @@ class MyServerTest {
 
     @SetUpRoute // <3>
     static void routing(HttpRouting.Builder builder) {
-        Main.routing(builder);
+        builder.get("/greet", (req, res) -> res.send("Hello World!"));
     }
 
     @Test
@@ -145,8 +186,8 @@ will create, configure, and inject this object as a parameter to the
 constructor.
 
 To set up routing, a static method annotated with `@SetUpRoute` is present. The
-framework uses this method to inject the configured routing to the subject of
-testing – in the current case, the `Quickstart` application.
+framework passes the routing builder to this method, which registers the route
+under test. An application can instead delegate to its own routing setup method.
 
 As everything above is performed by the testing framework, regular unit tests
 can be done. After completing all tests, the testing framework will shut down
@@ -162,6 +203,18 @@ Routing test using @RoutingTest and DirectClient:
 
 <!--@mdc ::code-callout{collapsed} -->
 ```java
+import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webclient.http1.Http1ClientResponse;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.testing.junit5.DirectClient;
+import io.helidon.webserver.testing.junit5.RoutingTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 @RoutingTest // <1>
 class MyRoutingTest {
 
@@ -173,7 +226,7 @@ class MyRoutingTest {
 
     @SetUpRoute // <3>
     static void routing(HttpRouting.Builder builder) {
-        Main.routing(builder);
+        builder.get("/greet", (req, res) -> res.send("Hello World!"));
     }
 
     @Test
@@ -181,8 +234,7 @@ class MyRoutingTest {
         try (Http1ClientResponse response = client
                 .get("/greet")
                 .request()) { // <5>
-            JsonObject json = response.as(JsonObject.class); // <6>
-            assertThat(json.getString("message"), is("Hello World!"));
+            assertThat(response.as(String.class), is("Hello World!")); // <6>
         }
     }
 }
@@ -275,103 +327,250 @@ necessary to include the following Maven dependency to the Project’s pom file:
 
 ```xml [pom.xml]
 <dependency>
-  <groupId>io.helidon.testing.junit5</groupId>
-  <artifactId>helidon-testing-junit5-websocket</artifactId>
+  <groupId>io.helidon.webserver.testing.junit5</groupId>
+  <artifactId>helidon-webserver-testing-junit5-websocket</artifactId>
   <scope>test</scope>
 </dependency>
 ```
 
-### WebSocket Testing Example
+Configure `WsRouting.Builder` with `@SetUpRoute` and inject `WsClient` into the
+test. Connecting starts asynchronous communication, so wait for a response
+before asserting its value:
 
-The WebSocket Testing extension adds support for routing configuration and
-injection of WebSocket related artifacts, such as WebSockets and DirectWsClient
-in Helidon unit tests.
-
-WebSocket sample test:
-
-<!--@mdc ::code-callout -->
 ```java
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+
+import io.helidon.webclient.websocket.WsClient;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+import io.helidon.webserver.websocket.WsRouting;
+import io.helidon.websocket.WsCloseCodes;
+import io.helidon.websocket.WsListener;
+import io.helidon.websocket.WsSession;
+
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 @ServerTest
 class WsSocketTest {
-
-    static final ServerSideListener WS_LISTENER = new ServerSideListener();
-    final WsClient wsClient; // <1>
-
-    WsSocketTest(WsClient wsClient) {
-        this.wsClient = wsClient;
-    }
-
     @SetUpRoute
-    static void routing(WsRouting.Builder ws) { // <2>
-        ws.endpoint("/testWs", WS_LISTENER);
+    static void routing(WsRouting.Builder ws) {
+        ws.endpoint("/echo", new WsListener() {
+            @Override
+            public void onMessage(WsSession session, String text, boolean last) {
+                session.send(text, last);
+            }
+        });
     }
 
     @Test
-    void testWsEndpoint() { // <3>
-        ClientSideListener clientListener = new ClientSideListener();
-        wsClient.connect("/testWs", clientListener); // <4>
-        assertThat(clientListener.message, is("ws")); // <5>
+    void echo(WsClient client) throws Exception {
+        var message = new CompletableFuture<String>();
+        client.connect("/echo", new WsListener() {
+            private final StringBuilder text = new StringBuilder();
+
+            @Override
+            public void onOpen(WsSession session) {
+                session.send("hello", true);
+            }
+
+            @Override
+            public void onMessage(WsSession session, String fragment, boolean last) {
+                text.append(fragment);
+                if (last) {
+                    session.close(WsCloseCodes.NORMAL_CLOSE, "Done");
+                    message.complete(text.toString());
+                }
+            }
+
+            @Override
+            public void onError(WsSession session, Throwable error) {
+                message.completeExceptionally(error);
+            }
+        });
+        assertThat(message.get(10, TimeUnit.SECONDS), is("hello"));
     }
 }
 ```
-1. Declare `WsClient` and later inject it in the constructor.
-2. Using @SetUpRoute, create WebSocket routing and assign a serverside listener.
-3. Test the WebSocket endpoint using the regular @Test annotation.
-4. Create and assign the clientside listener.
-5. Check if the received message is correct.
-<!--@mdc :: -->
 
-<!--@mdc ::code-callout -->
+For WebSocket routing tests without opening ports, use `@RoutingTest` and inject
+`DirectWsClient` from `io.helidon.webserver.testing.junit5.websocket`. The
+extension also accepts `WsClient` parameters in routing tests and supplies a
+direct client, so the example above can use `@RoutingTest` instead of `@ServerTest`.
+
+### HTTP/2 Testing
+
+Add the HTTP/2 extension:
+
+```xml [pom.xml]
+<dependency>
+  <groupId>io.helidon.webserver.testing.junit5</groupId>
+  <artifactId>helidon-webserver-testing-junit5-http2</artifactId>
+  <scope>test</scope>
+</dependency>
+```
+
+Inject `Http2Client` into a server test. Configure HTTP routes with
+`HttpRouting.Builder` or `HttpRules`; `Http2Route` can restrict a route to HTTP/2:
+
 ```java
-static class ClientSideListener implements WsListener {
-    volatile String message;
-    volatile Throwable error;
+import io.helidon.http.Method;
+import io.helidon.webclient.http2.Http2Client;
+import io.helidon.webserver.http.HttpRules;
+import io.helidon.webserver.http2.Http2Route;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
-    @Override
-    public void onOpen(WsSession session) { // <1>
-        session.send("hello", true);
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+@ServerTest
+class Http2ServerTest {
+    @SetUpRoute
+    static void routing(HttpRules rules) {
+        rules.route(Http2Route.route(Method.GET, "/greet", (req, res) -> res.send("hello")));
     }
 
-    @Override
-    public void onMessage(WsSession session, String text, boolean last) { // <2>
-        message = text;
-        session.close(WsCloseCodes.NORMAL_CLOSE, "End");
-    }
-
-    @Override
-    public void onError(WsSession session, Throwable t) { // <3>
-        error = t;
+    @Test
+    void greet(Http2Client client) {
+        assertThat(client.get("/greet").request(String.class).entity(), is("hello"));
     }
 }
 ```
-1. Send "Hello" when a connection is opened.
-2. Save the message when received and close the connection.
-3. React on an error.
-<!--@mdc :: -->
 
-The WebSocket `ClientSideListener` is also a helper class that implements
-`WsListener` and is very straightforward:
+For frame-level protocol checks, inject `Http2TestClient` from
+`io.helidon.webserver.testing.junit5.http2`. Close each `Http2TestConnection`
+created by that client using try-with-resources. Both HTTP/2 clients accept
+`@Socket` to select a named server socket.
 
-ServerSideListener helper class:
+### gRPC Testing
 
-<!--@mdc ::code-callout -->
+Add the gRPC extension:
+
+```xml [pom.xml]
+<dependency>
+  <groupId>io.helidon.webserver.testing.junit5</groupId>
+  <artifactId>helidon-webserver-testing-junit5-grpc</artifactId>
+  <scope>test</scope>
+</dependency>
+```
+
+Configure `GrpcRouting.Builder` with `@SetUpRoute` and inject `GrpcClient` into
+the server test. The client provides a gRPC channel for generated stubs or
+direct calls. This example defines a unary echo service using protobuf's
+`StringValue`, without requiring generated application classes:
+
 ```java
-static class ServerSideListener implements WsListener {
-    volatile String message;
+import io.helidon.webclient.grpc.GrpcClient;
+import io.helidon.webserver.grpc.GrpcRouting;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
 
-    @Override
-    public void onMessage(WsSession session, String text, boolean last) { // <1>
-        message = text;
-        session.send("ws", true);
+import com.google.protobuf.StringValue;
+import io.grpc.CallOptions;
+import io.grpc.MethodDescriptor;
+import io.grpc.ServerServiceDefinition;
+import io.grpc.protobuf.ProtoUtils;
+import io.grpc.stub.ClientCalls;
+import io.grpc.stub.ServerCalls;
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+@ServerTest
+class GrpcServerTest {
+    private static final MethodDescriptor<StringValue, StringValue> ECHO =
+            MethodDescriptor.<StringValue, StringValue>newBuilder()
+                    .setType(MethodDescriptor.MethodType.UNARY)
+                    .setFullMethodName("Echo/echo")
+                    .setRequestMarshaller(ProtoUtils.marshaller(StringValue.getDefaultInstance()))
+                    .setResponseMarshaller(ProtoUtils.marshaller(StringValue.getDefaultInstance()))
+                    .build();
+
+    @SetUpRoute
+    static void routing(GrpcRouting.Builder routing) {
+        routing.service(ServerServiceDefinition.builder("Echo")
+                                .addMethod(ECHO, ServerCalls.asyncUnaryCall((request, observer) -> {
+                                    observer.onNext(request);
+                                    observer.onCompleted();
+                                }))
+                                .build());
+    }
+
+    @Test
+    void echo(GrpcClient client) {
+        StringValue response = ClientCalls.blockingUnaryCall(client.channel(),
+                                                            ECHO,
+                                                            CallOptions.DEFAULT,
+                                                            StringValue.of("hello"));
+        assertThat(response.getValue(), is("hello"));
     }
 }
 ```
-1. Send "ws" on a received message.
-<!--@mdc :: -->
 
-The testing class should be annotated with `@RoutingTest` only if routing tests
-are required without real port opening. Instead of `WsClient`, use
-`DirectWsClient`.
+The injected `GrpcClient` targets the test server; use `@Socket` to select a
+named socket. gRPC requires a running server and is not supported by
+`@RoutingTest`.
+
+### JSON-RPC Testing
+
+Add the JSON-RPC extension:
+
+```xml [pom.xml]
+<dependency>
+  <groupId>io.helidon.webserver.testing.junit5</groupId>
+  <artifactId>helidon-webserver-testing-junit5-jsonrpc</artifactId>
+  <scope>test</scope>
+</dependency>
+```
+
+Register `JsonRpcRouting` on the HTTP routing builder and inject
+`JsonRpcClient`. JSON-RPC does not add a separate `@SetUpRoute` parameter type:
+
+```java
+import io.helidon.json.JsonString;
+import io.helidon.webclient.jsonrpc.JsonRpcClient;
+import io.helidon.webclient.jsonrpc.JsonRpcClientResponse;
+import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.jsonrpc.JsonRpcRouting;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpRoute;
+
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+@ServerTest
+class JsonRpcServerTest {
+    @SetUpRoute
+    static void routing(HttpRouting.Builder routing) {
+        routing.register("/rpc", JsonRpcRouting.builder()
+                .register("/echo", "echo", (req, res) -> res.result(JsonString.create("hello")).send())
+                .build());
+    }
+
+    @Test
+    void echo(JsonRpcClient client) {
+        try (JsonRpcClientResponse response = client.rpcMethod("echo")
+                .rpcId(1)
+                .path("/rpc/echo")
+                .submit()) {
+            assertThat(response.error().isEmpty(), is(true));
+            assertThat(response.result().orElseThrow().asJsonValue().asString().value(), is("hello"));
+        }
+    }
+}
+```
+
+The injected `JsonRpcClient` supports `@Socket` for named sockets and requires
+`@ServerTest`; it is not available with `@RoutingTest`.
 
 ## Reference
 

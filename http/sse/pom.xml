@@ -27,10 +27,6 @@
     <artifactId>helidon-http-sse</artifactId>
     <name>Helidon HTTP Server Sent Events</name>
 
-    <properties>
-        <javadoc.skip>true</javadoc.skip>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>

@@ -13,11 +13,11 @@ clients. The server API supports annotated and programmatic endpoints.
 
 Annotated endpoints use Java annotations to define WebSocket handlers;
 programmatic endpoints implement API interfaces and are annotation-free.
-Helidon uses `WebSocketRouting` to configure routing for both styles.
+Helidon uses `WsRouting` to configure routing for both styles.
 
 ## Maven Coordinates
 
-To enable WebSocket, add the following dependency to your project’s `pom.xml`
+To enable WebSocket server support, add the following dependency to your project’s `pom.xml`
 (see [Managing Dependencies](../dependency-management.md)).
 
 ```xml [pom.xml]
@@ -26,6 +26,17 @@ To enable WebSocket, add the following dependency to your project’s `pom.xml`
   <artifactId>helidon-webserver-websocket</artifactId>
 </dependency>
 ```
+
+For WebSocket client support, add:
+
+```xml [pom.xml]
+<dependency>
+  <groupId>io.helidon.webclient</groupId>
+  <artifactId>helidon-webclient-websocket</artifactId>
+</dependency>
+```
+
+The client API is `io.helidon.webclient.websocket.WsClient`.
 
 ## Example
 
@@ -126,5 +137,5 @@ non-browser clients continue to work.
 
 - [Helidon WebSocket Javadoc][helidon-websocke]
 
-[here]: https://github.com/helidon-io/helidon-examples/tree/helidon-27.x/examples/webserver/websocket
+[here]: https://github.com/helidon-io/helidon-examples/tree/helidon-28.x/examples/webserver/websocket
 [helidon-websocke]: https://helidon.io/docs/core/v28/apidocs/io.helidon.webserver.websocket/module-summary.html

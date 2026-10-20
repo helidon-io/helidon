@@ -7,7 +7,36 @@ This type is a provider contract.
 ## Implementations
 
 
-No implementations are currently known.
+
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a id="deflate"></a>
+<a href="io.helidon.http.encoding.deflate.DeflateEncoding.md">
+<code>deflate</code>
+</a>
+</td>
+<td>Support for <code>deflate</code> content encoding</td>
+</tr>
+<tr>
+<td>
+<a id="gzip"></a>
+<a href="io.helidon.http.encoding.gzip.GzipEncoding.md">
+<code>gzip</code>
+</a>
+</td>
+<td>Support for gzip content encoding</td>
+</tr>
+</tbody>
+</table>
+
 
 
 ## Usages
