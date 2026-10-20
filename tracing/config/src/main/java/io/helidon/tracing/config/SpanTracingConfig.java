@@ -189,7 +189,7 @@ public abstract class SpanTracingConfig extends Traceable {
 
                 @Override
                 protected Optional<SpanLogTracingConfig> getSpanLog(String name) {
-                    if (enabled.orElse(true)) {
+                    if (finalEnabled.orElse(true)) {
                         return Optional.ofNullable(finalSpanLogMap.get(name));
                     }
                     return Optional.of(SpanLogTracingConfig.DISABLED);
