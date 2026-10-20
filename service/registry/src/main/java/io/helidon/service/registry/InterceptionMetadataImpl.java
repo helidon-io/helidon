@@ -143,7 +143,7 @@ class InterceptionMetadataImpl implements InterceptionMetadata {
             }
         }
 
-        return result;
+        return List.copyOf(result);
     }
 
     private boolean applicableElement(Set<String> signatures, ServiceInfo serviceInfo) {
