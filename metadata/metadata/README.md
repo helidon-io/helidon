@@ -20,7 +20,7 @@ Each file then lives in a directory structure depending on module type (see JPMS
 The following files are expected by Helidon; this list may be extended in the future (`${file-name}` in the location patterns):
 
 - `service-registry.json` - information for Helidon `ServiceRegistry`
-- `feature-registry.json` - feature metadata, used at startup and when building native image
+- `feature-registry.json` - feature metadata, used at startup
 - `service.loader` - Java `ServiceLoader` services that should be discovered by Helidon `ServiceRegistry`
 - `serial-config.properties` - configuration for Java serialization
 - `media-types.properties` - customized media types

@@ -177,7 +177,7 @@ final class PersistenceConfiguration implements PersistenceUnitInfo {
 
     @Override
     public URL getPersistenceUnitRootUrl() {
-        // just point to current user directory, we do not have support for PU URL, as we may run in native image
+        // Use the current user directory because a persistence-unit URL is not available.
         // this should be used to discover persistence.xml, which this class replaces
         try {
             return Paths.get(".").toUri().toURL();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,22 +17,18 @@ package io.helidon.logging.common;
 
 import java.util.List;
 import java.util.ServiceLoader;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.NativeImageHelper;
 import io.helidon.logging.common.spi.LoggingProvider;
 
 /**
  * Logging configuration utility.
- * This utility looks for logging provider and configures it either for initialization or for runtime.
+ * This utility looks for a logging provider and configures it once during class initialization.
  * <p>
- * Initialization is done automatically at GraalVM native image build (through Helidon feature). Runtime initialization
- * is done automatically when using a container (such as Helidon MP), for Helidon SE (and programmatic API) it is recommended
- * to invoke {@link #configureRuntime()} as the first thing in your application, so all logs are correctly handled.
+ * Initialization is done automatically when using a container (such as Helidon MP). For Helidon SE (and programmatic API),
+ * invoke {@link #configureRuntime()} as the first thing in your application, so all logs are correctly handled.
  */
 public final class LogConfig {
-    private static final AtomicBoolean RUNTIME_CONFIGURED = new AtomicBoolean();
     private static final LoggingProvider PROVIDER;
 
     static {
@@ -58,22 +54,18 @@ public final class LogConfig {
     }
 
     /**
-     * Reconfigures logging with runtime configuration if within a native image.
-     * See GraalVM native image support in Helidon.
+     * Ensures logging is configured by initializing this class.
+     * Subsequent calls do not reconfigure logging.
      */
     public static void configureRuntime() {
-        if (NativeImageHelper.isRuntime() && RUNTIME_CONFIGURED.compareAndSet(false, true)) {
-            // only do this once
-            PROVIDER.runTime();
-        }
+        // Invoking this method triggers class initialization.
     }
 
     /**
-     * This method is for internal use, to correctly load logging configuration at AOT build time.
+     * Ensures logging is configured by initializing this class. Subsequent calls do not reconfigure logging.
      */
     public static void initClass() {
-        // DO NOT DELETE THIS METHOD
-        // we need to ensure class initialization for native image by invoking this method
+        // Invoking this method triggers class initialization.
     }
 
     private static final class NoOpProvider implements LoggingProvider {

@@ -120,21 +120,24 @@ public final class Features {
     }
 
     /**
-     * Declaration of support for ahead of time compilation using native image.
-     * AOT is considered supported by default (i.e. if this annotation is not present).
+     * Legacy declaration of support for GraalVM Native Image.
+     *
+     * @deprecated GraalVM Native Image is no longer supported. Remove this annotation from module declarations;
+     *             it is no longer processed by Helidon.
      */
     @Target(ElementType.MODULE)
     @Retention(RetentionPolicy.SOURCE)
+    @Deprecated(since = "28.0.0", forRemoval = true)
     public @interface Aot {
         /**
-         * Whether AOT is supported by this component or not.
+         * Whether AOT is supported by this component.
          *
          * @return whether AOT is supported, defaults to {@code true}
          */
         boolean value() default true;
 
         /**
-         * Description of AOT support, such as when AOT is supported, but with limitations.
+         * Description of AOT support, including any limitations.
          *
          * @return description
          */

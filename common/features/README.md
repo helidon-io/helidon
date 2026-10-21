@@ -11,7 +11,6 @@ There can be "finer-grained" features, such as `Config/YAML`, `Security/Provider
 - Each feature `module-info.java` is to be annotated with `@Features.*` annotations
 - For preview features (production ready, but being worked on), use `@Features.Preview`
 - For incubating features (not production ready, for preview only), use `@Features.Incubating`
-- For information related to Native image, use `@Features.Aot`
 
 An annotation processor (codegen) is available to process these annotations and generate a runtime JSON file with module information.
 
@@ -38,7 +37,6 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("Security provider for OpenID Connect authentication")
 @Features.Flavor({HelidonFlavor.SE, HelidonFlavor.MP})
 @Features.Path({"Security", "Provider", "OIDC"})
-@Features.Aot(false)
 module io.helidon.security.providers.oidc {
     requires static io.helidon.common.features.api;
     // other module dependencies and configuration
@@ -100,6 +98,8 @@ Created by `helidon-common-features-codegen`, using `Features.*` annotations.
 The generator writes `META-INF/helidon/<module-name>/feature-registry.json` and lists it in
 `META-INF/helidon/manifest`. Discovery also supports JSON registries at `META-INF/helidon/feature-registry.json`.
 The root element is an array, to allow merging of all features into a single file.
+Unknown fields are ignored when reading a registry. Legacy `aot` information remains readable and writable through
+deprecated metadata APIs. It is no longer generated from module annotations or used for normal feature diagnostics.
 
 The format is as follows (using `//` to comment sections, not part of the format):
 
@@ -130,12 +130,6 @@ The format is as follows (using `//` to comment sections, not part of the format
         "invalid-flavor": [
             "MP"
         ],
-        // native image restrictions (optional), defaults to fully supported 
-        "aot": {
-            "supported": true,
-            // description (optional)
-            "description": "Only supports buzz and foo"
-        },
         // status of this feature, defaults to "Production", or Deprecated if deprecation is set (optional)
         // allowed values: "Production", "Preview", "Incubating", "Deprecated"
         "status": "Production",

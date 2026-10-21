@@ -64,7 +64,7 @@ import io.helidon.webserver.WebServer;
 @Service.GenerateBinding // annotation is required to generate application binding
 public final class Main {
     static {
-        // used when building with GraalVM native image to configure logging during build
+        // Initialize logging before starting the application.
         LogConfig.initClass();
     }
 

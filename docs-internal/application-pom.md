@@ -61,7 +61,7 @@ And what they do (starting from the bottom):
   jandex. It inherits from *helidon-applications-project*.
 * **helidon-se**: the parent pom used by Helidon applications.
   It contains plugin configuration specific to Helidon applications, like
-  native image supportin the helidon-maven-plugin.
+  application creation in the helidon-maven-plugin.
   It also inherits from *helidon-applications-project*.
 * **helidon-applications-project**: contains
   all the boiler plate for Helidon applications. For example, this configures

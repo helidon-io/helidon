@@ -83,8 +83,8 @@ public interface MetadataDiscovery {
          * Discovers metadata files by scanning the file entries defined by the {@code java.class.path} and
          * {@code jdk.module.path} system properties.
          * <p>
-         * NOTE: this adds startup performance overhead, and will not work with unusual classloaders
-         * (such as GraalVM native-image).
+         * NOTE: this adds startup performance overhead, and will not work with classloaders whose resources
+         * are not represented by the classpath or module path.
          */
         SCANNING,
         /**

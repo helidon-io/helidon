@@ -192,9 +192,7 @@ There are three built-in scopes:
 
 Helidon injection is compile/build time based injection. This provides a
 significant performance boost since it eliminates the need for reflection or
-dynamic proxying at runtime, resulting in faster startup. Additionally, it
-integrates well with Native Image, making it an efficient choice for
-high-performance applications.
+dynamic proxying at runtime, resulting in faster startup.
 
 Because of that it needs to generate all the needed classes at compile time, so
 it minimizes the need of runtime processing. To ensure everything works

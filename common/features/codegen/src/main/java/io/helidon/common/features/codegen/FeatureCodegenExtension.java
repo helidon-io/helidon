@@ -33,7 +33,6 @@ import io.helidon.codegen.FilerResource;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.codegen.spi.CodegenExtension;
-import io.helidon.common.features.metadata.Aot;
 import io.helidon.common.features.metadata.Deprecation;
 import io.helidon.common.features.metadata.FeatureMetadata;
 import io.helidon.common.features.metadata.FeatureStatus;
@@ -144,16 +143,6 @@ class FeatureCodegenExtension implements CodegenExtension {
                     .ifPresent(deprecation::description);
             builder.deprecation(deprecation.build());
         }
-        if (module.hasAnnotation(FeatureCodegenTypes.AOT)) {
-            Annotation annotation = module.annotation(FeatureCodegenTypes.AOT);
-
-            Aot.Builder aot = Aot.builder();
-            aot.supported(annotation.booleanValue().orElse(true));
-            annotation.stringValue("description")
-                    .ifPresent(aot::description);
-            builder.aot(aot.build());
-        }
-
         this.processedModules.add(builder.build());
     }
 

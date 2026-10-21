@@ -24,7 +24,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -33,7 +32,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import io.helidon.common.Api;
-import io.helidon.common.NativeImageHelper;
 import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.features.metadata.Aot;
 import io.helidon.common.features.metadata.Deprecation;
@@ -99,10 +97,12 @@ public final class HelidonFeatures {
     /**
      * Will scan all features and log errors and warnings for features that have a
      * native image limitation.
-     * This method is automatically called when building a native image with Helidon.
+     * This compatibility hook is no longer invoked automatically by Helidon.
      *
      * @param classLoader to look for features in
+     * @deprecated GraalVM Native Image is no longer supported. Remove calls to this build-time hook.
      */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     public static void nativeBuildTime(ClassLoader classLoader) {
         Objects.requireNonNull(classLoader, "classLoader is null");
         scan(classLoader);
@@ -310,47 +310,7 @@ public final class HelidonFeatures {
             // already scanned
             return;
         }
-        // warn if in native image
         FeatureCatalog.features(classLoader).forEach(HelidonFeatures::register);
-
-        if (NativeImageHelper.isRuntime()) {
-            // make sure we warn about all features
-            for (FeatureMetadata feature : ALL_FEATURES) {
-                Optional<Aot> aot = feature.aot();
-                if (aot.isEmpty()) {
-                    continue;
-                }
-
-                String desc = aot.get().description().orElse(null);
-                boolean supported = aot.get().supported();
-
-                if (supported) {
-                    if (desc != null && !desc.isBlank()) {
-                        LOGGER.log(Level.WARNING, "Native image for feature "
-                                + feature.name()
-                                + "("
-                                + feature.stringPath()
-                                + "): "
-                                + desc);
-                    }
-                } else {
-                    if (desc == null || desc.isBlank()) {
-                        LOGGER.log(Level.ERROR, "You are using a feature not supported in native image: "
-                                + feature.name()
-                                + "("
-                                + feature.stringPath()
-                                + ")");
-                    } else {
-                        LOGGER.log(Level.ERROR, "You are using a feature not supported in native image: "
-                                + feature.name()
-                                + "("
-                                + feature.stringPath()
-                                + "): "
-                                + desc);
-                    }
-                }
-            }
-        }
     }
 
     private static void printDetails(String name, Node node, int level) {
@@ -373,18 +333,6 @@ public final class HelidonFeatures {
             String deprecated = feat.status() == FeatureStatus.DEPRECATED ? "Deprecated since "
                     + feat.deprecation().flatMap(Deprecation::since).orElse("?") + " - " : "";
 
-            String nativeDesc = "";
-            if (feat.aot().isPresent()) {
-                var aot = feat.aot().get();
-                if (!aot.supported()) {
-                    nativeDesc = " (NOT SUPPORTED in native image)";
-                } else {
-                    if (aot.description().isPresent()) {
-                        nativeDesc = " (Native image: " + aot.description().get() + ")";
-                    }
-                }
-            }
-
             LOGGER.log(Level.INFO,
                     prefix
                             + name
@@ -392,8 +340,7 @@ public final class HelidonFeatures {
                             + deprecated
                             + incubating
                             + preview
-                            + feat.description().orElseGet(feat::name)
-                            + nativeDesc);
+                            + feat.description().orElseGet(feat::name));
         }
 
         node.children.forEach((childName, childNode) -> {

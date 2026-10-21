@@ -1,7 +1,0 @@
-[
-    {
-        "name": "io.helidon.logging.jul.HelidonConsoleHandler",
-        "allDeclaredConstructors": true,
-        "allPublicMethods": true
-    }
-]
