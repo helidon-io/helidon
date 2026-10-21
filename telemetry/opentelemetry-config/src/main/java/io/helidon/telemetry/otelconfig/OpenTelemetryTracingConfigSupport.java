@@ -73,13 +73,13 @@ class OpenTelemetryTracingConfigSupport {
             return OtelConfigSupport.createProcessorConfig(config);
         }
 
-        @Prototype.ConfigFactoryMethod("sampler")
-        static Sampler createSampler(Config config) {
+        @Prototype.RuntimeTypeFactoryMethod("sampler")
+        static Sampler createSampler(SamplerConfig config) {
             return OtelConfigSupport.createSampler(config);
         }
 
-        @Prototype.ConfigFactoryMethod("spanLimits")
-        static SpanLimits createSpanLimits(Config config) {
+        @Prototype.RuntimeTypeFactoryMethod("spanLimits")
+        static SpanLimits createSpanLimits(SpanLimitsConfig config) {
             return OtelConfigSupport.createSpanLimits(config);
         }
 
@@ -88,8 +88,8 @@ class OpenTelemetryTracingConfigSupport {
             return OtlpExporterConfigSupport.CustomMethods.createSpanExporter(config);
         }
 
-        @Prototype.ConfigFactoryMethod("attributes")
-        static AttributesBuilder createAttributesBuilder(Config config) {
+        @Prototype.RuntimeTypeFactoryMethod("attributes")
+        static AttributesBuilder createAttributesBuilder(TypedAttributes config) {
             return OtelConfigSupport.createAttributesBuilder(config);
         }
 
