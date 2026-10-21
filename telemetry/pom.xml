@@ -31,8 +31,8 @@
 
     <modules>
         <module>opentelemetry</module>
-        <module>opentelemetry-config</module>
         <module>testing</module>
+        <module>opentelemetry-config</module>
     </modules>
 
 </project>
