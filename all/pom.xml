@@ -1042,26 +1042,6 @@
             <groupId>io.helidon.microprofile.bean-validation</groupId>
             <artifactId>helidon-microprofile-bean-validation</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.helidon.integrations.microstream</groupId>
-            <artifactId>helidon-integrations-microstream</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.integrations.microstream</groupId>
-            <artifactId>helidon-integrations-microstream-cdi</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.integrations.microstream</groupId>
-            <artifactId>helidon-integrations-microstream-health</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.integrations.microstream</groupId>
-            <artifactId>helidon-integrations-microstream-metrics</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.integrations.microstream</groupId>
-            <artifactId>helidon-integrations-microstream-cache</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>io.helidon.http</groupId>

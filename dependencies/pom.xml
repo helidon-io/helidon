@@ -136,7 +136,6 @@
         <version.lib.microprofile-telemetry-tck>1.1</version.lib.microprofile-telemetry-tck>
         <version.lib.microprofile-tracing>3.0</version.lib.microprofile-tracing>
         <version.lib.microprofile-lra-api>2.0.1</version.lib.microprofile-lra-api>
-        <version.lib.microstream>08.01.01-MS-GA</version.lib.microstream>
         <version.lib.mongodb>5.12.0</version.lib.mongodb>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.mysql-connector-j>8.2.0</version.lib.mysql-connector-j>
@@ -773,33 +772,6 @@
                 <groupId>io.smallrye</groupId>
                 <artifactId>smallrye-open-api-ui</artifactId>
                 <version>${version.lib.smallrye-openapi}</version>
-            </dependency>
-
-            <!-- Microstream related -->
-            <dependency>
-                <groupId>one.microstream</groupId>
-                <artifactId>microstream-storage-embedded</artifactId>
-                <version>${version.lib.microstream}</version>
-            </dependency>
-            <dependency>
-                <groupId>one.microstream</groupId>
-                <artifactId>microstream-storage-embedded-configuration</artifactId>
-                <version>${version.lib.microstream}</version>
-            </dependency>
-            <dependency>
-                <groupId>one.microstream</groupId>
-                <artifactId>microstream-configuration</artifactId>
-                <version>${version.lib.microstream}</version>
-            </dependency>
-            <dependency>
-                <groupId>one.microstream</groupId>
-                <artifactId>microstream-cache</artifactId>
-                <version>${version.lib.microstream}</version>
-            </dependency>
-            <dependency>
-                <groupId>one.microstream</groupId>
-                <artifactId>microstream-persistence-binary-jdk17</artifactId>
-                <version>${version.lib.microstream}</version>
             </dependency>
 
             <!-- Integrations related -->

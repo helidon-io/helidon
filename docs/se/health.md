@@ -70,8 +70,8 @@ something else).
 
 When details are enabled, responses include check names, statuses, and data
 returned by health checks. Unexpected check exceptions are logged on the server;
-their class names and messages are omitted from the response. Database and
-MicroStream health checks also omit backend exception details. Neo4j health checks
+their class names and messages are omitted from the response. Database health
+checks also omit backend exception details. Neo4j health checks
 report the protocol version and edition without the server address or database name.
 
 Data explicitly returned by custom health checks is included without filtering.
