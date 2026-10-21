@@ -39,8 +39,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 
 /**
- * Check that all threads created by timeout instances are properly
- * terminated and not in {@link Thread.State#TIMED_WAITING} state.
+ * Check that all threads created by timeout instances are properly terminated.
  */
 class TimeoutThreadTest {
 
@@ -48,24 +47,23 @@ class TimeoutThreadTest {
     void testTimeout() {
         // create executor with our thread factory
         TestThreadFactory threadFactory = new TestThreadFactory();
-        ExecutorService executor = Executors.newThreadPerTaskExecutor(threadFactory);
+        try (ExecutorService executor = Executors.newThreadPerTaskExecutor(threadFactory)) {
+            // run 10 tasks with long timeouts that return immediately
+            for (int i = 0; i < 10; i++) {
+                String status = Timeout.builder()
+                        .timeout(Duration.ofSeconds(60))        // long timeout
+                        .currentThread(true)
+                        .executor(executor)
+                        .build()
+                        .invoke(() -> "done");
+                assertThat(status, is("done"));
+            }
 
-        // run 10 tasks with long timeouts that return immediately
-        for (int i = 0; i < 10; i++) {
-            String status = Timeout.builder()
-                    .timeout(Duration.ofSeconds(60))        // long timeout
-                    .currentThread(true)
-                    .executor(executor)
-                    .build()
-                    .invoke(() -> "done");
-            assertThat(status, is("done"));
-        }
-
-        // if timeout monitor threads stopped, no TIMED_WAITING states
-        List<Thread> threads = threadFactory.threads();
-        assertThat(threads.size(), is(10));
-        for (Thread thread : threads) {
-            assertThat(thread.getState(), is(not(Thread.State.TIMED_WAITING)));
+            List<Thread> threads = threadFactory.threads();
+            assertThat(threads.size(), is(10));
+            for (Thread thread : threads) {
+                awaitThreadTerminated(thread);
+            }
         }
     }
 
@@ -85,10 +83,12 @@ class TimeoutThreadTest {
                     .build()
                     .invoke(() -> {
                         Thread monitorThread = awaitMonitorThread(threadFactory);
-                        awaitThreadState(monitorThread, Thread.State.TIMED_WAITING);
+                        awaitMonitorWaiting(monitorThread);
                         return "done";
                     });
             assertThat(status, is("done"));
+            assertThat(threadFactory.threads().size(), is(1));
+            awaitThreadTerminated(threadFactory.threads().get(0));
             assertThat(handler.logRecords(),
                        not(hasItem(LogRecordMatcher.withMessage(
                                containsString("Delayed runnable was unexpectedly interrupted")))));
@@ -109,15 +109,27 @@ class TimeoutThreadTest {
         throw new AssertionError("Timed out waiting for the timeout monitor thread to start");
     }
 
-    private static void awaitThreadState(Thread thread, Thread.State expectedState) {
+    private static void awaitMonitorWaiting(Thread thread) {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
         while (System.nanoTime() < deadline) {
-            if (thread.getState() == expectedState) {
+            Thread.State state = thread.getState();
+            // Sleeping virtual threads report WAITING on early JDK 21 builds and TIMED_WAITING on newer JDKs.
+            if (state == Thread.State.WAITING || state == Thread.State.TIMED_WAITING) {
                 return;
             }
             LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(10));
         }
-        throw new AssertionError("Timed out waiting for thread state " + expectedState + ", last state was " + thread.getState());
+        throw new AssertionError("Timed out waiting for the timeout monitor to sleep, last state was " + thread.getState());
+    }
+
+    private static void awaitThreadTerminated(Thread thread) {
+        try {
+            boolean terminated = thread.join(Duration.ofSeconds(5));
+            assertThat("Timeout monitor did not terminate, last state was " + thread.getState(), terminated, is(true));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new AssertionError("Interrupted while waiting for the timeout monitor to terminate", e);
+        }
     }
 
     static class TestThreadFactory implements ThreadFactory {
