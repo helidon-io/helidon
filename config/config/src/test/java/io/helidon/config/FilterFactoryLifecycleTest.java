@@ -29,7 +29,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.config.spi.ConfigFilter;
 import io.helidon.config.spi.ConfigFilterContext;
-import io.helidon.config.spi.ConfigFilterFactory;
 import io.helidon.config.spi.ConfigFilterProvider;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigSource;
@@ -62,21 +61,13 @@ class FilterFactoryLifecycleTest {
                 }
                 return (_, value) -> value + ":first" + generation;
             };
-        }).addFilterProvider(_ -> new ConfigFilterFactory() {
-            @Override
-            public ConfigFilter create(Config raw) {
-                int generation = secondFilters.incrementAndGet();
-                if (generation == 2) {
-                    reloaded.countDown();
-                }
-                return (_, value) -> value + ":second" + generation;
+        }).addFilterProvider(_ -> _ -> {
+            int generation = secondFilters.incrementAndGet();
+            initialized.set(true);
+            if (generation == 2) {
+                reloaded.countDown();
             }
-
-            @Override
-            public boolean startChangeSupport() {
-                initialized.set(true);
-                return false;
-            }
+            return (_, value) -> value + ":second" + generation;
         }).build();
         try {
             assertThat("Construction requests produced a reload", reloaded.await(10, TimeUnit.SECONDS), is(true));
@@ -138,7 +129,6 @@ class FilterFactoryLifecycleTest {
         assertThat(snapshot.get("nested").detach().get("value").asString().get(), is("raw"));
         assertThat(snapshot.context().reload(), sameInstance(snapshot));
         assertThat(snapshot.get("nested").context().last(), sameInstance(snapshot.get("nested")));
-        snapshot.onChange(_ -> { throw new AssertionError("Raw view received a change"); });
         snapshot.context().stopChangeSupport();
         Config next = config.context().reload();
         assertThat(next.get("nested.value").asString().get(), is("raw2"));
@@ -185,28 +175,27 @@ class FilterFactoryLifecycleTest {
         AtomicInteger stops = new AtomicInteger();
         AtomicReference<ConfigFilterContext> signal = new AtomicReference<>();
         CountDownLatch reloaded = new CountDownLatch(1);
-        Config config = builder().addFilterProvider(context -> new ConfigFilterFactory() {
-            @Override
-            public ConfigFilter create(Config raw) {
+        Config config = builder().addFilterProvider(context -> {
+            starts.incrementAndGet();
+            signal.set(context);
+            context.initialConfig().onChange(new Config.ChangeListener() {
+                @Override
+                public void onChange(Config config) {
+                }
+
+                @Override
+                public void onStop() {
+                    stops.incrementAndGet();
+                }
+            });
+            context.reload();
+            return _ -> {
                 int current = generation.incrementAndGet();
                 if (current == 2) {
                     reloaded.countDown();
                 }
                 return (_, value) -> value + current;
-            }
-
-            @Override
-            public boolean startChangeSupport() {
-                starts.incrementAndGet();
-                signal.set(context);
-                context.reload();
-                return true;
-            }
-
-            @Override
-            public void stopChangeSupport() {
-                stops.incrementAndGet();
-            }
+            };
         }).build();
         assertThat("Startup reload created a replacement filter", reloaded.await(10, TimeUnit.SECONDS), is(true));
         config.context().stopChangeSupport();
@@ -222,21 +211,22 @@ class FilterFactoryLifecycleTest {
     @Test
     void failedConstructionCleansUpEveryCreatedFactory() {
         AtomicInteger stopped = new AtomicInteger();
-        ConfigFilterFactory factory = new ConfigFilterFactory() {
-            @Override
-            public ConfigFilter create(Config config) {
-                throw new IllegalStateException("Cannot create filter");
-            }
-
-            @Override
-            public void stopChangeSupport() {
-                stopped.incrementAndGet();
-            }
-        };
         IllegalStateException failure = assertThrows(IllegalStateException.class,
                                                     () -> builder().addFilterProvider(context -> {
+                                                        context.initialConfig().onChange(new Config.ChangeListener() {
+                                                            @Override
+                                                            public void onChange(Config config) {
+                                                            }
+
+                                                            @Override
+                                                            public void onStop() {
+                                                                stopped.incrementAndGet();
+                                                            }
+                                                        });
                                                         context.reload();
-                                                        return factory;
+                                                        return _ -> {
+                                                            throw new IllegalStateException("Cannot create filter");
+                                                        };
                                                     }).build());
         assertThat("Pending reload did not replace the construction failure", failure.getMessage(), is("Cannot create filter"));
         assertThat(stopped.get(), is(1));
@@ -275,50 +265,6 @@ class FilterFactoryLifecycleTest {
         assertThat(maximum.get(), is(1));
         assertThat(generations.get(), is(13));
         assertThat(config.get("nested.value").asString().get(), is("raw1"));
-    }
-
-    @Test
-    void failedStartStopsFactoriesThatHaveNotStarted() {
-        AtomicInteger starts = new AtomicInteger();
-        AtomicInteger stopped = new AtomicInteger();
-        ConfigFilterFactory failing = new ConfigFilterFactory() {
-            @Override
-            public ConfigFilter create(Config config) {
-                return (_, value) -> value;
-            }
-
-            @Override
-            public boolean startChangeSupport() {
-                starts.incrementAndGet();
-                throw new IllegalStateException("Cannot start monitoring");
-            }
-
-            @Override
-            public void stopChangeSupport() {
-                stopped.incrementAndGet();
-            }
-        };
-        ConfigFilterFactory subsequent = new ConfigFilterFactory() {
-            @Override
-            public ConfigFilter create(Config config) {
-                return (_, value) -> value;
-            }
-
-            @Override
-            public boolean startChangeSupport() {
-                starts.incrementAndGet();
-                return false;
-            }
-
-            @Override
-            public void stopChangeSupport() {
-                stopped.incrementAndGet();
-            }
-        };
-        assertThrows(IllegalStateException.class, () -> builder()
-                .addFilterProvider(_ -> failing).addFilterProvider(_ -> subsequent).build());
-        assertThat(starts.get(), is(1));
-        assertThat(stopped.get(), is(2));
     }
 
     @Test

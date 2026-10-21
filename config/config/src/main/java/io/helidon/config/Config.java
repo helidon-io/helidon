@@ -911,6 +911,8 @@ public interface Config {
      * a user subscribes on. It is enough to subscribe just on single (e.g. on the first) Config instance.
      * There is no added value to subscribe again on new Config instance.
      *
+     * A {@link ChangeListener} also receives notification when this runtime stops change support.
+     *
      * @param onChangeConsumer consumer invoked on change
      */
     default void onChange(Consumer<Config> onChangeConsumer) {
@@ -1150,6 +1152,34 @@ public interface Config {
     }
 
     /**
+     * Listener for configuration changes and the end of background change support.
+     *
+     * @since 28.0.0
+     */
+    @FunctionalInterface
+    interface ChangeListener extends Consumer<Config> {
+        /**
+         * Invoked when the subscribed configuration changes.
+         *
+         * @param config updated configuration
+         */
+        void onChange(Config config);
+
+        /**
+         * Invoked once when the owning runtime stops change support.
+         * A listener registered after stopping is notified immediately.
+         * Queued change notifications and manual reloads can still invoke {@link #onChange(Config)} afterward.
+         */
+        default void onStop() {
+        }
+
+        @Override
+        default void accept(Config config) {
+            onChange(Objects.requireNonNull(config));
+        }
+    }
+
+    /**
      * {@link Config} Builder.
      * <p>
      * A factory for a {@code Config} object.
@@ -1361,20 +1391,23 @@ public interface Config {
          * FINE} overrides {@code logging.level} for all pods in test environment.
          * <p>
          * Override definitions are applied before any {@link ConfigFilter filter}.
-         * <p>
-         * Replace this method with {@link #addFilterProvider(ConfigFilterProvider)} using the optional
-         * {@code helidon-config-overrides} module. For example:
-         * <pre>{@code
-         * builder.addFilterProvider(io.helidon.config.overrides.OverrideConfigFilterProvider.builder()
-         *         .putOverrideExpression("test.*.logging.level", "FINE")
-         *         .build());
-         * }</pre>
-         * See {@link OverrideSource} for source-based replacements and migration details.
-         *
          * @param overridingSource a source with overriding key patterns and assigned values
          * @return an updated builder instance
-         * @deprecated use {@link #addFilterProvider(ConfigFilterProvider)} with the replacement documented in
-         *         {@link OverrideSource}
+         * @deprecated use {@link #addFilterProvider(ConfigFilterProvider)} with the optional
+         * {@code io.helidon.config:helidon-config-overrides} module:
+         * <pre>{@code
+         * import io.helidon.config.Config;
+         * import io.helidon.config.overrides.OverrideConfigFilterProvider;
+         *
+         * Config config = Config.builder()
+         *         .disableFilterServices()
+         *         .addFilterProvider(OverrideConfigFilterProvider.builder()
+         *                 .putOverrideExpression("test.*.logging.level", "FINE")
+         *                 .build())
+         *         .build();
+         * }</pre>
+         * This disables filter discovery; register other required filters explicitly.
+         * See {@link OverrideSource} for source-based replacements and migration details.
          */
         @Deprecated(since = "28.0.0", forRemoval = true)
         Builder overrides(Supplier<? extends OverrideSource> overridingSource);
@@ -1622,8 +1655,7 @@ public interface Config {
         /**
          * Registers a provider which creates a separate filter factory for each built configuration runtime.
          * Each factory creates a new filter for the initial configuration and every reload, using an unfiltered
-         * view of that generation's source data. This allows filters to be immutable and their factory to own
-         * change support independently of other configuration runtimes.
+         * view of that generation's source data. Filters from earlier generations retain their behavior.
          * <p>
          * Provider-created filters are applied before filters registered by the {@code addFilter} methods and
          * before built-in value resolution. Explicit providers are applied in registration order, followed by

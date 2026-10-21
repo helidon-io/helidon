@@ -36,9 +36,24 @@ import io.helidon.config.spi.WatchableSource;
  * {@link OverrideSource} implementation that loads override definitions from a file on a filesystem.
  *
  * @see FileOverrideSource.Builder
- * @deprecated Since 28.0.0, this legacy core API is deprecated for removal in favor of the optional overrides
- * filter module. See {@link OverrideSource} for migration
- * guidance and the usage feedback request. No removal release or timing has been decided.
+ * @deprecated Since 28.0.0, use the {@code io.helidon.config:helidon-config-overrides} module instead.
+ * Replace the legacy source registration with a filter provider:
+ * <pre>{@code
+ * import io.helidon.config.Config;
+ * import io.helidon.config.ConfigSources;
+ * import io.helidon.config.overrides.OverrideConfigFilterProvider;
+ *
+ * Config config = Config.builder()
+ *         .disableFilterServices()
+ *         .addFilterProvider(OverrideConfigFilterProvider.builder()
+ *                 .addConfigSource(() -> ConfigSources.file("overrides.properties").build())
+ *                 .build())
+ *         .build();
+ * }</pre>
+ * Configure polling or watching on the new source if updates are required.
+ * This disables filter discovery; register any other required filters explicitly.
+ * See {@link OverrideSource} for further migration considerations and the usage feedback request.
+ * No removal release or timing has been decided.
  */
 @Deprecated(since = "28.0.0", forRemoval = true)
 public final class FileOverrideSource extends AbstractSource
@@ -129,9 +144,24 @@ public final class FileOverrideSource extends AbstractSource
      * <li>{@code mandatory} - is existence of configuration resource mandatory (by default) or is {@code optional}?</li>
      * </ul>
      *
-     * @deprecated Since 28.0.0, this legacy core API is deprecated for removal in favor of the optional overrides
-     * filter module. See {@link OverrideSource} for migration
-     * guidance and the usage feedback request. No removal release or timing has been decided.
+     * @deprecated Since 28.0.0, use the {@code io.helidon.config:helidon-config-overrides} module instead.
+     * Replace the legacy source registration with a filter provider:
+     * <pre>{@code
+     * import io.helidon.config.Config;
+     * import io.helidon.config.ConfigSources;
+     * import io.helidon.config.overrides.OverrideConfigFilterProvider;
+     *
+     * Config config = Config.builder()
+     *         .disableFilterServices()
+     *         .addFilterProvider(OverrideConfigFilterProvider.builder()
+     *                 .addConfigSource(() -> ConfigSources.file("overrides.properties").build())
+     *                 .build())
+     *         .build();
+     * }</pre>
+     * Configure polling or watching on the new source if updates are required.
+     * This disables filter discovery; register any other required filters explicitly.
+     * See {@link OverrideSource} for further migration considerations and the usage feedback request.
+     * No removal release or timing has been decided.
      */
     @Deprecated(since = "28.0.0", forRemoval = true)
     public static final class Builder extends AbstractSourceBuilder<Builder, Path>

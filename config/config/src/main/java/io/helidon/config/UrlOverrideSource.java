@@ -39,7 +39,27 @@ import io.helidon.config.spi.WatchableSource;
  *
  * @see AbstractSource
  * @see OverrideSources
- * @deprecated use the replacement documented in {@link OverrideSource}
+ * @deprecated Since 28.0.0, use the {@code io.helidon.config:helidon-config-overrides} module instead.
+ * Replace the legacy URL source registration with a filter provider:
+ * <pre>{@code
+ * import java.net.URI;
+ *
+ * import io.helidon.config.Config;
+ * import io.helidon.config.ConfigSources;
+ * import io.helidon.config.overrides.OverrideConfigFilterProvider;
+ *
+ * var url = URI.create("https://example.com/overrides.properties").toURL();
+ * Config config = Config.builder()
+ *         .disableFilterServices()
+ *         .addFilterProvider(OverrideConfigFilterProvider.builder()
+ *                 .addConfigSource(() -> ConfigSources.url(url).build())
+ *                 .build())
+ *         .build();
+ * }</pre>
+ * The enclosing method must handle {@link java.net.MalformedURLException}.
+ * Configure polling or watching on the new source if updates are required.
+ * This disables filter discovery; register any other required filters explicitly.
+ * See {@link OverrideSource} for further migration considerations. No removal release or timing has been decided.
  */
 @Deprecated(since = "28.0.0", forRemoval = true)
 public class UrlOverrideSource extends AbstractSource
@@ -159,7 +179,27 @@ public class UrlOverrideSource extends AbstractSource
      * If {@code media-type} not set it uses HTTP response header {@code content-type}.
      * If {@code media-type} not returned it tries to guess it from url suffix.
      *
-     * @deprecated use the replacement documented in {@link OverrideSource}
+     * @deprecated Since 28.0.0, use the {@code io.helidon.config:helidon-config-overrides} module instead.
+     * Replace the legacy URL source registration with a filter provider:
+     * <pre>{@code
+     * import java.net.URI;
+     *
+     * import io.helidon.config.Config;
+     * import io.helidon.config.ConfigSources;
+     * import io.helidon.config.overrides.OverrideConfigFilterProvider;
+     *
+     * var url = URI.create("https://example.com/overrides.properties").toURL();
+     * Config config = Config.builder()
+     *         .disableFilterServices()
+     *         .addFilterProvider(OverrideConfigFilterProvider.builder()
+     *                 .addConfigSource(() -> ConfigSources.url(url).build())
+     *                 .build())
+     *         .build();
+     * }</pre>
+     * The enclosing method must handle {@link java.net.MalformedURLException}.
+     * Configure polling or watching on the new source if updates are required.
+     * This disables filter discovery; register any other required filters explicitly.
+     * See {@link OverrideSource} for further migration considerations. No removal release or timing has been decided.
      */
     @Deprecated(since = "28.0.0", forRemoval = true)
     public static final class Builder extends AbstractSourceBuilder<Builder, URL>
