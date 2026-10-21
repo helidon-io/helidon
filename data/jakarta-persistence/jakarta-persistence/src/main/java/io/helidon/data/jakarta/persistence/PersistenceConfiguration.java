@@ -23,6 +23,7 @@ import java.net.URLClassLoader;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -116,8 +117,13 @@ final class PersistenceConfiguration implements PersistenceUnitInfo {
                                                       jpaConfig.providerClassName().get()));
             }
             for (Map.Entry<String, Object> mapEntry : properties.entrySet()) {
-                LOGGER.log(Level.DEBUG,
-                           String.format(" - property: %s = %s", mapEntry.getKey(), mapEntry.getValue()));
+                String key = mapEntry.getKey();
+                var lower = key.toLowerCase(Locale.ROOT);
+                if (lower.contains("secret") || lower.contains("password")) {
+                    LOGGER.log(Level.DEBUG, String.format(" - property: %s = <redacted>", key));
+                } else {
+                    LOGGER.log(Level.DEBUG, String.format(" - property: %s = %s", key, mapEntry.getValue()));
+                }
             }
         }
 
