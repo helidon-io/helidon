@@ -79,6 +79,33 @@ class ServiceManager<T> {
                                          instance);
     }
 
+    Optional<List<QualifiedInstance<T>>> instances(Lookup lookup, ServiceInfo dependent) {
+        ScopedRegistry scopedRegistry = scopeSupplier.get().registry();
+        if (dependent != null
+                && dependent.scope().equals(provider.descriptor().scope())
+                && lookup.dependency().map(it -> !it.isSupplier()).orElse(true)
+                && scopedRegistry instanceof ScopedRegistryImpl scopedRegistryImpl) {
+            return scopedRegistryImpl.instances(provider.descriptor(), activatorSupplier, lookup, dependent);
+        }
+        return scopedRegistry.activator(provider.descriptor(), activatorSupplier).instances(lookup);
+    }
+
+    void dependency(Lookup lookup, ServiceInfo dependent) {
+        if (dependent != null
+                && dependent.scope().equals(provider.descriptor().scope())
+                && lookup.dependency().map(it -> !it.isSupplier()).orElse(true)
+                && scopeSupplier.get().registry() instanceof ScopedRegistryImpl scopedRegistry) {
+            scopedRegistry.dependency(provider.descriptor(), dependent);
+        }
+    }
+
+    void dependency(ServiceInstance<?> instance, Lookup lookup, ServiceInfo dependent) {
+        if (instance instanceof ServiceInstanceImpl<?> serviceInstance
+                && serviceInstance.descriptor == provider.descriptor()) {
+            dependency(lookup, dependent);
+        }
+    }
+
     Optional<List<ServiceInstance<T>>> activeInstances(Lookup lookup) {
         ServiceDescriptor<T> descriptor = provider.descriptor();
         if (Service.PerLookup.TYPE.equals(descriptor.scope())) {

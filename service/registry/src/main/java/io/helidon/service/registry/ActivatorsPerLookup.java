@@ -274,8 +274,7 @@ final class ActivatorsPerLookup {
 
             serviceInstances = services.stream()
                     .map(registry::serviceManager)
-                    .flatMap(it -> it.activator()
-                            .instances(Lookup.EMPTY)
+                    .flatMap(it -> it.instances(Lookup.EMPTY, provider.descriptor())
                             .stream()
                             .flatMap(List::stream)
                             .map(qi -> it.registryInstance(Lookup.EMPTY, qi)))
