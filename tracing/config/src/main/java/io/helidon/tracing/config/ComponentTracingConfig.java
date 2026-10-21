@@ -170,7 +170,7 @@ public abstract class ComponentTracingConfig extends Traceable {
             return new ComponentTracingConfig(name) {
                 @Override
                 public Optional<SpanTracingConfig> getSpan(String spanName) {
-                    if (enabled.orElse(true)) {
+                    if (finalEnabled.orElse(true)) {
                         return Optional.ofNullable(finalSpans.get(spanName));
                     } else {
                         return Optional.of(SpanTracingConfig.DISABLED);
