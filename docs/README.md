@@ -1,7 +1,7 @@
 <!--@frontmatter
 site:
   title: "Helidon Core"
-  version: "27.0.1-SNAPSHOT"
+  version: "27.0.2-SNAPSHOT"
 pages:
   - config/manifest.md
 -->
