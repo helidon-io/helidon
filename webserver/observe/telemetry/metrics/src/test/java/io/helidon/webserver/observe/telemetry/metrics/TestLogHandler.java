@@ -27,6 +27,8 @@ import io.helidon.common.testing.junit5.MatcherWithRetry;
 
 import org.hamcrest.Matcher;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 
 /**
@@ -74,5 +76,16 @@ class TestLogHandler extends Handler implements AutoCloseable {
                                                           matcher);
         messages.clear();
         return result;
+    }
+
+    String lastMessageContaining(String text) {
+        return lastMessageMatching(containsString(text));
+    }
+
+    String lastMessageMatching(Matcher<? super String> matcher) {
+        return messages(hasItem(matcher)).stream()
+                .filter(matcher::matches)
+                .reduce((_, second) -> second)
+                .orElseThrow(() -> new IllegalStateException("No logged message matching: " + matcher));
     }
 }
