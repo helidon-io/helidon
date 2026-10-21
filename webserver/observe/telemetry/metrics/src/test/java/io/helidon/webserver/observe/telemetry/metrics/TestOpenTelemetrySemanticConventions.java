@@ -42,9 +42,10 @@ import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webserver.testing.junit5.Socket;
 
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingMetricExporter;
+import org.hamcrest.FeatureMatcher;
+import org.hamcrest.Matcher;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasArray;
 import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasAttributes;
 import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasDouble;
 import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasString;
@@ -62,7 +63,6 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -144,6 +144,49 @@ class TestOpenTelemetrySemanticConventions {
 
     }
 
+    static Matcher<String> hasExpectedHttpMeasurements() {
+        return allOf(containsString(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME),
+                     new FeatureMatcher<String, List<JsonObject>>(
+                             allOf(hasItem(hasAttributes(allOf(hasEntry(SOCKET_NAME, "@default"),
+                                                               hasEntry(HTTP_ROUTE, "/greet/{name}")))),
+                                   hasItem(hasAttributes(allOf(hasEntry(SOCKET_NAME, "private"),
+                                                               hasEntry(HTTP_ROUTE, "/greet")))),
+                                   hasItem(hasAttributes(allOf(hasEntry(SOCKET_NAME, "@default"),
+                                                               hasEntry(HTTP_ROUTE, "/useLazyRouteOverride"))))),
+                             "HTTP duration data points for all expected socket/route pairs",
+                             "HTTP duration data points") {
+                         @Override
+                         protected List<JsonObject> featureValueOf(String jsonText) {
+                             return metricsEntries(JsonParser.create(jsonText).readJsonObject()).stream()
+                                     .filter(entry -> entry.stringValue("name")
+                                             .filter(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME::equals)
+                                             .isPresent())
+                                     .flatMap(entry -> entry.objectValue("histogram").orElseThrow()
+                                             .arrayValue("dataPoints").orElseThrow().values().stream())
+                                     .map(JsonValue::asObject)
+                                     .toList();
+                         }
+                     });
+    }
+
+    static void assertExpectedHttpMeasurementValues(List<JsonObject> dataPoints) {
+        assertThat("HTTP histogram data point for @default /greet/{name}", dataPoints,
+                   hasItem(allOf(hasString("count", is("1")),
+                                 hasDouble("sum", greaterThan(0.0D)),
+                                 hasAttributes(allOf(hasEntry(SOCKET_NAME, "@default"),
+                                                     hasEntry(HTTP_ROUTE, "/greet/{name}"))))));
+        assertThat("HTTP histogram data point for private /greet", dataPoints,
+                   hasItem(allOf(hasString("count", is("1")),
+                                 hasDouble("sum", greaterThan(0.0D)),
+                                 hasAttributes(allOf(hasEntry(SOCKET_NAME, "private"),
+                                                     hasEntry(HTTP_ROUTE, "/greet"))))));
+        assertThat("HTTP histogram data point for @default /useLazyRouteOverride", dataPoints,
+                   hasItem(allOf(hasString("count", is("1")),
+                                 hasDouble("sum", greaterThan(0.0D)),
+                                 hasAttributes(allOf(hasEntry(SOCKET_NAME, "@default"),
+                                                     hasEntry(HTTP_ROUTE, "/useLazyRouteOverride"))))));
+    }
+
     @Test
     void checkAutoMetrics() {
 
@@ -179,15 +222,14 @@ class TestOpenTelemetrySemanticConventions {
             List<String> socketNamesInTimers = new ArrayList<>();
 
             /*
-            There should be two timers, one for each of the greet endpoints and none for the
+            There should be three timers, one for each greet endpoint and the lazy route, and none for the
             metrics endpoint. Find each and make sure the socket name tag has the correct value
             and the timer's count is 1.
              */
 
-            List<String> jsonText =
-                    testLogHandler.messages(hasItem(containsString(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME)));
+            String jsonText = testLogHandler.lastMessageMatching(hasExpectedHttpMeasurements());
 
-            var root = JsonParser.create(jsonText.getFirst()).readJsonObject();
+            var root = JsonParser.create(jsonText).readJsonObject();
 
             List<JsonObject> metricsEntries = metricsEntries(root);
             Set<String> routesSeen = new HashSet<>();
@@ -211,13 +253,9 @@ class TestOpenTelemetrySemanticConventions {
                         .map(JsonValue::asObject)
                         .toList();
 
-                assertThat("Metrics entry", metricsEntry, allOf(
-                        hasString("name", is(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME)),
-                        hasArray("dataPoints",
-                                              hasItem(allOf(hasString("count", is("1")),
-                                                            hasDouble("sum", greaterThan(0.0D)),
-                                                            hasAttributes(
-                                                       hasEntry(HTTP_ROUTE, notNullValue())))))));
+                assertThat("Metrics entry", metricsEntry,
+                           hasString("name", is(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME)));
+                assertExpectedHttpMeasurementValues(dataPoints);
 
 
                 dataPoints.forEach(dataPoint -> {
@@ -293,8 +331,9 @@ class TestOpenTelemetrySemanticConventions {
                 assertThat("Greet endpoint", defaultResponse.status().code(), is(200));
             }
 
-            var beforeRoot = nextHttpRequestDurationRoot(testLogHandler);
-            var beforeMeasurement = personalizedGreetingMeasurement(beforeRoot);
+            var beforeJsonText =
+                    testLogHandler.lastMessageContaining(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME);
+            var beforeMeasurement = personalizedGreetingMeasurement(JsonParser.create(beforeJsonText).readJsonObject());
 
             var startTime = System.nanoTime();
             try (Http1ClientResponse defaultResponse = defaultClient.get("/greet/Joe")
@@ -304,8 +343,9 @@ class TestOpenTelemetrySemanticConventions {
             }
             var elapsedTimeFromClient = System.nanoTime() - startTime;
 
-            var afterRoot = nextHttpRequestDurationRoot(testLogHandler);
-            var afterMeasurement = personalizedGreetingMeasurement(afterRoot);
+            var afterJsonText =
+                    testLogHandler.lastMessageContaining(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME);
+            var afterMeasurement = personalizedGreetingMeasurement(JsonParser.create(afterJsonText).readJsonObject());
 
             var personalizedGreetingCount = afterMeasurement.count() - beforeMeasurement.count();
             var personalizedGreetingTimeNanos = afterMeasurement.timeNanos() - beforeMeasurement.timeNanos();
@@ -349,11 +389,7 @@ class TestOpenTelemetrySemanticConventions {
     }
 
     private static JsonObject nextHttpRequestDurationRoot(TestLogHandler testLogHandler) {
-        String jsonText = testLogHandler.messages(hasItem(containsString(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME)))
-                .stream()
-                .filter(it -> it.contains(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME))
-                .findFirst()
-                .orElseThrow();
+        String jsonText = testLogHandler.lastMessageContaining(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME);
 
         return JsonParser.create(jsonText).readJsonObject();
     }
