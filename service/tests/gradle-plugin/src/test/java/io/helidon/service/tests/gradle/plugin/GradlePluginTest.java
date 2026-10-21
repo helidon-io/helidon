@@ -131,6 +131,78 @@ class GradlePluginTest {
     }
 
     @Test
+    void mergesServiceMetadataFromMultipleClassOutputs() throws IOException {
+        fixture();
+        write("build.gradle", Files.readString(directory.resolve("build.gradle")) + """
+
+                def extraCompile = tasks.register('compileExtraServices', JavaCompile) {
+                    source = fileTree('src/extra/java')
+                    classpath = sourceSets.main.compileClasspath
+                    options.annotationProcessorPath = configurations.annotationProcessor
+                    destinationDirectory = layout.buildDirectory.dir('classes/extra/main')
+                }
+                sourceSets.main.output.classesDirs.from(extraCompile.flatMap { it.destinationDirectory })
+                tasks.register('splitServicesRun', JavaExec) {
+                    dependsOn tasks.named('classes')
+                    classpath = sourceSets.main.runtimeClasspath
+                    mainClass = 'example.Main'
+                }
+                """);
+        write("src/extra/java/example/ExtraService.java", """
+                package example;
+                import io.helidon.service.registry.Service;
+                @Service.Singleton
+                public class ExtraService {
+                    public String value() { return "extra"; }
+                }
+                """);
+        write("src/extra/java/example/RemovedService.java", """
+                package example;
+                import io.helidon.service.registry.Service;
+                @Service.Singleton
+                public class RemovedService { }
+                """);
+        write("src/main/java/example/Main.java", Files.readString(directory.resolve("src/main/java/example/Main.java"))
+                .replace("main(String[] args) {", "main(String[] args) throws Exception {")
+                .replace("manager.shutdown();", """
+                        Class<?> extraType = Class.forName("example.ExtraService");
+                        Object extra = manager.registry().get(extraType);
+                        System.out.println("EXTRA:" + extraType.getMethod("value").invoke(extra));
+                        manager.shutdown();
+                        """));
+
+        BuildResult first = runner("classes", "splitServicesRun").build();
+        assertTask(first, ":compileJava", TaskOutcome.SUCCESS);
+        assertTask(first, ":compileExtraServices", TaskOutcome.SUCCESS);
+        assertTask(first, ":generateApplicationBindings", TaskOutcome.SUCCESS);
+        assertTask(first, ":splitServicesRun", TaskOutcome.SUCCESS);
+        assertThat(first.getOutput(), containsString("APPLICATION:chosen:library"));
+        assertThat(first.getOutput(), containsString("EXTRA:extra"));
+        String metadata = "META-INF/helidon/unnamed/example/service-registry.json";
+        assertThat("Default compiler must contribute service metadata",
+                   Files.exists(directory.resolve("build/classes/java/main/" + metadata)), is(true));
+        assertThat("Extra compiler must contribute service metadata at the same path",
+                   Files.exists(directory.resolve("build/classes/extra/main/" + metadata)), is(true));
+        Path binding = directory.resolve("build/generated/sources/helidon/main/example/ApplicationBinding.java");
+        String firstBinding = Files.readString(binding);
+        assertThat(firstBinding, containsString("Greeting__ServiceDescriptor"));
+        assertThat(firstBinding, containsString("ExtraService__ServiceDescriptor"));
+        assertThat(firstBinding, containsString("RemovedService__ServiceDescriptor"));
+
+        Files.delete(directory.resolve("src/extra/java/example/RemovedService.java"));
+        BuildResult changed = runner("classes", "splitServicesRun").build();
+        assertTask(changed, ":compileJava", TaskOutcome.UP_TO_DATE);
+        assertTask(changed, ":compileExtraServices", TaskOutcome.SUCCESS);
+        assertTask(changed, ":generateApplicationBindings", TaskOutcome.SUCCESS);
+        assertThat(changed.getOutput(), containsString("APPLICATION:chosen:library"));
+        assertThat(changed.getOutput(), containsString("EXTRA:extra"));
+        String changedBinding = Files.readString(binding);
+        assertThat(changedBinding, containsString("Greeting__ServiceDescriptor"));
+        assertThat(changedBinding, containsString("ExtraService__ServiceDescriptor"));
+        assertThat(changedBinding, not(containsString("RemovedService__ServiceDescriptor")));
+    }
+
+    @Test
     void modularApplicationBindingsArePackagedAndRun() throws IOException {
         fixture();
         write("library/src/main/java/module-info.java", """
@@ -594,8 +666,13 @@ class GradlePluginTest {
     private GradleRunner runner(String... tasks) throws IOException {
         return GradleFixtureSupport.runner(directory, tasks)
                 .withPluginClasspath(classpath("fixture-tool-classpath.txt").stream()
-                                             .filter(path -> path.getFileName().toString()
-                                                     .startsWith("helidon-service-gradle-plugin-"))
+                                             .filter(path -> {
+                                                 String name = path.getFileName().toString();
+                                                 return name.startsWith("helidon-service-gradle-plugin-")
+                                                         || name.startsWith("helidon-metadata-hson-")
+                                                         || name.startsWith("helidon-common-buffers-")
+                                                         || name.matches("helidon-common-[0-9].*");
+                                             })
                                              .map(Path::toFile)
                                              .toList());
     }

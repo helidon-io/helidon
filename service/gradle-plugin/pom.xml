@@ -32,6 +32,10 @@
             <artifactId>helidon-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.metadata</groupId>
+            <artifactId>helidon-metadata-hson</artifactId>
+        </dependency>
+        <dependency>
             <groupId>dev.gradleplugins</groupId>
             <artifactId>gradle-api</artifactId>
             <scope>provided</scope>
