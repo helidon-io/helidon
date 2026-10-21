@@ -182,9 +182,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: graalvm/setup-graalvm@v1
         with:
-          version: 22.3.1
-          java-version: 17
-          components: native-image
+          distribution: graalvm
+          java-version: '17'
           github-token: ${{ secrets.GITHUB_TOKEN }}
           native-image-job-reports: true
           set-java-home: false
