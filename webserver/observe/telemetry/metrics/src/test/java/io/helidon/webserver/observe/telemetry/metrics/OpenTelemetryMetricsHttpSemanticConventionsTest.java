@@ -72,6 +72,33 @@ import static org.mockito.Mockito.when;
 class OpenTelemetryMetricsHttpSemanticConventionsTest {
 
     @Test
+    void usesSuppliedTelemetryWithoutInitializingConfiguredReaders() {
+        OpenTelemetry openTelemetry = openTelemetry(mock(DoubleHistogram.class));
+        Config config = Config.just("""
+                telemetry:
+                  service: configured-service
+                  signals:
+                    metrics:
+                      readers:
+                        - type: periodic
+                          exporter: unconfigured-exporter
+                """, MediaTypes.APPLICATION_YAML);
+
+        new OpenTelemetryMetricsHttpSemanticConventions(openTelemetry, config);
+
+        verify(openTelemetry).meterBuilder("configured-service");
+    }
+
+    @Test
+    void requiresConfiguredServiceName() {
+        var exception = assertThrows(IllegalStateException.class,
+                                     () -> new OpenTelemetryMetricsHttpSemanticConventions(OpenTelemetry.noop(),
+                                                                                          Config.empty()));
+
+        assertThat(exception.getMessage(), is("Missing required telemetry.service setting"));
+    }
+
+    @Test
     void knownStandardHttpMethodUsesMethodMetricAttribute() throws Exception {
         AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
         AtomicReference<Runnable> whenSent = new AtomicReference<>();
@@ -457,6 +484,15 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
     }
 
     private static Filter filter(DoubleHistogram histogram, MetricsObserverConfig metricsConfig) {
+        OpenTelemetryMetricsHttpSemanticConventions provider =
+                new OpenTelemetryMetricsHttpSemanticConventions(openTelemetry(histogram),
+                                                                Config.just("telemetry.service: test",
+                                                                            MediaTypes.APPLICATION_YAML));
+
+        return provider.filter(metricsConfig).orElseThrow();
+    }
+
+    private static OpenTelemetry openTelemetry(DoubleHistogram histogram) {
         OpenTelemetry openTelemetry = mock(OpenTelemetry.class);
         MeterBuilder meterBuilder = mock(MeterBuilder.class);
         Meter meter = mock(Meter.class);
@@ -470,12 +506,7 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
         doReturn(histogramBuilder).when(histogramBuilder).setExplicitBucketBoundariesAdvice(any());
         when(histogramBuilder.build()).thenReturn(histogram);
 
-        OpenTelemetryMetricsHttpSemanticConventions provider =
-                new OpenTelemetryMetricsHttpSemanticConventions(openTelemetry,
-                                                                Config.just("telemetry.service: test",
-                                                                            MediaTypes.APPLICATION_YAML));
-
-        return provider.filter(metricsConfig).orElseThrow();
+        return openTelemetry;
     }
 
     private static RoutingRequest request() {

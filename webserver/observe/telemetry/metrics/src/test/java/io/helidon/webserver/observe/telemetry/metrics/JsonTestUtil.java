@@ -120,6 +120,7 @@ class JsonTestUtil {
             var optFeatureValue = valueGetter.apply(actual.asObject(), featureName);
             if (optFeatureValue.isEmpty()) {
                 mismatch.appendText("missing property " + featureName);
+                return false;
             } else {
                 if (!subMatcher.matches(optFeatureValue.get())) {
                     mismatch.appendText(featureName).appendText(" ");

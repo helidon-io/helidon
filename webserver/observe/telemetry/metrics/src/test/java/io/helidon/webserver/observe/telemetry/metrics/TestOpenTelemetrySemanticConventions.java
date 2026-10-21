@@ -40,9 +40,10 @@ import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webserver.testing.junit5.Socket;
 
 import io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingMetricExporter;
+import org.hamcrest.FeatureMatcher;
+import org.hamcrest.Matcher;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasArray;
 import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasAttributes;
 import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasDouble;
 import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasString;
@@ -59,7 +60,6 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -129,6 +129,42 @@ class TestOpenTelemetrySemanticConventions {
 
     }
 
+    static Matcher<String> hasExpectedHttpMeasurements() {
+        return allOf(containsString(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME),
+                     new FeatureMatcher<String, List<JsonObject>>(
+                             allOf(hasItem(hasAttributes(allOf(hasEntry(SOCKET_NAME, "@default"),
+                                                               hasEntry(HTTP_ROUTE, "/greet/{name}")))),
+                                   hasItem(hasAttributes(allOf(hasEntry(SOCKET_NAME, "private"),
+                                                               hasEntry(HTTP_ROUTE, "/greet"))))),
+                             "HTTP duration data points for both expected socket/route pairs",
+                             "HTTP duration data points") {
+                         @Override
+                         protected List<JsonObject> featureValueOf(String jsonText) {
+                             return metricsEntries(JsonParser.create(jsonText).readJsonObject()).stream()
+                                     .filter(entry -> entry.stringValue("name")
+                                             .filter(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME::equals)
+                                             .isPresent())
+                                     .flatMap(entry -> entry.objectValue("histogram").orElseThrow()
+                                             .arrayValue("dataPoints").orElseThrow().values().stream())
+                                     .map(JsonValue::asObject)
+                                     .toList();
+                         }
+                     });
+    }
+
+    static void assertExpectedHttpMeasurementValues(List<JsonObject> dataPoints) {
+        assertThat("HTTP histogram data point for @default /greet/{name}", dataPoints,
+                   hasItem(allOf(hasString("count", is("1")),
+                                 hasDouble("sum", greaterThan(0.0D)),
+                                 hasAttributes(allOf(hasEntry(SOCKET_NAME, "@default"),
+                                                     hasEntry(HTTP_ROUTE, "/greet/{name}"))))));
+        assertThat("HTTP histogram data point for private /greet", dataPoints,
+                   hasItem(allOf(hasString("count", is("1")),
+                                 hasDouble("sum", greaterThan(0.0D)),
+                                 hasAttributes(allOf(hasEntry(SOCKET_NAME, "private"),
+                                                     hasEntry(HTTP_ROUTE, "/greet"))))));
+    }
+
     @Test
     void checkAutoMetrics() {
 
@@ -164,10 +200,9 @@ class TestOpenTelemetrySemanticConventions {
             and the timer's count is 1.
              */
 
-            List<String> jsonText =
-                    testLogHandler.messages(hasItem(containsString(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME)));
+            String jsonText = testLogHandler.lastMessageMatching(hasExpectedHttpMeasurements());
 
-            var root = JsonParser.create(jsonText.getFirst()).readJsonObject();
+            var root = JsonParser.create(jsonText).readJsonObject();
 
             Set<String> routesSeen = new HashSet<>();
             var metricsEntries = metricsEntries(root);
@@ -191,13 +226,9 @@ class TestOpenTelemetrySemanticConventions {
                         .map(JsonValue::asObject)
                         .toList();
 
-                assertThat("Metrics entry", metricsEntry, allOf(
-                        hasString("name", is(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME)),
-                        hasArray("dataPoints",
-                                              hasItem(allOf(hasString("count", is("1")),
-                                                            hasDouble("sum", greaterThan(0.0D)),
-                                                            hasAttributes(
-                                                       hasEntry(HTTP_ROUTE, notNullValue())))))));
+                assertThat("Metrics entry", metricsEntry,
+                           hasString("name", is(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME)));
+                assertExpectedHttpMeasurementValues(dataPoints);
 
 
                 dataPoints.forEach(dataPoint -> {
@@ -272,8 +303,8 @@ class TestOpenTelemetrySemanticConventions {
             }
 
             var beforeJsonText =
-                    testLogHandler.messages(hasItem(containsString(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME)));
-            var beforeMeasurement = personalizedGreetingMeasurement(beforeJsonText);
+                    testLogHandler.lastMessageContaining(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME);
+            var beforeMeasurement = personalizedGreetingMeasurement(JsonParser.create(beforeJsonText).readJsonObject());
 
             var startTime = System.nanoTime();
             try (Http1ClientResponse defaultResponse = defaultClient.get("/greet/Joe")
@@ -284,8 +315,8 @@ class TestOpenTelemetrySemanticConventions {
             var elapsedTimeFromClient = System.nanoTime() - startTime;
 
             var afterJsonText =
-                    testLogHandler.messages(hasItem(containsString(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME)));
-            var afterMeasurement = personalizedGreetingMeasurement(afterJsonText);
+                    testLogHandler.lastMessageContaining(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME);
+            var afterMeasurement = personalizedGreetingMeasurement(JsonParser.create(afterJsonText).readJsonObject());
 
             var personalizedGreetingCount = afterMeasurement.count() - beforeMeasurement.count();
             var personalizedGreetingTimeNanos = afterMeasurement.timeNanos() - beforeMeasurement.timeNanos();
@@ -295,15 +326,6 @@ class TestOpenTelemetrySemanticConventions {
                        personalizedGreetingTimeNanos,
                        allOf(greaterThan(0L), lessThanOrEqualTo(elapsedTimeFromClient)));
         }
-    }
-
-    private static PersonalizedGreetingMeasurement personalizedGreetingMeasurement(List<String> jsonText) {
-        var timerJson = jsonText.stream()
-                .filter(it -> it.contains(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME))
-                .reduce((first, second) -> second)
-                .orElseThrow();
-
-        return personalizedGreetingMeasurement(JsonParser.create(timerJson).readJsonObject());
     }
 
     private static PersonalizedGreetingMeasurement personalizedGreetingMeasurement(JsonObject root) {
