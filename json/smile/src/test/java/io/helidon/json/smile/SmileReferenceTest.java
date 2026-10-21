@@ -17,7 +17,6 @@
 package io.helidon.json.smile;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -30,9 +29,8 @@ import io.helidon.json.JsonNull;
 import io.helidon.json.JsonParser;
 import io.helidon.json.JsonValue;
 
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.dataformat.smile.SmileFactory;
-import com.fasterxml.jackson.dataformat.smile.SmileParser;
+import tools.jackson.core.JsonToken;
+import tools.jackson.dataformat.smile.SmileFactory;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -57,7 +55,7 @@ class SmileReferenceTest {
     @Test
     public void testNullReference() {
         byte[] jacksonBytes =
-                generateJacksonSmileBytes(com.fasterxml.jackson.dataformat.smile.SmileGenerator::writeNull);
+                generateJacksonSmileBytes(tools.jackson.core.JsonGenerator::writeNull);
         byte[] helidonBytes = generateHelidonSmileBytes(JsonGenerator::writeNull);
 
         // Compare the encoded bytes
@@ -194,8 +192,8 @@ class SmileReferenceTest {
     public void testSimpleObjectReference() {
         byte[] jacksonBytes = generateJacksonSmileBytes(gen -> {
             gen.writeStartObject();
-            gen.writeStringField("key", "value");
-            gen.writeNumberField("number", 42);
+            gen.writeStringProperty("key", "value");
+            gen.writeNumberProperty("number", 42);
             gen.writeEndObject();
         });
 
@@ -213,12 +211,12 @@ class SmileReferenceTest {
     public void testNestedStructureReference() {
         byte[] jacksonBytes = generateJacksonSmileBytes(gen -> {
             gen.writeStartObject();
-            gen.writeFieldName("items");
+            gen.writeName("items");
             gen.writeStartArray();
             gen.writeString("first");
             gen.writeStartObject();
-            gen.writeBooleanField("flag", true);
-            gen.writeNumberField("count", 7);
+            gen.writeBooleanProperty("flag", true);
+            gen.writeNumberProperty("count", 7);
             gen.writeEndObject();
             gen.writeEndArray();
             gen.writeEndObject();
@@ -267,9 +265,9 @@ class SmileReferenceTest {
 
         // Parse with Jackson
         String jacksonParsed;
-        try (SmileParser jacksonParser = JACKSON_SMILE_FACTORY.createParser(helidonBytes)) {
+        try (tools.jackson.core.JsonParser jacksonParser = JACKSON_SMILE_FACTORY.createParser(helidonBytes)) {
             jacksonParser.nextToken(); // Skip to first token
-            jacksonParsed = jacksonParser.getText();
+            jacksonParsed = jacksonParser.getString();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -293,11 +291,11 @@ class SmileReferenceTest {
     @Test
     public void testJacksonSharedValueStringsParsedByHelidon() {
         SmileFactory factory = SmileFactory.builder()
-                .enable(com.fasterxml.jackson.dataformat.smile.SmileGenerator.Feature.CHECK_SHARED_STRING_VALUES)
+                .enable(tools.jackson.dataformat.smile.SmileWriteFeature.CHECK_SHARED_STRING_VALUES)
                 .build();
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (com.fasterxml.jackson.dataformat.smile.SmileGenerator gen = factory.createGenerator(baos)) {
+        try (tools.jackson.core.JsonGenerator gen = factory.createGenerator(baos)) {
             gen.writeStartArray();
             gen.writeString("shared-value");
             gen.writeString("shared-value");
@@ -327,18 +325,18 @@ class SmileReferenceTest {
             gen.writeStartArray();
 
             gen.writeStartObject();
-            gen.writeStringField("shared-key", "first");
-            gen.writeNumberField("idx", 1);
+            gen.writeStringProperty("shared-key", "first");
+            gen.writeNumberProperty("idx", 1);
             gen.writeEndObject();
 
             gen.writeStartObject();
-            gen.writeStringField("shared-key", "second");
-            gen.writeNumberField("idx", 2);
+            gen.writeStringProperty("shared-key", "second");
+            gen.writeNumberProperty("idx", 2);
             gen.writeEndObject();
 
             gen.writeStartObject();
-            gen.writeStringField("shared-key", "third");
-            gen.writeNumberField("idx", 3);
+            gen.writeStringProperty("shared-key", "third");
+            gen.writeNumberProperty("idx", 3);
             gen.writeEndObject();
 
             gen.writeEndArray();
@@ -373,16 +371,16 @@ class SmileReferenceTest {
             gen.writeArrayEnd();
         });
 
-        try (SmileParser parser = JACKSON_SMILE_FACTORY.createParser(helidonBytes)) {
+        try (tools.jackson.core.JsonParser parser = JACKSON_SMILE_FACTORY.createParser(helidonBytes)) {
             assertThat(parser.nextToken(), is(JsonToken.START_ARRAY));
             assertThat(parser.nextToken(), is(JsonToken.VALUE_STRING));
-            assertThat(parser.getText(), is("shared-value"));
+            assertThat(parser.getString(), is("shared-value"));
             assertThat(parser.nextToken(), is(JsonToken.VALUE_STRING));
-            assertThat(parser.getText(), is("shared-value"));
+            assertThat(parser.getString(), is("shared-value"));
             assertThat(parser.nextToken(), is(JsonToken.VALUE_STRING));
-            assertThat(parser.getText(), is("shared-value"));
+            assertThat(parser.getString(), is("shared-value"));
             assertThat(parser.nextToken(), is(JsonToken.END_ARRAY));
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -410,7 +408,7 @@ class SmileReferenceTest {
             gen.writeArrayEnd();
         });
 
-        try (SmileParser parser = JACKSON_SMILE_FACTORY.createParser(helidonBytes)) {
+        try (tools.jackson.core.JsonParser parser = JACKSON_SMILE_FACTORY.createParser(helidonBytes)) {
             assertThat(parser.nextToken(), is(JsonToken.START_ARRAY));
 
             assertObject(parser, "first", 1);
@@ -418,7 +416,7 @@ class SmileReferenceTest {
             assertObject(parser, "third", 3);
 
             assertThat(parser.nextToken(), is(JsonToken.END_ARRAY));
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -432,10 +430,10 @@ class SmileReferenceTest {
 
         byte[] helidonBytes = generateHelidonSmileBytes(config, gen -> gen.writeBinary(payload));
 
-        try (SmileParser parser = JACKSON_SMILE_FACTORY.createParser(helidonBytes)) {
+        try (tools.jackson.core.JsonParser parser = JACKSON_SMILE_FACTORY.createParser(helidonBytes)) {
             assertThat(parser.nextToken(), is(JsonToken.VALUE_EMBEDDED_OBJECT));
             assertThat(parser.getBinaryValue(), is(payload));
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -463,15 +461,15 @@ class SmileReferenceTest {
     @Test
     public void testJacksonRawBinaryParsedByHelidon() {
         SmileFactory factory = SmileFactory.builder()
-                .enable(com.fasterxml.jackson.dataformat.smile.SmileGenerator.Feature.ENCODE_BINARY_AS_7BIT)
-                .disable(com.fasterxml.jackson.dataformat.smile.SmileGenerator.Feature.ENCODE_BINARY_AS_7BIT)
+                .enable(tools.jackson.dataformat.smile.SmileWriteFeature.ENCODE_BINARY_AS_7BIT)
+                .disable(tools.jackson.dataformat.smile.SmileWriteFeature.ENCODE_BINARY_AS_7BIT)
                 .build();
         byte[] payload = new byte[] {9, 8, 7, 6, 5, (byte) 0xFE, (byte) 0xFF};
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (com.fasterxml.jackson.dataformat.smile.SmileGenerator gen = factory.createGenerator(baos)) {
+        try (tools.jackson.core.JsonGenerator gen = factory.createGenerator(baos)) {
             gen.writeBinary(payload);
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 
@@ -493,7 +491,7 @@ class SmileReferenceTest {
     // Helper method to generate Jackson Smile bytes
     private byte[] generateJacksonSmileBytes(JacksonConsumer writer) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (com.fasterxml.jackson.dataformat.smile.SmileGenerator generator =
+        try (tools.jackson.core.JsonGenerator generator =
                      JACKSON_SMILE_FACTORY.createGenerator(baos)) {
             writer.accept(generator);
         } catch (Exception e) {
@@ -504,7 +502,7 @@ class SmileReferenceTest {
 
     private interface JacksonConsumer{
 
-        void accept(com.fasterxml.jackson.dataformat.smile.SmileGenerator smileGenerator) throws IOException;
+        void accept(tools.jackson.core.JsonGenerator smileGenerator);
 
     }
 
@@ -529,15 +527,15 @@ class SmileReferenceTest {
         return baos.toByteArray();
     }
 
-    private static void assertObject(SmileParser parser,
+    private static void assertObject(tools.jackson.core.JsonParser parser,
                                      String expectedSharedKeyValue,
-                                     int expectedIdx) throws IOException {
+                                     int expectedIdx) {
         assertThat(parser.nextToken(), is(JsonToken.START_OBJECT));
-        assertThat(parser.nextToken(), is(JsonToken.FIELD_NAME));
+        assertThat(parser.nextToken(), is(JsonToken.PROPERTY_NAME));
         assertThat(parser.currentName(), is("shared-key"));
         assertThat(parser.nextToken(), is(JsonToken.VALUE_STRING));
-        assertThat(parser.getText(), is(expectedSharedKeyValue));
-        assertThat(parser.nextToken(), is(JsonToken.FIELD_NAME));
+        assertThat(parser.getString(), is(expectedSharedKeyValue));
+        assertThat(parser.nextToken(), is(JsonToken.PROPERTY_NAME));
         assertThat(parser.currentName(), is("idx"));
         assertThat(parser.nextToken(), is(JsonToken.VALUE_NUMBER_INT));
         assertThat(parser.getIntValue(), is(expectedIdx));

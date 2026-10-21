@@ -20,7 +20,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -34,9 +33,9 @@ import io.helidon.http.media.ByteArrayInstanceWriter;
 import io.helidon.http.media.EntityWriterBase;
 import io.helidon.http.media.InstanceWriter;
 
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
+import tools.jackson.databind.JavaType;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectWriter;
 
 class JacksonWriter<T> extends EntityWriterBase<T> {
     private final ObjectMapper objectMapper;
@@ -95,12 +94,9 @@ class JacksonWriter<T> extends EntityWriterBase<T> {
     }
 
     private void write(GenericType<T> type, T object, Writer out) {
-        try {
-            // even though the javadoc claims they do not close the writer, it is actually closed
-            writer(type).writeValue(out, object);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        // Jackson 3 failures are unchecked (JacksonException)
+        // even though the javadoc claims they do not close the writer, it is actually closed
+        writer(type).writeValue(out, object);
 
         try {
             out.close();
@@ -129,11 +125,8 @@ class JacksonWriter<T> extends EntityWriterBase<T> {
 
     private byte[] toBytes(GenericType<T> type, T object, Optional<Charset> charset) {
         if (charset.isEmpty()) {
-            try {
-                return writer(type).writeValueAsBytes(object);
-            } catch (IOException e) {
-                throw new JacksonRuntimeException("Failed to serialize to JSON: " + type, e);
-            }
+            // Jackson 3 failures are unchecked (JacksonException)
+            return writer(type).writeValueAsBytes(object);
         }
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();

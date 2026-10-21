@@ -19,8 +19,8 @@
  * <p>
  * Supports builder codegen extension for the following types:
  * <ul>
- *     <li>{@code com.fasterxml.jackson.databind.annotation.JsonSerialize}</li>
- *     <li>{@code com.fasterxml.jackson.databind.annotation.JsonDeserialize}</li>
+ *     <li>{@code tools.jackson.databind.annotation.JsonSerialize}</li>
+ *     <li>{@code tools.jackson.databind.annotation.JsonDeserialize}</li>
  * </ul>
  */
 module io.helidon.builder.codegen.jackson {

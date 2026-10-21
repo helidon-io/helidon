@@ -26,7 +26,7 @@ import io.helidon.http.HttpMediaType;
 import io.helidon.http.media.MediaSupportConfig;
 import io.helidon.http.media.spi.MediaSupportProvider;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Configuration of the {@link JacksonSupport}.
@@ -41,7 +41,7 @@ interface JacksonSupportConfigBlueprint extends MediaSupportConfig, Prototype.Fa
     String name();
 
     /**
-     * Jackson {@link com.fasterxml.jackson.databind.ObjectMapper} instance.
+     * Jackson {@link tools.jackson.databind.ObjectMapper} instance.
      *
      * @return jackson object mapper instance
      */

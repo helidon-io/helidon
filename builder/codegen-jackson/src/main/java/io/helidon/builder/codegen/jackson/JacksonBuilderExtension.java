@@ -33,7 +33,9 @@ import static io.helidon.builder.codegen.jackson.JacksonTypes.JSON_DESERIALIZE;
 import static io.helidon.builder.codegen.jackson.JacksonTypes.JSON_POJO_BUILDER;
 
 class JacksonBuilderExtension implements BuilderCodegenExtension {
-    static final String JACKSON_PACKAGE_PREFIX = "com.fasterxml.jackson";
+    // Jackson 3: databind annotations moved to `tools.jackson`, jackson-annotations stayed on `com.fasterxml.jackson`
+    static final String JACKSON_PACKAGE_PREFIX = "tools.jackson";
+    static final String JACKSON_ANNOTATIONS_PACKAGE_PREFIX = "com.fasterxml.jackson.annotation";
     private final boolean serialize;
     private final boolean deserialize;
 
@@ -88,7 +90,7 @@ class JacksonBuilderExtension implements BuilderCodegenExtension {
         var methodBuilder = TypedElementInfo.builder(method.method());
 
         for (Annotation annotation : ifaceMethod.annotations()) {
-            if (annotation.typeName().packageName().startsWith(JACKSON_PACKAGE_PREFIX)) {
+            if (isJacksonAnnotation(annotation)) {
                 methodBuilder.addAnnotation(annotation);
             }
         }
@@ -108,12 +110,18 @@ class JacksonBuilderExtension implements BuilderCodegenExtension {
         var methodBuilder = TypedElementInfo.builder(method.method());
 
         for (Annotation annotation : ifaceMethod.annotations()) {
-            if (annotation.typeName().packageName().startsWith(JACKSON_PACKAGE_PREFIX)) {
+            if (isJacksonAnnotation(annotation)) {
                 methodBuilder.addAnnotation(annotation);
             }
         }
 
         return gmBuilder.method(methodBuilder)
                 .build();
+    }
+
+    private boolean isJacksonAnnotation(Annotation annotation) {
+        String packageName = annotation.typeName().packageName();
+        return packageName.startsWith(JACKSON_PACKAGE_PREFIX)
+                || packageName.startsWith(JACKSON_ANNOTATIONS_PACKAGE_PREFIX);
     }
 }
