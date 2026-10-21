@@ -203,6 +203,137 @@ class GradlePluginTest {
     }
 
     @Test
+    void preservesServiceOutputsRegisteredByLaterCallback() throws IOException {
+        fixture();
+        write("build.gradle", Files.readString(directory.resolve("build.gradle")) + """
+
+                def lateCompile = tasks.register('compileLateServices', JavaCompile) {
+                    source = fileTree('src/late/java')
+                    classpath = sourceSets.main.compileClasspath
+                    options.annotationProcessorPath = configurations.annotationProcessor
+                    destinationDirectory = layout.buildDirectory.dir('classes/late/main')
+                }
+                def lateTestCompile = tasks.register('compileLateTestServices', JavaCompile) {
+                    source = fileTree('src/lateTest/java')
+                    classpath = sourceSets.test.compileClasspath + files(tasks.named('compileTestJava')
+                            .flatMap { it.destinationDirectory })
+                    options.annotationProcessorPath = configurations.testAnnotationProcessor
+                    destinationDirectory = layout.buildDirectory.dir('classes/late/test')
+                }
+                afterEvaluate {
+                    sourceSets.main.output.classesDirs.from(lateCompile.flatMap { it.destinationDirectory })
+                    sourceSets.test.output.classesDirs.from(lateTestCompile.flatMap { it.destinationDirectory })
+                }
+                tasks.register('rawLateJar', Jar) {
+                    archiveClassifier = 'raw-late'
+                    from(lateCompile.flatMap { it.destinationDirectory })
+                }
+                tasks.register('prefixedOutputJar', Jar) {
+                    archiveClassifier = 'prefixed-output'
+                    into('nested') { from(sourceSets.main.output) }
+                }
+                """);
+        write("src/late/java/example/LateService.java", """
+                package example;
+                import io.helidon.service.registry.Service;
+                @Service.Singleton
+                public class LateService {
+                    public String value() { return "late"; }
+                }
+                """);
+        write("src/lateTest/java/example/LateTestService.java", """
+                package example;
+                import io.helidon.service.registry.Service;
+                @Service.Singleton
+                public class LateTestService {
+                    public String value() { return "late-test"; }
+                }
+                """);
+        write("src/lateTest/java/example/LateBindingTest.java", """
+                package example;
+                import io.helidon.service.registry.ServiceRegistryConfig;
+                import io.helidon.service.registry.ServiceRegistryManager;
+                import org.junit.jupiter.api.Test;
+                import static org.hamcrest.CoreMatchers.is;
+                import static org.hamcrest.MatcherAssert.assertThat;
+                public class LateBindingTest {
+                    @Test
+                    void lateTestServiceIsBound() {
+                        var binding = TestApplicationBinding.create();
+                        var config = ServiceRegistryConfig.builder()
+                                .discoverServices(false)
+                                .discoverServicesFromServiceLoader(false)
+                                .allowLateBinding(false)
+                                .update(binding::configure)
+                                .build();
+                        var manager = ServiceRegistryManager.start(binding, config);
+                        try {
+                            assertThat(manager.registry().get(LateTestService.class).value(), is("late-test"));
+                        } finally {
+                            manager.shutdown();
+                        }
+                    }
+                }
+                """);
+        write("src/main/java/example/Main.java", Files.readString(directory.resolve("src/main/java/example/Main.java"))
+                .replace("main(String[] args) {", "main(String[] args) throws Exception {")
+                .replace("manager.shutdown();", """
+                        Class<?> lateType = Class.forName("example.LateService");
+                        Object late = manager.registry().get(lateType);
+                        System.out.println("LATE:" + lateType.getMethod("value").invoke(late));
+                        manager.shutdown();
+                        """));
+
+        BuildResult classes = runner("classes", "--configuration-cache").build();
+        assertThat("classes must build the producer registered by the later callback",
+                   classes.task(":compileLateServices"), notNullValue());
+        assertTask(classes, ":compileLateServices", TaskOutcome.SUCCESS);
+        assertTask(classes, ":generateApplicationBindings", TaskOutcome.SUCCESS);
+        String binding = Files.readString(directory.resolve(
+                "build/generated/sources/helidon/main/example/ApplicationBinding.java"));
+        assertThat(binding, containsString("LateService__ServiceDescriptor"));
+
+        BuildResult packaged = runner("test", "packagedRun", "rawLateJar", "prefixedOutputJar",
+                                      "--configuration-cache").build();
+        assertTask(packaged, ":compileLateTestServices", TaskOutcome.SUCCESS);
+        assertTask(packaged, ":test", TaskOutcome.SUCCESS);
+        assertTask(packaged, ":packagedRun", TaskOutcome.SUCCESS);
+        assertThat(packaged.getOutput(), containsString("APPLICATION:chosen:library"));
+        assertThat(packaged.getOutput(), containsString("LATE:late"));
+        String testBinding = Files.readString(directory.resolve(
+                "build/generated/sources/helidon/test/example/TestApplicationBinding.java"));
+        assertThat(testBinding, containsString("LateService__ServiceDescriptor"));
+        assertThat(testBinding, containsString("LateTestService__ServiceDescriptor"));
+        assertThat(Files.readString(directory.resolve("build/test-results/test/TEST-example.LateBindingTest.xml")),
+                   containsString("tests=\"1\""));
+        try (var jar = new ZipFile(directory.resolve("build/libs/application.jar").toFile())) {
+            assertThat(jar.stream().filter(entry -> entry.getName().equals("example/LateService.class")).count(), is(1L));
+            assertThat(jar.stream().filter(entry -> entry.getName().equals("example/ApplicationBinding.class")).count(),
+                       is(1L));
+        }
+        try (var jar = new ZipFile(directory.resolve("build/libs/application-raw-late.jar").toFile())) {
+            assertThat("A jar of raw compiler output must retain its classes",
+                       jar.getEntry("example/LateService.class"), notNullValue());
+        }
+        try (var jar = new ZipFile(directory.resolve("build/libs/application-prefixed-output.jar").toFile())) {
+            assertThat(jar.stream().filter(entry -> entry.getName().equals("nested/example/LateService.class")).count(),
+                       is(1L));
+            assertThat(jar.getEntry("nested/example/ApplicationBinding.class"), notNullValue());
+        }
+
+        BuildResult repeated = runner("test", "packagedRun", "rawLateJar", "prefixedOutputJar",
+                                      "--configuration-cache").build();
+        assertThat(repeated.getOutput(), containsString("Reusing configuration cache"));
+        assertThat(repeated.getOutput(), containsString("LATE:late"));
+        assertTask(repeated, ":compileLateServices", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":compileLateTestServices", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":generateApplicationBindings", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":generateTestApplicationBindings", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":jar", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":test", TaskOutcome.UP_TO_DATE);
+    }
+
+    @Test
     void modularApplicationBindingsArePackagedAndRun() throws IOException {
         fixture();
         write("library/src/main/java/module-info.java", """

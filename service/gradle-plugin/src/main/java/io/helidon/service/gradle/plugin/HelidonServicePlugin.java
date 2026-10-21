@@ -17,6 +17,7 @@ package io.helidon.service.gradle.plugin;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
@@ -35,6 +36,7 @@ import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskProvider;
+import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.jvm.toolchain.JavaToolchainService;
 import org.gradle.language.jvm.tasks.ProcessResources;
@@ -104,24 +106,41 @@ public final class HelidonServicePlugin implements Plugin<Project> {
             task.getOptions().getPackageName().convention(extension.getTestPackageName());
             task.getTestSourceRoots().from(test.getAllJava().getSourceDirectories());
         });
-        project.afterEvaluate(_ -> {
-            classes(project, main, application);
-            classes(project, test, tests);
-        });
+        classes(project, main, application);
+        classes(project, test, tests);
         project.getTasks().named(main.getClassesTaskName()).configure(task -> task.dependsOn(application));
         project.getTasks().named(test.getClassesTaskName()).configure(task -> task.dependsOn(tests));
     }
 
     private static void classes(Project project, SourceSet sourceSet, TaskProvider<GenerateBindings> generator) {
         // Gradle's Java plugin exposes a configurable collection through the read-only SourceSetOutput interface.
-        // Capture all compiler outputs after plugins and build scripts have configured the source set.
         if (sourceSet.getOutput().getClassesDirs() instanceof ConfigurableFileCollection classes) {
-            // Copy the source objects to retain lazy paths and producer dependencies without following our replacement.
+            // Preserve existing sources and follow later additions without following our own completed output.
             var originalClasses = project.files(new ArrayList<>(classes.getFrom()))
                     .builtBy(new ArrayList<>(classes.getBuiltBy()));
-            generator.configure(task -> task.getRawClasses().from(originalClasses));
-            classes.setFrom(generator.flatMap(GenerateBindings::getClassesDirectory));
+            var completedClasses = generator.flatMap(GenerateBindings::getClassesDirectory);
+            var additionalClasses = project.files(project.provider(() -> classes.getFrom().stream()
+                            .filter(source -> source != completedClasses)
+                            .toList()))
+                    .builtBy(project.provider(classes::getBuiltBy));
+            generator.configure(task -> task.getRawClasses().from(originalClasses, additionalClasses));
+            // Consumers resolve completed classes first, including when another plugin adds compiler outputs later.
+            classes.setFrom(completedClasses);
             classes.setBuiltBy(List.of());
+            project.getTasks().withType(Jar.class).configureEach(jar -> {
+                var completedEntries = new HashSet<String>();
+                jar.eachFile(file -> {
+                    var path = file.getFile().toPath();
+                    var relativePath = file.getRelativePath().getPathString();
+                    if (path.startsWith(completedClasses.get().getAsFile().toPath())) {
+                        completedEntries.add(relativePath);
+                    } else if (completedEntries.contains(relativePath)
+                            && additionalClasses.getFiles().stream().anyMatch(root -> path.startsWith(root.toPath()))) {
+                        // Drop only a later raw copy of an entry already copied from completed output.
+                        file.exclude();
+                    }
+                });
+            });
         } else {
             throw new GradleException("The Helidon service plugin requires configurable Java source set class directories: "
                                               + sourceSet.getName());
