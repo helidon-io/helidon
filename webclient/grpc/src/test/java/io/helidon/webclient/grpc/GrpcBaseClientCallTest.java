@@ -60,6 +60,8 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.ClientCalls;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -407,8 +409,9 @@ class GrpcBaseClientCallTest {
         }
     }
 
-    @Test
-    void unaryCallClosesOnMalformedBinaryTrailer() throws InterruptedException {
+    @ParameterizedTest
+    @ValueSource(strings = {"partial", "complete", "trailers-only"})
+    void unaryCallClosesOnMalformedBinaryTrailer(String response) throws InterruptedException {
         WebServer server = WebServer.builder()
                 .tls(tls -> tls.enabled(false))
                 .addConnectionSelector(Http2ConnectionSelector.builder()
@@ -417,6 +420,13 @@ class GrpcBaseClientCallTest {
                 .addRouting(HttpRouting.builder()
                                     .post("/test.Test/Call", (req, res) -> {
                                         HeaderName binaryTrailer = HeaderNames.create("test-bin");
+                                        if (response.equals("trailers-only")) {
+                                            res.header(GrpcBaseClientCall.STATUS_NAME,
+                                                       String.valueOf(Status.Code.RESOURCE_EXHAUSTED.value()));
+                                            res.header(binaryTrailer, "!!!");
+                                            res.send();
+                                            return;
+                                        }
                                         res.header(HeaderValues.create(HeaderNames.TRAILER,
                                                                        "grpc-status, " + binaryTrailer));
                                         res.trailers().set(HeaderValues.create(GrpcBaseClientCall.STATUS_NAME,
@@ -424,7 +434,9 @@ class GrpcBaseClientCallTest {
                                                                                        Status.Code.RESOURCE_EXHAUSTED
                                                                                                .value())));
                                         res.trailers().set(HeaderValues.create(binaryTrailer, "!!!"));
-                                        res.send(new byte[] {0, 0});
+                                        res.send(response.equals("complete")
+                                                         ? grpcData("response").readBytes()
+                                                         : new byte[] {0, 0});
                                     }))
                 .build()
                 .start();
