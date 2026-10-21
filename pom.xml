@@ -134,10 +134,10 @@
         <javadoc.link.ojdbc>https://docs.oracle.com/en/database/oracle/oracle-database/${version.lib.ojdbc.family}/jajdb/</javadoc.link.ojdbc>
         <javadoc.link.ucp>https://docs.oracle.com/en/database/oracle/oracle-database/${version.lib.ojdbc.family}/jjuar/</javadoc.link.ucp>
 
-        <javadoc.jackson.version>2.14</javadoc.jackson.version>
-        <javadoc.link.jackson-annotations>https://fasterxml.github.io/jackson-annotations/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-annotations>
-        <javadoc.link.jackson-core>https://fasterxml.github.io/jackson-core/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-core>
-        <javadoc.link.jackson-databind>https://fasterxml.github.io/jackson-databind/javadoc/${javadoc.jackson.version}/</javadoc.link.jackson-databind>
+        <javadoc.jackson.version>3.2</javadoc.jackson.version>
+        <javadoc.link.jackson-annotations>https://fasterxml.github.io/jackson-annotations/javadoc/2.20/</javadoc.link.jackson-annotations>
+        <javadoc.link.jackson-core>https://javadoc.io/doc/tools.jackson.core/jackson-core/${javadoc.jackson.version}/</javadoc.link.jackson-core>
+        <javadoc.link.jackson-databind>https://javadoc.io/doc/tools.jackson.core/jackson-databind/${javadoc.jackson.version}/</javadoc.link.jackson-databind>
         <javadoc.link.reactive-streams>https://www.reactive-streams.org/reactive-streams-${version.lib.reactivestreams}-javadoc</javadoc.link.reactive-streams>
         <javadoc.link.typesafe-config>https://static.javadoc.io/com.typesafe/config/${version.lib.typesafe-config}</javadoc.link.typesafe-config>
         <javadoc.link.prometheus>https://prometheus.github.io/client_java/api/</javadoc.link.prometheus>

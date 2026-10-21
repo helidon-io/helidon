@@ -29,7 +29,7 @@ import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaSupport;
 import io.helidon.http.media.MediaSupportBase;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * {@link java.util.ServiceLoader} provider implementation for Jackson media support.
@@ -194,18 +194,16 @@ public class JacksonSupport extends MediaSupportBase<JacksonSupportConfig> imple
         return super.config();
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     protected boolean canSerialize(GenericType<?> type) {
-        // once the method is removed, just return `true` here
-        return objectMapper.canSerialize(type.rawType());
+        // ObjectMapper.canSerialize() was removed in Jackson 3; assume serializable
+        return true;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     protected boolean canDeserialize(GenericType<?> type) {
-        // once the method is removed, just return `true` here
-        return objectMapper.canDeserialize(objectMapper.constructType(type.type()));
+        // ObjectMapper.canDeserialize() was removed in Jackson 3; assume deserializable
+        return true;
     }
 
     private <T> EntityReader<T> reader() {

@@ -28,8 +28,8 @@ import io.helidon.common.GenericType;
 import io.helidon.http.Headers;
 import io.helidon.http.media.EntityReaderBase;
 
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JavaType;
+import tools.jackson.databind.ObjectMapper;
 
 class JacksonReader<T> extends EntityReaderBase<T> {
 

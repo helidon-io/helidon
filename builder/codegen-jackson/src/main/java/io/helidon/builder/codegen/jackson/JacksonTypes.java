@@ -19,9 +19,9 @@ package io.helidon.builder.codegen.jackson;
 import io.helidon.common.types.TypeName;
 
 final class JacksonTypes {
-    static final TypeName JSON_SERIALIZE = TypeName.create("com.fasterxml.jackson.databind.annotation.JsonSerialize");
-    static final TypeName JSON_DESERIALIZE = TypeName.create("com.fasterxml.jackson.databind.annotation.JsonDeserialize");
-    static final TypeName JSON_POJO_BUILDER = TypeName.create("com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder");
+    static final TypeName JSON_SERIALIZE = TypeName.create("tools.jackson.databind.annotation.JsonSerialize");
+    static final TypeName JSON_DESERIALIZE = TypeName.create("tools.jackson.databind.annotation.JsonDeserialize");
+    static final TypeName JSON_POJO_BUILDER = TypeName.create("tools.jackson.databind.annotation.JsonPOJOBuilder");
 
     private JacksonTypes() {
     }

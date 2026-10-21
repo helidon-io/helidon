@@ -18,9 +18,8 @@ package io.helidon.builder.tests.jackson;
 
 import java.util.Optional;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -31,19 +30,18 @@ public class JacksonSerializationTest {
     private static final String SERIALIZED_VALUE = """
             {"encrypted":true,"workflowId":47,"size":42}""";
     private static final String SERIALIZED_VALUE_WITH_NULL = """
-            {"encrypted":true,"workflowId":47,"size":42,"label":null}""";
+            {"encrypted":true,"label":null,"size":42,"workflowId":47}""";
     private static final String SERIALIZED_VALUE_WITH_LABEL = """
             {"encrypted":true,"workflowId":47,"size":42,"label":"some-label"}""";
     static ObjectMapper mapper;
 
     @BeforeAll
     static void beforeAll() {
-        mapper = new ObjectMapper();
-        mapper.registerModule(new Jdk8Module());
+        mapper = JsonMapper.builder().build();
     }
 
     @Test
-    void testDeserialization() throws JsonProcessingException {
+    void testDeserialization() {
         DemoWorkflowArguments result = mapper.readValue(SERIALIZED_VALUE, DemoWorkflowArguments.class);
         assertThat(result.getSize(), is(42L));
         assertThat(result.getWorkflowId(), is(47));
@@ -52,7 +50,7 @@ public class JacksonSerializationTest {
     }
 
     @Test
-    void testDeserializationWithNull() throws JsonProcessingException {
+    void testDeserializationWithNull() {
         DemoWorkflowArguments result = mapper.readValue(SERIALIZED_VALUE_WITH_NULL, DemoWorkflowArguments.class);
         assertThat(result.getSize(), is(42L));
         assertThat(result.getWorkflowId(), is(47));
@@ -61,7 +59,7 @@ public class JacksonSerializationTest {
     }
 
     @Test
-    void testDeserializationWithLabel() throws JsonProcessingException {
+    void testDeserializationWithLabel() {
         DemoWorkflowArguments result = mapper.readValue(SERIALIZED_VALUE_WITH_LABEL, DemoWorkflowArguments.class);
         assertThat(result.getSize(), is(42L));
         assertThat(result.getWorkflowId(), is(47));
@@ -70,7 +68,7 @@ public class JacksonSerializationTest {
     }
 
     @Test
-    void testSerialization() throws JsonProcessingException {
+    void testSerialization() {
         var instance = DemoWorkflowArguments.builder()
                 .setEncrypted(true)
                 .setSize(42)

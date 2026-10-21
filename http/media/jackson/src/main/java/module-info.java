@@ -29,11 +29,8 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Path({"Media", "Jackson"})
 module io.helidon.http.media.jackson {
 
-    requires com.fasterxml.jackson.core;
-    requires com.fasterxml.jackson.databind;
-    requires com.fasterxml.jackson.datatype.jdk8;
-    requires com.fasterxml.jackson.datatype.jsr310;
-    requires com.fasterxml.jackson.module.paramnames;
+    requires tools.jackson.core;
+    requires tools.jackson.databind;
     requires io.helidon.http.media;
 
     requires static io.helidon.common.features.api;

@@ -20,7 +20,7 @@ updates:
     schedule:
       interval: "daily"
     allow:
-      - dependency-name: "com.fasterxml.jackson:jackson-bom"
+      - dependency-name: "tools.jackson:jackson-bom"
         update-types:
           - "version-update:semver-patch"
       - dependency-name: "org.yaml:snakeyaml"
@@ -38,7 +38,7 @@ updates:
     schedule:
       interval: "daily"
     allow:
-      - dependency-name: "com.fasterxml.jackson:jackson-bom"
+      - dependency-name: "tools.jackson:jackson-bom"
         update-types:
           - "version-update:semver-patch"
       - dependency-name: "org.yaml:snakeyaml"
@@ -57,7 +57,7 @@ updates:
     schedule:
       interval: "daily"
     allow:
-      - dependency-name: "com.fasterxml.jackson:jackson-bom"
+      - dependency-name: "tools.jackson:jackson-bom"
         update-types:
           - "version-update:semver-patch"
       - dependency-name: "io.netty:netty-bom"
@@ -79,7 +79,7 @@ updates:
     schedule:
       interval: "daily"
     allow:
-      - dependency-name: "com.fasterxml.jackson:jackson-bom"
+      - dependency-name: "tools.jackson:jackson-bom"
         update-types:
           - "version-update:semver-patch"
       - dependency-name: "io.netty:netty-bom"

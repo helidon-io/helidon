@@ -23,20 +23,15 @@ import java.util.stream.Stream;
 
 import io.helidon.builder.api.Prototype;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.StreamReadFeature;
-import com.fasterxml.jackson.core.StreamWriteFeature;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.cfg.EnumFeature;
-import com.fasterxml.jackson.databind.cfg.JsonNodeFeature;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
+import tools.jackson.core.StreamReadFeature;
+import tools.jackson.core.StreamWriteFeature;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.MapperFeature;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.SerializationFeature;
+import tools.jackson.databind.cfg.EnumFeature;
+import tools.jackson.databind.cfg.JsonNodeFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 final class JacksonConfigSupport {
     private JacksonConfigSupport() {
@@ -54,10 +49,7 @@ final class JacksonConfigSupport {
                             .enable(StreamReadFeature.USE_FAST_DOUBLE_PARSER)
                             .enable(StreamReadFeature.USE_FAST_BIG_NUMBER_PARSER);
                     configureJsonMapper(builder, target.properties());
-                    ObjectMapper objectMapper = builder.build()
-                            .registerModule(new ParameterNamesModule())
-                            .registerModule(new Jdk8Module())
-                            .registerModule(new JavaTimeModule());
+                    ObjectMapper objectMapper = builder.build();
                     target.objectMapper(objectMapper);
                 }
             }
@@ -69,11 +61,8 @@ final class JacksonConfigSupport {
             configure(DeserializationFeature.values(), properties, jsonMapper::configure);
             configure(SerializationFeature.values(), properties, jsonMapper::configure);
             configure(JsonNodeFeature.values(), properties, jsonMapper::configure);
-            configure(JsonParser.Feature.values(), properties, jsonMapper::configure);
             configure(MapperFeature.values(), properties, jsonMapper::configure);
-            configure(JsonGenerator.Feature.values(), properties, jsonMapper::configure);
             configure(EnumFeature.values(), properties, jsonMapper::configure);
-            configure(JsonNodeFeature.values(), properties, jsonMapper::configure);
         }
 
         private static <T extends Enum<?>> void configure(T[] values,
@@ -89,10 +78,7 @@ final class JacksonConfigSupport {
             return JsonMapper.builder()
                     .enable(StreamReadFeature.USE_FAST_DOUBLE_PARSER)
                     .enable(StreamReadFeature.USE_FAST_BIG_NUMBER_PARSER)
-                    .build()
-                    .registerModule(new ParameterNamesModule())
-                    .registerModule(new Jdk8Module())
-                    .registerModule(new JavaTimeModule());
+                    .build();
         }
     }
 }

@@ -54,7 +54,7 @@
                                     <model>
                                         <list key="dependencies">
                                             <map order="500">
-                                                <value key="groupId">com.fasterxml.jackson.core</value>
+                                                <value key="groupId">tools.jackson.core</value>
                                                 <value key="artifactId">jackson-databind</value>
                                             </map>
                                             <map order="500" if="${flavor} == 'se'">
@@ -64,7 +64,7 @@
                                         </list>
                                         <list key="module-requires">
                                             <value>com.fasterxml.jackson.annotation</value>
-                                            <value>com.fasterxml.jackson.core</value>
+                                            <value>tools.jackson.core</value>
                                         </list>
                                     </model>
                                 </output>
