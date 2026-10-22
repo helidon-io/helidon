@@ -223,6 +223,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.helidon.media</groupId>
+            <artifactId>helidon-media-multipart</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>jakarta.inject</groupId>
             <artifactId>jakarta.inject-api</artifactId>
             <scope>test</scope>

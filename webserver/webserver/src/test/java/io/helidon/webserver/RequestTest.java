@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,7 @@ public class RequestTest {
     @Test
     public void queryEncodingTest() throws Exception {
         BareRequest mock = mock(BareRequest.class);
+        when(mock.socketConfiguration()).thenReturn(SocketConfiguration.builder().build());
         when(mock.uri()).thenReturn(new URI("http://localhost:123/one/two?a=b%26c=d&e=f&e=g&h=x%63%23e%3c#a%20frag%23ment"));
         when(mock.bodyPublisher()).thenReturn(Single.empty());
         WebServer webServer = mock(WebServer.class);

@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -51,6 +51,10 @@ Type: link:{javadoc-base-url}/io.helidon.media.common/io/helidon/media/common/Me
      <td>Whether to register default reader and writers</td>
  </tr>
  <tr>
+     <td>max-buffered-entity-size</td>
+     <td>Maximum decoded input bytes per materializing conversion; default 1048576 (1 MiB).</td>
+ </tr>
+ <tr>
      <td>discover-services</td>
      <td>Whether to discover services via service loader</td>
  </tr>
@@ -78,6 +82,9 @@ Type: link:{javadoc-base-url}/io.helidon.media.common/io/helidon/media/common/Me
 |`discover-services` |boolean |`false` |Whether Java Service Loader should be used to load MediaSupportProvider.
 |`filter-services` |boolean |`false` |Whether services loaded by Java Service Loader should be filtered.
  All of the services which should pass the filter, have to be present under `services` section of configuration.
+|`max-buffered-entity-size` |long |`1048576` |Maximum decoded input bytes per materializing conversion, including each multipart part.
+ Zero permits only empty input; negative values are rejected. Direct streams and streaming readers are excluded.
+ This is an input budget, not an object-graph size limit.
 |`register-defaults` |boolean |`true` |Whether default readers and writers should be registered.
 
 |===

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,15 +122,12 @@ public final class MediaContext {
         private final List<MessageBodyStreamWriter<?>> builderStreamWriter = new ArrayList<>();
         private final List<MediaSupport> mediaSupports = new ArrayList<>();
         private final Map<String, Map<String, String>> servicesConfig = new HashMap<>();
-        private final MessageBodyReaderContext readerContext;
-        private final MessageBodyWriterContext writerContext;
+        private long maxBufferedEntitySize = 1_048_576L;
         private boolean registerDefaults = true;
         private boolean discoverServices = false;
         private boolean filterServices = false;
 
         private Builder() {
-            this.readerContext = MessageBodyReaderContext.create();
-            this.writerContext = MessageBodyWriterContext.create();
         }
 
         /**
@@ -144,6 +141,10 @@ public final class MediaContext {
          * <tr>
          *     <td>register-defaults</td>
          *     <td>Whether to register default reader and writers</td>
+         * </tr>
+         * <tr>
+         *     <td>max-buffered-entity-size</td>
+         *     <td>Maximum decoded input bytes per materializing conversion; default 1048576 (1 MiB).</td>
          * </tr>
          * <tr>
          *     <td>discover-services</td>
@@ -172,6 +173,7 @@ public final class MediaContext {
             config.get("register-defaults").asBoolean().ifPresent(this::registerDefaults);
             config.get("discover-services").asBoolean().ifPresent(this::discoverServices);
             config.get("filter-services").asBoolean().ifPresent(this::filterServices);
+            config.get("max-buffered-entity-size").asLong().ifPresent(this::maxBufferedEntitySize);
             config.get("services")
                     .asNodeList()
                     .ifPresent(it -> it.forEach(serviceConfig -> {
@@ -268,8 +270,29 @@ public final class MediaContext {
             return this;
         }
 
+        /**
+         * Configure the decoded-input budget for each materializing entity conversion, including each multipart part.
+         * The default is 1 MiB (1,048,576 bytes). Zero permits only empty input; negative values are rejected.
+         * Direct streams and streaming readers are excluded. This limits input bytes rather than the resulting object graph.
+         *
+         * @param size maximum decoded input size in bytes
+         * @return this builder
+         * @throws IllegalArgumentException if {@code size} is negative
+         */
+        @ConfiguredOption("1048576")
+        public Builder maxBufferedEntitySize(long size) {
+            if (size < 0) {
+                throw new IllegalArgumentException("Maximum buffered entity size must not be negative");
+            }
+            this.maxBufferedEntitySize = size;
+            return this;
+        }
+
         @Override
         public MediaContext build() {
+            MessageBodyReaderContext readerContext = MessageBodyReaderContext.create()
+                    .maxBufferedEntitySize(maxBufferedEntitySize);
+            MessageBodyWriterContext writerContext = MessageBodyWriterContext.create();
             //Remove all service names from the obtained service configurations
             servicesConfig.forEach((key, values) -> values.remove(SERVICE_NAME));
             if (filterServices) {

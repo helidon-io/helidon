@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -52,3 +52,34 @@ In some situations Netty can aggressively allocate memory per request. This has 
 ----
 
 You can try smaller numbers.
+
+
+== Bound entity materialization
+
+Ordinary WebServer request and WebClient response conversions to byte arrays, strings, forms, JSON,
+and application-defined materializing readers have a decoded-input budget of 1 MiB (1,048,576 bytes).
+The budget applies after content filters and decoding, and applies independently to each materialized multipart part.
+It bounds input bytes rather than the resulting object graph or total JVM heap usage.
+
+Configure `max-buffered-entity-size` in bytes on the server socket or client component node.
+The programmatic equivalents are `WebServer.Builder.maxBufferedEntitySize(long)`,
+`SocketConfiguration.Builder.maxBufferedEntitySize(long)`, and `WebClient.Builder.maxBufferedEntitySize(long)`.
+Standalone media contexts support `MediaContext.Builder.maxBufferedEntitySize(long)` and the same configuration key.
+Zero permits only empty input; negative values are rejected when configuring the component.
+
+[source,yaml]
+----
+server:
+  max-buffered-entity-size: 16777216
+client:
+  max-buffered-entity-size: 16777216
+----
+
+Applications that previously materialized larger entities must explicitly increase this setting.
+A server conversion that exceeds its budget fails with HTTP 413; a client conversion fails with `IllegalStateException`.
+Custom `MessageBodyReader` implementations are materializing by default. A reader that processes input incrementally
+without accumulating it in memory can override `streaming()` to return `true`.
+
+Direct `InputStream` access, direct `DataChunk` subscriptions, `asStream` conversions, and readers declaring `streaming()`
+are excluded from this budget. Lazy streaming entities retain ownership of their subscriptions until consumption finishes
+or is cancelled. The separate server `max-payload-size` limit continues to apply to streaming and materializing requests.

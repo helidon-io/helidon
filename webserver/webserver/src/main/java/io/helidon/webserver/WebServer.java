@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -588,6 +588,12 @@ public interface WebServer {
         @Override
         public Builder maxPayloadSize(long size) {
             configurationBuilder.maxPayloadSize(size);
+            return this;
+        }
+
+        @Override
+        public Builder maxBufferedEntitySize(long size) {
+            configurationBuilder.maxBufferedEntitySize(size);
             return this;
         }
 

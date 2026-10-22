@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -226,6 +226,18 @@ public interface SocketConfiguration {
      */
     default long maxPayloadSize() {
         return -1L;
+    }
+
+    /**
+     * Maximum decoded input bytes consumed by one materializing request conversion, including each multipart part.
+     * Defaults to 1 MiB (1,048,576 bytes). Zero permits only empty input; negative values are invalid.
+     * Direct streams and streaming readers are excluded. This is independent of {@code max-payload-size}
+     * and limits input bytes rather than the resulting object graph. Exceeding the budget produces HTTP 413.
+     *
+     * @return maximum decoded input size in bytes
+     */
+    default long maxBufferedEntitySize() {
+        return 1_048_576L;
     }
 
     /**
@@ -503,6 +515,22 @@ public interface SocketConfiguration {
         B maxPayloadSize(long size);
 
         /**
+         * Configure decoded input bytes permitted per materializing conversion on this socket.
+         * Defaults to 1 MiB (1,048,576 bytes). Zero permits only empty input; negative values are rejected.
+         * Direct streams and streaming readers are excluded; {@code max-payload-size} remains independent.
+         * Existing third-party builder implementations may not support this option.
+         *
+         * @param size maximum decoded input size in bytes
+         * @return this builder
+         * @throws IllegalArgumentException if {@code size} is negative
+         * @throws UnsupportedOperationException if this builder does not support the option
+         */
+        @ConfiguredOption("1048576")
+        default B maxBufferedEntitySize(long size) {
+            throw new UnsupportedOperationException("This socket builder does not support a materialization limit");
+        }
+
+        /**
          * Maximum length of the response data sending buffer can keep without flushing.
          * Depends on `backpressure-policy` what happens if max buffer size is reached.
          *
@@ -620,6 +648,7 @@ public interface SocketConfiguration {
             config.get("max-header-size").asInt().ifPresent(this::maxHeaderSize);
             config.get("max-initial-line-length").asInt().ifPresent(this::maxInitialLineLength);
             config.get("max-payload-size").asLong().ifPresent(this::maxPayloadSize);
+            config.get("max-buffered-entity-size").asLong().ifPresent(this::maxBufferedEntitySize);
 
             DeprecatedConfig.get(config, "timeout-millis", "timeout")
                     .asInt()
@@ -698,6 +727,7 @@ public interface SocketConfiguration {
         private int initialBufferSize = 128;
         private boolean enableCompression = false;
         private long maxPayloadSize = -1;
+        private long maxBufferedEntitySize = 1_048_576L;
         private BackpressureStrategy backpressureStrategy = BackpressureStrategy.AUTO_FLUSH;
         private boolean continueImmediately = false;
         private int maxUpgradeContentLength = 64 * 1024;
@@ -877,6 +907,15 @@ public interface SocketConfiguration {
         @Override
         public Builder maxPayloadSize(long size) {
             this.maxPayloadSize = size;
+            return this;
+        }
+
+        @Override
+        public Builder maxBufferedEntitySize(long size) {
+            if (size < 0) {
+                throw new IllegalArgumentException("Maximum buffered entity size must not be negative");
+            }
+            this.maxBufferedEntitySize = size;
             return this;
         }
 
@@ -1088,6 +1127,10 @@ public interface SocketConfiguration {
 
         long maxPayloadSize() {
             return maxPayloadSize;
+        }
+
+        long maxBufferedEntitySize() {
+            return maxBufferedEntitySize;
         }
 
         long backpressureBufferSize() {

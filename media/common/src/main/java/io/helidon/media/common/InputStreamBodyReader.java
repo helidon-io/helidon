@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,20 @@ class InputStreamBodyReader implements MessageBodyReader<InputStream> {
     private InputStreamBodyReader() {
     }
 
+    /**
+     * Return an instance of {@link InputStreamBodyReader}.
+     *
+     * @return {@link InputStream} message body reader.
+     */
+    static InputStreamBodyReader create() {
+        return DEFAULT;
+    }
+
+    @Override
+    public boolean streaming() {
+        return true;
+    }
+
     @Override
     public PredicateResult accept(GenericType<?> type, MessageBodyReaderContext context) {
         if (INPUT_STREAM_TYPE.equals(type) || OLD_STREAM_TYPE.equals(type)) {
@@ -53,14 +67,5 @@ class InputStreamBodyReader implements MessageBodyReader<InputStream> {
                                                   MessageBodyReaderContext context) {
 
         return (Single<U>) Single.just(new DataChunkInputStream(publisher, true));
-    }
-
-    /**
-     * Return an instance of {@link InputStreamBodyReader}.
-     *
-     * @return {@link InputStream} message body reader.
-     */
-    static InputStreamBodyReader create() {
-        return DEFAULT;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscriber;
 import java.util.concurrent.Flow.Subscription;
+import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -230,7 +231,7 @@ public abstract class MessageBodyContext implements MessageBodyFilters {
      * @return tail of the publisher chain
      */
     public Publisher<DataChunk> applyFilters(Publisher<DataChunk> publisher) {
-        return doApplyFilters(publisher, eventListener);
+        return doApplyFilters(publisher, eventListener, UnaryOperator.identity());
     }
 
     /**
@@ -241,11 +242,16 @@ public abstract class MessageBodyContext implements MessageBodyFilters {
      * @return tail of the publisher chain
      */
     protected Publisher<DataChunk> applyFilters(Publisher<DataChunk> publisher, GenericType<?> type) {
+        return applyFilters(publisher, type, UnaryOperator.identity());
+    }
+
+    Publisher<DataChunk> applyFilters(Publisher<DataChunk> publisher, GenericType<?> type,
+                                     UnaryOperator<Publisher<DataChunk>> afterFilters) {
         Objects.requireNonNull(type, "type cannot be null!");
         if (eventListener != null) {
-            return doApplyFilters(publisher, new TypedEventListener(eventListener, type));
+            return doApplyFilters(publisher, new TypedEventListener(eventListener, type), afterFilters);
         } else {
-            return doApplyFilters(publisher, null);
+            return doApplyFilters(publisher, null, afterFilters);
         }
     }
 
@@ -254,9 +260,11 @@ public abstract class MessageBodyContext implements MessageBodyFilters {
      *
      * @param publisher input publisher
      * @param listener  subscription listener
+     * @param afterFilters processing applied after filters, before subscription events
      * @return tail of the publisher chain
      */
-    private Publisher<DataChunk> doApplyFilters(Publisher<DataChunk> publisher, EventListener listener) {
+    private Publisher<DataChunk> doApplyFilters(Publisher<DataChunk> publisher, EventListener listener,
+                                               UnaryOperator<Publisher<DataChunk>> afterFilters) {
         if (publisher == null) {
             publisher = Single.<DataChunk>empty();
         }
@@ -268,7 +276,7 @@ public abstract class MessageBodyContext implements MessageBodyFilters {
                     last = p;
                 }
             }
-            return new EventingPublisher(last, listener);
+            return new EventingPublisher(afterFilters.apply(last), listener);
         } finally {
             filters.close();
         }

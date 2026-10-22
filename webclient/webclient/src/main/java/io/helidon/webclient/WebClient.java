@@ -292,6 +292,22 @@ public interface WebClient {
         }
 
         /**
+         * Configure decoded input bytes permitted per materializing response conversion, including each multipart part.
+         * Defaults to the supplied media context's budget, or 1 MiB (1,048,576 bytes) when none is supplied.
+         * Zero permits only empty input; negative values are rejected.
+         * Direct streams and streaming readers are excluded. This is an input budget rather than an object-graph size limit.
+         * Exceeding the budget fails the conversion with {@link IllegalStateException}.
+         *
+         * @param size maximum decoded input size in bytes
+         * @return this builder
+         * @throws IllegalArgumentException if {@code size} is negative
+         */
+        public Builder maxBufferedEntitySize(long size) {
+            configuration.maxBufferedEntitySize(size);
+            return this;
+        }
+
+        /**
          * Sets new {@link WebClientTls} instance which contains ssl configuration.
          *
          * @param webClientTls tls instance

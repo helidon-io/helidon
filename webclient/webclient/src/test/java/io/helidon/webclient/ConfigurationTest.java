@@ -19,16 +19,24 @@ import java.net.URI;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.GenericType;
+import io.helidon.common.http.DataChunk;
 import io.helidon.common.http.Http;
 import io.helidon.common.http.MediaType;
+import io.helidon.common.reactive.Multi;
 import io.helidon.config.Config;
+import io.helidon.media.common.MediaContext;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for {@link WebClientConfiguration}.
@@ -58,6 +66,47 @@ public class ConfigurationTest {
                 .defaultHeader(Http.Header.ACCEPT, List.of("application/json", "text/plain"))
                 .build();
         validateConfiguration(wcc);
+    }
+
+    @Test
+    void mediaContextBudgetSurvivesClientAndRequestConfiguration() {
+        MediaContext mediaContext = MediaContext.builder().maxBufferedEntitySize(0).build();
+        WebClientConfiguration clientConfiguration = WebClient.builder().mediaContext(mediaContext).configuration();
+        WebClientConfiguration derived = clientConfiguration.derive().build();
+        RequestConfiguration requestConfiguration = RequestConfiguration.builder(URI.create("http://localhost"))
+                .update(derived)
+                .build();
+
+        assertThat(clientConfiguration.readerContext().maxBufferedEntitySize(), is(0L));
+        assertThat(derived.readerContext().maxBufferedEntitySize(), is(0L));
+        assertThat(requestConfiguration.readerContext().maxBufferedEntitySize(), is(0L));
+        ExecutionException failure = assertThrows(ExecutionException.class,
+                                                  () -> requestConfiguration.readerContext()
+                                                          .unmarshall(Multi.just(DataChunk.create(new byte[] {1})),
+                                                                      GenericType.create(byte[].class))
+                                                          .get(5, TimeUnit.SECONDS));
+        assertThat(failure.getCause(), instanceOf(IllegalStateException.class));
+    }
+
+    @Test
+    void explicitClientBudgetOverridesMediaContextRegardlessOfOrder() throws Exception {
+        MediaContext mediaContext = MediaContext.builder().maxBufferedEntitySize(0).build();
+        WebClientConfiguration overrideAfter = WebClient.builder()
+                .mediaContext(mediaContext)
+                .maxBufferedEntitySize(2)
+                .configuration();
+        WebClientConfiguration overrideBefore = WebClient.builder()
+                .maxBufferedEntitySize(2)
+                .mediaContext(mediaContext)
+                .configuration();
+
+        for (WebClientConfiguration configuration : List.of(overrideAfter, overrideBefore)) {
+            assertThat(configuration.readerContext().maxBufferedEntitySize(), is(2L));
+            assertThat(configuration.readerContext()
+                               .unmarshall(Multi.just(DataChunk.create(new byte[] {1, 2})),
+                                           GenericType.create(byte[].class))
+                               .get(5, TimeUnit.SECONDS), is(new byte[] {1, 2}));
+        }
     }
 
     private void validateConfiguration(WebClientConfiguration wcc) {

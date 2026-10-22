@@ -83,7 +83,10 @@ abstract class Request implements ServerRequest {
         this.queryParams = UriComponent.decodeQuery(req.uri().getRawQuery(), true);
         this.eventListener = new MessageBodyEventListener();
         MessageBodyReaderContext readerContext = MessageBodyReaderContext
-                .create(webServer.readerContext(), eventListener, headers, headers.contentType());
+                .create(webServer.readerContext(), eventListener, headers, headers.contentType())
+                .maxBufferedEntitySize(req.socketConfiguration().maxBufferedEntitySize(),
+                                       () -> new HttpException("Maximum materialized entity size exceeded",
+                                                               Http.Status.REQUEST_ENTITY_TOO_LARGE_413));
         this.content = MessageBodyReadableContent.create(req.bodyPublisher(), readerContext);
         this.requestedUri = LazyValue.create(this::createRequestedUri);
     }

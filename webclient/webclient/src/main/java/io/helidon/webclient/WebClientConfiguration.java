@@ -81,6 +81,8 @@ class WebClientConfiguration {
     private final boolean keepAlive;
     private final int maxRedirects;
     private final MessageBodyReaderContext readerContext;
+    private final long maxBufferedEntitySize;
+    private final boolean maxBufferedEntitySizeConfigured;
     private final MessageBodyWriterContext writerContext;
     private final WebClientTls webClientTls;
     private final URI uri;
@@ -113,7 +115,10 @@ class WebClientConfiguration {
                                                            enableAutomaticCookieStore);
         this.config = builder.config;
         this.context = builder.context;
-        this.readerContext = builder.readerContext;
+        this.maxBufferedEntitySize = builder.maxBufferedEntitySize;
+        this.maxBufferedEntitySizeConfigured = builder.maxBufferedEntitySizeConfigured;
+        this.readerContext = builder.readerContext == null ? null
+                : MessageBodyReaderContext.create(builder.readerContext).maxBufferedEntitySize(maxBufferedEntitySize);
         this.writerContext = builder.writerContext;
         this.clientServices = List.copyOf(builder.clientServices);
         this.uri = builder.uri;
@@ -357,6 +362,8 @@ class WebClientConfiguration {
         private WebClientTls webClientTls;
         private URI uri;
         private MessageBodyReaderContext readerContext;
+        private long maxBufferedEntitySize = 1_048_576L;
+        private boolean maxBufferedEntitySizeConfigured;
         private MessageBodyWriterContext writerContext;
         private boolean validateHeaders;
         private boolean relativeUris;
@@ -681,6 +688,9 @@ class WebClientConfiguration {
 
         B readerContextParent(MessageBodyReaderContext readerContext) {
             this.readerContext = MessageBodyReaderContext.create(readerContext);
+            if (!maxBufferedEntitySizeConfigured) {
+                this.maxBufferedEntitySize = readerContext.maxBufferedEntitySize();
+            }
             return me;
         }
 
@@ -691,6 +701,7 @@ class WebClientConfiguration {
 
         B readerContext(MessageBodyReaderContext readerContext) {
             this.readerContext = readerContext;
+            this.maxBufferedEntitySize = readerContext.maxBufferedEntitySize();
             return me;
         }
 
@@ -723,6 +734,27 @@ class WebClientConfiguration {
         }
 
         /**
+         * Configure the decoded input size permitted per materializing response conversion, including each multipart part.
+         * Defaults to the supplied media context's budget, or 1 MiB (1,048,576 bytes) when none is supplied.
+         * Zero permits only empty input; negative values are rejected.
+         * Direct streams and streaming readers are excluded. This limits input bytes rather than object-graph size.
+         * Exceeding this budget fails the conversion with {@link IllegalStateException}.
+         *
+         * @param size maximum decoded input size in bytes
+         * @return this builder
+         * @throws IllegalArgumentException if {@code size} is negative
+         */
+        @ConfiguredOption("1048576")
+        public B maxBufferedEntitySize(long size) {
+            if (size < 0) {
+                throw new IllegalArgumentException("Maximum buffered entity size must not be negative");
+            }
+            this.maxBufferedEntitySize = size;
+            this.maxBufferedEntitySizeConfigured = true;
+            return me;
+        }
+
+        /**
          * Configures this {@link WebClientConfiguration.Builder} from the supplied {@link Config}.
          * <table class="config">
          * <caption>Optional configuration parameters</caption>
@@ -749,6 +781,10 @@ class WebClientConfiguration {
          * <tr>
          *     <td>max-redirects</td>
          *     <td>Max number of followed redirections</td>
+         * </tr>
+         * <tr>
+         *     <td>max-buffered-entity-size</td>
+         *     <td>Decoded input bytes per materializing conversion; default 1048576 (1 MiB).</td>
          * </tr>
          * <tr>
          *     <td>filter-redirect-headers</td>
@@ -802,6 +838,7 @@ class WebClientConfiguration {
             config.get("redirect-sensitive-headers").asList(String.class)
                     .ifPresent(headerNames -> headerNames.forEach(this::addRedirectSensitiveHeader));
             config.get("max-redirects").asInt().ifPresent(this::maxRedirects);
+            config.get("max-buffered-entity-size").asLong().ifPresent(this::maxBufferedEntitySize);
             config.get("user-agent").asString().ifPresent(this::userAgent);
             config.get("keep-alive").asBoolean().ifPresent(this::keepAlive);
             config.get("cookies").asNode().ifPresent(this::cookies);
@@ -845,6 +882,8 @@ class WebClientConfiguration {
             cookiePolicy(configuration.cookiePolicy);
             clientServices(configuration.clientServices);
             readerContextParent(configuration.readerContext);
+            this.maxBufferedEntitySize = configuration.maxBufferedEntitySize;
+            this.maxBufferedEntitySizeConfigured = configuration.maxBufferedEntitySizeConfigured;
             writerContextParent(configuration.writerContext);
             context(configuration.context);
             keepAlive(configuration.keepAlive);

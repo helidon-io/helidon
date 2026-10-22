@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.media.common;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.StandardCharsets;
@@ -23,7 +24,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Publisher;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.http.DataChunk;
@@ -49,6 +52,9 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
     private final Optional<MediaType> contentType;
     private final MessageBodyOperators<MessageBodyReader<?>> readers;
     private final MessageBodyOperators<MessageBodyStreamReader<?>> sreaders;
+    private long maxBufferedEntitySize = 1_048_576L;
+    private Supplier<? extends RuntimeException> limitExceptionSupplier =
+            () -> new IllegalStateException("Maximum materialized entity size exceeded");
 
     /**
      * Private to enforce the use of the static factory methods.
@@ -62,6 +68,8 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
         this.headers = headers;
         this.contentType = contentType;
         if (parent != null) {
+            this.maxBufferedEntitySize = parent.maxBufferedEntitySize;
+            this.limitExceptionSupplier = parent.limitExceptionSupplier;
             this.readers = new MessageBodyOperators<>(parent.readers);
             this.sreaders = new MessageBodyOperators<>(parent.sreaders);
         } else {
@@ -84,6 +92,8 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
 
     private MessageBodyReaderContext(MessageBodyReaderContext parent) {
         super(parent);
+        this.maxBufferedEntitySize = parent.maxBufferedEntitySize;
+        this.limitExceptionSupplier = parent.limitExceptionSupplier;
         this.headers = parent.headers;
         this.contentType = parent.contentType;
         this.readers = new MessageBodyOperators<>(parent.readers);
@@ -99,6 +109,136 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
      */
     public static MessageBodyReaderContext create() {
         return new MessageBodyReaderContext();
+    }
+
+    /**
+     * Creates a new parented reader context.
+     *
+     * @param parent parent reader context
+     * @return new instance of MessageBodyReaderContext
+     */
+    public static MessageBodyReaderContext create(MessageBodyReaderContext parent) {
+        return new MessageBodyReaderContext(parent);
+    }
+
+    /**
+     * Create a new empty reader context backed by the specified headers.
+     *
+     * @param mediaContext mediaSupport instance used to derived the parent
+     * context, may be {@code null}
+     * @param eventListener subscription event listener, may be {@code null}
+     * @param headers backing headers, must not be {@code null}
+     * @param contentType content type, must not be {@code null}
+     * @return MessageBodyReaderContext
+     * @deprecated Use {@link #create(MediaContext, io.helidon.media.common.MessageBodyContext.EventListener,
+     * io.helidon.common.http.ReadOnlyHeaders, java.util.Optional)} instead, passing {@code ReadOnlyHeaders} instead of
+     * {@code ReadOnlyParameters}.
+     */
+    @Deprecated(since = "3.0.3", forRemoval = true)
+    public static MessageBodyReaderContext create(MediaContext mediaContext, EventListener eventListener,
+                                                  ReadOnlyParameters headers, Optional<MediaType> contentType) {
+
+        return create(mediaContext, eventListener, ReadOnlyHeaders.create(headers), contentType);
+    }
+
+    /**
+     * Create a new empty reader context backed by the specified headers.
+     *
+     * @param mediaContext mediaSupport instance used to derived the parent
+     * context, may be {@code null}
+     * @param eventListener subscription event listener, may be {@code null}
+     * @param headers backing headers, must not be {@code null}
+     * @param contentType content type, must not be {@code null}
+     * @return MessageBodyReaderContext
+     */
+    public static MessageBodyReaderContext create(MediaContext mediaContext, EventListener eventListener,
+                                                  ReadOnlyHeaders headers, Optional<MediaType> contentType) {
+
+        if (mediaContext == null) {
+            return new MessageBodyReaderContext(null, eventListener, headers, contentType);
+        }
+        return new MessageBodyReaderContext(mediaContext.readerContext(), eventListener, headers, contentType);
+    }
+
+    /**
+     * Create a new empty reader context backed by the specified headers.
+     *
+     * @param parent parent context, must not be {@code null}
+     * @param eventListener subscription event listener, may be {@code null}
+     * @param headers backing headers, must not be {@code null}
+     * @param contentType content type, must not be {@code null}
+     * @return MessageBodyReaderContext
+     * @deprecated Use {@link #create(MessageBodyReaderContext, io.helidon.media.common.MessageBodyContext.EventListener,
+     * io.helidon.common.http.ReadOnlyHeaders, java.util.Optional)} instead, passing {@code ReadOnlyHeaders} instead of
+     * {@code ReadOnlyParameters}.
+     */
+    @Deprecated(since = "3.0.3", forRemoval = true)
+    public static MessageBodyReaderContext create(MessageBodyReaderContext parent, EventListener eventListener,
+            ReadOnlyParameters headers, Optional<MediaType> contentType) {
+
+        return create(parent, eventListener, ReadOnlyHeaders.create(headers), contentType);
+    }
+
+    /**
+     * Create a new empty reader context backed by the specified headers.
+     *
+     * @param parent parent context, must not be {@code null}
+     * @param eventListener subscription event listener, may be {@code null}
+     * @param headers backing headers, must not be {@code null}
+     * @param contentType content type, must not be {@code null}
+     * @return MessageBodyReaderContext
+     */
+    public static MessageBodyReaderContext create(MessageBodyReaderContext parent, EventListener eventListener,
+                                                  ReadOnlyHeaders headers, Optional<MediaType> contentType) {
+
+        return new MessageBodyReaderContext(parent, eventListener, headers, contentType);
+    }
+
+    /**
+     * Maximum decoded input consumed by one materializing conversion. Streaming conversions are excluded.
+     * The default is 1 MiB (1,048,576 bytes); zero permits only empty entities.
+     * This bounds input bytes, rather than the resulting object graph. Each multipart part has its own budget.
+     *
+     * @return maximum number of decoded bytes consumed by one materializing conversion
+     */
+    public long maxBufferedEntitySize() {
+        return maxBufferedEntitySize;
+    }
+
+    /**
+     * Configure the decoded-input budget for each materializing conversion.
+     * The default is 1 MiB (1,048,576 bytes). Zero permits only empty entities; negative values are rejected.
+     * Direct streams, stream readers, and readers declaring {@link MessageBodyReader#streaming()} are excluded.
+     *
+     * @param size maximum decoded input size in bytes
+     * @return this context
+     * @throws IllegalArgumentException if {@code size} is negative
+     */
+    public MessageBodyReaderContext maxBufferedEntitySize(long size) {
+        if (size < 0) {
+            throw new IllegalArgumentException("Maximum buffered entity size must not be negative");
+        }
+        this.maxBufferedEntitySize = size;
+        return this;
+    }
+
+    /**
+     * Configure a decoded-input budget and the failure used when it is exceeded.
+     * Child contexts inherit this policy, including contexts for individual multipart parts.
+     * The supplier must return a non-null exception. The default failure is {@link IllegalStateException}.
+     *
+     * @param size maximum decoded input size in bytes; zero permits only empty entities
+     * @param exceptionSupplier supplier of the exception for a materialization-limit failure
+     * @return this context
+     * @throws IllegalArgumentException if {@code size} is negative
+     * @throws NullPointerException if {@code exceptionSupplier} is null
+     */
+    public MessageBodyReaderContext maxBufferedEntitySize(long size,
+                                                         Supplier<? extends RuntimeException> exceptionSupplier) {
+        Objects.requireNonNull(exceptionSupplier);
+        maxBufferedEntitySize(size);
+        this.limitExceptionSupplier = exceptionSupplier;
+        return this;
     }
 
     @Override
@@ -159,15 +299,15 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
         }
 
         try {
-            Publisher<DataChunk> filteredPayload = applyFilters(payload, type);
             if (byte[].class.equals(type.rawType())) {
-                return (Single<T>) ContentReaders.readBytes(filteredPayload);
+                return (Single<T>) materialize(payload, type, ContentReaders::readBytes);
             }
             MessageBodyReader<T> reader = (MessageBodyReader<T>) readers.select(type, this);
             if (reader == null) {
                 return readerNotFound(type.getTypeName());
             }
-            return reader.read(filteredPayload, type, this);
+            return reader.streaming() ? reader.read(applyFilters(payload, type), type, this)
+                    : materialize(payload, type, chunks -> reader.read(chunks, type, this));
         } catch (Throwable ex) {
             return transformationFailed(ex);
         }
@@ -196,8 +336,8 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
         }
 
         try {
-            Publisher<DataChunk> filteredPayload = applyFilters(payload, type);
-            return reader.read(filteredPayload, type, this);
+            return reader.streaming() ? reader.read(applyFilters(payload, type), type, this)
+                    : materialize(payload, type, chunks -> reader.read(chunks, type, this));
         } catch (Throwable ex) {
             return transformationFailed(ex);
         }
@@ -285,89 +425,6 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
     }
 
     /**
-     * Creates a new parented reader context.
-     *
-     * @param parent parent reader context
-     * @return new instance of MessageBodyReaderContext
-     */
-    public static MessageBodyReaderContext create(MessageBodyReaderContext parent) {
-        return new MessageBodyReaderContext(parent);
-    }
-
-    /**
-     * Create a new empty reader context backed by the specified headers.
-     *
-     * @param mediaContext mediaSupport instance used to derived the parent
-     * context, may be {@code null}
-     * @param eventListener subscription event listener, may be {@code null}
-     * @param headers backing headers, must not be {@code null}
-     * @param contentType content type, must not be {@code null}
-     * @return MessageBodyReaderContext
-     * @deprecated Use {@link #create(MediaContext, io.helidon.media.common.MessageBodyContext.EventListener,
-     * io.helidon.common.http.ReadOnlyHeaders, java.util.Optional)} instead, passing {@code ReadOnlyHeaders} instead of
-     * {@code ReadOnlyParameters}.
-     */
-    @Deprecated(since = "3.0.3", forRemoval = true)
-    public static MessageBodyReaderContext create(MediaContext mediaContext, EventListener eventListener,
-                                                  ReadOnlyParameters headers, Optional<MediaType> contentType) {
-
-        return create(mediaContext, eventListener, ReadOnlyHeaders.create(headers), contentType);
-    }
-
-    /**
-     * Create a new empty reader context backed by the specified headers.
-     *
-     * @param mediaContext mediaSupport instance used to derived the parent
-     * context, may be {@code null}
-     * @param eventListener subscription event listener, may be {@code null}
-     * @param headers backing headers, must not be {@code null}
-     * @param contentType content type, must not be {@code null}
-     * @return MessageBodyReaderContext
-     */
-    public static MessageBodyReaderContext create(MediaContext mediaContext, EventListener eventListener,
-                                                  ReadOnlyHeaders headers, Optional<MediaType> contentType) {
-
-        if (mediaContext == null) {
-            return new MessageBodyReaderContext(null, eventListener, headers, contentType);
-        }
-        return new MessageBodyReaderContext(mediaContext.readerContext(), eventListener, headers, contentType);
-    }
-
-    /**
-     * Create a new empty reader context backed by the specified headers.
-     *
-     * @param parent parent context, must not be {@code null}
-     * @param eventListener subscription event listener, may be {@code null}
-     * @param headers backing headers, must not be {@code null}
-     * @param contentType content type, must not be {@code null}
-     * @return MessageBodyReaderContext
-     * @deprecated Use {@link #create(MessageBodyReaderContext, io.helidon.media.common.MessageBodyContext.EventListener,
-     * io.helidon.common.http.ReadOnlyHeaders, java.util.Optional)} instead, passing {@code ReadOnlyHeaders} instead of
-     * {@code ReadOnlyParameters}.
-     */
-    @Deprecated(since = "3.0.3", forRemoval = true)
-    public static MessageBodyReaderContext create(MessageBodyReaderContext parent, EventListener eventListener,
-            ReadOnlyParameters headers, Optional<MediaType> contentType) {
-
-        return create(parent, eventListener, ReadOnlyHeaders.create(headers), contentType);
-    }
-
-    /**
-     * Create a new empty reader context backed by the specified headers.
-     *
-     * @param parent parent context, must not be {@code null}
-     * @param eventListener subscription event listener, may be {@code null}
-     * @param headers backing headers, must not be {@code null}
-     * @param contentType content type, must not be {@code null}
-     * @return MessageBodyReaderContext
-     */
-    public static MessageBodyReaderContext create(MessageBodyReaderContext parent, EventListener eventListener,
-                                                  ReadOnlyHeaders headers, Optional<MediaType> contentType) {
-
-        return new MessageBodyReaderContext(parent, eventListener, headers, contentType);
-    }
-
-    /**
      * Create a single that will emit a reader not found error to its subscriber.
      *
      * @param <T> publisher item type
@@ -388,6 +445,30 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
      */
     private static <T> Single<T> transformationFailed(Throwable ex) {
         return Single.<T>error(new IllegalStateException("Transformation failed!", ex));
+    }
+
+    private <T> Single<T> materialize(Publisher<DataChunk> payload, GenericType<?> type,
+                                     Function<Publisher<DataChunk>, Single<T>> reader) {
+        return Single.defer(() -> {
+            MaterializationBudget budget = new MaterializationBudget(maxBufferedEntitySize, limitExceptionSupplier);
+            Single<T> result;
+            try {
+                Publisher<DataChunk> limited = applyFilters(payload, type,
+                        filtered -> Multi.create(filtered).map(budget::accept));
+                result = reader.apply(limited);
+            } catch (Throwable e) {
+                return budget.failure == null ? transformationFailed(e) : Single.error(budget.failure);
+            }
+            return result
+                    .map(value -> {
+                        if (budget.failure != null) {
+                            throw budget.failure;
+                        }
+                        return value;
+                    })
+                    .switchIfEmpty(Single.defer(() -> budget.failure == null ? Single.empty() : Single.error(budget.failure)))
+                    .onErrorResumeWithSingle(error -> Single.error(budget.failure == null ? error : budget.failure));
+        });
     }
 
     /**
@@ -433,6 +514,35 @@ public final class MessageBodyReaderContext extends MessageBodyContext implement
                         : PredicateResult.NOT_SUPPORTED;
             }
             return PredicateResult.supports(clazz, type);
+        }
+    }
+
+    private static final class MaterializationBudget {
+        private final long maximum;
+        private final Supplier<? extends RuntimeException> exceptionSupplier;
+        private long received;
+        private volatile RuntimeException failure;
+
+        private MaterializationBudget(long maximum, Supplier<? extends RuntimeException> exceptionSupplier) {
+            this.maximum = maximum;
+            this.exceptionSupplier = exceptionSupplier;
+        }
+
+        private DataChunk accept(DataChunk chunk) {
+            if (failure != null) {
+                chunk.release();
+                throw failure;
+            }
+            for (ByteBuffer buffer : chunk.data()) {
+                int bytes = buffer.remaining();
+                if (bytes > maximum - received) {
+                    chunk.release();
+                    failure = Objects.requireNonNull(exceptionSupplier.get());
+                    throw failure;
+                }
+                received += bytes;
+            }
+            return chunk;
         }
     }
 }

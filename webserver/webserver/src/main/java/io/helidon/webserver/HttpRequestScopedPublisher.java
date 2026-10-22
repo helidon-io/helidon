@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ class HttpRequestScopedPublisher extends BufferedEmittingPublisher<DataChunk> {
     HttpRequestScopedPublisher(DataChunkHoldingQueue holdingQueue) {
         super();
         this.holdingQueue = holdingQueue;
+        super.onCleanup(DataChunk::release);
     }
 
     public void emit(ByteBuf data) {

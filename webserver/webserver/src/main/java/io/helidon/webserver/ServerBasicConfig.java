@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -213,6 +213,11 @@ class ServerBasicConfig implements ServerConfiguration {
         return socketConfig.connectionIdleTimeout();
     }
 
+    @Override
+    public long maxBufferedEntitySize() {
+        return socketConfig.maxBufferedEntitySize();
+    }
+
     static class SocketConfig implements SocketConfiguration {
 
         private final int port;
@@ -230,6 +235,7 @@ class ServerBasicConfig implements ServerConfiguration {
         private final int initialBufferSize;
         private final boolean enableCompression;
         private final long maxPayloadSize;
+        private final long maxBufferedEntitySize;
         private final long backpressureBufferSize;
         private final BackpressureStrategy backpressureStrategy;
         private final boolean continueImmediately;
@@ -257,6 +263,7 @@ class ServerBasicConfig implements ServerConfiguration {
             this.initialBufferSize = builder.initialBufferSize();
             this.enableCompression = builder.enableCompression();
             this.maxPayloadSize = builder.maxPayloadSize();
+            this.maxBufferedEntitySize = builder.maxBufferedEntitySize();
             this.backpressureBufferSize = builder.backpressureBufferSize();
             this.backpressureStrategy = builder.backpressureStrategy();
             this.continueImmediately = builder.continueImmediately();
@@ -371,6 +378,11 @@ class ServerBasicConfig implements ServerConfiguration {
         @Override
         public long maxPayloadSize() {
             return maxPayloadSize;
+        }
+
+        @Override
+        public long maxBufferedEntitySize() {
+            return maxBufferedEntitySize;
         }
 
         @Override

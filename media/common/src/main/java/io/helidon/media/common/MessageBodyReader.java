@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,19 @@ import io.helidon.common.reactive.Single;
  * @param <T> type or base type supported by the operator
  */
 public interface MessageBodyReader<T> extends MessageBodyOperator<MessageBodyReaderContext> {
+
+    /**
+     * Whether this reader processes input incrementally without materializing it in memory.
+     * This includes copying input to a file and returning a lazy entity that consumes input later.
+     * Streaming readers are not subject to {@code max-buffered-entity-size}; independently configured
+     * payload limits still apply. The default is {@code false}, including for application-defined readers.
+     * A lazy entity owns its subscription and must release its input when consumption finishes or is cancelled.
+     *
+     * @return whether the reader processes input without materializing it in memory
+     */
+    default boolean streaming() {
+        return false;
+    }
 
     /**
      * Convert a HTTP payload into a Single publisher of the given type.

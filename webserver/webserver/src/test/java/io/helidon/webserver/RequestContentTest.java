@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.webserver;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -35,11 +36,15 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.http.DataChunk;
+import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Multi;
 import io.helidon.common.reactive.Single;
 import io.helidon.media.common.ContentReaders;
 import io.helidon.media.common.MediaContext;
 import io.helidon.media.common.MessageBodyFilter;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.SpanContext;
+import io.helidon.tracing.Tracer;
 import io.helidon.webserver.utils.TestUtils;
 
 import org.junit.jupiter.api.Test;
@@ -56,21 +61,44 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * The RequestContentTest.
  */
 public class RequestContentTest {
 
-    private static Request requestTestStub(Publisher<DataChunk> flux) {
-        BareRequest bareRequestMock = mock(BareRequest.class);
-        doReturn(URI.create("http://0.0.0.0:1234")).when(bareRequestMock).uri();
-        doReturn(flux).when(bareRequestMock).bodyPublisher();
+    @Test
+    public void materializationLimitEndsContentReadSpanWithError() {
+        BareRequest bareRequest = mock(BareRequest.class);
+        when(bareRequest.uri()).thenReturn(URI.create("http://0.0.0.0:1234"));
+        when(bareRequest.socketConfiguration()).thenReturn(SocketConfiguration.builder()
+                                                              .maxBufferedEntitySize(4)
+                                                              .build());
+        when(bareRequest.bodyPublisher()).thenReturn(Multi.just(DataChunk.create("abcde".getBytes(StandardCharsets.UTF_8))));
         WebServer webServer = mock(WebServer.class);
-        MediaContext mediaContext = MediaContext.create();
-        doReturn(mediaContext.readerContext()).when(webServer).readerContext();
-        doReturn(mediaContext.writerContext()).when(webServer).writerContext();
-        return new RequestTestStub(bareRequestMock, webServer);
+        when(webServer.readerContext()).thenReturn(MediaContext.create().readerContext());
+        Span parentSpan = mock(Span.class);
+        when(parentSpan.context()).thenReturn(mock(SpanContext.class));
+        Span readSpan = mock(Span.class);
+        Tracer tracer = mock(Tracer.class);
+        Span.Builder<?> spanBuilder = mock(Span.Builder.class);
+        doReturn(spanBuilder).when(tracer).spanBuilder("content-read");
+        when(spanBuilder.start()).thenReturn(readSpan);
+        Request request = new RequestTestStub(bareRequest, webServer, parentSpan) {
+            @Override
+            public Tracer tracer() {
+                return tracer;
+            }
+        };
+
+        ExecutionException failure = assertThrows(ExecutionException.class,
+                () -> request.content().as(String.class).toCompletableFuture().get(10, TimeUnit.SECONDS));
+        assertThat(failure.getCause(), instanceOf(HttpException.class));
+        assertThat(((HttpException) failure.getCause()).status(), is(Http.Status.REQUEST_ENTITY_TOO_LARGE_413));
+        verify(readSpan).status(Span.Status.ERROR);
+        verify(readSpan).end(failure.getCause());
     }
 
     @Test
@@ -338,5 +366,17 @@ public class RequestContentTest {
 
         CompletionStage<? extends String> complete = request.content().as(String.class);
         assertThat(complete.toCompletableFuture().get(10, TimeUnit.SECONDS), is("TEST-STRING"));
+    }
+
+    private static Request requestTestStub(Publisher<DataChunk> flux) {
+        BareRequest bareRequestMock = mock(BareRequest.class);
+        doReturn(SocketConfiguration.builder().build()).when(bareRequestMock).socketConfiguration();
+        doReturn(URI.create("http://0.0.0.0:1234")).when(bareRequestMock).uri();
+        doReturn(flux).when(bareRequestMock).bodyPublisher();
+        WebServer webServer = mock(WebServer.class);
+        MediaContext mediaContext = MediaContext.create();
+        doReturn(mediaContext.readerContext()).when(webServer).readerContext();
+        doReturn(mediaContext.writerContext()).when(webServer).writerContext();
+        return new RequestTestStub(bareRequestMock, webServer);
     }
 }
