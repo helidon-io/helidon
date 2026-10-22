@@ -62,8 +62,9 @@
 
         Changing these version requires approval for a new third party dependency!
         -->
-        <version.lib.asm>9.10.1</version.lib.asm>
+        <version.lib.asm>9.11.1</version.lib.asm>
         <version.lib.checkstyle>14.1.0</version.lib.checkstyle>
+        <version.lib.handlebars>4.5.5</version.lib.handlebars>
         <!-- Persistence providers used only by tests. -->
         <version.lib.eclipselink>5.0.2</version.lib.eclipselink>
         <version.lib.hibernate.family>7.4</version.lib.hibernate.family>
@@ -771,6 +772,11 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.github.jknack</groupId>
+                <artifactId>handlebars</artifactId>
+                <version>${version.lib.handlebars}</version>
+            </dependency>
             <!-- Persistence providers used only by tests. -->
             <dependency>
                 <groupId>org.eclipse.persistence</groupId>
