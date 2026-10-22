@@ -80,6 +80,11 @@ public abstract class ProcessRunner {
         MODULE_PATH,
 
         /**
+         * Validate all modules on the module path.
+         */
+        MODULE_PATH_VALIDATE,
+
+        /**
          * Execute native processes.
          *
          * @deprecated GraalVM Native Image support is no longer provided. Use a JVM execution mode instead.
@@ -110,6 +115,7 @@ public abstract class ProcessRunner {
             case FAT_JAR -> new FatJarRunner();
             case NATIVE -> new NativeImageRunner();
             case MODULE_PATH -> new ModulePathRunner();
+            case MODULE_PATH_VALIDATE -> new ModulePathValidationRunner();
             case JLINK_CLASS_PATH -> new JlinkRunner();
             case JLINK_MODULE_PATH -> new JlinkModulePathRunner();
         };
@@ -453,6 +459,10 @@ public abstract class ProcessRunner {
             return Path.of("target");
         }
 
+        String modulePath() {
+            return dir().resolve(finalName + ".jar") + File.pathSeparator + dir().resolve("libs");
+        }
+
         @Override
         protected List<String> command(List<String> opts, List<String> args) {
             Objects.requireNonNull(mainClass, "mainClass is null");
@@ -462,7 +472,7 @@ public abstract class ProcessRunner {
             String module = mainModule != null ? mainModule : moduleName;
             cb.append(opts)
                     .append("--module-path")
-                    .append(dir().resolve(finalName + ".jar") + File.pathSeparator + dir().resolve("libs"))
+                    .append(modulePath())
                     .append("--module")
                     .append(module + "/" + mainClass);
             if (!Objects.equals(module, moduleName)) {
@@ -470,6 +480,19 @@ public abstract class ProcessRunner {
                 cb.append("--add-modules").append(moduleName);
             }
             return cb.command();
+        }
+    }
+
+    private static final class ModulePathValidationRunner extends ModulePathRunner {
+
+        @Override
+        protected List<String> command(List<String> opts, List<String> args) {
+            Objects.requireNonNull(finalName, "finalName is null");
+            return new CommandBuilder(javaExecutable())
+                    .append(opts)
+                    .append("--validate-modules", "--module-path")
+                    .append(modulePath())
+                    .command();
         }
     }
 
