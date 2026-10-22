@@ -142,9 +142,15 @@ class CorsPathValidator {
         }
 
         List<String> headers = req.headers()
-                .find(HeaderNames.ACCESS_CONTROL_REQUEST_HEADERS)
-                .map(it -> it.allValues(true))
-                .orElse(List.of());
+                .values(HeaderNames.ACCESS_CONTROL_REQUEST_HEADERS)
+                .stream()
+                .map(String::trim)
+                .filter(it -> !it.isEmpty())
+                .toList();
+        if (headers.isEmpty() && req.headers().contains(HeaderNames.ACCESS_CONTROL_REQUEST_HEADERS)) {
+            forbid(res);
+            return Result.FORBIDDEN;
+        }
         if (invalidHeaders(req, res, headers)) {
             return Result.FORBIDDEN;
         }
