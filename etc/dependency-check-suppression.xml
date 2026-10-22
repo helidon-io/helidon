@@ -383,5 +383,33 @@
     <cve>CVE-2026-53914</cve>
 </suppress>
 
+<!--
+  Handlebars.java is used to build our config reference. It is not a Helidon runtime dependency.
+  Also these CVEs are against Handlebars.js that is included in the Handlebars.java jar.
+  We exclude nashorn-core from Handlebars.java to ensure the javascript runtime is never used.
+  Therefore the following CVEs do not apply to Helidon's use of Handlebars
+-->
+<suppress>
+    <notes><![CDATA[
+    file name: handlebars-4.5.5.jar: handlebars-v4.7.9.js
+    ]]></notes>
+    <packageUrl regex="true">^pkg:javascript/handlebars@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-106445</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: handlebars-4.5.5.jar: handlebars-v4.7.9.js
+    ]]></notes>
+    <packageUrl regex="true">^pkg:javascript/handlebars@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-106446</vulnerabilityName>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: handlebars-4.5.5.jar: handlebars-v4.7.9.js
+    ]]></notes>
+    <packageUrl regex="true">^pkg:javascript/handlebars@.*$</packageUrl>
+    <vulnerabilityName>CVE-2026-106444</vulnerabilityName>
+</suppress>
+
 
 </suppressions>

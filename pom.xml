@@ -62,8 +62,9 @@
 
         Changing these version requires approval for a new third party dependency!
         -->
-        <version.lib.asm>9.10.1</version.lib.asm>
+        <version.lib.asm>9.11.1</version.lib.asm>
         <version.lib.checkstyle>14.1.0</version.lib.checkstyle>
+        <version.lib.handlebars>4.5.5</version.lib.handlebars>
         <!-- Dependencies convergence via jinjava -->
         <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mockserver>5.15.0</version.lib.mockserver>
@@ -764,6 +765,11 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.github.jknack</groupId>
+                <artifactId>handlebars</artifactId>
+                <version>${version.lib.handlebars}</version>
+            </dependency>
             <dependency>
                 <groupId>com.github.akarnokd</groupId>
                 <artifactId>rxjava2-jdk9-interop</artifactId>
