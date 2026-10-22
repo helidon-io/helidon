@@ -124,6 +124,34 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    <packageUrl regex="true">^pkg:maven/io\.opentelemetry/opentelemetry-.*@.*$</packageUrl>
    <cve>CVE-2026-39882</cve>
 </suppress>
+<suppress>
+   <notes><![CDATA[
+   OpenTelemetry-Go CVE incorrectly reported against OpenTelemetry Java artifacts
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.opentelemetry/opentelemetry-.*@.*$</packageUrl>
+   <cve>CVE-2026-24051</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   OpenTelemetry-Go CVE incorrectly reported against OpenTelemetry Java artifacts
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.opentelemetry/opentelemetry-.*@.*$</packageUrl>
+   <cve>CVE-2026-41178</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   OpenTelemetry C++ CVE incorrectly reported against OpenTelemetry Java artifacts
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.opentelemetry/opentelemetry-.*@.*$</packageUrl>
+   <cve>CVE-2026-44967</cve>
+</suppress>
+<suppress>
+   <notes><![CDATA[
+   OpenTelemetry JavaScript CVE incorrectly reported against OpenTelemetry Java artifacts
+   ]]></notes>
+   <packageUrl regex="true">^pkg:maven/io\.opentelemetry/opentelemetry-.*@.*$</packageUrl>
+   <cve>CVE-2026-54285</cve>
+</suppress>
 
 
 <!-- This CVE is against the etcd server. We use the Java client
@@ -596,4 +624,3 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
 
 
 </suppressions>
-
