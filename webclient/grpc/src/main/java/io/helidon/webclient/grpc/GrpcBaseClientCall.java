@@ -492,10 +492,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     }
 
     ClientConnection clientConnection(ClientUri clientUri, String authority) {
-        WebClient webClient = grpcClient.webClient();
-        if (deadline != null || context != Context.ROOT) {
-            webClient = grpcClient.connectionWebClient();
-        }
+        WebClient webClient = grpcClient.connectionWebClient();
         GrpcClientConfig clientConfig = grpcClient.prototype();
         SniConfig sni = clientConfig.sni().orElse(null);
         Tls tls = "http".equalsIgnoreCase(clientUri.scheme()) ? CLEARTEXT_TLS : clientConfig.tls();
@@ -732,9 +729,9 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         // obtain HTTP2 connection
         ClientUri clientUri = nextClientUri();
         String authority = authority(clientUri);
-        ClientConnection clientConnection = deadline == null && context == Context.ROOT
-                ? clientConnection(clientUri, authority)
-                : ScopedValue.where(CONNECTING_CALL, this).call(() -> clientConnection(clientUri, authority));
+        // Explicit cancellation must reach the raw transport during setup, even without a deadline.
+        ClientConnection clientConnection = ScopedValue.where(CONNECTING_CALL, this)
+                .call(() -> clientConnection(clientUri, authority));
         lifecycleLock.lock();
         try {
             if (!isClosed()) {
