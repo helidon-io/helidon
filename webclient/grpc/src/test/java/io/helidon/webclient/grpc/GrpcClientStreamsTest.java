@@ -306,23 +306,22 @@ class GrpcClientStreamsTest {
     }
 
     @Test
-    void requestSenderStagesAtMostOneRequestWhileNotReady() throws Exception {
+    void requestSenderStagesAtMostOneRequestWhileNotReady() {
         TestClientCall<String, String> call = new TestClientCall<>(true);
         call.pauseAfterNextMessage();
         AtomicInteger advances = new AtomicInteger();
         Stream<String> requests = Stream.of("one", "two", "three").peek(ignored -> advances.incrementAndGet());
 
-        Stream<String> responses = GrpcClientStreams.bidirectional(call, requests, executor);
+        // Run sender tasks inline so each readiness change finishes before its effects are asserted.
+        try (Stream<String> _ = GrpcClientStreams.bidirectional(call, requests, Runnable::run)) {
+            assertThat(call.requests, is(List.of("one")));
+            assertThat(advances.get(), is(2));
+            assertThat(call.halfClosed.getCount(), is(1L));
 
-        assertThat(call.firstMessage.await(10, TimeUnit.SECONDS), is(true));
-        assertThat(call.requests, is(List.of("one")));
-        assertThat(advances.get(), is(2));
-        assertThat(call.halfClosed.getCount(), is(1L));
-
-        call.ready(true);
-        assertThat(call.halfClosed.await(10, TimeUnit.SECONDS), is(true));
-        assertThat(call.requests, is(List.of("one", "two", "three")));
-        responses.close();
+            call.ready(true);
+            assertThat(call.halfClosed.getCount(), is(0L));
+            assertThat(call.requests, is(List.of("one", "two", "three")));
+        }
     }
 
     @Test
