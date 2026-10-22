@@ -43,6 +43,7 @@
         <version.lib.cron-utils>9.2.1</version.lib.cron-utils>
         <version.lib.dropwizard.metrics>4.2.40</version.lib.dropwizard.metrics>
         <version.lib.google-error-prone-annotations>2.30.0</version.lib.google-error-prone-annotations>
+        <version.lib.google-findbugs-jsr305>3.0.2</version.lib.google-findbugs-jsr305>
         <version.lib.google-gson>2.13.2</version.lib.google-gson>
         <version.lib.google-protobuf>4.36.2</version.lib.google-protobuf>
         <version.lib.google-j2objc-annotations>3.0.0</version.lib.google-j2objc-annotations>
@@ -360,6 +361,11 @@
                 <artifactId>error_prone_annotations</artifactId>
                 <version>${version.lib.google-error-prone-annotations}</version>
             </dependency>
+            <dependency>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>jsr305</artifactId>
+                <version>${version.lib.google-findbugs-jsr305}</version>
+            </dependency>
             <!-- For dependency convergence -->
             <dependency>
                 <groupId>com.google.code.gson</groupId>
@@ -439,11 +445,23 @@
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-api</artifactId>
                 <version>${version.lib.grpc}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.google.code.findbugs</groupId>
+                        <artifactId>jsr305</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-protobuf</artifactId>
                 <version>${version.lib.grpc}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.google.code.findbugs</groupId>
+                        <artifactId>jsr305</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.oracle.database.jdbc</groupId>
