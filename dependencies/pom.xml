@@ -37,7 +37,7 @@
         Changing these versions requires approval for a new third party dependency!
         -->
         <version.lib.antlr>4.13.2</version.lib.antlr>
-        <version.lib.bytebuddy>1.18.5</version.lib.bytebuddy>
+        <version.lib.bytebuddy>1.18.15</version.lib.bytebuddy>
         <version.lib.commons-compress>1.27.1</version.lib.commons-compress>
         <version.lib.commons-lang>3.18.0</version.lib.commons-lang>
         <version.lib.cron-utils>9.2.1</version.lib.cron-utils>
@@ -51,10 +51,9 @@
         <version.lib.graphql-java>22.1</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>22.0</version.lib.graphql-java.extended.scalars>
         <version.lib.grpc>1.73.0</version.lib.grpc>
-        <version.lib.guava>33.3.1-jre</version.lib.guava>
+        <version.lib.guava>33.7.2-jre</version.lib.guava>
         <version.lib.h2>2.4.240</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
-        <version.lib.handlebars>4.5.2</version.lib.handlebars>
         <version.lib.hibernate.family>6.3</version.lib.hibernate.family>
         <version.lib.hibernate>${version.lib.hibernate.family}.1.Final</version.lib.hibernate>
         <version.lib.hikaricp>7.1.0</version.lib.hikaricp>
@@ -211,12 +210,6 @@
                 <artifactId>yasson</artifactId>
                 <version>${version.lib.yasson}</version>
             </dependency>
-            <dependency>
-                <groupId>com.github.jknack</groupId>
-                <artifactId>handlebars</artifactId>
-                <version>${version.lib.handlebars}</version>
-            </dependency>
-
             <!-- Config related -->
             <dependency>
                 <groupId>com.typesafe</groupId>
@@ -478,23 +471,11 @@
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-api</artifactId>
                 <version>${version.lib.grpc}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>jsr305</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-protobuf</artifactId>
                 <version>${version.lib.grpc}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>jsr305</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.oracle.database.jdbc</groupId>
