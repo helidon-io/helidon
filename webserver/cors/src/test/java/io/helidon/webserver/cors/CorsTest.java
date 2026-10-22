@@ -16,6 +16,9 @@
 
 package io.helidon.webserver.cors;
 
+import java.util.List;
+import java.util.stream.Stream;
+
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
@@ -30,6 +33,8 @@ import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
@@ -45,6 +50,7 @@ import static io.helidon.webserver.cors.CorsTestServices.SERVICE_1;
 import static io.helidon.webserver.cors.CorsTestServices.SERVICE_2;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.IsNot.not;
@@ -68,6 +74,28 @@ class CorsTest {
     @SetUpRoute
     static void routing(HttpRules rules) {
         CorsTestSetup.routing(rules);
+    }
+
+    static Stream<List<String>> allowedPreflightHeaders() {
+        return Stream.of(List.of("X-foo,X-bar"),
+                         List.of("X-foo, X-bar"),
+                         List.of("X-foo,\tX-bar"),
+                         List.of("X-foo \t,\t X-bar"),
+                         List.of("X-foo,  X-bar"),
+                         List.of(", X-foo,, \t,X-bar,"),
+                         List.of("X-foo", "X-bar"),
+                         List.of("X-foo,", ",\tX-bar,"));
+    }
+
+    static Stream<List<String>> forbiddenPreflightHeaders() {
+        return Stream.of(List.of("X-foo,X-bar,X-oops"),
+                         List.of("X-foo, X-bar, X-oops"),
+                         List.of("X-foo,\tX-bar,\tX-oops"),
+                         List.of(",X-foo,, X-bar, ,X-oops,"),
+                         List.of("X-foo,X-bar", "X-oops"),
+                         List.of("X-foo", "X-bar,X-oops"),
+                         List.of(""),
+                         List.of(", \t,"));
     }
 
     @Test
@@ -166,14 +194,15 @@ class CorsTest {
         assertThat(status.reasonPhrase(), is("Forbidden"));
     }
 
-    @Test
-    void test2PreFlightForbiddenHeader() {
+    @ParameterizedTest
+    @MethodSource("forbiddenPreflightHeaders")
+    void test2PreFlightForbiddenHeader(List<String> headers) {
         Http1ClientRequest request = client.method(Method.OPTIONS)
                 .uri(TestUtil.path(SERVICE_2));
 
         request.header(ORIGIN, "http://foo.bar");
         request.header(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
-        request.header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar, X-oops");
+        request.header(ACCESS_CONTROL_REQUEST_HEADERS, headers);
 
         try (Http1ClientResponse response = request.request()) {
             Status status = response.status();
@@ -206,14 +235,15 @@ class CorsTest {
         }
     }
 
-    @Test
-    void test2PreFlightAllowedHeaders2() {
+    @ParameterizedTest
+    @MethodSource("allowedPreflightHeaders")
+    void test2PreFlightAllowedHeaders2(List<String> headers) {
         Http1ClientRequest request = client.method(Method.OPTIONS)
                 .uri(TestUtil.path(SERVICE_2));
 
         request.header(ORIGIN, "http://foo.bar");
         request.header(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
-        request.header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar");
+        request.header(ACCESS_CONTROL_REQUEST_HEADERS, headers);
 
         try (Http1ClientResponse response = request.request()) {
 
@@ -221,7 +251,7 @@ class CorsTest {
             assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN, "http://foo.bar"));
             assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true"));
             assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_METHODS, "PUT"));
-            assertThat(response.headers().get(ACCESS_CONTROL_ALLOW_HEADERS).allValues(), hasItems("X-foo", "X-bar"));
+            assertThat(response.headers().get(ACCESS_CONTROL_ALLOW_HEADERS).allValues(), containsInAnyOrder("X-foo", "X-bar"));
             assertThat(response.headers(), noHeader(ACCESS_CONTROL_MAX_AGE));
         }
     }
@@ -233,8 +263,7 @@ class CorsTest {
 
         request.header(ORIGIN, "http://foo.bar");
         request.header(ACCESS_CONTROL_REQUEST_METHOD, "PUT");
-        request.header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar");
-        request.header(ACCESS_CONTROL_REQUEST_HEADERS, "X-foo, X-bar");
+        request.header(ACCESS_CONTROL_REQUEST_HEADERS, List.of("X-foo, X-bar", "X-foo,X-bar"));
 
         try (Http1ClientResponse response = request.request()) {
 
@@ -242,7 +271,8 @@ class CorsTest {
             assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_ORIGIN, "http://foo.bar"));
             assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_CREDENTIALS, "true"));
             assertThat(response.headers(), hasHeader(ACCESS_CONTROL_ALLOW_METHODS, "PUT"));
-            assertThat(response.headers().get(ACCESS_CONTROL_ALLOW_HEADERS).allValues(), hasItems("X-foo", "X-bar"));
+            assertThat(response.headers().get(ACCESS_CONTROL_ALLOW_HEADERS).allValues(),
+                       containsInAnyOrder("X-foo", "X-bar", "X-foo", "X-bar"));
             assertThat(response.headers(), noHeader(ACCESS_CONTROL_MAX_AGE));
         }
     }
