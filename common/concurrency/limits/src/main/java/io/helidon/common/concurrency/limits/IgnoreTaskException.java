@@ -66,7 +66,7 @@ public class IgnoreTaskException extends RuntimeException {
     /**
      * This is used by limit implementations to either return the value, or throw an exception.
      *
-     * @return the value provided to be the return value
+     * @return the value supplied to {@link #IgnoreTaskException(Object)}, which may be {@code null}
      * @param <T> type of the return value
      * @throws Exception exception provided by the task
      */
