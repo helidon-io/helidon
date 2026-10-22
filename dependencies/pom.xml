@@ -76,7 +76,7 @@
         <version.lib.log4j>2.26.1</version.lib.log4j>
         <version.lib.micrometer>1.17.1</version.lib.micrometer>
         <version.lib.micrometer-prometheus>1.17.1</version.lib.micrometer-prometheus>
-        <version.lib.mongodb>5.11.1</version.lib.mongodb>
+        <version.lib.mongodb>5.12.0</version.lib.mongodb>
         <version.lib.narayana>7.3.4.Final</version.lib.narayana>
         <version.lib.ojdbc.family>23</version.lib.ojdbc.family>
         <version.lib.ojdbc>${version.lib.ojdbc.family}.26.1.0.0</version.lib.ojdbc>
