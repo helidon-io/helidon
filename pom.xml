@@ -63,8 +63,9 @@
         Changing these version requires approval for a new third party dependency!
         -->
         <version.lib.arquillian>1.7.0.Final</version.lib.arquillian>
-        <version.lib.asm>9.8</version.lib.asm>
+        <version.lib.asm>9.11.1</version.lib.asm>
         <version.lib.checkstyle>10.12.5</version.lib.checkstyle>
+        <version.lib.handlebars>4.5.5</version.lib.handlebars>
         <version.lib.groovy-all>2.4.14</version.lib.groovy-all>
         <!-- Force upgrade fourth party dependency of jlama langchain4j provider  -->
         <version.lib.jinjava>2.8.3</version.lib.jinjava>
@@ -1017,6 +1018,18 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-bom</artifactId>
+                <version>${version.lib.asm}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.github.jknack</groupId>
+                <artifactId>handlebars</artifactId>
+                <version>${version.lib.handlebars}</version>
+            </dependency>
             <dependency>
                 <!-- Force upgrade. Used by jlama langchain4j provider  -->
                 <groupId>com.hubspot.jinjava</groupId>
