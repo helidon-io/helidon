@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -413,12 +414,28 @@ public final class FileSystemWatcher implements ChangeWatcher<Path> {
          * Executor to use for this watcher.
          * The task is scheduled for regular execution and is only blocking a thread for the time needed
          * to process changed files.
+         * The caller remains responsible for shutting down the executor; stopping the watcher only cancels its scheduled work.
+         * If none is configured, each built watcher manages its own default executor.
          *
-         * @param executor executor service to use
+         * @param executor executor service to use; must not be null
          * @return updated builder instance
+         * @throws NullPointerException if {@code executor} is null
+         * @see #clearExecutor()
          */
         public Builder executor(ScheduledExecutorService executor) {
-            this.executor = executor;
+            this.executor = Objects.requireNonNull(executor, "executor");
+            return this;
+        }
+
+        /**
+         * Clear the configured executor, restoring a separate default executor for each subsequently built watcher.
+         * This does not shut down the previously configured executor or affect previously built watchers.
+         *
+         * @return updated builder instance
+         * @since 28.0.0
+         */
+        public Builder clearExecutor() {
+            this.executor = null;
             return this;
         }
 

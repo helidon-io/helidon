@@ -37,6 +37,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -58,6 +59,83 @@ public class ScheduledPollingStrategyTest {
     private static final Duration POLLING_STRATEGY_DURATION =
             Duration.ofMillis(POLLING_STRATEGY_MILLIS);
     private static final int NEXT_LATCH_WAIT_MILLIS = POLLING_STRATEGY_MILLIS * 5;
+
+    @Test
+    void testFactoriesRequireNonNullParameters() {
+        assertThrows(NullPointerException.class, () -> ScheduledPollingStrategy.create(null));
+        assertThrows(NullPointerException.class,
+                     () -> ScheduledPollingStrategy.create(() -> POLLING_STRATEGY_DURATION, null));
+        try (var executor = Executors.newSingleThreadScheduledExecutor()) {
+            assertThrows(NullPointerException.class, () -> ScheduledPollingStrategy.create(null, executor));
+        }
+        assertThrows(NullPointerException.class, () -> ScheduledPollingStrategy.builder().recurringPolicy(null));
+    }
+
+    @Test
+    void testDefaultFactoryOwnsExecutor() throws InterruptedException {
+        var strategy = ScheduledPollingStrategy.create(() -> Duration.ofMillis(10));
+        var tick = new CountDownLatch(1);
+        try {
+            strategy.start(_ -> {
+                tick.countDown();
+                return ChangeEventType.UNCHANGED;
+            });
+            assertThat("Default factory should produce polling ticks", tick.await(10, TimeUnit.SECONDS), is(true));
+        } finally {
+            strategy.stop();
+        }
+        assertThat("Stopping a default strategy should shut down its executor", strategy.executor().isShutdown(), is(true));
+    }
+
+    @Test
+    void testNullExecutorPreservesCustomSelection() {
+        assertThrows(NullPointerException.class, () -> ScheduledPollingStrategy.builder().executor(null));
+        try (var executor = Executors.newSingleThreadScheduledExecutor()) {
+            var builder = ScheduledPollingStrategy.builder()
+                    .recurringPolicy(() -> POLLING_STRATEGY_DURATION)
+                    .executor(executor);
+            assertThrows(NullPointerException.class, () -> builder.executor(null));
+            var strategy = builder.build();
+            try {
+                assertThat("An invalid setter must preserve the selected executor", strategy.executor(), sameInstance(executor));
+            } finally {
+                strategy.stop();
+            }
+            assertThat("A supplied executor remains caller-owned", executor.isShutdown(), is(false));
+        }
+    }
+
+    @Test
+    void testClearExecutorAffectsFutureBuilds() throws InterruptedException {
+        try (var executor = Executors.newSingleThreadScheduledExecutor()) {
+            var builder = ScheduledPollingStrategy.builder()
+                    .recurringPolicy(() -> Duration.ofMillis(10))
+                    .executor(executor);
+            var custom = builder.build();
+            var defaults = builder.clearExecutor().clearExecutor().build();
+            var restored = builder.executor(executor).build();
+            var tick = new CountDownLatch(1);
+            try {
+                assertThat("Clearing must not close the supplied pool", executor.isShutdown(), is(false));
+                assertThat("An existing strategy retains its supplied pool", custom.executor(), sameInstance(executor));
+                assertThat("A cleared builder selects a separate default pool", defaults.executor(), not(sameInstance(executor)));
+                assertThat("A custom pool can be selected again", restored.executor(), sameInstance(executor));
+                defaults.start(_ -> {
+                    tick.countDown();
+                    return ChangeEventType.UNCHANGED;
+                });
+                assertThat("The cleared default should poll", tick.await(10, TimeUnit.SECONDS), is(true));
+                defaults.stop();
+                assertThat("The cleared default owns its pool", defaults.executor().isShutdown(), is(true));
+                assertThat("Stopping the default must leave the caller pool live", executor.isShutdown(), is(false));
+            } finally {
+                custom.stop();
+                defaults.stop();
+                restored.stop();
+            }
+            assertThat("Stopping custom strategies must leave the caller pool live", executor.isShutdown(), is(false));
+        }
+    }
 
     @Test
     public void testNotStartedYet() {
