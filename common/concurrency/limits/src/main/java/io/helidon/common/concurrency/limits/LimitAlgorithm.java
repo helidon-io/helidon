@@ -33,6 +33,9 @@ public interface LimitAlgorithm {
     /**
      * Invoke a callable within the limits of this limiter.
      * <p>
+     * The callable may return {@code null}. The returned {@link Result} is never {@code null}, but its
+     * {@link Result#result()} value may be {@code null}.
+     * <p>
      * Custom implementations that override this method should:
      * <ul>
      * <li>Obtain the outcome for the submitted work from {@link #tryAcquireOutcome(boolean)}.</li>
@@ -42,11 +45,11 @@ public interface LimitAlgorithm {
      * </ul>
      * <p>
      * If the callable throws {@link IgnoreTaskException}, call {@link IgnoreTaskException#handle()} after marking the token as
-     * ignored so the return value or wrapped exception is preserved.
+     * ignored so the return value, including {@code null}, or wrapped exception is preserved.
      *
      * @param callable                 callable to execute within the limit
      * @param <T>                      the callable return type
-     * @return result of the callable with the outcome
+     * @return non-null carrier of the callable's possibly {@code null} return value and the outcome
      * @throws LimitException      in case the limiter did not have an available permit
      * @throws java.lang.Exception in case the task failed with an exception
      */
@@ -329,6 +332,7 @@ public interface LimitAlgorithm {
     /**
      * Carrier for both the result of a {@link java.util.concurrent.Callable} subjected to concurrency limits and the corresponding
      * {@link io.helidon.common.concurrency.limits.LimitAlgorithm.Outcome}.
+     * The callable's return value may be {@code null} and is preserved unchanged.
      *
      * @param <T> type returned by the {@code Callable}
      */
@@ -338,7 +342,7 @@ public interface LimitAlgorithm {
          * Creates a new {@code Result} combining the return value from the {@link java.util.concurrent.Callable} and the
          * limit algorithm {@link io.helidon.common.concurrency.limits.LimitAlgorithm.Outcome}.
          *
-         * @param callableReturnValue value returned from the {@code Callable}
+         * @param callableReturnValue value returned from the {@code Callable}, which may be {@code null}
          * @param outcome limit algorithm outcome
          * @return new {@code Result} combining the return value and the outcome
          * @param <T> type of the return value from the {@code Callable}
@@ -350,7 +354,7 @@ public interface LimitAlgorithm {
         /**
          * Value returned from the {@link java.util.concurrent.Callable} computation.
          *
-         * @return callable result
+         * @return callable result, which may be {@code null}, including when supplied by {@link IgnoreTaskException}
          */
         T result();
 
