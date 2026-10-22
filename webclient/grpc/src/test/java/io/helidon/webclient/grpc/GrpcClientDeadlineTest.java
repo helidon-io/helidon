@@ -16,6 +16,7 @@
 package io.helidon.webclient.grpc;
 
 import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -88,6 +89,7 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Timeout(15)
@@ -516,6 +518,80 @@ class GrpcClientDeadlineTest {
                 connection.setSoTimeout(5000);
                 connection.getInputStream().readAllBytes();
                 assertThat(listener.closeCount.get(), is(1));
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = MethodDescriptor.MethodType.class, names = {"UNARY", "BIDI_STREAMING"})
+    void explicitCancellationInterruptsRootContextTlsHandshake(MethodDescriptor.MethodType type) throws Exception {
+        List<Socket> transports = new CopyOnWriteArrayList<>();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor();
+             var listening = new ServerSocket(0, 2, InetAddress.getLoopbackAddress())) {
+            listening.setSoTimeout(5000);
+            var client = GrpcClient.builder()
+                    .baseUri("https://localhost:" + listening.getLocalPort())
+                    .connectionListener(new ConnectionListener() {
+                        @Override
+                        public void socketConnected(ConnectedSocketInfo socketInfo) {
+                            assertThat("connection setup retains the root context", Context.current(), sameInstance(Context.ROOT));
+                            transports.add(socketInfo.socket());
+                        }
+
+                        @Override
+                        public void socketChannelConnected(ConnectedSocketChannelInfo socketInfo) {
+                            throw new AssertionError("TCP connection must publish a socket");
+                        }
+                    })
+                    .build();
+            var first = Context.ROOT.call(() -> client.channel().newCall(descriptor(type), CallOptions.DEFAULT));
+            var second = Context.ROOT.call(() -> client.channel().newCall(descriptor(type), CallOptions.DEFAULT));
+            var firstListener = new ResponseListener();
+            var secondListener = new ResponseListener();
+            var firstStarted = executor.submit(() -> {
+                Context.ROOT.run(() -> first.start(firstListener, new Metadata()));
+                assertThat("cancellation does not interrupt the first caller", Thread.currentThread().isInterrupted(), is(false));
+            });
+            try (Socket firstPeer = listening.accept()) {
+                readTlsClientHello(firstPeer);
+                var secondStarted = executor.submit(() -> {
+                    Context.ROOT.run(() -> second.start(secondListener, new Metadata()));
+                    assertThat("cancellation does not interrupt the second caller",
+                               Thread.currentThread().isInterrupted(), is(false));
+                });
+                try (Socket secondPeer = listening.accept()) {
+                    readTlsClientHello(secondPeer);
+                    assertThat(transports.size(), is(2));
+                    assertThat("first startup is stalled in TLS", firstStarted.isDone(), is(false));
+                    assertThat("second startup is stalled in TLS", secondStarted.isDone(), is(false));
+
+                    executor.submit(() -> first.cancel("cancel first stalled handshake", null)).get(5, TimeUnit.SECONDS);
+                    assertThat(firstListener.status.get(5, TimeUnit.SECONDS).getCode(), is(Status.Code.CANCELLED));
+                    assertAll(() -> assertThat("cancellation closes the first raw TLS transport",
+                                               transports.getFirst().isClosed(), is(true)),
+                              () -> firstStarted.get(5, TimeUnit.SECONDS));
+                    assertThat("the first peer observes connection closure", firstPeer.getInputStream().read(), is(-1));
+                    assertThat("the second call retains its socket", transports.get(1).isClosed(), is(false));
+                    assertThat("the second call remains in TLS setup", secondStarted.isDone(), is(false));
+                    assertThat("the second call has no terminal result", secondListener.status.isDone(), is(false));
+
+                    executor.submit(() -> second.cancel("cancel second stalled handshake", null)).get(5, TimeUnit.SECONDS);
+                    assertThat(secondListener.status.get(5, TimeUnit.SECONDS).getCode(), is(Status.Code.CANCELLED));
+                    assertThat("cancellation closes the second raw TLS transport", transports.get(1).isClosed(), is(true));
+                    secondStarted.get(5, TimeUnit.SECONDS);
+                    assertThat("the second peer observes connection closure", secondPeer.getInputStream().read(), is(-1));
+                    first.cancel("repeated cancellation", null);
+                    second.cancel("repeated cancellation", null);
+                    assertThat(firstListener.closeCount.get(), is(1));
+                    assertThat(secondListener.closeCount.get(), is(1));
+                }
+            } finally {
+                // Close the peers before joining startup workers, including on the unfixed implementation.
+                first.cancel("test cleanup", null);
+                second.cancel("test cleanup", null);
+                for (Socket transport : transports) {
+                    transport.close();
+                }
             }
         }
     }
@@ -964,6 +1040,18 @@ class GrpcClientDeadlineTest {
                 .setRequestMarshaller(marshaller)
                 .setResponseMarshaller(marshaller)
                 .build();
+    }
+
+    private static void readTlsClientHello(Socket peer) throws IOException {
+        peer.setSoTimeout(5000);
+        var input = new DataInputStream(peer.getInputStream());
+        assertThat("the peer receives a TLS handshake record", input.readUnsignedByte(), is(22));
+        input.readUnsignedShort(); // legacy record version
+        int length = input.readUnsignedShort();
+        byte[] handshake = input.readNBytes(length);
+        assertThat("the peer receives the complete TLS record", handshake.length, is(length));
+        assertThat("the peer receives ClientHello before cancellation", handshake[0], is((byte) 1));
+        // Send no TLS response: only cancellation or test cleanup may release startup.
     }
 
     private enum StartupMode {
