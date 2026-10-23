@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.service.maven.plugin;
+package io.helidon.service.application.codegen;
 
 import java.lang.System.Logger.Level;
 import java.util.List;
@@ -107,7 +107,7 @@ class WrappedServices implements AutoCloseable {
         } catch (ReflectiveOperationException e) {
             logger.log(CodegenEvent.builder()
                                .level(Level.WARNING)
-                               .message("Failed to shutdown services used from Maven plugin")
+                               .message("Failed to shutdown services used during application generation")
                                .throwable(e)
                                .build());
         }

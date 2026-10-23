@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.service.maven.plugin;
+package io.helidon.service.application.codegen;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,11 +32,11 @@ import io.helidon.service.codegen.DescriptorClassCode;
 import io.helidon.service.codegen.RegistryRoundContext;
 import io.helidon.service.codegen.ServiceContracts;
 
-class MavenRoundContext implements RegistryRoundContext {
+class ApplicationRoundContext implements RegistryRoundContext {
     private final List<DescriptorClassCode> descriptors = new ArrayList<>();
-    private final MavenCodegenContext ctx;
+    private final ApplicationCodegenContext ctx;
 
-    MavenRoundContext(MavenCodegenContext ctx) {
+    ApplicationRoundContext(ApplicationCodegenContext ctx) {
         this.ctx = ctx;
     }
 

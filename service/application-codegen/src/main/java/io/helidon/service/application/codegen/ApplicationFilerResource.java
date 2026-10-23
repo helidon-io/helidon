@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.service.maven.plugin;
+package io.helidon.service.application.codegen;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,17 +25,17 @@ import java.util.Arrays;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.FilerResource;
 
-class MavenFilerResource implements FilerResource {
+class ApplicationFilerResource implements FilerResource {
     private final Path resourcePath;
 
     private byte[] currentBytes;
     private boolean modified;
 
-    MavenFilerResource(Path resourcePath) {
+    ApplicationFilerResource(Path resourcePath) {
         this(resourcePath, new byte[0]);
     }
 
-    MavenFilerResource(Path resourcePath, byte[] bytes) {
+    ApplicationFilerResource(Path resourcePath, byte[] bytes) {
         this.resourcePath = resourcePath;
         this.currentBytes = bytes;
     }

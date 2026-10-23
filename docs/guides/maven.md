@@ -13,7 +13,8 @@ Helidon supports Maven by providing the following:
 
 1.  The Helidon Application parent POM
 2.  Dependency management via the Helidon BOM and Dependencies POMs
-3.  The `helidon-maven-plugin`
+3.  The `helidon-service-maven-plugin` for declarative application bindings
+4.  The `helidon-maven-plugin` for custom Java runtime images
 
 ## The Helidon Application POM
 
@@ -74,6 +75,136 @@ Component dependency:
   <artifactId>helidon-config-yaml</artifactId>
 </dependency>
 ```
+
+## Declarative Applications
+
+The `io.helidon.service:helidon-service-maven-plugin` generates application
+bindings after Java compilation. It discovers service descriptors and resolves
+their dependencies during the build. The resulting binding registers services
+and their injection plans, avoiding discovery and dependency binding at runtime.
+The [Gradle guide](gradle.md#declarative-applications) describes the equivalent
+Gradle setup.
+
+Two build stages are required. Annotation processing generates service
+descriptors and a compile-time placeholder for a binding referenced by
+application source code. The service Maven plugin then replaces that placeholder
+with the complete application binding after compilation.
+
+The following standalone `pom.xml` configures both stages for main and test
+sources. Use Java 27 and the same Helidon 28 release for dependencies, processors
+and the service plugin, replacing `28.0.0` with your selected release.
+
+```xml [pom.xml]
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.example</groupId>
+  <artifactId>declarative-application</artifactId>
+  <version>1.0-SNAPSHOT</version>
+
+  <properties>
+    <helidon.version>28.0.0</helidon.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.source>27</maven.compiler.source>
+    <maven.compiler.release>${maven.compiler.source}</maven.compiler.release>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.helidon</groupId>
+        <artifactId>helidon-dependencies</artifactId>
+        <version>${helidon.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.helidon.service</groupId>
+      <artifactId>helidon-service-registry</artifactId>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.16.0</version>
+        <configuration>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>io.helidon.bundles</groupId>
+              <artifactId>helidon-bundles-apt</artifactId>
+              <version>${helidon.version}</version>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>io.helidon.service</groupId>
+        <artifactId>helidon-service-maven-plugin</artifactId>
+        <version>${helidon.version}</version>
+        <configuration>
+          <packageName>com.example</packageName>
+          <generateMain>true</generateMain>
+        </configuration>
+        <executions>
+          <execution>
+            <id>create-application</id>
+            <goals>
+              <goal>create-application</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>test-application-create</id>
+            <goals>
+              <goal>test-application-create</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+```
+
+The compiler's `annotationProcessorPaths` configuration applies to main and test
+compilation. The `create-application` goal runs in the `compile` phase after
+main compilation. The `test-application-create` goal runs in `test-compile`
+after test compilation and creates a `TestApplicationBinding` containing both
+application and test services. No explicit phase overrides are needed. Run the
+usual Maven lifecycle to execute both stages:
+
+```shell [Terminal]
+mvn verify
+```
+
+The example explicitly enables `generateMain` to generate
+`com.example.ApplicationMain`, which starts the registry using
+`com.example.ApplicationBinding`. Main generation defaults to `false`.
+Alternatively, set `generateMain` to `false`, annotate your own main class with
+`@Service.GenerateBinding`, and call
+`ServiceRegistryManager.start(ApplicationBinding.create())`. Keep the binding
+class name and package configured in the plugin aligned with the annotation;
+with the example configuration, put the annotated main class in `com.example`
+and use the annotation's default binding name, `ApplicationBinding`.
+
+If you use `io.helidon.applications:helidon-se` as your parent POM, it already
+provides Java 27 compiler settings, Maven Compiler Plugin 3.16.0 with
+`proc=full`, and Helidon dependency management. You can reuse those inherited
+settings when adapting this example, but you must still add the annotation
+processor path and both service-plugin executions. Importing only
+`helidon-dependencies` provides dependency management; it does not configure
+the compiler or build plugins.
+
+The service Maven plugin is separate from the build-tools
+`helidon-maven-plugin` described below, which creates custom Java runtime
+images.
 
 ## The `helidon-maven-plugin`
 

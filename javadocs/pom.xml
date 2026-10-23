@@ -59,6 +59,8 @@
                         <exclude>*:*-tests</exclude>
                         <exclude>io.helidon.config.metadata:helidon-config-metadata-docs</exclude>
                         <exclude>io.helidon.config.metadata:helidon-config-metadata-model</exclude>
+                        <!-- Gradle API bundles packages that conflict on the aggregate module path. -->
+                        <exclude>io.helidon.service:helidon-service-gradle-plugin</exclude>
                     </dependencyExcludes>
                     <sourceExcludes>
                         <exclude>**/src/it</exclude>
