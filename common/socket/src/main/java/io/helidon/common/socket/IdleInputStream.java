@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,9 +138,8 @@ class IdleInputStream extends InputStream {
                     //Set iteration read timeout
                     socket.setSoTimeout(ITERATION_TIME_MILLIS);
                     next = upstream.read();
-                    if (next <= 0) {
+                    if (next == -1) {
                         closed = true;
-                        return;
                     }
                     break;
                 } catch (SocketTimeoutException e) {
@@ -149,7 +148,7 @@ class IdleInputStream extends InputStream {
                     }
                 }
             }
-            //Idle checking thread was canceled or detected as not idle. Restore socket timeout it should have.
+            //Idle checking finished. Restore socket timeout it should have.
             if (socket.getSoTimeout() == ITERATION_TIME_MILLIS) {
                 //To prevent any incorrect socket timeout restoration. Assume the following scenario:
                 //1. IdleInputStream saves timeout to restore -> example 30s
