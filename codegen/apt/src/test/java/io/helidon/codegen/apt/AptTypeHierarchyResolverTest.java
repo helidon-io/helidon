@@ -183,7 +183,7 @@ class AptTypeHierarchyResolverTest {
 
     @Test
     void resolvesJavacInheritedGenericSignaturesAndCovariantOverrides() {
-        var processor = new HierarchyProcessor((round, number) -> {
+        var processor = new HierarchyProcessor((round, _) -> {
             TypeInfo root = round.typeInfo(TypeName.create("example.Root")).orElseThrow();
             List<TypeHierarchyResolver.ResolvedMethod> methods = round.typeHierarchyResolver().effectiveInterfaceMethods(root);
             assertThat(methods.stream().map(method -> method.method().elementName()).toList(),
