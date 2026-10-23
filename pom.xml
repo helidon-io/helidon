@@ -823,6 +823,22 @@
                 <artifactId>org.eclipse.persistence.jpa</artifactId>
                 <version>${version.lib.eclipselink}</version>
             </dependency>
+            <!-- Bytecode support for persistence providers used by tests. -->
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm</artifactId>
+                <version>${version.lib.asm}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-commons</artifactId>
+                <version>${version.lib.asm}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.ow2.asm</groupId>
+                <artifactId>asm-tree</artifactId>
+                <version>${version.lib.asm}</version>
+            </dependency>
             <dependency>
                 <groupId>org.hibernate.orm</groupId>
                 <artifactId>hibernate-core</artifactId>
