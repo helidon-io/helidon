@@ -158,9 +158,10 @@ public final class EncryptionUtil {
      * @param secret         secret to encrypt
      * @return Encrypted value base64 encoded
      * @throws ConfigEncryptionException If any problem with encryption occurs
-     * @deprecated this method will be removed once a separate module for encryption is created
+     * @deprecated use {@link #encryptAesEnvelope(char[], String)} to encrypt config passwords in the
+     * {@code ${ENC=...}} format. The legacy encryption format will be discontinued.
      */
-    @Deprecated(since = "2.2.0")
+    @Deprecated(since = "2.2.0", forRemoval = true)
     public static String encryptAesBytes(char[] masterPassword, byte[] secret) throws ConfigEncryptionException {
         Objects.requireNonNull(masterPassword, "Password must be provided for encryption");
         Objects.requireNonNull(secret, "Secret message must be provided to be encrypted");
@@ -217,9 +218,11 @@ public final class EncryptionUtil {
      * @param encryptedBase64 encrypted secret, base64 encoded
      * @return Decrypted secret
      * @throws ConfigEncryptionException if something bad happens during decryption (e.g. wrong password)
-     * @deprecated This method will be moved to a new module
+     * @deprecated use {@link #decryptAesEnvelope(char[], String)} for values encrypted with
+     * {@link #encryptAesEnvelope(char[], String)}. Legacy values must be decrypted and re-encrypted in the
+     * {@code ${ENC=...}} format before switching to the replacement.
      */
-    @Deprecated(since = "2.2.0")
+    @Deprecated(since = "2.2.0", forRemoval = true)
     public static byte[] decryptAesBytes(char[] masterPassword, String encryptedBase64) {
         Objects.requireNonNull(masterPassword, "Password must be provided for encryption");
         Objects.requireNonNull(encryptedBase64, "Encrypted bytes must be provided for decryption (base64 encoded)");
