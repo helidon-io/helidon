@@ -44,6 +44,19 @@ public interface AnnotationAnalyzer {
     }
 
     /**
+     * Whether this analyzer supports expanded callbacks for separate resource definition, declaring, and handling stages.
+     * <p>
+     * The default preserves the original application, resource-class, and resource-method callback topology. The returned
+     * value must remain stable after initialization.
+     *
+     * @return {@code true} to opt in to expanded endpoint analysis
+     * @since 28.0.0
+     */
+    default boolean supportsExpandedEndpointAnalysis() {
+        return false;
+    }
+
+    /**
      * Analyze an application class.
      *
      * @param maybeAnnotated class of the application layer
@@ -73,12 +86,17 @@ public interface AnnotationAnalyzer {
     }
 
     /**
-     * Analyze an endpoint class.
+     * Analyze a resource type.
+     * <p>
+     * By default, the supplied annotations are the complete annotation view of the selected resource class. An analyzer
+     * that opts in through {@link #supportsExpandedEndpointAnalysis()} may receive several ordered callbacks for a
+     * resource's selected definition, method-declaring type, and concrete handling type. The supplied annotations are then
+     * exactly those selected for that stage and may be a declared, inherited, or filtered subset.
      *
-     * @param endpointType     type of the endpoint
-     * @param annotations      annotations on the type
-     * @param previousResponse response from parent of this class (e.g. from application analysis)
-     * @return response with information whether to (and how) authenticate and authorize
+     * @param endpointType type analyzed at this stage
+     * @param annotations annotations selected for this stage
+     * @param previousResponse response returned by this analyzer for the preceding class or method stage
+     * @return response describing authentication and authorization requirements
      */
     default AnalyzerResponse analyze(TypeName endpointType, List<Annotation> annotations, AnalyzerResponse previousResponse) {
         return AnalyzerResponse.abstain(previousResponse);
@@ -86,12 +104,16 @@ public interface AnnotationAnalyzer {
 
     /**
      * Analyze a resource method.
-     * By default returns an abstain response.
+     * <p>
+     * An analyzer that opts in through {@link #supportsExpandedEndpointAnalysis()} may receive separate callbacks for a
+     * resource's selected definition method and actual handling method. The supplied metadata is the method view selected
+     * for this stage, and {@code previousResponse} is the response returned by this analyzer for the immediately preceding
+     * class or method stage.
      *
-     * @param typeName         type that contains the method
-     * @param method           endpoint method
-     * @param previousResponse response from parent of this class (e.g. from resource class analysis)
-     * @return response with information whether to (and how) authenticate and authorize
+     * @param typeName declaring type of the method analyzed at this stage
+     * @param method method metadata selected for this stage
+     * @param previousResponse response from the preceding analyzer stage
+     * @return response describing authentication and authorization requirements
      */
     default AnalyzerResponse analyze(TypeName typeName, TypedElementInfo method, AnalyzerResponse previousResponse) {
         return AnalyzerResponse.abstain(previousResponse);
@@ -189,13 +211,19 @@ public interface AnnotationAnalyzer {
         }
 
         /**
-         * Parent of this analysis.
+         * Response explicitly supplied as this response's parent.
+         * <p>
+         * Security integrations pass the response returned by the preceding analyzer callback as
+         * {@code previousResponse}. An analyzer that creates a new response normally preserves that relationship with
+         * {@link #builder(AnalyzerResponse)}. The framework does not infer or create the parent relationship, and an
+         * analyzer may return the preceding response unchanged.
+         * <p>
+         * Analysis begins with the application. An analyzer that opts in through
+         * {@link AnnotationAnalyzer#supportsExpandedEndpointAnalysis()} may then receive multiple definition,
+         * declaring-class, definition-method, handling-class, and handling-method stages, repeated for each level of a
+         * sub-resource path. Consequently, a class response may have a method response as its parent, and vice versa.
          *
-         * For application class analysis, the parent is empty.
-         * For resource class analysis, the parent is application class analysis result.
-         * For resource method analysis, the parent is resource class analysis result.
-         *
-         * @return parent if exists, or empty
+         * @return explicitly configured parent, or empty
          */
         public Optional<AnalyzerResponse> parent() {
             return Optional.ofNullable(parent);
