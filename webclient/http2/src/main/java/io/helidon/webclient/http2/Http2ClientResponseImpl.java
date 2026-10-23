@@ -199,16 +199,6 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
         }
     }
 
-    private void closeAfterEntityFailure(RuntimeException failure) {
-        try {
-            close();
-        } catch (RuntimeException closeFailure) {
-            if (closeFailure != failure) {
-                failure.addSuppressed(closeFailure);
-            }
-        }
-    }
-
     @Override
     public ClientUri lastEndpointUri() {
         return lastEndpointUri;
@@ -218,7 +208,8 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
     public void close() {
         if (!closed.getAndSet(true)) {
             try {
-                if (inputStream != null) {
+                // HTTP/1 fallback retains ownership of its entity stream.
+                if (inputStream != null && !(stream instanceof Http2CallChainBase.Http1ResponseResource)) {
                     inputStream.close();
                 }
             } catch (IOException e) {
@@ -226,6 +217,16 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
             } finally {
                 complete.complete(null);
                 closeResponseRunnable.run();
+            }
+        }
+    }
+
+    private void closeAfterEntityFailure(RuntimeException failure) {
+        try {
+            close();
+        } catch (RuntimeException closeFailure) {
+            if (closeFailure != failure) {
+                failure.addSuppressed(closeFailure);
             }
         }
     }

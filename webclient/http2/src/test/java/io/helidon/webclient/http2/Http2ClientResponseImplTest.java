@@ -30,14 +30,18 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.InflaterInputStream;
 
+import io.helidon.common.buffers.BufferData;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.ClientResponseTrailers;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.MediaContext;
+import io.helidon.webclient.api.ClientResponseEntity;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientConfig;
+import io.helidon.webclient.api.HttpClientResponse;
+import io.helidon.webclient.api.ReleasableResource;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -47,6 +51,10 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class Http2ClientResponseImplTest {
     @ParameterizedTest
@@ -210,6 +218,44 @@ class Http2ClientResponseImplTest {
         assertThat(closeCount.get(), is(1));
     }
 
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void closesHttp1FallbackWithoutRequestingUnavailableBody(boolean exhaustFirstBuffer) throws IOException {
+        var bodyRequests = new AtomicInteger();
+        var entityCompletions = new AtomicInteger();
+        var requestHeaders = ClientRequestHeaders.create(WritableHeaders.create());
+        var responseHeaders = ClientResponseHeaders.create(WritableHeaders.create());
+        var entity = ClientResponseEntity.create(_ -> {
+            int request = bodyRequests.incrementAndGet();
+            if (exhaustFirstBuffer && request == 1) {
+                return BufferData.create(new byte[] {'a'});
+            }
+            throw new IllegalStateException("Fallback body is unavailable");
+        }, entityCompletions::incrementAndGet, requestHeaders, responseHeaders, MediaContext.create(), 1024);
+        var owner = mock(HttpClientResponse.class);
+        when(owner.entity()).thenReturn(entity);
+        when(owner.inputStream()).thenReturn(entity.inputStream());
+        var resource = new Http2CallChainBase.Http1ResponseResource(owner);
+        var completed = new CompletableFuture<Void>();
+        var responseCompletions = new AtomicInteger();
+        completed.thenRun(responseCompletions::incrementAndGet);
+        var response = response(owner.inputStream(), completed, resource, resource::closeResource);
+        if (exhaustFirstBuffer) {
+            assertThat(response.entity().inputStream().read(), is((int) 'a'));
+        }
+        int requestsBeforeClose = bodyRequests.get();
+        assertThat(requestsBeforeClose, is(exhaustFirstBuffer ? 1 : 0));
+
+        response.close();
+        response.close();
+
+        assertThat(bodyRequests.get(), is(requestsBeforeClose));
+        assertThat(completed.isDone(), is(true));
+        assertThat(responseCompletions.get(), is(1));
+        assertThat(entityCompletions.get(), is(0));
+        verify(owner, times(1)).close();
+    }
+
     private static InputStream decoder(boolean gzip, boolean truncated) throws IOException {
         var encoded = new ByteArrayOutputStream();
         try (var encoder = gzip ? new GZIPOutputStream(encoded) : new DeflaterOutputStream(encoded)) {
@@ -221,8 +267,15 @@ class Http2ClientResponseImplTest {
     }
 
     private static Http2ClientResponseImpl response(InputStream input,
-                                                     CompletableFuture<Void> completed,
-                                                     AtomicInteger closeCount) {
+                                                    CompletableFuture<Void> completed,
+                                                    AtomicInteger closeCount) {
+        return response(input, completed, null, closeCount::incrementAndGet);
+    }
+
+    private static Http2ClientResponseImpl response(InputStream input,
+                                                    CompletableFuture<Void> completed,
+                                                    ReleasableResource resource,
+                                                    Runnable closeResponse) {
         return new Http2ClientResponseImpl(HttpClientConfig.builder().build(),
                                            "h2",
                                            Status.OK_200,
@@ -232,9 +285,9 @@ class Http2ClientResponseImplTest {
                                            input,
                                            MediaContext.create(),
                                            ClientUri.create(URI.create("http://localhost/test")),
-                                           null,
+                                           resource,
                                            completed,
-                                           closeCount::incrementAndGet,
+                                           closeResponse,
                                            1024,
                                            false,
                                            null);
