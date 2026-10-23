@@ -92,7 +92,10 @@ same package as the binding. Leave `generateMain` at its default of `false`.
 ### Build Tasks
 
 `generateApplicationBindings` runs after `compileJava` and `processResources`.
-Its final classes are used by `classes`, `jar`, `run`, distributions and test
+It post-processes the Java compiler's output, replacing the binding placeholder
+in its own completed Java class directory. That directory is registered using
+Gradle's [SourceDirectorySet.compiledBy](https://docs.gradle.org/current/dsl/org.gradle.api.file.SourceDirectorySet.html#org.gradle.api.file.SourceDirectorySet:compiledBy(org.gradle.api.tasks.TaskProvider,%20java.util.function.Function))
+API. Its final Java classes are used by `classes`, `jar`, `run`, distributions and test
 compilation. `generateTestApplicationBindings` runs after test compilation and
 resource processing, and generates `TestApplicationBinding` containing both
 application and test services before `test` runs.
@@ -112,6 +115,21 @@ the final class directories yourself. Compilation outputs remain separate so
 unchanged builds can stay up to date. Changes to application classes,
 resources, runtime dependencies or generation options regenerate the binding
 and remove obsolete generated output.
+
+The plugin leaves processed resources and additional compiler outputs in their
+own directories. It reads those directories when generating bindings; it does
+not copy or merge them into the completed Java output, replace the source set's
+class-directory collection, or configure archive filtering. Other plugins and
+build scripts can continue adding outputs through Gradle's source-set model.
+When several compiler outputs contain resources with the same path, directory
+execution preserves those resources separately. Combining them in a single
+archive requires the build's usual resource-merging or duplicate-handling policy;
+the Helidon plugin does not choose that policy.
+
+Configure a Java compiler's raw output with its `destinationDirectory` property.
+Configure the completed Java output with `sourceSets.main.java.destinationDirectory`
+(or the corresponding test source set). Both follow `layout.buildDirectory` by
+default. Each generation task modifies only its own completed output.
 
 ### Configuration
 

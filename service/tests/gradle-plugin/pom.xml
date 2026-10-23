@@ -65,6 +65,16 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.helidon.config.metadata</groupId>
+            <artifactId>helidon-config-metadata-codegen</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config.metadata</groupId>
+            <artifactId>helidon-config-metadata</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>dev.gradleplugins</groupId>
             <artifactId>gradle-test-kit</artifactId>
             <scope>test</scope>

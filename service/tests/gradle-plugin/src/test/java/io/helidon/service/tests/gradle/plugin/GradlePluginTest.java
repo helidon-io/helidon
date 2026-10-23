@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
 import org.gradle.testkit.runner.BuildResult;
@@ -131,7 +132,17 @@ class GradlePluginTest {
     }
 
     @Test
-    void mergesServiceMetadataFromMultipleClassOutputs() throws IOException {
+    void preservesRealizedCompilerDestinationConfiguredBeforePlugin() throws IOException {
+        customClassDirectories(true);
+    }
+
+    @Test
+    void preservesCompilerDestinationConfiguredAfterPlugin() throws IOException {
+        customClassDirectories(false);
+    }
+
+    @Test
+    void preservesMetadataFromMultipleClassOutputs() throws IOException {
         fixture();
         write("build.gradle", Files.readString(directory.resolve("build.gradle")) + """
 
@@ -162,6 +173,26 @@ class GradlePluginTest {
                 @Service.Singleton
                 public class RemovedService { }
                 """);
+        write("src/main/java/example/MainConfig.java", """
+                package example;
+                import io.helidon.config.metadata.Configured;
+                import io.helidon.config.metadata.ConfiguredOption;
+                @Configured(ignoreBuildMethod = true)
+                public class MainConfig {
+                    @ConfiguredOption
+                    public void mainOption(String value) { }
+                }
+                """);
+        write("src/extra/java/example/ExtraConfig.java", """
+                package example;
+                import io.helidon.config.metadata.Configured;
+                import io.helidon.config.metadata.ConfiguredOption;
+                @Configured(ignoreBuildMethod = true)
+                public class ExtraConfig {
+                    @ConfiguredOption
+                    public void extraOption(String value) { }
+                }
+                """);
         write("src/main/java/example/Main.java", Files.readString(directory.resolve("src/main/java/example/Main.java"))
                 .replace("main(String[] args) {", "main(String[] args) throws Exception {")
                 .replace("manager.shutdown();", """
@@ -183,6 +214,18 @@ class GradlePluginTest {
                    Files.exists(directory.resolve("build/classes/java/main/" + metadata)), is(true));
         assertThat("Extra compiler must contribute service metadata at the same path",
                    Files.exists(directory.resolve("build/classes/extra/main/" + metadata)), is(true));
+        String configMetadata = "META-INF/helidon/config-metadata.json";
+        String mainMetadata = Files.readString(directory.resolve("build/classes/java/main/" + configMetadata));
+        String extraMetadata = Files.readString(directory.resolve("build/classes/extra/main/" + configMetadata));
+        assertThat(mainMetadata, containsString("MainConfig"));
+        assertThat(mainMetadata, not(containsString("ExtraConfig")));
+        assertThat(extraMetadata, containsString("ExtraConfig"));
+        assertThat(extraMetadata, not(containsString("MainConfig")));
+        assertThat("Extra metadata must remain in its producer's output",
+                   Files.readString(directory.resolve("build/classes/helidon/main/" + configMetadata)),
+                   is(mainMetadata));
+        assertThat("Extra classes must remain in their producer's output",
+                   Files.exists(directory.resolve("build/classes/helidon/main/example/ExtraService.class")), is(false));
         Path binding = directory.resolve("build/generated/sources/helidon/main/example/ApplicationBinding.java");
         String firstBinding = Files.readString(binding);
         assertThat(firstBinding, containsString("Greeting__ServiceDescriptor"));
@@ -200,6 +243,12 @@ class GradlePluginTest {
         assertThat(changedBinding, containsString("Greeting__ServiceDescriptor"));
         assertThat(changedBinding, containsString("ExtraService__ServiceDescriptor"));
         assertThat(changedBinding, not(containsString("RemovedService__ServiceDescriptor")));
+
+        BuildResult repeated = runner("classes", "splitServicesRun").build();
+        assertTask(repeated, ":compileJava", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":compileExtraServices", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":generateApplicationBindings", TaskOutcome.UP_TO_DATE);
+        assertThat(repeated.getOutput(), containsString("EXTRA:extra"));
     }
 
     @Test
@@ -230,7 +279,11 @@ class GradlePluginTest {
                 }
                 tasks.register('prefixedOutputJar', Jar) {
                     archiveClassifier = 'prefixed-output'
+                    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
                     into('nested') { from(sourceSets.main.output) }
+                }
+                tasks.named('jar') {
+                    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
                 }
                 """);
         write("src/late/java/example/LateService.java", """
@@ -532,6 +585,50 @@ class GradlePluginTest {
         assertThat(name + " in:\n" + result.getOutput(), result.task(name).getOutcome(), is(expected));
     }
 
+    private void customClassDirectories(boolean configureBeforePlugin) throws IOException {
+        fixture();
+        String rawDirectory = configureBeforePlugin ? "custom-raw-main" : "custom-build/custom/raw-main";
+        String configure = configureBeforePlugin
+                ? "tasks.named('compileJava', JavaCompile).get().destinationDirectory = "
+                        + "layout.projectDirectory.dir('custom-raw-main')\n"
+                : "tasks.named('compileJava', JavaCompile) { destinationDirectory = "
+                        + "layout.buildDirectory.dir('custom/raw-main') }\n";
+        write("build.gradle", Files.readString(directory.resolve("build.gradle"))
+                .replace("id 'io.helidon.service'", "id 'io.helidon.service' apply false")
+                .replace("java { toolchain", (configureBeforePlugin ? configure : "")
+                        + "apply plugin: 'io.helidon.service'\n"
+                        + (configureBeforePlugin ? "" : configure)
+                        + "java { toolchain") + """
+
+                sourceSets.main.java.destinationDirectory = layout.buildDirectory.dir('custom/completed-main')
+                layout.buildDirectory = layout.projectDirectory.dir('custom-build')
+                """);
+
+        BuildResult result = runner("packagedRun", "--configuration-cache").build();
+        assertTask(result, ":compileJava", TaskOutcome.SUCCESS);
+        assertTask(result, ":generateApplicationBindings", TaskOutcome.SUCCESS);
+        assertTask(result, ":jar", TaskOutcome.SUCCESS);
+        assertThat(result.getOutput(), containsString("APPLICATION:chosen:library"));
+        Path rawBinding = directory.resolve(rawDirectory + "/example/ApplicationBinding.class");
+        Path completedBinding = directory.resolve("custom-build/custom/completed-main/example/ApplicationBinding.class");
+        assertThat("Configured compiler destination must retain the raw placeholder", Files.exists(rawBinding), is(true));
+        assertThat("Language destination must contain the completed binding", Files.exists(completedBinding), is(true));
+        assertThat("Completed binding must replace the placeholder",
+                   Files.mismatch(rawBinding, completedBinding), not(is(-1L)));
+        assertThat("Late build directory configuration must not leave default output behind",
+                   Files.exists(directory.resolve("build/classes/helidon/main")), is(false));
+        try (var jar = new ZipFile(directory.resolve("custom-build/libs/application.jar").toFile())) {
+            assertThat(jar.stream().filter(entry -> entry.getName().equals("example/ApplicationBinding.class")).count(),
+                       is(1L));
+        }
+
+        BuildResult repeated = runner("packagedRun", "--configuration-cache").build();
+        assertThat(repeated.getOutput(), containsString("Reusing configuration cache"));
+        assertTask(repeated, ":compileJava", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":generateApplicationBindings", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":jar", TaskOutcome.UP_TO_DATE);
+    }
+
     private void extraClassOutputs(boolean registerBeforePlugin) throws IOException {
         fixture();
         String producers = """
@@ -603,10 +700,14 @@ class GradlePluginTest {
         assertThat(result.getOutput(), containsString("EXTRA:extra-main"));
         assertThat(Files.readString(directory.resolve("build/test-results/test/TEST-example.ExtraOutputTest.xml")),
                    containsString("tests=\"1\""));
-        assertThat("Extra main class must be staged with completed application bindings",
-                   Files.exists(directory.resolve("build/classes/helidon/main/extra/MainOutput.class")), is(true));
-        assertThat("Extra test class must be staged with completed test bindings",
-                   Files.exists(directory.resolve("build/classes/helidon/test/extra/TestOutput.class")), is(true));
+        assertThat("Extra main class must remain in its own compiler output",
+                   Files.exists(directory.resolve("build/classes/extra/main/extra/MainOutput.class")), is(true));
+        assertThat("Extra test class must remain in its own compiler output",
+                   Files.exists(directory.resolve("build/classes/extra/test/extra/TestOutput.class")), is(true));
+        assertThat("Completed application output must not copy unrelated compiler outputs",
+                   Files.exists(directory.resolve("build/classes/helidon/main/extra/MainOutput.class")), is(false));
+        assertThat("Completed test output must not copy unrelated compiler outputs",
+                   Files.exists(directory.resolve("build/classes/helidon/test/extra/TestOutput.class")), is(false));
         try (var jar = new ZipFile(directory.resolve("build/libs/application.jar").toFile())) {
             assertThat(jar.stream().filter(entry -> entry.getName().equals("extra/MainOutput.class")).count(), is(1L));
             assertThat(jar.getEntry("extra/TestOutput.class"), nullValue());
@@ -629,6 +730,11 @@ class GradlePluginTest {
         List<Path> tools = classpath("fixture-tool-classpath.txt");
         List<Path> runtime = classpath("fixture-runtime-classpath.txt");
         List<Path> generator = tools.stream().filter(path -> !isGradleArtifact(path)).toList();
+        List<Path> compilation = tools.stream().filter(path -> {
+            String name = path.getFileName().toString();
+            return name.startsWith("helidon-config-metadata-");
+        }).toList();
+        List<Path> compileLibraries = Stream.concat(runtime.stream(), compilation.stream()).toList();
         List<Path> testLibraries = tools.stream().filter(path -> {
             String name = path.getFileName().toString();
             return name.startsWith("junit-") || name.startsWith("apiguardian-") || name.startsWith("opentest4j-")
@@ -678,7 +784,7 @@ class GradlePluginTest {
                     classpath = files(tasks.named('jar').flatMap { it.archiveFile }) + configurations.runtimeClasspath
                     mainClass = 'example.ApplicationMain'
                 }
-                """.formatted(files(runtime), files(generator), files(generator), files(testLibraries), files(generator)));
+                """.formatted(files(compileLibraries), files(generator), files(generator), files(testLibraries), files(generator)));
         write("library/src/main/java/library/LibraryService.java", """
                 package library;
                 import io.helidon.service.registry.Service;
@@ -763,29 +869,30 @@ class GradlePluginTest {
                 import io.helidon.service.registry.ServiceRegistryConfig;
                 import io.helidon.service.registry.ServiceRegistryManager;
                 import org.junit.jupiter.api.Test;
+                import static org.hamcrest.CoreMatchers.instanceOf;
+                import static org.hamcrest.CoreMatchers.is;
+                import static org.hamcrest.CoreMatchers.not;
+                import static org.hamcrest.MatcherAssert.assertThat;
                 @Service.GenerateBinding("TestApplicationBinding")
                 public class BindingTest {
                     @Test
                     void testBindingIncludesMainAndTestServices() {
                         Binding binding = TestApplicationBinding.create();
-                        if (binding instanceof EmptyBinding) {
-                            throw new AssertionError("Test annotation processor placeholder was not replaced");
-                        }
+                        assertThat("Test annotation processor placeholder was replaced", binding,
+                                   not(instanceOf(EmptyBinding.class)));
                         var config = ServiceRegistryConfig.builder()
                                         .discoverServices(false)
                                         .discoverServicesFromServiceLoader(false)
                                         .allowLateBinding(false)
                                         .update(binding::configure)
                                         .build();
-                        if (config.discoverServices() || config.discoverServicesFromServiceLoader()) {
-                            throw new AssertionError("Generated test binding enabled runtime discovery");
-                        }
+                        assertThat("Generated test binding disabled runtime discovery", config.discoverServices(), is(false));
+                        assertThat("Generated test binding disabled service loader discovery",
+                                   config.discoverServicesFromServiceLoader(), is(false));
                         var manager = ServiceRegistryManager.start(binding, config);
                         try {
                             String actual = manager.registry().get(TestOnly.class).value();
-                            if (!"test:chosen:library".equals(actual)) {
-                                throw new AssertionError("Unexpected injected value: " + actual);
-                            }
+                            assertThat("Injected value", actual, is("test:chosen:library"));
                         } finally {
                             manager.shutdown();
                         }

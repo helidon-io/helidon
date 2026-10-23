@@ -16,9 +16,6 @@
 package io.helidon.service.gradle.plugin;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -32,11 +29,9 @@ import org.gradle.api.attributes.Bundling;
 import org.gradle.api.attributes.Category;
 import org.gradle.api.attributes.LibraryElements;
 import org.gradle.api.attributes.Usage;
-import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskProvider;
-import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.jvm.toolchain.JavaToolchainService;
 import org.gradle.language.jvm.tasks.ProcessResources;
@@ -113,38 +108,27 @@ public final class HelidonServicePlugin implements Plugin<Project> {
     }
 
     private static void classes(Project project, SourceSet sourceSet, TaskProvider<GenerateBindings> generator) {
-        // Gradle's Java plugin exposes a configurable collection through the read-only SourceSetOutput interface.
-        if (sourceSet.getOutput().getClassesDirs() instanceof ConfigurableFileCollection classes) {
-            // Preserve existing sources and follow later additions without following our own completed output.
-            var originalClasses = project.files(new ArrayList<>(classes.getFrom()))
-                    .builtBy(new ArrayList<>(classes.getBuiltBy()));
-            var completedClasses = generator.flatMap(GenerateBindings::getClassesDirectory);
-            var additionalClasses = project.files(project.provider(() -> classes.getFrom().stream()
-                            .filter(source -> source != completedClasses)
-                            .toList()))
-                    .builtBy(project.provider(classes::getBuiltBy));
-            generator.configure(task -> task.getRawClasses().from(originalClasses, additionalClasses));
-            // Consumers resolve completed classes first, including when another plugin adds compiler outputs later.
-            classes.setFrom(completedClasses);
-            classes.setBuiltBy(List.of());
-            project.getTasks().withType(Jar.class).configureEach(jar -> {
-                var completedEntries = new HashSet<String>();
-                jar.eachFile(file -> {
-                    var path = file.getFile().toPath();
-                    var relativePath = file.getRelativePath().getPathString();
-                    if (path.startsWith(completedClasses.get().getAsFile().toPath())) {
-                        completedEntries.add(relativePath);
-                    } else if (completedEntries.contains(relativePath)
-                            && additionalClasses.getFiles().stream().anyMatch(root -> path.startsWith(root.toPath()))) {
-                        // Drop only a later raw copy of an entry already copied from completed output.
-                        file.exclude();
-                    }
-                });
-            });
+        var compile = project.getTasks().named(sourceSet.getCompileJavaTaskName(), JavaCompile.class);
+        // Detach the Java compiler's destination before rebinding the language output to its post-processor.
+        // The Java plugin may already have realized the compiler and bound it to this same directory property.
+        var compilation = compile.get();
+        var rawDirectory = compilation.getDestinationDirectory().get();
+        var defaultDirectory = project.getLayout().getBuildDirectory().dir("classes/java/" + sourceSet.getName());
+        if (rawDirectory.equals(defaultDirectory.get())) {
+            compilation.getDestinationDirectory().set(defaultDirectory);
         } else {
-            throw new GradleException("The Helidon service plugin requires configurable Java source set class directories: "
-                                              + sourceSet.getName());
+            compilation.getDestinationDirectory().set(rawDirectory);
         }
+        sourceSet.getJava().getDestinationDirectory().set(project.getLayout().getBuildDirectory()
+                                                                 .dir("classes/helidon/" + sourceSet.getName()));
+        sourceSet.getJava().compiledBy(generator, GenerateBindings::getClassesDirectory);
+        var completedDirectory = sourceSet.getJava().getDestinationDirectory();
+        var additionalClasses = sourceSet.getOutput().getClassesDirs().filter(directory ->
+                !directory.equals(completedDirectory.get().getAsFile()));
+        generator.configure(task -> {
+            task.getRawClasses().from(compile.flatMap(JavaCompile::getDestinationDirectory));
+            task.getApplicationClasspath().from(additionalClasses);
+        });
     }
 
     private static TaskProvider<GenerateBindings> register(Project project,

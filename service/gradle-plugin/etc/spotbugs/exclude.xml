@@ -25,9 +25,4 @@
         <Method name="~lambda\$stageClasses\$.*"/>
         <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT"/>
     </Match>
-    <Match>
-        <Class name="io.helidon.service.gradle.plugin.HelidonServicePlugin"/>
-        <Method name="~lambda\$classes\$.*"/>
-        <Bug pattern="RV_RETURN_VALUE_IGNORED_NO_SIDE_EFFECT"/>
-    </Match>
 </FindBugsFilter>

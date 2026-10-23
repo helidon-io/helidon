@@ -19,7 +19,6 @@
  */
 module io.helidon.service.gradle.plugin {
     requires io.helidon.common;
-    requires io.helidon.metadata.hson;
     requires transitive gradle.api;
 
     exports io.helidon.service.gradle.plugin;

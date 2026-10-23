@@ -17,23 +17,15 @@ package io.helidon.service.gradle.plugin;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
-import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
 import io.helidon.common.Api;
-import io.helidon.metadata.hson.Hson;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
@@ -57,7 +49,7 @@ import org.gradle.process.ExecOperations;
 import org.gradle.work.DisableCachingByDefault;
 
 /**
- * Stages compiled classes and generates application bindings in a separate JVM using the Java toolchain.
+ * Post-processes a Java compiler output and generates application bindings using the Java toolchain.
  * Each execution replaces its own output, so deleted services and renamed bindings cannot remain in application artifacts.
  * Configure generation through the {@link HelidonServiceExtension helidonService extension}.
  * This task implementation is internal; its public visibility, JavaBean accessors and injected constructor
@@ -66,8 +58,6 @@ import org.gradle.work.DisableCachingByDefault;
 @Api.Internal
 @DisableCachingByDefault(because = "Only local up-to-date checking is supported for the isolated compiler and classpath scan")
 public abstract class GenerateBindings extends DefaultTask {
-    private static final String HELIDON_MANIFEST = "META-INF/helidon/manifest";
-
     private final BindingOptions options;
     private final ExecOperations execOperations;
     private final FileSystemOperations fileOperations;
@@ -97,7 +87,8 @@ public abstract class GenerateBindings extends DefaultTask {
     }
 
     /**
-     * Initial compiler output, before application binding replacement.
+     * Java compiler output, before application binding replacement.
+     * Other compiler outputs are read from the application classpath and remain separate.
      * @return initial classes
      */
     @InputFiles
@@ -230,55 +221,11 @@ public abstract class GenerateBindings extends DefaultTask {
                 .collect(Collectors.joining(File.pathSeparator));
     }
 
-    private static void mergeServiceMetadata(List<Path> inputs, Path output) throws IOException {
-        List<Hson.Value<?>> registries = new ArrayList<>();
-        for (Path input : inputs) {
-            try (var stream = Files.newInputStream(input)) {
-                registries.addAll(Hson.parse(stream).asArray().value());
-            }
-        }
-        var text = new StringWriter();
-        try (var writer = new PrintWriter(text)) {
-            Hson.Array.create(registries).write(writer);
-        }
-        Files.writeString(output, text.toString());
-    }
-
-    private static void mergeManifests(List<Path> inputs, Path output) throws IOException {
-        List<String> lines = new ArrayList<>();
-        for (Path input : inputs) {
-            // Retain each manifest marker so metadata discovery recognizes the combined output.
-            lines.addAll(Files.readAllLines(input));
-        }
-        Files.write(output, lines);
-    }
-
     private void stageClasses(Path classes) throws IOException {
-        Map<String, List<Path>> metadata = new TreeMap<>();
         fileOperations.sync(copy -> {
             copy.from(getRawClasses());
             copy.into(classes);
-            copy.eachFile(file -> {
-                String path = file.getRelativePath().getPathString();
-                if (path.equals(HELIDON_MANIFEST)
-                        || (path.startsWith("META-INF/helidon/") && path.endsWith("/service-registry.json"))) {
-                    metadata.computeIfAbsent(path, _ -> new ArrayList<>()).add(file.getFile().toPath());
-                    file.exclude();
-                }
-            });
         });
-        for (var entry : metadata.entrySet()) {
-            Path output = classes.resolve(entry.getKey());
-            Files.createDirectories(Objects.requireNonNull(output.getParent()));
-            List<Path> inputs = entry.getValue();
-            if (inputs.size() == 1) {
-                Files.copy(inputs.getFirst(), output, StandardCopyOption.REPLACE_EXISTING);
-            } else if (entry.getKey().equals(HELIDON_MANIFEST)) {
-                mergeManifests(inputs, output);
-            } else {
-                mergeServiceMetadata(inputs, output);
-            }
-        }
     }
 
     private Properties request(File classes, File sources) {
