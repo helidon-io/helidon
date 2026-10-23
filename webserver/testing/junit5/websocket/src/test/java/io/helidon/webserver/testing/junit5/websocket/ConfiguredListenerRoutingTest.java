@@ -39,12 +39,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 @ServerTest
-class DefaultListenerSnapshotReproducerTest {
+class ConfiguredListenerRoutingTest {
     private static final WsListener ENDPOINT = new WsListener() { };
 
     @SetUpServer
     static void server(WebServerConfig.Builder server) {
-        server.writeQueueLength(17)
+        server.backlog(37)
+                .writeQueueLength(17)
                 .routing(http -> http.get("/server", (_, response) -> response.send("server")))
                 .addRouting(WsRouting.builder().endpoint("/old", ENDPOINT))
                 .putSocket("named", ListenerConfig.builder()
@@ -77,17 +78,14 @@ class DefaultListenerSnapshotReproducerTest {
 
     @Test
     void defaultListenerSettingsSurvive(WebServer server) {
-        assertThat(server.prototype().writeQueueLength(), is(19));
+        assertAll(() -> assertThat(server.prototype().backlog(), is(37)),
+                  () -> assertThat(server.prototype().writeQueueLength(), is(19)));
     }
 
     @Test
-    void defaultCollectedWebSocketMustBeAvailable(WebServer server) throws Exception {
-        assertThat(upgrade(server.port(), "/new"), is("HTTP/1.1 101 Switching Protocols"));
-    }
-
-    @Test
-    void defaultStillUsesOldWebSocketRouting(WebServer server) throws Exception {
-        assertThat(upgrade(server.port(), "/old"), is("HTTP/1.1 101 Switching Protocols"));
+    void defaultUsesCollectedWebSocketRouting(WebServer server) throws Exception {
+        assertAll(() -> assertThat(upgrade(server.port(), "/new"), is("HTTP/1.1 101 Switching Protocols")),
+                  () -> assertThat(upgrade(server.port(), "/old"), is("HTTP/1.1 404 Not Found")));
     }
 
     @Test
@@ -104,24 +102,6 @@ class DefaultListenerSnapshotReproducerTest {
     void namedUsesCollectedWebSocketRouting(WebServer server) throws Exception {
         assertAll(() -> assertThat(upgrade(server.port("named"), "/new"), is("HTTP/1.1 101 Switching Protocols")),
                   () -> assertThat(upgrade(server.port("named"), "/old"), is("HTTP/1.1 404 Not Found")));
-    }
-
-    @Test
-    void directServerUsesLastWebSocketRouting() throws Exception {
-        var server = WebServer.builder()
-                .host("localhost")
-                .port(0)
-                .shutdownHook(false)
-                .addRouting(WsRouting.builder().endpoint("/old", ENDPOINT))
-                .addRouting(WsRouting.builder().endpoint("/new", ENDPOINT))
-                .build()
-                .start();
-        try {
-            assertAll(() -> assertThat(upgrade(server.port(), "/new"), is("HTTP/1.1 101 Switching Protocols")),
-                      () -> assertThat(upgrade(server.port(), "/old"), is("HTTP/1.1 404 Not Found")));
-        } finally {
-            server.stop();
-        }
     }
 
     private static String upgrade(int port, String path) throws Exception {

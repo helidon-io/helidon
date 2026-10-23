@@ -20,11 +20,10 @@ import java.util.List;
 
 import io.helidon.common.testing.http.junit5.SocketHttpClient;
 import io.helidon.http.Method;
-import io.helidon.webserver.ListenerConfig;
+import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webserver.websocket.WsRouting;
 import io.helidon.websocket.WsListener;
@@ -35,26 +34,30 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
-class Issue12706Test {
+class ConfiguredServerRoutingTest {
     @SetUpServer
     static void server(WebServerConfig.Builder server) {
         server.writeQueueLength(17)
-                .addRouting(WsRouting.builder().endpoint("/old", new WsListener() { }));
-    }
-
-    @SetUpRoute
-    static void route(ListenerConfig.Builder listener, WsRouting.Builder ws) {
-        listener.writeQueueLength(19);
-        ws.endpoint("/new", new WsListener() { });
+                .routing(http -> http.get("/server", (_, response) -> response.send("server")))
+                .addRouting(WsRouting.builder().endpoint("/configured", new WsListener() { }));
     }
 
     @Test
-    void collectedRouteMustBeReachable(WebServer server, SocketHttpClient client) throws Exception {
-        assertThat(server.prototype().writeQueueLength(), is(19));
-        client.request(Method.GET, "/new", "", List.of("Connection: Upgrade",
-                                                     "Upgrade: websocket",
-                                                     "Sec-WebSocket-Version: 13",
-                                                     "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ=="));
+    void serverHttpRouteSurvives(Http1Client client) {
+        assertThat(client.get("/server").requestEntity(String.class), is("server"));
+    }
+
+    @Test
+    void serverListenerSettingsSurvive(WebServer server) {
+        assertThat(server.prototype().writeQueueLength(), is(17));
+    }
+
+    @Test
+    void serverWebSocketRouteSurvives(SocketHttpClient client) throws Exception {
+        client.request(Method.GET, "/configured", "", List.of("Connection: Upgrade",
+                                                            "Upgrade: websocket",
+                                                            "Sec-WebSocket-Version: 13",
+                                                            "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ=="));
         assertThat(client.socketReader().readLine(), is("HTTP/1.1 101 Switching Protocols"));
     }
 }
