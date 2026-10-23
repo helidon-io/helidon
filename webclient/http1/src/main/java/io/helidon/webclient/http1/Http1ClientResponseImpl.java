@@ -64,6 +64,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     private static final long ENTITY_LENGTH_CHUNKED = -1;
     private static final long ENTITY_LENGTH_CLOSE_DELIMITED = -2;
     private final AtomicBoolean closed = new AtomicBoolean();
+    private final AtomicBoolean inputStreamClosed = new AtomicBoolean();
 
     private final HttpClientConfig clientConfig;
     private final Http1ClientProtocolConfig protocolConfig;
@@ -89,6 +90,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     private boolean entityFullyRead = false;
     private boolean invalidNoEntityChunkedFraming;
     private boolean closeConnectionOnClose;
+    private Throwable entityFailure;
 
     Http1ClientResponseImpl(HttpClientConfig clientConfig,
                             Http1ClientProtocolConfig protocolConfig,
@@ -388,7 +390,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
 
     private void entityFullyRead() {
         try {
-            inputStream.close();
+            closeInputStream();
             if (hasTrailers) {
                 trailers.get();
             }
@@ -404,23 +406,53 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         }
     }
 
+    private void closeInputStream() throws IOException {
+        if (inputStream != null && inputStreamClosed.compareAndSet(false, true)) {
+            inputStream.close();
+        }
+    }
+
     private void closeAfterEntityFailure(Throwable failure) {
+        entityFailure = failure;
+        closed.set(true);
         try {
-            connection.closeResource();
+            // Cancel transport before closing the decoder, which may inspect remaining chunk framing.
+            closeConnection();
         } catch (RuntimeException | Error closeFailure) {
             if (closeFailure != failure) {
                 failure.addSuppressed(closeFailure);
+            }
+        } finally {
+            try {
+                closeInputStream();
+            } catch (IOException | RuntimeException | Error closeFailure) {
+                if (closeFailure != failure) {
+                    failure.addSuppressed(closeFailure);
+                }
+            } finally {
+                whenComplete.complete(null);
             }
         }
     }
 
     private BufferData readBytes(int estimate) {
-        BufferData bufferData = BufferData.create(estimate);
-        int bytesRead = bufferData.readFrom(inputStream);
-        if (bytesRead == -1) {
-            return null;
+        if (closed.get()) {
+            if (entityFailure != null) {
+                throw new IllegalStateException(entityFailure.getMessage(), entityFailure);
+            }
+            throw new IllegalStateException("Response is closed");
         }
-        return bufferData;
+        try {
+            BufferData bufferData = BufferData.create(estimate);
+            int bytesRead = bufferData.readFrom(inputStream);
+            if (bytesRead == -1) {
+                return null;
+            }
+            return bufferData;
+        } catch (RuntimeException | Error e) {
+            closeAfterEntityFailure(e);
+            throw e;
+        }
     }
 
     private record CloseOnReleaseClientConnection(ClientConnection delegate) implements ClientConnection {

@@ -214,8 +214,8 @@ public abstract class ReadableEntityBase implements ReadableEntity {
      * @return all bytes of the entity
      */
     protected byte[] readAllBytes() {
-        try {
-            return inputStream().readAllBytes();
+        try (InputStream stream = inputStream()) {
+            return stream.readAllBytes();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
