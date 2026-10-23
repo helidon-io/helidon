@@ -1,0 +1,102 @@
+#
+# Copyright (c) 2026 Oracle and/or its affiliates.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+name: Set up JDK 28 EA
+description: Install the pinned OpenJDK build with permanent StructuredTaskScope support
+runs:
+  using: composite
+  steps:
+    # Build 20 still exposes preview APIs. Avoid resolving a floating 28-ea
+    # through the download index until it has caught up with build 21.
+    # Checksums are from each official archive's .sha256 companion URL.
+    - name: Select OpenJDK 28 EA build 21
+      id: archive
+      shell: bash
+      run: |
+        case "${RUNNER_OS}-${RUNNER_ARCH}" in
+          Linux-X64)
+            platform=linux-x64
+            checksum=b32bf773d02fff73d4a2da78cf590459879963b3dbffd18dcc9d6c6756ee4549
+            ;;
+          Linux-ARM64)
+            platform=linux-aarch64
+            checksum=3908eb08a5a6a074301fffbed99ef8f2a36d0ae42dce41e7c948a3b16a8cfa5a
+            ;;
+          macOS-ARM64)
+            platform=macos-aarch64
+            checksum=cab7242cb132eb32c33f376817db91ca0c44f18d22633752f6f31d32a7714166
+            ;;
+          Windows-X64)
+            platform=windows-x64
+            checksum=7cb8070f868767880e8615bd4f8f52a01aa8e7a63c270034acbb719026396d58
+            ;;
+          *)
+            echo "::error::No pinned JDK 28 EA archive for ${RUNNER_OS}-${RUNNER_ARCH}"
+            exit 1
+            ;;
+        esac
+        extension=tar.gz
+        if [[ "${RUNNER_OS}" == Windows ]]; then
+          extension=zip
+        fi
+        archive_name="openjdk-28-ea+21_${platform}_bin.${extension}"
+        archive_directory="${RUNNER_TEMP//\\//}"
+        echo "name=${archive_name}" >> "${GITHUB_OUTPUT}"
+        echo "file=${archive_directory}/${archive_name}" >> "${GITHUB_OUTPUT}"
+        echo "checksum=${checksum}" >> "${GITHUB_OUTPUT}"
+    - name: Cache OpenJDK archive
+      id: cache
+      uses: actions/cache@v4.2.4
+      with:
+        path: ${{ steps.archive.outputs.file }}
+        key: openjdk-28-ea-21-${{ runner.os }}-${{ runner.arch }}-${{ steps.archive.outputs.checksum }}
+    - name: Download OpenJDK archive
+      if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+      shell: bash
+      env:
+        JDK_ARCHIVE: ${{ steps.archive.outputs.file }}
+        JDK_ARCHIVE_NAME: ${{ steps.archive.outputs.name }}
+      run: |
+        curl --fail --location --retry 3 --output "${JDK_ARCHIVE}" \
+          "https://download.java.net/java/early_access/jdk28/21/GPL/${JDK_ARCHIVE_NAME}"
+    - name: Verify OpenJDK archive
+      shell: bash
+      env:
+        JDK_ARCHIVE: ${{ steps.archive.outputs.file }}
+        JDK_SHA256: ${{ steps.archive.outputs.checksum }}
+      run: |
+        if [[ "${RUNNER_OS}" == macOS ]]; then
+          actual=$(shasum -a 256 < "${JDK_ARCHIVE}")
+        else
+          actual=$(sha256sum < "${JDK_ARCHIVE}")
+        fi
+        if [[ "${actual%% *}" != "${JDK_SHA256}" ]]; then
+          echo "::error::OpenJDK archive checksum mismatch"
+          exit 1
+        fi
+    - name: Install OpenJDK and Maven toolchain
+      uses: actions/setup-java@v6
+      with:
+        distribution: jdkfile
+        java-version: '28'
+        jdk-file: ${{ steps.archive.outputs.file }}
+        # jdkfile trusts this label instead of reading the archive's version.
+        # Always unpack our verified bytes rather than reuse a generic 28 entry.
+        force-download: true
+        overwrite-settings: false
+    - name: Show Java version
+      shell: bash
+      run: java --version
