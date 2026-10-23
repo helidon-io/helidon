@@ -149,6 +149,55 @@ class Http1ClientResponseImplTest {
     }
 
     @Test
+    void propagatesReadErrorWithoutFailureCleanup() {
+        var readError = new OutOfMemoryError("read failed");
+        var decoderCloses = new AtomicInteger();
+        var connection = new TestConnection();
+        var response = response(contentLengthHeaders(), new InputStream() {
+            @Override
+            public int read() {
+                throw readError;
+            }
+
+            @Override
+            public void close() {
+                decoderCloses.incrementAndGet();
+            }
+        }, connection);
+
+        var failure = assertThrows(OutOfMemoryError.class, () -> response.entity().inputStream().read());
+
+        assertThat(failure, sameInstance(readError));
+        assertThat(decoderCloses.get(), is(0));
+        assertThat(connection.closeCount(), is(0));
+        assertThat(connection.releaseCount(), is(0));
+        response.close();
+    }
+
+    @Test
+    void propagatesDecoderCloseErrorDuringFailureCleanup() {
+        var closeError = new OutOfMemoryError("close failed");
+        var connection = new TestConnection();
+        var response = response(contentLengthHeaders(), new InputStream() {
+            @Override
+            public int read() throws IOException {
+                throw new IOException("read failed");
+            }
+
+            @Override
+            public void close() {
+                throw closeError;
+            }
+        }, connection);
+
+        var failure = assertThrows(OutOfMemoryError.class, () -> response.entity().inputStream().read());
+
+        assertThat(failure, sameInstance(closeError));
+        assertThat(connection.closeCount(), is(1));
+        assertThat(connection.releaseCount(), is(0));
+    }
+
+    @Test
     void chunkedMustBeFinalTransferCoding() {
         WritableHeaders<?> headers = WritableHeaders.create();
         headers.add(HeaderValues.create(HeaderNames.TRANSFER_ENCODING, "chunked, gzip"));

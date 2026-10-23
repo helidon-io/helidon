@@ -193,16 +193,16 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
             var failure = new UncheckedIOException(e);
             closeAfterEntityFailure(failure);
             throw failure;
-        } catch (RuntimeException | Error e) {
+        } catch (RuntimeException e) {
             closeAfterEntityFailure(e);
             throw e;
         }
     }
 
-    private void closeAfterEntityFailure(Throwable failure) {
+    private void closeAfterEntityFailure(RuntimeException failure) {
         try {
             close();
-        } catch (RuntimeException | Error closeFailure) {
+        } catch (RuntimeException closeFailure) {
             if (closeFailure != failure) {
                 failure.addSuppressed(closeFailure);
             }

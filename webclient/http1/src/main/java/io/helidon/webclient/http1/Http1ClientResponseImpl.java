@@ -90,7 +90,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     private boolean entityFullyRead = false;
     private boolean invalidNoEntityChunkedFraming;
     private boolean closeConnectionOnClose;
-    private Throwable entityFailure;
+    private RuntimeException entityFailure;
 
     Http1ClientResponseImpl(HttpClientConfig clientConfig,
                             Http1ClientProtocolConfig protocolConfig,
@@ -400,7 +400,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
             RuntimeException failure = new RuntimeException(e);
             closeAfterEntityFailure(failure);
             throw failure;
-        } catch (RuntimeException | Error e) {
+        } catch (RuntimeException e) {
             closeAfterEntityFailure(e);
             throw e;
         }
@@ -412,20 +412,20 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         }
     }
 
-    private void closeAfterEntityFailure(Throwable failure) {
+    private void closeAfterEntityFailure(RuntimeException failure) {
         entityFailure = failure;
         closed.set(true);
         try {
             // Cancel transport before closing the decoder, which may inspect remaining chunk framing.
             closeConnection();
-        } catch (RuntimeException | Error closeFailure) {
+        } catch (RuntimeException closeFailure) {
             if (closeFailure != failure) {
                 failure.addSuppressed(closeFailure);
             }
         } finally {
             try {
                 closeInputStream();
-            } catch (IOException | RuntimeException | Error closeFailure) {
+            } catch (IOException | RuntimeException closeFailure) {
                 if (closeFailure != failure) {
                     failure.addSuppressed(closeFailure);
                 }
@@ -449,7 +449,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
                 return null;
             }
             return bufferData;
-        } catch (RuntimeException | Error e) {
+        } catch (RuntimeException e) {
             closeAfterEntityFailure(e);
             throw e;
         }

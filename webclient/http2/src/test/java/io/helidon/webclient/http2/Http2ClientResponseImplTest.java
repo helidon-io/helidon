@@ -156,6 +156,61 @@ class Http2ClientResponseImplTest {
         assertThat(closeCount.get(), is(1));
     }
 
+    @Test
+    void propagatesReadErrorWithoutAttemptingFailureCleanup() {
+        var readFailure = new OutOfMemoryError("sentinel read failure");
+        var decoderCloses = new AtomicInteger();
+        var completed = new CompletableFuture<Void>();
+        var closeCount = new AtomicInteger();
+        var response = response(new InputStream() {
+            @Override
+            public int read() {
+                throw readFailure;
+            }
+
+            @Override
+            public void close() {
+                decoderCloses.incrementAndGet();
+            }
+        }, completed, closeCount);
+
+        var failure = assertThrows(OutOfMemoryError.class, () -> response.entity().inputStream().read());
+
+        assertThat(failure, sameInstance(readFailure));
+        assertThat(decoderCloses.get(), is(0));
+        assertThat(completed.isDone(), is(false));
+        assertThat(closeCount.get(), is(0));
+    }
+
+    @Test
+    void propagatesDecoderCloseErrorAfterReadFailure() {
+        var readFailure = new IOException("read failed");
+        var closeFailure = new OutOfMemoryError("sentinel decoder close failure");
+        var decoderCloses = new AtomicInteger();
+        var completed = new CompletableFuture<Void>();
+        var closeCount = new AtomicInteger();
+        var response = response(new InputStream() {
+            @Override
+            public int read() throws IOException {
+                throw readFailure;
+            }
+
+            @Override
+            public void close() {
+                decoderCloses.incrementAndGet();
+                throw closeFailure;
+            }
+        }, completed, closeCount);
+
+        var failure = assertThrows(OutOfMemoryError.class, () -> response.entity().inputStream().read());
+
+        assertThat(failure, sameInstance(closeFailure));
+        assertThat(failure.getSuppressed().length, is(0));
+        assertThat(decoderCloses.get(), is(1));
+        assertThat(completed.isDone(), is(true));
+        assertThat(closeCount.get(), is(1));
+    }
+
     private static InputStream decoder(boolean gzip, boolean truncated) throws IOException {
         var encoded = new ByteArrayOutputStream();
         try (var encoder = gzip ? new GZIPOutputStream(encoded) : new DeflaterOutputStream(encoded)) {
