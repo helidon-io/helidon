@@ -164,7 +164,8 @@ public class MainTest {
             );
 
             String decrypted = EncryptionUtil.decryptAes(masterPassword.toCharArray(),
-                                                         encrypted.substring(EncryptionFilter.PREFIX_GCM.length(), encrypted.length() - 1));
+                                                         encrypted.substring(EncryptionFilter.PREFIX_GCM.length(),
+                                                                             encrypted.length() - 1));
             assertThat(algorithm + " encrypted config value", decrypted, is(secret));
         }
     }
