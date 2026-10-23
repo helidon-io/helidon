@@ -432,7 +432,7 @@ public class TestJunitExtension implements Extension,
         return !registry.allServices(paramType).isEmpty();
     }
 
-    private interface TestContext extends CloseableResource {
+    private interface TestContext extends CloseableResource, AutoCloseable {
         default void close() {
         }
 
