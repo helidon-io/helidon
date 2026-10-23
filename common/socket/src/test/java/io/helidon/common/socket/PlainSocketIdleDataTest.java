@@ -83,15 +83,16 @@ class PlainSocketIdleDataTest {
             try (var peer = listener.accept()) {
                 delegate.setSoTimeout(originalTimeout);
                 var socket = PlainSocket.client(delegate, "idle-data-test");
-                socket.idle();
-                // Only the monitor uses single-byte reads. Do not let the application reader cancel it before entry.
-                assertThat("Idle monitor did not enter its socket read",
-                           monitorReadStarted.await(5, TimeUnit.SECONDS), is(true));
+                // Queue input before monitoring so the monitor does not depend on producer-thread scheduling.
                 if (next == -1) {
                     peer.shutdownOutput();
                 } else {
                     peer.getOutputStream().write(next);
                 }
+                socket.idle();
+                // Only the monitor uses single-byte reads. Do not let the application reader cancel it before entry.
+                assertThat("Idle monitor did not enter its socket read",
+                           monitorReadStarted.await(5, TimeUnit.SECONDS), is(true));
                 assertThat("Idle monitor did not receive the peer's input",
                            monitorReadCompleted.await(5, TimeUnit.SECONDS), is(true));
 
