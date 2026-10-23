@@ -18,11 +18,24 @@ package io.helidon.http;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class HttpTokenTest {
+
+    @Test
+    void invalidTokenMessageDoesNotIncludeTokenDump() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                                                          () -> HttpToken.validate("secret token"));
+
+        String message = exception.getMessage();
+        assertThat(message, containsString("Token contains whitespace character at position 6"));
+        assertThat(message, not(containsString("secret")));
+        assertThat(message, not(containsString("73 65 63 72 65 74")));
+    }
 
     @Test
     void testValidTokens() {

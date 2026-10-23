@@ -16,10 +16,7 @@
 
 package io.helidon.http;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Objects;
-
-import io.helidon.common.buffers.BufferData;
 
 /**
  * HTTP Token utility.
@@ -47,27 +44,19 @@ public final class HttpToken {
             char aChar = token.charAt(i);
             if (aChar > 127) {
                 throw new IllegalArgumentException("Token contains non-ASCII character at position "
-                                                           + hex(i)
-                                                           + " \n"
-                                                           + debugToken(token));
+                                                           + hex(i));
             }
             if (Character.isISOControl(aChar)) {
                 throw new IllegalArgumentException("Token contains control character at position "
-                                                           + hex(i)
-                                                           + "\n"
-                                                           + debugToken(token));
+                                                           + hex(i));
             }
             if (Character.isWhitespace(aChar)) {
                 throw new IllegalArgumentException("Token contains whitespace character at position "
-                                                           + hex(i)
-                                                           + "\n"
-                                                           + debugToken(token));
+                                                           + hex(i));
             }
             if (!isValidCharacter(aChar)) {
                 throw new IllegalArgumentException("Token contains illegal character at position "
-                                                           + hex(i)
-                                                           + "\n"
-                                                           + debugToken(token));
+                                                           + hex(i));
             }
         }
     }
@@ -97,10 +86,5 @@ public final class HttpToken {
 
     private static String hex(int i) {
         return Integer.toHexString(i);
-    }
-
-    private static String debugToken(String token) {
-        return BufferData.create(token.getBytes(StandardCharsets.US_ASCII))
-                .debugDataHex();
     }
 }
