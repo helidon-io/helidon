@@ -22,6 +22,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -48,6 +49,41 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 
 class StructuredHealthTest {
+    static WebServerConfig.Builder server(List<HealthCheck> checks) {
+        return WebServer.builder()
+                .port(0)
+                .addFeature(ObserveFeature.builder()
+                                    .addObserver(HealthObserver.builder()
+                                                         .useSystemServices(false)
+                                                         .details(true)
+                                                         .healthChecks(checks)
+                                                         .build())
+                                    .build());
+    }
+
+    static HealthCheck check(String name, Callable<HealthCheckResponse> action) {
+        return new HealthCheck() {
+            @Override
+            public String name() {
+                return name;
+            }
+
+            @Override
+            public HealthCheckResponse call() {
+                try {
+                    return action.call();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Health check interrupted", e);
+                } catch (RuntimeException e) {
+                    throw e;
+                } catch (Exception e) {
+                    throw new IllegalStateException(e);
+                }
+            }
+        };
+    }
+
     @Test
     void concurrentChecksKeepDuplicateNamesAndResultOrderAndIsolateExceptions() throws Exception {
         var entered = new CountDownLatch(2);
@@ -113,17 +149,25 @@ class StructuredHealthTest {
     void ownerInterruptionCleansUpChildrenAndPreservesInterruptFlag() throws Exception {
         var entered = new CountDownLatch(2);
         var exited = new CountDownLatch(2);
+        var interrupted = new CountDownLatch(2);
         var release = new CountDownLatch(1);
+        var finishCleanup = new Semaphore(0);
         var ownerExited = new CountDownLatch(1);
         var owner = new AtomicReference<Thread>();
         var preserved = new AtomicBoolean();
+        var childrenTerminatedAtOwnerExit = new AtomicBoolean();
         var children = new ConcurrentLinkedQueue<Thread>();
         Callable<HealthCheckResponse> action = () -> {
             children.add(Thread.currentThread());
             entered.countDown();
             try {
-                await(release);
+                release.await();
                 return HealthCheckResponse.builder().status(HealthCheckResponse.Status.UP).build();
+            } catch (InterruptedException e) {
+                interrupted.countDown();
+                // Keep child cleanup in progress until the test allows it to finish.
+                finishCleanup.acquireUninterruptibly();
+                throw e;
             } finally {
                 exited.countDown();
             }
@@ -136,6 +180,7 @@ class StructuredHealthTest {
                 handler.handle(req, res);
             } finally {
                 preserved.set(Thread.currentThread().isInterrupted());
+                childrenTerminatedAtOwnerExit.set(children.stream().noneMatch(Thread::isAlive));
                 ownerExited.countDown();
             }
         })).build().start();
@@ -152,18 +197,22 @@ class StructuredHealthTest {
             try {
                 assertThat("Both children entered", entered.await(10, TimeUnit.SECONDS), is(true));
                 owner.get().interrupt();
-                assertThat("Both interrupted children exited", exited.await(10, TimeUnit.SECONDS), is(true));
+                assertThat("Both children received interruption", interrupted.await(10, TimeUnit.SECONDS), is(true));
+                assertThat("Child cleanup is still held by the test", exited.getCount(), is(2L));
+                assertThat("Owner cannot finish while child cleanup is held", ownerExited.getCount(), is(1L));
+                finishCleanup.release(2);
                 assertThat("Scope owner finished cleanup", ownerExited.await(10, TimeUnit.SECONDS), is(true));
+                assertThat("Both child checks completed", exited.getCount(), is(0L));
+                assertThat("Children terminated before the handler returned", childrenTerminatedAtOwnerExit.get(), is(true));
                 assertThat("Owner interrupt flag restored", preserved.get(), is(true));
-                for (Thread child : children) {
-                    assertThat("Child thread terminated: " + child.getName(), child.join(Duration.ofSeconds(10)), is(true));
-                }
             } finally {
                 release.countDown();
+                finishCleanup.release(2);
             }
             request.get(20, TimeUnit.SECONDS);
         } finally {
             release.countDown();
+            finishCleanup.release(2);
             server.stop();
         }
     }
@@ -212,41 +261,6 @@ class StructuredHealthTest {
         } finally {
             server.stop();
         }
-    }
-
-    static WebServerConfig.Builder server(List<HealthCheck> checks) {
-        return WebServer.builder()
-                .port(0)
-                .addFeature(ObserveFeature.builder()
-                                    .addObserver(HealthObserver.builder()
-                                                         .useSystemServices(false)
-                                                         .details(true)
-                                                         .healthChecks(checks)
-                                                         .build())
-                                    .build());
-    }
-
-    static HealthCheck check(String name, Callable<HealthCheckResponse> action) {
-        return new HealthCheck() {
-            @Override
-            public String name() {
-                return name;
-            }
-
-            @Override
-            public HealthCheckResponse call() {
-                try {
-                    return action.call();
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new IllegalStateException("Health check interrupted", e);
-                } catch (RuntimeException e) {
-                    throw e;
-                } catch (Exception e) {
-                    throw new IllegalStateException(e);
-                }
-            }
-        };
     }
 
     private static void await(CountDownLatch latch) throws InterruptedException {
