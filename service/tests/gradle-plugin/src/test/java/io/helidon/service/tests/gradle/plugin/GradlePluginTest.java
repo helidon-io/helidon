@@ -132,6 +132,16 @@ class GradlePluginTest {
     }
 
     @Test
+    void supportsGroovyPluginAppliedBeforeHelidonPlugin() throws IOException {
+        groovyClassOutputs(true);
+    }
+
+    @Test
+    void supportsGroovyPluginAppliedAfterHelidonPlugin() throws IOException {
+        groovyClassOutputs(false);
+    }
+
+    @Test
     void preservesRealizedCompilerDestinationConfiguredBeforePlugin() throws IOException {
         customClassDirectories(true);
     }
@@ -585,6 +595,111 @@ class GradlePluginTest {
         assertThat(name + " in:\n" + result.getOutput(), result.task(name).getOutcome(), is(expected));
     }
 
+    private void groovyClassOutputs(boolean applyBeforeHelidon) throws IOException {
+        fixture();
+        String plugins = applyBeforeHelidon
+                ? "id 'groovy'\n    id 'io.helidon.service'"
+                : "id 'io.helidon.service'\n    id 'groovy'";
+        write("build.gradle", Files.readString(directory.resolve("build.gradle"))
+                .replace("id 'io.helidon.service'", plugins) + """
+
+                dependencies {
+                    implementation localGroovy()
+                }
+                """);
+        write("src/main/groovy/example/GroovyProbe.groovy", """
+                package example
+                class GroovyProbe {
+                    static String value(Consumer consumer) {
+                        return "groovy:" + consumer.value()
+                    }
+                }
+                """);
+        write("src/test/groovy/example/TestGroovyProbe.groovy", """
+                package example
+                class TestGroovyProbe {
+                    static String value(TestOnly service) {
+                        return "groovy-test:" + service.value()
+                    }
+                }
+                """);
+        write("src/main/java/example/Main.java", Files.readString(directory.resolve("src/main/java/example/Main.java"))
+                .replace("main(String[] args) {", "main(String[] args) throws Exception {")
+                .replace("manager.shutdown();", """
+                        Class<?> groovy = Class.forName("example.GroovyProbe");
+                        Object value = groovy.getMethod("value", Consumer.class)
+                                .invoke(null, manager.registry().get(Consumer.class));
+                        System.out.println("GROOVY:" + value);
+                        manager.shutdown();
+                        """));
+        write("src/test/java/example/GroovyInteropTest.java", """
+                package example;
+                import io.helidon.service.registry.ServiceRegistryConfig;
+                import io.helidon.service.registry.ServiceRegistryManager;
+                import org.junit.jupiter.api.Test;
+                import static org.hamcrest.CoreMatchers.is;
+                import static org.hamcrest.MatcherAssert.assertThat;
+                public class GroovyInteropTest {
+                    @Test
+                    void groovyTestSourcesConsumeJavaServices() throws Exception {
+                        var binding = TestApplicationBinding.create();
+                        var config = ServiceRegistryConfig.builder()
+                                .discoverServices(false)
+                                .discoverServicesFromServiceLoader(false)
+                                .allowLateBinding(false)
+                                .update(binding::configure)
+                                .build();
+                        var manager = ServiceRegistryManager.start(binding, config);
+                        try {
+                            Class<?> groovy = Class.forName("example.TestGroovyProbe");
+                            Object value = groovy.getMethod("value", TestOnly.class)
+                                    .invoke(null, manager.registry().get(TestOnly.class));
+                            assertThat(value, is("groovy-test:test:chosen:library"));
+                        } finally {
+                            manager.shutdown();
+                        }
+                    }
+                }
+                """);
+
+        BuildResult first = runner("classes", "test", "packagedRun", "--configuration-cache").build();
+        assertTask(first, ":compileJava", TaskOutcome.SUCCESS);
+        assertTask(first, ":compileGroovy", TaskOutcome.SUCCESS);
+        assertTask(first, ":compileTestGroovy", TaskOutcome.SUCCESS);
+        assertTask(first, ":generateApplicationBindings", TaskOutcome.SUCCESS);
+        assertTask(first, ":generateTestApplicationBindings", TaskOutcome.SUCCESS);
+        assertTask(first, ":test", TaskOutcome.SUCCESS);
+        assertTask(first, ":jar", TaskOutcome.SUCCESS);
+        assertTask(first, ":packagedRun", TaskOutcome.SUCCESS);
+        assertThat(first.getOutput(), containsString("GROOVY:groovy:chosen:library"));
+        assertThat(Files.readString(directory.resolve("build/test-results/test/TEST-example.GroovyInteropTest.xml")),
+                   containsString("tests=\"1\""));
+        try (var jar = new ZipFile(directory.resolve("build/libs/application.jar").toFile())) {
+            assertThat(jar.getEntry("example/GroovyProbe.class"), notNullValue());
+            assertThat(jar.stream().filter(entry -> entry.getName().equals("example/ApplicationBinding.class")).count(),
+                       is(1L));
+        }
+
+        BuildResult repeated = runner("classes", "test", "packagedRun", "--configuration-cache").build();
+        assertThat(repeated.getOutput(), containsString("Reusing configuration cache"));
+        assertTask(repeated, ":compileJava", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":compileGroovy", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":compileTestGroovy", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":generateApplicationBindings", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":generateTestApplicationBindings", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":jar", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":test", TaskOutcome.UP_TO_DATE);
+
+        Path groovySource = directory.resolve("src/main/groovy/example/GroovyProbe.groovy");
+        Files.writeString(groovySource, Files.readString(groovySource).replace("groovy:", "updated-groovy:"));
+        BuildResult changed = runner("classes", "test", "packagedRun", "--configuration-cache").build();
+        assertTask(changed, ":compileJava", TaskOutcome.UP_TO_DATE);
+        assertTask(changed, ":compileGroovy", TaskOutcome.SUCCESS);
+        assertTask(changed, ":generateApplicationBindings", TaskOutcome.SUCCESS);
+        assertTask(changed, ":jar", TaskOutcome.SUCCESS);
+        assertThat(changed.getOutput(), containsString("GROOVY:updated-groovy:chosen:library"));
+    }
+
     private void customClassDirectories(boolean configureBeforePlugin) throws IOException {
         fixture();
         String rawDirectory = configureBeforePlugin ? "custom-raw-main" : "custom-build/custom/raw-main";
@@ -600,7 +715,9 @@ class GradlePluginTest {
                         + (configureBeforePlugin ? "" : configure)
                         + "java { toolchain") + """
 
-                sourceSets.main.java.destinationDirectory = layout.buildDirectory.dir('custom/completed-main')
+                tasks.named('generateApplicationBindings') {
+                    classesDirectory = layout.buildDirectory.dir('custom/completed-main')
+                }
                 layout.buildDirectory = layout.projectDirectory.dir('custom-build')
                 """);
 
@@ -612,7 +729,7 @@ class GradlePluginTest {
         Path rawBinding = directory.resolve(rawDirectory + "/example/ApplicationBinding.class");
         Path completedBinding = directory.resolve("custom-build/custom/completed-main/example/ApplicationBinding.class");
         assertThat("Configured compiler destination must retain the raw placeholder", Files.exists(rawBinding), is(true));
-        assertThat("Language destination must contain the completed binding", Files.exists(completedBinding), is(true));
+        assertThat("Generator destination must contain the completed binding", Files.exists(completedBinding), is(true));
         assertThat("Completed binding must replace the placeholder",
                    Files.mismatch(rawBinding, completedBinding), not(is(-1L)));
         assertThat("Late build directory configuration must not leave default output behind",

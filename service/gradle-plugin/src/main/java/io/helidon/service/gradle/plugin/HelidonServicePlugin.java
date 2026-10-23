@@ -16,6 +16,7 @@
 package io.helidon.service.gradle.plugin;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -29,6 +30,7 @@ import org.gradle.api.attributes.Bundling;
 import org.gradle.api.attributes.Category;
 import org.gradle.api.attributes.LibraryElements;
 import org.gradle.api.attributes.Usage;
+import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskProvider;
@@ -109,22 +111,21 @@ public final class HelidonServicePlugin implements Plugin<Project> {
 
     private static void classes(Project project, SourceSet sourceSet, TaskProvider<GenerateBindings> generator) {
         var compile = project.getTasks().named(sourceSet.getCompileJavaTaskName(), JavaCompile.class);
-        // Detach the Java compiler's destination before rebinding the language output to its post-processor.
-        // The Java plugin may already have realized the compiler and bound it to this same directory property.
-        var compilation = compile.get();
-        var rawDirectory = compilation.getDestinationDirectory().get();
-        var defaultDirectory = project.getLayout().getBuildDirectory().dir("classes/java/" + sourceSet.getName());
-        if (rawDirectory.equals(defaultDirectory.get())) {
-            compilation.getDestinationDirectory().set(defaultDirectory);
-        } else {
-            compilation.getDestinationDirectory().set(rawDirectory);
+        if (!(sourceSet.getOutput().getClassesDirs() instanceof ConfigurableFileCollection classes)) {
+            throw new GradleException("The Helidon service plugin requires configurable Java class directories: "
+                                              + sourceSet.getName());
         }
-        sourceSet.getJava().getDestinationDirectory().set(project.getLayout().getBuildDirectory()
-                                                                 .dir("classes/helidon/" + sourceSet.getName()));
-        sourceSet.getJava().compiledBy(generator, GenerateBindings::getClassesDirectory);
-        var completedDirectory = sourceSet.getJava().getDestinationDirectory();
-        var additionalClasses = sourceSet.getOutput().getClassesDirs().filter(directory ->
-                !directory.equals(completedDirectory.get().getAsFile()));
+        // Replace only Java's final output contribution. Other language compilers still consume raw Java classes.
+        var contributions = new ArrayList<>(classes.getFrom());
+        contributions.remove(sourceSet.getJava().getDestinationDirectory());
+        var completedClasses = generator.flatMap(GenerateBindings::getClassesDirectory);
+        classes.setFrom(contributions);
+        classes.from(completedClasses);
+        // Follow later additive registrations without feeding this generator's output back into its own inputs.
+        var additionalClasses = project.files(project.provider(() -> classes.getFrom().stream()
+                        .filter(source -> source != completedClasses)
+                        .toList()))
+                .builtBy(project.provider(classes::getBuiltBy));
         generator.configure(task -> {
             task.getRawClasses().from(compile.flatMap(JavaCompile::getDestinationDirectory));
             task.getApplicationClasspath().from(additionalClasses);

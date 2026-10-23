@@ -93,9 +93,11 @@ same package as the binding. Leave `generateMain` at its default of `false`.
 
 `generateApplicationBindings` runs after `compileJava` and `processResources`.
 It post-processes the Java compiler's output, replacing the binding placeholder
-in its own completed Java class directory. That directory is registered using
-Gradle's [SourceDirectorySet.compiledBy](https://docs.gradle.org/current/dsl/org.gradle.api.file.SourceDirectorySet.html#org.gradle.api.file.SourceDirectorySet:compiledBy(org.gradle.api.tasks.TaskProvider,%20java.util.function.Function))
-API. Its final Java classes are used by `classes`, `jar`, `run`, distributions and test
+in its own completed Java class directory. That directory replaces only the Java
+output contribution in the source set's final class directories. Java's language
+output provider still refers to `compileJava`, so another language compiler such
+as Groovy can consume Java classes before binding generation. The completed Java
+classes are used by `classes`, `jar`, `run`, distributions and test
 compilation. `generateTestApplicationBindings` runs after test compilation and
 resource processing, and generates `TestApplicationBinding` containing both
 application and test services before `test` runs.
@@ -118,8 +120,9 @@ and remove obsolete generated output.
 
 The plugin leaves processed resources and additional compiler outputs in their
 own directories. It reads those directories when generating bindings; it does
-not copy or merge them into the completed Java output, replace the source set's
-class-directory collection, or configure archive filtering. Other plugins and
+not copy or merge them into the completed Java output or configure archive
+filtering. The existing class-directory collection and its other contributions
+are retained. Other plugins and
 build scripts can continue adding outputs through Gradle's source-set model.
 When several compiler outputs contain resources with the same path, directory
 execution preserves those resources separately. Combining them in a single
@@ -127,9 +130,10 @@ archive requires the build's usual resource-merging or duplicate-handling policy
 the Helidon plugin does not choose that policy.
 
 Configure a Java compiler's raw output with its `destinationDirectory` property.
-Configure the completed Java output with `sourceSets.main.java.destinationDirectory`
-(or the corresponding test source set). Both follow `layout.buildDirectory` by
-default. Each generation task modifies only its own completed output.
+Configure the completed Java output with `classesDirectory` on
+`generateApplicationBindings` (or `generateTestApplicationBindings`). Both follow
+`layout.buildDirectory` by default. Each generation task modifies only its own
+completed output.
 
 ### Configuration
 
