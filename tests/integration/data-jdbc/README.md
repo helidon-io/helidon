@@ -25,6 +25,13 @@ also changed.
 
 External database tests require a working Docker/Testcontainers environment.
 
+The shared Oracle fixture raises `PROCESSES` to 400 to accommodate bursts of
+short-lived, unpooled connections between listener load updates. Its startup
+script restarts the prebuilt database to apply this static parameter. The
+fixture waits for the script's success marker before creating test schemas;
+the image's own readiness message appears before startup scripts run. The
+tests retain direct JDBC connections and their existing concurrency.
+
 ## Test database credentials
 
 > **Note:** These tests intentionally use hard-coded database credentials.
