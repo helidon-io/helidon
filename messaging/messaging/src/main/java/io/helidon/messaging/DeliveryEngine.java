@@ -471,10 +471,12 @@ final class DeliveryEngine implements AutoCloseable {
             }
             long remaining = deadline - System.nanoTime();
             if (remaining <= 0) {
-                break;
+                return false;
             }
             try {
-                task.join(Duration.ofNanos(remaining));
+                if (!task.join(Duration.ofNanos(remaining))) {
+                    return false;
+                }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 LOGGER.log(System.Logger.Level.WARNING,
@@ -483,7 +485,7 @@ final class DeliveryEngine implements AutoCloseable {
                 return false;
             }
         }
-        return sourceThreads.isEmpty() && dispatchThreads.isEmpty();
+        return true;
     }
 
     boolean ownsShutdownRejection(Throwable failure) {
@@ -636,7 +638,13 @@ final class DeliveryEngine implements AutoCloseable {
     }
 
     private boolean awaitSourceTermination(long deadline) {
-        List<Thread> tasks = List.copyOf(sourceThreads);
+        List<Thread> tasks;
+        sourceThreadsLock.lock();
+        try {
+            tasks = List.copyOf(sourceThreads);
+        } finally {
+            sourceThreadsLock.unlock();
+        }
         for (Thread task : tasks) {
             if (task == Thread.currentThread()) {
                 continue;
@@ -646,14 +654,16 @@ final class DeliveryEngine implements AutoCloseable {
                 return false;
             }
             try {
-                task.join(Duration.ofNanos(remaining));
+                if (!task.join(Duration.ofNanos(remaining))) {
+                    return false;
+                }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return false;
             }
         }
-        return sourceThreads.isEmpty()
-                || sourceThreads.size() == 1 && sourceThreads.contains(Thread.currentThread());
+        // Concurrent set counts can lag behind removal; completed joins determine whether these sources drained.
+        return true;
     }
 
     private MessagingRejectedException rejected(String channel,
