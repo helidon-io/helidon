@@ -44,7 +44,7 @@ public abstract class ReadableEntityBase implements ReadableEntity {
     private final AtomicBoolean entityProcessed = new AtomicBoolean();
     private final AtomicBoolean entityRequested = new AtomicBoolean();
     private final Consumer<Boolean> entityRequestedCallback;
-    private InputStream inputStream;
+    private RequestingInputStream inputStream;
 
     private byte[] bufferedEntity;
     private final long maxBufferedEntitySize;
@@ -214,8 +214,12 @@ public abstract class ReadableEntityBase implements ReadableEntity {
      * @return all bytes of the entity
      */
     protected byte[] readAllBytes() {
-        try {
-            return inputStream().readAllBytes();
+        try (InputStream stream = inputStream()) {
+            if (inputStream != null) {
+                // Decoder cleanup must not request more transport data after a failed conversion.
+                inputStream.skipReadOnClose = true;
+            }
+            return stream.readAllBytes();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -283,6 +287,7 @@ public abstract class ReadableEntityBase implements ReadableEntity {
 
         private BufferData currentBuffer;
         private boolean finished;
+        private boolean skipReadOnClose;
 
         private RequestingInputStream(Function<Integer, BufferData> bufferFunction, Runnable entityProcessedRunnable) {
             this.bufferFunction = bufferFunction;
@@ -303,7 +308,7 @@ public abstract class ReadableEntityBase implements ReadableEntity {
 
         @Override
         public void close() throws IOException {
-            if (!finished) {
+            if (!finished && !skipReadOnClose) {
                 ensureBuffer(1);
             }
         }

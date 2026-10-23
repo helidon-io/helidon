@@ -177,6 +177,9 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
     }
 
     private BufferData readBytes(int estimate) {
+        if (closed.get()) {
+            throw new IllegalStateException("Response is closed");
+        }
         try {
             // Empty buffer is considered as a fully consumed entity
             // so estimate can't be less than 1
@@ -187,7 +190,12 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
             }
             return BufferData.create(buffer, 0, read);
         } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            var failure = new UncheckedIOException(e);
+            closeAfterEntityFailure(failure);
+            throw failure;
+        } catch (RuntimeException e) {
+            closeAfterEntityFailure(e);
+            throw e;
         }
     }
 
@@ -199,8 +207,27 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
     @Override
     public void close() {
         if (!closed.getAndSet(true)) {
-            complete.complete(null);
-            closeResponseRunnable.run();
+            try {
+                // HTTP/1 fallback retains ownership of its entity stream.
+                if (inputStream != null && !(stream instanceof Http2CallChainBase.Http1ResponseResource)) {
+                    inputStream.close();
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            } finally {
+                complete.complete(null);
+                closeResponseRunnable.run();
+            }
+        }
+    }
+
+    private void closeAfterEntityFailure(RuntimeException failure) {
+        try {
+            close();
+        } catch (RuntimeException closeFailure) {
+            if (closeFailure != failure) {
+                failure.addSuppressed(closeFailure);
+            }
         }
     }
 }
