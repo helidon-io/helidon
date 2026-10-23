@@ -164,7 +164,7 @@ public class MainTest {
             );
 
             String decrypted = EncryptionUtil.decryptAes(masterPassword.toCharArray(),
-                    encrypted.substring(EncryptionFilter.PREFIX_GCM.length(), encrypted.length() - 1));
+                                                         encrypted.substring(EncryptionFilter.PREFIX_GCM.length(), encrypted.length() - 1));
             assertThat(algorithm + " encrypted config value", decrypted, is(secret));
         }
     }
@@ -235,7 +235,7 @@ public class MainTest {
         Path stdout = tempDir.resolve(algorithm + ".out");
         Path stderr = tempDir.resolve(algorithm + ".err");
         ProcessBuilder builder = new ProcessBuilder(java.toString(), "-cp", classpath,
-                Main.class.getName(), algorithm, masterPassword, secret)
+                                                    Main.class.getName(), algorithm, masterPassword, secret)
                 .redirectOutput(stdout.toFile())
                 .redirectError(stderr.toFile());
         builder.environment().remove("JAVA_TOOL_OPTIONS");
