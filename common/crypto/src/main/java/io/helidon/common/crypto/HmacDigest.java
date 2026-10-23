@@ -20,6 +20,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.Objects;
+import java.util.Optional;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -29,6 +30,7 @@ import io.helidon.common.Base64Value;
 
 /**
  * The HmacDigest is used for simplification of the HMAC signature creation and verification.
+ * Algorithm, provider and secret are validated when the instance is built.
  */
 @Api.Stable
 public class HmacDigest implements Digest {
@@ -99,7 +101,8 @@ public class HmacDigest implements Digest {
     private HmacDigest(Builder builder) {
         this.algorithm = builder.algorithm;
         this.provider = builder.provider;
-        this.hmacSecret = builder.hmacSecret;
+        this.hmacSecret = builder.hmacSecret.clone();
+        mac();
     }
 
     /**
@@ -125,6 +128,11 @@ public class HmacDigest implements Digest {
 
     @Override
     public Base64Value digest(Base64Value value) {
+        Objects.requireNonNull(value, "Value to digest cannot be null");
+        return Base64Value.create(mac().doFinal(value.toBytes()));
+    }
+
+    private Mac mac() {
         try {
             Mac mac;
             if (provider != null) {
@@ -134,19 +142,20 @@ public class HmacDigest implements Digest {
             }
             SecretKeySpec secretKey = new SecretKeySpec(hmacSecret, algorithm);
             mac.init(secretKey);
-            return Base64Value.create(mac.doFinal(value.toBytes()));
-        } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchProviderException e) {
+            return mac;
+        } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchProviderException | IllegalArgumentException e) {
             throw new CryptoException("Could not create hmac digest", e);
         }
     }
 
     /**
      * Builder of the {@link HmacDigest}.
+     * Optional provider selection can be removed using {@link #clearProvider()}; setters do not accept {@code null}.
      */
     public static final class Builder implements io.helidon.common.Builder<Builder, HmacDigest> {
 
         private String algorithm = ALGORITHM_SHA_256;
-        private String provider = null;
+        private String provider;
         private byte[] hmacSecret;
 
         private Builder() {
@@ -159,19 +168,36 @@ public class HmacDigest implements Digest {
          *
          * @param algorithm algorithm to set
          * @return updated builder instance
+         * @throws NullPointerException if algorithm is {@code null}
          */
         public Builder algorithm(String algorithm) {
-            this.algorithm = Objects.requireNonNull(algorithm, "Hmac type cannot be null");
+            Objects.requireNonNull(algorithm, "Hmac type cannot be null");
+            this.algorithm = algorithm;
+            return this;
+        }
+
+        /**
+         * Clear the explicit provider selection and use normal JCA provider selection.
+         *
+         * @return updated builder instance
+         * @since 28.0.0
+         */
+        public Builder clearProvider() {
+            this.provider = null;
             return this;
         }
 
         /**
          * Set provider of the algorithm.
+         * <p>
+         * To use normal JCA provider selection, call {@link #clearProvider()} instead of passing {@code null}.
          *
          * @param provider provider to set
          * @return updated builder instance
+         * @throws NullPointerException if provider is {@code null}
          */
         public Builder provider(String provider) {
+            Objects.requireNonNull(provider);
             this.provider = provider;
             return this;
         }
@@ -179,8 +205,9 @@ public class HmacDigest implements Digest {
         /**
          * Secret key to be used in HMAC algorithm.
          *
-         * @param hmacSecret secret key
+         * @param hmacSecret secret key, copied by this builder
          * @return updated builder instance
+         * @throws NullPointerException if secret key is {@code null}
          */
         public Builder hmacSecret(byte[] hmacSecret) {
             Objects.requireNonNull(hmacSecret, "Hmac base secret key");
@@ -188,6 +215,42 @@ public class HmacDigest implements Digest {
             return this;
         }
 
+        /**
+         * Algorithm used to create the HMAC digest.
+         *
+         * @return algorithm name
+         * @since 28.0.0
+         */
+        public String algorithm() {
+            return algorithm;
+        }
+
+        /**
+         * Explicit provider selection, if configured.
+         *
+         * @return provider name, or empty for normal JCA provider selection
+         * @since 28.0.0
+         */
+        public Optional<String> provider() {
+            return Optional.ofNullable(provider);
+        }
+
+        /**
+         * HMAC secret key, if configured.
+         *
+         * @return a copy of the secret key, or empty if not configured
+         * @since 28.0.0
+         */
+        public Optional<byte[]> hmacSecret() {
+            return Optional.ofNullable(hmacSecret).map(value -> value.clone());
+        }
+
+        /**
+         * Build a digest after validating its algorithm, provider and secret key with JCA initialization.
+         *
+         * @return configured digest
+         * @throws CryptoException if the secret key is missing or the configuration cannot initialize an HMAC
+         */
         @Override
         public HmacDigest build() {
             if (hmacSecret == null) {
