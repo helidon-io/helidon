@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
  */
 
 package io.helidon.webserver.tests.grpc;
-
-import javax.annotation.Nullable;
 
 import io.helidon.webserver.Router;
 import io.helidon.webserver.WebServer;
@@ -112,7 +110,7 @@ class GzipStringServiceTest extends BaseStringServiceTest {
                 }
 
                 @Override
-                public void cancel(@Nullable String message, @Nullable Throwable cause) {
+                public void cancel(String message, Throwable cause) {
                     nextCall.cancel(message, cause);
                 }
 
