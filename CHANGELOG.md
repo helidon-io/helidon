@@ -9,6 +9,17 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/helidon-io/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## Unreleased
+
+### NOTABLE CHANGES
+
+- Security: Helidon 3.x JWE tokens using `A128CBC-HS256`, `A192CBC-HS384`, or `A256CBC-HS512` now use corrected
+  CBC-HMAC keys and authentication tags. Tokens issued by older Helidon 3.x versions cannot be decrypted by updated
+  instances, and older instances cannot decrypt newly issued tokens. During a rolling upgrade, avoid exchanging CBC-HS
+  tokens between mixed-version instances: let existing tokens expire before upgrading the issuers and consumers, or
+  reissue them after all instances are upgraded. The AES-GCM token wire format, including the default `A256GCM`,
+  is unchanged.
+
 ## [3.2.22]
 
 This patch release of Helidon contains important bug fixes and is strongly recommended for all users of Helidon 3. Helidon 3 requires Java 17 or newer.
@@ -30,17 +41,6 @@ This patch release of Helidon contains important bug fixes and is strongly recom
 - Security: Avoid exposing mismatched authorization headers [e38e94431b](https://github.com/helidon-io/helidon/commit/e38e94431bc0eb44b0e5c3e92175879f115cef31)
 - Security: Avoid logging IDCS application tokens [f2e8cda339](https://github.com/helidon-io/helidon/commit/f2e8cda3393c693af3950df7463e6e988314cc79)
 - TLS: Accept TLS alert variations in tests [12668](https://github.com/helidon-io/helidon/pull/12668)
-
-## Unreleased
-
-### NOTABLE CHANGES
-
-- Security: Helidon 3.x JWE tokens using `A128CBC-HS256`, `A192CBC-HS384`, or `A256CBC-HS512` now use corrected
-  CBC-HMAC keys and authentication tags. Tokens issued by older Helidon 3.x versions cannot be decrypted by updated
-  instances, and older instances cannot decrypt newly issued tokens. During a rolling upgrade, avoid exchanging CBC-HS
-  tokens between mixed-version instances: let existing tokens expire before upgrading the issuers and consumers, or
-  reissue them after all instances are upgraded. The AES-GCM token wire format, including the default `A256GCM`,
-  is unchanged.
 
 ## [3.2.21]
 
