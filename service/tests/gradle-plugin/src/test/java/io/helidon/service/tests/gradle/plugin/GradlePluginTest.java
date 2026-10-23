@@ -143,12 +143,17 @@ class GradlePluginTest {
 
     @Test
     void preservesRealizedCompilerDestinationConfiguredBeforePlugin() throws IOException {
-        customClassDirectories(true);
+        customClassDirectories(true, false);
+    }
+
+    @Test
+    void preservesCompilerDestinationProviderConfiguredBeforePlugin() throws IOException {
+        customClassDirectories(true, true);
     }
 
     @Test
     void preservesCompilerDestinationConfiguredAfterPlugin() throws IOException {
-        customClassDirectories(false);
+        customClassDirectories(false, true);
     }
 
     @Test
@@ -700,14 +705,15 @@ class GradlePluginTest {
         assertThat(changed.getOutput(), containsString("GROOVY:updated-groovy:chosen:library"));
     }
 
-    private void customClassDirectories(boolean configureBeforePlugin) throws IOException {
+    private void customClassDirectories(boolean configureBeforePlugin, boolean buildDirectoryProvider) throws IOException {
         fixture();
-        String rawDirectory = configureBeforePlugin ? "custom-raw-main" : "custom-build/custom/raw-main";
+        String rawDirectory = buildDirectoryProvider ? "custom-build/custom/raw-main" : "custom-raw-main";
+        String destination = buildDirectoryProvider
+                ? "layout.buildDirectory.dir('custom/raw-main')"
+                : "layout.projectDirectory.dir('custom-raw-main')";
         String configure = configureBeforePlugin
-                ? "tasks.named('compileJava', JavaCompile).get().destinationDirectory = "
-                        + "layout.projectDirectory.dir('custom-raw-main')\n"
-                : "tasks.named('compileJava', JavaCompile) { destinationDirectory = "
-                        + "layout.buildDirectory.dir('custom/raw-main') }\n";
+                ? "tasks.named('compileJava', JavaCompile).get().destinationDirectory = " + destination + "\n"
+                : "tasks.named('compileJava', JavaCompile) { destinationDirectory = " + destination + " }\n";
         write("build.gradle", Files.readString(directory.resolve("build.gradle"))
                 .replace("id 'io.helidon.service'", "id 'io.helidon.service' apply false")
                 .replace("java { toolchain", (configureBeforePlugin ? configure : "")
@@ -734,6 +740,8 @@ class GradlePluginTest {
                    Files.mismatch(rawBinding, completedBinding), not(is(-1L)));
         assertThat("Late build directory configuration must not leave default output behind",
                    Files.exists(directory.resolve("build/classes/helidon/main")), is(false));
+        assertThat("Late build directory configuration must relocate the custom raw output provider",
+                   Files.exists(directory.resolve("build/custom/raw-main")), is(false));
         try (var jar = new ZipFile(directory.resolve("custom-build/libs/application.jar").toFile())) {
             assertThat(jar.stream().filter(entry -> entry.getName().equals("example/ApplicationBinding.class")).count(),
                        is(1L));
