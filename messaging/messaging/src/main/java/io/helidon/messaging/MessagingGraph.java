@@ -16,11 +16,15 @@
 
 package io.helidon.messaging;
 
+import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Api;
 import io.helidon.config.Config;
+import io.helidon.health.HealthCheck;
+import io.helidon.service.registry.ServiceRegistry;
 
 /**
  * One messaging topology and lifecycle.
@@ -62,6 +66,18 @@ public interface MessagingGraph extends RuntimeType.Api<MessagingConfig>, AutoCl
     }
 
     /**
+     * Create a graph using the specified service registry for runtime services, including metrics and health.
+     * The configuration builder's registry selects providers during configuration and is not retained by the configuration.
+     *
+     * @param config messaging configuration
+     * @param registry service registry that owns the graph's runtime services
+     * @return messaging graph
+     */
+    static MessagingGraph create(MessagingConfig config, ServiceRegistry registry) {
+        return new MessagingGraphAssembler(Objects.requireNonNull(config), Objects.requireNonNull(registry)).graph();
+    }
+
+    /**
      * Create a graph from the messaging configuration node.
      *
      * @param config messaging configuration node
@@ -81,6 +97,18 @@ public interface MessagingGraph extends RuntimeType.Api<MessagingConfig>, AutoCl
      * @return this graph
      */
     MessagingGraph start();
+
+    /**
+     * Readiness and liveness checks for this graph, or an empty list when health checks are disabled.
+     * Readiness is up only while the graph is running; idle channels remain ready. Liveness is down only after
+     * a terminal graph failure. The checks remain bound to this graph after it closes and do not retain its resources.
+     * <p>
+     * Applications can register these checks explicitly or use the aggregate messaging checks discovered through
+     * the graph's service registry.
+     *
+     * @return immutable list of stable graph health checks
+     */
+    List<HealthCheck> healthChecks();
 
     /**
      * Obtain an imperative emitter for a channel owned by this graph.

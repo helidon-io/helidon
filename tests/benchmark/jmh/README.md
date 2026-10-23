@@ -102,6 +102,58 @@ still allowing both runner methods to complete:
     '-Dmessaging.jmh.saturationInclude=.*MessagingSaturationJmhBenchmark\.messagingEmit'
 ```
 
+The observability benchmarks compare the native Helidon metrics provider with metrics disabled and with no registered
+provider. `dispatch` delivers a prebuilt batch of 1 or 32 messages to a short payload handler; its time and allocation are
+per batch. `constructAndClose` measures graph construction and cleanup with 1 or 64 channels and 0 or 4,096 unrelated
+meters already registered. Health is disabled in both cases to isolate metrics overhead.
+
+```shell
+mvn -ntp test -Ptests,jmh \
+    -pl :helidon-messaging,:helidon-tests-benchmark-jmh -am \
+    '-Dtest=MessagingJmhRunnerTest#observability' -Dsurefire.failIfNoSpecifiedTests=false
+```
+
+Results include the GC profiler and are written to `target/messaging-observability-jmh-result.json`. Use
+`messaging.jmh.observabilityInclude` to select a fully qualified benchmark method and
+`messaging.jmh.observabilityResult` to change the output path; the common `messaging.jmh` timing, fork, heap, and smoke
+settings also apply. Graphs, service registries, and metrics factories are closed after each trial.
+
+`MessagingJmhRunnerTest#recorder` isolates the steady-state recorder's start/finish operations from admission and
+virtual-thread scheduling, using the same three metrics modes and a short handler. It writes
+`target/messaging-recorder-jmh-result.json`; `messaging.jmh.recorderInclude` and `messaging.jmh.recorderResult` select
+methods and output path. Use this together with the public dispatch benchmark: recorder timings alone do not represent
+end-to-end delivery latency.
+
+Reference measurements for #12557 (2026-10-19): Oracle JDK 27, Intel i7-12800H, native Helidon metrics provider, one
+benchmark thread, 1 GiB heap, two forks, three one-second warmups, five one-second measurements, GC profiler, and
+process affinity to CPUs `0,2,4,8`. Intervals are JMH 99.9% confidence intervals. The construction comparison supplies
+the same explicit service registry for both builder provider discovery and graph runtime services; it includes build
+and close, with existing-meter setup outside measurement. "Before" is `29a9bb3b672a`; "after" uses creation callbacks
+instead of registry snapshots.
+
+| Channels / unrelated meters | Before time | After time | Before B/graph | After B/graph |
+| --- | ---: | ---: | ---: | ---: |
+| 1 / 0 | 9.39 ± 0.23 µs | 12.05 ± 3.40 µs | 44,547 | 46,573 |
+| 1 / 4,096 | 390.48 ± 10.85 µs | 16.69 ± 5.21 µs | 1,292,423 | 46,505 |
+| 64 / 0 | 639.52 ± 19.08 µs | 429.69 ± 93.39 µs | 2,922,464 | 1,257,466 |
+| 64 / 4,096 | 25.36 ± 1.38 ms | 5.83 ± 6.04 ms | 83,179,828 | 1,275,522 |
+
+Allocation no longer grows with unrelated registry contents. The steady-state recorder measured
+`113.5 ± 18.8 ns` and `24.0 B` per attempt; disabled metrics measured `6.7 ± 1.4 ns` with approximately zero allocation.
+For prebuilt emission, the pre-observability base `61ef77d66c91` and enabled metrics had overlapping intervals:
+
+| Batch size | Before observability | Metrics enabled |
+| --- | ---: | ---: |
+| 1 | 2.935 ± 0.147 µs | 3.103 ± 0.344 µs |
+| 32 | 3.056 ± 0.179 µs | 3.278 ± 0.225 µs |
+
+Emitter and recorder setup use an explicit native runtime registry and verify meter registration before measurement;
+setup is excluded from their timings. Unrelated build workloads interfered with some runs despite CPU affinity,
+especially the final construction row. These timings do not establish a throughput improvement; the allocation
+comparison is the stronger evidence for removing registry-size-dependent registration work. For the timing profile
+above, use `messaging.jmh.forks=2`, `messaging.jmh.warmupIterations=3`, and `messaging.jmh.measurementIterations=5` with
+the documented runner commands.
+
 The gRPC streaming benchmark covers the resource-owning server-streaming, client-streaming, and bidirectional APIs,
 same-run legacy iterator baselines, mixed new-client/legacy-server and legacy-client/new-server pairs, and a deliberately
 CPU-bound slow-consumer bidirectional path. Payloads exercise both sides of the client's readiness threshold. The JSON

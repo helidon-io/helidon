@@ -109,6 +109,20 @@ Messaging configuration
 </tr>
 <tr>
 <td>
+<a id="health"></a>
+<a href="io.helidon.messaging.MessagingHealthConfig.md">
+<code>health</code>
+</a>
+</td>
+<td>
+<code>Messaging<wbr>Health<wbr>Config</code>
+</td>
+<td>
+</td>
+<td>Graph readiness and liveness configuration</td>
+</tr>
+<tr>
+<td>
 <code>shutdown-<wbr>timeout</code>
 </td>
 <td>
@@ -129,6 +143,20 @@ Messaging configuration
 <td>
 </td>
 <td>Positive maximum capacity-wait time, representable in nanoseconds</td>
+</tr>
+<tr>
+<td>
+<a id="metrics"></a>
+<a href="io.helidon.messaging.MessagingMetricsConfig.md">
+<code>metrics</code>
+</a>
+</td>
+<td>
+<code>Messaging<wbr>Metrics<wbr>Config</code>
+</td>
+<td>
+</td>
+<td>Channel processing metrics configuration</td>
 </tr>
 <tr>
 <td>
