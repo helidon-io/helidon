@@ -166,8 +166,8 @@ class RoundContextImpl implements RoundContext {
      * same processing run, before javac creates an element for it. The generated
      * class lookup can resolve the simple name by searching registered packages. In
      * that case, the matched {@link ClassModel} supplies the fully qualified name
-     * for the resulting {@link TypeInfo}. Already qualified and nested names are
-     * preserved.
+     * for the resulting {@link TypeInfo}, retaining the requested type arguments.
+     * Already qualified and nested names are preserved.
      *
      * @param requestedName name supplied by the processing environment
      * @param generatedClass matched class model
@@ -177,7 +177,9 @@ class RoundContextImpl implements RoundContext {
         if (requestedName.packageName().isEmpty()
                 && requestedName.enclosingNames().isEmpty()
                 && generatedClass instanceof ClassModel classModel) {
-            return classModel.typeName();
+            return TypeName.builder(requestedName)
+                    .packageName(classModel.typeName().packageName())
+                    .build();
         }
         return requestedName;
     }
