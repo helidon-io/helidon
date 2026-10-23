@@ -80,9 +80,10 @@ final class OracleGeneratedRepositoryDiagnostics
             .parseCaseInsensitive().appendPattern("dd-MMM-uuuu HH:mm:ss[:SSS]")
             .toFormatter(Locale.ENGLISH).withResolverStyle(ResolverStyle.STRICT);
     // High-water marks retain evidence of earlier load when collection begins after a refusal.
+    // Instance-wide process and session counters use CON_ID = 0, even when queried from CDB$ROOT.
     private static final String RESOURCE_QUERY = """
             SELECT RESOURCE_NAME, CURRENT_UTILIZATION, MAX_UTILIZATION, LIMIT_VALUE
-            FROM V$RESOURCE_LIMIT WHERE RESOURCE_NAME IN ('processes', 'sessions') AND CON_ID = 1
+            FROM V$RESOURCE_LIMIT WHERE RESOURCE_NAME IN ('processes', 'sessions') AND CON_ID = 0
             """;
     // Raw output stays in memory. Only the structured fields extracted below may reach the artifact.
     private static final String CONTAINER_REPORT = """
