@@ -41,6 +41,9 @@ import io.helidon.webserver.spi.ServerFeature;
 
 /**
  * Observer that registers health endpoint, and collects all health checks.
+ * Each aggregate health request invokes its checks concurrently in a structured task scope,
+ * using one named virtual thread per check. Checks must not depend on running on the request thread
+ * or on another check completing first. Results retain registration order.
  */
 public class HealthObserver implements Observer, RuntimeType.Api<HealthObserverConfig> {
     private final HealthObserverConfig config;

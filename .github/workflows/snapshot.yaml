@@ -24,8 +24,7 @@ on:
 
 env:
   MVN_VERSION: 3.9.9
-  JAVA_VERSION: 27
-  JAVA_DISTRO: oracle
+  JAVA_VERSION: 28
   MVN_ARGS: |
     -B -e
     -Dmaven.wagon.httpconnectionManager.ttlSeconds=60

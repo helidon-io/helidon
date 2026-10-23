@@ -19,6 +19,8 @@ package io.helidon.webserver.observe.health;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.StructuredTaskScope;
 
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
@@ -50,25 +52,11 @@ class HealthHandler implements Handler {
 
     @Override
     public void handle(ServerRequest req, ServerResponse res) {
-        List<NamedResponse> responses = new ArrayList<>();
+        List<NamedResponse> responses = evaluateChecks();
         HealthCheckResponse.Status status = HealthCheckResponse.Status.UP;
 
-        for (HealthCheck check : checks) {
-            HealthCheckResponse response;
-
-            try {
-                response = check.call();
-            } catch (Exception e) {
-                response = HealthCheckResponse.builder()
-                        .status(HealthCheckResponse.Status.ERROR)
-                        .detail("error", e.getClass().getName())
-                        .detail("message", HtmlEncoder.encode(e.getMessage()))
-                        .build();
-                LOGGER.log(System.Logger.Level.ERROR, "Unexpected failure of health check", e);
-            }
-            // we may have more checks with the same name (such as in MP Health)
-            responses.add(new NamedResponse(check.name(), response));
-
+        for (NamedResponse namedResponse : responses) {
+            HealthCheckResponse response = namedResponse.response();
             if (response.status() == HealthCheckResponse.Status.ERROR) {
                 status = HealthCheckResponse.Status.ERROR;
             } else if (response.status() == HealthCheckResponse.Status.DOWN && status == HealthCheckResponse.Status.UP) {
@@ -107,5 +95,45 @@ class HealthHandler implements Handler {
 
         response.set("checks", JsonArray.create(checks));
         return response.build();
+    }
+
+    private List<NamedResponse> evaluateChecks() {
+        try (var scope = StructuredTaskScope.open(config -> config
+                .withName("health-checks")
+                .withThreadFactory(Thread.ofVirtual().name("health-check-", 0).factory()))) {
+            List<StructuredTaskScope.Subtask<NamedResponse>> tasks = new ArrayList<>(checks.size());
+            int index = 0;
+            for (HealthCheck check : checks) {
+                String name = check.name();
+                String threadName = "health-check-" + index++ + "[" + name + "]";
+                tasks.add(scope.fork(() -> {
+                    Thread.currentThread().setName(threadName);
+                    HealthCheckResponse response;
+                    try {
+                        response = check.call();
+                    } catch (Exception e) {
+                        response = HealthCheckResponse.builder()
+                                .status(HealthCheckResponse.Status.ERROR)
+                                .detail("error", e.getClass().getName())
+                                .detail("message", HtmlEncoder.encode(e.getMessage()))
+                                .build();
+                        LOGGER.log(System.Logger.Level.ERROR, "Unexpected failure of health check", e);
+                    }
+                    return new NamedResponse(name, response);
+                }));
+            }
+            scope.join();
+            // Keep registration order and allow duplicate check names, even when tasks finish out of order.
+            return tasks.stream().map(StructuredTaskScope.Subtask::get).toList();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while waiting for health checks", e);
+        } catch (ExecutionException e) {
+            // Ordinary check exceptions become ERROR results above. Fatal errors abort the request and cancel siblings.
+            if (e.getCause() instanceof Error error) {
+                throw error;
+            }
+            throw new IllegalStateException("Failed to execute health checks", e.getCause());
+        }
     }
 }
