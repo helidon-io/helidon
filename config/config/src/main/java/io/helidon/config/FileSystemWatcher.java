@@ -431,7 +431,8 @@ public final class FileSystemWatcher implements ChangeWatcher<Path> {
          * @return updated builder instance
          * @deprecated use {@link #initialDelay(Duration)} and {@link #delay(Duration)} instead
          */
-        @Deprecated(since = "4.0.0")
+        // remove earliest in version 30.0.0, the "forRemoval" was added for 28
+        @Deprecated(since = "4.0.0", forRemoval = true)
         public Builder schedule(long initialDelay, long delay, TimeUnit timeUnit) {
             this.initialDelay = initialDelay;
             this.delay = delay;
