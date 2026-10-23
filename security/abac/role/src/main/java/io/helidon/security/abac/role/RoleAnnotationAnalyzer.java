@@ -43,6 +43,11 @@ public class RoleAnnotationAnalyzer implements AnnotationAnalyzer {
     }
 
     @Override
+    public boolean supportsExpandedEndpointAnalysis() {
+        return true;
+    }
+
+    @Override
     public AnalyzerResponse analyze(Class<?> maybeAnnotated) {
         return analyze(TypeName.create(maybeAnnotated), AnnotationFactory.create(maybeAnnotated));
     }

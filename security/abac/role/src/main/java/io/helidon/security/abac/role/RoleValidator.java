@@ -114,9 +114,10 @@ public final class RoleValidator implements AbacValidator<RoleValidator.RoleConf
 
                     if (typeName.equals(ROLES_ALLOWED)) {
                         // these are user roles by default
-                        roles.addAll(annotation.stringValues().orElseGet(List::of));
+                        List<String> annotationRoles = annotation.stringValues().orElseGet(List::of);
+                        roles.addAll(annotationRoles);
                         builder.permitAll(false);
-                        builder.denyAll(false);
+                        builder.denyAll(annotationRoles.isEmpty());
                     } else if (typeName.equals(ROLES)) {
                         // these are configured
                         addRoles(annotation, roles, serviceRoles);
