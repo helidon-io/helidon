@@ -139,9 +139,8 @@ class IdleInputStream extends InputStream {
                     //Set iteration read timeout
                     socket.setSoTimeout(ITERATION_TIME_MILLIS);
                     next = upstream.read();
-                    if (next <= 0) {
+                    if (next == -1) {
                         closed = true;
-                        return;
                     }
                     break;
                 } catch (SocketTimeoutException e) {
@@ -153,7 +152,7 @@ class IdleInputStream extends InputStream {
                     }
                 }
             }
-            //Idle checking thread was canceled or detected as not idle. Restore socket timeout it should have.
+            //Idle checking finished. Restore socket timeout it should have.
             if (socket.getSoTimeout() == ITERATION_TIME_MILLIS) {
                 //To prevent any incorrect socket timeout restoration. Assume the following scenario:
                 //1. IdleInputStream saves timeout to restore -> example 30s
