@@ -635,6 +635,33 @@ Various parts of the config system work asynchronously:
 Each of these uses an executor to perform its work. The config system provides
 default executors, but your application can specify different ones if necessary.
 
+### Default Executor Selection for Polling and Watching
+
+`ScheduledPollingStrategy`, `PollingStrategies.regular(Duration)`, and
+`FileSystemWatcher` use a separate default scheduled executor for each built
+instance when you omit the builder's `executor` setting. To restore that choice
+after supplying an executor, call `clearExecutor()`:
+
+```java
+var builder = FileSystemWatcher.builder().executor(applicationScheduler);
+var customWatcher = builder.build();
+var defaultWatcher = builder.clearExecutor().build();
+```
+
+Clearing the selection affects subsequent builds only. It neither shuts down
+`applicationScheduler` nor changes `customWatcher`. The same operation is
+available on `ScheduledPollingStrategy.Builder` and
+`PollingStrategies.ScheduledBuilder`. Executor setters require a non-null
+`ScheduledExecutorService`; use `clearExecutor()` instead of passing `null`.
+For a custom recurring policy with a default executor, use
+`ScheduledPollingStrategy.create(policy)` instead of `create(policy, null)`.
+
+Each polling strategy or watcher shuts down its default executor when stopped
+and creates another when restarted. If you supply an executor, stopping the
+component cancels its own scheduled work without shutting down that executor.
+The supplier remains responsible for shutting down a shared executor after all
+its users have stopped.
+
 ### Executors for Polling Strategy
 
 The method `PollingStrategies.regular(Duration)` returns builder for polling

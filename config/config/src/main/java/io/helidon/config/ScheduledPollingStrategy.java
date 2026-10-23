@@ -68,13 +68,29 @@ public final class ScheduledPollingStrategy implements PollingStrategy {
     }
 
     /**
-     * Creates a polling strategy with an interval of the polling as a parameter.
-     * <p>
-     * If parameter {@code executor} is {@code null} then a new {@link ScheduledExecutorService} is created.
+     * Creates a polling strategy using a new default executor.
+     * The strategy shuts down this executor when stopped and creates another when restarted.
      *
      * @param recurringPolicy a recurring policy
-     * @param executor        an executor
      * @return configured strategy
+     * @throws NullPointerException if {@code recurringPolicy} is null
+     * @since 28.0.0
+     */
+    public static ScheduledPollingStrategy create(RecurringPolicy recurringPolicy) {
+        return builder()
+                .recurringPolicy(recurringPolicy)
+                .build();
+    }
+
+    /**
+     * Creates a polling strategy using the supplied executor.
+     * The caller remains responsible for shutting down the executor; stopping the strategy only cancels its scheduled work.
+     *
+     * @param recurringPolicy a recurring policy
+     * @param executor        an executor; must not be null
+     * @return configured strategy
+     * @throws NullPointerException if {@code recurringPolicy} or {@code executor} is null
+     * @see #create(RecurringPolicy)
      */
     public static ScheduledPollingStrategy create(RecurringPolicy recurringPolicy, ScheduledExecutorService executor) {
         return builder()
@@ -215,20 +231,37 @@ public final class ScheduledPollingStrategy implements PollingStrategy {
          *
          * @param recurringPolicy policy
          * @return updated builder instance
+         * @throws NullPointerException if {@code recurringPolicy} is null
          */
         public Builder recurringPolicy(RecurringPolicy recurringPolicy) {
-            this.recurringPolicy = recurringPolicy;
+            this.recurringPolicy = Objects.requireNonNull(recurringPolicy, "recurringPolicy");
             return this;
         }
 
         /**
          * Executor service to use to schedule the polling events.
+         * The caller remains responsible for shutting down the executor; stopping the strategy only cancels its scheduled work.
+         * If none is configured, each built strategy manages its own default executor.
          *
-         * @param executor executor service for scheduling events
+         * @param executor executor service for scheduling events; must not be null
          * @return updated builder instance
+         * @throws NullPointerException if {@code executor} is null
+         * @see #clearExecutor()
          */
         public Builder executor(ScheduledExecutorService executor) {
-            this.executor = executor;
+            this.executor = Objects.requireNonNull(executor, "executor");
+            return this;
+        }
+
+        /**
+         * Clear the configured executor, restoring a separate default executor for each subsequently built strategy.
+         * This does not shut down the previously configured executor or affect previously built strategies.
+         *
+         * @return updated builder instance
+         * @since 28.0.0
+         */
+        public Builder clearExecutor() {
+            this.executor = null;
             return this;
         }
     }
