@@ -47,6 +47,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class EntityDecoderCloseTest {
@@ -63,6 +64,9 @@ class EntityDecoderCloseTest {
         try {
             assertThat(fixture.entity.as(byte[].class), is(PAYLOAD));
             fixture.assertDecoderClosed();
+            assertThat("decoder EOF does not complete the transport", fixture.processed.get(), is(0));
+            assertThat(fixture.entity.consumed(), is(false));
+            fixture.entity.consume();
             assertThat(fixture.processed.get(), is(1));
             fixture.entity.consume();
             assertThat(fixture.processed.get(), is(1));
@@ -103,6 +107,22 @@ class EntityDecoderCloseTest {
 
     @ParameterizedTest(name = "{0}, {1}")
     @MethodSource("decoders")
+    void decodedLimitDoesNotRequestAdditionalTransportData(boolean http2, String encodingName, ContentEncoding encoding)
+            throws IOException {
+        var fixture = new EntityFixture(http2, encoding, 16, false, true);
+        try {
+            var failure = assertThrows(HttpException.class, () -> fixture.entity.as(byte[].class));
+            assertThat(failure.status(), is(Status.REQUEST_ENTITY_TOO_LARGE_413));
+            assertAll(() -> assertThat("cleanup must not request another transport buffer", fixture.reads.get(), is(1)),
+                      fixture::assertDecoderClosed,
+                      () -> assertThat("transport EOF must remain owned by the transport", fixture.processed.get(), is(0)));
+        } finally {
+            fixture.closeDecoder();
+        }
+    }
+
+    @ParameterizedTest(name = "{0}, {1}")
+    @MethodSource("decoders")
     void inputStreamRemainsLazy(boolean http2, String encodingName, ContentEncoding encoding) throws IOException {
         var fixture = new EntityFixture(http2, encoding, -1, false);
         try (var stream = fixture.entity.as(InputStream.class)) {
@@ -127,8 +147,18 @@ class EntityDecoderCloseTest {
         private final ReadableEntity entity;
         private int position;
         private InputStream decoder;
+        private boolean rejectAdditionalReads;
 
         EntityFixture(boolean http2, ContentEncoding encoding, long maxPayloadSize, boolean truncate) throws IOException {
+            this(http2, encoding, maxPayloadSize, truncate, false);
+        }
+
+        EntityFixture(boolean http2,
+                      ContentEncoding encoding,
+                      long maxPayloadSize,
+                      boolean truncate,
+                      boolean rejectAdditionalReads) throws IOException {
+            this.rejectAdditionalReads = rejectAdditionalReads;
             var output = new ByteArrayOutputStream();
             try (var encoder = encoding.encoder().apply(output)) {
                 encoder.write(PAYLOAD);
@@ -140,7 +170,10 @@ class EntityDecoderCloseTest {
                 return decoder;
             };
             Function<Integer, BufferData> reading = _ -> {
-                reads.incrementAndGet();
+                int count = reads.incrementAndGet();
+                if (this.rejectAdditionalReads && count > 1) {
+                    throw new IllegalStateException("Peer has not supplied another transport buffer");
+                }
                 if (position == encoded.length) {
                     return BufferData.empty();
                 }
@@ -175,6 +208,7 @@ class EntityDecoderCloseTest {
         }
 
         void closeDecoder() throws IOException {
+            rejectAdditionalReads = false;
             if (decoder != null) {
                 decoder.close();
             }

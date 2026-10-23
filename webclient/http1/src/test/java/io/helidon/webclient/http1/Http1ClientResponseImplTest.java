@@ -139,10 +139,8 @@ class Http1ClientResponseImplTest {
         var failure = assertThrows(UncheckedIOException.class, () -> response.entity().as(byte[].class));
 
         assertThat(failure.getCause(), sameInstance(readFailure));
-        assertThat(failure.getSuppressed().length, is(2));
+        assertThat(failure.getSuppressed().length, is(1));
         assertThat(failure.getSuppressed()[0], sameInstance(closeFailure));
-        assertThat(failure.getSuppressed()[1].getMessage(), is(failure.getMessage()));
-        assertThat(failure.getSuppressed()[1].getCause(), sameInstance(failure));
         assertThat(reads.get(), is(1));
         assertThat(connection.closeCount(), is(1));
         assertThat(connection.releaseCount(), is(0));

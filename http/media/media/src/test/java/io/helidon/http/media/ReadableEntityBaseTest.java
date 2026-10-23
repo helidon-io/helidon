@@ -149,6 +149,22 @@ class ReadableEntityBaseTest {
     }
 
     @Test
+    void testLazyStreamCloseRetainsSingleBufferRequest() throws IOException {
+        var reads = new AtomicInteger();
+        var entity = new ReadableEntityImpl(_ -> {
+            reads.incrementAndGet();
+            return BufferData.create(BYTES);
+        }, 1024);
+
+        InputStream stream = entity.inputStream();
+        assertThat(reads.get(), is(0));
+        stream.close();
+
+        assertThat(reads.get(), is(1));
+        assertThat(entity.consumed(), is(false));
+    }
+
+    @Test
     void testMultipleInputStream() throws IOException {
         ReadableEntityBase entityBase = new ReadableEntityImpl(new Readable(), 1024);
         try (InputStream is = entityBase.inputStream()) {

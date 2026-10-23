@@ -148,9 +148,8 @@ class Http2ClientResponseImplTest {
         var failure = assertThrows(UncheckedIOException.class, () -> response.entity().as(byte[].class));
 
         assertThat(failure.getCause(), sameInstance(readFailure));
-        assertThat(failure.getSuppressed().length, is(2));
+        assertThat(failure.getSuppressed().length, is(1));
         assertThat(failure.getSuppressed()[0].getCause(), sameInstance(closeFailure));
-        assertThat(failure.getSuppressed()[1].getMessage(), is("Response is closed"));
         assertThat(reads.get(), is(1));
         assertThat(completed.isDone(), is(true));
         assertThat(closeCount.get(), is(1));
