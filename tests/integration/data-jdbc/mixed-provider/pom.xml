@@ -29,10 +29,16 @@
     <name>Helidon Tests Integration Data JDBC Mixed Provider</name>
 
     <properties>
-        <mainClass>io.helidon.data.jdbc.tests.mixed.provider.Main</mainClass>
+        <mainClass>io.helidon.tests.integration.data.jdbc.mixed.provider.Main</mainClass>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>io.helidon.tests.integration.data.jdbc</groupId>
+            <artifactId>helidon-tests-integration-data-jdbc-common-fixtures-mysql</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config-yaml</artifactId>
@@ -126,29 +132,8 @@
             <testResource>
                 <directory>${project.basedir}/src/test/resources</directory>
             </testResource>
-            <testResource>
-                <directory>${project.basedir}/../common/src/mysql/resources</directory>
-            </testResource>
         </testResources>
         <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>add-mysql-test-source</id>
-                        <phase>generate-test-sources</phase>
-                        <goals>
-                            <goal>add-test-source</goal>
-                        </goals>
-                        <configuration>
-                            <sources>
-                                <source>${project.basedir}/../common/src/mysql/java</source>
-                            </sources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
