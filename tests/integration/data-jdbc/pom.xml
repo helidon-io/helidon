@@ -31,11 +31,23 @@
 
     <modules>
         <module>common</module>
-        <module>mysql</module>
-        <module>imperative</module>
-        <module>declarative</module>
-        <module>mixed-provider</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>long-tests</id>
+            <activation>
+                <property>
+                    <name>!long-tests</name>
+                </property>
+            </activation>
+            <modules>
+                <module>imperative</module>
+                <module>declarative</module>
+                <module>mixed-provider</module>
+            </modules>
+        </profile>
+    </profiles>
 
     <build>
         <plugins>

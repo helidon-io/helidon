@@ -1,0 +1,114 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package io.helidon.tests.integration.data.jdbc.declarative.mysql;
+
+import java.util.List;
+import java.util.Optional;
+
+import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.tests.integration.data.jdbc.application.ContactView;
+import io.helidon.tests.integration.data.jdbc.contract.AbstractGeneratedRepositoryContract;
+import io.helidon.tests.integration.data.jdbc.declarative.repository.ContactRepository;
+import io.helidon.tests.integration.data.jdbc.support.DatabaseFixture;
+import io.helidon.tests.integration.data.jdbc.support.TestConfigFactory;
+
+import org.junit.jupiter.api.Test;
+import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+/**
+ * Executes generated repository behavior against MySQL.
+ */
+@Testcontainers(disabledWithoutDocker = true)
+class MySqlGeneratedRepositoryTest extends AbstractGeneratedRepositoryContract {
+    @Container
+    static final MySQLContainer<?> MYSQL = MySqlDeclarativeTestSupport.MYSQL;
+
+    @Override
+    protected void beforeStartApplication() {
+        TestConfigFactory.config(MySqlDeclarativeTestSupport.config());
+    }
+
+    @Override
+    protected long assertGeneratedKeyMappingVariants(ContactRepository repository) {
+        long scalarKey = repository.insert("scalar-key");
+        Optional<Long> optionalKey = repository.insertOptional("optional-key");
+        assertThat(repository.findByName("optional-key"),
+                   is(Optional.of(new ContactView(optionalKey.orElseThrow(), "optional-key", Optional.empty()))));
+        List<Long> listKeys = repository.insertList("list-key");
+        assertThat(listKeys.size(), is(1));
+        assertThat(repository.findByName("list-key"),
+                   is(Optional.of(new ContactView(listKeys.getFirst(), "list-key", Optional.empty()))));
+
+        // MySQL Connector/J exposes only the single auto-increment GENERATED_KEY value from getGeneratedKeys().
+        // It does not return the requested ID, NAME, and EMAIL projection, so assert the supported scalar key.
+        List<Long> recordKeys = repository.insertList("record-key");
+        assertThat(recordKeys.size(), is(1));
+        assertThat(repository.findByName("record-key"),
+                   is(Optional.of(new ContactView(recordKeys.getFirst(), "record-key", Optional.empty()))));
+
+        // The same Connector/J generated-key result cannot provide the requested NAME column for mapper tests.
+        // Assert the exact committed row identified by the returned generated key instead of weakening the check.
+        List<Long> markerKeys = repository.insertList("marker-key");
+        assertThat(markerKeys.size(), is(1));
+        assertThat(repository.findByName("marker-key"),
+                   is(Optional.of(new ContactView(markerKeys.getFirst(), "marker-key", Optional.empty()))));
+        List<Long> explicitKeys = repository.insertList("explicit-key");
+        assertThat(explicitKeys.size(), is(1));
+        assertThat(repository.findByName("explicit-key"),
+                   is(Optional.of(new ContactView(explicitKeys.getFirst(), "explicit-key", Optional.empty()))));
+        return scalarKey;
+    }
+
+    /**
+     * Proves multiple generated methods can execute when application parameters
+     * collide with generated fields and lambda parameters.
+     */
+    @Test
+    void executesMultipleGeneratedMethodsWithNameCollisions() {
+        beforeStartApplication();
+        ServiceRegistryManager manager = ServiceRegistryManager.start();
+        try {
+            DatabaseFixture database = manager.registry().get(DatabaseFixture.class);
+            database.reset();
+            MySqlGeneratedNameCollisionRepository repository =
+                    manager.registry().get(MySqlGeneratedNameCollisionRepository.class);
+
+            assertThat(repository.find("sql-find"), is("sql-find"));
+            assertThat(repository.lookup("sql-lookup"), is("sql-lookup"));
+            assertThat(repository.client("client"), is("client"));
+            assertThat(repository.secondaryClient("secondary-client"), is("secondary-client"));
+
+            long firstId = repository.insert("lambda-row", "lambda-value@example.test").orElseThrow();
+            assertThat(database.committedByName("lambda-row"),
+                       is(Optional.of(new ContactView(firstId,
+                                                      "lambda-row",
+                                                      Optional.of("lambda-value@example.test")))));
+            long secondId = repository.insertSecondary("secondary-lambda-row",
+                                                       "secondary-lambda-value@example.test").orElseThrow();
+            assertThat(database.committedByName("secondary-lambda-row"),
+                       is(Optional.of(new ContactView(secondId,
+                                                      "secondary-lambda-row",
+                                                      Optional.of("secondary-lambda-value@example.test")))));
+        } finally {
+            manager.shutdown();
+        }
+    }
+}
