@@ -34,6 +34,8 @@
         modules retain their JPMS descriptors.
     -->
     <properties>
+        <!-- Plugin discovery uses META-INF/gradle-plugins, not JPMS service declarations. -->
+        <helidon.services.skip>true</helidon.services.skip>
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
     <dependencies>
