@@ -48,9 +48,13 @@ import org.gradle.workers.WorkerExecutor;
 /**
  * Generates application binding classes separately from compiler outputs using the Java toolchain.
  * Each execution replaces its own output, so deleted services and renamed bindings cannot remain in application artifacts.
- * Configure generation through the {@link HelidonServiceExtension helidonService extension}.
- * This task implementation is internal; its public visibility, JavaBean accessors and injected constructor
- * support Gradle task instantiation and managed properties.
+ * Configure generation options through the {@link HelidonServiceExtension helidonService extension}.
+ * The plugin-created {@code generateApplicationBindings} and {@code generateTestApplicationBindings} tasks
+ * support configuring {@link #getClassesDirectory() classesDirectory} by name through the Gradle DSL.
+ * The task names and documented DSL properties form the supported configuration contract.
+ * This implementation type is internal and does not provide an API for registering or subclassing binding tasks.
+ * Its public visibility, JavaBean accessors and injected constructor support Gradle task instantiation
+ * and managed properties.
  */
 @Api.Internal
 @DisableCachingByDefault(because = "Only local up-to-date checking is supported for the isolated compiler and classpath scan")

@@ -143,6 +143,21 @@ Configure the generated class output with `classesDirectory` on
 `layout.buildDirectory` by default. Each generation task modifies only its own
 generated output.
 
+The `helidonService` extension options, the generation task names above and
+their documented `classesDirectory` property form the supported build-script
+configuration contract. Use `tasks.named` to customize a task created by the
+plugin:
+
+```groovy [build.gradle]
+tasks.named('generateApplicationBindings') {
+    classesDirectory = layout.buildDirectory.dir('custom/completed-main')
+}
+```
+
+The generation task implementation type is internal. Registering additional
+binding-generation tasks through that type is outside the supported
+configuration contract.
+
 ### Configuration
 
 The `helidonService` extension accepts these options. They correspond to the
