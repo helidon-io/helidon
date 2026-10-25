@@ -625,6 +625,101 @@ class GrpcProtocolHandlerTest {
     }
 
     @Test
+    @Timeout(15)
+    void testTransportCloseDuringFailingAsyncTrailersCancelsListenerOnce() throws Exception {
+        var writing = new CountDownLatch(1);
+        var releaseFailure = new CountDownLatch(1);
+        var gateFailure = new AtomicBoolean();
+        FailingTrailerSocket socket = new FailingTrailerSocket() {
+            @Override
+            public void write(BufferData buffer) {
+                if (gateFailure.get()) {
+                    writing.countDown();
+                    await(releaseFailure);
+                }
+                super.write(buffer);
+            }
+        };
+        var socketWriter = SocketWriter.create(EXECUTOR, socket, 2, false);
+        var writer = new Http2ConnectionWriter(socket, socketWriter, List.of());
+        var callReference = new AtomicReference<ServerCall<String, String>>();
+        var cancellations = new AtomicInteger();
+        var completions = new AtomicInteger();
+        var cancelledContext = new AtomicReference<Context>();
+        var connection = ConnectionFlowControl.serverBuilder((_, _) -> { }).build();
+        var flowControl = connection.createStreamFlowControl(1, 65535, 16384);
+        var handler = deadlineHandler("1H", (call, _) -> {
+            callReference.set(call);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onCancel() {
+                    cancellations.incrementAndGet();
+                    cancelledContext.set(Context.current());
+                }
+
+                @Override
+                public void onComplete() {
+                    completions.incrementAndGet();
+                }
+            };
+        }, writer, stringMethodDescriptor(), flowControl);
+        var executor = Executors.newVirtualThreadPerTaskExecutor();
+        try {
+            handler.init();
+            var call = callReference.get();
+            call.sendHeaders(new Metadata());
+            socket.failWrites = true;
+            gateFailure.set(true);
+            var closing = executor.submit(() -> assertThrows(SocketWriterException.class,
+                                                             () -> call.close(Status.OK, new Metadata())));
+            assertThat("terminal socket write entered before its injected failure", writing.await(5, TimeUnit.SECONDS), is(true));
+
+            handler.close();
+            var finishingThread = new CompletableFuture<Thread>();
+            var finishing = executor.submit(() -> {
+                finishingThread.complete(Thread.currentThread());
+                handler.streamFinished();
+            });
+            Thread thread = finishingThread.get(5, TimeUnit.SECONDS);
+            long waitDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+            boolean waitingObserved = false;
+            while (!finishing.isDone() && System.nanoTime() < waitDeadline) {
+                if (thread.getState() == Thread.State.WAITING) {
+                    waitingObserved = true;
+                    break;
+                }
+                Thread.yield();
+            }
+            assertThat("stream teardown waits for the unfinished terminal write", finishing.isDone(), is(false));
+            assertThat("stream teardown reached its terminal-state wait", waitingObserved, is(true));
+            assertThat("generic transport closure does not report success", completions.get(), is(0));
+            assertThat("generic transport closure leaves terminal publication pending", cancellations.get(), is(0));
+
+            releaseFailure.countDown();
+            var failure = closing.get(5, TimeUnit.SECONDS);
+            finishing.get(5, TimeUnit.SECONDS);
+            assertThat("the async writer retains the injected socket failure", failure.getCause(), sameInstance(socket.failure));
+            assertThat("failed terminal publication releases stream teardown with one cancellation", cancellations.get(), is(1));
+            assertThat("failed terminal publication never reports successful completion", completions.get(), is(0));
+            assertThat("the cancellation callback sees a cancelled Context", cancelledContext.get().isCancelled(), is(true));
+            assertThat("transport failure preserves call cancellation", call.isCancelled(), is(true));
+            handler.close();
+            handler.streamFinished();
+            call.close(Status.OK, new Metadata());
+            assertThat("repeated cleanup cannot duplicate cancellation", cancellations.get(), is(1));
+            assertThat("repeated cleanup cannot convert failure to completion", completions.get(), is(0));
+        } finally {
+            releaseFailure.countDown();
+            handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+            handler.close();
+            socketWriter.close();
+            executor.shutdownNow();
+            assertThat("terminal publication and stream teardown workers stopped",
+                       executor.awaitTermination(5, TimeUnit.SECONDS), is(true));
+        }
+    }
+
+    @Test
     void testExistingConnectionWriterFailureDuringTrailersCancelsListenerOnce() {
         var socket = new FailingTrailerSocket();
         var socketWriter = SocketWriter.create(EXECUTOR, socket, 2, false);

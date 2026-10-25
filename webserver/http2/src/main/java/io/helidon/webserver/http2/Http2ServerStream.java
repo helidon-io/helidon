@@ -340,7 +340,6 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         if (runner != null) {
             runner.interrupt();
         }
-        resetSubProtocol(handler, new Http2RstStream(Http2ErrorCode.CANCEL));
         closeSubProtocol(handler);
         inboundData.abortAndDrain();
     }
