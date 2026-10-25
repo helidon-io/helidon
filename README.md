@@ -71,7 +71,7 @@ See this [document](HELIDON-CLI.md) for more info.
 
 ## Build
 
-You need JDK 27 to build Helidon 27.
+You need JDK 28 to build Helidon from this branch.
 
 You also need Maven. We recommend 3.8.0 or newer.
 

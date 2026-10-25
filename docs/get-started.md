@@ -57,7 +57,7 @@ You must have Java and Maven installed on your system to use Helidon.
 
 | Requirement                                     | Description                                  |
 |-------------------------------------------------|----------------------------------------------|
-| [Java 27][java-27] ([Open JDK 27][open-jdk-27]) | Helidon requires Java 27+.                   |
+| [OpenJDK 28 EA][open-jdk-28]                     | Helidon requires Java 28+.                   |
 | [Maven 3.8+][maven-3-8]                         | Helidon requires Maven 3.8+.                 |
 
 > [!NOTE]
@@ -79,17 +79,17 @@ Make sure you set the `JAVA_HOME` environment variable.
 
 ```shell [Linux] <!-- @icon i-logos-linux-tux -->
 # Enter the appropriate path to your JDK
-export JAVA_HOME=/usr/lib/jvm/jdk-27
+export JAVA_HOME=/usr/lib/jvm/jdk-28
 ```
 
 ```shell [macOS] <!-- @icon i-simple-icons-apple -->
 # Enter the appropriate path to your JDK
-export JAVA_HOME=`/usr/libexec/java_home -v 27`
+export JAVA_HOME=`/usr/libexec/java_home -v 28`
 ```
 
 ```cmd [Windows] <!-- @icon i-logos-microsoft-windows-icon -->
 # Enter the appropriate path to your JDK
-setx JAVA_HOME=C:\\PROGRA~1\\Java\\jdk-27
+setx JAVA_HOME=C:\\PROGRA~1\\Java\\jdk-28
 ```
 
 <!--@mdc :: -->
@@ -104,6 +104,5 @@ project and application.
 > Read the [Helidon introduction](introduction.md) to learn more about
 > the programming model.
 
-[java-27]: https://www.oracle.com/technetwork/java/javase/downloads
-[open-jdk-27]: http://jdk.java.net
+[open-jdk-28]: https://jdk.java.net/28/
 [maven-3-8]: https://maven.apache.org/download.cgi
