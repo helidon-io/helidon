@@ -85,13 +85,13 @@ abstract class GenerateBindingsWorkAction implements WorkAction<GenerateBindings
 
     private static void log(CodegenEvent event) {
         switch (event.level()) {
-            case ALL, TRACE, DEBUG -> log(LogLevel.DEBUG, event);
-            case INFO -> log(LogLevel.INFO, event);
-            case WARNING -> log(LogLevel.WARN, event);
-            case ERROR -> log(LogLevel.ERROR, event);
-            case OFF -> {
-            }
-            default -> throw new IllegalStateException("Unsupported code generation log level: " + event.level());
+        case ALL, TRACE, DEBUG -> log(LogLevel.DEBUG, event);
+        case INFO -> log(LogLevel.INFO, event);
+        case WARNING -> log(LogLevel.WARN, event);
+        case ERROR -> log(LogLevel.ERROR, event);
+        case OFF -> {
+        }
+        default -> throw new IllegalStateException("Unsupported code generation log level: " + event.level());
         }
     }
 
