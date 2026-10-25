@@ -18,7 +18,6 @@ package io.helidon.service.application.codegen;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.module.ModuleFinder;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -33,11 +32,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.function.Predicate;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -97,79 +93,6 @@ public final class ApplicationGenerator {
             }
             logger.log(System.Logger.Level.WARNING, "Failed to generate application binding: " + e.getMessage());
         }
-    }
-
-    /**
-     * Run the generator in an isolated Java process using a Java properties file.
-     * The file accepts paths for {@code classpath}, {@code modulepath}, {@code sourceRoots},
-     * {@code mainSourceRoots}, and {@code testSourceRoots}, separated by the platform path separator.
-     * It requires {@code generatedSourceDirectory} and {@code outputDirectory}.
-     * Other keys correspond to the generation configuration, with {@code scope} set to
-     * {@code main} or {@code test}. Compiler arguments use {@code compilerArgs.count}
-     * and indexed keys {@code compilerArgs.0}, {@code compilerArgs.1}, and so on.
-     *
-     * @param args exactly one properties-file path
-     */
-    public static void main(String[] args) {
-        Objects.requireNonNull(args);
-        if (args.length != 1) {
-            throw new IllegalArgumentException("Expected exactly one application generator properties file");
-        }
-        Properties properties = new Properties();
-        try (InputStream input = Files.newInputStream(Path.of(args[0]))) {
-            properties.load(input);
-        } catch (IOException e) {
-            throw new CodegenException("Unable to read application generator properties", e);
-        }
-        var builder = ApplicationGeneratorConfig.builder()
-                .classpath(paths(properties, "classpath"))
-                .modulepath(paths(properties, "modulepath"))
-                .sourceRoots(paths(properties, "sourceRoots"))
-                .mainSourceRoots(paths(properties, "mainSourceRoots"))
-                .testSourceRoots(paths(properties, "testSourceRoots"))
-                .generatedSourceDirectory(Path.of(required(properties, "generatedSourceDirectory")))
-                .outputDirectory(Path.of(required(properties, "outputDirectory")))
-                .release(properties.getProperty("release", "27"))
-                .bindingClassName(properties.getProperty("bindingClassName", "ApplicationBinding"))
-                .mainClassName(properties.getProperty("mainClassName", "ApplicationMain"))
-                .generateBinding(Boolean.parseBoolean(properties.getProperty("generateBinding", "true")))
-                .generateMain(Boolean.parseBoolean(properties.getProperty("generateMain", "false")))
-                .validate(Boolean.parseBoolean(properties.getProperty("validate", "true")))
-                .failOnError(Boolean.parseBoolean(properties.getProperty("failOnError", "true")))
-                .failOnWarning(Boolean.parseBoolean(properties.getProperty("failOnWarning", "false")));
-        String scope = properties.getProperty("scope", "main");
-        if (!scope.equals("main") && !scope.equals("test")) {
-            throw new IllegalArgumentException("Unsupported generation scope: " + scope);
-        }
-        builder.scope(scope.equals("main") ? CodegenScope.PRODUCTION : new CodegenScope("test"));
-        Optional.ofNullable(properties.getProperty("packageName")).ifPresent(builder::packageName);
-        Optional.ofNullable(properties.getProperty("moduleName")).ifPresent(builder::moduleName);
-        int argumentCount = Integer.parseInt(properties.getProperty("compilerArgs.count", "0"));
-        List<String> arguments = new ArrayList<>(argumentCount);
-        for (int i = 0; i < argumentCount; i++) {
-            arguments.add(required(properties, "compilerArgs." + i));
-        }
-        generate(builder.compilerArgs(arguments).build());
-    }
-
-    private static String required(Properties properties, String name) {
-        String value = properties.getProperty(name);
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException("Missing generator property: " + name);
-        }
-        return value;
-    }
-
-    private static List<Path> paths(Properties properties, String name) {
-        String value = properties.getProperty(name, "");
-        if (value.isBlank()) {
-            return List.of();
-        }
-        return Pattern.compile(Pattern.quote(File.pathSeparator))
-                .splitAsStream(value)
-                .filter(Predicate.not(String::isBlank))
-                .map(Path::of)
-                .toList();
     }
 
     // to dot separated path

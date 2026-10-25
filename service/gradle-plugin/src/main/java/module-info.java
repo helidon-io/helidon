@@ -20,6 +20,8 @@
 module io.helidon.service.gradle.plugin {
     requires io.helidon.common;
     requires transitive gradle.api;
+    requires static io.helidon.service.application.codegen;
+    requires static io.helidon.codegen;
 
     exports io.helidon.service.gradle.plugin;
 }

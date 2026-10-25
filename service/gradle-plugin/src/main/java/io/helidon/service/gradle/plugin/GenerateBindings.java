@@ -19,8 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
-import java.util.Properties;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
 import javax.inject.Inject;
 
@@ -30,7 +29,6 @@ import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
-import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileSystemOperations;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.ListProperty;
@@ -44,8 +42,8 @@ import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.jvm.toolchain.JavaLauncher;
-import org.gradle.process.ExecOperations;
 import org.gradle.work.DisableCachingByDefault;
+import org.gradle.workers.WorkerExecutor;
 
 /**
  * Generates application binding classes separately from compiler outputs using the Java toolchain.
@@ -58,20 +56,20 @@ import org.gradle.work.DisableCachingByDefault;
 @DisableCachingByDefault(because = "Only local up-to-date checking is supported for the isolated compiler and classpath scan")
 public abstract class GenerateBindings extends DefaultTask {
     private final BindingOptions options;
-    private final ExecOperations execOperations;
+    private final WorkerExecutor workers;
     private final FileSystemOperations fileOperations;
 
     /**
      * Constructor used by Gradle service injection.
      * @param objects managed object factory
-     * @param execOperations process execution service
+     * @param workers isolated work execution service
      * @param fileOperations file system service
      */
     @Inject
-    public GenerateBindings(ObjectFactory objects, ExecOperations execOperations, FileSystemOperations fileOperations) {
-        this.options = objects.newInstance(BindingOptions.class);
-        this.execOperations = execOperations;
-        this.fileOperations = fileOperations;
+    public GenerateBindings(ObjectFactory objects, WorkerExecutor workers, FileSystemOperations fileOperations) {
+        this.options = Objects.requireNonNull(objects, "objects").newInstance(BindingOptions.class);
+        this.workers = Objects.requireNonNull(workers, "workers");
+        this.fileOperations = Objects.requireNonNull(fileOperations, "fileOperations");
         getCompilerArgs().convention(List.of());
         getGenerateApplication().convention(true);
     }
@@ -197,59 +195,33 @@ public abstract class GenerateBindings extends DefaultTask {
                     && getSourceRoots().getAsFileTree().matching(patterns -> patterns.include("**/*.java")).isEmpty())) {
                 return;
             }
-            Properties request = request(classes, sources);
-            File requestFile = new File(getTemporaryDir(), "generator.properties");
-            try (var output = Files.newOutputStream(requestFile.toPath())) {
-                request.store(output, "Helidon application generation");
-            }
-            execOperations.javaexec(exec -> {
-                exec.setExecutable(getJavaLauncher().get().getExecutablePath().getAsFile());
-                exec.classpath(getGeneratorClasspath());
-                exec.getMainClass().set("io.helidon.service.application.codegen.ApplicationGenerator");
-                exec.args(requestFile.getAbsolutePath());
-            }).assertNormalExitValue();
+            var queue = workers.processIsolation(worker -> {
+                worker.getForkOptions().setExecutable(getJavaLauncher().get().getExecutablePath().getAsFile());
+                worker.getClasspath().from(getGeneratorClasspath());
+            });
+            queue.submit(GenerateBindingsWorkAction.class, parameters -> {
+                parameters.getApplicationClasspath().from(getRawClasses(), getApplicationClasspath());
+                parameters.getSourceRoots().from(sources, getSourceRoots());
+                parameters.getMainSourceRoots().from(getMainSourceRoots());
+                parameters.getTestSourceRoots().from(getTestSourceRoots());
+                parameters.getClassesDirectory().set(getClassesDirectory());
+                parameters.getGeneratedSourceDirectory().set(getGeneratedSourceDirectory());
+                parameters.getCompilerArgs().set(getCompilerArgs());
+                parameters.getRelease().set(getRelease());
+                parameters.getScope().set(getScope());
+                parameters.getPackageName().set(options.getPackageName());
+                parameters.getModuleName().set(options.getModuleName());
+                parameters.getBindingClassName().set(options.getBindingClassName());
+                parameters.getMainClassName().set(options.getMainClassName());
+                parameters.getGenerateBinding().set(options.getGenerateBinding());
+                parameters.getGenerateMain().set(options.getGenerateMain());
+                parameters.getValidate().set(options.getValidate());
+                parameters.getFailOnError().set(options.getFailOnError());
+                parameters.getFailOnWarning().set(options.getFailOnWarning());
+            });
+            queue.await();
         } catch (IOException e) {
             throw new GradleException("Cannot prepare application binding generation", e);
         }
-    }
-
-    private static String paths(FileCollection files) {
-        return files.getFiles().stream()
-                .map(File::getAbsolutePath)
-                .collect(Collectors.joining(File.pathSeparator));
-    }
-
-    private Properties request(File classes, File sources) {
-        Properties request = new Properties();
-        request.setProperty("classpath", paths(getRawClasses().plus(getApplicationClasspath())));
-        request.setProperty("modulepath", request.getProperty("classpath"));
-        String sourceRoots = paths(getSourceRoots());
-        request.setProperty("sourceRoots", sources.getAbsolutePath()
-                + (sourceRoots.isEmpty() ? "" : File.pathSeparator + sourceRoots));
-        request.setProperty("mainSourceRoots", paths(getMainSourceRoots()));
-        request.setProperty("testSourceRoots", paths(getTestSourceRoots()));
-        request.setProperty("generatedSourceDirectory", sources.getAbsolutePath());
-        request.setProperty("outputDirectory", classes.getAbsolutePath());
-        request.setProperty("release", getRelease().get());
-        request.setProperty("scope", getScope().get());
-        request.setProperty("bindingClassName", options.getBindingClassName().get());
-        request.setProperty("mainClassName", options.getMainClassName().get());
-        if (options.getPackageName().isPresent()) {
-            request.setProperty("packageName", options.getPackageName().get());
-        }
-        if (options.getModuleName().isPresent()) {
-            request.setProperty("moduleName", options.getModuleName().get());
-        }
-        request.setProperty("generateBinding", options.getGenerateBinding().get().toString());
-        request.setProperty("generateMain", options.getGenerateMain().get().toString());
-        request.setProperty("validate", options.getValidate().get().toString());
-        request.setProperty("failOnError", options.getFailOnError().get().toString());
-        request.setProperty("failOnWarning", options.getFailOnWarning().get().toString());
-        var compilerArgs = getCompilerArgs().get();
-        request.setProperty("compilerArgs.count", Integer.toString(compilerArgs.size()));
-        for (int i = 0; i < compilerArgs.size(); i++) {
-            request.setProperty("compilerArgs." + i, compilerArgs.get(i));
-        }
-        return request;
     }
 }

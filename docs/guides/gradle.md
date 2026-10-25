@@ -104,6 +104,11 @@ the generated binding is included at the same archive path.
 resource processing, and generates `TestApplicationBinding` containing both
 application and test services before `test` runs.
 
+Generation runs in a Gradle worker using the project's selected Java toolchain.
+The worker calls the same typed generator API as the Maven plugin. Gradle manages
+the worker process and its isolated generator classpath; build options are passed
+as managed worker parameters.
+
 Run the usual Gradle tasks:
 
 ```shell

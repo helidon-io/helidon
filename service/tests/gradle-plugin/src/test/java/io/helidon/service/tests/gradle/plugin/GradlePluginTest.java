@@ -641,29 +641,54 @@ class GradlePluginTest {
 
     @Test
     void invalidScopeFailsDuringBindingGeneration() throws IOException {
-        fixture();
+        invalidScopeFixture();
         write("build.gradle", Files.readString(directory.resolve("build.gradle"))
                 + "\nhelidonService { failOnWarning = true }\n");
-        write("src/main/java/example/RequestScoped.java", """
-                package example;
-                import io.helidon.service.registry.Service;
-                @Service.PerRequest
-                public class RequestScoped { }
-                """);
-        write("src/main/java/example/Broken.java", """
-                package example;
-                import io.helidon.service.registry.Service;
-                @Service.Singleton
-                public class Broken {
-                    @Service.Inject
-                    public Broken(RequestScoped request) { }
-                }
-                """);
         BuildResult failure = runner("jar").buildAndFail();
         assertTask(failure, ":generateApplicationBindings", TaskOutcome.FAILED);
         assertThat(failure.getOutput(), containsString("request scoped"));
         assertThat(failure.getOutput(), containsString("RequestScoped"));
         assertThat(failure.getOutput(), containsString("Broken"));
+    }
+
+    @Test
+    void invalidScopeCanBeReportedWithoutFailingBuild() throws IOException {
+        invalidScopeFixture();
+        write("build.gradle", Files.readString(directory.resolve("build.gradle")) + """
+
+                helidonService {
+                    failOnWarning = true
+                    failOnError = false
+                }
+                """);
+        runner("compileJava").build();
+        Path rawBinding = directory.resolve("build/classes/java/main/example/ApplicationBinding.class");
+        byte[] placeholder = Files.readAllBytes(rawBinding);
+
+        BuildResult result = runner("jar", "--configuration-cache").build();
+        assertTask(result, ":generateApplicationBindings", TaskOutcome.SUCCESS);
+        assertTask(result, ":jar", TaskOutcome.SUCCESS);
+        assertThat("Ignored generation failure must still be reported",
+                   result.getOutput(), containsString("Failed to generate application binding:"));
+        assertThat("Validation diagnostics must identify the invalid dependency",
+                   result.getOutput(), containsString("request scoped"));
+        assertThat(result.getOutput(), containsString("RequestScoped"));
+        assertThat(result.getOutput(), containsString("Broken"));
+        assertThat("An ignored generation failure must not replace the compiler's placeholder",
+                   Files.readAllBytes(rawBinding), is(placeholder));
+        assertThat("Failed validation must not emit a completed binding",
+                   Files.exists(directory.resolve("build/classes/helidon/main/example/ApplicationBinding.class")), is(false));
+        try (var jar = new ZipFile(directory.resolve("build/libs/application.jar").toFile())) {
+            assertThat("Without a completed binding the archive must retain the compiler's placeholder",
+                       jar.getEntry("example/ApplicationBinding.class"), notNullValue());
+            assertThat("An ignored generation failure must preserve the raw binding in the archive",
+                       jar.getInputStream(jar.getEntry("example/ApplicationBinding.class")).readAllBytes(), is(placeholder));
+        }
+
+        BuildResult repeated = runner("jar", "--configuration-cache").build();
+        assertThat(repeated.getOutput(), containsString("Reusing configuration cache"));
+        assertTask(repeated, ":generateApplicationBindings", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":jar", TaskOutcome.UP_TO_DATE);
     }
 
     private static List<Path> classpath(String name) throws IOException {
@@ -686,6 +711,25 @@ class GradlePluginTest {
     private static void assertTask(BuildResult result, String name, TaskOutcome expected) {
         assertThat("Missing task " + name + " in:\n" + result.getOutput(), result.task(name), notNullValue());
         assertThat(name + " in:\n" + result.getOutput(), result.task(name).getOutcome(), is(expected));
+    }
+
+    private void invalidScopeFixture() throws IOException {
+        fixture();
+        write("src/main/java/example/RequestScoped.java", """
+                package example;
+                import io.helidon.service.registry.Service;
+                @Service.PerRequest
+                public class RequestScoped { }
+                """);
+        write("src/main/java/example/Broken.java", """
+                package example;
+                import io.helidon.service.registry.Service;
+                @Service.Singleton
+                public class Broken {
+                    @Service.Inject
+                    public Broken(RequestScoped request) { }
+                }
+                """);
     }
 
     private void groovyClassOutputs(boolean applyBeforeHelidon) throws IOException {
