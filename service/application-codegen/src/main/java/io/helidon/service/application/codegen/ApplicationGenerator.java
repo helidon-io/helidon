@@ -19,6 +19,7 @@ package io.helidon.service.application.codegen;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.module.ModuleFinder;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -223,7 +224,7 @@ public final class ApplicationGenerator {
                     .modulepath(List.copyOf(modulepath))
                     .sourcepath(config.sourceRoots())
                     .release(config.release())
-                    .commandLineArguments(config.compilerArgs())
+                    .commandLineArguments(compilerArgs(myModuleInfo, classpath))
                     .outputDirectory(config.outputDirectory())
                     .build();
 
@@ -320,6 +321,44 @@ public final class ApplicationGenerator {
             Compiler.compile(compilerOptions, sourcesToCompile.toArray(new Path[0]));
         }
 
+    }
+
+    private List<String> compilerArgs(Optional<ModuleInfo> moduleInfo, Set<Path> classpath) {
+        var arguments = new ArrayList<>(config.compilerArgs());
+        if (moduleInfo.isEmpty()) {
+            return arguments;
+        }
+        String name = moduleInfo.get().name();
+        Path output = config.outputDirectory().toAbsolutePath().normalize();
+        List<String> moduleClasses = classpath.stream()
+                .map(path -> path.toAbsolutePath().normalize())
+                .filter(path -> !path.equals(output))
+                .filter(path -> Files.isRegularFile(path.resolve("module-info.class")))
+                .filter(path -> ModuleFinder.of(path).find(name).isPresent())
+                .map(Path::toString)
+                .toList();
+        if (moduleClasses.isEmpty()) {
+            return arguments;
+        }
+        // Generated sources belong to the existing module even when their output is separate.
+        String patch = String.join(File.pathSeparator, moduleClasses)
+                + File.pathSeparator + config.generatedSourceDirectory().toAbsolutePath();
+        String module = name + "=";
+        for (int i = 0; i < arguments.size(); i++) {
+            String argument = arguments.get(i);
+            if (argument.equals("--patch-module") && i + 1 < arguments.size()
+                    && arguments.get(i + 1).startsWith(module)) {
+                arguments.set(i + 1, arguments.get(i + 1) + File.pathSeparator + patch);
+                return arguments;
+            }
+            if (argument.startsWith("--patch-module=" + module)) {
+                arguments.set(i, argument + File.pathSeparator + patch);
+                return arguments;
+            }
+        }
+        arguments.add("--patch-module");
+        arguments.add(module + patch);
+        return arguments;
     }
 
     private Optional<Path> findModuleInfo(List<Path> sourcePaths) {
