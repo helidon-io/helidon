@@ -47,9 +47,6 @@ inputs:
   free-space:
     description: Whether to aggressively free disk space on the runner
     default: 'false'
-  setup-latest-java:
-    description: Whether to setup latest stable java version
-    default: 'false'
   setup-maven:
     description: Wheter to setup Maven
     default: 'true'
@@ -98,21 +95,8 @@ runs:
           unzip "${RUNNER_TEMP}/apache-maven-${MVN_VERSION}-bin.zip" -d .tools
         fi
         echo ${PWD}/.tools/apache-maven-${MVN_VERSION}/bin >> "${GITHUB_PATH}"
-    - name: Set up JDK
-      if: ${{ inputs.setup-latest-java == 'false' }}
-      uses: actions/setup-java@v6
-      with:
-        distribution: ${{ env.JAVA_DISTRO }}
-        java-version: ${{ env.JAVA_VERSION }}
-        cache-jdk: true
-        overwrite-settings: false
-    - name: Set up JDK ea-stable
-      if: ${{ inputs.setup-latest-java == 'true' }}
-      uses: oracle-actions/setup-java@v1
-      with:
-        website: jdk.java.net
-        release: ea
-        version: stable
+    - name: Set up JDK 28 EA
+      uses: ./.github/actions/setup-java
     - name: Cache local Maven repository (read-write)
       if: ${{ inputs.maven-cache == 'read-write' }}
       uses: actions/cache@v4.2.4

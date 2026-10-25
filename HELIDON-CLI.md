@@ -8,9 +8,9 @@ It also supports a developer loop that performs continuous compilation and
 
 ## Prerequisites
 
-Helidon requires Java 27 and Maven 3.6.1 or newer.
+Helidon requires Java 28 and Maven 3.6.1 or newer.
 
-* [Java SE](https://www.oracle.com/technetwork/java/javase/downloads)
+* [OpenJDK 28 Early Access](https://jdk.java.net/28/)
 * [Maven](https://maven.apache.org/download.cgi)
 
 You should make sure `java` and `mvn` are in your path.

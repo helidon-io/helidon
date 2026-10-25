@@ -36,7 +36,7 @@
         <helidon.version>28.0.0-SNAPSHOT</helidon.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven.compiler.source>27</maven.compiler.source>
+        <maven.compiler.source>28</maven.compiler.source>
         <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
         <maven.compiler.release>${maven.compiler.source}</maven.compiler.release>
         <version.plugin.compiler>3.16.0</version.plugin.compiler>
