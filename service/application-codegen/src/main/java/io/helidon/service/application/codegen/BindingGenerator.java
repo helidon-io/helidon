@@ -191,6 +191,11 @@ class BindingGenerator {
 
         sourcesToCompile.add(generated);
 
+        // A binding-only output must not publish an empty registry over the compiler's service metadata.
+        if (roundContext.descriptors().isEmpty()) {
+            return;
+        }
+
         HelidonMetaInfServices services = HelidonMetaInfServices.create(ctx.filer(), moduleName);
 
         for (DescriptorClassCode descriptor : roundContext.descriptors()) {

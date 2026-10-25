@@ -129,7 +129,10 @@ public final class HelidonServicePlugin implements Plugin<Project> {
         // Keep all compiler outputs and give completed bindings precedence on consumer classpaths.
         var contributions = new ArrayList<>(classes.getFrom());
         var completedClasses = generator.flatMap(GenerateBindings::getClassesDirectory);
-        classes.setFrom(completedClasses, contributions);
+        // Task-level compiler destinations can differ from the source directory set's convention.
+        var compilerClasses = project.files(compile.flatMap(JavaCompile::getDestinationDirectory))
+                .minus(project.files(sourceSet.getJava().getDestinationDirectory()));
+        classes.setFrom(completedClasses, contributions, compilerClasses);
         // Follow later additive registrations without feeding this generator's output back into its own inputs.
         var additionalClasses = project.files(project.provider(() -> classes.getFrom().stream()
                         .filter(source -> source != completedClasses)
