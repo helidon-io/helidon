@@ -135,7 +135,7 @@ final class H2SpecExecution implements AutoCloseable {
             if (!workers.awaitTermination(Math.max(1, deadline - System.nanoTime()), TimeUnit.NANOSECONDS)) {
                 progress("Cleanup deadline reached; Docker worker has not terminated");
             }
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
         }
         progress("Cleanup finished; any incomplete operations are reported above");
@@ -175,7 +175,7 @@ final class H2SpecExecution implements AutoCloseable {
     private void boundedWait(Future<?> future, long deadline, String operation) {
         try {
             future.get(Math.max(1, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
             future.cancel(true);
             progress(operation + " interrupted");

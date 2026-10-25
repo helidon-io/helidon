@@ -42,7 +42,7 @@ class H2SpecExecutionTest {
         Path diagnostics = Files.createDirectory(directory.resolve("diagnostics"));
         Path stale = Files.writeString(diagnostics.resolve("host-threads.txt"), "old timeout");
         Path unrelated = Files.writeString(directory.resolve("unrelated.txt"), "keep");
-        try (var execution = new H2SpecExecution(Duration.ofSeconds(2), diagnostics)) {
+        try (var _ = new H2SpecExecution(Duration.ofSeconds(2), diagnostics)) {
             assertThat("an earlier timeout must not appear in the current run's artifacts", Files.exists(stale), is(false));
             assertThat(Files.readString(unrelated), is("keep"));
         }
