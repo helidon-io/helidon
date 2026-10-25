@@ -97,7 +97,7 @@ jobs:
               install
   _tests:
     needs: build
-    timeout-minutes: 30
+    timeout-minutes: 40
     env:
       # Allow slow image pulls and transient stalls on CI runners.
       TESTCONTAINERS_PULL_TIMEOUT: "900"
