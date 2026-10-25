@@ -61,6 +61,11 @@ final class H2SpecExecution implements AutoCloseable {
         this.diagnosticsDirectory = diagnosticsDirectory;
     }
 
+    static void progress(String message) {
+        System.out.println(Instant.now() + " [h2spec-client] " + message);
+        System.out.flush();
+    }
+
     <T> Future<T> submit(Callable<T> task) {
         Future<T> future = workers.submit(task);
         tasks.add(future);
@@ -127,11 +132,6 @@ final class H2SpecExecution implements AutoCloseable {
             Thread.currentThread().interrupt();
         }
         progress("Cleanup finished; any incomplete operations are reported above");
-    }
-
-    static void progress(String message) {
-        System.out.println(Instant.now() + " [h2spec-client] " + message);
-        System.out.flush();
     }
 
     private void diagnose(String phase) {
