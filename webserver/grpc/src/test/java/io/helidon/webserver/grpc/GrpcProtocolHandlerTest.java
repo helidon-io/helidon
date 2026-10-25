@@ -746,10 +746,10 @@ class GrpcProtocolHandlerTest {
             try {
                 assertThat(writing.await(5, TimeUnit.SECONDS), is(true));
                 handler.close();
-                assertThat("application cancellation waits for the stream writer", contextCancelled.isDone(), is(false));
+                assertThat(contextCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
+                assertThat("listener cancellation waits for the stream writer", listenerCancelled.isDone(), is(false));
                 releaseWrite.countDown();
                 request.get(5, TimeUnit.SECONDS);
-                assertThat(contextCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
                 assertThat(listenerCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
             } finally {
                 releaseWrite.countDown();
