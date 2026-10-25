@@ -151,8 +151,9 @@ class H2SpecClientIT {
         AtomicReference<String> imageId = new AtomicReference<>();
         AtomicReference<String> error = new AtomicReference<>();
         try (var callback = new H2SpecExecution.Callback<BuildResponseItem>(item -> {
-            if (item.getStream() != null && !item.getStream().isBlank()) {
-                H2SpecExecution.progress("image build: " + item.getStream().stripTrailing());
+            String stream = item.getStream();
+            if (stream != null && !stream.isBlank()) {
+                H2SpecExecution.progress("image build: " + stream.stripTrailing());
             } else if (item.getStatus() != null) {
                 H2SpecExecution.progress("image build: " + item.getStatus());
             }
@@ -164,7 +165,7 @@ class H2SpecClientIT {
                 imageId.set(item.getImageId());
             }
         });
-             var build = docker.buildImageCmd(Path.of("Dockerfile").toFile())
+             var build = docker.buildImageCmd(Path.of("Dockerfile").toAbsolutePath().toFile())
                      .withTags(Set.of(IMAGE_NAME))
                      .withLabels(DockerClientFactory.DEFAULT_LABELS)
                      .withRemove(true)
