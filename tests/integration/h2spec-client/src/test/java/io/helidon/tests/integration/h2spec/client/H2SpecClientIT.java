@@ -47,6 +47,7 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.PullPolicy;
+import org.testcontainers.images.builder.Transferable;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.MountableFile;
 
@@ -466,7 +467,7 @@ class H2SpecClientIT {
                                     String skipped) {
     }
 
-    private record H2SpecSection(String id, int fromPort) {
+    record H2SpecSection(String id, int fromPort) {
         String fileName() {
             return id.replace('/', '-') + ".txt";
         }
@@ -488,11 +489,12 @@ class H2SpecClientIT {
     private record SectionExecResult(String output, Long exitCode) {
     }
 
-    private static final class SectionContainer extends GenericContainer<SectionContainer> {
+    static class SectionContainer extends GenericContainer<SectionContainer> {
         private final H2SpecExecution execution;
         private final H2SpecSection section;
+        private boolean owned;
 
-        private SectionContainer(String imageName, H2SpecExecution execution, H2SpecSection section) {
+        SectionContainer(String imageName, H2SpecExecution execution, H2SpecSection section) {
             super(imageName);
             this.execution = execution;
             this.section = section;
@@ -500,6 +502,21 @@ class H2SpecClientIT {
 
         @Override
         protected void containerIsCreated(String containerId) {
+            ownCreatedContainer(containerId);
+        }
+
+        @Override
+        public void copyFileToContainer(Transferable transferable, String containerPath) {
+            // GenericContainer creates its ID before copying, but calls containerIsCreated only after copying.
+            // Register first so a blocked startup archive request is included in timeout diagnostics and cleanup.
+            ownCreatedContainer(getContainerId());
+            super.copyFileToContainer(transferable, containerPath);
+        }
+
+        private void ownCreatedContainer(String containerId) {
+            if (owned) {
+                return;
+            }
             try {
                 DockerClient docker = getDockerClient();
                 execution.own(() -> {
@@ -512,6 +529,7 @@ class H2SpecClientIT {
                 execution.diagnostic(section.fileName() + "-state.txt",
                                      () -> docker.inspectContainerCmd(containerId).exec().toString());
                 execution.diagnostic(section.fileName() + "-logs.txt", this::getLogs);
+                owned = true;
                 H2SpecExecution.progress(section.id() + " container created: " + containerId);
             } catch (IOException e) {
                 throw new IllegalStateException("Suite stopped while creating " + section.id(), e);
