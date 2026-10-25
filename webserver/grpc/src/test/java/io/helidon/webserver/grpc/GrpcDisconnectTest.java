@@ -25,6 +25,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
@@ -61,6 +62,9 @@ import io.helidon.http.http2.Http2Setting;
 import io.helidon.http.http2.Http2Settings;
 import io.helidon.http.http2.Http2StreamWriter;
 import io.helidon.http.http2.Http2Util;
+import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.ProxyProtocolData;
@@ -594,6 +598,16 @@ class GrpcDisconnectTest {
         }
     }
 
+    @Test
+    void successfulTrailersRecordMetricsBeforeConnectionClose() throws Exception {
+        completedResponseMetrics(false);
+    }
+
+    @Test
+    void connectionCloseAfterSuccessfulTrailersPreservesMetrics() throws Exception {
+        completedResponseMetrics(true);
+    }
+
     private static void initializeLargeWindowConnection(Socket socket, int port) throws IOException {
         socket.setReceiveBufferSize(64 * 1024);
         socket.connect(new InetSocketAddress("127.0.0.1", port));
@@ -722,6 +736,93 @@ class GrpcDisconnectTest {
                 .setRequestMarshaller(marshaller)
                 .setResponseMarshaller(marshaller)
                 .build();
+    }
+
+    private void completedResponseMetrics(boolean closeBeforePublicationReturns) throws Exception {
+        var contextCancelled = new CompletableFuture<Context>();
+        var callFinished = new CompletableFuture<Void>();
+        var transportGate = new TransportGate(true);
+        var metricsFactory = Services.get(MetricsFactory.class);
+        var meterRegistry = metricsFactory.createMeterRegistry(MetricsConfig.create());
+        var service = ServerServiceDefinition.builder("test.Disconnect")
+                .addMethod(descriptor("CompletedMetrics"), (call, _) -> {
+                    Context.current().addListener(contextCancelled::complete, Runnable::run);
+                    return new ServerCall.Listener<>() {
+                        @Override
+                        public void onHalfClose() {
+                            try {
+                                call.sendHeaders(new Metadata());
+                                call.sendMessage("small response");
+                                call.close(Status.OK, new Metadata());
+                                callFinished.complete(null);
+                            } catch (RuntimeException | Error failure) {
+                                callFinished.completeExceptionally(failure);
+                                throw failure;
+                            }
+                        }
+                    };
+                })
+                .build();
+        var grpcSelector = GrpcProtocolSelector.create(GrpcConfig.builder().enableMetrics(true).build());
+        var http2Selector = Http2ConnectionSelector.builder()
+                .http2Config(Http2Config.create())
+                .addSubProtocolSelector(grpcSelector)
+                .build();
+        var readers = Executors.newThreadPerTaskExecutor(Thread.ofPlatform().daemon().name("grpc-metrics-reader-", 1).factory());
+        var gatedSelector = new GatedTransportSelector(http2Selector, transportGate);
+        ServerConnectionSelector selector = System.getProperty("os.name").toLowerCase(Locale.ROOT).startsWith("windows")
+                ? new PlatformReaderSelector(gatedSelector, readers)
+                : gatedSelector;
+        var server = WebServer.builder()
+                .host("127.0.0.1")
+                .port(0)
+                .addConnectionSelector(selector)
+                .addRouting(GrpcRouting.builder().config(Config.empty()).meterRegistry(() -> meterRegistry).service(service))
+                .build();
+        try (var socket = new Socket(); transportGate) {
+            server.start();
+            initializeLargeWindowConnection(socket, server.port());
+            startCall(socket, 1, "CompletedMetrics", null);
+            var responseTable = Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
+            var body = new ByteArrayOutputStream();
+            assertThat("client receives successful terminal trailers",
+                       readResponse(socket, 1, responseTable, Http2HuffmanDecoder.create(), body), is(0));
+            assertResponse(body);
+            transportGate.entered.get(5, TimeUnit.SECONDS);
+            assertThat("successful terminal headers are written before server completion returns", callFinished.isDone(), is(false));
+
+            if (closeBeforePublicationReturns) {
+                socket.close();
+                assertThat("connection teardown reaches the still-publishing call",
+                           contextCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
+                assertThat("teardown occurs before terminal publication returns", callFinished.isDone(), is(false));
+            }
+            transportGate.close();
+            callFinished.get(5, TimeUnit.SECONDS);
+
+            var methodTag = metricsFactory.tagCreate("grpc.method", "test.Disconnect/CompletedMetrics");
+            var okTag = metricsFactory.tagCreate("grpc.status", "OK");
+            var started = meterRegistry.counter("grpc.server.call.started", List.of(methodTag)).orElseThrow();
+            var duration = meterRegistry.timer("grpc.server.call.duration", List.of(methodTag, okTag)).orElseThrow();
+            var sentSize = meterRegistry.summary("grpc.server.call.sent_total_compressed_message_size",
+                                                 List.of(methodTag, okTag)).orElseThrow();
+            assertThat("the successful client response has one started call", started.count(), is(1L));
+            assertThat("the successful client response retains its call duration metric; sent message count=" + sentSize.count(),
+                       duration.count(), is(1L));
+            assertThat("the successful client response retains its sent message metric", sentSize.count(), is(1L));
+        } finally {
+            transportGate.close();
+            try {
+                server.stop();
+            } finally {
+                try {
+                    readers.shutdownNow();
+                    assertThat("fixture connection readers stopped", readers.awaitTermination(5, TimeUnit.SECONDS), is(true));
+                } finally {
+                    meterRegistry.close();
+                }
+            }
+        }
     }
 
     private void resetWithBlockedCancellationPreservesSiblingCall(boolean blockContextListener) throws Exception {
@@ -930,16 +1031,34 @@ class GrpcDisconnectTest {
     }
 
     private static class TransportGate implements AutoCloseable {
+        private final boolean terminalHeaders;
         private final CompletableFuture<Thread> entered = new CompletableFuture<>();
         private final CompletableFuture<Void> released = new CompletableFuture<>();
         private final AtomicInteger dataWrites = new AtomicInteger();
+
+        private TransportGate() {
+            this(false);
+        }
+
+        private TransportGate(boolean terminalHeaders) {
+            this.terminalHeaders = terminalHeaders;
+        }
 
         @Override
         public void close() {
             released.complete(null);
         }
 
-        private void beforeWrite(BufferData buffer) {
+        private boolean beforeWrite(BufferData buffer) {
+            if (terminalHeaders) {
+                return buffer.available() >= Http2FrameHeader.LENGTH
+                        && buffer.get(3) == 1
+                        && (buffer.get(4) & Http2Flag.END_OF_STREAM) != 0
+                        && buffer.get(5) == 0
+                        && buffer.get(6) == 0
+                        && buffer.get(7) == 0
+                        && buffer.get(8) == 1;
+            }
             if (buffer.available() >= Http2FrameHeader.LENGTH
                     && buffer.get(3) == 0
                     && buffer.get(5) == 0
@@ -947,6 +1066,14 @@ class GrpcDisconnectTest {
                     && buffer.get(7) == 0
                     && buffer.get(8) == 1
                     && dataWrites.incrementAndGet() == 2) {
+                entered.complete(Thread.currentThread());
+                released.join();
+            }
+            return false;
+        }
+
+        private void afterWrite(boolean terminal) {
+            if (terminal) {
                 entered.complete(Thread.currentThread());
                 released.join();
             }
@@ -971,8 +1098,9 @@ class GrpcDisconnectTest {
 
         @Override
         public void writeNow(BufferData buffer) {
-            gate.beforeWrite(buffer);
+            boolean terminal = gate.beforeWrite(buffer);
             delegate.writeNow(buffer);
+            gate.afterWrite(terminal);
         }
 
         @Override
