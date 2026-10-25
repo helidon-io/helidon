@@ -16,7 +16,10 @@
 package io.helidon.service.gradle.plugin;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -31,9 +34,13 @@ import org.gradle.api.attributes.Category;
 import org.gradle.api.attributes.LibraryElements;
 import org.gradle.api.attributes.Usage;
 import org.gradle.api.file.ConfigurableFileCollection;
+import org.gradle.api.file.Directory;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.plugins.JavaPluginExtension;
+import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskProvider;
+import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.jvm.toolchain.JavaToolchainService;
 import org.gradle.language.jvm.tasks.ProcessResources;
@@ -105,6 +112,10 @@ public final class HelidonServicePlugin implements Plugin<Project> {
         });
         classes(project, main, application);
         classes(project, test, tests);
+        project.getTasks().named(main.getJarTaskName(), Jar.class).configure(jar ->
+                excludePlaceholders(jar,
+                                    application.flatMap(GenerateBindings::getClassesDirectory),
+                                    project.files(application.map(GenerateBindings::getRawClasses))));
         project.getTasks().named(main.getClassesTaskName()).configure(task -> task.dependsOn(application));
         project.getTasks().named(test.getClassesTaskName()).configure(task -> task.dependsOn(tests));
     }
@@ -115,12 +126,10 @@ public final class HelidonServicePlugin implements Plugin<Project> {
             throw new GradleException("The Helidon service plugin requires configurable Java class directories: "
                                               + sourceSet.getName());
         }
-        // Replace only Java's final output contribution. Other language compilers still consume raw Java classes.
+        // Keep all compiler outputs and give completed bindings precedence on consumer classpaths.
         var contributions = new ArrayList<>(classes.getFrom());
-        contributions.remove(sourceSet.getJava().getDestinationDirectory());
         var completedClasses = generator.flatMap(GenerateBindings::getClassesDirectory);
-        classes.setFrom(contributions);
-        classes.from(completedClasses);
+        classes.setFrom(completedClasses, contributions);
         // Follow later additive registrations without feeding this generator's output back into its own inputs.
         var additionalClasses = project.files(project.provider(() -> classes.getFrom().stream()
                         .filter(source -> source != completedClasses)
@@ -129,6 +138,29 @@ public final class HelidonServicePlugin implements Plugin<Project> {
         generator.configure(task -> {
             task.getRawClasses().from(compile.flatMap(JavaCompile::getDestinationDirectory));
             task.getApplicationClasspath().from(additionalClasses);
+        });
+    }
+
+    private static void excludePlaceholders(Jar jar, Provider<Directory> generatedClasses, FileCollection rawClasses) {
+        var generatedEntries = new HashSet<String>();
+        jar.eachFile(details -> {
+            if (details.isDirectory() || !details.getName().endsWith(".class")) {
+                return;
+            }
+            Path generated = generatedClasses.get().getAsFile().toPath();
+            Path file = details.getFile().toPath();
+            String entry = details.getRelativePath().getPathString();
+            if (file.startsWith(generated)) {
+                generatedEntries.add(entry);
+            } else if (generatedEntries.contains(entry)) {
+                for (var raw : rawClasses) {
+                    Path root = raw.toPath();
+                    if (file.startsWith(root) && Files.isRegularFile(generated.resolve(root.relativize(file)))) {
+                        details.exclude();
+                        break;
+                    }
+                }
+            }
         });
     }
 

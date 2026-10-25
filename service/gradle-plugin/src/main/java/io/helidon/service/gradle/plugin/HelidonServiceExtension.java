@@ -42,8 +42,8 @@ public abstract class HelidonServiceExtension extends BindingOptions {
     public abstract Property<String> getToolVersion();
 
     /**
-     * Whether to generate test bindings, default true. When false, test classes are still staged
-     * for normal Gradle consumers, without generating a test binding.
+     * Whether to generate test bindings, default true. When false, tests use their compiler output
+     * without a generated test binding.
      * @return test generation property
      */
     public abstract Property<Boolean> getGenerateTestBinding();

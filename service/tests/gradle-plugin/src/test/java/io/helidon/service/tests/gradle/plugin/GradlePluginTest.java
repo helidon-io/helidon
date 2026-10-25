@@ -97,6 +97,95 @@ class GradlePluginTest {
     }
 
     @Test
+    void preservesCompilerOutputsAndFiltersOnlyShadowedArchiveEntries() throws IOException {
+        fixture();
+        write("build.gradle", Files.readString(directory.resolve("build.gradle")) + """
+
+                tasks.register('rawClassesJar', Jar) {
+                    archiveClassifier = 'raw'
+                    from(tasks.named('compileJava', JavaCompile).flatMap { it.destinationDirectory })
+                    mustRunAfter tasks.named('generateApplicationBindings')
+                    outputs.upToDateWhen { false }
+                }
+                """);
+
+        BuildResult raw = runner("rawClassesJar").build();
+        assertTask(raw, ":rawClassesJar", TaskOutcome.SUCCESS);
+        assertThat("An archive of compiler output must not require binding generation",
+                   raw.task(":generateApplicationBindings"), nullValue());
+        Path rawBinding = directory.resolve("build/classes/java/main/example/ApplicationBinding.class");
+        byte[] placeholder = Files.readAllBytes(rawBinding);
+
+        BuildResult result = runner("test", "packagedRun", "generatedRun", "rawClassesJar", "--configuration-cache").build();
+        assertThat(result.getOutput(), containsString("APPLICATION:chosen:library"));
+        assertThat(result.getOutput(), containsString("GENERATED:chosen:library"));
+        assertTask(result, ":generateApplicationBindings", TaskOutcome.SUCCESS);
+        assertTask(result, ":generateTestApplicationBindings", TaskOutcome.SUCCESS);
+        assertTask(result, ":test", TaskOutcome.SUCCESS);
+        assertTask(result, ":rawClassesJar", TaskOutcome.SUCCESS);
+        assertThat("Binding generation must leave the compiler's placeholder unchanged",
+                   Files.readAllBytes(rawBinding), is(placeholder));
+        for (String ordinaryClass : List.of("Main.class", "Greeting.class", "Greeting__ServiceDescriptor.class")) {
+            assertThat("Compiler output must retain " + ordinaryClass,
+                       Files.exists(directory.resolve("build/classes/java/main/example/" + ordinaryClass)), is(true));
+            assertThat("Generated output must not republish " + ordinaryClass,
+                       Files.exists(directory.resolve("build/classes/helidon/main/example/" + ordinaryClass)), is(false));
+        }
+        for (String ordinaryClass : List.of("BindingTest.class", "TestOnly.class", "TestOnly__ServiceDescriptor.class")) {
+            assertThat("Generated test output must not republish " + ordinaryClass,
+                       Files.exists(directory.resolve("build/classes/helidon/test/example/" + ordinaryClass)), is(false));
+        }
+        String metadata = "META-INF/helidon/unnamed/example/service-registry.json";
+        assertThat("Compiler metadata must stay in its producer's output",
+                   Files.exists(directory.resolve("build/classes/java/main/" + metadata)), is(true));
+        assertThat("Generated output must not duplicate compiler metadata",
+                   Files.exists(directory.resolve("build/classes/helidon/main/" + metadata)), is(false));
+        Path generatedBinding = directory.resolve("build/classes/helidon/main/example/ApplicationBinding.class");
+        byte[] completed = Files.readAllBytes(generatedBinding);
+        assertThat("Generated binding must differ from the annotation processor placeholder",
+                   completed, not(is(placeholder)));
+        try (var jar = new ZipFile(directory.resolve("build/libs/application.jar").toFile())) {
+            assertThat("Application archive must contain exactly one completed binding",
+                       jar.stream().filter(entry -> entry.getName().equals("example/ApplicationBinding.class")).count(),
+                       is(1L));
+            assertThat("Application archive must retain the generated binding",
+                       jar.getInputStream(jar.getEntry("example/ApplicationBinding.class")).readAllBytes(), is(completed));
+            assertThat("Application archive must retain ordinary compiler output",
+                       jar.getEntry("example/Greeting.class"), notNullValue());
+        }
+        try (var jar = new ZipFile(directory.resolve("build/libs/application-raw.jar").toFile())) {
+            assertThat("An archive of compiler output must retain its raw placeholder after generation",
+                       jar.getEntry("example/ApplicationBinding.class"), notNullValue());
+            assertThat("Binding exclusions must not affect an archive without the generated layer",
+                       jar.getInputStream(jar.getEntry("example/ApplicationBinding.class")).readAllBytes(), is(placeholder));
+        }
+
+        write("build.gradle", Files.readString(directory.resolve("build.gradle")) + """
+
+                tasks.named('jar') {
+                    into 'application'
+                    eachFile { path = 'relocated/' + path }
+                }
+                """);
+        BuildResult relocated = runner("jar", "--configuration-cache").build();
+        assertTask(relocated, ":generateApplicationBindings", TaskOutcome.UP_TO_DATE);
+        assertTask(relocated, ":jar", TaskOutcome.SUCCESS);
+        String archiveBinding = "relocated/application/example/ApplicationBinding.class";
+        try (var jar = new ZipFile(directory.resolve("build/libs/application.jar").toFile())) {
+            assertThat("Relocated application archive must contain exactly one completed binding",
+                       jar.stream().filter(entry -> entry.getName().equals(archiveBinding)).count(), is(1L));
+            assertThat("Archive relocation must retain the generated binding instead of its raw placeholder",
+                       jar.getInputStream(jar.getEntry(archiveBinding)).readAllBytes(), is(completed));
+            assertThat("Archive relocation must retain ordinary compiler output",
+                       jar.getEntry("relocated/application/example/Greeting.class"), notNullValue());
+        }
+        BuildResult repeated = runner("jar", "--configuration-cache").build();
+        assertThat(repeated.getOutput(), containsString("Reusing configuration cache"));
+        assertTask(repeated, ":generateApplicationBindings", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":jar", TaskOutcome.UP_TO_DATE);
+    }
+
+    @Test
     void testBindingsCanBeGeneratedWithoutApplicationBindings() throws IOException {
         fixture();
         write("build.gradle", Files.readString(directory.resolve("build.gradle")) + """
@@ -236,9 +325,8 @@ class GradlePluginTest {
         assertThat(mainMetadata, not(containsString("ExtraConfig")));
         assertThat(extraMetadata, containsString("ExtraConfig"));
         assertThat(extraMetadata, not(containsString("MainConfig")));
-        assertThat("Extra metadata must remain in its producer's output",
-                   Files.readString(directory.resolve("build/classes/helidon/main/" + configMetadata)),
-                   is(mainMetadata));
+        assertThat("Generated output must not duplicate compiler configuration metadata",
+                   Files.exists(directory.resolve("build/classes/helidon/main/" + configMetadata)), is(false));
         assertThat("Extra classes must remain in their producer's output",
                    Files.exists(directory.resolve("build/classes/helidon/main/example/ExtraService.class")), is(false));
         Path binding = directory.resolve("build/generated/sources/helidon/main/example/ApplicationBinding.java");

@@ -18,7 +18,6 @@ package io.helidon.service.gradle.plugin;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -49,7 +48,7 @@ import org.gradle.process.ExecOperations;
 import org.gradle.work.DisableCachingByDefault;
 
 /**
- * Post-processes a Java compiler output and generates application bindings using the Java toolchain.
+ * Generates application binding classes separately from compiler outputs using the Java toolchain.
  * Each execution replaces its own output, so deleted services and renamed bindings cannot remain in application artifacts.
  * Configure generation through the {@link HelidonServiceExtension helidonService extension}.
  * This task implementation is internal; its public visibility, JavaBean accessors and injected constructor
@@ -155,7 +154,7 @@ public abstract class GenerateBindings extends DefaultTask {
     public abstract Property<String> getScope();
 
     /**
-     * Whether generation should run after staging initial classes.
+     * Whether application generation should run.
      * @return generation switch
      */
     @Input
@@ -169,8 +168,8 @@ public abstract class GenerateBindings extends DefaultTask {
     public abstract Property<JavaLauncher> getJavaLauncher();
 
     /**
-     * Final classes consumed by packaging, test compilation and execution.
-     * @return final classes directory
+     * Generated binding and main classes, separate from compiler outputs.
+     * @return generated classes directory
      */
     @OutputDirectory
     public abstract DirectoryProperty getClassesDirectory();
@@ -183,15 +182,14 @@ public abstract class GenerateBindings extends DefaultTask {
     public abstract DirectoryProperty getGeneratedSourceDirectory();
 
     /**
-     * Replaces staged output and runs the isolated binding generator.
+     * Replaces generated output and runs the isolated binding generator.
      */
     @TaskAction
     public void generate() {
         File classes = getClassesDirectory().get().getAsFile();
         File sources = getGeneratedSourceDirectory().get().getAsFile();
         try {
-            stageClasses(classes.toPath());
-            fileOperations.delete(delete -> delete.delete(sources));
+            fileOperations.delete(delete -> delete.delete(classes, sources));
             Files.createDirectories(classes.toPath());
             Files.createDirectories(sources.toPath());
             if (!getGenerateApplication().get()
@@ -221,18 +219,9 @@ public abstract class GenerateBindings extends DefaultTask {
                 .collect(Collectors.joining(File.pathSeparator));
     }
 
-    private void stageClasses(Path classes) throws IOException {
-        fileOperations.sync(copy -> {
-            copy.from(getRawClasses());
-            copy.into(classes);
-        });
-    }
-
     private Properties request(File classes, File sources) {
         Properties request = new Properties();
-        String dependencies = paths(getApplicationClasspath());
-        request.setProperty("classpath", classes.getAbsolutePath()
-                + (dependencies.isEmpty() ? "" : File.pathSeparator + dependencies));
+        request.setProperty("classpath", paths(getRawClasses().plus(getApplicationClasspath())));
         request.setProperty("modulepath", request.getProperty("classpath"));
         String sourceRoots = paths(getSourceRoots());
         request.setProperty("sourceRoots", sources.getAbsolutePath()

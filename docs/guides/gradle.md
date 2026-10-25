@@ -92,13 +92,15 @@ same package as the binding. Leave `generateMain` at its default of `false`.
 ### Build Tasks
 
 `generateApplicationBindings` runs after `compileJava` and `processResources`.
-It post-processes the Java compiler's output, replacing the binding placeholder
-in its own completed Java class directory. That directory replaces only the Java
-output contribution in the source set's final class directories. Java's language
-output provider still refers to `compileJava`, so another language compiler such
-as Groovy can consume Java classes before binding generation. The completed Java
-classes are used by `classes`, `jar`, `run`, distributions and test
-compilation. `generateTestApplicationBindings` runs after test compilation and
+It reads the compiler outputs and generates binding and optional main classes
+in its own directory, without copying or modifying compiler output. The generated
+directory comes first in the source set's class directories so completed bindings
+take precedence over annotation processor placeholders. Other language compilers,
+such as Groovy, can still consume Java compiler output before binding generation.
+The combined class directories are used by `classes`, `run`, distributions and
+test compilation. The application `jar` task excludes a raw placeholder only when
+the generated binding is included at the same archive path.
+`generateTestApplicationBindings` runs after test compilation and
 resource processing, and generates `TestApplicationBinding` containing both
 application and test services before `test` runs.
 
@@ -110,18 +112,19 @@ Run the usual Gradle tasks:
 ```
 
 Generated sources are under `build/generated/sources/helidon/main` and
-`build/generated/sources/helidon/test`. Final classes are under
+`build/generated/sources/helidon/test`. Generated classes are under
 `build/classes/helidon/main` and `build/classes/helidon/test`. These directories
 are task outputs; do not add the generated sources to `compileJava` or modify
-the final class directories yourself. Compilation outputs remain separate so
+the generated class directories yourself. Compilation outputs remain separate so
 unchanged builds can stay up to date. Changes to application classes,
 resources, runtime dependencies or generation options regenerate the binding
 and remove obsolete generated output.
 
 The plugin leaves processed resources and additional compiler outputs in their
 own directories. It reads those directories when generating bindings; it does
-not copy or merge them into the completed Java output or configure archive
-filtering. The existing class-directory collection and its other contributions
+not copy or merge them into the generated output. Archive exclusions apply only
+to shadowed class entries in the application JAR; resources and other archives
+retain their usual behavior. The existing compiler directories and other contributions
 are retained. Other plugins and
 build scripts can continue adding outputs through Gradle's source-set model.
 When several compiler outputs contain resources with the same path, directory
@@ -130,10 +133,10 @@ archive requires the build's usual resource-merging or duplicate-handling policy
 the Helidon plugin does not choose that policy.
 
 Configure a Java compiler's raw output with its `destinationDirectory` property.
-Configure the completed Java output with `classesDirectory` on
+Configure the generated class output with `classesDirectory` on
 `generateApplicationBindings` (or `generateTestApplicationBindings`). Both follow
 `layout.buildDirectory` by default. Each generation task modifies only its own
-completed output.
+generated output.
 
 ### Configuration
 
