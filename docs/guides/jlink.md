@@ -24,7 +24,7 @@ For this 10 minute tutorial, you will need the following:
 
 | Requirement                                     | Description                                                                       |
 |-------------------------------------------------|-----------------------------------------------------------------------------------|
-| [Java 27][java-27] ([Open JDK 27][open-jdk-27]) | Helidon requires Java 27+.                                      |
+| [OpenJDK 28 EA][open-jdk-28]                     | Helidon requires Java 28+.                                      |
 | [Maven 3.8+][maven-3-8]                         | Helidon requires Maven 3.8+.                                                      |
 | [Docker 18.09+][docker-18-09]                   | If you want to build and run Docker containers.                                   |
 | [Kubectl 1.16.5+][kubectl-1-16-5]               | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
@@ -44,16 +44,16 @@ Setting JAVA_HOME:
 
 ```shell [Terminal]
 # On Mac
-export JAVA_HOME=`/usr/libexec/java_home -v 27`
+export JAVA_HOME=`/usr/libexec/java_home -v 28`
 
 # On Linux
 # Use the appropriate path to your JDK
-export JAVA_HOME=/usr/lib/jvm/jdk-27
+export JAVA_HOME=/usr/lib/jvm/jdk-28
 ```
 
 ## Verify JDK
 
-As noted in the prerequisites above, Java 27 or newer is required.
+As noted in the prerequisites above, Java 28 or newer is required.
 
 ```shell [Terminal]
 $JAVA_HOME/bin/java --version
@@ -194,8 +194,7 @@ Custom runtime images are ideal for use when you want all the runtime
 performance of the JDK JVM in a reasonably compact form.
 
 [jlink]: https://docs.oracle.com/en/java/javase/27/docs/specs/man/jlink.html
-[java-27]: https://www.oracle.com/technetwork/java/javase/downloads
-[open-jdk-27]: http://jdk.java.net
+[open-jdk-28]: https://jdk.java.net/28/
 [maven-3-8]: https://maven.apache.org/download.cgi
 [docker-18-09]: https://docs.docker.com/install/
 [kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/

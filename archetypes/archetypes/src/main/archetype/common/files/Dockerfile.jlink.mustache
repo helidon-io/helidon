@@ -2,6 +2,24 @@
 # 1st stage, build the app
 FROM container-registry.oracle.com/java/openjdk:27-oraclelinux9 AS build
 
+# Pin the JDK 28 EA build used by CI.
+# SHA-256 values are published alongside the official archives.
+RUN set -eux; \
+    case "$(uname -m)" in \
+      x86_64) platform=linux-x64; checksum=b32bf773d02fff73d4a2da78cf590459879963b3dbffd18dcc9d6c6756ee4549 ;; \
+      aarch64) platform=linux-aarch64; checksum=3908eb08a5a6a074301fffbed99ef8f2a36d0ae42dce41e7c948a3b16a8cfa5a ;; \
+      *) echo "Unsupported JDK architecture" >&2; exit 1 ;; \
+    esac; \
+    curl --fail --location --retry 3 --retry-all-errors \
+      "https://download.java.net/java/early_access/jdk28/21/GPL/openjdk-28-ea+21_${platform}_bin.tar.gz" \
+      --output /tmp/openjdk-28.tar.gz; \
+    echo "${checksum}  /tmp/openjdk-28.tar.gz" | sha256sum --check -; \
+    mkdir -p /opt/java/jdk-28; \
+    tar -xzf /tmp/openjdk-28.tar.gz --strip-components=1 -C /opt/java/jdk-28; \
+    rm /tmp/openjdk-28.tar.gz
+ENV JAVA_HOME=/opt/java/jdk-28
+ENV PATH="${JAVA_HOME}/bin:${PATH}"
+
 WORKDIR /usr/share
 
 # Install maven

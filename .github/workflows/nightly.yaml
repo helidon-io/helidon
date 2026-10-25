@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2025 Oracle and/or its affiliates.
+# Copyright (c) 2025, 2026 Oracle and/or its affiliates.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ on:
 
 env:
   MVN_VERSION: 3.9.9
+  JAVA_VERSION: 28
   MVN_ARGS: |
     -B -fae -e
     -Dmaven.wagon.httpconnectionManager.ttlSeconds=60
@@ -40,7 +41,6 @@ jobs:
         with:
           build-cache: read-write
           maven-cache: read-write
-          setup-latest-java: true
           run: |
             mvn ${MVN_ARGS} --version
             mvn ${MVN_ARGS} build-cache:go-offline
@@ -60,7 +60,7 @@ jobs:
           - { os: ubuntu-22.04, platform: linux }
           - { os: windows-2022, platform: windows }
     runs-on: ${{ matrix.os }}
-    name: tests/${{ matrix.moduleSet }}-${{matrix.platform}}-latest-java
+    name: tests/${{ matrix.moduleSet }}-${{matrix.platform}}-java-28-ea
     steps:
       - uses: actions/checkout@v4
         with:
@@ -68,8 +68,7 @@ jobs:
       - uses: ./.github/actions/common
         with:
           build-cache: read-only
-          setup-latest-java: true
-          test-artifact-name: tests-${{ matrix.moduleSet }}-${{ matrix.platform }}-latest-java
+          test-artifact-name: tests-${{ matrix.moduleSet }}-${{ matrix.platform }}-java-28-ea
           run: |
             mvn --version
             mvn ${MVN_ARGS} \
