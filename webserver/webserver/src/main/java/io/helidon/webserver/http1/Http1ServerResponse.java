@@ -263,6 +263,11 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
     }
 
     @Override
+    public Headers requestHeaders() {
+        return request.headers();
+    }
+
+    @Override
     public void sendSwitchingProtocols(Headers requiredHeaders) {
         Objects.requireNonNull(requiredHeaders);
         if (isSent) {
