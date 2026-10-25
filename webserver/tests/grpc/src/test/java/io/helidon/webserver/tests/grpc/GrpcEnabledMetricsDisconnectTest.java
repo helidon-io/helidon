@@ -235,7 +235,8 @@ class GrpcEnabledMetricsDisconnectTest {
             startCall(socket, server.port());
             readResponse(socket);
             transportGate.headersWritten.get(5, TimeUnit.SECONDS);
-            assertThat("successful terminal headers are written before server completion returns", callFinished.isDone(), is(false));
+            assertThat("successful terminal headers are written before server completion returns",
+                       callFinished.isDone(), is(false));
 
             if (closeBeforePublicationReturns) {
                 socket.close();
