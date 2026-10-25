@@ -77,21 +77,6 @@
                 <version>${version.plugin.os}</version>
             </extension>
         </extensions>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <inherited>false</inherited>
-                <dependencies>
-                    <!-- Order reactor builds before compiling applications with the inherited processors. -->
-                    <dependency>
-                        <groupId>io.helidon.bundles</groupId>
-                        <artifactId>helidon-bundles-apt</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
-        </plugins>
         <pluginManagement>
             <plugins>
                 <plugin>
