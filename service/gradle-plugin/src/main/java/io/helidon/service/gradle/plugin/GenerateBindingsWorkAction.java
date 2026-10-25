@@ -40,6 +40,7 @@ abstract class GenerateBindingsWorkAction implements WorkAction<GenerateBindings
      * Constructor used by Gradle worker instantiation.
      */
     @Inject
+    @SuppressWarnings("checkstyle:RedundantModifier") // Gradle generates constructors from Class.getConstructors().
     public GenerateBindingsWorkAction() {
     }
 
@@ -90,6 +91,7 @@ abstract class GenerateBindingsWorkAction implements WorkAction<GenerateBindings
             case ERROR -> log(LogLevel.ERROR, event);
             case OFF -> {
             }
+            default -> throw new IllegalStateException("Unsupported code generation log level: " + event.level());
         }
     }
 

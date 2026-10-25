@@ -28,6 +28,7 @@ abstract class GenerateBindingsParameters extends BindingOptions implements Work
      * Constructor used by Gradle managed instantiation.
      */
     @Inject
+    @SuppressWarnings("checkstyle:RedundantModifier") // Gradle generates constructors from Class.getConstructors().
     public GenerateBindingsParameters() {
     }
 
