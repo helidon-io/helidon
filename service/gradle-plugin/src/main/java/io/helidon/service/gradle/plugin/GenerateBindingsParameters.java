@@ -15,6 +15,8 @@
  */
 package io.helidon.service.gradle.plugin;
 
+import javax.inject.Inject;
+
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
 import org.gradle.api.provider.ListProperty;
@@ -22,6 +24,13 @@ import org.gradle.api.provider.Property;
 import org.gradle.workers.WorkParameters;
 
 abstract class GenerateBindingsParameters extends BindingOptions implements WorkParameters {
+    /**
+     * Constructor used by Gradle managed instantiation.
+     */
+    @Inject
+    public GenerateBindingsParameters() {
+    }
+
     public abstract ConfigurableFileCollection getApplicationClasspath();
 
     public abstract ConfigurableFileCollection getSourceRoots();

@@ -19,6 +19,8 @@ import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import io.helidon.codegen.CodegenEvent;
 import io.helidon.codegen.CodegenScope;
 import io.helidon.service.application.codegen.ApplicationGenerator;
@@ -33,6 +35,13 @@ import org.gradle.workers.WorkAction;
 
 abstract class GenerateBindingsWorkAction implements WorkAction<GenerateBindingsParameters> {
     private static final Logger LOGGER = Logging.getLogger(GenerateBindingsWorkAction.class);
+
+    /**
+     * Constructor used by Gradle worker instantiation.
+     */
+    @Inject
+    public GenerateBindingsWorkAction() {
+    }
 
     @Override
     public void execute() {
