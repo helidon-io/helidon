@@ -58,7 +58,7 @@ public final class Main {
                                    + EncryptionUtil.ENVELOPE_MIN_HASH_ITERATIONS + " and "
                                    + EncryptionUtil.ENVELOPE_MAX_HASH_ITERATIONS + "; default is "
                                    + EncryptionUtil.ENVELOPE_HASH_ITERATIONS + ".");
-        System.out.println("To encrypt password using legacy formats:");
+        System.out.println("To encrypt password using deprecated legacy formats (will be discontinued):");
         System.out.println("java -jar <path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar "
                                    + "aes masterPassword secretToEncrypt");
         System.out.println("java -jar <path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar "
@@ -137,6 +137,12 @@ public final class Main {
         }
 
         String gcm() {
+            System.err.println("WARNING: The legacy 'aes' and 'gcm' encryption modes and the ${GCM=...} format "
+                                       + "will be discontinued.");
+            System.err.println("Re-encrypt passwords using: java -jar "
+                                       + "<path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar "
+                                       + "enc masterPassword secretToEncrypt");
+            System.err.println("Use the resulting ${ENC=...} value in your configuration with the same master password.");
             return EncryptionFilter.PREFIX_GCM + EncryptionUtil.encryptAes(masterPassword.toCharArray(), secret) + '}';
         }
 

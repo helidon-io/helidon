@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,7 +76,8 @@ public interface ConfigParser {
      * @throws ConfigParserException in case of problem to parse configuration from the source
      * @deprecated use {@link #parse(io.helidon.config.spi.ConfigParser.Content, java.util.function.Function)} instead
      */
-    @Deprecated
+    // remove earliest in version 30.0.0, the "forRemoval" was added for 28
+    @Deprecated(since = "2.5.0", forRemoval = true)
     ObjectNode parse(Content content) throws ConfigParserException;
 
     /**
