@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.config;
 
 import java.time.Duration;
+import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
 
 import io.helidon.common.Builder;
@@ -96,12 +97,28 @@ public final class PollingStrategies {
          * Sets a custom {@link ScheduledExecutorService service} used to schedule polling ticks on.
          * <p>
          * By default it is a new thread pool executor per polling strategy instance.
+         * The caller remains responsible for shutting down a supplied executor;
+         * stopping the strategy only cancels its scheduled work.
          *
-         * @param executor the custom scheduled executor service
+         * @param executor the custom scheduled executor service; must not be null
          * @return a modified builder instance
+         * @throws NullPointerException if {@code executor} is null
+         * @see #clearExecutor()
          */
         public ScheduledBuilder executor(ScheduledExecutorService executor) {
-            this.executor = executor;
+            this.executor = Objects.requireNonNull(executor, "executor");
+            return this;
+        }
+
+        /**
+         * Clear the configured executor, restoring a separate default executor for each subsequently built strategy.
+         * This does not shut down the previously configured executor or affect previously built strategies.
+         *
+         * @return updated builder instance
+         * @since 28.0.0
+         */
+        public ScheduledBuilder clearExecutor() {
+            this.executor = null;
             return this;
         }
 
@@ -113,7 +130,9 @@ public final class PollingStrategies {
         @Override
         public PollingStrategy build() {
             ScheduledExecutorService executor = this.executor;
-            return ScheduledPollingStrategy.create(recurringPolicy, executor);
+            return executor == null
+                    ? ScheduledPollingStrategy.create(recurringPolicy)
+                    : ScheduledPollingStrategy.create(recurringPolicy, executor);
         }
 
         @Override
