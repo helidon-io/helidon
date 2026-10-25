@@ -255,7 +255,8 @@ class HelidonServerJunitExtension extends JunitExtensionBase
         Map<String, ListenerConfig.Builder> listenerConfigs = new HashMap<>();
         Map<String, Router.Builder> routerBuilders = new HashMap<>();
 
-        listenerConfigs.put(DEFAULT_SOCKET_NAME, ListenerConfig.builder().from(builder));
+        // Keep preconfigured protocol routings on the server; collect additional routings separately.
+        listenerConfigs.put(DEFAULT_SOCKET_NAME, ListenerConfig.builder().from(builder).clearRoutings());
 
         withStaticMethods(testClass(), SetUpRoute.class, (setUpRoute, method) -> {
             // validate parameters
@@ -273,14 +274,9 @@ class HelidonServerJunitExtension extends JunitExtensionBase
             methodConsumer.handle(socketName, builder, socketBuilder, route);
         });
 
-        routerBuilders.forEach((socketName, routerBuilder) -> {
-            if (DEFAULT_SOCKET_NAME.equals(socketName)) {
-                builder.addRoutings(routerBuilder.routings());
-            } else {
-                listenerConfigs.computeIfAbsent(socketName, it -> ListenerConfig.builder())
-                        .addRoutings(routerBuilder.routings());
-            }
-        });
+        routerBuilders.forEach((socketName, routerBuilder) ->
+                                      listenerConfigs.computeIfAbsent(socketName, it -> ListenerConfig.builder())
+                                              .addRoutings(routerBuilder.routings()));
 
         listenerConfigs.forEach((socketName, listenerBuilder) -> {
             if (DEFAULT_SOCKET_NAME.equals(socketName)) {
