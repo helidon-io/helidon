@@ -92,6 +92,15 @@ class ClassModelFactoryTest {
         assertThat(declaredParameter.upperBounds(), is(List.of(TypeName.create(CharSequence.class))));
         assertThat(element(recordInfo, "value").typeName().className(), is("T"));
         assertThat(element(recordInfo, "optionalValue").typeName().typeArguments().getFirst().className(), is("T"));
+
+        TypeInfo simpleNameInfo = roundContext.typeInfo(TypeName.builder(concreteRecordType)
+                                                               .packageName("")
+                                                               .build())
+                .orElseThrow();
+        assertThat(simpleNameInfo.typeName(), is(concreteRecordType));
+        assertThat(simpleNameInfo.typeName().typeArguments(), is(List.of(TypeNames.STRING)));
+        assertThat(simpleNameInfo.rawType(), is(recordInfo.rawType()));
+        assertThat(simpleNameInfo.declaredType(), is(recordInfo.declaredType()));
     }
 
     /**

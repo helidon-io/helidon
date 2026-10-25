@@ -83,7 +83,7 @@ final class ClassModelFactory {
             addConstructor(requestedTypeName, builder, constructor);
         }
         for (Method method : requestedType.methods()) {
-            addMethod(builder, method);
+            addMethod(builder, requestedType.kind(), method);
         }
 
         for (ClassBase innerClass : requestedType.innerClasses()) {
@@ -126,7 +126,7 @@ final class ClassModelFactory {
                 .build();
     }
 
-    private static void addMethod(TypeInfo.Builder builder, Method method) {
+    private static void addMethod(TypeInfo.Builder builder, ElementKind enclosingKind, Method method) {
         builder.addElementInfo(methodInfo -> methodInfo
                 .kind(ElementKind.METHOD)
                 .elementName(method.name())
@@ -138,7 +138,8 @@ final class ClassModelFactory {
                     if (method.isFinal()) {
                         it.addElementModifier(Modifier.FINAL);
                     }
-                    if (method.isAbstract()) {
+                    if (method.isAbstract()
+                            || (enclosingKind == ElementKind.INTERFACE && !method.isDefault() && !method.isStatic())) {
                         it.addElementModifier(Modifier.ABSTRACT);
                     }
                     if (method.isDefault()) {
