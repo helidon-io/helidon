@@ -35,6 +35,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import com.github.dockerjava.api.async.ResultCallback;
 
@@ -52,13 +53,19 @@ final class H2SpecExecution implements AutoCloseable {
     private final Path diagnosticsDirectory;
     private boolean closed;
 
-    H2SpecExecution(Duration maintenanceTimeout) {
+    H2SpecExecution(Duration maintenanceTimeout) throws IOException {
         this(maintenanceTimeout, DIAGNOSTICS);
     }
 
-    H2SpecExecution(Duration maintenanceTimeout, Path diagnosticsDirectory) {
+    H2SpecExecution(Duration maintenanceTimeout, Path diagnosticsDirectory) throws IOException {
         this.maintenanceTimeout = maintenanceTimeout;
         this.diagnosticsDirectory = diagnosticsDirectory;
+        Files.createDirectories(diagnosticsDirectory);
+        try (Stream<Path> paths = Files.list(diagnosticsDirectory)) {
+            for (Path path : paths.filter(Files::isRegularFile).toList()) {
+                Files.deleteIfExists(path);
+            }
+        }
     }
 
     static void progress(String message) {

@@ -29,12 +29,24 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class H2SpecExecutionTest {
     @TempDir
     Path directory;
+
+    @Test
+    void removesDiagnosticsFromAnEarlierRun() throws Exception {
+        Path diagnostics = Files.createDirectory(directory.resolve("diagnostics"));
+        Path stale = Files.writeString(diagnostics.resolve("host-threads.txt"), "old timeout");
+        Path unrelated = Files.writeString(directory.resolve("unrelated.txt"), "keep");
+        try (var execution = new H2SpecExecution(Duration.ofSeconds(2), diagnostics)) {
+            assertFalse(Files.exists(stale), "an earlier timeout must not appear in the current run's artifacts");
+            assertEquals("keep", Files.readString(unrelated));
+        }
+    }
 
     @Test
     void timeoutClosesStreamRemovesResourceAndPreservesPartialOutput() throws Exception {
