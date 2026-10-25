@@ -15,9 +15,11 @@
  */
 package io.helidon.http.media;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -29,8 +31,10 @@ import io.helidon.common.buffers.BufferData;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ReadableEntityBaseTest {
@@ -69,6 +73,95 @@ class ReadableEntityBaseTest {
     void testOptionalByteArray() {
         ReadableEntityBase entityBase = new ReadableEntityImpl(new Readable(), 1024);
         assertThat(entityBase.asOptional(byte[].class).orElseThrow(), is(BYTES));
+    }
+
+    @Test
+    void testByteArrayClosesInputStream() {
+        var stream = new ClosingInputStream(new ByteArrayInputStream(BYTES));
+        var entity = new StreamReadableEntity(stream);
+
+        assertThat(entity.as(byte[].class), is(BYTES));
+        assertThat(stream.closeCount, is(1));
+    }
+
+    @Test
+    void testOptionalByteArrayClosesInputStream() {
+        var stream = new ClosingInputStream(new ByteArrayInputStream(BYTES));
+        var entity = new StreamReadableEntity(stream);
+
+        assertThat(entity.asOptional(byte[].class).orElseThrow(), is(BYTES));
+        assertThat(stream.closeCount, is(1));
+    }
+
+    @Test
+    void testByteArrayClosesInputStreamOnIoFailure() {
+        var readFailure = new IOException("read failed");
+        var closeFailure = new IOException("close failed");
+        var stream = new ClosingInputStream(new InputStream() {
+            @Override
+            public int read() throws IOException {
+                throw readFailure;
+            }
+        });
+        stream.closeFailure = closeFailure;
+        var entity = new StreamReadableEntity(stream);
+
+        var exception = assertThrows(UncheckedIOException.class, () -> entity.as(byte[].class));
+
+        assertThat(exception.getCause(), sameInstance(readFailure));
+        assertThat(readFailure.getSuppressed(), arrayContaining(closeFailure));
+        assertThat(stream.closeCount, is(1));
+    }
+
+    @Test
+    void testByteArrayClosesInputStreamOnRuntimeFailure() {
+        var readFailure = new IllegalStateException("read failed");
+        var closeFailure = new IOException("close failed");
+        var stream = new ClosingInputStream(new InputStream() {
+            @Override
+            public int read() {
+                throw readFailure;
+            }
+        });
+        stream.closeFailure = closeFailure;
+        var entity = new StreamReadableEntity(stream);
+
+        var exception = assertThrows(IllegalStateException.class, () -> entity.as(byte[].class));
+
+        assertThat(exception, sameInstance(readFailure));
+        assertThat(exception.getSuppressed(), arrayContaining(closeFailure));
+        assertThat(stream.closeCount, is(1));
+    }
+
+    @Test
+    void testInputStreamRemainsOpenUntilCallerCloses() throws IOException {
+        var stream = new ClosingInputStream(new ByteArrayInputStream(BYTES));
+        var entity = new StreamReadableEntity(stream);
+
+        try (InputStream inputStream = entity.as(InputStream.class)) {
+            assertThat(inputStream, sameInstance(stream));
+            assertThat(stream.readCount, is(0));
+            assertThat(stream.closeCount, is(0));
+            assertThat(inputStream.readAllBytes(), is(BYTES));
+            assertThat(stream.closeCount, is(0));
+        }
+        assertThat(stream.closeCount, is(1));
+    }
+
+    @Test
+    void testLazyStreamCloseRetainsSingleBufferRequest() throws IOException {
+        var reads = new AtomicInteger();
+        var entity = new ReadableEntityImpl(_ -> {
+            reads.incrementAndGet();
+            return BufferData.create(BYTES);
+        }, 1024);
+
+        InputStream stream = entity.inputStream();
+        assertThat(reads.get(), is(0));
+        stream.close();
+
+        assertThat(reads.get(), is(1));
+        assertThat(entity.consumed(), is(false));
     }
 
     @Test
@@ -165,6 +258,52 @@ class ReadableEntityBaseTest {
         @Override
         public ReadableEntity copy(Runnable entityProcessedRunnable) {
             throw new UnsupportedOperationException("Not supported yet.");
+        }
+    }
+
+    private static class StreamReadableEntity extends ReadableEntityImpl {
+        private final InputStream stream;
+
+        private StreamReadableEntity(InputStream stream) {
+            super(_ -> BufferData.empty(), 1024);
+            this.stream = stream;
+        }
+
+        @Override
+        public InputStream inputStream() {
+            return stream;
+        }
+    }
+
+    private static class ClosingInputStream extends InputStream {
+        private final InputStream delegate;
+        private int readCount;
+        private int closeCount;
+        private IOException closeFailure;
+
+        private ClosingInputStream(InputStream delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public int read() throws IOException {
+            readCount++;
+            return delegate.read();
+        }
+
+        @Override
+        public int read(byte[] bytes, int offset, int length) throws IOException {
+            readCount++;
+            return delegate.read(bytes, offset, length);
+        }
+
+        @Override
+        public void close() throws IOException {
+            closeCount++;
+            delegate.close();
+            if (closeFailure != null) {
+                throw closeFailure;
+            }
         }
     }
 }

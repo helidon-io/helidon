@@ -91,7 +91,27 @@ class DecodedEntityLimitTest {
                     req.content().as(String.class);
                     res.send();
                 })
+                .post("/as-bytes", (req, res) -> {
+                    req.content().as(byte[].class);
+                    res.send();
+                })
                 .get("/alive", (req, res) -> res.send("alive"));
+    }
+
+    @Test
+    void testDecodedByteArrayLimit() {
+        for (var encoding : new Header[] {CONTENT_ENCODING_GZIP, CONTENT_ENCODING_DEFLATE}) {
+            byte[] payload = encoding == CONTENT_ENCODING_GZIP ? GZIP_PAYLOAD : DEFLATE_PAYLOAD;
+            try (var response = client.post("/as-bytes")
+                    .header(encoding)
+                    .submit(payload)) {
+                assertThat(response.status(), is(Status.REQUEST_ENTITY_TOO_LARGE_413));
+                assertThat(response.headers(), hasHeader(HeaderValues.CONNECTION_CLOSE));
+            }
+            try (var response = client.get("/alive").request()) {
+                assertThat(response.entity().as(String.class), is("alive"));
+            }
+        }
     }
 
     @Test

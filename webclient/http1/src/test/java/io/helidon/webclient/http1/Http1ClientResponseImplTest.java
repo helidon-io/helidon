@@ -17,8 +17,10 @@
 package io.helidon.webclient.http1;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -33,6 +35,10 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
+import java.util.zip.InflaterInputStream;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -56,6 +62,8 @@ import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
@@ -63,6 +71,129 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class Http1ClientResponseImplTest {
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void closesDecoderAfterByteArrayConversion(boolean gzip) throws IOException {
+        InputStream decoder = decoder(gzip, false, () -> { });
+        TestConnection connection = new TestConnection();
+        Http1ClientResponseImpl response = response(contentLengthHeaders(), decoder, connection);
+
+        assertThat(response.entity().as(byte[].class), is("data".getBytes(StandardCharsets.UTF_8)));
+
+        assertThat(assertThrows(IOException.class, decoder::read).getMessage(), is("Stream closed"));
+        assertThat(connection.releaseCount(), is(1));
+        assertThat(connection.closeCount(), is(0));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void closesDecoderAfterByteArrayConversionFails(boolean gzip) throws IOException {
+        TestConnection connection = new TestConnection();
+        var transportClosesAtDecoderClose = new AtomicInteger(-1);
+        InputStream decoder = decoder(gzip, true, () -> transportClosesAtDecoderClose.set(connection.closeCount()));
+        Http1ClientResponseImpl response = response(contentLengthHeaders(), decoder, connection);
+
+        assertThrows(UncheckedIOException.class, () -> response.entity().as(byte[].class));
+
+        assertThat(assertThrows(IOException.class, decoder::read).getMessage(), is("Stream closed"));
+        assertThat(transportClosesAtDecoderClose.get(), is(1));
+        assertThat(connection.releaseCount(), is(0));
+        assertThat(connection.closeCount(), is(1));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void keepsLazyDecoderOpenAfterPartialRead(boolean gzip) throws IOException {
+        InputStream decoder = decoder(gzip, false, () -> { });
+        TestConnection connection = new TestConnection();
+        Http1ClientResponseImpl response = response(contentLengthHeaders(), decoder, connection);
+
+        InputStream entityStream = response.entity().inputStream();
+        assertThat(entityStream.read(), is((int) 'd'));
+        assertThat(entityStream.read(), is((int) 'a'));
+        assertThat(connection.releaseCount(), is(0));
+        decoder.close();
+        response.close();
+    }
+
+    @Test
+    void preservesReadFailureAndClosesTransportWhenDecoderCloseFails() {
+        var readFailure = new IOException("read failed");
+        var closeFailure = new IOException("close failed");
+        var reads = new AtomicInteger();
+        var connection = new TestConnection();
+        var response = response(contentLengthHeaders(), new InputStream() {
+            @Override
+            public int read() throws IOException {
+                reads.incrementAndGet();
+                throw readFailure;
+            }
+
+            @Override
+            public void close() throws IOException {
+                throw closeFailure;
+            }
+        }, connection);
+
+        var failure = assertThrows(UncheckedIOException.class, () -> response.entity().as(byte[].class));
+
+        assertThat(failure.getCause(), sameInstance(readFailure));
+        assertThat(failure.getSuppressed().length, is(1));
+        assertThat(failure.getSuppressed()[0], sameInstance(closeFailure));
+        assertThat(reads.get(), is(1));
+        assertThat(connection.closeCount(), is(1));
+        assertThat(connection.releaseCount(), is(0));
+    }
+
+    @Test
+    void propagatesReadErrorWithoutFailureCleanup() {
+        var readError = new OutOfMemoryError("read failed");
+        var decoderCloses = new AtomicInteger();
+        var connection = new TestConnection();
+        var response = response(contentLengthHeaders(), new InputStream() {
+            @Override
+            public int read() {
+                throw readError;
+            }
+
+            @Override
+            public void close() {
+                decoderCloses.incrementAndGet();
+            }
+        }, connection);
+
+        var failure = assertThrows(OutOfMemoryError.class, () -> response.entity().inputStream().read());
+
+        assertThat(failure, sameInstance(readError));
+        assertThat(decoderCloses.get(), is(0));
+        assertThat(connection.closeCount(), is(0));
+        assertThat(connection.releaseCount(), is(0));
+        response.close();
+    }
+
+    @Test
+    void propagatesDecoderCloseErrorDuringFailureCleanup() {
+        var closeError = new OutOfMemoryError("close failed");
+        var connection = new TestConnection();
+        var response = response(contentLengthHeaders(), new InputStream() {
+            @Override
+            public int read() throws IOException {
+                throw new IOException("read failed");
+            }
+
+            @Override
+            public void close() {
+                throw closeError;
+            }
+        }, connection);
+
+        var failure = assertThrows(OutOfMemoryError.class, () -> response.entity().inputStream().read());
+
+        assertThat(failure, sameInstance(closeError));
+        assertThat(connection.closeCount(), is(1));
+        assertThat(connection.releaseCount(), is(0));
+    }
 
     @Test
     void chunkedMustBeFinalTransferCoding() {
@@ -304,6 +435,21 @@ class Http1ClientResponseImplTest {
 
         assertThat(actualFailure, sameInstance(closeFailure));
         assertThat(whenComplete.isDone(), is(true));
+    }
+
+    private static InputStream decoder(boolean gzip, boolean truncated, Runnable whenSourceCloses) throws IOException {
+        var encoded = new ByteArrayOutputStream();
+        try (var encoder = gzip ? new GZIPOutputStream(encoded) : new DeflaterOutputStream(encoded)) {
+            encoder.write("data".getBytes(StandardCharsets.UTF_8));
+        }
+        byte[] bytes = encoded.toByteArray();
+        var source = new ByteArrayInputStream(bytes, 0, truncated ? bytes.length - 3 : bytes.length) {
+            @Override
+            public void close() {
+                whenSourceCloses.run();
+            }
+        };
+        return gzip ? new GZIPInputStream(source) : new InflaterInputStream(source);
     }
 
     private static WebClientServiceResponse serviceResponse(Method method,
