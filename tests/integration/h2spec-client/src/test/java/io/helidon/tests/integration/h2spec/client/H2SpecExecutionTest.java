@@ -28,10 +28,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class H2SpecExecutionTest {
     @TempDir
@@ -43,8 +43,8 @@ class H2SpecExecutionTest {
         Path stale = Files.writeString(diagnostics.resolve("host-threads.txt"), "old timeout");
         Path unrelated = Files.writeString(directory.resolve("unrelated.txt"), "keep");
         try (var execution = new H2SpecExecution(Duration.ofSeconds(2), diagnostics)) {
-            assertFalse(Files.exists(stale), "an earlier timeout must not appear in the current run's artifacts");
-            assertEquals("keep", Files.readString(unrelated));
+            assertThat("an earlier timeout must not appear in the current run's artifacts", Files.exists(stale), is(false));
+            assertThat(Files.readString(unrelated), is("keep"));
         }
     }
 
@@ -81,17 +81,17 @@ class H2SpecExecutionTest {
                 }
                 return null;
             });
-            assertTrue(started.await(2, TimeUnit.SECONDS), "worker did not start");
-            assertEquals("partial output", Files.readString(output));
+            assertThat("worker did not start", started.await(2, TimeUnit.SECONDS), is(true));
+            assertThat(Files.readString(output), is("partial output"));
             assertThrows(IllegalStateException.class, () -> execution.await(future, System.nanoTime(), "test section"));
         }
-        assertTrue(streamClosed.get(), "Docker stream must close on timeout");
-        assertTrue(removed.get(), "owned container removal must run on timeout");
-        assertTrue(interrupted.await(2, TimeUnit.SECONDS), "blocked worker must be interrupted");
-        assertEquals("partial output", Files.readString(output));
-        assertEquals("running", Files.readString(diagnostics.resolve("container-state.txt")));
-        assertTrue(Files.readString(diagnostics.resolve("host-threads.txt")).contains("test section"),
-                   "timeout phase must be recorded with the host stacks");
+        assertThat("Docker stream must close on timeout", streamClosed.get(), is(true));
+        assertThat("owned container removal must run on timeout", removed.get(), is(true));
+        assertThat("blocked worker must be interrupted", interrupted.await(2, TimeUnit.SECONDS), is(true));
+        assertThat(Files.readString(output), is("partial output"));
+        assertThat(Files.readString(diagnostics.resolve("container-state.txt")), is("running"));
+        assertThat("timeout phase must be recorded with the host stacks",
+                   Files.readString(diagnostics.resolve("host-threads.txt")), containsString("test section"));
     }
 
     @Test
@@ -103,7 +103,7 @@ class H2SpecExecutionTest {
         callback.close();
         callback.onStart(() -> closed.set(true));
         callback.onNext("late output");
-        assertTrue(closed.get(), "late Docker response must not escape cleanup");
+        assertThat("late Docker response must not escape cleanup", closed.get(), is(true));
     }
 
     @Test
@@ -112,6 +112,6 @@ class H2SpecExecutionTest {
         var execution = new H2SpecExecution(Duration.ofSeconds(2));
         execution.close();
         assertThrows(IOException.class, () -> execution.own(() -> removed.set(true)));
-        assertTrue(removed.get(), "late-created container must be removed");
+        assertThat("late-created container must be removed", removed.get(), is(true));
     }
 }
