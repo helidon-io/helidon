@@ -682,11 +682,16 @@ class GrpcProtocolHandlerTest {
             });
             Thread thread = finishingThread.get(5, TimeUnit.SECONDS);
             long waitDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-            while (!finishing.isDone() && thread.getState() != Thread.State.WAITING && System.nanoTime() < waitDeadline) {
+            boolean waitingObserved = false;
+            while (!finishing.isDone() && System.nanoTime() < waitDeadline) {
+                if (thread.getState() == Thread.State.WAITING) {
+                    waitingObserved = true;
+                    break;
+                }
                 Thread.yield();
             }
             assertThat("stream teardown waits for the unfinished terminal write", finishing.isDone(), is(false));
-            assertThat("stream teardown reached its terminal-state wait", thread.getState(), is(Thread.State.WAITING));
+            assertThat("stream teardown reached its terminal-state wait", waitingObserved, is(true));
             assertThat("generic transport closure does not report success", completions.get(), is(0));
             assertThat("generic transport closure leaves terminal publication pending", cancellations.get(), is(0));
 
