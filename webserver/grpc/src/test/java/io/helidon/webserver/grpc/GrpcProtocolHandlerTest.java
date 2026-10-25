@@ -459,6 +459,7 @@ class GrpcProtocolHandlerTest {
         var writing = new CountDownLatch(1);
         var releaseWrite = new CountDownLatch(1);
         var listenerCancelled = new CompletableFuture<Context>();
+        var listenerCancelledAfterWrite = new CompletableFuture<Boolean>();
         var callerInterrupted = new CompletableFuture<Boolean>();
         var writerInterrupted = new CompletableFuture<Boolean>();
         var contextCancelled = new CompletableFuture<Context>();
@@ -487,6 +488,7 @@ class GrpcProtocolHandlerTest {
 
                 @Override
                 public void onCancel() {
+                    listenerCancelledAfterWrite.complete(writerInterrupted.isDone());
                     listenerCancelled.complete(Context.current());
                 }
             };
@@ -502,6 +504,8 @@ class GrpcProtocolHandlerTest {
                 releaseWrite.countDown();
                 request.get(5, TimeUnit.SECONDS);
                 assertThat(listenerCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
+                assertThat("listener cancellation waits for the stream writer",
+                           listenerCancelledAfterWrite.get(5, TimeUnit.SECONDS), is(true));
             } finally {
                 releaseWrite.countDown();
             }
