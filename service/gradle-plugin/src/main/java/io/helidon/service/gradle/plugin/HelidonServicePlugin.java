@@ -35,6 +35,7 @@ import org.gradle.api.attributes.LibraryElements;
 import org.gradle.api.attributes.Usage;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.Directory;
+import org.gradle.api.file.DuplicatesStrategy;
 import org.gradle.api.file.FileCollection;
 import org.gradle.api.plugins.JavaPluginExtension;
 import org.gradle.api.provider.Provider;
@@ -159,7 +160,8 @@ public final class HelidonServicePlugin implements Plugin<Project> {
                 for (var raw : rawClasses) {
                     Path root = raw.toPath();
                     if (file.startsWith(root) && Files.isRegularFile(generated.resolve(root.relativize(file)))) {
-                        details.exclude();
+                        // Resolve duplicate final paths after later copy actions have transformed or excluded entries.
+                        details.setDuplicatesStrategy(DuplicatesStrategy.EXCLUDE);
                         break;
                     }
                 }
