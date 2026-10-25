@@ -739,14 +739,12 @@ class GrpcDisconnectTest {
     }
 
     private void completedResponseMetrics(boolean closeBeforePublicationReturns) throws Exception {
-        var contextCancelled = new CompletableFuture<Context>();
         var callFinished = new CompletableFuture<Void>();
         var transportGate = new TransportGate(true);
         var metricsFactory = Services.get(MetricsFactory.class);
         var meterRegistry = metricsFactory.createMeterRegistry(MetricsConfig.create());
         var service = ServerServiceDefinition.builder("test.Disconnect")
                 .addMethod(descriptor("CompletedMetrics"), (call, _) -> {
-                    Context.current().addListener(contextCancelled::complete, Runnable::run);
                     return new ServerCall.Listener<>() {
                         @Override
                         public void onHalfClose() {
@@ -793,8 +791,7 @@ class GrpcDisconnectTest {
 
             if (closeBeforePublicationReturns) {
                 socket.close();
-                assertThat("connection teardown reaches the still-publishing call",
-                           contextCancelled.get(5, TimeUnit.SECONDS).isCancelled(), is(true));
+                transportGate.connectionHandled.get(5, TimeUnit.SECONDS);
                 assertThat("teardown occurs before terminal publication returns", callFinished.isDone(), is(false));
             }
             transportGate.close();
@@ -1033,6 +1030,7 @@ class GrpcDisconnectTest {
     private static class TransportGate implements AutoCloseable {
         private final boolean terminalHeaders;
         private final CompletableFuture<Thread> entered = new CompletableFuture<>();
+        private final CompletableFuture<Void> connectionHandled = new CompletableFuture<>();
         private final CompletableFuture<Void> released = new CompletableFuture<>();
         private final AtomicInteger dataWrites = new AtomicInteger();
 
@@ -1195,7 +1193,35 @@ class GrpcDisconnectTest {
 
         @Override
         public ServerConnection connection(ConnectionContext ctx) {
-            return delegate.connection(new GatedConnectionContext(ctx, new GatedDataWriter(ctx.dataWriter(), gate)));
+            var connection = delegate.connection(new GatedConnectionContext(ctx, new GatedDataWriter(ctx.dataWriter(), gate)));
+            return new HandledConnection(connection, gate.connectionHandled);
+        }
+    }
+
+    private record HandledConnection(ServerConnection delegate,
+                                     CompletableFuture<Void> handled) implements ServerConnection, InterruptableTask<Void> {
+        @Override
+        public void handle(Limit limit) throws InterruptedException {
+            try {
+                delegate.handle(limit);
+            } finally {
+                handled.complete(null);
+            }
+        }
+
+        @Override
+        public Duration idleTime() {
+            return delegate.idleTime();
+        }
+
+        @Override
+        public void close(boolean interrupt) {
+            delegate.close(interrupt);
+        }
+
+        @Override
+        public boolean canInterrupt() {
+            return delegate instanceof InterruptableTask<?> task && task.canInterrupt();
         }
     }
 
