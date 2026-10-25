@@ -26,6 +26,13 @@
     </parent>
     <artifactId>helidon-service-gradle-plugin</artifactId>
     <name>Helidon Service Gradle Plugin</name>
+    <!--
+        Exception to development guidelines 4.1.2.1 and 9.1: Gradle loads this
+        build-tool adapter on the classpath, so it has no JPMS descriptor.
+        The Gradle API artifact bundles XML packages that conflict with java.xml
+        when the generator's module graph is resolved. Application and generator
+        modules retain their JPMS descriptors.
+    -->
     <properties>
         <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
     </properties>
