@@ -28,12 +28,14 @@ import io.helidon.common.Weights;
 import io.helidon.http.BadRequestException;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.Headers;
 import io.helidon.http.HttpException;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.LogFormatter;
 import io.helidon.http.Method;
 import io.helidon.http.NotFoundException;
 import io.helidon.http.RequestException;
+import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerLifecycle;
@@ -79,10 +81,19 @@ final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
 
     @Override
     public void route(ConnectionContext ctx, RoutingRequest request, RoutingResponse response) {
-        RoutingExecutor routingExecutor = new RoutingExecutor(ctx, rootRoute, request, response, maxReRouteCount);
+        HttpServerRequestEvent event = HttpServerRequestEvent.start(request);
+        RoutingExecutor routingExecutor = new RoutingExecutor(ctx, rootRoute, request, response, maxReRouteCount, event);
         // we cannot throw an exception to the filters, as then the filter would not have information about actual status
         // code, so error handling is done in routing executor and for each filter
-        filters.filter(ctx, request, response, routingExecutor);
+        boolean completed = false;
+        try {
+            filters.filter(ctx, request, response, routingExecutor);
+            completed = true;
+        } finally {
+            if (event != null) {
+                event.finish(response, completed);
+            }
+        }
     }
 
     @Override
@@ -91,15 +102,28 @@ final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
                                            RoutingResponse response,
                                            Http1UpgradeResponse upgradeResponse,
                                            Http1RoutedUpgrade upgrade) {
+        HttpServerRequestEvent event = HttpServerRequestEvent.start(request);
+        Http1UpgradeResponse recordedResponse = event == null ? upgradeResponse
+                : new RecordedUpgradeResponse(upgradeResponse, event);
         UpgradeRoutingExecutor routingExecutor = new UpgradeRoutingExecutor(ctx,
                                                                             rootRoute,
                                                                             protocolUpgradeRoute,
                                                                             request,
                                                                             response,
-                                                                            upgradeResponse,
+                                                                            recordedResponse,
                                                                             maxReRouteCount,
-                                                                            upgrade);
-        filters.filter(ctx, request, response, routingExecutor);
+                                                                            upgrade,
+                                                                            event);
+        // Only the synchronous upgrade handshake is covered, not the upgraded connection's lifetime.
+        boolean completed = false;
+        try {
+            filters.filter(ctx, request, response, routingExecutor);
+            completed = true;
+        } finally {
+            if (event != null) {
+                event.finish(response, completed);
+            }
+        }
         if (routingExecutor.result == null) {
             return Http1UpgradeResult.responded();
         }
@@ -139,7 +163,35 @@ final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
         NONE
     }
 
+    private static final class RecordedUpgradeResponse implements Http1UpgradeResponse {
+        private final Http1UpgradeResponse delegate;
+        private final HttpServerRequestEvent event;
+
+        private RecordedUpgradeResponse(Http1UpgradeResponse delegate, HttpServerRequestEvent event) {
+            this.delegate = delegate;
+            this.event = event;
+        }
+
+        @Override
+        public ServerResponseHeaders headers() {
+            return delegate.headers();
+        }
+
+        @Override
+        public void send(Status status) {
+            delegate.send(status);
+            event.handshakeSent(status);
+        }
+
+        @Override
+        public void sendSwitchingProtocols(Headers requiredHeaders) {
+            delegate.sendSwitchingProtocols(requiredHeaders);
+            event.handshakeSent(Status.SWITCHING_PROTOCOLS_101);
+        }
+    }
+
     private static final class RoutingExecutor implements Callable<Void> {
+        private final HttpServerRequestEvent event;
         private final ConnectionContext ctx;
         private final RoutingRequest request;
         private final RoutingResponse response;
@@ -150,7 +202,9 @@ final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
                                 ServiceRoute rootRoute,
                                 RoutingRequest request,
                                 RoutingResponse response,
-                                int maxReRouteCount) {
+                                int maxReRouteCount,
+                                HttpServerRequestEvent event) {
+            this.event = event;
             this.ctx = ctx;
             this.rootRoute = rootRoute;
             this.request = request;
@@ -212,13 +266,19 @@ final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
                                             true);
                 }
             }
-            RouteCrawler crawler = rootRoute.crawler(ctx, request);
+            if (event != null) {
+                event.routingStarted();
+            }
+            RouteCrawler crawler = rootRoute.crawler(ctx, request, event != null);
 
             while (crawler.hasNext()) {
                 response.resetRouting();
                 RouteCrawler.CrawlerItem next = crawler.next();
                 request.path(next.path());
                 request.matchingPattern(next.matchingElement());
+                if (event != null) {
+                    event.routeSelected(next);
+                }
 
                 next.handler().handle(request, response);
                 if (response.shouldReroute()) {
@@ -267,6 +327,7 @@ final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
     }
 
     private static final class UpgradeRoutingExecutor implements Callable<Void> {
+        private final HttpServerRequestEvent event;
         private final ConnectionContext ctx;
         private final RoutingRequest request;
         private final RoutingResponse response;
@@ -285,7 +346,9 @@ final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
                                        RoutingResponse response,
                                        Http1UpgradeResponse upgradeResponse,
                                        int maxReRouteCount,
-                                       Http1RoutedUpgrade upgrade) {
+                                       Http1RoutedUpgrade upgrade,
+                                       HttpServerRequestEvent event) {
+            this.event = event;
             this.ctx = ctx;
             this.ordinaryRoute = ordinaryRoute;
             this.protocolUpgradeRoute = protocolUpgradeRoute;
@@ -324,13 +387,16 @@ final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
                                       RoutingRequest request,
                                       RoutingResponse response) throws Exception {
             HttpPrologue prologue = request.prologue();
-            RouteCrawler crawler = protocolUpgradeRoute.crawler(ctx, request);
+            RouteCrawler crawler = protocolUpgradeRoute.crawler(ctx, request, event != null);
 
             while (crawler.hasNext()) {
                 response.resetRouting();
                 RouteCrawler.CrawlerItem next = crawler.next();
                 request.path(next.path());
                 request.matchingPattern(next.matchingElement());
+                if (event != null) {
+                    event.routeSelected(next);
+                }
 
                 Handler handler = next.handler();
                 handler.handle(request, response);
@@ -344,7 +410,7 @@ final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
                     }
                     request.prologue(response.reroutePrologue(prologue));
                     response.resetRouting();
-                    new RoutingExecutor(ctx, ordinaryRoute, request, response, maxReRouteCount).call();
+                    new RoutingExecutor(ctx, ordinaryRoute, request, response, maxReRouteCount, event).call();
                     result = Http1UpgradeResult.responded();
                     return RoutingResult.FINISH;
                 }

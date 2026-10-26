@@ -31,19 +31,26 @@ import io.helidon.http.RoutedPath;
 import io.helidon.webserver.ConnectionContext;
 
 class RouteCrawler {
+    private static final Class<?> EXACT_MATCHER = PathMatchers.exact("/").getClass();
+    private static final Class<?> PREFIX_MATCHER = PathMatchers.prefix("/").getClass();
+    private static final Class<?> PATTERN_MATCHER = PathMatchers.pattern("/{id}").getClass();
+    private static final Class<?> ANY_MATCHER = PathMatchers.any().getClass();
+
     private final ConnectionContext ctx;
     private final RoutingRequest request;
     private final Iterator<HttpRouteBase> routeIterator;
     private final UriPath matchingPath;
     private final RoutedPath parent;
     private final String parentPattern;
+    private final String safeParentTemplate;
+    private final boolean collectTemplate;
     private final RouteCrawler parentCrawler;
     private final HttpPrologue prologue;
 
     private CrawlerItem next;
     private RouteCrawler subCrawler;
 
-    RouteCrawler(ConnectionContext ctx, RoutingRequest request, List<HttpRouteBase> rootRoute) {
+    RouteCrawler(ConnectionContext ctx, RoutingRequest request, List<HttpRouteBase> rootRoute, boolean collectTemplate) {
         this.ctx = ctx;
         this.routeIterator = rootRoute.iterator();
         this.matchingPath = request.prologue().uriPath();
@@ -51,39 +58,28 @@ class RouteCrawler {
         this.request = request;
         this.parent = null;
         this.parentPattern = null;
+        this.safeParentTemplate = null;
+        this.collectTemplate = collectTemplate;
         this.parentCrawler = null;
     }
 
-    RouteCrawler(ConnectionContext ctx,
-                 RoutingRequest request,
-                 List<HttpRouteBase> rootRoute,
-                 RoutedPath parent,
-                 UriPath child) {
-        this(ctx, request, rootRoute, parent, null, child);
-    }
-
-    RouteCrawler(ConnectionContext ctx,
-                 RoutingRequest request,
-                 List<HttpRouteBase> rootRoute,
-                 RoutedPath parent,
-                 String parentPattern,
-                 UriPath child) {
-        this(ctx, request, rootRoute, parent, parentPattern, null, child);
-    }
-
-    RouteCrawler(ConnectionContext ctx,
-                 RoutingRequest request,
-                 List<HttpRouteBase> rootRoute,
-                 RoutedPath parent,
-                 String parentPattern,
-                 RouteCrawler parentCrawler,
-                 UriPath child) {
+    private RouteCrawler(ConnectionContext ctx,
+                         RoutingRequest request,
+                         List<HttpRouteBase> rootRoute,
+                         RoutedPath parent,
+                         String parentPattern,
+                         String safeParentTemplate,
+                         boolean collectTemplate,
+                         RouteCrawler parentCrawler,
+                         UriPath child) {
         this.ctx = ctx;
         this.routeIterator = rootRoute.iterator();
         this.matchingPath = child;
         this.request = request;
         this.parent = parent;
         this.parentPattern = parentPattern;
+        this.safeParentTemplate = safeParentTemplate;
+        this.collectTemplate = collectTemplate;
         this.parentCrawler = parentCrawler;
 
         this.prologue = request.prologue().withUriPath(child);
@@ -100,7 +96,7 @@ class RouteCrawler {
                 next = subCrawler.next();
 
                 if (parent != null) {
-                    next = parentPattern == null ? next.parent(parent) : next.parent(parent, parentPattern);
+                    next = next.parent(parent, parentPattern, safeParentTemplate);
                 }
                 return true;
             }
@@ -137,13 +133,15 @@ class RouteCrawler {
                                                   routes,
                                                   matchedPath,
                                                   matchedPattern,
+                                                  collectTemplate ? safeTemplate(nextRoute) : null,
+                                                  collectTemplate,
                                                   this,
                                                   accepts.unmatchedPath());
                     if (subCrawler.hasNext()) {
                         next = subCrawler.next();
 
                         if (parent != null) {
-                            next = parentPattern == null ? next.parent(parent) : next.parent(parent, parentPattern);
+                            next = next.parent(parent, parentPattern, safeParentTemplate);
                         }
                         return true;
                     }
@@ -159,10 +157,11 @@ class RouteCrawler {
                     PathMatcher pathMatcher = nextRoute.pathMatcher().orElse(null);
                     next = new CrawlerItem(accepts.path(),
                                            pathMatcher != null ? pathMatcher.matchingElement().orElse("") : null,
+                                           collectTemplate ? safeTemplate(nextRoute) : null,
                                            nextRoute.handler());
 
                     if (parent != null) {
-                        next = parentPattern == null ? next.parent(parent) : next.parent(parent, parentPattern);
+                        next = next.parent(parent, parentPattern, safeParentTemplate);
                     }
 
                     return true;
@@ -173,34 +172,49 @@ class RouteCrawler {
         return false;
     }
 
-    private String matchingElement(HttpRouteBase route, PathMatchers.PrefixMatchResult accepts) {
-        return route.pathMatcher()
-                .flatMap(PathMatcher::matchingElement)
-                .orElseGet(() -> accepts.matchedPath().path());
-    }
-
-    private static RoutedPath merge(RoutedPath parent, RoutedPath path) {
-        return CrawlerItem.merge(parent, path);
-    }
-
     CrawlerItem next() {
         CrawlerItem result = next;
         next = null;
         return result;
     }
 
-    record CrawlerItem(RoutedPath path, String matchingElement, Handler handler) {
-        public CrawlerItem parent(RoutedPath parent) {
-            RoutedPath result = merge(parent, path);
-            return new CrawlerItem(result,
-                                   matchingElement == null ? null : parent.path() + matchingElement,
-                                   handler);
+    private static String safeTemplate(HttpRouteBase route) {
+        PathMatcher matcher = route.pathMatcher().orElse(null);
+        if (matcher == null) {
+            return null;
         }
+        // Exact class identity proves factory provenance without trusting a custom matchingElement implementation.
+        Class<?> type = matcher.getClass();
+        if (type == ANY_MATCHER) {
+            return "";
+        }
+        if (type == EXACT_MATCHER || type == PREFIX_MATCHER || type == PATTERN_MATCHER) {
+            String template = matcher.matchingElement().orElse(null);
+            return template != null && template.length() <= 256 ? template : null;
+        }
+        return null;
+    }
 
-        public CrawlerItem parent(RoutedPath parent, String parentPattern) {
+    private static RoutedPath merge(RoutedPath parent, RoutedPath path) {
+        return CrawlerItem.merge(parent, path);
+    }
+
+    private String matchingElement(HttpRouteBase route, PathMatchers.PrefixMatchResult accepts) {
+        return route.pathMatcher()
+                .flatMap(PathMatcher::matchingElement)
+                .orElseGet(() -> accepts.matchedPath().path());
+    }
+
+    record CrawlerItem(RoutedPath path, String matchingElement, String safeTemplate, Handler handler) {
+        CrawlerItem parent(RoutedPath parent, String parentPattern, String safeParentTemplate) {
             RoutedPath result = merge(parent, path);
+            String combinedTemplate = safeTemplate == null || safeParentTemplate == null
+                    || safeTemplate.length() + safeParentTemplate.length() > 256
+                    ? null : safeParentTemplate + safeTemplate;
             return new CrawlerItem(result,
-                                   matchingElement == null ? null : parentPattern + matchingElement,
+                                   matchingElement == null ? null
+                                           : (parentPattern == null ? parent.path() : parentPattern) + matchingElement,
+                                   combinedTemplate,
                                    handler);
         }
 
