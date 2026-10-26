@@ -99,15 +99,15 @@ class HealthHandler implements Handler {
     }
 
     private List<NamedResponse> evaluateChecks() {
+        var threads = Thread.ofVirtual();
         try (var scope = StructuredTaskScope.open(Joiner.<NamedResponse>allSuccessfulOrThrow(), config -> config
                 .withName("health-checks")
-                .withThreadFactory(Thread.ofVirtual().name("health-check-", 0).factory()))) {
+                .withThreadFactory(threads::unstarted))) {
             int index = 0;
             for (HealthCheck check : checks) {
                 String name = check.name();
-                String threadName = "health-check-" + index++ + "[" + name + "]";
+                threads.name("health-check-" + index++ + "[" + name + "]");
                 scope.fork(() -> {
-                    Thread.currentThread().setName(threadName);
                     HealthCheckResponse response;
                     try {
                         response = check.call();
