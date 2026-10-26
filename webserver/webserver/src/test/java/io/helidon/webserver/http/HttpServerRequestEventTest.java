@@ -91,6 +91,8 @@ class HttpServerRequestEventTest {
                                 .get("/{id}", (req, res) -> res.send("located")))))
                 .get("/custom/{id}", (request, response) -> response.next())
                 .route(Method.GET, new UntrustedMatcher("/custom/secret-custom"), (request, response) -> response.send())
+                .route(Method.GET, new TemplateMatcher(PathMatchers.pattern("/wrapped/{id}")),
+                       (request, response) -> response.send())
                 .register("/untrusted/{tenant}", parent -> parent.route(Method.GET,
                         new UntrustedMatcher("/secret-child"),
                         (request, response) -> response.send(request.matchingPattern().orElseThrow())))
@@ -117,13 +119,14 @@ class HttpServerRequestEventTest {
             assertThat(exchange(server, "/reroute-missing"), containsString("404 Not Found"));
             assertThat(exchange(server, "/parent/secret-tenant/located/secret-kind/secret-id"), containsString("200 OK"));
             assertThat(exchange(server, "/custom/secret-custom"), containsString("200 OK"));
+            assertThat(exchange(server, "/wrapped/secret-wrapped"), containsString("200 OK"));
             assertThat(exchange(server, "/untrusted/secret-tenant/secret-child"),
                        containsString("/untrusted/{tenant}/secret-child"));
             assertThat(exchange(server, "/filter-rejection"), containsString("503 Service Unavailable"));
             assertThat(exchange(server, "/no-matcher/secret-no-matcher"), containsString("200 OK"));
             assertThat(exchange(server, "/" + "long".repeat(70)), containsString("200 OK"));
             List<RecordedEvent> events = events(recording, "requests.jfr");
-            assertThat(events, hasSize(12));
+            assertThat(events, hasSize(13));
             assertRequest(events, identities.get("/items/secret-value"), "/items/{id}", 200, "SUCCESS");
             assertRequest(events, identities.get("/failure"), "/failure", 500, "SERVER_ERROR");
             assertRequest(events, identities.get("/handled"), "/handled", 400, "CLIENT_ERROR");
@@ -133,6 +136,7 @@ class HttpServerRequestEventTest {
             assertRequest(events, identities.get("/parent/secret-tenant/located/secret-kind/secret-id"),
                           "/parent/{tenant}/located/{kind}/{id}", 200, "SUCCESS");
             assertRequest(events, identities.get("/custom/secret-custom"), null, 200, "SUCCESS");
+            assertRequest(events, identities.get("/wrapped/secret-wrapped"), "/wrapped/{id}", 200, "SUCCESS");
             assertRequest(events, identities.get("/untrusted/secret-tenant/secret-child"), null, 200, "SUCCESS");
             assertRequest(events, identities.get("/filter-rejection"), null, 503, "SERVER_ERROR");
             assertRequest(events, identities.get("/no-matcher/secret-no-matcher"), null, 200, "SUCCESS");
@@ -288,6 +292,34 @@ class HttpServerRequestEventTest {
     private record Identity(String serverSocketId, String socketId, int requestId, long threadId) {
         static Identity of(ServerRequest request) {
             return new Identity(request.serverSocketId(), request.socketId(), request.id(), Thread.currentThread().threadId());
+        }
+    }
+
+    private static final class TemplateMatcher implements PathMatcher {
+        private final PathMatcher delegate;
+
+        private TemplateMatcher(PathMatcher delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public PathMatchers.MatchResult match(UriPath path) {
+            return delegate.match(path);
+        }
+
+        @Override
+        public PathMatchers.PrefixMatchResult prefixMatch(UriPath path) {
+            return delegate.prefixMatch(path);
+        }
+
+        @Override
+        public Optional<String> matchingElement() {
+            return delegate.matchingElement();
+        }
+
+        @Override
+        public Optional<String> routeTemplate() {
+            return delegate.routeTemplate();
         }
     }
 

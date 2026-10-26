@@ -31,11 +31,6 @@ import io.helidon.http.RoutedPath;
 import io.helidon.webserver.ConnectionContext;
 
 class RouteCrawler {
-    private static final Class<?> EXACT_MATCHER = PathMatchers.exact("/").getClass();
-    private static final Class<?> PREFIX_MATCHER = PathMatchers.prefix("/").getClass();
-    private static final Class<?> PATTERN_MATCHER = PathMatchers.pattern("/{id}").getClass();
-    private static final Class<?> ANY_MATCHER = PathMatchers.any().getClass();
-
     private final ConnectionContext ctx;
     private final RoutingRequest request;
     private final Iterator<HttpRouteBase> routeIterator;
@@ -183,16 +178,8 @@ class RouteCrawler {
         if (matcher == null) {
             return null;
         }
-        // Exact class identity proves factory provenance without trusting a custom matchingElement implementation.
-        Class<?> type = matcher.getClass();
-        if (type == ANY_MATCHER) {
-            return "";
-        }
-        if (type == EXACT_MATCHER || type == PREFIX_MATCHER || type == PATTERN_MATCHER) {
-            String template = matcher.matchingElement().orElse(null);
-            return template != null && template.length() <= 256 ? template : null;
-        }
-        return null;
+        String template = matcher.routeTemplate().orElse(null);
+        return template != null && template.length() <= 256 ? template : null;
     }
 
     private static RoutedPath merge(RoutedPath parent, RoutedPath path) {
