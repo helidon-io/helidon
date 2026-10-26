@@ -1627,6 +1627,60 @@ class DeliveryEngineTest {
     }
 
     @Test
+    void drainWaitsForConcurrentlyCompletingSource() {
+        MessagingConfig config = configBuilder().buildPrototype();
+        for (int iteration = 0; iteration < 10000; iteration++) {
+            CountDownLatch releaseSource = new CountDownLatch(1);
+            try (DeliveryEngine engine = engine(config)) {
+                engine.startSource("source", () -> await(releaseSource));
+                engine.beginDrain();
+                releaseSource.countDown();
+                Thread.yield();
+
+                assertThat("Source drain failed at iteration " + iteration, engine.awaitDrained(WAIT), is(true));
+            } finally {
+                releaseSource.countDown();
+            }
+        }
+    }
+
+    @Test
+    void terminationWaitsForConcurrentlyCompletingTasks() {
+        MessagingConfig config = configBuilder().buildPrototype();
+        for (int iteration = 0; iteration < 10000; iteration++) {
+            CountDownLatch releaseTasks = new CountDownLatch(1);
+            try (DeliveryEngine engine = engine(config)) {
+                engine.startSource("source", () -> await(releaseTasks));
+                assertThat(engine.startCleanup(() -> await(releaseTasks)), is(true));
+                releaseTasks.countDown();
+                Thread.yield();
+
+                assertThat("Task termination failed at iteration " + iteration, engine.awaitTermination(WAIT), is(true));
+            } finally {
+                releaseTasks.countDown();
+            }
+        }
+    }
+
+    @Test
+    void drainAndTerminationTimeOutWhileSourceIsRunning() {
+        CountDownLatch releaseSource = new CountDownLatch(1);
+        try (DeliveryEngine engine = engine(configBuilder().buildPrototype())) {
+            engine.startSource("source", () -> await(releaseSource));
+            engine.beginDrain();
+
+            assertThat(engine.awaitDrained(Duration.ofMillis(20)), is(false));
+            assertThat(engine.awaitTermination(Duration.ofMillis(20)), is(false));
+
+            releaseSource.countDown();
+            assertThat(engine.awaitDrained(WAIT), is(true));
+            assertThat(engine.awaitTermination(WAIT), is(true));
+        } finally {
+            releaseSource.countDown();
+        }
+    }
+
+    @Test
     void sourceCompletionListenerRunsAfterDeregistrationWithPublishedFailure() throws Exception {
         IllegalStateException sourceFailure = new IllegalStateException("source failed");
         CountDownLatch sourceStarted = new CountDownLatch(1);
