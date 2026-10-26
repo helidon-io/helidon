@@ -268,12 +268,13 @@ final class Activators {
                         || phase == ActivationPhase.POST_CONSTRUCTING)) {
                     // A JVM shutdown hook can run while the activating thread waits for shutdown to complete. Taking the
                     // instance lock here would deadlock, so interrupt activation and let the activating thread terminate.
+                    // Incomplete or deliberately limited activation has no cleanup to perform. Stopping it succeeds;
+                    // an activating caller reports the interruption separately.
                     var response = ActivationResult.builder()
-                            .success(false)
+                            .success(true)
                             .startingActivationPhase(phase)
                             .finishingActivationPhase(ActivationPhase.DESTROYED)
                             .targetActivationPhase(ActivationPhase.DESTROYED)
-                            .error(new IllegalStateException("Deactivation request received while constructing an instance"))
                             .build();
 
                     currentPhase = ActivationPhase.DESTROYED;
