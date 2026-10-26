@@ -149,6 +149,81 @@ public class EncryptedJwtTest {
     }
 
     @Test
+    public void testPreparsedHeadersFromToken() {
+        for (SupportedEncryption encryption : SupportedEncryption.values()) {
+            EncryptedJwt encryptedJwt = builder(signedJwt)
+                    .jwks(jwkKeys, "RS_512")
+                    .encryption(encryption)
+                    .build();
+            String token = encryptedJwt.token();
+            JwtHeaders headers = JwtHeaders.parseToken(token);
+
+            EncryptedJwt parsed = parseToken(headers, token);
+            assertThat(parsed.decrypt(jwkKeys).tokenContent(), is(signedJwt.tokenContent()));
+        }
+    }
+
+    @Test
+    public void testPreparsedHeadersAllowReorderedClaims() {
+        for (SupportedEncryption encryption : SupportedEncryption.values()) {
+            EncryptedJwt encryptedJwt = builder(signedJwt)
+                    .jwks(jwkKeys, "RS_512")
+                    .encryption(encryption)
+                    .build();
+            JwtHeaders suppliedHeaders = JwtHeaders.builder()
+                    .keyId("RS_512")
+                    .algorithm(SupportedAlgorithm.RSA_OAEP.toString())
+                    .encryption(encryption.toString())
+                    .contentType("JWT")
+                    .build();
+
+            assertThat(suppliedHeaders.headerJson(), is(encryptedJwt.headers().headerJson()));
+            assertThat(suppliedHeaders.headerJson().toString(), not(encryptedJwt.headers().headerJson().toString()));
+
+            EncryptedJwt parsed = parseToken(suppliedHeaders, encryptedJwt.token());
+            assertThat(parsed.headers().headerJson().toString(), is(encryptedJwt.headers().headerJson().toString()));
+            assertThat(parsed.decrypt(jwkKeys).tokenContent(), is(signedJwt.tokenContent()));
+        }
+    }
+
+    @Test
+    public void testPreparsedHeadersCannotChangeContentType() {
+        for (SupportedEncryption encryption : SupportedEncryption.values()) {
+            EncryptedJwt encryptedJwt = builder(signedJwt)
+                    .jwks(jwkKeys, "RS_512")
+                    .encryption(encryption)
+                    .build();
+            JwtHeaders headers = JwtHeaders.builder()
+                    .algorithm(SupportedAlgorithm.RSA_OAEP.toString())
+                    .encryption(encryption.toString())
+                    .keyId("RS_512")
+                    .contentType("text/plain")
+                    .build();
+
+            JwtException exception = assertThrows(JwtException.class,
+                                                  () -> parseToken(headers, encryptedJwt.token()).decrypt(jwkKeys),
+                                                  encryption.toString());
+            assertThat(exception.getMessage(), is("Provided JWT header does not match the token protected header"));
+        }
+    }
+
+    @Test
+    public void testPreparsedHeadersCannotAddClaims() {
+        EncryptedJwt encryptedJwt = builder(signedJwt).jwks(jwkKeys, "RS_512").build();
+        JwtHeaders headers = JwtHeaders.builder()
+                .algorithm(SupportedAlgorithm.RSA_OAEP.toString())
+                .encryption(SupportedEncryption.A256GCM.toString())
+                .keyId("RS_512")
+                .contentType("JWT")
+                .addHeaderClaim("custom", "unauthenticated")
+                .build();
+
+        JwtException exception = assertThrows(JwtException.class,
+                                              () -> parseToken(headers, encryptedJwt.token()).decrypt(jwkKeys));
+        assertThat(exception.getMessage(), is("Provided JWT header does not match the token protected header"));
+    }
+
+    @Test
     public void testCbcHmacRfc7518Construction() throws Exception {
         JwkRSA jwk = (JwkRSA) jwkKeys.forKeyId("RS_512").orElseThrow();
         for (CbcHmacParameters parameters : CBC_HMAC_PARAMETERS) {

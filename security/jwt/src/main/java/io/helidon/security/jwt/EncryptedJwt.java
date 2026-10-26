@@ -169,6 +169,7 @@ public final class EncryptedJwt {
      * {@code jwe_header_base64.encrypted_content_key_base64.iv_base64.content_base64.authentication_tag_base64} where base64 is
      * base64 URL encoding.
      * Use this method if you have pre-parsed header, otherwise use {@link #parseToken(String)}.
+     * The supplied header must match the header parsed from the token.
      *
      * This method does NO validation of content at all, only validates that the content is correctly formatted:
      * <ul>
@@ -180,22 +181,16 @@ public final class EncryptedJwt {
      * @param header parsed JWT header
      * @param token String with the token
      * @return Encrypted jwt parts
+     * @throws JwtException if the supplied header does not match the token's protected header
      * @throws RuntimeException in case of invalid content, see {@link Errors.ErrorMessagesException}
      */
     public static EncryptedJwt parseToken(JwtHeaders header, String token) {
-        Errors.Collector collector = Errors.collector();
-
-        Matcher matcher = JWE_PATTERN.matcher(token);
-        if (matcher.matches()) {
-            String encryptedKeyBase64 = matcher.group(2);
-            String ivBase64 = matcher.group(3);
-            String payloadBase64 = matcher.group(4);
-            String authTagBase64 = matcher.group(5);
-
-            return parse(token, collector, header, encryptedKeyBase64, ivBase64, payloadBase64, authTagBase64);
-        } else {
-            throw new JwtException("Not a JWE token: " + token);
+        Objects.requireNonNull(header);
+        EncryptedJwt parsed = parseToken(token);
+        if (!header.headerJson().equals(parsed.header.headerJson())) {
+            throw new JwtException("Provided JWT header does not match the token protected header");
         }
+        return parsed;
     }
 
     private static EncryptedJwt parse(String token,
