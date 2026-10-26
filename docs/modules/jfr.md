@@ -87,8 +87,9 @@ thread:
 | `requestName` | Known HTTP method and the last selected safe route template, or `<unknown>` |
 
 `method` and `routeTemplate` are also available as event details. Nonstandard
-methods are recorded as `OTHER`. Route templates are limited to 256 characters
-and come only from recognized configured matchers. Unknown/custom matcher
+methods are recorded as `<other>`, which cannot be an HTTP method token.
+Route templates are limited to 256 characters and come only from recognized
+configured matchers. Unknown/custom matcher
 provenance, unmatched requests, and oversized templates produce an absent
 template. Nested routes and reroutes retain the same restriction. No raw path
 or query string is substituted for a missing template.
