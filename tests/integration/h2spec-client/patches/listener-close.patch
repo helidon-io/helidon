@@ -1,0 +1,21 @@
+diff --git a/spec/server.go b/spec/server.go
+--- a/spec/server.go
++++ b/spec/server.go
+@@ -1,6 +1,7 @@
+ package spec
+ 
+ import (
+ 	"crypto/tls"
++	"errors"
+ 	"fmt"
+ 	"net"
+@@ -62,6 +63,9 @@ func (server *Server) RunListener(listener net.Listener, tc *ClientTestCase) {
+ 	for {
+ 		baseConn, err := listener.Accept()
+ 		if err != nil {
++			if errors.Is(err, net.ErrClosed) {
++				return
++			}
+ 			log.Println(err)
+ 			continue
+ 		}

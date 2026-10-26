@@ -33,6 +33,12 @@ RUN git checkout ${COMMIT}
 # JVM client started repeatedly inside a container, so honor the existing --timeout flag instead.
 RUN sed -i 's/time.Duration(3) \* time.Second/c.Timeout/' spec/specd.go
 RUN grep -nF 'time.After(c.Timeout)' spec/specd.go
+# A closed listener cannot recover: stop its accept loop instead of repeatedly logging shutdown errors.
+COPY patches/listener-close.patch /workspace/listener-close.patch
+COPY patches/server_listener_close_test.go spec/server_listener_close_test.go
+RUN git apply --check /workspace/listener-close.patch
+RUN git apply /workspace/listener-close.patch
+RUN go test ./spec -run '^TestRunListenerStopsAfterClose$' -count=1 -timeout=30s
 RUN go build -ldflags "-X main.VERSION=${VERSION} -X main.COMMIT=${COMMIT}" ./cmd/h2specd
 
 FROM container-registry.oracle.com/java/openjdk:27-oraclelinux9
