@@ -76,7 +76,7 @@ final class HttpServerRequestEvent extends Event {
         event.socketId = request.socketId();
         event.requestId = request.id();
         String method = request.prologue().method().text();
-        event.method = METHODS.contains(method) ? method : "OTHER";
+        event.method = METHODS.contains(method) ? method : "<other>";
         event.begin();
         return event;
     }

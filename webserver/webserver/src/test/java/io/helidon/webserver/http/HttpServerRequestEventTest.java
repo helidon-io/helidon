@@ -47,6 +47,8 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingFile;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -197,6 +199,28 @@ class HttpServerRequestEventTest {
         }
     }
 
+    @ParameterizedTest
+    @CsvSource({"GET, GET", "OPTIONS, OPTIONS", "OTHER, <other>", "_OTHER, <other>", "REPORT, <other>"})
+    void recordsMethodsWithAnUnambiguousFallback(String method, String recordedMethod) throws Exception {
+        var server = WebServer.builder().port(0).routing(rules -> rules
+                .route(Method.create(method), PathMatchers.exact("/method"),
+                       (request, response) -> response.send(request.prologue().method().text())))
+                .build().start();
+        try (var recording = new Recording()) {
+            recording.start();
+            String response = exchange(server, method, "/method");
+            assertThat(response, containsString("200 OK"));
+            assertThat(response, containsString(method));
+            List<RecordedEvent> events = events(recording, "method.jfr");
+            assertThat(events, hasSize(1));
+            RecordedEvent event = events.getFirst();
+            assertThat(event.getString("method"), is(recordedMethod));
+            assertThat(event.getString("requestName"), is(recordedMethod + " /method"));
+        } finally {
+            server.stop();
+        }
+    }
+
     @Test
     void eventCanBeDisabledAndHasContextualDefaults() throws Exception {
         EventType type = EventType.getEventType(HttpServerRequestEvent.class);
@@ -239,9 +263,13 @@ class HttpServerRequestEventTest {
     }
 
     private static String exchange(WebServer server, String target) throws Exception {
+        return exchange(server, "GET", target);
+    }
+
+    private static String exchange(WebServer server, String method, String target) throws Exception {
         try (var socket = new Socket(InetAddress.getLoopbackAddress(), server.port())) {
             socket.setSoTimeout(10_000);
-            socket.getOutputStream().write(("GET " + target + " HTTP/1.1\r\nHost: localhost\r\n"
+            socket.getOutputStream().write((method + " " + target + " HTTP/1.1\r\nHost: localhost\r\n"
                                                    + "Connection: close\r\n\r\n").getBytes(StandardCharsets.US_ASCII));
             socket.getOutputStream().flush();
             // EOF follows the routing return and connection close, so the event producer has completed before dumping.
