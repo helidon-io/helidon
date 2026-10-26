@@ -90,6 +90,11 @@ record SchemaInfo(TypeName generatedSchema, JsonObject schema) {
         annotatedType.findAnnotation(SchemaTypes.JSON_SCHEMA_REQUIRED).ifPresent(it -> required.set(true));
     }
 
+    private static void processBooleanAnnotations(JsonObject.Builder builder, Annotated annotatedType, AtomicBoolean required) {
+        builder.set("type", "boolean");
+        processCommonAnnotations(builder, annotatedType, required);
+    }
+
     private static void processIntegerAnnotations(JsonObject.Builder builder, Annotated annotatedType, AtomicBoolean required) {
         processCommonAnnotations(builder, annotatedType, required);
         builder.set("type", "integer");
@@ -271,7 +276,7 @@ record SchemaInfo(TypeName generatedSchema, JsonObject schema) {
             properties.forEach(it -> processNumberAnnotations(newStructBuilder, it.annotated(), required));
         } else if (parameterTypeName.primitive()) {
             if (parameterTypeName.equals(TypeNames.PRIMITIVE_BOOLEAN)) {
-                properties.forEach(it -> processCommonAnnotations(newStructBuilder, it.annotated(), required));
+                properties.forEach(it -> processBooleanAnnotations(newStructBuilder, it.annotated(), required));
             } else {
                 properties.forEach(it -> processStringAnnotations(newStructBuilder, it.annotated(), required));
             }
@@ -360,7 +365,7 @@ record SchemaInfo(TypeName generatedSchema, JsonObject schema) {
             processNumberAnnotations(itemsBuilder, element, required);
         } else if (finalTypeName.primitive()) {
             if (finalTypeName.equals(TypeNames.PRIMITIVE_BOOLEAN)) {
-                processCommonAnnotations(itemsBuilder, element, required);
+                processBooleanAnnotations(itemsBuilder, element, required);
             } else {
                 processStringAnnotations(itemsBuilder, element, required);
             }
