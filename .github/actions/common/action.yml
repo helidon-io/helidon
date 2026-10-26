@@ -189,6 +189,9 @@ runs:
           **/target/surefire-reports/**
           **/target/failsafe-reports/**
           **/target/it/**/*.log
+          **/target/h2spec-client-output.txt
+          **/target/h2spec-client-sections/**
+          **/target/h2spec-client-diagnostics/**
     - name: Archive artifacts
       if: ${{ inputs.artifact-name != '' && inputs.artifact-path != '' && always() }}
       uses: actions/upload-artifact@v4

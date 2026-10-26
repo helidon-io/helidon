@@ -17,6 +17,7 @@
 package io.helidon.tests.integration.h2spec.client;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,14 +25,18 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import io.helidon.logging.common.LogConfig;
 
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.exception.NotFoundException;
+import com.github.dockerjava.api.model.BuildResponseItem;
+import com.github.dockerjava.api.model.Frame;
+import com.github.dockerjava.api.model.StreamType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -39,9 +44,10 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.images.PullPolicy;
-import org.testcontainers.images.builder.ImageFromDockerfile;
+import org.testcontainers.images.builder.Transferable;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.MountableFile;
 
@@ -57,8 +63,10 @@ class H2SpecClientIT {
     private static final int MAX_PARALLEL_SECTION_RUNS = 2;
     private static final Path APPLICATION_JAR = Path.of("./target/helidon-tests-integration-h2spec-client.jar");
     private static final Path APPLICATION_LIBS = Path.of("./target/libs");
-    private static final ImageFromDockerfile IMAGE = new ImageFromDockerfile("helidon-h2spec-client", false)
-            .withDockerfile(Path.of("./Dockerfile"));
+    private static final String IMAGE_NAME = "helidon-h2spec-client";
+    private static final Duration IMAGE_TIMEOUT = timeout("image", 600);
+    private static final Duration SECTIONS_TIMEOUT = timeout("sections", 300);
+    private static final Duration CLEANUP_TIMEOUT = timeout("cleanup", 15);
     private static final List<H2SpecSection> SECTIONS = List.of(
             new H2SpecSection("client/1", 34_000),
             new H2SpecSection("client/4", 34_100),
@@ -101,8 +109,15 @@ class H2SpecClientIT {
 
         try {
             prepareOutputFiles();
-            String imageName = resolveImageName();
-            List<H2SpecSectionResult> sectionResults = runSections(imageName);
+            List<H2SpecSectionResult> sectionResults;
+            try (var execution = new H2SpecExecution(CLEANUP_TIMEOUT)) {
+                H2SpecExecution.progress("Image preparation started; deadline " + IMAGE_TIMEOUT);
+                long imageDeadline = System.nanoTime() + IMAGE_TIMEOUT.toNanos();
+                String imageName = execution.await(execution.submit(() -> resolveImageName(execution)),
+                                                  imageDeadline, "image preparation");
+                H2SpecExecution.progress("Image preparation completed: " + imageName);
+                sectionResults = runSections(execution, imageName);
+            }
             persistOutput(sectionResults);
 
             List<H2SpecCaseResult> caseResults = sectionResults.stream()
@@ -124,37 +139,74 @@ class H2SpecClientIT {
         }
     }
 
-    private static String resolveImageName() {
-        return IMAGE.get();
+    private static Duration timeout(String phase, long defaultSeconds) {
+        long seconds = Long.getLong("h2spec.client." + phase + ".timeout.seconds", defaultSeconds);
+        if (seconds <= 0) {
+            throw new IllegalArgumentException("h2spec client " + phase + " timeout must be positive");
+        }
+        return Duration.ofSeconds(seconds);
     }
 
-    private static List<H2SpecSectionResult> runSections(String imageName) {
-        // Starting too many one-shot containers at once makes the shortest jobs flaky under Testcontainers.
-        try (var executor = Executors.newFixedThreadPool(Math.min(SECTIONS.size(), MAX_PARALLEL_SECTION_RUNS))) {
-            List<SectionFuture> futures = new ArrayList<>(SECTIONS.size());
-            for (H2SpecSection section : SECTIONS) {
-                futures.add(new SectionFuture(section, executor.submit(() -> runSection(imageName, section))));
+    private static String resolveImageName(H2SpecExecution execution) throws Exception {
+        DockerClient docker = DockerClientFactory.instance().client();
+        AtomicReference<String> imageId = new AtomicReference<>();
+        AtomicReference<String> error = new AtomicReference<>();
+        try (var callback = new H2SpecExecution.Callback<BuildResponseItem>(item -> {
+            String stream = item.getStream();
+            if (stream != null && !stream.isBlank()) {
+                H2SpecExecution.progress("image build: " + stream.stripTrailing());
+            } else if (item.getStatus() != null) {
+                H2SpecExecution.progress("image build: " + item.getStatus());
             }
-
-            List<H2SpecSectionResult> results = new ArrayList<>(SECTIONS.size());
-            for (SectionFuture sectionFuture : futures) {
-                try {
-                    results.add(sectionFuture.future().get());
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    throw new IllegalStateException("Interrupted while waiting for " + sectionFuture.section().id(), e);
-                } catch (ExecutionException e) {
-                    throw new IllegalStateException("Failed to execute " + sectionFuture.section().id(), e.getCause());
-                }
+            if (item.isErrorIndicated()) {
+                error.set(item.getError());
+                H2SpecExecution.progress("image build error: " + item.getError());
             }
-            return results;
+            if (item.isBuildSuccessIndicated()) {
+                imageId.set(item.getImageId());
+            }
+        });
+             var build = docker.buildImageCmd(Path.of("Dockerfile").toAbsolutePath().toFile())
+                     .withTags(Set.of(IMAGE_NAME))
+                     .withLabels(DockerClientFactory.DEFAULT_LABELS)
+                     .withRemove(true)
+                     .withForcerm(true)) {
+            execution.own(callback);
+            execution.own(build);
+            H2SpecExecution.progress("Docker image build started");
+            build.exec(callback);
+            callback.await();
+            if (error.get() != null || imageId.get() == null) {
+                throw new IllegalStateException("Docker image build failed: " + error.get());
+            }
+            return IMAGE_NAME;
         }
     }
 
-    private static H2SpecSectionResult runSection(String imageName, H2SpecSection section) {
-        LOGGER.info("Running h2specd section {}", section.id());
+    private static List<H2SpecSectionResult> runSections(H2SpecExecution execution, String imageName) {
+        // Starting too many one-shot containers at once makes the shortest jobs flaky under Testcontainers.
+        H2SpecExecution.progress("Section suite started; workers " + MAX_PARALLEL_SECTION_RUNS
+                                         + "; deadline " + SECTIONS_TIMEOUT);
+        long deadline = System.nanoTime() + SECTIONS_TIMEOUT.toNanos();
+        List<SectionFuture> futures = new ArrayList<>(SECTIONS.size());
+        for (H2SpecSection section : SECTIONS) {
+            futures.add(new SectionFuture(section, execution.submit(() -> runSection(execution, imageName, section))));
+        }
 
-        try (var cont = new GenericContainer<>(imageName)
+        List<H2SpecSectionResult> results = new ArrayList<>(SECTIONS.size());
+        for (SectionFuture sectionFuture : futures) {
+            results.add(execution.await(sectionFuture.future(), deadline,
+                                        "section suite (waiting for " + sectionFuture.section().id() + ")"));
+        }
+        H2SpecExecution.progress("Section suite completed");
+        return results;
+    }
+
+    private static H2SpecSectionResult runSection(H2SpecExecution execution, String imageName, H2SpecSection section)
+            throws Exception {
+        H2SpecExecution.progress(section.id() + " container startup started");
+
+        try (var cont = new SectionContainer(imageName, execution, section)
                 .withCopyFileToContainer(MountableFile.forHostPath(APPLICATION_JAR), CONTAINER_APPLICATION_JAR)
                 .withCopyFileToContainer(MountableFile.forHostPath(APPLICATION_LIBS), CONTAINER_APPLICATION_LIBS)
                 .withImagePullPolicy(PullPolicy.ageBased(Duration.ofDays(365)))
@@ -162,15 +214,14 @@ class H2SpecClientIT {
                 .withStartupAttempts(1)) {
 
             cont.start();
-
-            var execResult = execSection(cont, section);
-
-            String output = combineExecOutput(execResult.getStdout(), execResult.getStderr());
-            persistSectionOutput(section, output);
-
-            if (execResult.getExitCode() != 0) {
+            H2SpecExecution.progress(section.id() + " container startup completed");
+            SectionExecResult exec = execSection(execution, cont, section);
+            String output = exec.output();
+            H2SpecExecution.progress(section.id() + " execution completed");
+            Long exitCode = exec.exitCode();
+            if (exitCode == null || exitCode != 0) {
                 throw new IllegalStateException("h2specd failed for " + section.id()
-                                                        + " with exit code " + execResult.getExitCode()
+                                                        + " with exit code " + exitCode
                                                         + ".\nOutput:\n" + output);
             }
 
@@ -178,10 +229,13 @@ class H2SpecClientIT {
         }
     }
 
-    private static org.testcontainers.containers.Container.ExecResult execSection(GenericContainer<?> cont,
-                                                                                  H2SpecSection section) {
-        try {
-            return cont.execInContainer(
+    private static SectionExecResult execSection(H2SpecExecution execution, GenericContainer<?> cont, H2SpecSection section) {
+        Path stdout = OUTPUT_DIR.resolve(section.fileName());
+        Path stderr = OUTPUT_DIR.resolve(section.logName() + "-stderr.txt");
+        try (OutputStream out = Files.newOutputStream(stdout);
+             OutputStream err = Files.newOutputStream(stderr)) {
+            DockerClient docker = cont.getDockerClient();
+            String execId = docker.execCreateCmd(cont.getContainerId()).withAttachStdout(true).withAttachStderr(true).withCmd(
                     "sh",
                     "-c",
                     "/usr/local/bin/h2specd " + section.id() + " "
@@ -190,7 +244,25 @@ class H2SpecClientIT {
                             // Containerized JVM startup is slower than the host-side ad hoc run.
                             + "--timeout " + H2SPEC_TIMEOUT_SECONDS + " "
                             + "-e 'java -cp " + CONTAINER_APPLICATION_JAR + ":" + CONTAINER_APPLICATION_LIBS + "/* "
-                            + "io.helidon.tests.integration.h2spec.client.H2SpecClientMain'");
+                            + "io.helidon.tests.integration.h2spec.client.H2SpecClientMain'").exec().getId();
+            H2SpecExecution.progress(section.id() + " exec started: " + execId);
+            try (var callback = new H2SpecExecution.Callback<Frame>(frame -> {
+                try {
+                    OutputStream destination = frame.getStreamType() == StreamType.STDERR ? err : out;
+                    destination.write(frame.getPayload());
+                    destination.flush();
+                    System.out.write(frame.getPayload());
+                    System.out.flush();
+                } catch (IOException e) {
+                    throw new IllegalStateException("Cannot persist output for " + section.id(), e);
+                }
+            })) {
+                execution.own(callback);
+                docker.execStartCmd(execId).exec(callback);
+                callback.await();
+            }
+            return new SectionExecResult(combineExecOutput(Files.readString(stdout), Files.readString(stderr)),
+                                         docker.inspectExecCmd(execId).exec().getExitCodeLong());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Interrupted while executing h2specd inside container for " + section.id(), e);
@@ -363,16 +435,6 @@ class H2SpecClientIT {
         }
     }
 
-    private static void persistSectionOutput(H2SpecSection section, String output) {
-        Path outputPath = OUTPUT_DIR.resolve(section.fileName());
-        try {
-            Files.createDirectories(OUTPUT_DIR);
-            Files.writeString(outputPath, output, StandardCharsets.UTF_8);
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to persist h2specd client output to " + outputPath, e);
-        }
-    }
-
     private static boolean isKnownFailure(String id, String desc) {
         return KNOWN_FAILURES.contains(new KnownFailure(id, desc));
     }
@@ -405,7 +467,7 @@ class H2SpecClientIT {
                                     String skipped) {
     }
 
-    private record H2SpecSection(String id, int fromPort) {
+    record H2SpecSection(String id, int fromPort) {
         String fileName() {
             return id.replace('/', '-') + ".txt";
         }
@@ -422,5 +484,56 @@ class H2SpecClientIT {
 
     private record SectionFuture(H2SpecSection section,
                                  Future<H2SpecSectionResult> future) {
+    }
+
+    private record SectionExecResult(String output, Long exitCode) {
+    }
+
+    static class SectionContainer extends GenericContainer<SectionContainer> {
+        private final H2SpecExecution execution;
+        private final H2SpecSection section;
+        private boolean owned;
+
+        SectionContainer(String imageName, H2SpecExecution execution, H2SpecSection section) {
+            super(imageName);
+            this.execution = execution;
+            this.section = section;
+        }
+
+        @Override
+        protected void containerIsCreated(String containerId) {
+            ownCreatedContainer(containerId);
+        }
+
+        @Override
+        public void copyFileToContainer(Transferable transferable, String containerPath) {
+            // GenericContainer creates its ID before copying, but calls containerIsCreated only after copying.
+            // Register first so a blocked startup archive request is included in timeout diagnostics and cleanup.
+            ownCreatedContainer(getContainerId());
+            super.copyFileToContainer(transferable, containerPath);
+        }
+
+        private void ownCreatedContainer(String containerId) {
+            if (owned) {
+                return;
+            }
+            try {
+                DockerClient docker = getDockerClient();
+                execution.own(() -> {
+                    try {
+                        docker.removeContainerCmd(containerId).withForce(true).withRemoveVolumes(true).exec();
+                    } catch (NotFoundException _) {
+                        // Normal section completion already removed this container.
+                    }
+                });
+                execution.diagnostic(section.fileName() + "-state.txt",
+                                     () -> docker.inspectContainerCmd(containerId).exec().toString());
+                execution.diagnostic(section.fileName() + "-logs.txt", this::getLogs);
+                owned = true;
+                H2SpecExecution.progress(section.id() + " container created: " + containerId);
+            } catch (IOException e) {
+                throw new IllegalStateException("Suite stopped while creating " + section.id(), e);
+            }
+        }
     }
 }
