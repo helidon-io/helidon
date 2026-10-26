@@ -35,6 +35,7 @@ module io.helidon.webserver {
     requires io.helidon.logging.common;
     requires io.helidon.service.registry;
     requires java.management;
+    requires jdk.jfr;
     requires io.helidon;
 
     requires transitive io.helidon.common.buffers;
