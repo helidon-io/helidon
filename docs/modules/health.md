@@ -68,6 +68,22 @@ something else).
 
 ### Writing Custom Health Checks
 
+Each aggregate health request runs its selected checks concurrently, with one
+named virtual thread per check. Checks must be independent: do not rely on execution order or
+on another check completing first. Detailed results retain registration order,
+including checks with duplicate names. An exception from a check produces an
+`ERROR` result while the other checks complete. A fatal error cancels sibling
+checks, and the request waits for their cleanup before returning.
+
+If the WebServer context feature binds a request context, all checks inherit
+that same context through scoped values, including explicitly propagated header
+values. Headers and the request object do not automatically become context
+entries. Without a bound context, checks have no scoped context. Configure the
+context feature on the socket serving the health endpoint, including a separate
+observability socket when used. Checks must safely coordinate access to shared
+mutable context values and must not depend on ordinary request-thread
+`ThreadLocal` values.
+
 In many cases, the ability of your application to do its job depends on
 conditions known only to your application: for example, whether certain external
 resources such as databases are available. You can create custom health checks
