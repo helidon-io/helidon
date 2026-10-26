@@ -177,6 +177,32 @@ class PemKeysTest {
         assertThat(keys.publicKey().orElseThrow(), is(firstCertificate.getPublicKey()));
     }
 
+    @ParameterizedTest(name = "mixed bundle: {0}")
+    @ValueSource(booleans = {false, true})
+    @SuppressWarnings("removal")
+    void testTrustedCertificateBundles(boolean mixed) throws IOException {
+        String trusted;
+        // OpenSSL x509 -addtrust serverAuth -trustout adds auxiliary trust data to public_key_cert.pem.
+        try (InputStream input = PemKeysTest.class.getResourceAsStream("/keystore/trusted_cert.pem")) {
+            trusted = new String(input.readAllBytes(), StandardCharsets.US_ASCII);
+        }
+        String ordinary = PEMEncoder.of().encodeToString(secondCertificate);
+        String bundle = mixed ? ordinary + trusted + ordinary + trusted : trusted;
+        var expected = mixed ? List.of(secondCertificate, firstCertificate, secondCertificate, firstCertificate)
+                : List.of(firstCertificate);
+        Keys keys = Keys.builder()
+                .pem(pem -> pem.certChain(Resource.create("trusted certificate chain", bundle))
+                        .certificates(Resource.create("trusted certificates", bundle)))
+                .build();
+
+        assertThat(keys.certChain(), is(expected));
+        assertThat(keys.certs(), is(expected));
+
+        var input = new TrackedInputStream(bundle.getBytes(StandardCharsets.US_ASCII), false, false);
+        assertThat(PemReader.readCertificates(input), is(expected));
+        assertThat(input.closed, is(true));
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"X509 CERTIFICATE", "X.509 CERTIFICATE"})
     void testHistoricalCertificateLabels(String label) {

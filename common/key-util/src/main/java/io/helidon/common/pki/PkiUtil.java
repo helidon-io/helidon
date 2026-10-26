@@ -94,6 +94,10 @@ final class PkiUtil {
                     }
                     break;
                 }
+                if (pem.type().equals("TRUSTED CERTIFICATE")) {
+                    // Decode the certificate without applying OpenSSL's auxiliary trust attributes, as before.
+                    pem = new PEM("CERTIFICATE", pem.content());
+                }
                 if (pem.type().equals("CERTIFICATE")) {
                     certificates.add(decoder.decode(pem.toString(), X509Certificate.class));
                 }
