@@ -84,7 +84,12 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${version.plugin.compiler}</version>
                     <configuration>
-                        <proc>full</proc>
+                        <annotationProcessorPaths>
+                            <path>
+                                <groupId>io.helidon.bundles</groupId>
+                                <artifactId>helidon-bundles-apt</artifactId>
+                            </path>
+                        </annotationProcessorPaths>
                     </configuration>
                 </plugin>
                 <plugin>
