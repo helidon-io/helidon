@@ -88,6 +88,113 @@ class ScopedRegistryImplTest {
                 )));
     }
 
+    private static void withDebug(boolean debug, Executable action) throws Throwable {
+        Logger logger = Logger.getLogger(ScopedRegistryImpl.class.getName());
+        Level previousLevel = logger.getLevel();
+        try {
+            logger.setLevel(debug ? Level.FINE : Level.INFO);
+            assertThat("actual DEBUG logging", System.getLogger(logger.getName()).isLoggable(System.Logger.Level.DEBUG),
+                       is(debug));
+            action.execute();
+        } finally {
+            logger.setLevel(previousLevel);
+        }
+    }
+
+    private static void completedCallbackIsDeactivatedDuringShutdown(ActivationPhase blockedPhase,
+                                                                     int expectedLifecycleInvocations,
+                                                                     Throwable cleanupFailure)
+            throws InterruptedException {
+        CountDownLatch activationStarted = new CountDownLatch(1);
+        CountDownLatch continueActivation = new CountDownLatch(1);
+        CountDownLatch deactivationStarted = new CountDownLatch(1);
+        CountDownLatch continueDeactivation = new CountDownLatch(1);
+        CountDownLatch pendingDeactivationStarted = new CountDownLatch(1);
+        ScopedRegistryImpl registry = registry();
+        TestActivator blocker = TestActivator.active(BLOCKING_DESCRIPTOR,
+                                                      deactivationStarted,
+                                                      continueDeactivation);
+        BlockingActivationActivator pending = new BlockingActivationActivator(PENDING_DESCRIPTOR,
+                                                                                 activationStarted,
+                                                                                 continueActivation,
+                                                                                 pendingDeactivationStarted,
+                                                                                 blockedPhase,
+                                                                                 cleanupFailure);
+        registry.activator(blocker.descriptor(), () -> blocker);
+        registry.activator(pending.descriptor(), () -> pending);
+
+        AtomicReference<ActivationResult> activationResult = new AtomicReference<>();
+        AtomicReference<Throwable> activationFailure = new AtomicReference<>();
+        Thread activationThread = Thread.ofVirtual()
+                .name("service-activation")
+                .unstarted(() -> {
+                    try {
+                        activationResult.set(pending.activate(ActivationRequest.builder()
+                                                                        .targetPhase(ActivationPhase.ACTIVE)
+                                                                        .build()));
+                    } catch (Throwable t) {
+                        activationFailure.set(t);
+                    }
+                });
+        AtomicReference<Throwable> shutdownFailure = new AtomicReference<>();
+        Thread shutdownThread = Thread.ofVirtual()
+                .name("scoped-registry-shutdown")
+                .unstarted(() -> {
+                    try {
+                        registry.deactivate();
+                    } catch (Throwable t) {
+                        shutdownFailure.set(t);
+                    }
+                });
+
+        activationThread.start();
+        try {
+            assertThat("activation started", activationStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS), is(true));
+            assertThat("blocked callback phase", pending.phase(), is(blockedPhase));
+            shutdownThread.start();
+            assertThat("higher run-level deactivation started",
+                       deactivationStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS),
+                       is(true));
+            continueActivation.countDown();
+            activationThread.join(TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS));
+            assertThat("activation completed before pending deactivation", activationThread.isAlive(), is(false));
+            assertThat("pending deactivation not started", pendingDeactivationStarted.getCount(), is(1L));
+            assertThat("pre destroy waits for pending deactivation", pending.preDestroyInvocations(), is(0));
+        } finally {
+            continueActivation.countDown();
+            continueDeactivation.countDown();
+            activationThread.join(TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS));
+            shutdownThread.join(TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS));
+        }
+
+        assertThat("activation completed", activationThread.isAlive(), is(false));
+        assertThat("shutdown completed", shutdownThread.isAlive(), is(false));
+        assertThat("activation failure", activationFailure.get(), nullValue());
+        assertThat("activation result", activationResult.get(), notNullValue());
+        assertThat("activation interrupted", activationResult.get().failure(), is(true));
+        if (cleanupFailure == null) {
+            assertThat("shutdown failure", shutdownFailure.get(), nullValue());
+        } else {
+            assertThat("shutdown failure", shutdownFailure.get(), instanceOf(ServiceRegistryException.class));
+            assertThat("suppressed failures", shutdownFailure.get().getSuppressed().length, is(1));
+            assertThat("cleanup failure", shutdownFailure.get().getSuppressed()[0], sameInstance(cleanupFailure));
+        }
+        assertThat("target instances not published", pending.targetInstancesSet(), is(false));
+        assertThat("pending deactivation started", pendingDeactivationStarted.getCount(), is(0L));
+        assertThat("post construct invocations", pending.postConstructInvocations(), is(expectedLifecycleInvocations));
+        assertThat("pre destroy invocations", pending.preDestroyInvocations(), is(expectedLifecycleInvocations));
+        assertThat(pending.phase(), is(ActivationPhase.DESTROYED));
+    }
+
+    private static ScopedRegistryImpl registry() {
+        ScopedRegistryImpl registry = new ScopedRegistryImpl(null,
+                                                             Service.Singleton.TYPE,
+                                                             "test",
+                                                             Map.of());
+        registry.activate();
+        return registry;
+    }
+
     private void handedOutInitActivatorIsTerminalAfterShutdown() {
         ScopedRegistryImpl registry = registry();
         TestActivator pending = TestActivator.init(PENDING_DESCRIPTOR);
@@ -357,113 +464,6 @@ class ScopedRegistryImplTest {
             assertThat(phase + " cleanup invocations", activator.preDestroyInvocations(), is(0));
             assertThat(phase + " terminal phase", activator.phase(), is(ActivationPhase.DESTROYED));
         }
-    }
-
-    private static void withDebug(boolean debug, Executable action) throws Throwable {
-        Logger logger = Logger.getLogger(ScopedRegistryImpl.class.getName());
-        Level previousLevel = logger.getLevel();
-        try {
-            logger.setLevel(debug ? Level.FINE : Level.INFO);
-            assertThat("actual DEBUG logging", System.getLogger(logger.getName()).isLoggable(System.Logger.Level.DEBUG),
-                       is(debug));
-            action.execute();
-        } finally {
-            logger.setLevel(previousLevel);
-        }
-    }
-
-    private static void completedCallbackIsDeactivatedDuringShutdown(ActivationPhase blockedPhase,
-                                                                     int expectedLifecycleInvocations,
-                                                                     Throwable cleanupFailure)
-            throws InterruptedException {
-        CountDownLatch activationStarted = new CountDownLatch(1);
-        CountDownLatch continueActivation = new CountDownLatch(1);
-        CountDownLatch deactivationStarted = new CountDownLatch(1);
-        CountDownLatch continueDeactivation = new CountDownLatch(1);
-        CountDownLatch pendingDeactivationStarted = new CountDownLatch(1);
-        ScopedRegistryImpl registry = registry();
-        TestActivator blocker = TestActivator.active(BLOCKING_DESCRIPTOR,
-                                                      deactivationStarted,
-                                                      continueDeactivation);
-        BlockingActivationActivator pending = new BlockingActivationActivator(PENDING_DESCRIPTOR,
-                                                                                 activationStarted,
-                                                                                 continueActivation,
-                                                                                 pendingDeactivationStarted,
-                                                                                 blockedPhase,
-                                                                                 cleanupFailure);
-        registry.activator(blocker.descriptor(), () -> blocker);
-        registry.activator(pending.descriptor(), () -> pending);
-
-        AtomicReference<ActivationResult> activationResult = new AtomicReference<>();
-        AtomicReference<Throwable> activationFailure = new AtomicReference<>();
-        Thread activationThread = Thread.ofVirtual()
-                .name("service-activation")
-                .unstarted(() -> {
-                    try {
-                        activationResult.set(pending.activate(ActivationRequest.builder()
-                                                                        .targetPhase(ActivationPhase.ACTIVE)
-                                                                        .build()));
-                    } catch (Throwable t) {
-                        activationFailure.set(t);
-                    }
-                });
-        AtomicReference<Throwable> shutdownFailure = new AtomicReference<>();
-        Thread shutdownThread = Thread.ofVirtual()
-                .name("scoped-registry-shutdown")
-                .unstarted(() -> {
-                    try {
-                        registry.deactivate();
-                    } catch (Throwable t) {
-                        shutdownFailure.set(t);
-                    }
-                });
-
-        activationThread.start();
-        try {
-            assertThat("activation started", activationStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS), is(true));
-            assertThat("blocked callback phase", pending.phase(), is(blockedPhase));
-            shutdownThread.start();
-            assertThat("higher run-level deactivation started",
-                       deactivationStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS),
-                       is(true));
-            continueActivation.countDown();
-            activationThread.join(TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS));
-            assertThat("activation completed before pending deactivation", activationThread.isAlive(), is(false));
-            assertThat("pending deactivation not started", pendingDeactivationStarted.getCount(), is(1L));
-            assertThat("pre destroy waits for pending deactivation", pending.preDestroyInvocations(), is(0));
-        } finally {
-            continueActivation.countDown();
-            continueDeactivation.countDown();
-            activationThread.join(TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS));
-            shutdownThread.join(TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS));
-        }
-
-        assertThat("activation completed", activationThread.isAlive(), is(false));
-        assertThat("shutdown completed", shutdownThread.isAlive(), is(false));
-        assertThat("activation failure", activationFailure.get(), nullValue());
-        assertThat("activation result", activationResult.get(), notNullValue());
-        assertThat("activation interrupted", activationResult.get().failure(), is(true));
-        if (cleanupFailure == null) {
-            assertThat("shutdown failure", shutdownFailure.get(), nullValue());
-        } else {
-            assertThat("shutdown failure", shutdownFailure.get(), instanceOf(ServiceRegistryException.class));
-            assertThat("suppressed failures", shutdownFailure.get().getSuppressed().length, is(1));
-            assertThat("cleanup failure", shutdownFailure.get().getSuppressed()[0], sameInstance(cleanupFailure));
-        }
-        assertThat("target instances not published", pending.targetInstancesSet(), is(false));
-        assertThat("pending deactivation started", pendingDeactivationStarted.getCount(), is(0L));
-        assertThat("post construct invocations", pending.postConstructInvocations(), is(expectedLifecycleInvocations));
-        assertThat("pre destroy invocations", pending.preDestroyInvocations(), is(expectedLifecycleInvocations));
-        assertThat(pending.phase(), is(ActivationPhase.DESTROYED));
-    }
-
-    private static ScopedRegistryImpl registry() {
-        ScopedRegistryImpl registry = new ScopedRegistryImpl(null,
-                                                             Service.Singleton.TYPE,
-                                                             "test",
-                                                             Map.of());
-        registry.activate();
-        return registry;
     }
 
     private static final class TestDescriptor implements ServiceDescriptor<Object> {
