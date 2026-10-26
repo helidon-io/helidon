@@ -28,11 +28,8 @@ import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalValue;
@@ -44,23 +41,19 @@ import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.collection.IsArrayWithSize.arrayWithSize;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class AnnotationTest {
-    private static Annotation helidonAnnotation;
-    private static MyAnnotation syntheticAnnotation;
+    private Annotation helidonAnnotation;
 
-    @BeforeAll
-    public static void setup() {
-        helidonAnnotation = null;
+    @BeforeEach
+    public void setup() {
+        helidonAnnotation = AnnotationFactory.create(AnnotatedType.class).getFirst();
     }
 
-    @Order(0)
     @Test
     public void testCreateAnnotation() {
         List<Annotation> annotations = AnnotationFactory.create(AnnotatedType.class);
         assertThat(annotations, hasSize(1));
         Annotation annotation = annotations.getFirst();
-        helidonAnnotation = annotation;
 
         assertThat(annotation.typeName(), is(TypeName.create(MyAnnotation.class)));
         assertThat(annotation.stringValue("stringValue"), optionalValue(is("value1")));
@@ -108,7 +101,6 @@ public class AnnotationTest {
         assertThat(annotation.stringValues("singletonList"), optionalValue(is(List.of("value"))));
     }
 
-    @Order(1)
     @Test
     public void testSyntheticAnnotationWithNullContextClassLoader() {
         Thread thread = Thread.currentThread();
@@ -125,7 +117,6 @@ public class AnnotationTest {
         }
     }
 
-    @Order(1)
     @Test
     public void testSyntheticAnnotationWithUnrelatedContextClassLoader() {
         Thread thread = Thread.currentThread();
@@ -142,14 +133,12 @@ public class AnnotationTest {
         }
     }
 
-    @Order(2)
     @Test
     public void testSyntheticAnnotation() {
         Optional<MyAnnotation> synthesizedAnnotation = AnnotationFactory.synthesize(helidonAnnotation);
 
         assertThat(synthesizedAnnotation, optionalPresent());
         MyAnnotation annotation = synthesizedAnnotation.get();
-        AnnotationTest.syntheticAnnotation = annotation;
 
         assertThat(annotation.annotationType(), sameInstance(MyAnnotation.class));
         assertThat(annotation.stringValue(), is("value1"));
@@ -199,9 +188,9 @@ public class AnnotationTest {
         assertThat(annotation.singletonList(), arrayContaining("value"));
     }
 
-    @Order(2)
     @Test
     public void testEqualsAndHashCode() {
+        MyAnnotation syntheticAnnotation = AnnotationFactory.<MyAnnotation>synthesize(helidonAnnotation).orElseThrow();
         MyAnnotation synthesizedAnnotation2 = AnnotationFactory.<MyAnnotation>synthesize(helidonAnnotation).get();
 
         assertThat("Synthesized from same annotation should be equal", syntheticAnnotation, is(synthesizedAnnotation2));
@@ -216,9 +205,9 @@ public class AnnotationTest {
                    is(onType.hashCode()));
     }
 
-    @Order(3)
     @Test
     public void testOtherObjectMethods() {
+        MyAnnotation syntheticAnnotation = AnnotationFactory.<MyAnnotation>synthesize(helidonAnnotation).orElseThrow();
         String string = syntheticAnnotation.toString();
         assertThat(string, is(notNullValue()));
         Class<? extends MyAnnotation> aClass = syntheticAnnotation.getClass();
