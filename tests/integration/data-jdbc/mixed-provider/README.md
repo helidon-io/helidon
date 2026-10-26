@@ -22,17 +22,26 @@ The test also verifies that only `JpaBookRepository__Jpa` and
 constructor dependencies contain the expected persistence-unit and JDBC-client
 qualifiers.
 
-Run the module directly:
-
-```bash
-mvn -Plong-tests clean package
-```
-
-Or select it from the Data JDBC integration reactor:
+Select the module from the Data JDBC integration reactor, building its MySQL
+fixture dependency from `common/fixtures/mysql` with `-am`:
 
 ```bash
 mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests -pl mixed-provider -am clean package
 ```
+
+To run directly from this module directory, first install the test parent POMs
+and support modules (the parent POMs may already be installed by a repository
+test build):
+
+```bash
+mvn -N -f ../../../pom.xml install
+mvn -N -f ../../pom.xml install
+mvn -f ../pom.xml -P-long-tests install
+mvn clean verify
+```
+
+The `long-tests` profile controls inclusion from the Data JDBC reactor; directly
+targeting this module runs its tests regardless of that gate.
 
 These tests require Docker and use the same approved MySQL image as the JDBC
 matrix. They are skipped when Docker is unavailable.
