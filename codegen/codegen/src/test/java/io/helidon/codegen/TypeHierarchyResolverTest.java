@@ -25,6 +25,7 @@ import java.util.Set;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.Modifier;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -135,6 +136,79 @@ class TypeHierarchyResolverTest {
 
         Annotation annotation = resolved.findAnnotation(TypeName.create("example.ResultType")).orElseThrow();
         assertThat(annotation.stringValue().orElseThrow(), is("mapped"));
+    }
+
+    @Test
+    void resolvesGenericArrayMemberTypes() {
+        TypeName variable = TypeName.createFromGenericDeclaration("T");
+        TypeName boundedVariable = TypeName.builder(variable)
+                .addUpperBound(TypeName.create(CharSequence.class))
+                .build();
+        TypeName genericArray = arrayType(variable);
+        TypeName stringArray = arrayType(TypeNames.STRING);
+        TypeName genericList = TypeName.builder(TypeNames.LIST)
+                .addTypeArgument(variable)
+                .build();
+        TypeName stringList = TypeName.builder(TypeNames.LIST)
+                .addTypeArgument(TypeNames.STRING)
+                .build();
+        List<TypeName> memberTypes = List.of(genericArray,
+                                             arrayType(boundedVariable),
+                                             arrayType(genericArray),
+                                             arrayType(genericList),
+                                             TypeName.builder(genericArray).vararg(true).build());
+        List<TypeName> expectedTypes = List.of(stringArray,
+                                               stringArray,
+                                               arrayType(stringArray),
+                                               arrayType(stringList),
+                                               TypeName.builder(stringArray).vararg(true).build());
+
+        for (int index = 0; index < memberTypes.size(); index++) {
+            TypeName memberType = memberTypes.get(index);
+            TypeName expectedType = expectedTypes.get(index);
+            TypeName resolved = resolveStringMemberType(memberType);
+
+            assertThat(memberType.resolvedName(), resolved.resolvedName(), is(expectedType.resolvedName()));
+            assertThat(memberType.resolvedName(), ResolvedType.create(resolved), is(ResolvedType.create(expectedType)));
+            assertThat(memberType.resolvedName(), resolved.generic(), is(false));
+            assertThat(memberType.resolvedName(), resolved.vararg(), is(expectedType.vararg()));
+        }
+    }
+
+    @Test
+    void preservesArrayDimensionAndComponentAnnotationsWhenResolvingMemberType() {
+        Annotation componentAnnotation = Annotation.create(TypeName.create("example.Component"));
+        Annotation inheritedComponentAnnotation = Annotation.create(TypeName.create("example.InheritedComponent"));
+        Annotation dimensionAnnotation = Annotation.create(TypeName.create("example.Dimension"));
+        Annotation inheritedDimensionAnnotation = Annotation.create(TypeName.create("example.InheritedDimension"));
+        TypeName variable = TypeName.builder(TypeName.createFromGenericDeclaration("T"))
+                .addAnnotation(componentAnnotation)
+                .addInheritedAnnotation(inheritedComponentAnnotation)
+                .build();
+        TypeName array = TypeName.builder(arrayType(variable))
+                .annotations(List.of(dimensionAnnotation))
+                .inheritedAnnotations(List.of(inheritedDimensionAnnotation))
+                .build();
+
+        TypeName resolved = resolveStringMemberType(array);
+
+        assertThat(resolved.resolvedName(), is("java.lang.String[]"));
+        assertThat(resolved.annotations(), is(List.of(dimensionAnnotation)));
+        assertThat(resolved.inheritedAnnotations(), is(List.of(inheritedDimensionAnnotation)));
+        TypeName component = resolved.componentType().orElseThrow();
+        assertThat(component.annotations(), is(List.of(componentAnnotation)));
+        assertThat(component.inheritedAnnotations(), is(List.of(inheritedComponentAnnotation)));
+    }
+
+    @Test
+    void retainsArrayDimensionsWhenATypeVariableResolvesToAnArray() {
+        TypeName variable = TypeName.createFromGenericDeclaration("T");
+        TypeName stringArray = arrayType(TypeNames.STRING);
+
+        TypeName resolved = resolveMemberType(arrayType(variable), stringArray);
+
+        assertThat(resolved.resolvedName(), is("java.lang.String[][]"));
+        assertThat(ResolvedType.create(resolved), is(ResolvedType.create(arrayType(stringArray))));
     }
 
     /**
@@ -414,6 +488,10 @@ class TypeHierarchyResolverTest {
      * @return resolved member type
      */
     private static TypeName resolveStringMemberType(TypeName memberType) {
+        return resolveMemberType(memberType, TypeNames.STRING);
+    }
+
+    private static TypeName resolveMemberType(TypeName memberType, TypeName typeArgument) {
         TypeName variable = TypeName.createFromGenericDeclaration("T");
         TypeName declarationType = TypeName.create("example.GenericType");
         TypeInfo declaration = TypeInfo.builder()
@@ -428,10 +506,17 @@ class TypeHierarchyResolverTest {
                 .kind(ElementKind.CLASS)
                 .build();
         TypeName useSiteType = TypeName.builder(declarationType)
-                .addTypeArgument(TypeNames.STRING)
+                .addTypeArgument(typeArgument)
                 .build();
         return TypeHierarchyResolver.create(_ -> Optional.empty())
                 .resolveMemberType(declaration, useSiteType, memberType);
+    }
+
+    private static TypeName arrayType(TypeName componentType) {
+        return TypeName.builder(componentType)
+                .array(true)
+                .componentType(componentType)
+                .build();
     }
 
     private static TypeName effectiveReturnType(TypeName first, TypeName second) {
