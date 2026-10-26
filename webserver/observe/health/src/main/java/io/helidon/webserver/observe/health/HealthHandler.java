@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.StructuredTaskScope;
+import java.util.concurrent.StructuredTaskScope.Joiner;
 
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
@@ -98,15 +99,14 @@ class HealthHandler implements Handler {
     }
 
     private List<NamedResponse> evaluateChecks() {
-        try (var scope = StructuredTaskScope.open(config -> config
+        try (var scope = StructuredTaskScope.open(Joiner.<NamedResponse>allSuccessfulOrThrow(), config -> config
                 .withName("health-checks")
                 .withThreadFactory(Thread.ofVirtual().name("health-check-", 0).factory()))) {
-            List<StructuredTaskScope.Subtask<NamedResponse>> tasks = new ArrayList<>(checks.size());
             int index = 0;
             for (HealthCheck check : checks) {
                 String name = check.name();
                 String threadName = "health-check-" + index++ + "[" + name + "]";
-                tasks.add(scope.fork(() -> {
+                scope.fork(() -> {
                     Thread.currentThread().setName(threadName);
                     HealthCheckResponse response;
                     try {
@@ -120,11 +120,10 @@ class HealthHandler implements Handler {
                         LOGGER.log(System.Logger.Level.ERROR, "Unexpected failure of health check", e);
                     }
                     return new NamedResponse(name, response);
-                }));
+                });
             }
-            scope.join();
             // Keep registration order and allow duplicate check names, even when tasks finish out of order.
-            return tasks.stream().map(StructuredTaskScope.Subtask::get).toList();
+            return scope.join();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("Interrupted while waiting for health checks", e);
