@@ -489,9 +489,20 @@ final class Activators {
                     return response.build();
                 }
                 postConstruct(response);
-                postConstructCompleted = true;
-                if (activationInterrupted(response)) {
-                    return response.build();
+                phaseLock.lock();
+                try {
+                    postConstructCompleted = true;
+                    if (currentPhase.eligibleForDeactivation()
+                            && targetPhase.ordinal() > ActivationPhase.POST_CONSTRUCTING.ordinal()) {
+                        // Publish cleanup ownership with completion so shutdown cannot destroy a fully initialized
+                        // instance before activation has checked for interruption. Limited activation stays unchanged.
+                        activationCleanupPending = true;
+                    }
+                    if (activationInterruptedLocked(response)) {
+                        return response.build();
+                    }
+                } finally {
+                    phaseLock.unlock();
                 }
             }
             finishingPhase = response.finishingActivationPhase().orElse(finishingPhase);

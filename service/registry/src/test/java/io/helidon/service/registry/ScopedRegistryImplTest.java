@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -75,6 +76,11 @@ class ScopedRegistryImplTest {
                                     () -> withDebug(debug, this::completedInjectionIsNotPreDestroyedDuringShutdown)),
                         dynamicTest("completed post construction runs pre destroy",
                                     () -> withDebug(debug, this::completedPostConstructIsPreDestroyedDuringShutdown)),
+                        dynamicTest("shutdown at post construction handoff runs pre destroy",
+                                    () -> withDebug(debug, () -> shutdownAtPostConstructHandoff(null))),
+                        dynamicTest("shutdown at post construction handoff reports cleanup failure",
+                                    () -> withDebug(debug, () -> shutdownAtPostConstructHandoff(
+                                            new IllegalStateException("Handoff cleanup failed")))),
                         dynamicTest("queued pre destroy reports failure",
                                     () -> withDebug(debug, this::queuedCleanupFailureIsReported)),
                         dynamicTest("active activator runs pre destroy",
@@ -331,6 +337,56 @@ class ScopedRegistryImplTest {
 
     private void completedPostConstructIsPreDestroyedDuringShutdown() throws InterruptedException {
         completedCallbackIsDeactivatedDuringShutdown(ActivationPhase.POST_CONSTRUCTING, 1, null);
+    }
+
+    private void shutdownAtPostConstructHandoff(Throwable cleanupFailure) {
+        AtomicBoolean postConstructCompleted = new AtomicBoolean();
+        AtomicBoolean shutdownStarted = new AtomicBoolean();
+        AtomicReference<Throwable> shutdownFailure = new AtomicReference<>();
+        ScopedRegistryImpl registry = new ScopedRegistryImpl(null, Service.Singleton.TYPE, "handoff", Map.of()) {
+            @Override
+            boolean activationAllowed() {
+                // Reenter shutdown at the first eligibility check after the callback returned, before activation
+                // has handled interruption. This exposes the handoff without depending on thread scheduling.
+                if (postConstructCompleted.get() && shutdownStarted.compareAndSet(false, true)) {
+                    try {
+                        deactivate();
+                    } catch (Throwable t) {
+                        shutdownFailure.set(t);
+                    }
+                }
+                return super.activationAllowed();
+            }
+        };
+        registry.activate();
+        LifecycleActivator activator = new LifecycleActivator(PENDING_DESCRIPTOR, response -> {
+            if (cleanupFailure != null) {
+                response.success(false).error(cleanupFailure);
+            }
+        }) {
+            @Override
+            void postConstruct(ActivationResult.Builder response) {
+                postConstructCompleted.set(true);
+            }
+        };
+        registry.activator(activator.descriptor(), () -> activator);
+
+        ActivationResult result = activator.activate(ActivationRequest.builder().targetPhase(ActivationPhase.ACTIVE).build());
+
+        assertThat("shutdown reached the post construct handoff", shutdownStarted.get(), is(true));
+        assertThat("activation interrupted", result.failure(), is(true));
+        assertThat("target instances not published", activator.targetInstancesSet(), is(false));
+        assertThat("pre destroy invocations", activator.preDestroyInvocations(), is(1));
+        assertThat("terminal phase", activator.phase(), is(ActivationPhase.DESTROYED));
+        if (cleanupFailure == null) {
+            assertThat("shutdown failure", shutdownFailure.get(), nullValue());
+        } else {
+            assertThat("shutdown failure", shutdownFailure.get(), instanceOf(ServiceRegistryException.class));
+            assertThat("suppressed failures", shutdownFailure.get().getSuppressed().length, is(1));
+            assertThat("cleanup failure", shutdownFailure.get().getSuppressed()[0], sameInstance(cleanupFailure));
+        }
+        registry.deactivate();
+        assertThat("pre destroy is not repeated", activator.preDestroyInvocations(), is(1));
     }
 
     private void queuedCleanupFailureIsReported() throws InterruptedException {
