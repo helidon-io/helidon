@@ -52,7 +52,7 @@
         <version.plugin.resources>3.3.1</version.plugin.resources>
         <version.plugin.surefire>3.5.6</version.plugin.surefire>
         <version.lib.google-protobuf>4.36.2</version.lib.google-protobuf>
-        <version.lib.grpc>1.73.0</version.lib.grpc>
+        <version.lib.grpc>1.82.4</version.lib.grpc>
         <helidon.test.config.profile>test</helidon.test.config.profile>
     </properties>
 

@@ -662,6 +662,12 @@
                                 <dependencyConvergence>
                                     <uniqueVersions>true</uniqueVersions>
                                 </dependencyConvergence>
+                                <bannedDependencies>
+                                    <excludes>
+                                        <exclude>com.google.code.findbugs:jsr305</exclude>
+                                    </excludes>
+                                    <searchTransitive>true</searchTransitive>
+                                </bannedDependencies>
                             </rules>
                         </configuration>
                     </execution>
