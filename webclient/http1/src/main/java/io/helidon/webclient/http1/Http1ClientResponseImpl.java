@@ -85,6 +85,8 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
 
     private final ClientConnection connection;
     private final LazyValue<Headers> trailers;
+    private byte[] entityReadBytes;
+    private BufferData entityReadBuffer;
     private boolean entityRequested;
     private long entityLength;
     private boolean entityFullyRead = false;
@@ -443,11 +445,17 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
             throw new IllegalStateException("Response is closed");
         }
         try {
-            BufferData bufferData = BufferData.create(estimate);
+            if (entityReadBuffer == null || !entityReadBuffer.consumed() || entityReadBytes.length < estimate) {
+                entityReadBytes = new byte[estimate];
+            }
+            BufferData bufferData = BufferData.create(entityReadBytes, 0, estimate).reset();
             int bytesRead = bufferData.readFrom(inputStream);
             if (bytesRead == -1) {
+                entityReadBytes = null;
+                entityReadBuffer = null;
                 return null;
             }
+            entityReadBuffer = bufferData;
             return bufferData;
         } catch (RuntimeException e) {
             closeAfterEntityFailure(e);

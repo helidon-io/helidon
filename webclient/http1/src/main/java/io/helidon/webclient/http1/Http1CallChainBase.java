@@ -911,6 +911,7 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         private boolean finished;
         private int chunkRemaining;
         private boolean chunkTerminatorPending;
+        private boolean bufferedTerminatorValidated;
 
         ChunkedInputStream(ClientConnection connection,
                            DataReader reader,
@@ -966,10 +967,16 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
             if (!finished && failure == null) {
                 if (currentBuffer != null
                         && currentBuffer.consumed()
-                        && chunkRemaining == 0
-                        && consumeExpectedFinalChunk()) {
-                    finish();
-                    return;
+                        && chunkRemaining == 0) {
+                    try {
+                        consumeChunkTerminator();
+                    } catch (RuntimeException e) {
+                        throw fail(e);
+                    }
+                    if (consumeExpectedFinalChunk()) {
+                        finish();
+                        return;
+                    }
                 }
                 finished = true;
                 currentBuffer = null;
@@ -989,7 +996,6 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
 
         private boolean consumeExpectedFinalChunk() {
             try {
-                consumeChunkTerminator();
                 if (readChunkSize(reader) != 0) {
                     throw new IllegalStateException("HTTP content decoder completed before the final response chunk");
                 }
@@ -1021,6 +1027,7 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
                 if (chunkRemaining == 0) {
                     consumeChunkTerminator();
                     chunkRemaining = readChunkSize(reader);
+                    bufferedTerminatorValidated = false;
                     if (chunkRemaining == 0) {
                         if (!hasTrailers && reader.startsWithNewLine()) {
                             reader.skip(2);
@@ -1031,10 +1038,22 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
                 }
                 // Deliver a bounded slice without waiting for the remainder of a wire chunk or its terminator.
                 reader.ensureAvailable();
-                int toRead = Math.min(chunkRemaining, Math.min(reader.available(), 8192));
+                int available = reader.available();
+                int toRead = Math.min(chunkRemaining, Math.min(available, 8192));
+                if (!bufferedTerminatorValidated && toRead < chunkRemaining && available - chunkRemaining >= 2) {
+                    BufferData bufferedChunk = reader.getBuffer(chunkRemaining + 2);
+                    bufferedChunk.skip(chunkRemaining);
+                    if (bufferedChunk.read() != Bytes.CR_BYTE || bufferedChunk.read() != Bytes.LF_BYTE) {
+                        throw new IllegalStateException("HTTP response chunk data is not followed by CRLF");
+                    }
+                    bufferedTerminatorValidated = true;
+                }
                 currentBuffer = reader.readBuffer(toRead);
                 chunkRemaining -= toRead;
                 chunkTerminatorPending = chunkRemaining == 0;
+                if (chunkTerminatorPending && reader.available() >= 2) {
+                    consumeChunkTerminator();
+                }
                 recvListener.data(helidonSocket, currentBuffer);
             } catch (RuntimeException e) {
                 throw fail(e);
