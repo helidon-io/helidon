@@ -703,13 +703,7 @@ and releases graph-local state without removing meters or closing the shared reg
 same channel tags continues the cumulative measurements, including any measurements already recorded by application
 code. A force-closed graph's late callbacks do not add samples; recording already in progress is allowed to complete.
 
-If messaging is already registering meters in a registry, graph construction on another thread using that registry can
-proceed with deferred registration. Completed attempts are buffered until registration can publish them. Attempts starting
-before registration use the system monotonic clock for their entire duration; subsequent attempts use the registry's clock.
-At most 64 channel registrations can wait per registry, and each pending channel can buffer 1,024 completed attempts.
-Exceeding either limit disables metrics for that channel and logs a warning without interrupting message processing.
-
-Meter registration normally runs synchronously during graph construction. A meter-added listener must not wait for another
+Meter registration runs synchronously during graph construction. A meter-added listener must not wait for another
 thread to construct a messaging graph using the same registry: the listener may hold a registry lock that the graph needs
 to register its meters. This can deadlock, including when application code initiated the outer registration. Schedule such
 work and return from the listener; wait only outside the callback.

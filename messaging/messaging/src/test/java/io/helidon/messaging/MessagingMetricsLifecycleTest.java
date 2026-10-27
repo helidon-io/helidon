@@ -25,21 +25,21 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.messaging.spi.OutgoingChannel;
 import io.helidon.metrics.api.Counter;
-import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.Timer;
 import io.helidon.metrics.providers.helidon.HelidonMetricsFactory;
-import io.helidon.service.registry.ServiceRegistryConfig;
-import io.helidon.service.registry.ServiceRegistryManager;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MessagingMetricsLifecycleTest {
@@ -54,8 +54,8 @@ class MessagingMetricsLifecycleTest {
         CountDownLatch closeEntered = new CountDownLatch(1);
         AtomicBoolean first = new AtomicBoolean(true);
         AtomicReference<MessagingGraph> newGraph = new AtomicReference<>();
-        try (Environment registering = new Environment(); Environment independent = new Environment()) {
-            Environment closing = sharedRegistry ? registering : independent;
+        try (MetricsTestSupport registering = new MetricsTestSupport(); MetricsTestSupport independent = new MetricsTestSupport()) {
+            MetricsTestSupport closing = sharedRegistry ? registering : independent;
             MessagingChannel<String> existingChannel = MessagingChannel.create("existing", String.class);
             try (MessagingGraph existing = closing.graph(closing.builder().channel(existingChannel)
                     .outgoingChannel(existingChannel, new CloseSignal(closeEntered))).start()) {
@@ -92,13 +92,47 @@ class MessagingMetricsLifecycleTest {
         }
     }
 
+    @Test
+    void closeDoesNotWaitForBlockedRegistration() throws InterruptedException {
+        // Close the same observer while its timer-added callback is blocked; close must finish before registration resumes.
+        CountDownLatch entered = new CountDownLatch(1);
+        CountDownLatch resume = new CountDownLatch(1);
+        AtomicReference<MessagingMetrics.Recorder> created = new AtomicReference<>();
+        try (MetricsTestSupport environment = new MetricsTestSupport()) {
+            MessagingMetrics metrics = environment.observe();
+            environment.meters.onMeterAdded(meter -> {
+                if (meter.id().name().equals(DURATION)) {
+                    entered.countDown();
+                    await(resume, "Test did not release registration");
+                }
+            });
+            Task builder = new Task(() -> created.set(metrics.channel("orders")));
+            Task closer = new Task(metrics::close);
+            builder.start();
+            try {
+                await(entered, "Registration did not reach its callback");
+                closer.start();
+                closer.awaitCompletion("Close waited for the blocked provider");
+            } finally {
+                resume.countDown();
+                builder.join();
+                closer.join();
+            }
+            builder.awaitCompletion("Registration did not finish");
+            MessagingMetrics.Recorder recorder = created.get();
+            recorder.finish(recorder.start(), true);
+            assertThat(environment.timer("orders").count(), is(0L));
+            assertThat(environment.counter("orders").count(), is(0L));
+        }
+    }
+
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void customizedChannelsAggregateAcrossGraphsInEitherCloseOrder(boolean closeFirst) {
         // Removing channel tags makes distinct channels share counts, which persist after both graphs close.
         HelidonMetricsFactory factory = HelidonMetricsFactory.create(builder -> builder
                 .addMeterBuilderCustomizer(meter -> meter.tags(List.of())));
-        try (Environment environment = new Environment(factory)) {
+        try (MetricsTestSupport environment = new MetricsTestSupport(factory)) {
             MessagingChannel<String> orders = MessagingChannel.create("orders", String.class);
             MessagingChannel<String> payments = MessagingChannel.create("payments", String.class);
             AtomicInteger deliveries = new AtomicInteger();
@@ -140,7 +174,7 @@ class MessagingMetricsLifecycleTest {
                         meter.tags(List.of());
                     }
                 }));
-        try (Environment environment = new Environment(factory)) {
+        try (MetricsTestSupport environment = new MetricsTestSupport(factory)) {
             MessagingChannel<String> orders = MessagingChannel.create("orders", String.class);
             MessagingChannel<String> payments = MessagingChannel.create("payments", String.class);
             var ordersTags = List.of(factory.tagCreate("channel", orders.name()));
@@ -172,7 +206,7 @@ class MessagingMetricsLifecycleTest {
     @Test
     void registrationTypeMismatchPreservesTheExistingMeterAndDelivery() {
         // An application already owns a counter with the timer's name; failed observation must preserve it and delivery.
-        try (Environment environment = new Environment()) {
+        try (MetricsTestSupport environment = new MetricsTestSupport()) {
             var tags = List.of(environment.factory.tagCreate("channel", "orders"));
             Counter existing = environment.meters.getOrCreate(environment.factory.counterBuilder(DURATION).tags(tags));
             existing.increment();
@@ -195,7 +229,7 @@ class MessagingMetricsLifecycleTest {
     @Test
     void graphClosePreservesAnApplicationTimer() {
         // Messaging shares an application timer; closing both graphs leaves its cumulative values usable.
-        try (Environment environment = new Environment()) {
+        try (MetricsTestSupport environment = new MetricsTestSupport()) {
             var tags = List.of(environment.factory.tagCreate("channel", "orders"));
             Timer existing = environment.meters.getOrCreate(environment.factory.timerBuilder(DURATION).tags(tags));
             existing.record(10, TimeUnit.NANOSECONDS);
@@ -222,7 +256,7 @@ class MessagingMetricsLifecycleTest {
     @Test
     void failedCounterRegistrationPreservesApplicationAndConflictingMeters() {
         // Counter registration fails after getting the application timer; both existing series remain unaffected.
-        try (Environment environment = new Environment()) {
+        try (MetricsTestSupport environment = new MetricsTestSupport()) {
             var tags = List.of(environment.factory.tagCreate("channel", "orders"));
             Timer borrowed = environment.meters.getOrCreate(environment.factory.timerBuilder(DURATION).tags(tags));
             Timer conflicting = environment.meters.getOrCreate(environment.factory.timerBuilder(FAILURES).tags(tags));
@@ -242,6 +276,86 @@ class MessagingMetricsLifecycleTest {
             assertThat(environment.meters.timer(FAILURES, tags).orElseThrow(), sameInstance(conflicting));
             assertThat(borrowed.count(), is(1L));
             assertThat(conflicting.count(), is(1L));
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false, false", "false, true", "true, false", "true, true"})
+    void laterGraphRecordsIntoReplacementSeries(boolean applicationCreatesReplacement, boolean closeOriginalFirst) {
+        // A new graph uses current registry series, whether the application or the graph recreated them.
+        try (MetricsTestSupport environment = new MetricsTestSupport()) {
+            MessagingChannel<String> originalChannel = MessagingChannel.create("orders", String.class);
+            MessagingChannel<String> laterChannel = MessagingChannel.create("orders", String.class);
+            try (MessagingGraph original = environment.graph(originalChannel)) {
+                assertThrows(BatchDeliveryException.class, () -> original.emitter(originalChannel).emit("fail"));
+                Timer originalTimer = environment.timer("orders");
+                Counter originalCounter = environment.counter("orders");
+                environment.meters.remove(originalTimer);
+                environment.meters.remove(originalCounter);
+
+                if (applicationCreatesReplacement) {
+                    environment.meters.getOrCreate(environment.factory.timerBuilder(DURATION).tags(environment.tags("orders")));
+                    environment.meters.getOrCreate(environment.factory.counterBuilder(FAILURES).tags(environment.tags("orders")));
+                }
+                try (MessagingGraph later = environment.graph(laterChannel)) {
+                    assertThat(environment.timer("orders").count(), is(0L));
+                    assertThat(environment.counter("orders").count(), is(0L));
+                    assertThrows(BatchDeliveryException.class, () -> later.emitter(laterChannel).emit("fail"));
+                    if (closeOriginalFirst) {
+                        original.close();
+                        assertThrows(BatchDeliveryException.class, () -> later.emitter(laterChannel).emit("fail"));
+                    } else {
+                        later.close();
+                        original.close();
+                    }
+                }
+
+                long expected = closeOriginalFirst ? 2 : 1;
+                assertThat(environment.timer("orders").count(), is(expected));
+                assertThat(environment.counter("orders").count(), is(expected));
+                assertThat(originalTimer.count(), is(1L));
+                assertThat(originalCounter.count(), is(1L));
+                try (MessagingGraph recreated = environment.graph(laterChannel)) {
+                    recreated.emitter(laterChannel).emit("success");
+                    assertThat(environment.timer("orders").count(), is(expected + 1));
+                    assertThat(environment.counter("orders").count(), is(expected));
+                }
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void fatalCounterRegistrationPreservesSeriesForLaterGraphs(boolean beforeInsertion) {
+        // Fatal provider errors propagate and clear the recursion guard; a subsequent graph can still record.
+        AtomicBoolean fail = new AtomicBoolean(true);
+        AssertionError failure = new AssertionError("Fatal counter registration failure");
+        try (MetricsTestSupport environment = new MetricsTestSupport(MetricsConfig.create(), registry -> {
+            registry.onMeterAdded(meter -> {
+                if (!beforeInsertion && meter.id().name().equals(FAILURES) && fail.compareAndSet(true, false)) {
+                    throw failure;
+                }
+            });
+            return new DelegatingMeterRegistry(registry) {
+                @Override
+                public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder) {
+                    if (beforeInsertion && builder.name().equals(FAILURES) && fail.compareAndSet(true, false)) {
+                        throw failure;
+                    }
+                    return super.getOrCreate(builder);
+                }
+            };
+        })) {
+            MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
+            assertThat(assertThrows(AssertionError.class, () -> environment.graph(channel)), sameInstance(failure));
+            assertThat(environment.meters.meters(), hasSize(beforeInsertion ? 1 : 2));
+
+            try (MessagingGraph graph = environment.graph(channel)) {
+                graph.emitter(channel).emit("delivered");
+                assertThat(environment.timer("orders").count(), is(1L));
+                assertThat(environment.counter("orders").count(), is(0L));
+            }
+            assertThat(environment.meters.meters(), hasSize(2));
         }
     }
 
@@ -294,44 +408,6 @@ class MessagingMetricsLifecycleTest {
         private void join() throws InterruptedException {
             thread.join(TimeUnit.SECONDS.toMillis(5));
             assertThat("Test task must terminate", thread.isAlive(), is(false));
-        }
-    }
-
-    private static final class Environment implements AutoCloseable {
-        private final HelidonMetricsFactory factory;
-        private final MeterRegistry meters;
-        private final ServiceRegistryManager manager;
-
-        private Environment() {
-            this(HelidonMetricsFactory.create());
-        }
-
-        private Environment(HelidonMetricsFactory factory) {
-            this.factory = factory;
-            meters = factory.createMeterRegistry(MetricsConfig.create());
-            manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
-                    .discoverServices(false)
-                    .discoverServicesFromServiceLoader(false)
-                    .putContractInstance(MeterRegistry.class, meters)
-                    .build());
-        }
-
-        @Override
-        public void close() {
-            try {
-                manager.shutdown();
-            } finally {
-                factory.close();
-            }
-        }
-
-        private MessagingGraph graph(MessagingConfig.Builder config) {
-            // The fixture owns this registry; graph close releases only this graph's observers.
-            return new MessagingGraphAssembler(config.buildPrototype(), manager.registry()).graph();
-        }
-
-        private MessagingConfig.Builder builder() {
-            return MessagingGraph.builder().serviceRegistry(manager.registry());
         }
     }
 
