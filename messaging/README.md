@@ -712,8 +712,7 @@ Exceeding either limit disables metrics for that channel and logs a warning with
 Meter registration normally runs synchronously during graph construction. A meter-added listener must not wait for another
 thread to construct a messaging graph using the same registry: the listener may hold a registry lock that the graph needs
 to register its meters. This can deadlock, including when application code initiated the outer registration. Schedule such
-work and return from the listener; wait only outside the callback. Shared listener-contract documentation is tracked in
-[#12973](https://github.com/helidon-io/helidon/issues/12973).
+work and return from the listener; wait only outside the callback.
 
 An ordinary metrics provider failure disables the affected recording and is logged once per graph without changing
 delivery or retry behavior. If a listener invoked during messaging meter registration creates another graph on the same
