@@ -285,7 +285,8 @@ public class GrpcTransportCompatibilityJmhBenchmark {
             responseCount++;
         }
         if (responseCount != MESSAGE_COUNT) {
-            throw new IllegalStateException("Expected " + MESSAGE_COUNT + " server-streaming responses, received " + responseCount);
+            throw new IllegalStateException("Expected " + MESSAGE_COUNT
+                                                    + " server-streaming responses, received " + responseCount);
         }
         verifyCompletedStreamAdvanced(completed, SERVER_STREAMING);
         completed = completedStreamCount();
