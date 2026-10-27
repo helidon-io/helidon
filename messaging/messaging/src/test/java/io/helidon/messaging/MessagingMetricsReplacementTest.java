@@ -106,7 +106,7 @@ class MessagingMetricsReplacementTest {
         }
 
         private MessagingGraph graph(MessagingChannel<String> channel) {
-            return MessagingGraph.create(MessagingGraph.builder()
+            return new MessagingGraphAssembler(MessagingGraph.builder()
                     .serviceRegistry(manager.registry())
                     .channel(channel)
                     .payloadSink(channel, payload -> {
@@ -114,7 +114,7 @@ class MessagingMetricsReplacementTest {
                             throw new IllegalStateException("Processing failed");
                         }
                     })
-                    .buildPrototype(), manager.registry())
+                    .buildPrototype(), manager.registry()).graph()
                     .start();
         }
 

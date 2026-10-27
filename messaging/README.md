@@ -671,8 +671,8 @@ messaging:
 
 The equivalent builder options are `metrics(metrics -> metrics.enabled(false))` and
 `health(health -> health.enabled(false))`. Declarative messaging uses the Service Registry that constructs the runtime,
-including when the application supplies its own messaging configuration. Imperative construction uses the global registry
-by default; use `MessagingGraph.create(config, registry)` to select another registry for runtime services.
+including when the application supplies its own messaging configuration. Imperative construction uses the application
+registry; configure a custom application registry with `Services.registry(registry)` at application startup if needed.
 The configuration builder's `serviceRegistry(registry)` selects providers during configuration and is not retained in
 the immutable configuration.
 

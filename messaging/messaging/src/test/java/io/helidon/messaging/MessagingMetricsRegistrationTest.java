@@ -150,7 +150,7 @@ class MessagingMetricsRegistrationTest {
                 MessagingChannel<String> additional = MessagingChannel.create("channel-" + i, String.class);
                 config.channel(additional).payloadSink(additional, _ -> { });
             }
-            return MessagingGraph.create(config.buildPrototype(), manager.registry());
+            return new MessagingGraphAssembler(config.buildPrototype(), manager.registry()).graph();
         }
 
         private Timer createTimer() {

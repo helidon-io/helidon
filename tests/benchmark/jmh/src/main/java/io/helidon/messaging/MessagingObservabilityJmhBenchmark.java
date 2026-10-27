@@ -294,7 +294,7 @@ public class MessagingObservabilityJmhBenchmark {
         }
 
         MessagingGraph graph(MessagingConfig.Builder builder) {
-            return MessagingGraph.create(builder.buildPrototype(), services.registry());
+            return new MessagingGraphAssembler(builder.buildPrototype(), services.registry()).graph();
         }
 
         MessagingMetrics observation() {

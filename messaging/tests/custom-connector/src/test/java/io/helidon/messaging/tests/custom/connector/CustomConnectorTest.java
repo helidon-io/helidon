@@ -39,9 +39,13 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
@@ -51,6 +55,8 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItems;
 
 @Timeout(10)
+@Testing.Test(perMethod = true)
+@Execution(ExecutionMode.SAME_THREAD)
 @SuppressWarnings({"helidon:api:internal", "helidon:api:preview"})
 class CustomConnectorTest {
     private static final Duration WAIT = Duration.ofSeconds(5);
@@ -60,13 +66,14 @@ class CustomConnectorTest {
         // This module intentionally has no metrics provider; optional observation must leave processing and health usable.
         ServiceRegistryManager manager = ServiceRegistryManager.create();
         try {
+            // Application startup selects the registry once; the testing extension isolates this test's global lookup.
+            Services.registry(manager.registry());
             MeterRegistry meters = manager.registry().get(MeterRegistry.class);
             assertThat(meters.isMeterEnabled("messaging.processing.duration"), is(false));
             AtomicInteger deliveries = new AtomicInteger();
             MessagingChannel<String> channel = MessagingChannel.create("without-provider", String.class);
-            try (MessagingGraph graph = MessagingGraph.create(MessagingGraph.builder().serviceRegistry(manager.registry())
-                    .channel(channel).payloadSink(channel, _ -> deliveries.incrementAndGet()).buildPrototype(),
-                    manager.registry()).start()) {
+            try (MessagingGraph graph = MessagingGraph.builder()
+                    .channel(channel).payloadSink(channel, _ -> deliveries.incrementAndGet()).build().start()) {
                 graph.emitter(channel).emit("first");
 
                 assertThat(deliveries.get(), is(1));
@@ -87,12 +94,13 @@ class CustomConnectorTest {
                 .discoverServicesFromServiceLoader(false)
                 .build());
         try {
+            // Select a discovery-free application registry, rather than overriding the registry on an individual graph.
+            Services.registry(manager.registry());
             assertThat(manager.registry().first(MeterRegistry.class).isEmpty(), is(true));
             AtomicInteger deliveries = new AtomicInteger();
             MessagingChannel<String> channel = MessagingChannel.create("without-discovery", String.class);
-            try (MessagingGraph graph = MessagingGraph.create(MessagingGraph.builder().serviceRegistry(manager.registry())
-                    .channel(channel).payloadSink(channel, _ -> deliveries.incrementAndGet()).buildPrototype(),
-                    manager.registry()).start()) {
+            try (MessagingGraph graph = MessagingGraph.builder()
+                    .channel(channel).payloadSink(channel, _ -> deliveries.incrementAndGet()).build().start()) {
                 graph.emitter(channel).emit("first");
 
                 assertThat(deliveries.get(), is(1));
