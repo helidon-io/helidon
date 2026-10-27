@@ -126,6 +126,19 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <compilerArgs combine.children="append">
+                                <compilerArg>--add-modules</compilerArg>
+                                <compilerArg>java.net.http</compilerArg>
+                                <compilerArg>--add-reads</compilerArg>
+                                <compilerArg>io.helidon.security.providers.oidc=java.net.http</compilerArg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                </executions>
                 <configuration>
                     <annotationProcessorPaths>
                         <path>

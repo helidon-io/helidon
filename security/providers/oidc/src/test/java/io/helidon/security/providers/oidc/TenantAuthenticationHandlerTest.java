@@ -24,9 +24,12 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.common.configurable.AllowList;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.SetCookie;
+import io.helidon.http.Status;
 import io.helidon.json.JsonArray;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonString;
@@ -45,6 +48,7 @@ import io.helidon.security.jwt.jwk.JwkKeys;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy;
 import io.helidon.security.providers.oidc.common.Tenant;
+import io.helidon.security.providers.oidc.common.TenantConfig;
 
 import org.junit.jupiter.api.Test;
 
@@ -55,6 +59,7 @@ import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.D
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
@@ -138,6 +143,7 @@ class TenantAuthenticationHandlerTest {
                 .identityUri(URI.create("http://localhost:1234"))
                 .oidcMetadataWellKnown(false)
                 .signJwk(TEST_KEYS)
+                .frontendUriAllowList(frontendAllowList("http://localhost:1234"))
                 .useCookie(true)
                 .useHeader(false)
                 .redirect(false)
@@ -165,6 +171,7 @@ class TenantAuthenticationHandlerTest {
                 .identityUri(URI.create("http://localhost:1234"))
                 .oidcMetadataWellKnown(false)
                 .signJwk(TEST_KEYS)
+                .frontendUriAllowList(frontendAllowList("http://localhost:1234"))
                 .useCookie(true)
                 .useHeader(false)
                 .redirect(false)
@@ -451,6 +458,7 @@ class TenantAuthenticationHandlerTest {
                 .identityUri(URI.create("http://localhost:1234"))
                 .oidcMetadataWellKnown(false)
                 .signJwk(TEST_KEYS)
+                .frontendUriAllowList(frontendAllowList("http://localhost:1234"))
                 .redirectAttemptCounterStrategy(COOKIE)
                 .useParam(true)
                 .paramName("access token")
@@ -493,6 +501,7 @@ class TenantAuthenticationHandlerTest {
                 .identityUri(URI.create("http://localhost:1234"))
                 .oidcMetadataWellKnown(false)
                 .signJwk(TEST_KEYS)
+                .frontendUriAllowList(frontendAllowList("http://localhost:1234"))
                 .redirectAttemptCounterStrategy(NONE)
                 .maxRedirects(0)
                 .build();
@@ -551,6 +560,142 @@ class TenantAuthenticationHandlerTest {
     }
 
     @Test
+    void testRedirectUsesAllowedRequestedUriInsteadOfHost() {
+        OidcConfig config = redirectConfig()
+                .frontendUriAllowList(frontendAllowList("https://frontend.example")).build();
+        ProviderRequest request = requestWithUris(URI.create("https://frontend.example/protected"), "attacker.example");
+
+        AuthenticationResponse response = authenticationHandler(config).authenticate(DEFAULT_TENANT_ID, request);
+        URI location = URI.create(response.responseHeaders().get(HeaderNames.LOCATION.defaultCase()).getFirst());
+
+        assertThat(UriQuery.create(location).first("redirect_uri").orElseThrow(),
+                   is("https://frontend.example/oidc/redirect"));
+    }
+
+    @Test
+    void testRedirectRequiresConfiguredOrAllowedFrontend() {
+        OidcConfig config = redirectConfig().build();
+        ProviderRequest request = requestWithUris(URI.create("http://localhost:1234/protected"), "localhost:1234");
+
+        AuthenticationResponse response = authenticationHandler(config).authenticate(DEFAULT_TENANT_ID, request);
+
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE_FINISH));
+        assertThat(response.statusCode().orElseThrow(), is(Status.UNAUTHORIZED_401.code()));
+        assertThat(response.responseHeaders().get(HeaderNames.WWW_AUTHENTICATE.defaultCase()),
+                   is(List.of("Bearer realm=\"helidon\"")));
+        assertThat(response.responseHeaders().keySet(), not(hasItem(HeaderNames.LOCATION.defaultCase())));
+    }
+
+    @Test
+    void testRedirectRejectsDisallowedFrontendWithoutDiscoveryContext() {
+        OidcConfig config = redirectConfig()
+                .frontendUriAllowList(frontendAllowList("https://allowed.example")).build();
+        ProviderRequest request = requestWithUris(URI.create("https://attacker.example/protected"), "attacker.example");
+
+        AuthenticationResponse response = authenticationHandler(config).authenticate(DEFAULT_TENANT_ID, request);
+
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE_FINISH));
+        assertThat(response.statusCode().orElseThrow(), is(Status.UNAUTHORIZED_401.code()));
+        assertThat(response.responseHeaders().get(HeaderNames.WWW_AUTHENTICATE.defaultCase()),
+                   is(List.of("Bearer realm=\"helidon\"")));
+        assertThat(response.responseHeaders().keySet(), not(hasItem(HeaderNames.LOCATION.defaultCase())));
+    }
+
+    @Test
+    void testRedirectRejectsInvalidRequestedUriOrigin() {
+        OidcConfig config = redirectConfig().frontendUriAllowList(AllowList.builder().allowAll(true).build()).build();
+        ProviderRequest request = requestWithUris(URI.create("ftp://frontend.example/protected"), "frontend.example");
+
+        AuthenticationResponse response = authenticationHandler(config).authenticate(DEFAULT_TENANT_ID, request);
+
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE_FINISH));
+        assertThat(response.statusCode().orElseThrow(), is(Status.UNAUTHORIZED_401.code()));
+        assertThat(response.responseHeaders().get(HeaderNames.WWW_AUTHENTICATE.defaultCase()),
+                   is(List.of("Bearer realm=\"helidon\"")));
+        assertThat(response.responseHeaders().keySet(), not(hasItem(HeaderNames.LOCATION.defaultCase())));
+    }
+
+    @Test
+    void testFrontendRejectionUsesTenantRealm() {
+        OidcConfig config = redirectConfig()
+                .frontendUriAllowList(frontendAllowList("https://allowed.example")).build();
+        TenantConfig tenantConfig = TenantConfig.tenantBuilder()
+                .name("tenant-a")
+                .realm("tenant-realm")
+                .clientId("test")
+                .clientSecret("123")
+                .identityUri(URI.create("http://localhost:1234"))
+                .oidcMetadataWellKnown(false)
+                .build();
+        Tenant tenant = mock(Tenant.class);
+        when(tenant.tenantConfig()).thenReturn(tenantConfig);
+        when(tenant.authorizationEndpointUri()).thenReturn("http://localhost:1234/authorize");
+        TenantAuthenticationHandler handler = new TenantAuthenticationHandler(config, tenant, false, true);
+
+        for (String origin : List.of("https://attacker.example", "ftp://frontend.example")) {
+            ProviderRequest request = requestWithUris(URI.create(origin + "/protected"), "attacker.example");
+
+            AuthenticationResponse response = handler.authenticate("tenant-a", request);
+
+            assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE_FINISH));
+            assertThat(response.statusCode().orElseThrow(), is(Status.UNAUTHORIZED_401.code()));
+            assertThat(response.responseHeaders().get(HeaderNames.WWW_AUTHENTICATE.defaultCase()),
+                       is(List.of("Bearer realm=\"tenant-realm\"")));
+            assertThat(response.responseHeaders().keySet(), not(hasItem(HeaderNames.LOCATION.defaultCase())));
+        }
+    }
+
+    @Test
+    void testConfiguredFrontendUriDoesNotRequireAllowedOrigin() {
+        OidcConfig config = redirectConfig().frontendUri("https://configured.example").build();
+        ProviderRequest request = requestWithUris(URI.create("ftp://attacker.example/protected"), "attacker.example");
+
+        AuthenticationResponse response = authenticationHandler(config).authenticate(DEFAULT_TENANT_ID, request);
+        URI location = URI.create(response.responseHeaders().get(HeaderNames.LOCATION.defaultCase()).getFirst());
+
+        assertThat(UriQuery.create(location).first("redirect_uri").orElseThrow(),
+                   is("https://configured.example/oidc/redirect"));
+    }
+
+    @Test
+    void testForceHttpsRedirectRequiresAllowedHttpsOrigin() {
+        OidcConfig config = redirectConfig().forceHttpsRedirects(true)
+                .frontendUriAllowList(frontendAllowList("http://frontend.example")).build();
+        ProviderRequest request = requestWithUris(URI.create("http://frontend.example/protected"), "frontend.example");
+
+        AuthenticationResponse response = authenticationHandler(config).authenticate(DEFAULT_TENANT_ID, request);
+
+        assertThat(response.status(), is(SecurityResponse.SecurityStatus.FAILURE_FINISH));
+        assertThat(response.statusCode().orElseThrow(), is(Status.UNAUTHORIZED_401.code()));
+        assertThat(response.responseHeaders().keySet(), not(hasItem(HeaderNames.LOCATION.defaultCase())));
+    }
+
+    @Test
+    void testForceHttpsRedirectNormalizesDefaultPort() {
+        OidcConfig config = redirectConfig().forceHttpsRedirects(true)
+                .frontendUriAllowList(frontendAllowList("https://frontend.example")).build();
+        ProviderRequest request = requestWithUris(URI.create("http://frontend.example:80/protected"), "frontend.example:80");
+
+        AuthenticationResponse response = authenticationHandler(config).authenticate(DEFAULT_TENANT_ID, request);
+        URI location = URI.create(response.responseHeaders().get(HeaderNames.LOCATION.defaultCase()).getFirst());
+
+        assertThat(UriQuery.create(location).first("redirect_uri").orElseThrow(),
+                   is("https://frontend.example/oidc/redirect"));
+    }
+
+    @Test
+    void testRedirectNormalizesExpandedIpv6() {
+        OidcConfig config = redirectConfig()
+                .frontendUriAllowList(frontendAllowList("https://[::1]")).build();
+        ProviderRequest request = requestWithUris(URI.create("https://[0:0:0:0:0:0:0:1]/protected"), "attacker.example");
+
+        AuthenticationResponse response = authenticationHandler(config).authenticate(DEFAULT_TENANT_ID, request);
+        URI location = URI.create(response.responseHeaders().get(HeaderNames.LOCATION.defaultCase()).getFirst());
+
+        assertThat(UriQuery.create(location).first("redirect_uri").orElseThrow(), is("https://[::1]/oidc/redirect"));
+    }
+
+    @Test
     public void testRedirectSetsCookieCounter() {
         OidcConfig oidcConfig = OidcConfig.builder()
                 .clientId("test")
@@ -558,6 +703,7 @@ class TenantAuthenticationHandlerTest {
                 .identityUri(URI.create("http://localhost:1234"))
                 .oidcMetadataWellKnown(false)
                 .signJwk(TEST_KEYS)
+                .frontendUriAllowList(frontendAllowList("http://localhost:1234"))
                 .redirectAttemptCounterStrategy(COOKIE)
                 .cookieSecure(true)
                 .cookieDomain("example.com")
@@ -600,6 +746,7 @@ class TenantAuthenticationHandlerTest {
                 .identityUri(URI.create("http://localhost:1234"))
                 .oidcMetadataWellKnown(false)
                 .signJwk(TEST_KEYS)
+                .frontendUriAllowList(frontendAllowList("http://localhost:1234"))
                 .redirectAttemptCounterStrategy(strategy)
                 .useParam(useParam)
                 .build();
@@ -644,18 +791,39 @@ class TenantAuthenticationHandlerTest {
     }
 
     private static ProviderRequest requestWithUri(URI targetUri, String... cookies) {
+        return requestWithUris(targetUri, targetUri.getRawAuthority(), cookies);
+    }
+
+    private static ProviderRequest requestWithUris(URI requestedUri, String host, String... cookies) {
         ProviderRequest providerRequest = mock(ProviderRequest.class);
-        SecurityEnvironment.Builder securityEnvironmentBuilder = SecurityEnvironment.builder()
-                .targetUri(targetUri)
-                .header("Host", "localhost:1234");
+        SecurityEnvironment.Builder environment = SecurityEnvironment.builder()
+                .targetUri(requestedUri)
+                .header(HeaderNames.HOST.defaultCase(), host);
         for (String cookie : cookies) {
-            securityEnvironmentBuilder.header("Cookie", cookie);
+            environment.header(HeaderNames.COOKIE.defaultCase(), cookie);
         }
-        when(providerRequest.env()).thenReturn(securityEnvironmentBuilder.build());
+        when(providerRequest.env()).thenReturn(environment.build());
         EndpointConfig endpointConfig = mock(EndpointConfig.class);
         when(endpointConfig.securityLevels()).thenReturn(List.of());
         when(providerRequest.endpointConfig()).thenReturn(endpointConfig);
         return providerRequest;
+    }
+
+    private static AllowList frontendAllowList(String... origins) {
+        var builder = AllowList.builder();
+        for (String origin : origins) {
+            builder.addAllowed(origin);
+        }
+        return builder.build();
+    }
+
+    private static OidcConfig.Builder redirectConfig() {
+        return OidcConfig.builder()
+                .clientId("test")
+                .clientSecret("123")
+                .identityUri(URI.create("http://localhost:1234"))
+                .oidcMetadataWellKnown(false)
+                .redirectAttemptCounterStrategy(NONE);
     }
 
 }

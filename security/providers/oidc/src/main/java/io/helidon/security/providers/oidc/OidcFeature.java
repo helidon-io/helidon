@@ -49,7 +49,8 @@ import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.Timeout;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
-import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.HttpException;
+import io.helidon.http.RequestException;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
 import io.helidon.json.JsonObject;
@@ -72,13 +73,13 @@ import io.helidon.security.providers.oidc.common.spi.TenantConfigProvider;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.security.SecurityHttpFeature;
 
-import static io.helidon.http.HeaderNames.HOST;
 import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
 
 /**
@@ -382,6 +383,8 @@ public final class OidcFeature implements HttpFeature {
                 return;
             }
 
+            ServerResponseHeaders headers = res.headers();
+            clearLocalOidcCookies(headers);
             URI logoutEndpoint = tenant.logoutEndpointUri();
             String logoutQuery = logoutEndpoint.getRawQuery();
             String querySeparator = "?";
@@ -393,18 +396,17 @@ public final class OidcFeature implements HttpFeature {
                     .append("id_token_hint=")
                     .append(encode(idToken))
                     .append("&post_logout_redirect_uri=")
-                    .append(postLogoutUri(req));
+                    .append(postLogoutUri(req, tenant.tenantConfig()));
 
             if (stateQuery != null) {
                 sb.append(stateQuery);
             }
 
-            ServerResponseHeaders headers = res.headers();
-            clearLocalOidcCookies(headers);
-
             res.status(Status.TEMPORARY_REDIRECT_307)
                     .header(HeaderNames.LOCATION, sb.toString())
                     .send();
+        } catch (HttpException | RequestException | CloseConnectionException e) {
+            throw e;
         } catch (Exception e) {
             sendError(res, e);
         }
@@ -504,7 +506,7 @@ public final class OidcFeature implements HttpFeature {
         Parameters.Builder form = Parameters.builder("oidc-form-params")
                 .add("grant_type", "authorization_code")
                 .add("code", code)
-                .add("redirect_uri", redirectUri(req, tenantName));
+                .add("redirect_uri", redirectUri(req, tenantName, tenantConfig));
 
         if (oidcConfig.pkceEnabled()) {
             String verifier = stateCookie.stringValue("pkceVerifier")
@@ -545,33 +547,32 @@ public final class OidcFeature implements HttpFeature {
         }
     }
 
-    private Object postLogoutUri(ServerRequest req) {
+    private Object postLogoutUri(ServerRequest req, TenantConfig tenantConfig) {
         URI uri = oidcConfig.postLogoutUri();
         if (uri.getHost() != null) {
             return uri.toString();
         }
-        String path = uri.getPath();
+        String path = uri.getRawPath();
         path = path.startsWith("/") ? path : "/" + path;
-        ServerRequestHeaders headers = req.headers();
-        if (headers.contains(HOST)) {
-            String scheme = oidcConfig.forceHttpsRedirects() || req.isSecure() ? "https" : "http";
-            return scheme + "://" + headers.get(HOST).get() + path;
-        } else {
-            LOGGER.log(Level.WARNING, "Request without Host header received, yet post logout URI does not define a host");
-            return oidcConfig.toString();
+        String frontendUri = OidcUtil.frontendUri(oidcConfig,
+                                                 tenantConfig,
+                                                 () -> req.requestedUri().toUri());
+        int authorityEnd = frontendUri.length();
+        for (int i = frontendUri.indexOf("://") + 3; i < frontendUri.length(); i++) {
+            char ch = frontendUri.charAt(i);
+            if (ch == '/' || ch == '?' || ch == '#') {
+                authorityEnd = i;
+                break;
+            }
         }
+        return frontendUri.substring(0, authorityEnd) + path;
     }
 
-    private String redirectUri(ServerRequest req, String tenantName) {
-        Optional<String> host = req.headers().first(HOST);
-        String uri;
-
-        if (host.isPresent()) {
-            String scheme = req.isSecure() ? "https" : "http";
-            uri = oidcConfig.redirectUriWithHost(scheme + "://" + host.get());
-        } else {
-            uri = oidcConfig.redirectUriWithHost();
-        }
+    private String redirectUri(ServerRequest req, String tenantName, TenantConfig tenantConfig) {
+        String frontendUri = OidcUtil.frontendUri(oidcConfig,
+                                                 tenantConfig,
+                                                 () -> req.requestedUri().toUri());
+        String uri = oidcConfig.redirectUriWithHost(frontendUri);
         if (!DEFAULT_TENANT_ID.equals(tenantName)) {
             return uri + (uri.contains("?") ? "&" : "?") + encode(oidcConfig.tenantParamName()) + "=" + encode(tenantName);
         }
