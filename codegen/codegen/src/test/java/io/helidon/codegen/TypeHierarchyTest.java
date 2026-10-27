@@ -650,6 +650,11 @@ class TypeHierarchyTest {
                 .build();
         TypeName list = TypeName.builder(TypeNames.LIST).addTypeArgument(variable).build();
         TypeName stringList = TypeName.builder(TypeNames.LIST).addTypeArgument(TypeNames.STRING).build();
+        TypeName wildcardArray = TypeName.builder(arrayOf(variable)).wildcard(true).build();
+        TypeName stringArrayWildcard = TypeName.create("? extends java.lang.String[]");
+        TypeName wildcardStringList = TypeName.builder(TypeNames.LIST)
+                .addTypeArgument(stringArrayWildcard)
+                .build();
         return Stream.of(
                 Arguments.of(variable, list, stringList),
                 Arguments.of(bounded, bounded, TypeNames.STRING),
@@ -658,6 +663,16 @@ class TypeHierarchyTest {
                 Arguments.of(bounded, arrayOf(bounded), arrayOf(TypeNames.STRING)),
                 Arguments.of(variable, arrayOf(arrayOf(variable)), arrayOf(arrayOf(TypeNames.STRING))),
                 Arguments.of(variable, arrayOf(list), arrayOf(stringList)),
+                Arguments.of(variable,
+                             TypeName.builder(TypeNames.LIST).addTypeArgument(wildcardArray).build(),
+                             wildcardStringList),
+                Arguments.of(variable,
+                             TypeName.builder(TypeNames.LIST)
+                                     .addTypeArgument(TypeName.builder(stringArrayWildcard)
+                                                              .addAnnotation(Annotation.create(NOT_BLANK))
+                                                              .build())
+                                     .build(),
+                             wildcardStringList),
                 Arguments.of(variable, TypeName.builder(arrayOf(variable)).vararg(true).build(), arrayOf(TypeNames.STRING)));
     }
 

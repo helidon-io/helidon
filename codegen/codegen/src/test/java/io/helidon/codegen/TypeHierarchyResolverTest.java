@@ -211,6 +211,47 @@ class TypeHierarchyResolverTest {
         assertThat(ResolvedType.create(resolved), is(ResolvedType.create(arrayType(stringArray))));
     }
 
+    @Test
+    void preservesWildcardArrayMemberTypes() {
+        TypeName wildcardArray = TypeName.create("? extends java.lang.String[]");
+        TypeName list = TypeName.builder(TypeNames.LIST)
+                .addTypeArgument(wildcardArray)
+                .build();
+
+        TypeName resolved = resolveStringMemberType(wildcardArray);
+        TypeName resolvedList = resolveStringMemberType(list);
+
+        assertThat(resolved.wildcard(), is(true));
+        assertThat(resolved.array(), is(true));
+        assertThat(resolved.upperBounds(), is(wildcardArray.upperBounds()));
+        assertThat(ResolvedType.create(resolved), is(ResolvedType.create(wildcardArray)));
+        assertThat(ResolvedType.create(resolvedList), is(ResolvedType.create(list)));
+        assertThat(resolvedList.typeArguments().getFirst().wildcard(), is(true));
+    }
+
+    @Test
+    void substitutesTypeVariablesInsideWildcardArrayBounds() {
+        TypeName variable = TypeName.createFromGenericDeclaration("T");
+        TypeName wildcardArray = TypeName.builder(arrayType(variable))
+                .wildcard(true)
+                .build();
+        TypeName list = TypeName.builder(TypeNames.LIST)
+                .addTypeArgument(wildcardArray)
+                .build();
+        TypeName expected = TypeName.create("? extends java.lang.String[]");
+
+        TypeName resolved = resolveStringMemberType(wildcardArray);
+        TypeName resolvedList = resolveStringMemberType(list);
+
+        assertThat(resolved.wildcard(), is(true));
+        assertThat(resolved.array(), is(true));
+        assertThat(resolved.upperBounds(), is(expected.upperBounds()));
+        assertThat(ResolvedType.create(resolved), is(ResolvedType.create(expected)));
+        TypeName resolvedArgument = resolvedList.typeArguments().getFirst();
+        assertThat(resolvedArgument.wildcard(), is(true));
+        assertThat(ResolvedType.create(resolvedArgument), is(ResolvedType.create(expected)));
+    }
+
     /**
      * Verifies that resolving a member type does not treat a concrete default package type as a type variable.
      */

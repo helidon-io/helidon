@@ -209,7 +209,7 @@ public class TypeHierarchyResolver {
     }
 
     private static TypeName substitute(TypeName type, Map<String, TypeName> substitutions) {
-        if (type.array() && type.componentType().isPresent()) {
+        if (type.array() && !type.wildcard() && type.componentType().isPresent()) {
             TypeName component = substitute(type.componentType().orElseThrow(), substitutions);
             return TypeName.builder(component)
                     .array(true)

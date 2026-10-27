@@ -891,7 +891,7 @@ public final class TypeHierarchy {
             return typeName;
         }
 
-        if (typeName.array() && typeName.componentType().isPresent()) {
+        if (typeName.array() && !typeName.wildcard() && typeName.componentType().isPresent()) {
             TypeName component = substituteTypeParameters(typeName.componentType().orElseThrow(), substitutions);
             return TypeName.builder(component)
                     .array(true)
