@@ -63,13 +63,16 @@ class ScopedRegistryImplTest {
                                     () -> withDebug(debug, this::initActivatorIsUnavailableDuringShutdown)),
                         dynamicTest("shutdown interrupts construction",
                                     () -> withDebug(debug, () -> inProgressInitActivatorIsDestroyedDuringShutdown(
-                                            ActivationPhase.CONSTRUCTING))),
+                                            ActivationPhase.CONSTRUCTING, ActivationPhase.ACTIVE))),
                         dynamicTest("shutdown interrupts injection",
                                     () -> withDebug(debug, () -> inProgressInitActivatorIsDestroyedDuringShutdown(
-                                            ActivationPhase.INJECTING))),
+                                            ActivationPhase.INJECTING, ActivationPhase.ACTIVE))),
                         dynamicTest("shutdown interrupts post construction",
                                     () -> withDebug(debug, () -> inProgressInitActivatorIsDestroyedDuringShutdown(
-                                            ActivationPhase.POST_CONSTRUCTING))),
+                                            ActivationPhase.POST_CONSTRUCTING, ActivationPhase.ACTIVE))),
+                        dynamicTest("shutdown interrupts limited post construction",
+                                    () -> withDebug(debug, () -> inProgressInitActivatorIsDestroyedDuringShutdown(
+                                            ActivationPhase.POST_CONSTRUCTING, ActivationPhase.POST_CONSTRUCTING))),
                         dynamicTest("completed construction skips pre destroy",
                                     () -> withDebug(debug, this::completedConstructionIsNotPreDestroyedDuringShutdown)),
                         dynamicTest("completed injection skips pre destroy",
@@ -89,6 +92,9 @@ class ScopedRegistryImplTest {
                                     () -> withDebug(debug, this::deactivationFailuresAreAggregated)),
                         dynamicTest("limited activation skips pre destroy",
                                     () -> withDebug(debug, this::limitedActivationSkipsPreDestroy)),
+                        dynamicTest("completed limited post construction skips queued pre destroy",
+                                    () -> withDebug(debug, () -> completedCallbackIsDeactivatedDuringShutdown(
+                                            ActivationPhase.POST_CONSTRUCTING, ActivationPhase.POST_CONSTRUCTING, 1, 0, null))),
                         dynamicTest("failed initialization skips pre destroy",
                                     () -> withDebug(debug, this::failedInitializationSkipsPreDestroy))
                 )));
@@ -108,7 +114,9 @@ class ScopedRegistryImplTest {
     }
 
     private static void completedCallbackIsDeactivatedDuringShutdown(ActivationPhase blockedPhase,
-                                                                     int expectedLifecycleInvocations,
+                                                                     ActivationPhase targetPhase,
+                                                                     int expectedPostConstructInvocations,
+                                                                     int expectedPreDestroyInvocations,
                                                                      Throwable cleanupFailure)
             throws InterruptedException {
         CountDownLatch activationStarted = new CountDownLatch(1);
@@ -136,7 +144,7 @@ class ScopedRegistryImplTest {
                 .unstarted(() -> {
                     try {
                         activationResult.set(pending.activate(ActivationRequest.builder()
-                                                                        .targetPhase(ActivationPhase.ACTIVE)
+                                                                        .targetPhase(targetPhase)
                                                                         .build()));
                     } catch (Throwable t) {
                         activationFailure.set(t);
@@ -187,8 +195,8 @@ class ScopedRegistryImplTest {
         }
         assertThat("target instances not published", pending.targetInstancesSet(), is(false));
         assertThat("pending deactivation started", pendingDeactivationStarted.getCount(), is(0L));
-        assertThat("post construct invocations", pending.postConstructInvocations(), is(expectedLifecycleInvocations));
-        assertThat("pre destroy invocations", pending.preDestroyInvocations(), is(expectedLifecycleInvocations));
+        assertThat("post construct invocations", pending.postConstructInvocations(), is(expectedPostConstructInvocations));
+        assertThat("pre destroy invocations", pending.preDestroyInvocations(), is(expectedPreDestroyInvocations));
         assertThat(pending.phase(), is(ActivationPhase.DESTROYED));
     }
 
@@ -260,7 +268,8 @@ class ScopedRegistryImplTest {
         assertThat(pending.phase(), is(ActivationPhase.DESTROYED));
     }
 
-    private void inProgressInitActivatorIsDestroyedDuringShutdown(ActivationPhase blockedPhase) throws InterruptedException {
+    private void inProgressInitActivatorIsDestroyedDuringShutdown(ActivationPhase blockedPhase,
+                                                                 ActivationPhase targetPhase) throws InterruptedException {
         CountDownLatch activationStarted = new CountDownLatch(1);
         CountDownLatch continueActivation = new CountDownLatch(1);
         CountDownLatch deactivationStarted = new CountDownLatch(1);
@@ -281,7 +290,7 @@ class ScopedRegistryImplTest {
                 .unstarted(() -> {
                     try {
                         activationResult.set(pending.activate(ActivationRequest.builder()
-                                                                        .targetPhase(ActivationPhase.ACTIVE)
+                                                                        .targetPhase(targetPhase)
                                                                         .build()));
                     } catch (Throwable t) {
                         activationFailure.set(t);
@@ -328,15 +337,15 @@ class ScopedRegistryImplTest {
     }
 
     private void completedConstructionIsNotPreDestroyedDuringShutdown() throws InterruptedException {
-        completedCallbackIsDeactivatedDuringShutdown(ActivationPhase.CONSTRUCTING, 0, null);
+        completedCallbackIsDeactivatedDuringShutdown(ActivationPhase.CONSTRUCTING, ActivationPhase.ACTIVE, 0, 0, null);
     }
 
     private void completedInjectionIsNotPreDestroyedDuringShutdown() throws InterruptedException {
-        completedCallbackIsDeactivatedDuringShutdown(ActivationPhase.INJECTING, 0, null);
+        completedCallbackIsDeactivatedDuringShutdown(ActivationPhase.INJECTING, ActivationPhase.ACTIVE, 0, 0, null);
     }
 
     private void completedPostConstructIsPreDestroyedDuringShutdown() throws InterruptedException {
-        completedCallbackIsDeactivatedDuringShutdown(ActivationPhase.POST_CONSTRUCTING, 1, null);
+        completedCallbackIsDeactivatedDuringShutdown(ActivationPhase.POST_CONSTRUCTING, ActivationPhase.ACTIVE, 1, 1, null);
     }
 
     private void shutdownAtPostConstructHandoff(Throwable cleanupFailure) {
@@ -391,6 +400,8 @@ class ScopedRegistryImplTest {
 
     private void queuedCleanupFailureIsReported() throws InterruptedException {
         completedCallbackIsDeactivatedDuringShutdown(ActivationPhase.POST_CONSTRUCTING,
+                                                    ActivationPhase.ACTIVE,
+                                                    1,
                                                     1,
                                                     new IllegalStateException("Queued cleanup failed"));
     }

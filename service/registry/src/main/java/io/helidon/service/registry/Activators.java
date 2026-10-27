@@ -419,9 +419,10 @@ final class Activators {
             if (!deactivationRequested && (scopedRegistry == null || scopedRegistry.activationAllowed())) {
                 return false;
             }
-            if (postConstructCompleted && currentPhase.eligibleForDeactivation()) {
-                // Preserve queued cleanup only after post construct returned normally. Earlier cancellation must not
-                // invoke pre destroy on an instance whose lifecycle initialization is incomplete.
+            if (postConstructCompleted && currentPhase.eligibleForDeactivation()
+                    && response.targetActivationPhase().ordinal() > ActivationPhase.POST_CONSTRUCTING.ordinal()) {
+                // Preserve queued cleanup only after post construct returned normally for activation beyond that phase.
+                // Incomplete or deliberately limited activation must not invoke pre destroy.
                 activationCleanupPending = true;
             } else {
                 currentPhase = ActivationPhase.DESTROYED;
