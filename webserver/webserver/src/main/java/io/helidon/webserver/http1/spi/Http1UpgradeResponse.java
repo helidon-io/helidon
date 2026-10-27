@@ -34,6 +34,17 @@ public interface Http1UpgradeResponse {
     ServerResponseHeaders headers();
 
     /**
+     * Request headers at the time of this call, including changes made by HTTP filters and route policies.
+     * Implementations that do not provide access to request headers throw {@link UnsupportedOperationException}.
+     *
+     * @return current request headers
+     * @throws UnsupportedOperationException if request headers are not available from this implementation
+     */
+    default Headers requestHeaders() {
+        throw new UnsupportedOperationException("Request headers are not available from this upgrade response");
+    }
+
+    /**
      * Send an empty response with the provided status.
      *
      * @param status response status

@@ -21,12 +21,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.socket.PeerInfo;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Status;
 import io.helidon.http.encoding.ContentEncodingContext;
@@ -49,6 +53,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -229,6 +234,38 @@ class Http1ReceiveListenerTest {
         assertThat(listener.received, contains(UPGRADE_REQUEST));
     }
 
+    @Test
+    void routedUpgradeSeesFilterUpdatedRequestHeaders() throws InterruptedException {
+        var originalHeaders = new AtomicReference<Headers>();
+        var callbackHeaders = new AtomicReference<Headers>();
+        var filterHeader = HeaderNames.create("X-Filter");
+        var upgrader = mock(Http1RoutedUpgrader.class);
+        when(upgrader.routedUpgrade(any(), any(), any())).thenAnswer(invocation -> {
+            originalHeaders.set(invocation.getArgument(2));
+            Http1RoutedUpgrade prepared = response -> {
+                callbackHeaders.set(response.requestHeaders());
+                response.send(Status.BAD_REQUEST_400);
+                return Http1UpgradeResult.responded();
+            };
+            return Optional.of(prepared);
+        });
+        var routing = HttpRouting.builder()
+                .addFilter((chain, request, _) -> {
+                    request.header(HeaderValues.create(HeaderNames.HOST, "filtered.example"));
+                    request.header(HeaderValues.create(filterHeader, "present"));
+                    chain.proceed();
+                });
+
+        connection(reader(UPGRADE_REQUEST), new RecordingListener(), Map.of("test", upgrader), routing)
+                .handle(FixedLimit.create());
+
+        assertThat(callbackHeaders.get(), notNullValue());
+        assertThat(callbackHeaders.get().get(HeaderNames.HOST).get(), is("filtered.example"));
+        assertThat(callbackHeaders.get().get(filterHeader).get(), is("present"));
+        assertThat(originalHeaders.get().get(HeaderNames.HOST).get(), is("localhost"));
+        assertThat(originalHeaders.get().contains(filterHeader), is(false));
+    }
+
     private static DataReader reader(String... chunks) {
         var bytes = List.of(chunks).stream()
                 .map(chunk -> chunk.getBytes(StandardCharsets.US_ASCII))
@@ -239,6 +276,14 @@ class Http1ReceiveListenerTest {
     private static Http1Connection connection(DataReader reader,
                                               Http1ConnectionListener listener,
                                               Map<String, Http1Upgrader> upgraders) {
+        return connection(reader, listener, upgraders,
+                          HttpRouting.builder().get("/", (_, response) -> response.send("done")));
+    }
+
+    private static Http1Connection connection(DataReader reader,
+                                              Http1ConnectionListener listener,
+                                              Map<String, Http1Upgrader> upgraders,
+                                              HttpRouting.Builder routing) {
         var listenerContext = mock(ListenerContext.class);
         when(listenerContext.contentEncodingContext()).thenReturn(ContentEncodingContext.create());
         when(listenerContext.config()).thenReturn(WebServer.builder().buildPrototype());
@@ -249,10 +294,7 @@ class Http1ReceiveListenerTest {
         when(context.listenerContext()).thenReturn(listenerContext);
         when(context.dataWriter()).thenReturn(mock(DataWriter.class));
         when(context.dataReader()).thenReturn(reader);
-        when(context.router()).thenReturn(Router.builder()
-                                                 .addRouting(HttpRouting.builder()
-                                                                     .get("/", (_, response) -> response.send("done")))
-                                                 .build());
+        when(context.router()).thenReturn(Router.builder().addRouting(routing).build());
         when(context.remotePeer()).thenReturn(peerInfo);
         when(context.localPeer()).thenReturn(peerInfo);
 
