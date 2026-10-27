@@ -123,9 +123,11 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             checkRedirectHeaders(responseHeaders);
             URI newUri = URI.create(responseHeaders.httpHeaders().get(HeaderNames.LOCATION).get());
             ClientUri redirectUri = ClientUri.create(newUri);
-            if (newUri.getHost() == null) {
+            if (newUri.getScheme() == null) {
+                redirectUri.scheme(outputStream.lastRequest.resolvedUri().scheme());
+            }
+            if (newUri.getRawAuthority() == null) {
                 UriInfo resolvedUri = outputStream.lastRequest.resolvedUri();
-                redirectUri.scheme(resolvedUri.scheme());
                 redirectUri.host(resolvedUri.host());
                 redirectUri.port(resolvedUri.port());
             }
@@ -195,9 +197,11 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             checkRedirectHeaders(response.headers());
             URI newUri = URI.create(response.headers().get(HeaderNames.LOCATION).get());
             redirectUri = ClientUri.create(newUri);
-            if (newUri.getHost() == null) {
+            if (newUri.getScheme() == null) {
+                redirectUri.scheme(clientRequest().resolvedUri().scheme());
+            }
+            if (newUri.getRawAuthority() == null) {
                 UriInfo resolvedUri = clientRequest().resolvedUri();
-                redirectUri.scheme(resolvedUri.scheme());
                 redirectUri.host(resolvedUri.host());
                 redirectUri.port(resolvedUri.port());
             }
@@ -528,8 +532,10 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
                 numberOfRedirects++;
                 URI newUri = URI.create(redirectedUri);
                 ClientUri redirectUri = ClientUri.create(newUri);
-                if (newUri.getHost() == null) {
+                if (newUri.getScheme() == null) {
                     redirectUri.scheme(lastUri.scheme());
+                }
+                if (newUri.getRawAuthority() == null) {
                     redirectUri.host(lastUri.host());
                     redirectUri.port(lastUri.port());
                 }

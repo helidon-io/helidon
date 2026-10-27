@@ -133,9 +133,11 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             checkRedirectHeaders(responseHeaders);
             URI newUri = URI.create(responseHeaders.get(HeaderNames.LOCATION).get());
             ClientUri redirectUri = ClientUri.create(newUri);
-            if (newUri.getHost() == null) {
+            if (newUri.getScheme() == null) {
+                redirectUri.scheme(cos.lastRequest.resolvedUri().scheme());
+            }
+            if (newUri.getRawAuthority() == null) {
                 UriInfo resolvedUri = cos.lastRequest.resolvedUri();
-                redirectUri.scheme(resolvedUri.scheme());
                 redirectUri.host(resolvedUri.host());
                 redirectUri.port(resolvedUri.port());
             }
@@ -543,8 +545,10 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                 numberOfRedirects++;
                 URI newUri = URI.create(redirectedUri);
                 ClientUri redirectUri = ClientUri.create(newUri);
-                if (newUri.getHost() == null) {
+                if (newUri.getScheme() == null) {
                     redirectUri.scheme(lastUri.scheme());
+                }
+                if (newUri.getRawAuthority() == null) {
                     redirectUri.host(lastUri.host());
                     redirectUri.port(lastUri.port());
                 }
