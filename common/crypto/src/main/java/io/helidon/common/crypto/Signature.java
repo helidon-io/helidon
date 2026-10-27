@@ -23,12 +23,16 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.Objects;
+import java.util.Optional;
 
 import io.helidon.common.Api;
 import io.helidon.common.Base64Value;
 
 /**
  * The Signature class is used for simplification of the digital signature creation and verification.
+ * Algorithm, provider and each configured key are validated when the instance is built.
+ * A private key enables signing and a public key enables verification; either or both can be configured.
+ * Keys are validated individually, without checking that they form a matching pair.
  */
 @Api.Stable
 public class Signature implements Digest {
@@ -161,6 +165,7 @@ public class Signature implements Digest {
         this.provider = builder.provider;
         this.privateKey = builder.privateKey;
         this.publicKey = builder.publicKey;
+        validateConfiguration();
     }
 
     /**
@@ -177,6 +182,7 @@ public class Signature implements Digest {
         if (privateKey == null) {
             throw new CryptoException("Private key not set. This object cannot create new signatures");
         }
+        Objects.requireNonNull(value, "Value to sign cannot be null");
         try {
             java.security.Signature signature = getSignature();
             signature.initSign(privateKey);
@@ -192,6 +198,8 @@ public class Signature implements Digest {
         if (publicKey == null) {
             throw new CryptoException("Public key not set. This object cannot verify the signatures");
         }
+        Objects.requireNonNull(toVerify, "Value to verify cannot be null");
+        Objects.requireNonNull(digestToVerify, "Signature to verify cannot be null");
         try {
             java.security.Signature signature = getSignature();
             signature.initVerify(publicKey);
@@ -210,13 +218,27 @@ public class Signature implements Digest {
         }
     }
 
+    private void validateConfiguration() {
+        try {
+            if (privateKey != null) {
+                getSignature().initSign(privateKey);
+            }
+            if (publicKey != null) {
+                getSignature().initVerify(publicKey);
+            }
+        } catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidKeyException | IllegalArgumentException e) {
+            throw new CryptoException("Could not initialize signature", e);
+        }
+    }
+
     /**
      * Builder of the {@link Signature}.
+     * Optional values can be removed using the corresponding {@code clear} methods; setters do not accept {@code null}.
      */
     public static final class Builder implements io.helidon.common.Builder<Builder, Signature> {
 
         private String algorithm = ALGORITHM_SHA256_RSA;
-        private String provider = null;
+        private String provider;
         private PrivateKey privateKey;
         private PublicKey publicKey;
 
@@ -230,45 +252,139 @@ public class Signature implements Digest {
          *
          * @param algorithm algorithm to be used
          * @return updated builder instance
+         * @throws NullPointerException if algorithm is {@code null}
          */
         public Builder algorithm(String algorithm) {
-            this.algorithm = Objects.requireNonNull(algorithm, "Algorithm cannot be null");
+            Objects.requireNonNull(algorithm, "Algorithm cannot be null");
+            this.algorithm = algorithm;
+            return this;
+        }
+
+        /**
+         * Clear the explicit provider selection and use normal JCA provider selection.
+         *
+         * @return updated builder instance
+         * @since 28.0.0
+         */
+        public Builder clearProvider() {
+            this.provider = null;
             return this;
         }
 
         /**
          * Set provider of the algorithm.
+         * <p>
+         * To use normal JCA provider selection, call {@link #clearProvider()} instead of passing {@code null}.
          *
          * @param provider provider to be used
          * @return updated builder instance
+         * @throws NullPointerException if provider is {@code null}
          */
         public Builder provider(String provider) {
+            Objects.requireNonNull(provider);
             this.provider = provider;
             return this;
         }
 
         /**
+         * Clear the private key, disabling signing for subsequently built instances.
+         *
+         * @return updated builder instance
+         * @since 28.0.0
+         */
+        public Builder clearPrivateKey() {
+            this.privateKey = null;
+            return this;
+        }
+
+        /**
          * Set private key which should be used for signature creation.
+         * <p>
+         * To remove the private key, call {@link #clearPrivateKey()} instead of passing {@code null}.
          *
          * @param privateKey private key
          * @return updated builder instance
+         * @throws NullPointerException if private key is {@code null}
          */
         public Builder privateKey(PrivateKey privateKey) {
+            Objects.requireNonNull(privateKey);
             this.privateKey = privateKey;
             return this;
         }
 
         /**
-         * Set public key which should be used for signature verification.
+         * Clear the public key, disabling verification for subsequently built instances.
          *
-         * @param publicKey private key
          * @return updated builder instance
+         * @since 28.0.0
+         */
+        public Builder clearPublicKey() {
+            this.publicKey = null;
+            return this;
+        }
+
+        /**
+         * Set public key which should be used for signature verification.
+         * <p>
+         * To remove the public key, call {@link #clearPublicKey()} instead of passing {@code null}.
+         *
+         * @param publicKey public key
+         * @return updated builder instance
+         * @throws NullPointerException if public key is {@code null}
          */
         public Builder publicKey(PublicKey publicKey) {
+            Objects.requireNonNull(publicKey);
             this.publicKey = publicKey;
             return this;
         }
 
+        /**
+         * Algorithm used for signature creation and verification.
+         *
+         * @return algorithm name
+         * @since 28.0.0
+         */
+        public String algorithm() {
+            return algorithm;
+        }
+
+        /**
+         * Explicit provider selection, if configured.
+         *
+         * @return provider name, or empty for normal JCA provider selection
+         * @since 28.0.0
+         */
+        public Optional<String> provider() {
+            return Optional.ofNullable(provider);
+        }
+
+        /**
+         * Private key used for signature creation, if configured.
+         *
+         * @return private key, or empty if not configured
+         * @since 28.0.0
+         */
+        public Optional<PrivateKey> privateKey() {
+            return Optional.ofNullable(privateKey);
+        }
+
+        /**
+         * Public key used for signature verification, if configured.
+         *
+         * @return public key, or empty if not configured
+         * @since 28.0.0
+         */
+        public Optional<PublicKey> publicKey() {
+            return Optional.ofNullable(publicKey);
+        }
+
+        /**
+         * Build a signature instance after validating JCA initialization for each configured key.
+         * At least one key is required; keys are not checked for a matching pair.
+         *
+         * @return configured signature instance
+         * @throws CryptoException if no key is configured or the configuration cannot initialize a signature
+         */
         @Override
         public Signature build() {
             if (privateKey == null && publicKey == null) {

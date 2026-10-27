@@ -78,7 +78,7 @@ public final class EncryptionUtil {
 
         try {
             Base64Value value = Base64Value.createFromEncoded(encryptedBase64);
-            return AsymmetricCipher.decrypt(AsymmetricCipher.ALGORITHM_RSA_ECB_OAEP256, null, key, value).toDecodedString();
+            return AsymmetricCipher.decrypt(AsymmetricCipher.ALGORITHM_RSA_ECB_OAEP256, key, value).toDecodedString();
         } catch (ConfigEncryptionException e) {
             throw e;
         } catch (Exception e) {
@@ -103,7 +103,7 @@ public final class EncryptionUtil {
         }
         try {
             Base64Value value = Base64Value.create(secret);
-            return AsymmetricCipher.encrypt(AsymmetricCipher.ALGORITHM_RSA_ECB_OAEP256, null, key, value).toBase64();
+            return AsymmetricCipher.encrypt(AsymmetricCipher.ALGORITHM_RSA_ECB_OAEP256, key, value).toBase64();
         } catch (Exception e) {
             throw new ConfigEncryptionException("Failed to encrypt using RSA key", e);
         }
@@ -169,7 +169,7 @@ public final class EncryptionUtil {
         byte[] salt = SECURE_RANDOM.get().generateSeed(SALT_LENGTH);
         byte[] nonce = SECURE_RANDOM.get().generateSeed(NONCE_LENGTH);
         byte[] key = PasswordKeyDerivation
-                .deriveKey("PBKDF2WithHmacSHA256", null, masterPassword, salt, HASH_ITERATIONS, KEY_LENGTH);
+                .deriveKey("PBKDF2WithHmacSHA256", masterPassword, salt, HASH_ITERATIONS, KEY_LENGTH);
         byte[] encrypted = SymmetricCipher.encrypt(SymmetricCipher.ALGORITHM_AES_GCM, key, nonce, Base64Value.create(secret))
                 .toBytes();
 
@@ -241,7 +241,7 @@ public final class EncryptionUtil {
             System.arraycopy(decodedBytes, SALT_LENGTH + NONCE_LENGTH, encryptedBytes, 0, encryptedBytes.length);
 
             byte[] key = PasswordKeyDerivation
-                    .deriveKey("PBKDF2WithHmacSHA256", null, masterPassword, salt, HASH_ITERATIONS, KEY_LENGTH);
+                    .deriveKey("PBKDF2WithHmacSHA256", masterPassword, salt, HASH_ITERATIONS, KEY_LENGTH);
             Base64Value encryptedValue = Base64Value.create(encryptedBytes);
             return SymmetricCipher.decrypt(SymmetricCipher.ALGORITHM_AES_GCM, key, nonce, encryptedValue).toBytes();
         } catch (Throwable e) {

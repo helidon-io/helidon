@@ -38,6 +38,7 @@
 module io.helidon.common.crypto {
 
     requires io.helidon.common;
+    requires transitive io.helidon.builder.api;
 
     exports io.helidon.common.crypto;
 

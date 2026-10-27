@@ -20,6 +20,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.Objects;
+import java.util.Optional;
 
 import io.helidon.common.Api;
 import io.helidon.common.Base64Value;
@@ -28,6 +29,7 @@ import io.helidon.common.Base64Value;
  * The HashDigest is used for ordinary data digest creation and verification.
  * <br>
  * Should not be used for authentication purposes.
+ * Algorithm and provider availability are validated when the instance is built.
  */
 @Api.Stable
 public class HashDigest implements Digest {
@@ -130,6 +132,7 @@ public class HashDigest implements Digest {
     private HashDigest(Builder builder) {
         this.algorithm = builder.algorithm;
         this.provider = builder.provider;
+        messageDigest();
     }
 
     /**
@@ -153,14 +156,17 @@ public class HashDigest implements Digest {
 
     @Override
     public Base64Value digest(Base64Value value) {
+        Objects.requireNonNull(value, "Value to digest cannot be null");
+        return Base64Value.create(messageDigest().digest(value.toBytes()));
+    }
+
+    private MessageDigest messageDigest() {
         try {
-            MessageDigest digest;
             if (provider == null) {
-                digest = MessageDigest.getInstance(algorithm);
+                return MessageDigest.getInstance(algorithm);
             } else {
-                digest = MessageDigest.getInstance(algorithm, provider);
+                return MessageDigest.getInstance(algorithm, provider);
             }
-            return Base64Value.create(digest.digest(value.toBytes()));
         } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
             throw new IllegalStateException("Could not create digest", e);
         }
@@ -168,11 +174,12 @@ public class HashDigest implements Digest {
 
     /**
      * Builder of the {@link HashDigest}.
+     * Optional provider selection can be removed using {@link #clearProvider()}; setters do not accept {@code null}.
      */
     public static final class Builder implements io.helidon.common.Builder<Builder, HashDigest> {
 
         private String algorithm = ALGORITHM_SHA_256;
-        private String provider = null;
+        private String provider;
 
         private Builder() {
         }
@@ -182,23 +189,67 @@ public class HashDigest implements Digest {
          *
          * @param algorithm algorithm to be used
          * @return updated builder instance
+         * @throws NullPointerException if algorithm is {@code null}
          */
         public Builder algorithm(String algorithm) {
-            this.algorithm = Objects.requireNonNull(algorithm, "Algorithm cannot be null");
+            Objects.requireNonNull(algorithm, "Algorithm cannot be null");
+            this.algorithm = algorithm;
+            return this;
+        }
+
+        /**
+         * Clear the explicit provider selection and use normal JCA provider selection.
+         *
+         * @return updated builder instance
+         * @since 28.0.0
+         */
+        public Builder clearProvider() {
+            this.provider = null;
             return this;
         }
 
         /**
          * Set provider of the algorithm.
+         * <p>
+         * To use normal JCA provider selection, call {@link #clearProvider()} instead of passing {@code null}.
          *
          * @param provider provider to be used
          * @return updated builder instance
+         * @throws NullPointerException if provider is {@code null}
          */
         public Builder provider(String provider) {
+            Objects.requireNonNull(provider);
             this.provider = provider;
             return this;
         }
 
+        /**
+         * Algorithm used to create the digest.
+         *
+         * @return algorithm name
+         * @since 28.0.0
+         */
+        public String algorithm() {
+            return algorithm;
+        }
+
+        /**
+         * Explicit provider selection, if configured.
+         *
+         * @return provider name, or empty for normal JCA provider selection
+         * @since 28.0.0
+         */
+        public Optional<String> provider() {
+            return Optional.ofNullable(provider);
+        }
+
+        /**
+         * Build a digest after validating algorithm and provider availability using JCA lookup.
+         *
+         * @return configured digest
+         * @throws IllegalStateException if the algorithm or provider is unavailable
+         * @throws IllegalArgumentException if the explicit provider name is empty
+         */
         @Override
         public HashDigest build() {
             return new HashDigest(this);
