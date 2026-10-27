@@ -102,8 +102,9 @@ still allowing both runner methods to complete:
     '-Dmessaging.jmh.saturationInclude=.*MessagingSaturationJmhBenchmark\.messagingEmit'
 ```
 
-The observability benchmarks compare the native Helidon metrics provider with metrics disabled and with no registered
-provider. `dispatch` delivers a prebuilt batch of 1 or 32 messages to a short payload handler; its time and allocation are
+The observability benchmarks compare enabled native Helidon metrics, disabled messaging metrics, and an absent
+`MeterRegistry` service. The absent mode disables service discovery; it does not measure a discovered no-op metrics registry.
+`dispatch` delivers a prebuilt batch of 1 or 32 messages to a short payload handler; its time and allocation are
 per batch. Construction benchmarks use 1 or 64 channels and 0 or 4,096 unrelated meters, with metrics enabled or disabled:
 
 - `constructAndCloseWithRegisteredMeters` repeatedly constructs and closes graphs with the same channel names in one
@@ -133,10 +134,8 @@ virtual-thread scheduling, using the same three metrics modes and a short handle
 methods and output path. Use this together with the public dispatch benchmark: recorder timings alone do not represent
 end-to-end delivery latency.
 
-The October 19 measurements for #12557 compared earlier implementations that removed graph-owned meters on close.
-They do not describe the registry-owned, cumulative series used now. Repeated construction now reuses those series;
-use the separate new-meter benchmark to measure first registration. Dispatch and recorder setup verify meter
-registration before measurement so a missing provider cannot masquerade as lower metrics overhead.
+Dispatch and recorder setup verify meter registration before measurement so a missing provider cannot masquerade as
+lower metrics overhead.
 
 The gRPC streaming benchmark covers the resource-owning server-streaming, client-streaming, and bidirectional APIs,
 same-run legacy iterator baselines, mixed new-client/legacy-server and legacy-client/new-server pairs, and a deliberately
