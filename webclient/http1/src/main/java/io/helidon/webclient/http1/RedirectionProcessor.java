@@ -16,8 +16,6 @@
 
 package io.helidon.webclient.http1;
 
-import java.net.URI;
-
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Method;
@@ -84,22 +82,7 @@ class RedirectionProcessor {
                                                             + "It is not clear where to redirect.");
                 }
                 String redirectedUri = clientResponse.headers().get(HeaderNames.LOCATION).get();
-                URI newUri = URI.create(redirectedUri);
-                ClientUri redirectUri = ClientUri.create(newUri);
-
-                if (newUri.getScheme() == null) {
-                    redirectUri.scheme(clientRequest.resolvedUri().scheme());
-                }
-                if (newUri.getRawAuthority() == null) {
-                    //To keep the information about the latest host, we need to use uri from the last performed request
-                    //Example:
-                    //request -> my-test.com -> response redirect -> my-example.com
-                    //new request -> my-example.com -> response redirect -> /login
-                    //with using the last request uri host etc, we prevent my-test.com/login from happening
-                    ClientUri resolvedUri = clientRequest.resolvedUri();
-                    redirectUri.host(resolvedUri.host());
-                    redirectUri.port(resolvedUri.port());
-                }
+                ClientUri redirectUri = clientRequest.redirectUri(redirectedUri);
                 //Method and entity is required to be the same as with original request with 307 and 308 requests
                 validateEntityRedirect(clientRequest, clientResponse.status(), redirectUri, entityToBeSent);
                 if (keepsMethodAndEntity(clientResponse.status())) {

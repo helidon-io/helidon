@@ -68,6 +68,27 @@ class RedirectAuthorityTest {
         return redirectTests(true);
     }
 
+    @TestFactory
+    Stream<DynamicTest> expectContinueTemplateScheme() {
+        return Stream.of(Protocol.HTTP1, Protocol.HTTP2)
+                .flatMap(protocol -> Stream.of(false, true)
+                        .flatMap(secure -> Stream.of("redirect-host", "redirect_host")
+                                .map(host -> DynamicTest.dynamicTest(protocol + " actual HTTPS " + secure + " " + host,
+                                        () -> {
+                                            var executor = Executors.newVirtualThreadPerTaskExecutor();
+                                            try {
+                                                try (var fixture = new RedirectFixture(protocol, Exchange.EXPECT_CONTINUE,
+                                                                                       Location.SCHEME_RELATIVE,
+                                                                                       secure, null, host)) {
+                                                    awaitExchange(submitExpectContinue(executor, fixture),
+                                                                  Duration.ofSeconds(10));
+                                                }
+                                            } finally {
+                                                terminate(executor);
+                                            }
+                                        }))));
+    }
+
     @Test
     void expectContinueTimeoutClosesResources() throws Exception {
         var executor = Executors.newVirtualThreadPerTaskExecutor();
@@ -213,31 +234,48 @@ class RedirectAuthorityTest {
 
     private static class RedirectFixture implements AutoCloseable {
         private final Exchange exchange;
+        private final boolean templateRequest;
+        private final String requestUri;
+        private final String expectedSource;
         private WebServer target;
         private WebServer source;
         private HttpClient<?> client;
         private String expected;
+        private volatile String observedSource;
 
         private RedirectFixture(Protocol protocol, Exchange exchange, Location location, boolean secure, ResponseGate gate)
                 throws Exception {
+            this(protocol, exchange, location, secure, gate, null);
+        }
+
+        private RedirectFixture(Protocol protocol, Exchange exchange, Location location, boolean secure, ResponseGate gate,
+                                String templateRedirectHost) throws Exception {
             this.exchange = exchange;
+            this.templateRequest = templateRedirectHost != null;
+            this.expectedSource = (protocol == Protocol.HTTP2 ? "2.0" : "1.1")
+                    + "|" + secure + "|/redirect|100-continue";
             try {
                 String scheme = secure ? "https" : "http";
                 String sourceHost = secure ? "source_host" : "source-host";
                 // The H2 307 upload probe waits for a timeout; use 302 to isolate early redirect routing.
-                boolean keepEntity = exchange != Exchange.GET && protocol != Protocol.HTTP2_FALLBACK
+                boolean keepEntity = !templateRequest && exchange != Exchange.GET && protocol != Protocol.HTTP2_FALLBACK
                         && (protocol != Protocol.HTTP2 || exchange != Exchange.EXPECT_CONTINUE);
                 target = server(protocol, secure, HttpRouting.builder()
                         .any("/target", (req, res) -> res.send(capture("target", req))));
                 String redirectLocation = switch (location) {
                     case ABSOLUTE_UNDERSCORE -> scheme + "://redirect_host:" + target.port() + "/target";
                     case ABSOLUTE_HOST -> scheme + "://redirect-host:" + target.port() + "/target";
-                    case SCHEME_RELATIVE -> "//redirect_host:" + target.port() + "/target";
+                    case SCHEME_RELATIVE -> "//" + (templateRequest ? templateRedirectHost : "redirect_host")
+                            + ":" + target.port() + "/target";
                     case SAME_AUTHORITY_SCHEME_RELATIVE -> "//" + sourceHost + ":";
                     case PATH_RELATIVE -> "/target";
                 };
                 source = server(protocol, secure, HttpRouting.builder()
                         .any("/redirect", (req, res) -> {
+                            if (templateRequest) {
+                                observedSource = req.prologue().protocolVersion() + "|" + req.isSecure()
+                                        + "|" + req.path().path() + "|" + req.headers().first(HeaderNames.EXPECT).orElse("");
+                            }
                             if (exchange == Exchange.EXPECT_CONTINUE
                                     && !req.headers().first(HeaderNames.EXPECT).orElse("").equalsIgnoreCase("100-continue")) {
                                 res.status(Status.BAD_REQUEST_400).send("Expected an Expect: 100-continue request");
@@ -258,9 +296,11 @@ class RedirectAuthorityTest {
                         })
                         .any("/target", (req, res) -> res.send(capture("source", req))));
                 var loopback = InetAddress.getByName("127.0.0.1");
-                String baseUri = scheme + "://" + sourceHost + ":" + source.port();
+                String baseScheme = templateRequest ? (secure ? "http" : "https") : scheme;
+                String baseUri = baseScheme + "://" + sourceHost + ":" + source.port();
+                requestUri = templateRequest ? scheme + "://" + sourceHost + ":" + source.port() + "/{path}" : "/redirect";
                 var clientTls = Tls.builder()
-                        .enabled(secure)
+                        .enabled(secure || templateRequest)
                         .trustAll(true)
                         .endpointIdentificationAlgorithm(Tls.ENDPOINT_IDENTIFICATION_NONE)
                         .build();
@@ -289,7 +329,8 @@ class RedirectAuthorityTest {
                 boolean relative = location == Location.PATH_RELATIVE
                         || location == Location.SAME_AUTHORITY_SCHEME_RELATIVE;
                 String host = switch (location) {
-                    case ABSOLUTE_UNDERSCORE, SCHEME_RELATIVE -> "redirect_host";
+                    case ABSOLUTE_UNDERSCORE -> "redirect_host";
+                    case SCHEME_RELATIVE -> templateRequest ? templateRedirectHost : "redirect_host";
                     case ABSOLUTE_HOST -> "redirect-host";
                     case PATH_RELATIVE, SAME_AUTHORITY_SCHEME_RELATIVE -> sourceHost;
                 };
@@ -329,8 +370,11 @@ class RedirectAuthorityTest {
 
         private void exchange() {
             var request = client.method(exchange == Exchange.GET ? Method.GET : Method.PUT)
-                    .uri("/redirect")
+                    .uri(requestUri)
                     .sendExpectContinue(exchange == Exchange.EXPECT_CONTINUE);
+            if (templateRequest) {
+                request.pathParam("path", "redirect");
+            }
             if (exchange == Exchange.EXPECT_CONTINUE) {
                 request.readContinueTimeout(Duration.ofSeconds(30));
             }
@@ -346,6 +390,9 @@ class RedirectAuthorityTest {
             try (response) {
                 String captured = response.as(String.class);
                 assertThat(captured, response.status(), is(Status.OK_200));
+                if (templateRequest) {
+                    assertThat("Source request protocol, TLS, path and Expect header", observedSource, is(expectedSource));
+                }
                 assertThat(captured, is(expected));
             }
         }

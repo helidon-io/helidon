@@ -19,11 +19,9 @@ package io.helidon.webclient.http2;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 
 import io.helidon.common.buffers.BufferData;
-import io.helidon.common.uri.UriInfo;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.HeaderNames;
@@ -121,16 +119,8 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
         if (clientRequest().followRedirects()
                 && RedirectionProcessor.redirectionStatusCode(responseHeaders.status())) {
             checkRedirectHeaders(responseHeaders);
-            URI newUri = URI.create(responseHeaders.httpHeaders().get(HeaderNames.LOCATION).get());
-            ClientUri redirectUri = ClientUri.create(newUri);
-            if (newUri.getScheme() == null) {
-                redirectUri.scheme(outputStream.lastRequest.resolvedUri().scheme());
-            }
-            if (newUri.getRawAuthority() == null) {
-                UriInfo resolvedUri = outputStream.lastRequest.resolvedUri();
-                redirectUri.host(resolvedUri.host());
-                redirectUri.port(resolvedUri.port());
-            }
+            ClientUri redirectUri = outputStream.lastRequest.redirectUri(
+                    responseHeaders.httpHeaders().get(HeaderNames.LOCATION).get());
             boolean sendEntity = RedirectionProcessor.keepsMethodAndEntity(responseHeaders.status());
             ClientRequest.OutputStreamHandler handler = streamHandler;
             if (sendEntity && !outputStream.lastRequest.canReplayEntityTo(redirectUri)) {
@@ -195,16 +185,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
         boolean sendEntity;
         try (response) {
             checkRedirectHeaders(response.headers());
-            URI newUri = URI.create(response.headers().get(HeaderNames.LOCATION).get());
-            redirectUri = ClientUri.create(newUri);
-            if (newUri.getScheme() == null) {
-                redirectUri.scheme(clientRequest().resolvedUri().scheme());
-            }
-            if (newUri.getRawAuthority() == null) {
-                UriInfo resolvedUri = clientRequest().resolvedUri();
-                redirectUri.host(resolvedUri.host());
-                redirectUri.port(resolvedUri.port());
-            }
+            redirectUri = clientRequest().redirectUri(response.headers().get(HeaderNames.LOCATION).get());
 
             if (RedirectionProcessor.keepsMethodAndEntity(response.status())) {
                 method = clientRequest().method();
@@ -518,7 +499,6 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
 
         private void redirect(Status lastStatus, Headers headerValues) {
             String redirectedUri = headerValues.get(HeaderNames.LOCATION).get();
-            ClientUri lastUri = originalRequest.uri();
             Method method;
             boolean sendEntity;
             if (RedirectionProcessor.keepsMethodAndEntity(lastStatus)) {
@@ -530,16 +510,7 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
             }
             while (numberOfRedirects < originalRequest.maxRedirects()) {
                 numberOfRedirects++;
-                URI newUri = URI.create(redirectedUri);
-                ClientUri redirectUri = ClientUri.create(newUri);
-                if (newUri.getScheme() == null) {
-                    redirectUri.scheme(lastUri.scheme());
-                }
-                if (newUri.getRawAuthority() == null) {
-                    redirectUri.host(lastUri.host());
-                    redirectUri.port(lastUri.port());
-                }
-                lastUri = redirectUri;
+                ClientUri redirectUri = lastRequest.redirectUri(redirectedUri);
                 // Queue RST_STREAM before releasing this stream's reservation, so redirected HEADERS
                 // are serialized after the abandoned upload is reset for max-concurrent-streams peers.
                 try {
