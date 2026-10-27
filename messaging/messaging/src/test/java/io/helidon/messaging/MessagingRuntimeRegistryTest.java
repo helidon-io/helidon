@@ -44,7 +44,6 @@ import static io.helidon.health.HealthCheckResponse.Status.DOWN;
 import static io.helidon.health.HealthCheckResponse.Status.UP;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Timeout(60)
 class MessagingRuntimeRegistryTest {
@@ -106,16 +105,6 @@ class MessagingRuntimeRegistryTest {
                 assertThat(fixture.attempts(), is(1L));
             }
             assertThat(fixture.readiness(), is(UP));
-        }
-    }
-
-    @Test
-    void explicitRegistryFactoryRejectsNullArguments() {
-        // The explicit owner-registry entry point rejects nulls before attempting graph assembly.
-        try (var fixture = new Fixture(false, false, false)) {
-            assertThrows(NullPointerException.class, () -> MessagingGraph.create(null, fixture.registry));
-            assertThrows(NullPointerException.class,
-                         () -> MessagingGraph.create(MessagingConfig.builder().buildPrototype(), null));
         }
     }
 

@@ -299,7 +299,7 @@ class MessagingHealthTest {
 
     private static MessagingGraph graph(ServiceRegistryManager registry, MessagingConfig.Builder config) {
         // The graph borrows its selected application registry; the test fixture shuts the registry down.
-        return MessagingGraph.create(config.buildPrototype(), registry.registry());
+        return new MessagingGraphAssembler(config.buildPrototype(), registry.registry()).graph();
     }
 
     private static MessagingConfig.Builder builder() {

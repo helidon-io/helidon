@@ -475,7 +475,7 @@ class MessagingObservabilityTest {
 
         private MessagingGraph graph(MessagingConfig.Builder config) {
             // The fixture owns this registry; graph close releases only this graph's observers.
-            return MessagingGraph.create(config.buildPrototype(), services.registry());
+            return new MessagingGraphAssembler(config.buildPrototype(), services.registry()).graph();
         }
 
         private MessagingConfig.Builder builder() {

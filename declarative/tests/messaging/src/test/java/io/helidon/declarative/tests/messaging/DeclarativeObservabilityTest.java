@@ -35,9 +35,13 @@ import io.helidon.metrics.providers.helidon.HelidonMetricsFactory;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
@@ -47,6 +51,8 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Timeout(15)
+@Testing.Test(perMethod = true)
+@Execution(ExecutionMode.SAME_THREAD)
 class DeclarativeObservabilityTest {
     private static final String DURATION = "messaging.processing.duration";
     private static final String FAILURES = "messaging.processing.failures";
@@ -67,15 +73,16 @@ class DeclarativeObservabilityTest {
 
     @Test
     void imperativeAndGeneratedGraphsShareTheSelectedRegistryAndChannelMeters() {
-        // Both graph APIs use the selected application registry, so closing the imperative graph preserves shared meters.
+        // Configure one application registry before creating either graph; the extension isolates it to this test.
         try (Fixture fixture = new Fixture()) {
+            Services.registry(fixture.registry);
             ChannelMessagingTypes.Producer producer = fixture.registry.get(ChannelMessagingTypes.Producer.class);
             producer.emitChannelTwo("declarative first");
 
             MessagingChannel<String> channel = MessagingChannel.create(ChannelMessagingTypes.CHANNEL_TWO, String.class);
             List<String> imperative = new ArrayList<>();
-            try (MessagingGraph graph = MessagingGraph.create(MessagingGraph.builder().serviceRegistry(fixture.registry)
-                    .channel(channel).payloadSink(channel, imperative::add).buildPrototype(), fixture.registry).start()) {
+            try (MessagingGraph graph = MessagingGraph.builder()
+                    .channel(channel).payloadSink(channel, imperative::add).build().start()) {
                 graph.emitter(channel).emit("imperative");
 
                 assertThat(imperative, is(List.of("imperative")));
@@ -116,6 +123,7 @@ class DeclarativeObservabilityTest {
     void previouslyDiscoveredHealthChecksObserveImperativeAndGeneratedGraphs() {
         // Discover checks before either graph exists, then verify that they observe later graph membership and startup.
         try (Fixture fixture = new Fixture()) {
+            Services.registry(fixture.registry);
             List<HealthCheck> checks = fixture.checks();
             assertThat(checks, hasSize(2));
             assertThat(checks.stream().map(check -> check.call().status()).toList(),
@@ -123,8 +131,8 @@ class DeclarativeObservabilityTest {
             HealthCheck readiness = checks.stream().filter(check -> check.type() == HealthCheckType.READINESS)
                     .findFirst().orElseThrow();
             MessagingChannel<String> channel = MessagingChannel.create("late-graph", String.class);
-            try (MessagingGraph graph = MessagingGraph.create(MessagingGraph.builder().serviceRegistry(fixture.registry)
-                    .channel(channel).payloadSink(channel, _ -> { }).buildPrototype(), fixture.registry)) {
+            try (MessagingGraph graph = MessagingGraph.builder()
+                    .channel(channel).payloadSink(channel, _ -> { }).build()) {
                 assertThat(readiness.call().status(), is(HealthCheckResponse.Status.DOWN));
                 fixture.registry.get(ChannelMessagingTypes.Producer.class).emitChannelTwo("start graph");
                 assertThat(readiness.call().status(), is(HealthCheckResponse.Status.DOWN));

@@ -327,7 +327,7 @@ class MessagingMetricsLifecycleTest {
 
         private MessagingGraph graph(MessagingConfig.Builder config) {
             // The fixture owns this registry; graph close releases only this graph's observers.
-            return MessagingGraph.create(config.buildPrototype(), manager.registry());
+            return new MessagingGraphAssembler(config.buildPrototype(), manager.registry()).graph();
         }
 
         private MessagingConfig.Builder builder() {

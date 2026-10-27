@@ -114,12 +114,12 @@ class MessagingMetricsFailureTest {
         }
 
         private MessagingGraph graph() {
-            return MessagingGraph.create(MessagingGraph.builder()
+            return new MessagingGraphAssembler(MessagingGraph.builder()
                     .serviceRegistry(manager.registry())
                     .health(h -> h.enabled(false))
                     .channel(channel)
                     .payloadSink(channel, _ -> { })
-                    .buildPrototype(), manager.registry());
+                    .buildPrototype(), manager.registry()).graph();
         }
     }
 }
