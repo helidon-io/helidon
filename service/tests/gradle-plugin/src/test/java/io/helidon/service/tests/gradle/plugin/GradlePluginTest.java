@@ -374,6 +374,65 @@ class GradlePluginTest {
     }
 
     @Test
+    void filtersBindingPlaceholderFromAdditionalCompilerOutput() throws IOException {
+        fixture();
+        write("src/main/java/example/Main.java", Files.readString(directory.resolve("src/main/java/example/Main.java"))
+                .replace("@Service.GenerateBinding\n", ""));
+        write("src/extra/java/example/BindingAnchor.java", """
+                package example;
+                import io.helidon.service.registry.Service;
+                @Service.GenerateBinding("ApplicationBinding")
+                public class BindingAnchor { }
+                """);
+        write("build.gradle", Files.readString(directory.resolve("build.gradle")) + """
+
+                def compileExtra = tasks.register('compileExtraBinding', JavaCompile) {
+                    source = fileTree('src/extra/java')
+                    classpath = sourceSets.main.compileClasspath
+                    options.annotationProcessorPath = configurations.annotationProcessor
+                    destinationDirectory = layout.buildDirectory.dir('classes/extra/main')
+                }
+                sourceSets.main.output.classesDirs.from(compileExtra.flatMap { it.destinationDirectory })
+                tasks.named('compileJava', JavaCompile) {
+                    dependsOn compileExtra
+                    classpath += files(compileExtra.flatMap { it.destinationDirectory })
+                }
+                """);
+
+        BuildResult compiled = runner("compileJava").build();
+        assertTask(compiled, ":compileExtraBinding", TaskOutcome.SUCCESS);
+        assertTask(compiled, ":compileJava", TaskOutcome.SUCCESS);
+        Path rawBinding = directory.resolve("build/classes/extra/main/example/ApplicationBinding.class");
+        byte[] placeholder = Files.readAllBytes(rawBinding);
+        assertThat("The binding placeholder must come only from the additional compiler",
+                   Files.exists(directory.resolve("build/classes/java/main/example/ApplicationBinding.class")), is(false));
+
+        BuildResult result = runner("jar", "packagedRun", "--configuration-cache").build();
+        assertTask(result, ":generateApplicationBindings", TaskOutcome.SUCCESS);
+        assertTask(result, ":jar", TaskOutcome.SUCCESS);
+        assertThat(result.getOutput(), containsString("APPLICATION:chosen:library"));
+        assertThat("Generation must leave the additional compiler's placeholder unchanged",
+                   Files.readAllBytes(rawBinding), is(placeholder));
+        byte[] completed = Files.readAllBytes(directory.resolve("build/classes/helidon/main/example/ApplicationBinding.class"));
+        assertThat("The completed binding must replace the additional compiler's placeholder", completed, not(is(placeholder)));
+        try (var jar = new ZipFile(directory.resolve("build/libs/application.jar").toFile())) {
+            assertThat("The standard archive must contain exactly one binding",
+                       jar.stream().filter(entry -> entry.getName().equals("example/ApplicationBinding.class")).count(), is(1L));
+            assertThat("The standard archive must retain the completed binding",
+                       jar.getInputStream(jar.getEntry("example/ApplicationBinding.class")).readAllBytes(), is(completed));
+            assertThat("The additional compiler's ordinary output must remain in the archive",
+                       jar.getEntry("example/BindingAnchor.class"), notNullValue());
+        }
+
+        BuildResult repeated = runner("jar", "packagedRun", "--configuration-cache").build();
+        assertThat(repeated.getOutput(), containsString("Reusing configuration cache"));
+        assertThat(repeated.getOutput(), containsString("APPLICATION:chosen:library"));
+        assertTask(repeated, ":compileExtraBinding", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":generateApplicationBindings", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":jar", TaskOutcome.UP_TO_DATE);
+    }
+
+    @Test
     void generatedOnlyRelocationPreservesRawPlaceholder() throws IOException {
         generatedOnlyArchiveRule(false);
     }
