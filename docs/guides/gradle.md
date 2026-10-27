@@ -145,20 +145,91 @@ Configure the generated class output with `classesDirectory` on
 `layout.buildDirectory` by default. Each generation task modifies only its own
 generated output.
 
-The `helidonService` extension options, the generation task names above and
-their documented `classesDirectory` property form the supported build-script
-configuration contract. Use `tasks.named` to customize a task created by the
-plugin:
+### Customize Binding Tasks
+
+`GenerateBindings` is an incubating public task type. Use `tasks.named` to
+extend a task created by the plugin. Its `classpath` and `sourceRoots` are
+additive file collections, so `from(...)` retains the plugin's existing inputs.
+For example, an additional Java compiler can contribute service classes and
+their sources:
 
 ```groovy [build.gradle]
-tasks.named('generateApplicationBindings') {
+import io.helidon.service.gradle.plugin.GenerateBindings
+
+def compileExtra = tasks.register('compileExtraJava', JavaCompile) {
+    dependsOn tasks.named('compileJava')
+    source = fileTree('src/extra/java')
+    classpath = sourceSets.main.compileClasspath + files(
+            tasks.named('compileJava', JavaCompile).flatMap { it.destinationDirectory })
+    options.annotationProcessorPath = configurations.annotationProcessor
+    destinationDirectory = layout.buildDirectory.dir('classes/extra/main')
+}
+
+tasks.named('generateApplicationBindings', GenerateBindings) {
+    dependsOn compileExtra
+    classpath.from(compileExtra.flatMap { it.destinationDirectory })
+    sourceRoots.from(file('src/extra/java'))
     classesDirectory = layout.buildDirectory.dir('custom/completed-main')
+}
+
+// Include the additional classes in application packaging and execution too.
+sourceSets.main.output.classesDirs.from(
+        compileExtra.flatMap { it.destinationDirectory })
+```
+
+Use `tasks.register` for a separate binding target. The following example adds
+an independent `other` source set, whose classes reference an `OtherBinding`
+placeholder generated with `@Service.GenerateBinding("OtherBinding")`:
+
+```groovy [build.gradle]
+import io.helidon.service.gradle.plugin.GenerateBindings
+
+sourceSets { other }
+configurations {
+    otherImplementation.extendsFrom implementation
+    otherAnnotationProcessor.extendsFrom annotationProcessor
+}
+
+def compileOther = tasks.named(sourceSets.other.compileJavaTaskName, JavaCompile)
+def generateOtherBinding = tasks.register('generateOtherBinding', GenerateBindings) {
+    dependsOn compileOther
+    classpath.from(compileOther.flatMap { it.destinationDirectory },
+                   configurations.otherRuntimeClasspath)
+    sourceRoots.from(sourceSets.other.allJava.sourceDirectories)
+    options.bindingClassName = 'OtherBinding'
+    prependClassesTo(sourceSets.other)
+}
+
+tasks.named(sourceSets.other.classesTaskName) {
+    dependsOn generateOtherBinding
+}
+
+tasks.register('otherJar', Jar) { jar ->
+    dependsOn generateOtherBinding
+    archiveClassifier = 'other'
+    from(sourceSets.other.output)
+    generateOtherBinding.get().addExclusionsTo(jar)
 }
 ```
 
-The generation task implementation type is internal. Registering additional
-binding-generation tasks through that type is outside the supported
-configuration contract.
+`prependClassesTo(sourceSet)` puts this task's generated class directory first
+while retaining the source set's compiler outputs and their producer dependencies.
+It also includes those compiler outputs in generation inputs. Supply runtime
+dependencies through `classpath`; do not add the generated output back to that
+input collection. `addExclusionsTo(jarTask)` configures the archive to keep
+completed bindings and omit their compiler placeholders, and makes it depend on
+the generation task. Declare the archive's dependency outside the generation
+task's registration action, as above, so requesting `otherJar` directly realizes
+and connects the generation task.
+
+Standalone tasks default to scope `main`, the Gradle JVM's Java release, no
+additional compiler arguments, and binding generation enabled. Their output
+directories are `build/classes/helidon/<taskName>` and
+`build/generated/sources/helidon/<taskName>`; their `mainSourceRoots` default to
+`sourceRoots`. Configure binding options through `options`, using the same
+property names as the extension below. The plugin-created application and test
+tasks retain their `main` and `test` output directories and inherit options from
+`helidonService`.
 
 ### Configuration
 

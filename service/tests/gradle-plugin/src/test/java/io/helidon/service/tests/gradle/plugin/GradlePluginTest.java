@@ -97,6 +97,194 @@ class GradlePluginTest {
     }
 
     @Test
+    void namedBindingTaskAcceptsAdditionalCompilerInputs() throws IOException {
+        fixture();
+        write("build.gradle", "import io.helidon.service.gradle.plugin.GenerateBindings\n"
+                + Files.readString(directory.resolve("build.gradle")) + """
+
+                def compileExtra = tasks.register('compileExtra', JavaCompile) {
+                    dependsOn tasks.named('compileJava')
+                    source = fileTree('src/extra/java')
+                    classpath = sourceSets.main.compileClasspath + files(
+                            tasks.named('compileJava', JavaCompile).flatMap { it.destinationDirectory })
+                    options.annotationProcessorPath = configurations.annotationProcessor
+                    destinationDirectory = layout.buildDirectory.dir('classes/extra/main')
+                }
+                tasks.named('generateApplicationBindings', GenerateBindings) {
+                    dependsOn compileExtra
+                    classpath.from(compileExtra.flatMap { it.destinationDirectory })
+                    sourceRoots.from(file('src/extra/java'))
+                }
+                tasks.named('packagedRun', JavaExec) {
+                    classpath += files(compileExtra.flatMap { it.destinationDirectory })
+                }
+                """);
+        write("src/extra/java/extra/ExtraService.java", """
+                package extra;
+                import example.Greeting;
+                import io.helidon.service.registry.Service;
+                @Service.Singleton
+                public class ExtraService {
+                    private final Greeting greeting;
+                    @Service.Inject
+                    public ExtraService(@Service.Named("chosen") Greeting greeting) { this.greeting = greeting; }
+                    public String value() { return greeting.value(); }
+                }
+                """);
+        write("src/main/java/example/Main.java", Files.readString(directory.resolve("src/main/java/example/Main.java"))
+                .replace("main(String[] args) {", "main(String[] args) throws Exception {")
+                .replace("manager.shutdown();", """
+                        Object extra = manager.registry().get(Class.forName("extra.ExtraService"));
+                        System.out.println("EXTRA:" + extra.getClass().getMethod("value").invoke(extra));
+                        manager.shutdown();
+                        """));
+
+        BuildResult result = runner("packagedRun", "--configuration-cache").build();
+        assertTask(result, ":compileJava", TaskOutcome.SUCCESS);
+        assertTask(result, ":compileExtra", TaskOutcome.SUCCESS);
+        assertTask(result, ":generateApplicationBindings", TaskOutcome.SUCCESS);
+        assertThat(result.getOutput(), containsString("APPLICATION:chosen:library"));
+        assertThat(result.getOutput(), containsString("EXTRA:chosen:library"));
+        String binding = Files.readString(directory.resolve(
+                "build/generated/sources/helidon/main/example/ApplicationBinding.java"));
+        assertThat(binding, containsString("Greeting__ServiceDescriptor"));
+        assertThat(binding, containsString("LibraryService__ServiceDescriptor"));
+        assertThat(binding, containsString("ExtraService__ServiceDescriptor"));
+        assertThat("The extra compiler output remains separate",
+                   Files.exists(directory.resolve("build/classes/helidon/main/extra/ExtraService.class")), is(false));
+
+        BuildResult repeated = runner("packagedRun", "--configuration-cache").build();
+        assertThat(repeated.getOutput(), containsString("Reusing configuration cache"));
+        assertThat(repeated.getOutput(), containsString("EXTRA:chosen:library"));
+        assertTask(repeated, ":compileJava", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":compileExtra", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":generateApplicationBindings", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":jar", TaskOutcome.UP_TO_DATE);
+    }
+
+    @Test
+    void registeredBindingTaskBuildsIndependentArchiveDirectly() throws IOException {
+        fixture();
+        write("build.gradle", "import io.helidon.service.gradle.plugin.GenerateBindings\n"
+                + Files.readString(directory.resolve("build.gradle")) + """
+
+                sourceSets { other }
+                configurations {
+                    otherImplementation.extendsFrom implementation
+                    otherAnnotationProcessor.extendsFrom annotationProcessor
+                }
+                def compileOther = tasks.named(sourceSets.other.compileJavaTaskName, JavaCompile)
+                def generateOtherBinding = tasks.register('generateOtherBinding', GenerateBindings) {
+                    dependsOn compileOther
+                    classpath.from(compileOther.flatMap { it.destinationDirectory }, configurations.otherRuntimeClasspath)
+                    sourceRoots.from(sourceSets.other.allJava.sourceDirectories)
+                    options.bindingClassName = 'OtherBinding'
+                    options.generateMain = true
+                    options.mainClassName = 'OtherMain'
+                    prependClassesTo(sourceSets.other)
+                }
+                tasks.named(sourceSets.other.classesTaskName) {
+                    dependsOn generateOtherBinding
+                }
+                def otherJar = tasks.register('otherJar', Jar) { jar ->
+                    dependsOn generateOtherBinding
+                    archiveClassifier = 'other'
+                    from(sourceSets.other.output)
+                    generateOtherBinding.get().addExclusionsTo(jar)
+                }
+                tasks.register('otherRun', JavaExec) {
+                    dependsOn otherJar
+                    classpath = files(otherJar.flatMap { it.archiveFile }) + configurations.otherRuntimeClasspath
+                    mainClass = 'other.Main'
+                }
+                """);
+        write("src/other/java/other/OtherService.java", """
+                package other;
+                import io.helidon.service.registry.Service;
+                @Service.Singleton
+                public class OtherService {
+                    public String value() { return "independent"; }
+                }
+                """);
+        write("src/other/java/other/Main.java", """
+                package other;
+                import io.helidon.service.registry.EmptyBinding;
+                import io.helidon.service.registry.Service;
+                import io.helidon.service.registry.ServiceRegistryManager;
+                @Service.GenerateBinding("OtherBinding")
+                public class Main {
+                    public static void main(String[] args) {
+                        var binding = OtherBinding.create();
+                        if (binding instanceof EmptyBinding) {
+                            throw new AssertionError("Other binding placeholder was not replaced");
+                        }
+                        var manager = ServiceRegistryManager.start(binding);
+                        try {
+                            System.out.println("OTHER:" + manager.registry().get(OtherService.class).value());
+                        } finally {
+                            manager.shutdown();
+                        }
+                    }
+                }
+                """);
+
+        BuildResult archive = runner("otherJar", "--configuration-cache").build();
+        assertTask(archive, ":compileOtherJava", TaskOutcome.SUCCESS);
+        assertTask(archive, ":generateOtherBinding", TaskOutcome.SUCCESS);
+        assertTask(archive, ":otherJar", TaskOutcome.SUCCESS);
+        assertThat("An independent archive must not build the default binding",
+                   archive.task(":generateApplicationBindings"), nullValue());
+        assertThat("An independent archive must not compile the main source set",
+                   archive.task(":compileJava"), nullValue());
+        Path rawBinding = directory.resolve("build/classes/java/other/other/OtherBinding.class");
+        Path generatedBinding = directory.resolve("build/classes/helidon/generateOtherBinding/other/OtherBinding.class");
+        assertThat("Standalone task defaults must put generated output under its own task name",
+                   Files.exists(generatedBinding), is(true));
+        assertThat("The compiler's placeholder must remain in its original output", Files.exists(rawBinding), is(true));
+        assertThat("Standalone generation must complete the binding", Files.mismatch(rawBinding, generatedBinding), not(is(-1L)));
+        String binding = Files.readString(directory.resolve(
+                "build/generated/sources/helidon/generateOtherBinding/other/OtherBinding.java"));
+        assertThat(binding, containsString("OtherService__ServiceDescriptor"));
+        assertThat(binding, not(containsString("Greeting__ServiceDescriptor")));
+        assertThat("Standalone output must not overlap the plugin-created application output",
+                   Files.exists(directory.resolve("build/classes/helidon/main")), is(false));
+        try (var jar = new ZipFile(directory.resolve("build/libs/application-other.jar").toFile())) {
+            assertThat(jar.stream().filter(entry -> entry.getName().equals("other/OtherBinding.class")).count(), is(1L));
+            assertThat(jar.getInputStream(jar.getEntry("other/OtherBinding.class")).readAllBytes(),
+                       is(Files.readAllBytes(generatedBinding)));
+            assertThat(jar.getEntry("other/OtherMain.class"), notNullValue());
+            assertThat(jar.getEntry("other/OtherService.class"), notNullValue());
+            assertThat(jar.getEntry("example/Greeting.class"), nullValue());
+        }
+        BuildResult repeated = runner("otherJar", "--configuration-cache").build();
+        assertThat(repeated.getOutput(), containsString("Reusing configuration cache"));
+        assertTask(repeated, ":compileOtherJava", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":generateOtherBinding", TaskOutcome.UP_TO_DATE);
+        assertTask(repeated, ":otherJar", TaskOutcome.UP_TO_DATE);
+
+        BuildResult run = runner("otherRun", "--configuration-cache").build();
+        assertThat(run.getOutput(), containsString("OTHER:independent"));
+        assertTask(run, ":generateOtherBinding", TaskOutcome.UP_TO_DATE);
+    }
+
+    @Test
+    void unrelatedTaskDoesNotRealizeBindingTasks() throws IOException {
+        fixture();
+        write("build.gradle", "import io.helidon.service.gradle.plugin.GenerateBindings\n"
+                + Files.readString(directory.resolve("build.gradle")) + """
+
+                tasks.withType(GenerateBindings).configureEach {
+                    throw new GradleException('Binding tasks must stay lazy when running help')
+                }
+                """);
+
+        BuildResult result = runner("help").build();
+        assertTask(result, ":help", TaskOutcome.SUCCESS);
+        assertThat(result.task(":generateApplicationBindings"), nullValue());
+        assertThat(result.task(":generateTestApplicationBindings"), nullValue());
+    }
+
+    @Test
     void preservesCompilerOutputsAndFiltersOnlyShadowedArchiveEntries() throws IOException {
         fixture();
         write("build.gradle", Files.readString(directory.resolve("build.gradle")) + """

@@ -15,24 +15,14 @@
  */
 package io.helidon.service.gradle.plugin;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Objects;
 
 import io.helidon.common.Api;
 
-import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.file.ConfigurableFileCollection;
-import org.gradle.api.file.Directory;
-import org.gradle.api.file.DuplicatesStrategy;
-import org.gradle.api.file.FileCollection;
 import org.gradle.api.plugins.JavaPluginExtension;
-import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.Jar;
@@ -68,7 +58,7 @@ public final class HelidonServicePlugin implements Plugin<Project> {
         var application = register(project, "generateApplicationBindings", main, main, extension);
         var tests = register(project, "generateTestApplicationBindings", test, main, extension);
         tests.configure(task -> {
-            task.getApplicationClasspath().from(main.getOutput());
+            task.getClasspath().from(main.getOutput());
             task.getGenerateApplication().convention(extension.getGenerateTestBinding());
             task.getOptions().getGenerateBinding().convention(extension.getGenerateTestBinding());
             task.getOptions().getGenerateMain().set(false);
@@ -78,60 +68,20 @@ public final class HelidonServicePlugin implements Plugin<Project> {
         });
         classes(project, main, application);
         classes(project, test, tests);
-        project.getTasks().named(main.getJarTaskName(), Jar.class).configure(jar ->
-                excludePlaceholders(jar,
-                                    application.flatMap(GenerateBindings::getClassesDirectory),
-                                    project.files(application.map(GenerateBindings::getRawClasses))));
+        project.getTasks().named(main.getJarTaskName(), Jar.class).configure(jar -> {
+            jar.dependsOn(application);
+            GenerateBindings.excludePlaceholders(jar,
+                                                 application.flatMap(GenerateBindings::getClassesDirectory),
+                                                 project.files(application.map(GenerateBindings::getClasspath)));
+        });
         project.getTasks().named(main.getClassesTaskName()).configure(task -> task.dependsOn(application));
         project.getTasks().named(test.getClassesTaskName()).configure(task -> task.dependsOn(tests));
     }
 
     private static void classes(Project project, SourceSet sourceSet, TaskProvider<GenerateBindings> generator) {
-        var compile = project.getTasks().named(sourceSet.getCompileJavaTaskName(), JavaCompile.class);
-        if (!(sourceSet.getOutput().getClassesDirs() instanceof ConfigurableFileCollection classes)) {
-            throw new GradleException("The Helidon service plugin requires configurable Java class directories: "
-                                              + sourceSet.getName());
-        }
-        // Keep all compiler outputs and give completed bindings precedence on consumer classpaths.
-        var contributions = new ArrayList<>(classes.getFrom());
-        var completedClasses = generator.flatMap(GenerateBindings::getClassesDirectory);
-        // Task-level compiler destinations can differ from the source directory set's convention.
-        var compilerClasses = project.files(compile.flatMap(JavaCompile::getDestinationDirectory))
-                .minus(project.files(sourceSet.getJava().getDestinationDirectory()));
-        classes.setFrom(completedClasses, contributions, compilerClasses);
-        // Follow later additive registrations without feeding this generator's output back into its own inputs.
-        var additionalClasses = project.files(project.provider(() -> classes.getFrom().stream()
-                        .filter(source -> source != completedClasses)
-                        .toList()))
-                .builtBy(project.provider(classes::getBuiltBy));
-        generator.configure(task -> {
-            task.getRawClasses().from(compile.flatMap(JavaCompile::getDestinationDirectory));
-            task.getApplicationClasspath().from(additionalClasses);
-        });
-    }
-
-    private static void excludePlaceholders(Jar jar, Provider<Directory> generatedClasses, FileCollection rawClasses) {
-        var generatedEntries = new HashSet<String>();
-        jar.eachFile(details -> {
-            if (details.isDirectory() || !details.getName().endsWith(".class")) {
-                return;
-            }
-            Path generated = generatedClasses.get().getAsFile().toPath();
-            Path file = details.getFile().toPath();
-            String entry = details.getRelativePath().getPathString();
-            if (file.startsWith(generated)) {
-                generatedEntries.add(entry);
-            } else if (generatedEntries.contains(entry)) {
-                for (var raw : rawClasses) {
-                    Path root = raw.toPath();
-                    if (file.startsWith(root) && Files.isRegularFile(generated.resolve(root.relativize(file)))) {
-                        // Resolve duplicate final paths after later copy actions have transformed or excluded entries.
-                        details.setDuplicatesStrategy(DuplicatesStrategy.EXCLUDE);
-                        break;
-                    }
-                }
-            }
-        });
+        var generatedClasses = project.files(generator.flatMap(GenerateBindings::getClassesDirectory));
+        var compilerClasses = GenerateBindings.prependClasses(project, sourceSet, generatedClasses);
+        generator.configure(task -> task.getClasspath().from(compilerClasses));
     }
 
     private static TaskProvider<GenerateBindings> register(Project project,
@@ -147,7 +97,9 @@ public final class HelidonServicePlugin implements Plugin<Project> {
             task.setGroup("build");
             task.setDescription("Generates Helidon declarative bindings for " + sourceSet.getName());
             task.dependsOn(compile, resources);
-            task.getApplicationClasspath().from(resources.map(ProcessResources::getDestinationDir), runtime);
+            task.getClasspath().from(compile.flatMap(JavaCompile::getDestinationDirectory),
+                                     resources.map(ProcessResources::getDestinationDir),
+                                     runtime);
             task.getSourceRoots().from(sourceSet.getAllJava().getSourceDirectories());
             task.getMainSourceRoots().from(main.getAllJava().getSourceDirectories());
             task.getScope().set(sourceSet.getName());
