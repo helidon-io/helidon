@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,9 @@ import io.helidon.config.ConfigSources;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Collections.singletonList;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -59,11 +61,10 @@ public class TokenHandlerTest {
                 .tokenPrefix("hearer ")
                 .build();
 
-        try {
-            testBearer(tp, TOKEN_VALUE);
-        } catch (SecurityException e) {
-            assertThat(e.getMessage(), startsWith("Header does not start"));
-        }
+        SecurityException exception = assertThrows(SecurityException.class, () -> tp.extractToken(bearerRequest()));
+
+        assertThat(exception.getMessage(), startsWith("Header does not start"));
+        assertThat(exception.getMessage(), not(containsString(TOKEN_VALUE)));
     }
 
     @Test
@@ -73,11 +74,10 @@ public class TokenHandlerTest {
                 .tokenPattern(Pattern.compile("not matching"))
                 .build();
 
-        try {
-            testBearer(tp, TOKEN_VALUE);
-        } catch (SecurityException e) {
-            assertThat(e.getMessage(), startsWith("Header does not match expected pattern"));
-        }
+        SecurityException exception = assertThrows(SecurityException.class, () -> tp.extractToken(bearerRequest()));
+
+        assertThat(exception.getMessage(), startsWith("Header does not match expected pattern"));
+        assertThat(exception.getMessage(), not(containsString(TOKEN_VALUE)));
     }
 
     @Test
