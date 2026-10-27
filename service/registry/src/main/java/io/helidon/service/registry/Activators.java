@@ -167,10 +167,12 @@ final class Activators {
         private final ReentrantLock phaseLock = new ReentrantLock();
 
         volatile ActivationPhase currentPhase = ActivationPhase.INIT;
+        // Guarded by instanceLock; currentPhase is published before a callback, completedPhase only after it succeeds.
+        private ActivationPhase completedPhase = ActivationPhase.INIT;
         private boolean deactivationRequested;
-        private boolean postConstructCompleted;
         private boolean postConstructCleanupRequired;
         private boolean activationCleanupPending;
+        private boolean targetInstancesPublished;
         private ScopedRegistryImpl scopedRegistry;
 
         BaseActivator(ServiceProvider<T> provider, DependencyContext dependencyContext) {
@@ -232,7 +234,8 @@ final class Activators {
             // probably re-entering the same lock
             instanceLock.writeLock().lock();
             try {
-                if (currentPhase == request.targetPhase()) {
+                if (currentPhase == request.targetPhase() && completedPhase == currentPhase
+                        && (completedPhase.ordinal() < ActivationPhase.CONSTRUCTING.ordinal() || targetInstancesPublished)) {
                     // we are already there, just return success
                     return ActivationResult.builder()
                             .startingActivationPhase(currentPhase)
@@ -401,13 +404,13 @@ final class Activators {
                 if (activationInterruptedLocked(response)) {
                     return false;
                 }
-                if (phase == ActivationPhase.CONSTRUCTING) {
-                    // A later activation request may restart construction after a staged activation. Cleanup ownership
-                    // belongs to the current attempt, so earlier completion must not make shutdown wait for this one.
-                    postConstructCompleted = false;
-                    postConstructCleanupRequired = false;
-                    activationCleanupPending = false;
-                } else if (phase == ActivationPhase.POST_CONSTRUCTING) {
+                if (completedPhase.ordinal() >= ActivationPhase.POST_CONSTRUCTING.ordinal()
+                        && response.targetActivationPhase().ordinal() > ActivationPhase.POST_CONSTRUCTING.ordinal()
+                        && currentPhase.eligibleForDeactivation()) {
+                    // A continuation beyond a deliberately limited post construct phase now owns cleanup.
+                    activationCleanupPending = true;
+                }
+                if (phase == ActivationPhase.POST_CONSTRUCTING) {
                     postConstructCleanupRequired = response.targetActivationPhase().ordinal() > phase.ordinal();
                 }
                 stateTransitionStart(response, phase);
@@ -433,12 +436,7 @@ final class Activators {
             if (!deactivationRequested && (scopedRegistry == null || scopedRegistry.activationAllowed())) {
                 return false;
             }
-            if (postConstructCompleted && currentPhase.eligibleForDeactivation()
-                    && response.targetActivationPhase().ordinal() > ActivationPhase.POST_CONSTRUCTING.ordinal()) {
-                // Preserve queued cleanup only after post construct returned normally for activation beyond that phase.
-                // Incomplete or deliberately limited activation must not invoke pre destroy.
-                activationCleanupPending = true;
-            } else {
+            if (!activationCleanupPending || !currentPhase.eligibleForDeactivation()) {
                 currentPhase = ActivationPhase.DESTROYED;
             }
             response.finishingActivationPhase(currentPhase)
@@ -451,7 +449,6 @@ final class Activators {
             ActivationPhase initialPhase = this.currentPhase;
             ActivationPhase startingPhase = request.startingPhase().orElse(initialPhase);
             ActivationPhase targetPhase = request.targetPhase();
-            ActivationPhase finishingPhase = startingPhase;
 
             ActivationResult.Builder response = ActivationResult.builder()
                     .startingActivationPhase(initialPhase)
@@ -463,43 +460,40 @@ final class Activators {
                 return response.build();
             }
 
-            if (targetPhase.ordinal() > ActivationPhase.ACTIVATION_STARTING.ordinal()
-                    && initialPhase == ActivationPhase.INIT) {
-                if (ActivationPhase.INIT == startingPhase
-                        || ActivationPhase.ACTIVATION_STARTING == startingPhase
-                        || ActivationPhase.DESTROYED == startingPhase) {
-                    if (!activationStateTransitionStart(response, ActivationPhase.ACTIVATION_STARTING)) {
-                        return response.build();
-                    }
+            if (targetPhase.ordinal() >= ActivationPhase.ACTIVATION_STARTING.ordinal()
+                    && completedPhase.ordinal() < ActivationPhase.ACTIVATION_STARTING.ordinal()) {
+                if (!activationStateTransitionStart(response, ActivationPhase.ACTIVATION_STARTING)) {
+                    return response.build();
                 }
+                completedPhase = ActivationPhase.ACTIVATION_STARTING;
             }
 
-            finishingPhase = response.finishingActivationPhase().orElse(finishingPhase);
-            if (response.targetActivationPhase().ordinal() >= ActivationPhase.CONSTRUCTING.ordinal()) {
+            if (targetPhase.ordinal() >= ActivationPhase.CONSTRUCTING.ordinal()
+                    && completedPhase.ordinal() < ActivationPhase.CONSTRUCTING.ordinal()) {
                 if (!activationStateTransitionStart(response, ActivationPhase.CONSTRUCTING)) {
                     return response.build();
                 }
                 construct(response);
+                completedPhase = ActivationPhase.CONSTRUCTING;
                 if (activationInterrupted(response)) {
                     return response.build();
                 }
             }
 
-            finishingPhase = response.finishingActivationPhase().orElse(finishingPhase);
-            if (response.targetActivationPhase().ordinal() >= ActivationPhase.INJECTING.ordinal()
-                    && (ActivationPhase.CONSTRUCTING == finishingPhase)) {
+            if (targetPhase.ordinal() >= ActivationPhase.INJECTING.ordinal()
+                    && completedPhase.ordinal() < ActivationPhase.INJECTING.ordinal()) {
                 if (!activationStateTransitionStart(response, ActivationPhase.INJECTING)) {
                     return response.build();
                 }
                 inject(response);
+                completedPhase = ActivationPhase.INJECTING;
                 if (activationInterrupted(response)) {
                     return response.build();
                 }
             }
 
-            finishingPhase = response.finishingActivationPhase().orElse(finishingPhase);
-            if (response.targetActivationPhase().ordinal() >= ActivationPhase.POST_CONSTRUCTING.ordinal()
-                    && (ActivationPhase.INJECTING == finishingPhase)) {
+            if (targetPhase.ordinal() >= ActivationPhase.POST_CONSTRUCTING.ordinal()
+                    && completedPhase.ordinal() < ActivationPhase.POST_CONSTRUCTING.ordinal()) {
                 if (!activationStateTransitionStart(response, ActivationPhase.POST_CONSTRUCTING)) {
                     return response.build();
                 }
@@ -516,7 +510,7 @@ final class Activators {
                 }
                 phaseLock.lock();
                 try {
-                    postConstructCompleted = true;
+                    completedPhase = ActivationPhase.POST_CONSTRUCTING;
                     if (currentPhase.eligibleForDeactivation()
                             && targetPhase.ordinal() > ActivationPhase.POST_CONSTRUCTING.ordinal()) {
                         // Publish cleanup ownership with completion so shutdown cannot destroy a fully initialized
@@ -530,28 +524,28 @@ final class Activators {
                     phaseLock.unlock();
                 }
             }
-            finishingPhase = response.finishingActivationPhase().orElse(finishingPhase);
-            if (response.targetActivationPhase().ordinal() >= ActivationPhase.ACTIVATION_FINISHING.ordinal()
-                    && (ActivationPhase.POST_CONSTRUCTING == finishingPhase)) {
+            if (targetPhase.ordinal() >= ActivationPhase.ACTIVATION_FINISHING.ordinal()
+                    && completedPhase.ordinal() < ActivationPhase.ACTIVATION_FINISHING.ordinal()) {
                 if (!activationStateTransitionStart(response, ActivationPhase.ACTIVATION_FINISHING)) {
                     return response.build();
                 }
                 finishActivation(response);
+                completedPhase = ActivationPhase.ACTIVATION_FINISHING;
             }
-            finishingPhase = response.finishingActivationPhase().orElse(finishingPhase);
-            if (response.targetActivationPhase().ordinal() >= ActivationPhase.ACTIVE.ordinal()
-                    && (ActivationPhase.ACTIVATION_FINISHING == finishingPhase)) {
+            if (targetPhase.ordinal() >= ActivationPhase.ACTIVE.ordinal()
+                    && completedPhase.ordinal() < ActivationPhase.ACTIVE.ordinal()) {
                 if (!activationStateTransitionStart(response, ActivationPhase.ACTIVE)) {
                     return response.build();
                 }
+                completedPhase = ActivationPhase.ACTIVE;
             }
 
             if (activationInterrupted(response)) {
                 return response.build();
             }
-            if (startingPhase.ordinal() < ActivationPhase.CONSTRUCTING.ordinal()
-                    && currentPhase.ordinal() >= ActivationPhase.CONSTRUCTING.ordinal()) {
+            if (!targetInstancesPublished && completedPhase.ordinal() >= ActivationPhase.CONSTRUCTING.ordinal()) {
                 setTargetInstances();
+                targetInstancesPublished = true;
             }
 
             return response.build();
