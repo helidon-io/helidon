@@ -219,10 +219,12 @@ class Http2TlsTeardownTest {
 
     private static void awaitState(Thread thread, Thread.State state) {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-        while (thread.getState() != state && thread.isAlive() && System.nanoTime() < deadline) {
+        Thread.State observedState = thread.getState();
+        while (observedState != state && observedState != Thread.State.TERMINATED && System.nanoTime() < deadline) {
             Thread.onSpinWait();
+            observedState = thread.getState();
         }
-        assertThat("teardown is waiting for publication", thread.getState(), is(state));
+        assertThat("teardown is waiting for publication", observedState, is(state));
     }
 
     private static void join(Thread thread) throws InterruptedException {

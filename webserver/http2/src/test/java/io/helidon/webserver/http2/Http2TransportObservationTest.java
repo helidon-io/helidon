@@ -260,10 +260,14 @@ class Http2TransportObservationTest {
             assertThat("terminal writer registered", registered.await(5, TimeUnit.SECONDS), is(true));
             teardown.start();
             long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-            while (teardown.isAlive() && teardown.getState() != Thread.State.TIMED_WAITING && System.nanoTime() < deadline) {
+            Thread.State observedState = teardown.getState();
+            while (observedState != Thread.State.TIMED_WAITING
+                    && observedState != Thread.State.TERMINATED
+                    && System.nanoTime() < deadline) {
                 Thread.onSpinWait();
+                observedState = teardown.getState();
             }
-            assertThat("teardown waits in its grace period", teardown.getState(), is(Thread.State.TIMED_WAITING));
+            assertThat("teardown waits in its grace period", observedState, is(Thread.State.TIMED_WAITING));
             teardown.interrupt();
             writer.join(TimeUnit.SECONDS.toMillis(5));
             teardown.join(TimeUnit.SECONDS.toMillis(5));

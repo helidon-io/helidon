@@ -453,10 +453,12 @@ class Http2ConnectionOutcomeTest {
 
     private static void awaitState(Thread thread, Thread.State expected, String message) {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-        while (thread.isAlive() && thread.getState() != expected && System.nanoTime() < deadline) {
+        Thread.State observedState = thread.getState();
+        while (observedState != expected && observedState != Thread.State.TERMINATED && System.nanoTime() < deadline) {
             Thread.onSpinWait();
+            observedState = thread.getState();
         }
-        assertThat(message, thread.getState(), is(expected));
+        assertThat(message, observedState, is(expected));
     }
 
     private static void await(CountDownLatch latch, String message) {
