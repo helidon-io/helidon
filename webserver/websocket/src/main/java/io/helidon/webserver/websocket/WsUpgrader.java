@@ -178,6 +178,31 @@ public class WsUpgrader implements Http1Upgrader {
                                    wsConfig);
     }
 
+    /**
+     * Validate the request origin against either the configured allowlist or the request host authority.
+     *
+     * @param headers request headers
+     * @param origin origin header value
+     * @throws NullPointerException if headers or origin is {@code null}
+     * @since 28.0.0
+     */
+    protected void validateOrigin(Headers headers, String origin) {
+        Objects.requireNonNull(headers);
+        Objects.requireNonNull(origin);
+        if (!anyOrigin()) {
+            if (origins().contains(origin)) {
+                return;
+            }
+        } else if (matchesAuthority(headers, origin)) {
+            return;
+        }
+
+        throw RequestException.builder()
+                .message("Invalid Origin")
+                .type(DirectHandler.EventType.FORBIDDEN)
+                .build();
+    }
+
     private Optional<PreparedUpgrade> prepareUpgrade(ConnectionContext ctx,
                                                      HttpPrologue prologue,
                                                      WritableHeaders<?> headers) {
@@ -260,34 +285,13 @@ public class WsUpgrader implements Http1Upgrader {
     }
 
     /**
-     * Validate the request origin against either the configured allowlist or the request host authority.
-     *
-     * @param headers request headers
-     * @param origin origin header value
-     */
-    private void validateOrigin(WritableHeaders<?> headers, String origin) {
-        if (!anyOrigin()) {
-            if (origins().contains(origin)) {
-                return;
-            }
-        } else if (matchesAuthority(headers, origin)) {
-            return;
-        }
-
-        throw RequestException.builder()
-                .message("Invalid Origin")
-                .type(DirectHandler.EventType.FORBIDDEN)
-                .build();
-    }
-
-    /**
      * Check whether the origin authority matches the request host authority.
      *
      * @param headers request headers
      * @param origin origin header value
      * @return {@code true} if the authorities match
      */
-    private boolean matchesAuthority(WritableHeaders<?> headers, String origin) {
+    private boolean matchesAuthority(Headers headers, String origin) {
         URI originUri;
         try {
             originUri = new URI(origin);

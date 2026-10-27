@@ -19,6 +19,7 @@ package io.helidon.webserver.websocket;
 import java.io.UncheckedIOException;
 import java.net.SocketException;
 import java.util.List;
+import java.util.Set;
 
 import io.helidon.common.Size;
 import io.helidon.common.buffers.BufferData;
@@ -26,8 +27,10 @@ import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
+import io.helidon.http.RequestException;
 import io.helidon.http.WritableHeaders;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerConfig;
@@ -43,6 +46,7 @@ import io.helidon.websocket.WsListener;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -53,6 +57,57 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class WsUpgraderTest {
+
+    @Test
+    void sharedOriginValidationAcceptsSameAuthority() {
+        Headers headers = WritableHeaders.create().set(HeaderValues.create(HeaderNames.HOST, "EXAMPLE.com:443"));
+        new WsUpgrader(WsConfig.builder().build()).validateOrigin(headers, "https://example.com");
+    }
+
+    @Test
+    void sharedOriginValidationRejectsDifferentAuthority() {
+        Headers headers = WritableHeaders.create().set(HeaderValues.create(HeaderNames.HOST, "example.com"));
+        var upgrader = new WsUpgrader(WsConfig.builder().build());
+
+        RequestException exception = assertThrows(RequestException.class,
+                                                  () -> upgrader.validateOrigin(headers, "http://other.example"));
+
+        assertThat(exception.getMessage(), is("Invalid Origin"));
+    }
+
+    @Test
+    void sharedOriginValidationUsesConfiguredAllowlist() {
+        Headers headers = WritableHeaders.create().set(HeaderValues.create(HeaderNames.HOST, "example.com"));
+        var upgrader = new WsUpgrader(WsConfig.builder().origins(Set.of("https://allowed.example")).build());
+
+        upgrader.validateOrigin(headers, "https://allowed.example");
+        assertThrows(RequestException.class, () -> upgrader.validateOrigin(headers, "http://example.com"));
+    }
+
+    @Test
+    void sharedOriginValidationRejectsNullHeaders() {
+        var defaultUpgrader = new WsUpgrader(WsConfig.builder().build());
+        var allowlistedUpgrader = new WsUpgrader(WsConfig.builder().origins(Set.of("https://allowed.example")).build());
+
+        assertAll(
+                () -> assertThrows(NullPointerException.class,
+                                   () -> defaultUpgrader.validateOrigin(null, "https://allowed.example")),
+                () -> assertThrows(NullPointerException.class,
+                                   () -> allowlistedUpgrader.validateOrigin(null, "https://allowed.example"))
+        );
+    }
+
+    @Test
+    void sharedOriginValidationRejectsNullOrigin() {
+        Headers headers = WritableHeaders.create().set(HeaderValues.create(HeaderNames.HOST, "example.com"));
+        var defaultUpgrader = new WsUpgrader(WsConfig.builder().build());
+        var allowlistedUpgrader = new WsUpgrader(WsConfig.builder().origins(Set.of("https://allowed.example")).build());
+
+        assertAll(
+                () -> assertThrows(NullPointerException.class, () -> defaultUpgrader.validateOrigin(headers, null)),
+                () -> assertThrows(NullPointerException.class, () -> allowlistedUpgrader.validateOrigin(headers, null))
+        );
+    }
 
     @Test
     void routedUpgradeUsesProgrammaticProtocolConfig() {

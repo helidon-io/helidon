@@ -377,6 +377,11 @@ final class HttpRoutingImpl implements HttpRouting, Http1UpgradeRouting {
             }
 
             result = Objects.requireNonNull(upgrade.upgrade(upgradeResponse));
+            if (result.kind() == Http1UpgradeResult.Kind.NOT_APPLICABLE) {
+                response.resetRouting();
+                result = Http1UpgradeResult.responded();
+                new RoutingExecutor(ctx, ordinaryRoute, request, response, maxReRouteCount).call();
+            }
             return RoutingResult.FINISH;
         }
     }
