@@ -64,7 +64,7 @@ class PublishedPluginIT {
     }
 
     @Test
-    void resolvesPublishedPluginAndDefaultGenerator() throws IOException {
+    void resolvesPublishedPluginWithTransitiveGenerator() throws IOException {
         var result = GradleFixtureSupport.runner(directory, "publishedRun").build();
         assertThat(result.getOutput(), result.task(":generateApplicationBindings"), notNullValue());
         assertThat(result.getOutput(), result.task(":generateApplicationBindings").getOutcome(), is(TaskOutcome.SUCCESS));

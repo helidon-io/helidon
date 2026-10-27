@@ -51,11 +51,6 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.service</groupId>
-            <artifactId>helidon-service-application-codegen</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.service</groupId>
             <artifactId>helidon-service-codegen</artifactId>
             <scope>test</scope>
         </dependency>
@@ -144,7 +139,6 @@
                     <extraArtifacts>
                         <extraArtifact>io.helidon.service:io.helidon.service.gradle.plugin:${project.version}:pom</extraArtifact>
                         <extraArtifact>io.helidon.service:helidon-service-gradle-plugin:${project.version}</extraArtifact>
-                        <extraArtifact>io.helidon.service:helidon-service-application-codegen:${project.version}</extraArtifact>
                         <extraArtifact>io.helidon.service:helidon-service-codegen:${project.version}</extraArtifact>
                         <extraArtifact>io.helidon.codegen:helidon-codegen-apt:${project.version}</extraArtifact>
                         <!-- Gradle parses imported BOM metadata from Helidon's parent POMs even for

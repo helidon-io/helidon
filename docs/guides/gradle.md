@@ -104,10 +104,12 @@ the generated binding is included at the same archive path.
 resource processing, and generates `TestApplicationBinding` containing both
 application and test services before `test` runs.
 
-Generation runs in a Gradle worker using the project's selected Java toolchain.
-The worker calls the same typed generator API as the Maven plugin. Gradle manages
-the worker process and its isolated generator classpath; build options are passed
-as managed worker parameters.
+Generation calls the same typed generator API as the Maven plugin directly in
+the Gradle daemon. The generator is included in the plugin's implementation
+dependencies and uses the daemon's JDK and Java compiler. Run Gradle on Java 27
+or later, using a JDK that can load the application's compiled classes and compile
+its selected Java release. Selecting a newer application toolchain alone does
+not change the JDK used for binding generation.
 
 Run the usual Gradle tasks:
 
@@ -177,12 +179,11 @@ Maven generator options where applicable.
 | `generateTestBinding` | `true` | Generate a binding for application and test services |
 | `testBindingClassName` | `TestApplicationBinding` | Test binding simple class name |
 | `testPackageName` | Inferred from application and test sources | Package for the test binding |
-| `toolVersion` | Plugin version | Version of the isolated generator |
 
-Generation uses the Java compiler's release and arguments and runs in a
-separate process using the application's Java toolchain. Configure compiler
-options on the corresponding Gradle `JavaCompile` task. Keep the plugin and
-generator versions aligned with the application dependencies.
+Generation uses the release and arguments configured on the corresponding
+Gradle `JavaCompile` task, with the Gradle daemon's compiler. Compiler options
+must therefore be supported by that compiler. Keep the plugin version aligned
+with the application dependencies; the generator version follows the plugin.
 
 ## Dependency Management
 

@@ -46,12 +46,10 @@
         <dependency>
             <groupId>io.helidon.service</groupId>
             <artifactId>helidon-service-application-codegen</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.helidon.codegen</groupId>
             <artifactId>helidon-codegen</artifactId>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>dev.gradleplugins</groupId>
@@ -60,12 +58,6 @@
         </dependency>
     </dependencies>
     <build>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>true</filtering>
-            </resource>
-        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

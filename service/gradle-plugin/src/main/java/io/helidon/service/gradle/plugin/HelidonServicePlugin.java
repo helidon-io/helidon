@@ -15,13 +15,11 @@
  */
 package io.helidon.service.gradle.plugin;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Objects;
-import java.util.Properties;
 
 import io.helidon.common.Api;
 
@@ -29,10 +27,6 @@ import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
-import org.gradle.api.attributes.Bundling;
-import org.gradle.api.attributes.Category;
-import org.gradle.api.attributes.LibraryElements;
-import org.gradle.api.attributes.Usage;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.Directory;
 import org.gradle.api.file.DuplicatesStrategy;
@@ -43,7 +37,6 @@ import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.bundling.Jar;
 import org.gradle.api.tasks.compile.JavaCompile;
-import org.gradle.jvm.toolchain.JavaToolchainService;
 import org.gradle.language.jvm.tasks.ProcessResources;
 
 /**
@@ -65,43 +58,15 @@ public final class HelidonServicePlugin implements Plugin<Project> {
     public void apply(Project project) {
         Objects.requireNonNull(project, "project");
         var extension = project.getExtensions().create("helidonService", HelidonServiceExtension.class);
-        extension.getToolVersion().convention(pluginVersion());
-        Configuration generator = project.getConfigurations().create("helidonServiceGenerator", configuration -> {
-            configuration.setDescription("Isolated Helidon application binding generator");
-            configuration.setCanBeConsumed(false);
-            configuration.setCanBeResolved(true);
-            configuration.attributes(attributes -> {
-                attributes.attribute(Usage.USAGE_ATTRIBUTE, project.getObjects().named(Usage.class, Usage.JAVA_RUNTIME));
-                attributes.attribute(Category.CATEGORY_ATTRIBUTE, project.getObjects().named(Category.class, Category.LIBRARY));
-                attributes.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
-                                     project.getObjects().named(LibraryElements.class, LibraryElements.JAR));
-                attributes.attribute(Bundling.BUNDLING_ATTRIBUTE, project.getObjects().named(Bundling.class, Bundling.EXTERNAL));
-            });
-            configuration.defaultDependencies(dependencies -> dependencies.add(project.getDependencies().create(
-                    "io.helidon.service:helidon-service-application-codegen:" + extension.getToolVersion().get())));
-        });
-        project.getPluginManager().withPlugin("java", _ -> configureJava(project, extension, generator));
+        project.getPluginManager().withPlugin("java", _ -> configureJava(project, extension));
     }
 
-    private static String pluginVersion() {
-        Properties properties = new Properties();
-        try (var input = HelidonServicePlugin.class.getResourceAsStream("plugin.properties")) {
-            if (input == null) {
-                throw new GradleException("Missing Helidon service Gradle plugin version resource");
-            }
-            properties.load(input);
-            return Objects.requireNonNull(properties.getProperty("version"), "plugin version");
-        } catch (IOException e) {
-            throw new GradleException("Cannot read Helidon service Gradle plugin version", e);
-        }
-    }
-
-    private static void configureJava(Project project, HelidonServiceExtension extension, Configuration generator) {
+    private static void configureJava(Project project, HelidonServiceExtension extension) {
         var java = project.getExtensions().getByType(JavaPluginExtension.class);
         var main = java.getSourceSets().getByName(SourceSet.MAIN_SOURCE_SET_NAME);
         var test = java.getSourceSets().getByName(SourceSet.TEST_SOURCE_SET_NAME);
-        var application = register(project, "generateApplicationBindings", main, main, extension, generator, java);
-        var tests = register(project, "generateTestApplicationBindings", test, main, extension, generator, java);
+        var application = register(project, "generateApplicationBindings", main, main, extension);
+        var tests = register(project, "generateTestApplicationBindings", test, main, extension);
         tests.configure(task -> {
             task.getApplicationClasspath().from(main.getOutput());
             task.getGenerateApplication().convention(extension.getGenerateTestBinding());
@@ -173,10 +138,7 @@ public final class HelidonServicePlugin implements Plugin<Project> {
                                                            String taskName,
                                                            SourceSet sourceSet,
                                                            SourceSet main,
-                                                           HelidonServiceExtension extension,
-                                                           Configuration generator,
-                                                           JavaPluginExtension java) {
-        var toolchains = project.getExtensions().getByType(JavaToolchainService.class);
+                                                           HelidonServiceExtension extension) {
         TaskProvider<JavaCompile> compile = project.getTasks().named(sourceSet.getCompileJavaTaskName(), JavaCompile.class);
         TaskProvider<ProcessResources> resources = project.getTasks().named(sourceSet.getProcessResourcesTaskName(),
                                                                           ProcessResources.class);
@@ -186,7 +148,6 @@ public final class HelidonServicePlugin implements Plugin<Project> {
             task.setDescription("Generates Helidon declarative bindings for " + sourceSet.getName());
             task.dependsOn(compile, resources);
             task.getApplicationClasspath().from(resources.map(ProcessResources::getDestinationDir), runtime);
-            task.getGeneratorClasspath().from(generator);
             task.getSourceRoots().from(sourceSet.getAllJava().getSourceDirectories());
             task.getMainSourceRoots().from(main.getAllJava().getSourceDirectories());
             task.getScope().set(sourceSet.getName());
@@ -194,7 +155,6 @@ public final class HelidonServicePlugin implements Plugin<Project> {
             task.getRelease().set(compile.flatMap(compilation -> compilation.getOptions().getRelease())
                                           .map(String::valueOf)
                                           .orElse(compile.map(JavaCompile::getTargetCompatibility)));
-            task.getJavaLauncher().set(toolchains.launcherFor(java.getToolchain()));
             task.getClassesDirectory().convention(project.getLayout().getBuildDirectory()
                                                           .dir("classes/helidon/" + sourceSet.getName()));
             task.getGeneratedSourceDirectory().convention(project.getLayout().getBuildDirectory()

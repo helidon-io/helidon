@@ -547,63 +547,22 @@ class GradlePluginTest {
     }
 
     @Test
-    void generatorProjectDependencySelectsRuntimeVariant() throws IOException {
+    void regeneratesInSameDaemonAfterServiceChangesAndRemovesOldBinding() throws IOException {
         fixture();
-        write("settings.gradle", Files.readString(directory.resolve("settings.gradle")) + "\ninclude 'generator'\n");
-        List<Path> generator = classpath("fixture-tool-classpath.txt").stream()
-                .filter(path -> !isGradleArtifact(path))
-                .toList();
-        write("generator/build.gradle", """
-                configurations {
-                    generatorApiElements {
-                        canBeConsumed = true
-                        canBeResolved = false
-                        attributes {
-                            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_API))
-                            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
-                            attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
-                                      objects.named(LibraryElements, LibraryElements.JAR))
-                            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
-                        }
-                    }
-                    generatorRuntimeElements {
-                        canBeConsumed = true
-                        canBeResolved = false
-                        attributes {
-                            attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage, Usage.JAVA_RUNTIME))
-                            attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category, Category.LIBRARY))
-                            attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
-                                      objects.named(LibraryElements, LibraryElements.JAR))
-                            attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling, Bundling.EXTERNAL))
-                        }
-                    }
-                }
-                files(%s).each { artifact ->
-                    configurations.generatorRuntimeElements.outgoing.artifact(artifact)
-                }
-                """.formatted(files(generator)));
-        write("build.gradle", Files.readString(directory.resolve("build.gradle"))
-                .replace("helidonServiceGenerator files(" + files(generator) + ")",
-                         "helidonServiceGenerator project(':generator')") + """
+        write("gradle.properties", "org.gradle.daemon=true\norg.gradle.workers.max=2\n");
+        write("build.gradle", Files.readString(directory.resolve("build.gradle")) + """
 
-                def generatorUsage = configurations.helidonServiceGenerator.attributes.getAttribute(Usage.USAGE_ATTRIBUTE)
-                if (generatorUsage?.name != Usage.JAVA_RUNTIME) {
-                    throw new GradleException('helidonServiceGenerator must explicitly request java-runtime usage; found '
-                                              + generatorUsage)
+                tasks.register('generationDaemon') {
+                    doLast {
+                        println 'GENERATION_DAEMON:' + ProcessHandle.current().pid()
+                    }
                 }
                 """);
-
-        BuildResult result = runner("packagedRun").build();
-        assertTask(result, ":generateApplicationBindings", TaskOutcome.SUCCESS);
-        assertTask(result, ":jar", TaskOutcome.SUCCESS);
-        assertTask(result, ":packagedRun", TaskOutcome.SUCCESS);
-        assertThat(result.getOutput(), containsString("APPLICATION:chosen:library"));
-    }
-
-    @Test
-    void regeneratesAfterServiceChangesAndRemovesOldBinding() throws IOException {
-        fixture();
-        runner("jar").build();
+        BuildResult first = runner("jar", "packagedRun", "generationDaemon", "--configuration-cache").build();
+        assertThat(first.getOutput(), containsString("APPLICATION:chosen:library"));
+        String daemon = first.getOutput().lines()
+                .filter(line -> line.startsWith("GENERATION_DAEMON:"))
+                .findFirst().orElseThrow();
         write("src/main/java/example/Added.java", """
                 package example;
                 import io.helidon.service.registry.Service;
@@ -615,7 +574,9 @@ class GradlePluginTest {
         Files.writeString(consumer, originalConsumer.replace(
                 "Consumer(@Service.Named(\"chosen\") Greeting greeting)",
                 "Consumer(@Service.Named(\"chosen\") Greeting greeting, Added added)"));
-        BuildResult added = runner("jar", "packagedRun").build();
+        BuildResult added = runner("jar", "packagedRun", "generationDaemon", "--configuration-cache").build();
+        assertSameGenerationDaemon(added, daemon);
+        assertTask(added, ":generateApplicationBindings", TaskOutcome.SUCCESS);
         assertThat(added.getOutput(), containsString("APPLICATION:chosen:library"));
         Path binding = directory.resolve("build/generated/sources/helidon/main/example/ApplicationBinding.java");
         assertThat(Files.readString(binding), containsString("Added__ServiceDescriptor"));
@@ -624,13 +585,16 @@ class GradlePluginTest {
         Files.writeString(consumer, originalConsumer);
         String greeting = Files.readString(directory.resolve("src/main/java/example/Greeting.java"));
         write("src/main/java/example/Greeting.java", greeting.replace("chosen:", "updated:"));
-        BuildResult changed = runner("jar", "packagedRun").build();
+        BuildResult changed = runner("jar", "packagedRun", "generationDaemon", "--configuration-cache").build();
+        assertSameGenerationDaemon(changed, daemon);
+        assertTask(changed, ":generateApplicationBindings", TaskOutcome.SUCCESS);
         assertThat(changed.getOutput(), containsString("APPLICATION:updated:library"));
         assertThat(Files.readString(binding), not(containsString("Added__ServiceDescriptor")));
 
         Path library = directory.resolve("library/src/main/java/library/LibraryService.java");
         Files.writeString(library, Files.readString(library).replace("\"library\"", "\"changed-library\""));
-        BuildResult dependencyChanged = runner("jar", "packagedRun").build();
+        BuildResult dependencyChanged = runner("jar", "packagedRun", "generationDaemon", "--configuration-cache").build();
+        assertSameGenerationDaemon(dependencyChanged, daemon);
         assertTask(dependencyChanged, ":generateApplicationBindings", TaskOutcome.SUCCESS);
         assertThat(dependencyChanged.getOutput(), containsString("APPLICATION:updated:changed-library"));
 
@@ -721,6 +685,13 @@ class GradlePluginTest {
     private static void assertTask(BuildResult result, String name, TaskOutcome expected) {
         assertThat("Missing task " + name + " in:\n" + result.getOutput(), result.task(name), notNullValue());
         assertThat(name + " in:\n" + result.getOutput(), result.task(name).getOutcome(), is(expected));
+    }
+
+    private static void assertSameGenerationDaemon(BuildResult result, String daemon) {
+        assertThat(result.getOutput(), containsString("Reusing configuration cache"));
+        assertThat(result.getOutput(), result.getOutput().lines()
+                .filter(line -> line.startsWith("GENERATION_DAEMON:"))
+                .toList(), is(List.of(daemon)));
     }
 
     private void generatedOnlyArchiveRule(boolean excludeGenerated) throws IOException {
@@ -1090,7 +1061,6 @@ class GradlePluginTest {
                     annotationProcessor files(%s)
                     testAnnotationProcessor files(%s)
                     testImplementation files(%s)
-                    helidonServiceGenerator files(%s)
                 }
                 helidonService {
                     packageName = 'example'
@@ -1108,7 +1078,7 @@ class GradlePluginTest {
                     classpath = files(tasks.named('jar').flatMap { it.archiveFile }) + configurations.runtimeClasspath
                     mainClass = 'example.ApplicationMain'
                 }
-                """.formatted(files(compileLibraries), files(generator), files(generator), files(testLibraries), files(generator)));
+                """.formatted(files(compileLibraries), files(generator), files(generator), files(testLibraries)));
         write("library/src/main/java/library/LibraryService.java", """
                 package library;
                 import io.helidon.service.registry.Service;
@@ -1228,13 +1198,8 @@ class GradlePluginTest {
     private GradleRunner runner(String... tasks) throws IOException {
         return GradleFixtureSupport.runner(directory, tasks)
                 .withPluginClasspath(classpath("fixture-tool-classpath.txt").stream()
-                                             .filter(path -> {
-                                                 String name = path.getFileName().toString();
-                                                 return name.startsWith("helidon-service-gradle-plugin-")
-                                                         || name.startsWith("helidon-metadata-hson-")
-                                                         || name.startsWith("helidon-common-buffers-")
-                                                         || name.matches("helidon-common-[0-9].*");
-                                             })
+                                             .filter(path -> path.getFileName().toString()
+                                                     .startsWith("helidon-service-gradle-plugin-") || !isGradleArtifact(path))
                                              .map(Path::toFile)
                                              .toList());
     }

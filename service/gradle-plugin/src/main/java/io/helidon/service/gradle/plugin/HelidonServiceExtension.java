@@ -36,12 +36,6 @@ public abstract class HelidonServiceExtension extends BindingOptions {
     }
 
     /**
-     * Version of the isolated generator dependency, defaulting to the plugin version.
-     * @return generator version property
-     */
-    public abstract Property<String> getToolVersion();
-
-    /**
      * Whether to generate test bindings, default true. When false, tests use their compiler output
      * without a generated test binding.
      * @return test generation property

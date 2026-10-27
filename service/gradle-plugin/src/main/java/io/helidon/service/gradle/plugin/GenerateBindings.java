@@ -18,18 +18,26 @@ package io.helidon.service.gradle.plugin;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 import javax.inject.Inject;
 
+import io.helidon.codegen.CodegenEvent;
+import io.helidon.codegen.CodegenScope;
 import io.helidon.common.Api;
+import io.helidon.service.application.codegen.ApplicationGenerator;
+import io.helidon.service.application.codegen.ApplicationGeneratorConfig;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.DirectoryProperty;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.file.FileSystemOperations;
+import org.gradle.api.logging.LogLevel;
 import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
@@ -41,12 +49,10 @@ import org.gradle.api.tasks.OutputDirectory;
 import org.gradle.api.tasks.PathSensitive;
 import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
-import org.gradle.jvm.toolchain.JavaLauncher;
 import org.gradle.work.DisableCachingByDefault;
-import org.gradle.workers.WorkerExecutor;
 
 /**
- * Generates application binding classes separately from compiler outputs using the Java toolchain.
+ * Generates application binding classes separately from compiler outputs using the Gradle JVM's Java compiler.
  * Each execution replaces its own output, so deleted services and renamed bindings cannot remain in application artifacts.
  * Configure generation options through the {@link HelidonServiceExtension helidonService extension}.
  * The plugin-created {@code generateApplicationBindings} and {@code generateTestApplicationBindings} tasks
@@ -57,22 +63,19 @@ import org.gradle.workers.WorkerExecutor;
  * and managed properties.
  */
 @Api.Internal
-@DisableCachingByDefault(because = "Only local up-to-date checking is supported for the isolated compiler and classpath scan")
+@DisableCachingByDefault(because = "Only local up-to-date checking is supported for generation and classpath scanning")
 public abstract class GenerateBindings extends DefaultTask {
     private final BindingOptions options;
-    private final WorkerExecutor workers;
     private final FileSystemOperations fileOperations;
 
     /**
      * Constructor used by Gradle service injection.
      * @param objects managed object factory
-     * @param workers isolated work execution service
      * @param fileOperations file system service
      */
     @Inject
-    public GenerateBindings(ObjectFactory objects, WorkerExecutor workers, FileSystemOperations fileOperations) {
+    public GenerateBindings(ObjectFactory objects, FileSystemOperations fileOperations) {
         this.options = Objects.requireNonNull(objects, "objects").newInstance(BindingOptions.class);
-        this.workers = Objects.requireNonNull(workers, "workers");
         this.fileOperations = Objects.requireNonNull(fileOperations, "fileOperations");
         getCompilerArgs().convention(List.of());
         getGenerateApplication().convention(true);
@@ -102,13 +105,6 @@ public abstract class GenerateBindings extends DefaultTask {
      */
     @Classpath
     public abstract ConfigurableFileCollection getApplicationClasspath();
-
-    /**
-     * Isolated tool implementation and dependencies.
-     * @return generator classpath
-     */
-    @Classpath
-    public abstract ConfigurableFileCollection getGeneratorClasspath();
 
     /**
      * Sources of the scope being generated, including module descriptors and annotation processor options.
@@ -163,13 +159,6 @@ public abstract class GenerateBindings extends DefaultTask {
     public abstract Property<Boolean> getGenerateApplication();
 
     /**
-     * Java launcher selected from the project's toolchain.
-     * @return launcher
-     */
-    @Nested
-    public abstract Property<JavaLauncher> getJavaLauncher();
-
-    /**
      * Generated binding and main classes, separate from compiler outputs.
      * @return generated classes directory
      */
@@ -184,7 +173,7 @@ public abstract class GenerateBindings extends DefaultTask {
     public abstract DirectoryProperty getGeneratedSourceDirectory();
 
     /**
-     * Replaces generated output and runs the isolated binding generator.
+     * Replaces generated output and invokes the shared binding generator in the Gradle JVM.
      */
     @TaskAction
     public void generate() {
@@ -199,33 +188,69 @@ public abstract class GenerateBindings extends DefaultTask {
                     && getSourceRoots().getAsFileTree().matching(patterns -> patterns.include("**/*.java")).isEmpty())) {
                 return;
             }
-            var queue = workers.processIsolation(worker -> {
-                worker.getForkOptions().setExecutable(getJavaLauncher().get().getExecutablePath().getAsFile());
-                worker.getClasspath().from(getGeneratorClasspath());
-            });
-            queue.submit(GenerateBindingsWorkAction.class, parameters -> {
-                parameters.getApplicationClasspath().from(getRawClasses(), getApplicationClasspath());
-                parameters.getSourceRoots().from(sources, getSourceRoots());
-                parameters.getMainSourceRoots().from(getMainSourceRoots());
-                parameters.getTestSourceRoots().from(getTestSourceRoots());
-                parameters.getClassesDirectory().set(getClassesDirectory());
-                parameters.getGeneratedSourceDirectory().set(getGeneratedSourceDirectory());
-                parameters.getCompilerArgs().set(getCompilerArgs());
-                parameters.getRelease().set(getRelease());
-                parameters.getScope().set(getScope());
-                parameters.getPackageName().set(options.getPackageName());
-                parameters.getModuleName().set(options.getModuleName());
-                parameters.getBindingClassName().set(options.getBindingClassName());
-                parameters.getMainClassName().set(options.getMainClassName());
-                parameters.getGenerateBinding().set(options.getGenerateBinding());
-                parameters.getGenerateMain().set(options.getGenerateMain());
-                parameters.getValidate().set(options.getValidate());
-                parameters.getFailOnError().set(options.getFailOnError());
-                parameters.getFailOnWarning().set(options.getFailOnWarning());
-            });
-            queue.await();
+            generateApplication(classes.toPath(), sources.toPath());
         } catch (IOException e) {
             throw new GradleException("Cannot prepare application binding generation", e);
+        }
+    }
+
+    private static List<Path> paths(FileCollection files) {
+        return files.getFiles().stream().map(File::toPath).toList();
+    }
+
+    private void generateApplication(Path classes, Path sources) {
+        List<Path> classpath = paths(getRawClasses().plus(getApplicationClasspath()));
+        List<Path> sourceRoots = new ArrayList<>();
+        sourceRoots.add(sources);
+        sourceRoots.addAll(paths(getSourceRoots()));
+        var builder = ApplicationGeneratorConfig.builder()
+                .classpath(classpath)
+                .modulepath(classpath)
+                .sourceRoots(sourceRoots)
+                .mainSourceRoots(paths(getMainSourceRoots()))
+                .testSourceRoots(paths(getTestSourceRoots()))
+                .generatedSourceDirectory(sources)
+                .outputDirectory(classes)
+                .release(getRelease().get())
+                .scope(switch (getScope().get()) {
+                    case "main" -> CodegenScope.PRODUCTION;
+                    case "test" -> new CodegenScope("test");
+                    default -> throw new GradleException("Unsupported generation scope: " + getScope().get());
+                })
+                .bindingClassName(options.getBindingClassName().get())
+                .mainClassName(options.getMainClassName().get())
+                .generateBinding(options.getGenerateBinding().get())
+                .generateMain(options.getGenerateMain().get())
+                .validate(options.getValidate().get())
+                .failOnError(options.getFailOnError().get())
+                .failOnWarning(options.getFailOnWarning().get())
+                .compilerArgs(getCompilerArgs().get());
+        if (options.getPackageName().isPresent()) {
+            builder.packageName(options.getPackageName().get());
+        }
+        if (options.getModuleName().isPresent()) {
+            builder.moduleName(options.getModuleName().get());
+        }
+        ApplicationGenerator.generate(builder.build(), this::log);
+    }
+
+    private void log(CodegenEvent event) {
+        switch (event.level()) {
+        case ALL, TRACE, DEBUG -> log(LogLevel.DEBUG, event);
+        case INFO -> log(LogLevel.INFO, event);
+        case WARNING -> log(LogLevel.WARN, event);
+        case ERROR -> log(LogLevel.ERROR, event);
+        case OFF -> {
+        }
+        default -> throw new IllegalStateException("Unsupported code generation log level: " + event.level());
+        }
+    }
+
+    private void log(LogLevel level, CodegenEvent event) {
+        if (event.throwable().isPresent()) {
+            getLogger().log(level, event.message(), event.throwable().get());
+        } else {
+            getLogger().log(level, event.message());
         }
     }
 }
