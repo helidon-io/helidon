@@ -17,7 +17,6 @@
 package io.helidon.messaging;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
@@ -48,11 +47,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Timeout(value = 60, unit = TimeUnit.SECONDS)
 class MessagingHealthTest {
-    private final List<ServiceRegistryManager> registries = new ArrayList<>();
+    private ServiceRegistryManager registry;
 
     @AfterEach
-    void shutdownRegistries() {
-        registries.forEach(ServiceRegistryManager::shutdown);
+    void shutdownRegistry() {
+        if (registry != null) {
+            registry.shutdown();
+        }
     }
 
     @Test
@@ -264,21 +265,29 @@ class MessagingHealthTest {
 
     @Test
     void serviceRegistriesHaveIndependentAggregateMembership() {
-        // Separate registries model isolated applications; one application's graph must not affect the other's health.
-        var firstRegistry = registry();
-        var secondRegistry = registry();
-        List<HealthCheck> firstAggregate = aggregate(firstRegistry);
-        List<HealthCheck> secondAggregate = aggregate(secondRegistry);
-        try (MessagingGraph first = graph(firstRegistry, builder());
-             MessagingGraph second = graph(secondRegistry, builder())) {
-            assertHealth(firstAggregate, DOWN, UP);
-            assertHealth(secondAggregate, DOWN, UP);
-            first.start();
-            assertHealth(firstAggregate, UP, UP);
-            assertHealth(secondAggregate, DOWN, UP);
-            second.close();
-            assertHealth(firstAggregate, UP, UP);
-            assertHealth(secondAggregate, UP, UP);
+        // Only this test needs two registries: starting or closing one application must not change the other's health.
+        var firstRegistry = createRegistry();
+        try {
+            var secondRegistry = createRegistry();
+            try {
+                List<HealthCheck> firstAggregate = aggregate(firstRegistry);
+                List<HealthCheck> secondAggregate = aggregate(secondRegistry);
+                try (MessagingGraph first = graph(firstRegistry, builder());
+                     MessagingGraph second = graph(secondRegistry, builder())) {
+                    assertHealth(firstAggregate, DOWN, UP);
+                    assertHealth(secondAggregate, DOWN, UP);
+                    first.start();
+                    assertHealth(firstAggregate, UP, UP);
+                    assertHealth(secondAggregate, DOWN, UP);
+                    second.close();
+                    assertHealth(firstAggregate, UP, UP);
+                    assertHealth(secondAggregate, UP, UP);
+                }
+            } finally {
+                secondRegistry.shutdown();
+            }
+        } finally {
+            firstRegistry.shutdown();
         }
     }
 
@@ -289,7 +298,7 @@ class MessagingHealthTest {
                                                            .discoverServices(false)
                                                            .discoverServicesFromServiceLoader(false)
                                                            .build());
-        registries.add(manager);
+        registry = manager;
         try (MessagingGraph graph = graph(manager, builder())) {
             assertHealth(graph.healthChecks(), DOWN, UP);
             graph.start();
@@ -297,8 +306,15 @@ class MessagingHealthTest {
         }
     }
 
+    private static ServiceRegistryManager createRegistry() {
+        return ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                     .putContractInstance(Config.class, Config.empty())
+                                                     .build());
+    }
+
     private static MessagingGraph graph(ServiceRegistryManager registry, MessagingConfig.Builder config) {
         // The graph borrows its selected application registry; the test fixture shuts the registry down.
+        config.serviceRegistry(registry.registry());
         return new MessagingGraphAssembler(config.buildPrototype(), registry.registry()).graph();
     }
 
@@ -387,12 +403,11 @@ class MessagingHealthTest {
     }
 
     private ServiceRegistryManager registry() {
-        // Each test owns fresh service discovery and aggregate membership; shutdown releases only that test's graphs.
-        var result = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
-                                                          .putContractInstance(Config.class, Config.empty())
-                                                          .build());
-        registries.add(result);
-        return result;
+        // Ordinary tests share one registry within the test; the isolation test owns its two registries explicitly.
+        if (registry == null) {
+            registry = createRegistry();
+        }
+        return registry;
     }
 
     private static final class TestIncoming implements IncomingChannel {
