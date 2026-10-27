@@ -63,16 +63,19 @@ class ScopedRegistryImplTest {
                                     () -> withDebug(debug, this::initActivatorIsUnavailableDuringShutdown)),
                         dynamicTest("shutdown interrupts construction",
                                     () -> withDebug(debug, () -> inProgressInitActivatorIsDestroyedDuringShutdown(
-                                            ActivationPhase.CONSTRUCTING, ActivationPhase.ACTIVE))),
+                                            ActivationPhase.CONSTRUCTING, ActivationPhase.ACTIVE, false))),
                         dynamicTest("shutdown interrupts injection",
                                     () -> withDebug(debug, () -> inProgressInitActivatorIsDestroyedDuringShutdown(
-                                            ActivationPhase.INJECTING, ActivationPhase.ACTIVE))),
-                        dynamicTest("shutdown interrupts post construction",
+                                            ActivationPhase.INJECTING, ActivationPhase.ACTIVE, false))),
+                        dynamicTest("shutdown reports unresolved cleanup during full post construction",
                                     () -> withDebug(debug, () -> inProgressInitActivatorIsDestroyedDuringShutdown(
-                                            ActivationPhase.POST_CONSTRUCTING, ActivationPhase.ACTIVE))),
+                                            ActivationPhase.POST_CONSTRUCTING, ActivationPhase.ACTIVE, true))),
+                        dynamicTest("shutdown reports unresolved cleanup before activation finishing",
+                                    () -> withDebug(debug, () -> inProgressInitActivatorIsDestroyedDuringShutdown(
+                                            ActivationPhase.POST_CONSTRUCTING, ActivationPhase.ACTIVATION_FINISHING, true))),
                         dynamicTest("shutdown interrupts limited post construction",
                                     () -> withDebug(debug, () -> inProgressInitActivatorIsDestroyedDuringShutdown(
-                                            ActivationPhase.POST_CONSTRUCTING, ActivationPhase.POST_CONSTRUCTING))),
+                                            ActivationPhase.POST_CONSTRUCTING, ActivationPhase.POST_CONSTRUCTING, false))),
                         dynamicTest("completed construction skips pre destroy",
                                     () -> withDebug(debug, this::completedConstructionIsNotPreDestroyedDuringShutdown)),
                         dynamicTest("completed injection skips pre destroy",
@@ -269,7 +272,8 @@ class ScopedRegistryImplTest {
     }
 
     private void inProgressInitActivatorIsDestroyedDuringShutdown(ActivationPhase blockedPhase,
-                                                                 ActivationPhase targetPhase) throws InterruptedException {
+                                                                 ActivationPhase targetPhase,
+                                                                 boolean expectedShutdownFailure) throws InterruptedException {
         CountDownLatch activationStarted = new CountDownLatch(1);
         CountDownLatch continueActivation = new CountDownLatch(1);
         CountDownLatch deactivationStarted = new CountDownLatch(1);
@@ -330,7 +334,16 @@ class ScopedRegistryImplTest {
         assertThat("activation failure", activationFailure.get(), nullValue());
         assertThat("activation result", activationResult.get(), notNullValue());
         assertThat("activation interrupted", activationResult.get().failure(), is(true));
-        assertThat("shutdown failure", shutdownFailure.get(), nullValue());
+        if (expectedShutdownFailure) {
+            assertThat("shutdown failure", shutdownFailure.get(), instanceOf(ServiceRegistryException.class));
+            assertThat("suppressed failures", shutdownFailure.get().getSuppressed().length, is(1));
+            Throwable cleanupFailure = shutdownFailure.get().getSuppressed()[0];
+            assertThat("cleanup failure", cleanupFailure, instanceOf(ServiceRegistryException.class));
+            assertThat("cleanup failure message", cleanupFailure.getMessage(),
+                       containsString("Cannot assure cleanup after interrupted post construction"));
+        } else {
+            assertThat("shutdown failure", shutdownFailure.get(), nullValue());
+        }
         assertThat("target instances not published", pending.targetInstancesSet(), is(false));
         assertThat("pre destroy skipped for interrupted callback", pending.preDestroyInvocations(), is(0));
         assertThat(pending.phase(), is(ActivationPhase.DESTROYED));

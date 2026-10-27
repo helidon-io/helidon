@@ -169,6 +169,7 @@ final class Activators {
         volatile ActivationPhase currentPhase = ActivationPhase.INIT;
         private boolean deactivationRequested;
         private boolean postConstructCompleted;
+        private boolean postConstructCleanupRequired;
         private boolean activationCleanupPending;
         private ScopedRegistryImpl scopedRegistry;
 
@@ -268,18 +269,22 @@ final class Activators {
                         || phase == ActivationPhase.POST_CONSTRUCTING)) {
                     // A JVM shutdown hook can run while the activating thread waits for shutdown to complete. Taking the
                     // instance lock here would deadlock, so interrupt activation and let the activating thread terminate.
-                    // Incomplete or deliberately limited activation has no cleanup to perform. Stopping it succeeds;
-                    // an activating caller reports the interruption separately.
+                    // Construction, injection and deliberately limited activation have no cleanup to perform.
+                    // Post construction targeting a later phase cannot assure cleanup before ownership is published.
                     var response = ActivationResult.builder()
                             .success(true)
                             .startingActivationPhase(phase)
                             .finishingActivationPhase(ActivationPhase.DESTROYED)
-                            .targetActivationPhase(ActivationPhase.DESTROYED)
-                            .build();
+                            .targetActivationPhase(ActivationPhase.DESTROYED);
+                    if (phase == ActivationPhase.POST_CONSTRUCTING && postConstructCleanupRequired) {
+                        response.success(false)
+                                .error(new ServiceRegistryException(
+                                        "Cannot assure cleanup after interrupted post construction of " + description()));
+                    }
 
                     currentPhase = ActivationPhase.DESTROYED;
 
-                    return response;
+                    return response.build();
                 }
             } finally {
                 phaseLock.unlock();
@@ -396,6 +401,9 @@ final class Activators {
                 if (activationInterruptedLocked(response)) {
                     return false;
                 }
+                if (phase == ActivationPhase.POST_CONSTRUCTING) {
+                    postConstructCleanupRequired = response.targetActivationPhase().ordinal() > phase.ordinal();
+                }
                 stateTransitionStart(response, phase);
                 return true;
             } finally {
@@ -489,7 +497,17 @@ final class Activators {
                 if (!activationStateTransitionStart(response, ActivationPhase.POST_CONSTRUCTING)) {
                     return response.build();
                 }
-                postConstruct(response);
+                try {
+                    postConstruct(response);
+                } catch (RuntimeException | Error e) {
+                    phaseLock.lock();
+                    try {
+                        postConstructCleanupRequired = false;
+                    } finally {
+                        phaseLock.unlock();
+                    }
+                    throw e;
+                }
                 phaseLock.lock();
                 try {
                     postConstructCompleted = true;
