@@ -63,6 +63,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
             = HelidonServiceLoader.builder(ServiceLoader.load(SourceHandlerProvider.class)).build().asList();
     private static final long ENTITY_LENGTH_CHUNKED = -1;
     private static final long ENTITY_LENGTH_CLOSE_DELIMITED = -2;
+    private static final int MAX_STAGING_SIZE = 8 * 1024;
     private final AtomicBoolean closed = new AtomicBoolean();
     private final AtomicBoolean inputStreamClosed = new AtomicBoolean();
 
@@ -91,6 +92,8 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     private boolean invalidNoEntityChunkedFraming;
     private boolean closeConnectionOnClose;
     private RuntimeException entityFailure;
+    private byte[] stagingBytes;
+    private BufferData stagingBuffer;
 
     Http1ClientResponseImpl(HttpClientConfig clientConfig,
                             Http1ClientProtocolConfig protocolConfig,
@@ -220,6 +223,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
                     }
                 }
             } finally {
+                clearStagingBuffer();
                 whenComplete.complete(null);
             }
         }
@@ -430,6 +434,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
                     failure.addSuppressed(closeFailure);
                 }
             } finally {
+                clearStagingBuffer();
                 whenComplete.complete(null);
             }
         }
@@ -443,9 +448,19 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
             throw new IllegalStateException("Response is closed");
         }
         try {
-            BufferData bufferData = BufferData.create(estimate);
+            int length = Math.min(estimate, MAX_STAGING_SIZE);
+            byte[] bytes = stagingBytes;
+            BufferData previous = stagingBuffer;
+            if (bytes == null || previous == null || bytes.length != length || !previous.consumed()) {
+                bytes = new byte[length];
+            }
+            // Copies have independent cursors; never revive an older stream's consumed buffer.
+            BufferData bufferData = BufferData.create(bytes).clear();
+            stagingBytes = bytes;
+            stagingBuffer = bufferData;
             int bytesRead = bufferData.readFrom(inputStream);
             if (bytesRead == -1) {
+                clearStagingBuffer();
                 return null;
             }
             return bufferData;
@@ -453,6 +468,11 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
             closeAfterEntityFailure(e);
             throw e;
         }
+    }
+
+    private void clearStagingBuffer() {
+        stagingBytes = null;
+        stagingBuffer = null;
     }
 
     private record CloseOnReleaseClientConnection(ClientConnection delegate) implements ClientConnection {
