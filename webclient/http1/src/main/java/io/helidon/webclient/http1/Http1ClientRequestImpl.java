@@ -239,6 +239,10 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         return http1Client;
     }
 
+    ClientUri redirectUri(String location) {
+        return resolveRedirectUri(location);
+    }
+
     void sanitizeRedirectHeaders(ClientUri requestUri, ClientRequestHeaders requestHeaders) {
         super.sanitizeRedirectSensitiveHeaders(requestUri, requestHeaders);
     }

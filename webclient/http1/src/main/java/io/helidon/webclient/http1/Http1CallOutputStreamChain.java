@@ -19,7 +19,6 @@ package io.helidon.webclient.http1;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 
@@ -29,7 +28,6 @@ import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.common.uri.UriFragment;
-import io.helidon.common.uri.UriInfo;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.HeaderNames;
@@ -131,14 +129,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
         if (originalRequest().followRedirects()
                 && RedirectionProcessor.redirectionStatusCode(responseStatus)) {
             checkRedirectHeaders(responseHeaders);
-            URI newUri = URI.create(responseHeaders.get(HeaderNames.LOCATION).get());
-            ClientUri redirectUri = ClientUri.create(newUri);
-            if (newUri.getHost() == null) {
-                UriInfo resolvedUri = cos.lastRequest.resolvedUri();
-                redirectUri.scheme(resolvedUri.scheme());
-                redirectUri.host(resolvedUri.host());
-                redirectUri.port(resolvedUri.port());
-            }
+            ClientUri redirectUri = cos.lastRequest.redirectUri(responseHeaders.get(HeaderNames.LOCATION).get());
             boolean sendEntity = RedirectionProcessor.keepsMethodAndEntity(responseStatus);
             ClientRequest.OutputStreamHandler handler = osHandler;
             if (sendEntity && !cos.lastRequest.canReplayEntityTo(redirectUri)) {
@@ -528,7 +519,6 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
 
         private void redirect(Status lastStatus, WritableHeaders<?> headerValues) {
             String redirectedUri = headerValues.get(HeaderNames.LOCATION).get();
-            ClientUri lastUri = originalRequest.uri();
             Method method;
             boolean sendEntity;
             if (RedirectionProcessor.keepsMethodAndEntity(lastStatus)) {
@@ -541,14 +531,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             connection.closeResource();
             while (numberOfRedirects < originalRequest.maxRedirects()) {
                 numberOfRedirects++;
-                URI newUri = URI.create(redirectedUri);
-                ClientUri redirectUri = ClientUri.create(newUri);
-                if (newUri.getHost() == null) {
-                    redirectUri.scheme(lastUri.scheme());
-                    redirectUri.host(lastUri.host());
-                    redirectUri.port(lastUri.port());
-                }
-                lastUri = redirectUri;
+                ClientUri redirectUri = lastRequest.redirectUri(redirectedUri);
                 boolean sendEmptyEntity = false;
                 if (sendEntity && !lastRequest.canReplayEntityTo(redirectUri)) {
                     // User code already provided bytes for the original origin; do not replay them across origins.
