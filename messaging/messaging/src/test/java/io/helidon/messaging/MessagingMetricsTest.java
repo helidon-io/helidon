@@ -25,7 +25,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
 import io.helidon.metrics.api.Clock;
@@ -44,7 +43,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
 
@@ -70,15 +68,17 @@ class MessagingMetricsTest {
             assertThat(timer.count(), is(2L));
             assertThat(timer.totalTime(TimeUnit.NANOSECONDS), is(40D));
             assertThat(environment.counter("orders").count(), is(1L));
-            assertThat(metrics.channel("orders"), sameInstance(recorder));
+            MessagingMetrics.Recorder again = metrics.channel("orders");
+            again.finish(again.start(), false);
+            assertThat(timer.count(), is(3L));
             metrics.close();
-            assertThat(environment.registry.meters(), empty());
+            assertThat(environment.timer("orders").count(), is(3L));
         }
     }
 
     @Test
-    void sharesMetersAcrossServiceRegistriesAndRetiresEachOwner() {
-        // Two application registries borrow the same meter registry; a surviving graph must retain the shared series.
+    void sharesCumulativeMetersAcrossGraphCloseAndRecreation() {
+        // Closing a graph stops its recording, while other and recreated graphs continue the registry's series.
         try (Environment environment = new Environment(MetricsConfig.create())) {
             MessagingMetrics first = environment.observe(environment.registry);
             MessagingMetrics second = environment.observe(environment.registry);
@@ -95,21 +95,21 @@ class MessagingMetricsTest {
             first.close();
             assertThat(environment.registry.meters().size(), is(2));
             second.close();
-            assertThat(environment.registry.meters(), empty());
+            assertThat(environment.timer("orders").count(), is(2L));
 
             MessagingMetrics replacement = environment.observe(environment.registry);
             MessagingMetrics.Recorder current = replacement.channel("orders");
             retired.finish(late, true);
             surviving.finish(late, true);
             current.finish(current.start(), false);
-            assertThat(environment.timer("orders").count(), is(1L));
-            assertThat(environment.counter("orders").count(), is(0L));
+            assertThat(environment.timer("orders").count(), is(3L));
+            assertThat(environment.counter("orders").count(), is(1L));
         }
     }
 
     @Test
     void separateMeterRegistriesRemainIndependent() {
-        // Equal channel names in different meter registries must not share counts or cleanup ownership.
+        // Equal channel names in different meter registries must not share counts.
         try (Environment first = new Environment(MetricsConfig.create());
              Environment second = new Environment(MetricsConfig.create())) {
             MessagingMetrics firstMetrics = first.observe(first.registry);
@@ -119,14 +119,15 @@ class MessagingMetricsTest {
             secondRecorder.finish(secondRecorder.start(), false);
             firstMetrics.close();
 
-            assertThat(first.registry.meters(), empty());
+            assertThat(first.timer("orders").count(), is(1L));
+            assertThat(first.counter("orders").count(), is(1L));
             assertThat(second.timer("orders").count(), is(1L));
             assertThat(second.counter("orders").count(), is(0L));
         }
     }
 
     @Test
-    void registrationListenerCannotCreateCompetingOwnership() {
+    void sameThreadRegistrationCallbackDoesNotRecordPartiallyRegisteredMeters() {
         // A same-thread registration callback cannot acquire the series whose registration is still in progress.
         try (Environment environment = new Environment(MetricsConfig.create())) {
             AtomicBoolean entered = new AtomicBoolean();
@@ -147,45 +148,16 @@ class MessagingMetricsTest {
             assertThat(environment.timer("orders").count(), is(1L));
             assertThat(environment.counter("orders").count(), is(0L));
             outer.close();
-            assertThat(environment.registry.meters(), empty());
-        }
-    }
-
-    @Test
-    void removalListenerCannotAcquireRetiringGeneration() {
-        // A reentrant listener must not give a nested graph ownership of meters that the outer close is removing.
-        try (Environment environment = new Environment(MetricsConfig.create())) {
-            MessagingMetrics outer = environment.observe(environment.registry);
-            outer.channel("orders");
-            AtomicBoolean entered = new AtomicBoolean();
-            AtomicReference<MessagingMetrics> nested = new AtomicReference<>();
-            environment.registry.onMeterRemoved(_ -> {
-                if (entered.compareAndSet(false, true)) {
-                    MessagingMetrics metrics = environment.observe(environment.registry);
-                    nested.set(metrics);
-                    metrics.channel("orders");
-                }
-            });
-
-            outer.close();
-            assertThat(environment.registry.meters(), empty());
-            MessagingMetrics replacement = environment.observe(environment.registry);
-            MessagingMetrics.Recorder current = replacement.channel("orders");
-            nested.get().close();
-            current.finish(current.start(), false);
             assertThat(environment.timer("orders").count(), is(1L));
-            assertThat(environment.counter("orders").count(), is(0L));
-            replacement.close();
-            assertThat(environment.registry.meters(), empty());
         }
     }
 
     @Test
-    void registrationListenerCanCloseAnotherChannelOwner() {
-        // Closing an unrelated owner from a provider callback must not keep its retired meters registered.
+    void registrationListenerCanCloseAnotherGraph() {
+        // Closing another graph in a provider callback must stop its recorder without calling back into the provider.
         try (Environment environment = new Environment(MetricsConfig.create())) {
             MessagingMetrics previous = environment.observe(environment.registry);
-            previous.channel("previous");
+            MessagingMetrics.Recorder closed = previous.channel("previous");
             AtomicBoolean entered = new AtomicBoolean();
             environment.registry.onMeterAdded(_ -> {
                 if (entered.compareAndSet(false, true)) {
@@ -196,9 +168,12 @@ class MessagingMetricsTest {
             MessagingMetrics next = environment.observe(environment.registry);
             MessagingMetrics.Recorder recorder = next.channel("orders");
             recorder.finish(recorder.start(), false);
+            closed.finish(closed.start(), true);
             assertThat(environment.timer("orders").count(), is(1L));
+            assertThat(environment.timer("previous").count(), is(0L));
+            assertThat(environment.counter("previous").count(), is(0L));
             next.close();
-            assertThat(environment.registry.meters(), empty());
+            assertThat(environment.registry.meters().size(), is(4));
         }
     }
 
@@ -216,7 +191,8 @@ class MessagingMetricsTest {
             MessagingMetrics.Recorder recorder = metrics.channel("orders");
             recorder.finish(recorder.start(), true);
             metrics.close();
-            assertThat(metrics.channel("other"), sameInstance(recorder));
+            MessagingMetrics.Recorder other = metrics.channel("other");
+            other.finish(other.start(), true);
         } finally {
             manager.shutdown();
         }
@@ -236,7 +212,8 @@ class MessagingMetricsTest {
             MessagingMetrics.Recorder recorder = metrics.channel("orders");
             recorder.finish(recorder.start(), true);
             metrics.close();
-            assertThat(metrics.channel("other"), sameInstance(recorder));
+            MessagingMetrics.Recorder other = metrics.channel("other");
+            other.finish(other.start(), true);
         } finally {
             manager.shutdown();
         }
@@ -270,46 +247,6 @@ class MessagingMetricsTest {
             assertThat(environment.counter("orders").count(), is(1L));
             assertThat(handler.clockRequests.get(), is(0));
             assertThat(environment.clock.reads.get(), is(clockReads));
-        }
-    }
-
-    @Test
-    void hiddenWrappedTimerReleasesItsNativeCreationHandle() {
-        // The adapter defers enablement to registration and wraps the hidden timer; cleanup still owns its native handle.
-        MetricsConfig config = MetricsConfig.builder()
-                .addMeter(builder -> builder.namePattern(Pattern.compile(Pattern.quote(DURATION))).enabled(false))
-                .build();
-        try (Environment environment = new Environment(config)) {
-            MeterRegistry wrapped = new DelegatingMeterRegistry(environment.registry) {
-                @Override
-                public boolean isMeterEnabled(String name) {
-                    return true;
-                }
-
-                @Override
-                public boolean isMeterEnabled(String name, Map<String, String> tags) {
-                    return true;
-                }
-
-                @Override
-                @SuppressWarnings("unchecked")
-                public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder, Consumer<M> onCreate) {
-                    M meter = super.getOrCreate(builder, onCreate);
-                    return meter instanceof Timer timer ? (M) new DelegatingTimer(timer) : meter;
-                }
-            };
-            MessagingMetrics metrics = environment.observe(wrapped);
-            MessagingMetrics.Recorder recorder = metrics.channel("orders");
-            Timer hidden = environment.registry.getOrCreate(environment.factory.timerBuilder(DURATION)
-                    .tags(environment.tags("orders")));
-            assertThat(environment.registry.timer(DURATION, environment.tags("orders")).isEmpty(), is(true));
-            assertThat(environment.registry.isDeleted(hidden), is(false));
-
-            recorder.finish(recorder.start(), false);
-            metrics.close();
-
-            assertThat(environment.registry.isDeleted(hidden), is(true));
-            assertThat(environment.registry.meters(), empty());
         }
     }
 
@@ -348,15 +285,16 @@ class MessagingMetricsTest {
     }
 
     @Test
-    void partialRegistrationFailureRollsBackAndDoesNotPreventLaterAcquisition() {
-        // Failure of the second meter registration must release the first and leave later graph construction usable.
+    void partialRegistrationFailureDoesNotPreventLaterRecording() {
+        // Failure of the counter disables this recorder; a later graph reuses the timer and completes registration.
         try (Environment environment = new Environment(MetricsConfig.create())) {
             FaultyRegistry handler = new FaultyRegistry(environment.registry);
             handler.fault = Fault.REGISTER;
             MessagingMetrics first = environment.observe(handler);
             MessagingMetrics.Recorder failed = first.channel("orders");
             failed.finish(failed.start(), true);
-            assertThat(environment.registry.meters(), empty());
+            assertThat(environment.timer("orders").count(), is(0L));
+            assertThat(environment.registry.counter(FAILURES, environment.tags("orders")).isEmpty(), is(true));
 
             handler.fault = Fault.NONE;
             MessagingMetrics.Recorder subsequent = environment.observe(handler).channel("orders");
@@ -368,8 +306,8 @@ class MessagingMetricsTest {
 
     @ParameterizedTest
     @ValueSource(strings = {DURATION, FAILURES})
-    void throwingAddListenerRemovesOnlyAttemptedIdentitiesWithGlobalTags(String failingMeter) {
-        // Global tags change the registered ID; rollback must remove this attempt while preserving another channel.
+    void throwingAddListenerPreservesExistingCountsAndAllowsLaterRecording(String failingMeter) {
+        // An add listener fails after insertion; the failed recorder stops while a later graph reuses those series.
         HelidonMetricsFactory factory = HelidonMetricsFactory.create();
         MetricsConfig config = MetricsConfig.builder()
                 .appName("messaging-tests")
@@ -377,7 +315,8 @@ class MessagingMetricsTest {
                 .build();
         try (Environment environment = new Environment(config, factory)) {
             MessagingMetrics existing = environment.observe(environment.registry);
-            existing.channel("payments");
+            MessagingMetrics.Recorder payments = existing.channel("payments");
+            payments.finish(payments.start(), true);
             AtomicBoolean failed = new AtomicBoolean();
             environment.registry.onMeterAdded(meter -> {
                 if (meter.id().name().equals(failingMeter) && failed.compareAndSet(false, true)) {
@@ -386,10 +325,11 @@ class MessagingMetricsTest {
             });
 
             MessagingMetrics broken = environment.observe(environment.registry);
-            broken.channel("orders");
-            assertThat(failingMeter, environment.registry.meters().size(), is(2));
-            assertThat(environment.registry.timer(DURATION, environment.tags("orders")).isEmpty(), is(true));
-            assertThat(environment.registry.counter(FAILURES, environment.tags("orders")).isEmpty(), is(true));
+            MessagingMetrics.Recorder failedRecorder = broken.channel("orders");
+            failedRecorder.finish(failedRecorder.start(), true);
+            assertThat(environment.timer("orders").count(), is(0L));
+            assertThat(environment.timer("payments").count(), is(1L));
+            assertThat(environment.counter("payments").count(), is(1L));
 
             MessagingMetrics replacement = environment.observe(environment.registry);
             MessagingMetrics.Recorder recorder = replacement.channel("orders");
@@ -397,23 +337,9 @@ class MessagingMetricsTest {
             assertThat(environment.timer("orders").count(), is(1L));
             broken.close();
             replacement.close();
-            assertThat(environment.registry.meters().size(), is(2));
+            assertThat(environment.registry.meters().size(), is(4));
             existing.close();
-            assertThat(environment.registry.meters(), empty());
-        }
-    }
-
-    @Test
-    void throwingAddListenerCleanupUsesCustomizerTags() {
-        // A customizer removes the channel tag, so rollback must use the returned meter rather than the requested tags.
-        HelidonMetricsFactory factory = HelidonMetricsFactory.create(builder -> builder
-                .addMeterBuilderCustomizer(meter -> meter.tags(List.of())));
-        try (Environment environment = new Environment(MetricsConfig.create(), factory)) {
-            environment.registry.onMeterAdded(_ -> {
-                throw new IllegalStateException("Listener failed after customized registration");
-            });
-            environment.observe(environment.registry).channel("orders");
-            assertThat(environment.registry.meters(), empty());
+            assertThat(environment.registry.meters().size(), is(4));
         }
     }
 
@@ -437,8 +363,8 @@ class MessagingMetricsTest {
     }
 
     @Test
-    void clockFailureDisablesRecorderAndStillReleasesMeters() {
-        // Clock failure stops further observation but must not lose the ownership needed for graph cleanup.
+    void clockFailureDisablesRecorder() {
+        // A failed clock stops recording for this graph, including after the clock becomes available again.
         try (Environment environment = new Environment(MetricsConfig.create())) {
             MessagingMetrics metrics = environment.observe(environment.registry);
             MessagingMetrics.Recorder recorder = metrics.channel("orders");
@@ -448,44 +374,37 @@ class MessagingMetricsTest {
             recorder.finish(recorder.start(), true);
             assertThat(environment.timer("orders").count(), is(0L));
             metrics.close();
-            assertThat(environment.registry.meters(), empty());
+            assertThat(environment.counter("orders").count(), is(0L));
         }
     }
 
     @Test
-    void removalFailureStillRetiresLeaseAndAttemptsBothMeters() {
-        // A provider that rejects removal retains its meters; messaging must retire its lease and attempt both removals.
+    void closeNeverRemovesRegistryMetersAndStopsLateRecording() {
+        // Closing an observer never asks the registry to delete a series, and an already-started sample is discarded.
         try (Environment environment = new Environment(MetricsConfig.create())) {
             FaultyRegistry handler = new FaultyRegistry(environment.registry);
             MessagingMetrics metrics = environment.observe(handler);
             MessagingMetrics.Recorder recorder = metrics.channel("orders");
             var started = recorder.start();
-            Timer retainedTimer = environment.timer("orders");
-            Counter retainedCounter = environment.counter("orders");
-            handler.fault = Fault.REMOVE;
             metrics.close();
-            assertThat(handler.removals.get(), is(2));
+            assertThat(handler.removals.get(), is(0));
             recorder.finish(started, true);
             assertThat(environment.timer("orders").count(), is(0L));
 
-            handler.fault = Fault.NONE;
             MessagingMetrics replacement = environment.observe(handler);
             MessagingMetrics.Recorder current = replacement.channel("orders");
             current.finish(current.start(), false);
             replacement.close();
-            // Failed cleanup released internal ownership; a later graph borrows the pre-existing series.
-            assertThat(environment.timer("orders"), sameInstance(retainedTimer));
-            assertThat(environment.counter("orders"), sameInstance(retainedCounter));
-            assertThat(retainedTimer.count(), is(1L));
-            assertThat(retainedCounter.count(), is(0L));
+            assertThat(handler.removals.get(), is(0));
+            assertThat(environment.timer("orders").count(), is(1L));
+            assertThat(environment.counter("orders").count(), is(0L));
         }
     }
 
     private enum Fault {
         NONE,
         REGISTER,
-        RECORD,
-        REMOVE
+        RECORD
     }
 
     private static final class Environment implements AutoCloseable {
@@ -585,17 +504,12 @@ class MessagingMetricsTest {
         }
 
         @Override
-        public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder) {
-            return getOrCreate(builder, _ -> { });
-        }
-
-        @Override
         @SuppressWarnings("unchecked")
-        public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder, Consumer<M> onCreate) {
+        public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder) {
             if (builder instanceof Counter.Builder && fault == Fault.REGISTER) {
                 throw new IllegalStateException("Counter registration unavailable");
             }
-            M result = super.getOrCreate(builder, onCreate);
+            M result = super.getOrCreate(builder);
             if (result instanceof Timer timer) {
                 return (M) new DelegatingTimer(timer) {
                     @Override
@@ -613,10 +527,7 @@ class MessagingMetricsTest {
         @Override
         public Optional<Meter> remove(Meter meter) {
             removals.incrementAndGet();
-            if (fault == Fault.REMOVE) {
-                throw new IllegalStateException("Removal unavailable");
-            }
-            return super.remove(meter);
+            throw new AssertionError("Graph close must not remove registry meters");
         }
     }
 }

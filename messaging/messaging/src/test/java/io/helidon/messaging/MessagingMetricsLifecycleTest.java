@@ -40,7 +40,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MessagingMetricsLifecycleTest {
@@ -50,7 +49,7 @@ class MessagingMetricsLifecycleTest {
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
     void addListenerCanAwaitConcurrentGraphClose(boolean sharedRegistry) throws InterruptedException {
-        // The add callback waits for shutdown on another thread, with both shared and independent registry ownership.
+        // The add callback waits for shutdown on another thread, with both shared and independent meter registries.
         CountDownLatch listenerEntered = new CountDownLatch(1);
         CountDownLatch closeEntered = new CountDownLatch(1);
         AtomicBoolean first = new AtomicBoolean(true);
@@ -77,7 +76,7 @@ class MessagingMetricsLifecycleTest {
                     await(listenerEntered, "New graph did not register its meters");
                     closer.start();
                     builder.awaitCompletion("Graph construction blocked in its meter listener");
-                    closer.awaitCompletion("Graph close blocked while retiring its meters");
+                    closer.awaitCompletion("Graph close blocked in the metrics provider");
                 } finally {
                     // Release a listener waiting for shutdown if the lock-cycle regression returns.
                     builder.interrupt();
@@ -88,15 +87,15 @@ class MessagingMetricsLifecycleTest {
                     }
                 }
             }
-            assertThat(registering.meters.meters(), empty());
-            assertThat(closing.meters.meters(), empty());
+            assertThat(registering.meters.meters().size(), is(sharedRegistry ? 4 : 2));
+            assertThat(closing.meters.meters().size(), is(sharedRegistry ? 4 : 2));
         }
     }
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void customizedChannelsRetainSharedMetersUntilTheLastGraphCloses(boolean closeFirst) {
-        // Removing channel tags makes distinct channels share meters; neither close order may retire a surviving owner.
+    void customizedChannelsAggregateAcrossGraphsInEitherCloseOrder(boolean closeFirst) {
+        // Removing channel tags makes distinct channels share counts, which persist after both graphs close.
         HelidonMetricsFactory factory = HelidonMetricsFactory.create(builder -> builder
                 .addMeterBuilderCustomizer(meter -> meter.tags(List.of())));
         try (Environment environment = new Environment(factory)) {
@@ -110,7 +109,6 @@ class MessagingMetricsLifecycleTest {
                 first.emitter(orders).emit("first");
                 second.emitter(payments).emit("second");
                 Timer sharedTimer = environment.meters.timer(DURATION, List.of()).orElseThrow();
-                Counter sharedFailures = environment.meters.counter(FAILURES, List.of()).orElseThrow();
                 assertThat(sharedTimer.count(), is(2L));
 
                 Emitter<String> surviving;
@@ -124,19 +122,18 @@ class MessagingMetricsLifecycleTest {
                 surviving.emit("third");
                 assertThrows(BatchDeliveryException.class, () -> surviving.emit("fail"));
 
-                assertThat(environment.meters.timer(DURATION, List.of()).orElseThrow(), sameInstance(sharedTimer));
-                assertThat(environment.meters.counter(FAILURES, List.of()).orElseThrow(), sameInstance(sharedFailures));
-                assertThat(sharedTimer.count(), is(4L));
-                assertThat(sharedFailures.count(), is(1L));
+                assertThat(environment.meters.timer(DURATION, List.of()).orElseThrow().count(), is(4L));
+                assertThat(environment.meters.counter(FAILURES, List.of()).orElseThrow().count(), is(1L));
                 assertThat(deliveries.get(), is(4));
             }
-            assertThat(environment.meters.meters(), empty());
+            assertThat(environment.meters.timer(DURATION, List.of()).orElseThrow().count(), is(4L));
+            assertThat(environment.meters.counter(FAILURES, List.of()).orElseThrow().count(), is(1L));
         }
     }
 
     @Test
-    void sharedTimerDoesNotMergeOwnershipOfDistinctFailureCounters() {
-        // Only the timer loses its channel tag; failure counters still have independent owners and lifetimes.
+    void sharedTimerKeepsFailureCountsSeparateByChannel() {
+        // Only the timer loses its channel tag; failure counters retain per-channel values across graph close.
         HelidonMetricsFactory factory = HelidonMetricsFactory.create(builder -> builder
                 .addMeterBuilderCustomizer(meter -> {
                     if (meter.name().equals(DURATION)) {
@@ -160,15 +157,15 @@ class MessagingMetricsLifecycleTest {
                 assertThat(environment.meters.counter(FAILURES, ordersTags).isPresent(), is(true));
                 first.close();
 
-                assertThat(environment.meters.counter(FAILURES, ordersTags).isEmpty(), is(true));
-                assertThat(environment.meters.timer(DURATION, List.of()).orElseThrow(), sameInstance(sharedTimer));
-                assertThat(environment.meters.counter(FAILURES, paymentsTags).orElseThrow(), sameInstance(survivingCounter));
+                assertThat(environment.meters.counter(FAILURES, ordersTags).orElseThrow().count(), is(0L));
                 assertThrows(BatchDeliveryException.class, () -> second.emitter(payments).emit("fail"));
                 assertThat(sharedTimer.count(), is(3L));
                 assertThat(survivingCounter.count(), is(1L));
                 assertThat(deliveries.get(), is(3));
             }
-            assertThat(environment.meters.meters(), empty());
+            assertThat(environment.meters.timer(DURATION, List.of()).orElseThrow().count(), is(3L));
+            assertThat(environment.meters.counter(FAILURES, ordersTags).orElseThrow().count(), is(0L));
+            assertThat(environment.meters.counter(FAILURES, paymentsTags).orElseThrow().count(), is(1L));
         }
     }
 
@@ -196,8 +193,8 @@ class MessagingMetricsLifecycleTest {
     }
 
     @Test
-    void graphClosePreservesABorrowedTimerAfterItsLastMessagingOwner() {
-        // The application created this timer before messaging, so closing the last graph must leave it usable.
+    void graphClosePreservesAnApplicationTimer() {
+        // Messaging shares an application timer; closing both graphs leaves its cumulative values usable.
         try (Environment environment = new Environment()) {
             var tags = List.of(environment.factory.tagCreate("channel", "orders"));
             Timer existing = environment.meters.getOrCreate(environment.factory.timerBuilder(DURATION).tags(tags));
@@ -216,15 +213,15 @@ class MessagingMetricsLifecycleTest {
                 assertThat(existing.count(), is(3L));
             }
             assertThat(environment.meters.timer(DURATION, tags).orElseThrow(), sameInstance(existing));
-            assertThat(environment.meters.counter(FAILURES, tags).isEmpty(), is(true));
+            assertThat(environment.meters.counter(FAILURES, tags).orElseThrow().count(), is(0L));
             existing.record(20, TimeUnit.NANOSECONDS);
             assertThat(existing.count(), is(4L));
         }
     }
 
     @Test
-    void failedCounterRegistrationPreservesBorrowedAndConflictingMeters() {
-        // Counter registration fails after borrowing an application timer; neither application meter belongs to rollback.
+    void failedCounterRegistrationPreservesApplicationAndConflictingMeters() {
+        // Counter registration fails after getting the application timer; both existing series remain unaffected.
         try (Environment environment = new Environment()) {
             var tags = List.of(environment.factory.tagCreate("channel", "orders"));
             Timer borrowed = environment.meters.getOrCreate(environment.factory.timerBuilder(DURATION).tags(tags));

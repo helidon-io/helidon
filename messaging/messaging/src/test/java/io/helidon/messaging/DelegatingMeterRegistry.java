@@ -73,11 +73,6 @@ class DelegatingMeterRegistry implements MeterRegistry {
     }
 
     @Override
-    public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder, Consumer<M> onCreate) {
-        return delegate.getOrCreate(builder, onCreate);
-    }
-
-    @Override
     public <M extends Meter> Optional<M> meter(Class<M> type, String name, Iterable<Tag> tags) {
         return delegate.meter(type, name, tags);
     }

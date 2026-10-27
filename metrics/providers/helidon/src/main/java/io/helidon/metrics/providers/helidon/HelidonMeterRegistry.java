@@ -150,15 +150,9 @@ final class HelidonMeterRegistry implements MeterRegistry {
     }
 
     @Override
-    public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder) {
-        return getOrCreate(builder, _ -> { });
-    }
-
-    @Override
     @SuppressWarnings("unchecked")
-    public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder, Consumer<M> onCreate) {
+    public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder) {
         Objects.requireNonNull(builder);
-        Objects.requireNonNull(onCreate);
         checkOpen();
         metricsFactory.customize(builder);
         HelidonMeter.AbstractBuilder<?, ?> helidonBuilder = toHelidonBuilder(builder);
@@ -198,13 +192,11 @@ final class HelidonMeterRegistry implements MeterRegistry {
                 Meter result = metricsFactory.noOpMeter(helidonBuilder);
                 verifyType(result, helidonBuilder);
                 disabledMeters.put(id, result);
-                onCreate.accept((M) result);
                 return (M) result;
             }
             configureMeter(helidonBuilder);
             HelidonMeter meter = createMeter(id, helidonBuilder);
             meters.put(id, meter);
-            onCreate.accept((M) meter);
             addListeners.forEach(listener -> listener.accept(meter));
             return (M) meter;
         } finally {
@@ -231,17 +223,7 @@ final class HelidonMeterRegistry implements MeterRegistry {
 
     @Override
     public Optional<Meter> remove(Meter meter) {
-        Objects.requireNonNull(meter);
-        lock.writeLock().lock();
-        try {
-            HelidonMeterId meterId = HelidonTypes.meterId(meter.id().name(), meter.id().tags());
-            if (meters.get(meterId) != meter && disabledMeters.get(meterId) != meter) {
-                return Optional.empty();
-            }
-            return remove(meterId);
-        } finally {
-            lock.writeLock().unlock();
-        }
+        return remove(Objects.requireNonNull(meter).id());
     }
 
     @Override

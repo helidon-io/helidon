@@ -113,7 +113,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     private final Map<io.helidon.metrics.api.Meter.Id, MMeter<?>> metersById = new HashMap<>();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final Condition closeCompleted = lock.writeLock().newCondition();
-    private final ThreadLocal<CreationObserver> creationObserver = new ThreadLocal<>();
     private LifecycleState lifecycleState = LifecycleState.OPEN;
     private volatile Thread closeThread;
 
@@ -137,12 +136,12 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                     public Meter.Id map(Meter.Id id) {
                         Map<String, String> systemTags = systemTagsManager.displayTagPairs();
                         if (systemTags.isEmpty()) {
-                            return observeRegistrationId(id);
+                            return id;
                         }
                         List<io.micrometer.core.instrument.Tag> tags = new ArrayList<>();
                         systemTags.forEach((name, value) ->
                                                    tags.add(io.micrometer.core.instrument.Tag.of(name, value)));
-                        return observeRegistrationId(id.replaceTags(Tags.concat(tags, id.getTagsAsIterable())));
+                        return id.replaceTags(Tags.concat(tags, id.getTagsAsIterable()));
                     }
                 });
     }
@@ -309,15 +308,14 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     public <HB extends io.helidon.metrics.api.Meter.Builder<HB, HM>,
             HM extends io.helidon.metrics.api.Meter> HM getOrCreate(HB builder) {
         Objects.requireNonNull(builder);
-        return getOrCreateWithNotification(builder, null);
-    }
-
-    @Override
-    public <HB extends io.helidon.metrics.api.Meter.Builder<HB, HM>,
-            HM extends io.helidon.metrics.api.Meter> HM getOrCreate(HB builder, Consumer<HM> onCreate) {
-        Objects.requireNonNull(builder);
-        Objects.requireNonNull(onCreate);
-        return getOrCreateWithNotification(builder, onCreate);
+        lock.readLock().lock();
+        try {
+            checkOpen();
+        } finally {
+            lock.readLock().unlock();
+        }
+        metricsFactory.customize(builder);
+        return getOrCreateCustomized(builder);
     }
 
     @Override
@@ -355,25 +353,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     @Override
     public Optional<io.helidon.metrics.api.Meter> remove(io.helidon.metrics.api.Meter meter) {
-        Objects.requireNonNull(meter);
-        lock.writeLock().lock();
-        try {
-            if (lifecycleState != LifecycleState.OPEN
-                    || !(meter instanceof MMeter<?> expected)
-                    || meters.get(expected.delegate()) != expected) {
-                return Optional.empty();
-            }
-            delegate.remove(expected.delegate());
-            // A native add listener can fail before Micrometer publishes the meter. Its Helidon wrapper still needs
-            // retirement even though the native registry has nothing to remove and cannot invoke our removal listener.
-            if (meters.get(expected.delegate()) == expected) {
-                meters.remove(expected.delegate());
-                recordRemove(expected);
-            }
-            return Optional.of(expected);
-        } finally {
-            lock.writeLock().unlock();
-        }
+        return internalRemove(meter.id());
     }
 
     @Override
@@ -450,15 +430,15 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         io.helidon.metrics.api.Meter helidonMeter;
 
         if (builder instanceof MCounter.Builder cBuilder) {
-            helidonMeter = registerNative(cBuilder, cBuilder.delegate()::register);
+            helidonMeter = getOrCreate(cBuilder, cBuilder.delegate()::register);
         } else if (builder instanceof MFunctionalCounter.Builder<?> fcBuilder) {
-            helidonMeter = registerNative(fcBuilder, fcBuilder.delegate()::register);
+            helidonMeter = getOrCreate(fcBuilder, fcBuilder.delegate()::register);
         } else if (builder instanceof MDistributionSummary.Builder sBuilder) {
-            helidonMeter = registerNative(sBuilder, sBuilder.delegate()::register);
+            helidonMeter = getOrCreate(sBuilder, sBuilder.delegate()::register);
         } else if (builder instanceof MGauge.Builder gBuilder) {
-            helidonMeter = registerNative(gBuilder, ((MGauge.Builder<?, ?>) gBuilder).delegate()::register);
+            helidonMeter = getOrCreate(gBuilder, ((MGauge.Builder<?, ?>) gBuilder).delegate()::register);
         } else if (builder instanceof MTimer.Builder tBuilder) {
-            helidonMeter = registerNative(tBuilder, tBuilder.delegate()::register);
+            helidonMeter = getOrCreate(tBuilder, tBuilder.delegate()::register);
         } else {
             throw new IllegalArgumentException(String.format("Unexpected builder type %s, expected one of %s",
                                                              builder.getClass().getName(),
@@ -527,14 +507,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         }
     }
 
-    private Meter.Id observeRegistrationId(Meter.Id id) {
-        CreationObserver observer = creationObserver.get();
-        if (observer != null && observer.nativeId == null) {
-            observer.nativeId = id;
-        }
-        return id;
-    }
-
     private <M extends Meter> void recordMeterAdded(M addedMeter, MMeter.Builder<?, M, ?, ?> builder) {
         /*
         Gauge builders require the exact native gauge created from their private source, because a filter can insert a
@@ -550,55 +522,20 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             mMeter = builder.build(id, addedMeter);
         }
         recordNewMeter(id, mMeter, addedMeter);
-        CreationObserver observer = creationObserver.get();
-        // Native filters can reenter registration with the same logical ID. Only the exact ID object observed for this
-        // call proves ownership; a native extension replacing that object leaves the resulting meter borrowed.
-        if (observer != null && observer.builder == builder && observer.nativeId == addedMeter.getId() && !observer.notified) {
-            observer.notified = true;
-            observer.onCreate.accept(mMeter);
-        }
         onAddListeners.forEach(listener -> listener.accept(mMeter));
     }
 
     private <HB extends io.helidon.metrics.api.Meter.Builder<HB, HM>,
-            HM extends io.helidon.metrics.api.Meter> HM getOrCreateWithNotification(HB builder, Consumer<HM> onCreate) {
-        lock.readLock().lock();
-        try {
-            checkOpen();
-        } finally {
-            lock.readLock().unlock();
-        }
-        CreationObserver previous = creationObserver.get();
-        if (previous != null) {
-            creationObserver.remove();
-        }
-        try {
-            metricsFactory.customize(builder);
-            return getOrCreateCustomized(builder, onCreate);
-        } finally {
-            if (previous != null) {
-                creationObserver.set(previous);
-            }
-        }
-    }
-
-    private <HB extends io.helidon.metrics.api.Meter.Builder<HB, HM>,
-            HM extends io.helidon.metrics.api.Meter> HM getOrCreateCustomized(HB builder, Consumer<HM> onCreate) {
+            HM extends io.helidon.metrics.api.Meter> HM getOrCreateCustomized(HB builder) {
         // Just cast the builder if it "one of ours" because that means it was prepared using our MetricsFactory, and that
         // would already have set the builder up with the correct Micrometer builder delegate.
+        if (builder instanceof MMeter.Builder<?, ?, ?, ?> mBuilder) {
+            return (HM) getOrCreateUntyped((HB) mBuilder);
+        }
+
         // If this is not "one of ours" then we need to create a new builder, based on the one passed in but with the correct
         // Micrometer delegate builder assigned.
-        MMeter.Builder<?, ?, ?, ?> mBuilder = builder instanceof MMeter.Builder<?, ?, ?, ?> existing
-                ? existing : convertNeutralBuilder(builder);
-        if (onCreate == null) {
-            return (HM) getOrCreateUntyped((io.helidon.metrics.api.Meter.Builder<?, ?>) mBuilder);
-        }
-        creationObserver.set(new CreationObserver(mBuilder, meter -> onCreate.accept((HM) meter)));
-        try {
-            return (HM) getOrCreateUntyped((io.helidon.metrics.api.Meter.Builder<?, ?>) mBuilder);
-        } finally {
-            creationObserver.remove();
-        }
+        return (HM) getOrCreateUntyped(convertNeutralBuilder(builder));
     }
 
     private void configureMeter(io.helidon.metrics.api.Meter.Builder<?, ?> builder) {
@@ -666,7 +603,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     private <M extends Meter,
             HB extends MMeter.Builder<?, M, HB, HM>,
-            HM extends MMeter<M>> io.helidon.metrics.api.Meter registerNative(HB mBuilder,
+            HM extends MMeter<M>> io.helidon.metrics.api.Meter getOrCreate(HB mBuilder,
                                                                            Function<io.micrometer.core.instrument.MeterRegistry,
                                                                                    M> registration) {
 
@@ -952,18 +889,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
         private GaugeRegistration(MGauge.Builder<?, ?> builder) {
             this.builder = builder;
-        }
-    }
-
-    private static final class CreationObserver {
-        private final MMeter.Builder<?, ?, ?, ?> builder;
-        private final Consumer<io.helidon.metrics.api.Meter> onCreate;
-        private Meter.Id nativeId;
-        private boolean notified;
-
-        private CreationObserver(MMeter.Builder<?, ?, ?, ?> builder, Consumer<io.helidon.metrics.api.Meter> onCreate) {
-            this.builder = builder;
-            this.onCreate = onCreate;
         }
     }
 

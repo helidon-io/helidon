@@ -40,12 +40,9 @@ import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -54,18 +51,46 @@ class MessagingMetricsCallbackTest {
     private static final String DURATION = "messaging.processing.duration";
     private static final String FAILURES = "messaging.processing.failures";
 
-    @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void listenerCanAwaitChildGraphDelivery(boolean removal) throws Exception {
+    @Test
+    void listenerCanAwaitChildGraphDelivery() throws Exception {
         // The listener waits for another thread, so metrics registration must not block that thread's graph construction.
-        assertCallbackCanAwaitDelivery(removal);
+        try (Environment environment = new Environment();
+             ChildCallback callback = new ChildCallback(environment, false)) {
+            try (MessagingGraph _ = environment.trigger(callback)) {
+                callback.assertCompletedInsideListener();
+                assertThat(callback.deliveries.get(), is(2));
+                environment.assertCounts("child", 2, 1);
+
+                callback.child.get().emitter(callback.channel).emit("after-registration");
+                assertThat(callback.deliveries.get(), is(3));
+                environment.assertCounts("child", 3, 1);
+                callback.close();
+                environment.assertCounts("child", 3, 1);
+            }
+            environment.assertCounts("child", 3, 1);
+        }
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void listenerCanAwaitChildGraphClose(boolean removal) throws Exception {
-        // A child closed before registration completes must neither deadlock the listener nor retain meters afterward.
-        assertCallbackCanAwaitClose(removal);
+    @Test
+    void listenerCanAwaitChildGraphClose() throws Exception {
+        // A child can close inside a provider callback; its completed attempts are retained once registration completes.
+        try (Environment environment = new Environment();
+             ChildCallback callback = new ChildCallback(environment, true)) {
+            try (MessagingGraph _ = environment.trigger(callback)) {
+                callback.assertCompletedInsideListener();
+                assertThat(callback.deliveries.get(), is(2));
+                environment.assertCounts("child", 2, 1);
+
+                MessagingChannel<String> replacementChannel = MessagingChannel.create("child", String.class);
+                try (MessagingGraph replacement = environment.graph(environment.builder().channel(replacementChannel)
+                        .payloadSink(replacementChannel, _ -> { })).start()) {
+                    replacement.emitter(replacementChannel).emit("after-registration");
+                    environment.assertCounts("child", 3, 1);
+                }
+                environment.assertCounts("child", 3, 1);
+            }
+            environment.assertCounts("child", 3, 1);
+        }
     }
 
     @Test
@@ -96,7 +121,7 @@ class MessagingMetricsCallbackTest {
             Thread worker = Thread.ofVirtual().unstarted(delivery);
             long before = System.nanoTime();
             try {
-                try (MessagingGraph _ = environment.trigger(false, _ -> {
+                try (MessagingGraph _ = environment.trigger(_ -> {
                     if (!listenerEntered.compareAndSet(false, true)) {
                         return;
                     }
@@ -139,7 +164,7 @@ class MessagingMetricsCallbackTest {
                     child.get().close();
                 }
             }
-            assertThat(environment.meters.meters(), empty());
+            environment.assertCounts("child", 2, 0);
         }
     }
 
@@ -148,7 +173,7 @@ class MessagingMetricsCallbackTest {
         // Bounded deferred observations may be discarded, but processing and the parent's metrics must keep working.
         try (Environment environment = new Environment();
              ChildCallback callback = new ChildCallback(environment, false, 2_000)) {
-            try (MessagingGraph parent = environment.trigger(false, callback).start()) {
+            try (MessagingGraph parent = environment.trigger(callback).start()) {
                 callback.assertCompletedInsideListener();
                 assertThat(callback.deliveries.get(), is(2_000));
                 environment.assertAbsent("child");
@@ -161,7 +186,7 @@ class MessagingMetricsCallbackTest {
                 environment.assertCounts("parent", 1, 0);
                 callback.close();
             }
-            assertThat(environment.meters.meters(), empty());
+            environment.assertCounts("parent", 1, 0);
         }
     }
 
@@ -186,7 +211,7 @@ class MessagingMetricsCallbackTest {
             }, null);
             Thread worker = Thread.ofVirtual().unstarted(task);
             try {
-                try (MessagingGraph parent = environment.trigger(false, _ -> {
+                try (MessagingGraph parent = environment.trigger(_ -> {
                     if (!listenerEntered.compareAndSet(false, true)) {
                         return;
                     }
@@ -230,16 +255,16 @@ class MessagingMetricsCallbackTest {
                 }
                 children.forEach(MessagingGraph::close);
             }
-            assertThat(environment.meters.meters(), empty());
+            environment.assertCounts("parent", 1, 0);
         }
     }
 
     @Test
-    void childClosedBeforeInitializationReplaysCompletedSamplesIntoSharedMeters() throws Exception {
-        // A retired child's completed attempts still contribute when customization gives the parent the same series.
+    void childClosedBeforeInitializationPreservesCompletedSamples() throws Exception {
+        // A closed child's completed attempts still contribute when the parent uses the same channel series.
         try (Environment environment = new Environment();
              ChildCallback callback = new ChildCallback(environment, true, 2, "parent")) {
-            try (MessagingGraph parent = environment.trigger(false, callback).start()) {
+            try (MessagingGraph parent = environment.trigger(callback).start()) {
                 callback.assertCompletedInsideListener();
                 assertThat(callback.deliveries.get(), is(2));
                 environment.assertCounts("parent", 2, 1);
@@ -248,7 +273,7 @@ class MessagingMetricsCallbackTest {
                 parent.emitter(environment.parentChannel).emit("parent-survives-child-close");
                 environment.assertCounts("parent", 3, 1);
             }
-            assertThat(environment.meters.meters(), empty());
+            environment.assertCounts("parent", 3, 1);
         }
     }
 
@@ -258,44 +283,6 @@ class MessagingMetricsCallbackTest {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException(e);
-        }
-    }
-
-    private static void assertCallbackCanAwaitDelivery(boolean removal) throws Exception {
-        try (Environment environment = new Environment();
-             ChildCallback callback = new ChildCallback(environment, false)) {
-            try (MessagingGraph _ = environment.trigger(removal, callback)) {
-                callback.assertCompletedInsideListener();
-                assertThat(callback.deliveries.get(), is(2));
-                environment.assertCounts("child", 2, 1);
-
-                callback.child.get().emitter(callback.channel).emit("after-registration");
-                assertThat(callback.deliveries.get(), is(3));
-                environment.assertCounts("child", 3, 1);
-                callback.close();
-                environment.assertAbsent("child");
-            }
-            assertThat(environment.meters.meters(), empty());
-        }
-    }
-
-    private static void assertCallbackCanAwaitClose(boolean removal) throws Exception {
-        try (Environment environment = new Environment();
-             ChildCallback callback = new ChildCallback(environment, true)) {
-            try (MessagingGraph _ = environment.trigger(removal, callback)) {
-                callback.assertCompletedInsideListener();
-                assertThat(callback.deliveries.get(), is(2));
-                environment.assertAbsent("child");
-
-                MessagingChannel<String> replacementChannel = MessagingChannel.create("child", String.class);
-                try (MessagingGraph replacement = environment.graph(environment.builder().channel(replacementChannel)
-                        .payloadSink(replacementChannel, _ -> { })).start()) {
-                    replacement.emitter(replacementChannel).emit("fresh-generation");
-                    environment.assertCounts("child", 1, 0);
-                }
-                environment.assertAbsent("child");
-            }
-            assertThat(environment.meters.meters(), empty());
         }
     }
 
@@ -450,16 +437,9 @@ class MessagingMetricsCallbackTest {
             return MessagingGraph.builder().serviceRegistry(manager.registry());
         }
 
-        private MessagingGraph trigger(boolean removal, Consumer<Meter> callback) {
-            if (!removal) {
-                meters.onMeterAdded(callback);
-            }
-            MessagingGraph graph = graph(builder().channel(parentChannel).payloadSink(parentChannel, _ -> { }));
-            if (removal) {
-                meters.onMeterRemoved(callback);
-                graph.close();
-            }
-            return graph;
+        private MessagingGraph trigger(Consumer<Meter> callback) {
+            meters.onMeterAdded(callback);
+            return graph(builder().channel(parentChannel).payloadSink(parentChannel, _ -> { }));
         }
 
         private void assertCounts(String channel, long attempts, long failures) {
