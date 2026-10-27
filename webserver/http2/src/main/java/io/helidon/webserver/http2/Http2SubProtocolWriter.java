@@ -56,13 +56,16 @@ abstract class Http2SubProtocolWriter implements Http2StreamWriter {
             return;
         }
 
+        beginTerminalWrite();
         try {
             delegate().write(frame);
+            terminalFrameWritten();
         } catch (RuntimeException | Error e) {
             failPublication();
             throw e;
+        } finally {
+            endTerminalWrite();
         }
-        terminalFrameWritten();
         cleanupAfterLocalClose();
     }
 
@@ -87,13 +90,17 @@ abstract class Http2SubProtocolWriter implements Http2StreamWriter {
             return;
         }
 
+        beginTerminalWrite();
         try {
             connectionWriter.writeData(frame, outboundFlowControl, this::terminalFrameWritten);
         } catch (Http2Exception e) {
+            streamFailed();
             throw e;
         } catch (RuntimeException | Error e) {
             failPublication();
             throw e;
+        } finally {
+            endTerminalWrite();
         }
         cleanupAfterLocalClose();
     }
@@ -124,6 +131,7 @@ abstract class Http2SubProtocolWriter implements Http2StreamWriter {
         }
 
         int written;
+        beginTerminalWrite();
         try {
             written = connectionWriter.writeHeaders(http2Headers,
                                                     streamId,
@@ -133,6 +141,8 @@ abstract class Http2SubProtocolWriter implements Http2StreamWriter {
         } catch (RuntimeException | Error e) {
             failPublication();
             throw e;
+        } finally {
+            endTerminalWrite();
         }
         cleanupAfterLocalClose();
         return written;
@@ -173,6 +183,7 @@ abstract class Http2SubProtocolWriter implements Http2StreamWriter {
         }
 
         int written;
+        beginTerminalWrite();
         try {
             written = connectionWriter.writeHeaders(http2Headers,
                                                     streamId,
@@ -181,10 +192,13 @@ abstract class Http2SubProtocolWriter implements Http2StreamWriter {
                                                     outboundFlowControl,
                                                     this::terminalFrameWritten);
         } catch (Http2Exception e) {
+            streamFailed();
             throw e;
         } catch (RuntimeException | Error e) {
             failPublication();
             throw e;
+        } finally {
+            endTerminalWrite();
         }
         cleanupAfterLocalClose();
         return written;
@@ -193,6 +207,10 @@ abstract class Http2SubProtocolWriter implements Http2StreamWriter {
     abstract Http2StreamWriter delegate();
 
     abstract Http2ConnectionWriter connectionWriter();
+
+    abstract void beginTerminalWrite();
+
+    abstract void endTerminalWrite();
 
     abstract void terminalFrameWritten();
 

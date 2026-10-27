@@ -361,6 +361,20 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
     }
 
     @Override
+    void beginTerminalWrite() {
+        if (transportObservation != null) {
+            transportObservation.beginTerminalWrite();
+        }
+    }
+
+    @Override
+    void endTerminalWrite() {
+        if (transportObservation != null) {
+            transportObservation.endTerminalWrite();
+        }
+    }
+
+    @Override
     void failPublication() {
         streamFailed();
         streamAdmissionGate.fail();
@@ -389,19 +403,24 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         if (!claimSubProtocolReset()) {
             return;
         }
+        beginTerminalWrite();
         try {
-            writer.write(frame);
-        } catch (RuntimeException | Error e) {
-            streamFailed();
-            if (trackedPublication) {
-                streamAdmissionGate.fail();
+            try {
+                writer.write(frame);
+            } catch (RuntimeException | Error e) {
+                streamFailed();
+                if (trackedPublication) {
+                    streamAdmissionGate.fail();
+                }
+                throw e;
+            } finally {
+                flowControl.outbound().streamClosed();
+                locallyResetStreamTracker.localComplete(streamId);
             }
-            throw e;
+            publishSubProtocolReset(trackedPublication);
         } finally {
-            flowControl.outbound().streamClosed();
-            locallyResetStreamTracker.localComplete(streamId);
+            endTerminalWrite();
         }
-        publishSubProtocolReset(trackedPublication);
     }
 
     @Override
@@ -864,6 +883,9 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         Runnable completeRejectedStream = () -> completeRejectedResponse(resetRequestBody,
                                                                          rejectedStreamCompleted,
                                                                          true);
+        if (connectionWriter != null) {
+            beginTerminalWrite();
+        }
         try {
             if (entity.length == 0) {
                 Http2Flag.HeaderFlags flags =
@@ -920,6 +942,10 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                 writeFailure.addSuppressed(cleanupFailure);
             }
             throw writeFailure;
+        } finally {
+            if (connectionWriter != null) {
+                endTerminalWrite();
+            }
         }
         if (!finalInformationalResponse && responseStatus.code() == Status.INTERNAL_SERVER_ERROR_500.code()
                 && (exception.safeMessage() || errorHandling.logAllMessages())) {
@@ -972,26 +998,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         }
 
         try {
-            if (endOfStream && connectionWriter != null) {
-                int written;
-                try {
-                    written = connectionWriter.writeHeaders(http2Headers,
-                                                            streamId,
-                                                            flags,
-                                                            flowControl.outbound(),
-                                                            this::terminalFrameWritten);
-                } catch (RuntimeException | Error e) {
-                    failPublication();
-                    throw e;
-                }
-                cleanupAfterLocalClose();
-                return written;
-            }
-            int written = writer.writeHeaders(http2Headers, streamId, flags, flowControl.outbound());
-            if (endOfStream) {
-                closeFromLocal();
-            }
-            return written;
+            return super.writeHeaders(http2Headers, streamId, flags, flowControl.outbound());
         } catch (UncheckedIOException e) {
             streamFailed();
             throw new ServerConnectionException("Failed to write headers", e);
@@ -1018,22 +1025,11 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                                    bufferData);
         try {
             if (endOfStream && connectionWriter != null) {
-                int written;
-                try {
-                    written = connectionWriter.writeHeaders(http2Headers,
-                                                            streamId,
-                                                            Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
-                                                            frameData,
-                                                            flowControl.outbound(),
-                                                            this::terminalFrameWritten);
-                } catch (Http2Exception e) {
-                    throw e;
-                } catch (RuntimeException | Error e) {
-                    failPublication();
-                    throw e;
-                }
-                cleanupAfterLocalClose();
-                return written;
+                return super.writeHeaders(http2Headers,
+                                          streamId,
+                                          Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                          frameData,
+                                          flowControl.outbound());
             }
             return writer.writeHeaders(http2Headers,
                                        streamId,
@@ -1098,24 +1094,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         try {
             Http2Flag.HeaderFlags flags =
                     Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM);
-            if (connectionWriter != null) {
-                int written;
-                try {
-                    written = connectionWriter.writeHeaders(http2trailers,
-                                                            streamId,
-                                                            flags,
-                                                            flowControl.outbound(),
-                                                            this::terminalFrameWritten);
-                } catch (RuntimeException | Error e) {
-                    failPublication();
-                    throw e;
-                }
-                cleanupAfterLocalClose();
-                return written;
-            }
-            int written = writer.writeHeaders(http2trailers, streamId, flags, flowControl.outbound());
-            closeFromLocal();
-            return written;
+            return super.writeHeaders(http2trailers, streamId, flags, flowControl.outbound());
         } catch (UncheckedIOException e) {
             streamFailed();
             throw new ServerConnectionException("Failed to write trailers", e);
@@ -1236,15 +1215,25 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             return frameData.header().length() + Http2FrameHeader.LENGTH;
         }
         int written;
+        if (endOfStream) {
+            beginTerminalWrite();
+        }
         try {
             written = connectionWriter.writeData(frameData,
                                                  flowControl.outbound(),
                                                  endOfStream ? this::terminalFrameWritten : NO_OP);
         } catch (Http2Exception e) {
+            if (endOfStream) {
+                streamFailed();
+            }
             throw e;
         } catch (RuntimeException | Error e) {
             failPublication();
             throw e;
+        } finally {
+            if (endOfStream) {
+                endTerminalWrite();
+            }
         }
         if (endOfStream) {
             cleanupAfterLocalClose();
@@ -1494,6 +1483,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
         } finally {
             resetCompletionLock.unlock();
         }
+        beginTerminalWrite();
         try {
             writer.write(reset.toFrameData(settings, streamId, Http2Flag.NoFlags.create()));
             if (transportObservation != null) {
@@ -1506,7 +1496,11 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
             }
             throw e;
         } finally {
-            flowControl.outbound().streamClosed();
+            try {
+                flowControl.outbound().streamClosed();
+            } finally {
+                endTerminalWrite();
+            }
         }
     }
 

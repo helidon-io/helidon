@@ -230,7 +230,7 @@ Configuration of a server listener (server socket)
 <td>
 <code>PT0.<wbr>5S</code>
 </td>
-<td>Grace period in ISO 8601 duration format to allow running tasks to complete before listener's shutdown</td>
+<td>Grace period in ISO 8601 duration format to allow running tasks to complete before listener shutdown or teardown of HTTP/2 connections with HTTP transport observation</td>
 </tr>
 <tr>
 <td>

@@ -49,6 +49,7 @@ import io.helidon.http.http2.Http2StreamState;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.HttpTransportObserverSupport.ConnectionObservationContext;
+import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
@@ -117,7 +118,9 @@ class Http2InitialHeadersObservationTest {
         var context = mock(ConnectionContext.class, withSettings().extraInterfaces(ConnectionObservationContext.class));
         when(((ConnectionObservationContext) context).httpTransportObservation()).thenReturn(observation);
         when(context.router()).thenReturn(Router.empty());
-        when(context.listenerContext()).thenReturn(mock(ListenerContext.class));
+        var listenerContext = mock(ListenerContext.class);
+        when(listenerContext.config()).thenReturn(ListenerConfig.create());
+        when(context.listenerContext()).thenReturn(listenerContext);
         when(context.dataWriter()).thenReturn(mock(DataWriter.class));
         when(context.dataReader()).thenReturn(DataReader.create(input::poll));
         when(context.sniContext()).thenReturn(Optional.empty());

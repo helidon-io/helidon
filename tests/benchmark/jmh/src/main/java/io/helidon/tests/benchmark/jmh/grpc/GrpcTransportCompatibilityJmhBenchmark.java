@@ -22,20 +22,38 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.IntStream;
 
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.metrics.api.Tag;
+import io.helidon.service.registry.Services;
 import io.helidon.webclient.grpc.GrpcClient;
 import io.helidon.webclient.grpc.GrpcClientMethodDescriptor;
 import io.helidon.webclient.grpc.GrpcServiceClient;
 import io.helidon.webclient.grpc.GrpcServiceDescriptor;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.grpc.GrpcConfig;
+import io.helidon.webserver.grpc.GrpcProtocolSelector;
 import io.helidon.webserver.grpc.GrpcRouting;
+import io.helidon.webserver.http1.Http1Config;
+import io.helidon.webserver.http1.Http1ConnectionSelector;
+import io.helidon.webserver.http2.Http2Config;
+import io.helidon.webserver.http2.Http2ConnectionSelector;
+import io.helidon.webserver.http2.Http2Upgrader;
+import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig;
+import io.helidon.webserver.observe.metrics.MetricsObserver;
 
 import io.grpc.CallOptions;
 import io.grpc.Channel;
@@ -75,6 +93,13 @@ public class GrpcTransportCompatibilityJmhBenchmark {
     private static final String EARLY_CLOSE = "EarlyClose";
     private static final int MESSAGE_COUNT = 8;
 
+    private static final MetricsFactory METRICS_FACTORY = Services.get(MetricsFactory.class);
+    private static final List<Tag> COMPLETED_STREAM_TAGS = List.of(METRICS_FACTORY.tagCreate("role", "server"),
+                                                                  METRICS_FACTORY.tagCreate("protocol", "http/2"),
+                                                                  METRICS_FACTORY.tagCreate("direction", "bidi"),
+                                                                  METRICS_FACTORY.tagCreate("initiator", "remote"),
+                                                                  METRICS_FACTORY.tagCreate("outcome", "completed"));
+
     private final ReentrantLock callStartupLock = new ReentrantLock();
 
     @Param({"65530", "65531", "131072"})
@@ -83,6 +108,11 @@ public class GrpcTransportCompatibilityJmhBenchmark {
     @Param({"false", "true"})
     private boolean deadlineEnabled;
 
+    /** Whether the server publishes automatic HTTP transport metrics. */
+    @Param({"false", "true"})
+    private boolean transportMetrics;
+
+    private MeterRegistry registry;
     private byte[] payload;
     private WebServer server;
     private GrpcClient grpcClient;
@@ -105,10 +135,7 @@ public class GrpcTransportCompatibilityJmhBenchmark {
                            ServerCalls.asyncBidiStreamingCall(this::bidirectional))
                 .build();
 
-        server = WebServer.builder()
-                .addRouting(GrpcRouting.builder().service(service))
-                .build()
-                .start();
+        setupServer(service);
 
         grpcClient = GrpcClient.builder()
                 .baseUri("http://localhost:" + server.port())
@@ -137,11 +164,16 @@ public class GrpcTransportCompatibilityJmhBenchmark {
                                                               clientMethod(BIDIRECTIONAL,
                                                                            MethodDescriptor.MethodType.BIDI_STREAMING))
                                                    .build());
+        verifyCompletedStreams();
     }
 
     @TearDown
     public void tearDown() {
-        server.stop();
+        try {
+            verifyCompletedStreams();
+        } finally {
+            closeResources();
+        }
     }
 
     @Benchmark
@@ -209,6 +241,101 @@ public class GrpcTransportCompatibilityJmhBenchmark {
             throw new IllegalStateException("Call closed before first response: " + status.get());
         }
         blackhole.consume(firstResponse);
+    }
+
+    private void setupServer(ServerServiceDefinition service) {
+        registry = METRICS_FACTORY.createMeterRegistry(MetricsConfig.builder()
+                                                              .warnOnMultipleRegistries(false)
+                                                              .build());
+        Http2Config http2Config = Http2Config.create();
+        var serverBuilder = WebServer.builder()
+                .featuresDiscoverServices(false)
+                .protocolsDiscoverServices(false)
+                .addConnectionSelector(Http2ConnectionSelector.builder()
+                                               .http2Config(http2Config)
+                                               .addSubProtocolSelector(GrpcProtocolSelector.create(GrpcConfig.create()))
+                                               .build())
+                .addConnectionSelector(Http1ConnectionSelector.builder()
+                                               .config(Http1Config.create())
+                                               .addUpgrader(Http2Upgrader.create(http2Config))
+                                               .build())
+                .addRouting(GrpcRouting.builder().service(service));
+        if (transportMetrics) {
+            serverBuilder.addFeature(ObserveFeature.builder()
+                                             .observersDiscoverServices(false)
+                                             .addObserver(MetricsObserver.builder()
+                                                                  .meterRegistry(registry)
+                                                                  .autoHttpMetrics(AutoHttpMetricsConfig.builder()
+                                                                                           .enabled(true)
+                                                                                           .build())
+                                                                  .build())
+                                             .build());
+        }
+        server = serverBuilder.build();
+        server.start();
+    }
+
+    private void verifyCompletedStreams() {
+        // Exercise both completed streaming workflows outside the timed methods, including in cancellation campaigns.
+        long completed = completedStreamCount();
+        Iterator<byte[]> responses = client.serverStream(SERVER_STREAMING, payload);
+        int responseCount = 0;
+        while (responses.hasNext()) {
+            verifyResponse(responses.next());
+            responseCount++;
+        }
+        if (responseCount != MESSAGE_COUNT) {
+            throw new IllegalStateException("Expected " + MESSAGE_COUNT + " server-streaming responses, received " + responseCount);
+        }
+        verifyCompletedStreamAdvanced(completed, SERVER_STREAMING);
+        completed = completedStreamCount();
+        verifyResponse(client.clientStream(CLIENT_STREAMING, requests()));
+        verifyCompletedStreamAdvanced(completed, CLIENT_STREAMING);
+    }
+
+    private void verifyResponse(byte[] response) {
+        if (!Arrays.equals(payload, response)) {
+            throw new IllegalStateException("Unexpected gRPC streaming response payload");
+        }
+    }
+
+    private void verifyCompletedStreamAdvanced(long previous, String methodName) {
+        if (!transportMetrics) {
+            if (registry.meters().stream().anyMatch(meter -> meter.id().name().startsWith("helidon.http."))) {
+                throw new IllegalStateException("Unexpected HTTP transport meters with transportMetrics=false");
+            }
+            return;
+        }
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        while (completedStreamCount() <= previous) {
+            if (Thread.currentThread().isInterrupted() || System.nanoTime() >= deadline) {
+                throw new IllegalStateException("Server HTTP/2 completed stream counter did not advance for " + methodName
+                                                        + "; previous=" + previous + ", actual=" + completedStreamCount());
+            }
+            LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1));
+        }
+    }
+
+    private long completedStreamCount() {
+        return registry.counter("helidon.http.streams.closed", COMPLETED_STREAM_TAGS).map(Counter::count).orElse(0L);
+    }
+
+    private void closeResources() {
+        try {
+            if (grpcClient != null) {
+                grpcClient.closeResourceAsync().toCompletableFuture().orTimeout(10, TimeUnit.SECONDS).join();
+            }
+        } finally {
+            try {
+                if (server != null) {
+                    server.stop();
+                }
+            } finally {
+                if (registry != null) {
+                    registry.close();
+                }
+            }
+        }
     }
 
     private void sendResponses(StreamObserver<byte[]> observer) {
