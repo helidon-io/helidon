@@ -24,94 +24,12 @@
         <version>27.0.2-SNAPSHOT</version>
     </parent>
 
-    <artifactId>helidon-tests-integration-data-jdbc-common</artifactId>
-    <name>Helidon Tests Integration Data JDBC Common</name>
+    <artifactId>helidon-tests-integration-data-jdbc-common-project</artifactId>
+    <packaging>pom</packaging>
+    <name>Helidon Tests Integration Data JDBC Common Project</name>
 
-    <dependencies>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.common</groupId>
-            <artifactId>helidon-common-types</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.data</groupId>
-            <artifactId>helidon-data</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.data.jdbc</groupId>
-            <artifactId>helidon-data-jdbc</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.service</groupId>
-            <artifactId>helidon-service-registry</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.transaction</groupId>
-            <artifactId>helidon-transaction</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <compilerArgs combine.children="append">
-                        <arg>-Ahelidon.api.incubating=ignore</arg>
-                    </compilerArgs>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>io.helidon.codegen</groupId>
-                            <artifactId>helidon-codegen-apt</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.codegen</groupId>
-                            <artifactId>helidon-codegen-helidon-copyright</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.codegen</groupId>
-                            <artifactId>helidon-codegen-api-stability</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.service</groupId>
-                            <artifactId>helidon-service-codegen</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.data.codegen</groupId>
-                            <artifactId>helidon-data-codegen</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                        <path>
-                            <groupId>io.helidon.data.jdbc</groupId>
-                            <artifactId>helidon-data-jdbc-codegen</artifactId>
-                            <version>${helidon.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>io.helidon.data.jdbc</groupId>
-                        <artifactId>helidon-data-jdbc-codegen</artifactId>
-                        <version>${helidon.version}</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
-        </plugins>
-    </build>
+    <modules>
+        <module>application</module>
+        <module>fixtures</module>
+    </modules>
 </project>
