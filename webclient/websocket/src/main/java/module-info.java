@@ -27,9 +27,9 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.webclient.websocket {
 
     requires io.helidon.webclient;
+    requires transitive io.helidon.common;
     requires transitive io.helidon.websocket;
 
-    requires static io.helidon.common;
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 
