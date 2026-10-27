@@ -401,7 +401,13 @@ final class Activators {
                 if (activationInterruptedLocked(response)) {
                     return false;
                 }
-                if (phase == ActivationPhase.POST_CONSTRUCTING) {
+                if (phase == ActivationPhase.CONSTRUCTING) {
+                    // A later activation request may restart construction after a staged activation. Cleanup ownership
+                    // belongs to the current attempt, so earlier completion must not make shutdown wait for this one.
+                    postConstructCompleted = false;
+                    postConstructCleanupRequired = false;
+                    activationCleanupPending = false;
+                } else if (phase == ActivationPhase.POST_CONSTRUCTING) {
                     postConstructCleanupRequired = response.targetActivationPhase().ordinal() > phase.ordinal();
                 }
                 stateTransitionStart(response, phase);

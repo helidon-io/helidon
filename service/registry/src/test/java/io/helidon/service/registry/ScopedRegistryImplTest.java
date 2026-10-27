@@ -67,6 +67,15 @@ class ScopedRegistryImplTest {
                         dynamicTest("shutdown interrupts injection",
                                     () -> withDebug(debug, () -> inProgressInitActivatorIsDestroyedDuringShutdown(
                                             ActivationPhase.INJECTING, ActivationPhase.ACTIVE, false))),
+                        dynamicTest("shutdown interrupts staged construction",
+                                    () -> withDebug(debug, () -> stagedActivationIsInterruptedDuringShutdown(
+                                            ActivationPhase.CONSTRUCTING))),
+                        dynamicTest("shutdown interrupts staged injection",
+                                    () -> withDebug(debug, () -> stagedActivationIsInterruptedDuringShutdown(
+                                            ActivationPhase.INJECTING))),
+                        dynamicTest("shutdown reports unresolved staged post construction",
+                                    () -> withDebug(debug, () -> stagedActivationIsInterruptedDuringShutdown(
+                                            ActivationPhase.POST_CONSTRUCTING))),
                         dynamicTest("shutdown reports unresolved cleanup during full post construction",
                                     () -> withDebug(debug, () -> inProgressInitActivatorIsDestroyedDuringShutdown(
                                             ActivationPhase.POST_CONSTRUCTING, ActivationPhase.ACTIVE, true))),
@@ -359,6 +368,106 @@ class ScopedRegistryImplTest {
 
     private void completedPostConstructIsPreDestroyedDuringShutdown() throws InterruptedException {
         completedCallbackIsDeactivatedDuringShutdown(ActivationPhase.POST_CONSTRUCTING, ActivationPhase.ACTIVE, 1, 1, null);
+    }
+
+    private void stagedActivationIsInterruptedDuringShutdown(ActivationPhase blockedPhase) throws InterruptedException {
+        CountDownLatch callbackStarted = new CountDownLatch(1);
+        CountDownLatch shutdownCompleted = new CountDownLatch(1);
+        AtomicBoolean secondActivation = new AtomicBoolean();
+        Consumer<ActivationPhase> callback = phase -> {
+            if (!secondActivation.get() || phase != blockedPhase) {
+                return;
+            }
+            callbackStarted.countDown();
+            try {
+                // The test's finally block releases this wait if shutdown incorrectly waits for the callback.
+                shutdownCompleted.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new AssertionError(e);
+            }
+        };
+        ScopedRegistryImpl registry = registry();
+        LifecycleActivator activator = new LifecycleActivator(PENDING_DESCRIPTOR) {
+            @Override
+            void construct(ActivationResult.Builder response) {
+                callback.accept(ActivationPhase.CONSTRUCTING);
+            }
+
+            @Override
+            void inject(ActivationResult.Builder response) {
+                callback.accept(ActivationPhase.INJECTING);
+            }
+
+            @Override
+            void postConstruct(ActivationResult.Builder response) {
+                callback.accept(ActivationPhase.POST_CONSTRUCTING);
+            }
+        };
+        registry.activator(activator.descriptor(), () -> activator);
+        ActivationResult firstResult = activator.activate(ActivationRequest.builder()
+                                                                 .targetPhase(ActivationPhase.ACTIVATION_FINISHING)
+                                                                 .build());
+        assertThat("first activation succeeded", firstResult.success(), is(true));
+        assertThat("first activation reached its target", activator.phase(), is(ActivationPhase.ACTIVATION_FINISHING));
+        secondActivation.set(true);
+
+        AtomicReference<ActivationResult> activationResult = new AtomicReference<>();
+        AtomicReference<Throwable> activationFailure = new AtomicReference<>();
+        Thread activationThread = Thread.ofVirtual()
+                .name("staged-service-activation")
+                .unstarted(() -> {
+                    try {
+                        activationResult.set(activator.activate(ActivationRequest.builder()
+                                                                                .targetPhase(ActivationPhase.ACTIVE)
+                                                                                .build()));
+                    } catch (Throwable t) {
+                        activationFailure.set(t);
+                    }
+                });
+        AtomicReference<Throwable> shutdownFailure = new AtomicReference<>();
+        Thread shutdownThread = Thread.ofVirtual()
+                .name("staged-scoped-registry-shutdown")
+                .unstarted(() -> {
+                    try {
+                        registry.deactivate();
+                    } catch (Throwable t) {
+                        shutdownFailure.set(t);
+                    } finally {
+                        shutdownCompleted.countDown();
+                    }
+                });
+
+        activationThread.start();
+        try {
+            assertThat("second activation entered callback", callbackStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS), is(true));
+            assertThat("second activation callback phase", activator.phase(), is(blockedPhase));
+            shutdownThread.start();
+            assertThat("shutdown completes while the second activation waits for it",
+                       shutdownCompleted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS),
+                       is(true));
+        } finally {
+            shutdownCompleted.countDown();
+            activationThread.join(TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS));
+            shutdownThread.join(TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS));
+        }
+
+        assertThat("activation completed", activationThread.isAlive(), is(false));
+        assertThat("shutdown completed", shutdownThread.isAlive(), is(false));
+        assertThat("activation failure", activationFailure.get(), nullValue());
+        assertThat("activation result", activationResult.get(), notNullValue());
+        assertThat("second activation interrupted", activationResult.get().failure(), is(true));
+        if (blockedPhase == ActivationPhase.POST_CONSTRUCTING) {
+            assertThat("shutdown reports unresolved cleanup", shutdownFailure.get(), instanceOf(ServiceRegistryException.class));
+            Throwable[] failures = shutdownFailure.get().getSuppressed();
+            assertThat("unresolved cleanup failures", failures.length, is(1));
+            assertThat(failures[0].getMessage(), containsString("Cannot assure cleanup after interrupted post construction"));
+        } else {
+            assertThat("shutdown failure", shutdownFailure.get(), nullValue());
+        }
+        assertThat("incomplete second activation skips pre destroy", activator.preDestroyInvocations(), is(0));
+        assertThat("terminal phase", activator.phase(), is(ActivationPhase.DESTROYED));
+        registry.deactivate();
     }
 
     private void shutdownAtPostConstructHandoff(Throwable cleanupFailure) {
