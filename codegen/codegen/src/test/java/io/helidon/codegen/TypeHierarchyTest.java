@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import io.helidon.codegen.spi.AnnotationMapper;
 import io.helidon.codegen.spi.ElementMapper;
@@ -34,6 +35,9 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
@@ -369,35 +373,30 @@ class TypeHierarchyTest {
         assertThat(TypeHierarchy.nestedAnnotations(CTX, implementation), hasItem(NOT_BLANK));
     }
 
-    @Test
-    void mergeHierarchyAnnotationsIncludesGenericContractTypeUseAnnotations() {
+    @ParameterizedTest
+    @MethodSource("genericContractTypes")
+    void mergeHierarchyAnnotationsIncludesGenericContractTypeUseAnnotations(TypeName typeVariable,
+                                                                            TypeName annotatedType,
+                                                                            TypeName plainType) {
         Annotation notBlank = Annotation.create(NOT_BLANK);
-        TypeName typeVariable = TypeName.createFromGenericDeclaration("T");
         TypeName contractType = TypeName.create("io.helidon.codegen.test.GenericContract");
         TypeName declaredContract = TypeName.builder(contractType)
-                .addTypeParameter("T")
+                .addTypeParameter(typeVariable.resolvedName())
                 .addTypeArgument(typeVariable)
                 .build();
         TypeName implementedContract = TypeName.builder(contractType)
-                .addTypeArgument(TypeNames.STRING)
-                .build();
-        TypeName annotatedList = TypeName.builder(TypeNames.LIST)
-                .addTypeArgument(TypeName.builder(typeVariable)
-                                         .addAnnotation(notBlank)
-                                         .build())
-                .build();
-        TypeName plainList = TypeName.builder(TypeNames.LIST)
                 .addTypeArgument(TypeNames.STRING)
                 .build();
         TypedElementInfo contractMethod = TypedElementInfo.builder()
                 .kind(ElementKind.METHOD)
                 .accessModifier(AccessModifier.PUBLIC)
                 .elementName("validate")
-                .typeName(TypeNames.PRIMITIVE_VOID)
+                .typeName(annotatedType)
+                .addAnnotation(notBlank)
                 .addParameterArgument(TypedElementInfo.builder()
                                               .kind(ElementKind.PARAMETER)
                                               .elementName("value")
-                                              .typeName(annotatedList)
+                                              .typeName(annotatedType)
                                               .build())
                 .build();
         TypeInfo contract = TypeInfo.builder()
@@ -410,11 +409,11 @@ class TypeHierarchyTest {
                 .kind(ElementKind.METHOD)
                 .accessModifier(AccessModifier.PUBLIC)
                 .elementName("validate")
-                .typeName(TypeNames.PRIMITIVE_VOID)
+                .typeName(plainType)
                 .addParameterArgument(TypedElementInfo.builder()
                                               .kind(ElementKind.PARAMETER)
                                               .elementName("value")
-                                              .typeName(plainList)
+                                              .typeName(plainType)
                                               .build())
                 .build();
         TypeInfo implementation = TypeInfo.builder()
@@ -427,7 +426,10 @@ class TypeHierarchyTest {
         TypedElementInfo merged = TypeHierarchy.mergeHierarchyAnnotations(implementation, implementationMethod);
 
         TypeName mergedType = merged.parameterArguments().getFirst().typeName();
-        assertThat(mergedType.typeArguments().getFirst().annotations(), hasItem(notBlank));
+        assertThat(merged.annotations(), hasItem(notBlank));
+        assertThat(mergedType.resolvedName(), is(plainType.resolvedName()));
+        assertThat(TypeHierarchy.typeNameAnnotations(mergedType), hasItem(notBlank));
+        assertThat(TypeHierarchy.typeNameAnnotations(merged.typeName()), hasItem(notBlank));
         assertThat(TypeHierarchy.nestedAnnotations(CTX, implementation), hasItem(NOT_BLANK));
     }
 
@@ -637,6 +639,48 @@ class TypeHierarchyTest {
 
         assertThat(merged.typeParameters(), is(List.of("T")));
         assertThat(merged.typeArguments().getFirst().annotations(), hasItem(notBlank));
+    }
+
+    private static Stream<Arguments> genericContractTypes() {
+        TypeName variable = TypeName.builder(TypeName.createFromGenericDeclaration("T"))
+                .addAnnotation(Annotation.create(NOT_BLANK))
+                .build();
+        TypeName bounded = TypeName.builder(variable)
+                .addUpperBound(TypeName.create(CharSequence.class))
+                .build();
+        TypeName list = TypeName.builder(TypeNames.LIST).addTypeArgument(variable).build();
+        TypeName stringList = TypeName.builder(TypeNames.LIST).addTypeArgument(TypeNames.STRING).build();
+        TypeName wildcardArray = TypeName.builder(arrayOf(variable)).wildcard(true).build();
+        TypeName stringArrayWildcard = TypeName.create("? extends java.lang.String[]");
+        TypeName wildcardStringList = TypeName.builder(TypeNames.LIST)
+                .addTypeArgument(stringArrayWildcard)
+                .build();
+        return Stream.of(
+                Arguments.of(variable, list, stringList),
+                Arguments.of(bounded, bounded, TypeNames.STRING),
+                Arguments.of(bounded, TypeName.builder(TypeNames.LIST).addTypeArgument(bounded).build(), stringList),
+                Arguments.of(variable, arrayOf(variable), arrayOf(TypeNames.STRING)),
+                Arguments.of(bounded, arrayOf(bounded), arrayOf(TypeNames.STRING)),
+                Arguments.of(variable, arrayOf(arrayOf(variable)), arrayOf(arrayOf(TypeNames.STRING))),
+                Arguments.of(variable, arrayOf(list), arrayOf(stringList)),
+                Arguments.of(variable,
+                             TypeName.builder(TypeNames.LIST).addTypeArgument(wildcardArray).build(),
+                             wildcardStringList),
+                Arguments.of(variable,
+                             TypeName.builder(TypeNames.LIST)
+                                     .addTypeArgument(TypeName.builder(stringArrayWildcard)
+                                                              .addAnnotation(Annotation.create(NOT_BLANK))
+                                                              .build())
+                                     .build(),
+                             wildcardStringList),
+                Arguments.of(variable, TypeName.builder(arrayOf(variable)).vararg(true).build(), arrayOf(TypeNames.STRING)));
+    }
+
+    private static TypeName arrayOf(TypeName component) {
+        return TypeName.builder(component)
+                .array(true)
+                .componentType(component)
+                .build();
     }
 
     private static final class EmptyCodegenContext implements CodegenContext {

@@ -891,11 +891,21 @@ public final class TypeHierarchy {
             return typeName;
         }
 
+        if (typeName.array() && !typeName.wildcard() && typeName.componentType().isPresent()) {
+            TypeName component = substituteTypeParameters(typeName.componentType().orElseThrow(), substitutions);
+            return TypeName.builder(component)
+                    .array(true)
+                    .vararg(typeName.vararg())
+                    .componentType(component)
+                    .annotations(typeName.annotations())
+                    .inheritedAnnotations(typeName.inheritedAnnotations())
+                    .build();
+        }
+
         TypeName replacement = typeName.generic()
+                && !typeName.wildcard()
                 && !typeName.array()
                 && typeName.typeArguments().isEmpty()
-                && typeName.lowerBounds().isEmpty()
-                && typeName.upperBounds().isEmpty()
                 && typeName.componentType().isEmpty()
                 ? substitutions.get(typeName.className())
                 : null;

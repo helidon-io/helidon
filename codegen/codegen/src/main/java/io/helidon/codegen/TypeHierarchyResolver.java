@@ -209,6 +209,16 @@ public class TypeHierarchyResolver {
     }
 
     private static TypeName substitute(TypeName type, Map<String, TypeName> substitutions) {
+        if (type.array() && !type.wildcard() && type.componentType().isPresent()) {
+            TypeName component = substitute(type.componentType().orElseThrow(), substitutions);
+            return TypeName.builder(component)
+                    .array(true)
+                    .vararg(type.vararg())
+                    .componentType(component)
+                    .annotations(type.annotations())
+                    .inheritedAnnotations(type.inheritedAnnotations())
+                    .build();
+        }
         TypeName replacement = typeVariable(type)
                 ? substitutions.get(genericName(type.className()))
                 : null;
