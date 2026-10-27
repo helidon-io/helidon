@@ -190,30 +190,6 @@ public interface MeterRegistry extends Wrapper {
     <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder);
 
     /**
-     * Locates or registers a meter and reports ownership of a newly registered instance.
-     * Providers supporting creation notifications invoke {@code onCreate} only when this invocation creates the meter,
-     * before invoking general meter-added listeners. The callback can therefore retain the newly registered instance
-     * even if a subsequent listener throws. No notification is delivered for a previously registered meter.
-     * Providers may omit notification when they cannot establish that this invocation created the instance,
-     * for example when provider-native extensions transform registration identity. Such an instance is borrowed.
-     * <p>
-     * The default implementation delegates to {@link #getOrCreate(Meter.Builder)} without invoking the callback.
-     * Callers must treat an instance returned without notification as borrowed.
-     *
-     * @param builder builder to use in finding or creating a meter
-     * @param onCreate callback for a newly registered instance
-     * @param <B> builder for the meter
-     * @param <M> type of the meter
-     * @return the previously registered or newly registered meter
-     * @since 28.0.0
-     */
-    default <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder, Consumer<M> onCreate) {
-        Objects.requireNonNull(builder);
-        Objects.requireNonNull(onCreate);
-        return getOrCreate(builder);
-    }
-
-    /**
      * Locates a previously-registered counter.
      *
      * @param name name to match
@@ -273,11 +249,7 @@ public interface MeterRegistry extends Wrapper {
     <M extends Meter> Optional<M> meter(Class<M> mClass, String name, Iterable<Tag> tags);
 
     /**
-     * Removes a previously registered meter only if the specified instance is still registered.
-     * A replacement with the same ID is not removed. Use {@link #remove(Meter.Id)} to remove whichever instance
-     * is currently registered under an ID.
-     * This comparison is atomic with other operations through this registry API; concurrent mutations through
-     * an unwrapped provider-native registry follow that provider's own concurrency rules.
+     * Removes a previously-registered meter.
      *
      * @param meter the meter to remove
      * @return the removed meter; empty if the meter is not currently registered

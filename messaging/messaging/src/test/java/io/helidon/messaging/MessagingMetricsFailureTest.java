@@ -19,7 +19,6 @@ package io.helidon.messaging;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Consumer;
 
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Meter;
@@ -37,7 +36,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -48,17 +46,17 @@ class MessagingMetricsFailureTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    void fatalCounterRegistrationReleasesInsertedMeters(boolean beforeInsertion) {
-        // Both a provider failure and an add-listener failure must roll back this graph's partial registration.
+    void fatalCounterRegistrationPreservesSeriesForLaterGraphs(boolean beforeInsertion) {
+        // A fatal registration failure propagates, but registry-owned series remain available to a later graph.
         try (Environment environment = new Environment(beforeInsertion)) {
             AssertionError thrown = assertThrows(AssertionError.class, environment::graph);
 
             assertThat(thrown, sameInstance(environment.failure));
             assertThat(environment.additions, hasSize(beforeInsertion ? 1 : 2));
             assertThat(environment.additions.getFirst().id().name(), is(DURATION));
-            assertThat(environment.meters.meters(), empty());
+            assertThat(environment.meters.meters(), hasSize(beforeInsertion ? 1 : 2));
             for (Meter meter : environment.additions) {
-                assertThat(environment.meters.isDeleted(meter), is(true));
+                assertThat(environment.meters.isDeleted(meter), is(false));
             }
 
             try (MessagingGraph graph = environment.graph().start()) {
@@ -66,7 +64,7 @@ class MessagingMetricsFailureTest {
                 assertThat(environment.meters.timer(DURATION, environment.tags).orElseThrow().count(), is(1L));
                 assertThat(environment.meters.counter(FAILURES, environment.tags).orElseThrow().count(), is(0L));
             }
-            assertThat(environment.meters.meters(), empty());
+            assertThat(environment.meters.meters(), hasSize(2));
         }
     }
 
@@ -91,16 +89,11 @@ class MessagingMetricsFailureTest {
                     ? new DelegatingMeterRegistry(meters) {
                         @Override
                         public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder) {
-                            return getOrCreate(builder, _ -> { });
-                        }
-
-                        @Override
-                        public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder, Consumer<M> onCreate) {
                             if (builder instanceof Counter.Builder && builder.name().equals(FAILURES)
                                     && fail.compareAndSet(true, false)) {
                                 throw failure;
                             }
-                            return super.getOrCreate(builder, onCreate);
+                            return super.getOrCreate(builder);
                         }
                     }
                     : meters;

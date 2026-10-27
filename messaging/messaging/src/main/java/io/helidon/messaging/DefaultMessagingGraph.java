@@ -1184,28 +1184,14 @@ final class DefaultMessagingGraph implements MessagingGraph {
     }
 
     private void publishShutdownCompletion(Throwable shutdownFailure) {
-        Throwable completionFailure = shutdownFailure;
-        try {
-            invokeLifecycleCallback(metrics::close);
-        } catch (Error e) {
-            completionFailure = e;
-            lifecycleLock.lock();
-            try {
-                failure = e;
-                changeState(State.FAILED);
-            } finally {
-                lifecycleLock.unlock();
-            }
-            throw e;
-        } finally {
-            if (closeRequested.get()) {
-                health.close();
-            }
-            if (completionFailure == null) {
-                shutdownCompletion.complete(null);
-            } else {
-                shutdownCompletion.completeExceptionally(completionFailure);
-            }
+        metrics.close();
+        if (closeRequested.get()) {
+            health.close();
+        }
+        if (shutdownFailure == null) {
+            shutdownCompletion.complete(null);
+        } else {
+            shutdownCompletion.completeExceptionally(shutdownFailure);
         }
     }
 

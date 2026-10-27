@@ -43,7 +43,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 import static io.helidon.health.HealthCheckResponse.Status.DOWN;
 import static io.helidon.health.HealthCheckResponse.Status.UP;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -78,7 +77,9 @@ class MessagingRuntimeRegistryTest {
             assertThat(second.attempts(), is(2L));
             assertThat(first.readiness(), is(UP));
             first.manager.shutdown();
-            assertThat(first.meters.meters(), empty());
+            // Closing the application runtime retires health membership; its externally owned meter registry keeps totals.
+            assertThat(first.attempts(), is(1L));
+            assertThat(first.readiness(), is(UP));
             assertThat(second.attempts(), is(2L));
             assertThat(second.readiness(), is(UP));
         }

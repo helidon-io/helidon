@@ -65,12 +65,24 @@ public class MessagingObservabilityJmhBenchmark {
     }
 
     @Benchmark
-    public MessagingGraph constructAndClose(ConstructionState state) {
-        MessagingConfig.Builder builder = state.environment.builder();
-        for (MessagingChannel<String> channel : state.channels) {
+    public MessagingGraph constructAndCloseWithRegisteredMeters(RegisteredMetersState state) {
+        return constructAndClose(state.environment, state.channels);
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.SingleShotTime)
+    @Warmup(iterations = 5, batchSize = 1)
+    @Measurement(iterations = 8, batchSize = 1)
+    public MessagingGraph constructAndCloseWithNewMeters(NewMetersState state) {
+        return constructAndClose(state.environment, state.channels);
+    }
+
+    private static MessagingGraph constructAndClose(Environment environment, List<MessagingChannel<String>> channels) {
+        MessagingConfig.Builder builder = environment.builder();
+        for (MessagingChannel<String> channel : channels) {
             builder.channel(channel).payloadSink(channel, _ -> { });
         }
-        MessagingGraph graph = state.environment.graph(builder);
+        MessagingGraph graph = environment.graph(builder);
         graph.close();
         return graph;
     }
@@ -137,7 +149,7 @@ public class MessagingObservabilityJmhBenchmark {
     }
 
     @State(Scope.Thread)
-    public static class ConstructionState {
+    public static class RegisteredMetersState {
         @Param({"enabled", "disabled"})
         public String metrics;
 
@@ -173,6 +185,41 @@ public class MessagingObservabilityJmhBenchmark {
         }
     }
 
+    @State(Scope.Thread)
+    public static class NewMetersState {
+        @Param({"enabled", "disabled"})
+        public String metrics;
+
+        @Param({"1", "64"})
+        public int channelCount;
+
+        @Param({"0", "4096"})
+        public int unrelatedMeters;
+
+        private Environment environment;
+        private List<MessagingChannel<String>> channels;
+
+        @Setup(Level.Iteration)
+        public void setUp() {
+            environment = new Environment(metrics, unrelatedMeters);
+            channels = new ArrayList<>(channelCount);
+            for (int i = 0; i < channelCount; i++) {
+                channels.add(MessagingChannel.create("channel-" + i, String.class));
+            }
+            environment.verifyMeters(0);
+        }
+
+        @TearDown(Level.Iteration)
+        public void tearDown() {
+            try {
+                // Single-shot iterations construct exactly one graph in a registry without matching channel meters.
+                environment.verifyMeters(channelCount);
+            } finally {
+                environment.close();
+            }
+        }
+    }
+
     static final class Environment implements AutoCloseable {
         private final ServiceRegistryManager factoryServices;
         private final ServiceRegistryManager services;
@@ -182,12 +229,12 @@ public class MessagingObservabilityJmhBenchmark {
         private final int unrelatedMeters;
         private final boolean enabled;
 
+        private int registeredChannels;
+
         Environment(String metrics, int unrelatedMeters) {
             this.unrelatedMeters = unrelatedMeters;
             enabled = metrics.equals("enabled");
-            config = Config.just(ConfigSources.create(Map.of("enable-metrics", Boolean.toString(!metrics.equals("disabled")),
-                                                             "enable-health", "false",
-                                                             "metrics.enabled", Boolean.toString(!metrics.equals("disabled")),
+            config = Config.just(ConfigSources.create(Map.of("metrics.enabled", Boolean.toString(!metrics.equals("disabled")),
                                                              "health.enabled", "false")));
             factoryServices = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
                                                                     .discoverServices(false)
@@ -220,9 +267,7 @@ public class MessagingObservabilityJmhBenchmark {
         @Override
         public void close() {
             try {
-                if (registry != null && registry.meters().size() != unrelatedMeters) {
-                    throw new IllegalStateException("Graph close left messaging meters registered");
-                }
+                verifyMeters(registeredChannels);
             } finally {
                 try {
                     services.shutdown();
@@ -260,6 +305,7 @@ public class MessagingObservabilityJmhBenchmark {
             if (registry != null && registry.meters().size() != unrelatedMeters + (enabled ? 2 * channels : 0)) {
                 throw new IllegalStateException("Metrics mode did not register the expected meters in the supplied registry");
             }
+            registeredChannels = channels;
         }
     }
 }

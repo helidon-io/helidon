@@ -17,13 +17,11 @@
 package io.helidon.messaging;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
@@ -45,12 +43,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 
 @Timeout(60)
-class MessagingMetricsOwnershipTest {
+class MessagingMetricsRegistrationTest {
     private static final String DURATION = "messaging.processing.duration";
 
     @Test
-    void applicationRegistrationRacingGraphConstructionRemainsBorrowed() throws Exception {
-        // The application wins immediately before getOrCreate; only the provider can decide who created the timer.
+    void applicationRegistrationRacingGraphConstructionSharesTheSameSeries() throws Exception {
+        // Pause graph registration, create the timer in the application, then resume and deliver once.
+        // Closing the graph must preserve the application timer and its recorded count.
         try (Environment environment = new Environment();
              var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             environment.registry.pauseRegistration.set(true);
@@ -63,28 +62,6 @@ class MessagingMetricsOwnershipTest {
                     graph.emitter(environment.channel).emit("delivered");
                     assertThat(application.count(), is(1L));
                 }
-                environment.assertApplicationTimer(application);
-            } finally {
-                environment.registry.resume.countDown();
-            }
-        }
-    }
-
-    @Test
-    void applicationReplacementRacingGraphCloseIsPreserved() throws Exception {
-        // A replacement appears after messaging selected its old handle but before provider removal acquires its lock.
-        try (Environment environment = new Environment();
-             var executor = Executors.newVirtualThreadPerTaskExecutor()) {
-            MessagingGraph graph = environment.graph(1);
-            Timer original = environment.nativeRegistry.timer(DURATION, environment.tags).orElseThrow();
-            environment.registry.pauseRemoval.set(true);
-            var closing = executor.submit(graph::close);
-            try {
-                await(environment.registry.entered);
-                environment.nativeRegistry.remove(original);
-                Timer application = environment.createTimer();
-                environment.registry.resume.countDown();
-                closing.get(30, TimeUnit.SECONDS);
                 environment.assertApplicationTimer(application);
             } finally {
                 environment.registry.resume.countDown();
@@ -105,7 +82,7 @@ class MessagingMetricsOwnershipTest {
                 assertThat(environment.nativeRegistry.meters(), hasSize(256 + 2 * channelCount));
             }
             assertThat(environment.registry.enumerations.get(), is(0));
-            assertThat(environment.nativeRegistry.meters(), hasSize(256));
+            assertThat(environment.nativeRegistry.meters(), hasSize(256 + 2 * channelCount));
         }
     }
 
@@ -120,7 +97,6 @@ class MessagingMetricsOwnershipTest {
 
     private static final class InterleavingRegistry extends DelegatingMeterRegistry {
         private final AtomicBoolean pauseRegistration = new AtomicBoolean();
-        private final AtomicBoolean pauseRemoval = new AtomicBoolean();
         private final AtomicInteger enumerations = new AtomicInteger();
         private final CountDownLatch entered = new CountDownLatch(1);
         private final CountDownLatch resume = new CountDownLatch(1);
@@ -136,21 +112,12 @@ class MessagingMetricsOwnershipTest {
         }
 
         @Override
-        public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder, Consumer<M> onCreate) {
+        public <B extends Meter.Builder<B, M>, M extends Meter> M getOrCreate(B builder) {
             if (builder.name().equals(DURATION) && pauseRegistration.compareAndSet(true, false)) {
                 entered.countDown();
                 await(resume);
             }
-            return super.getOrCreate(builder, onCreate);
-        }
-
-        @Override
-        public Optional<Meter> remove(Meter meter) {
-            if (meter.id().name().equals(DURATION) && pauseRemoval.compareAndSet(true, false)) {
-                entered.countDown();
-                await(resume);
-            }
-            return super.remove(meter);
+            return super.getOrCreate(builder);
         }
     }
 
@@ -193,7 +160,8 @@ class MessagingMetricsOwnershipTest {
         private void assertApplicationTimer(Timer timer) {
             assertThat(nativeRegistry.timer(DURATION, tags).orElseThrow(), sameInstance(timer));
             assertThat(nativeRegistry.isDeleted(timer), is(false));
-            assertThat(nativeRegistry.meters(), hasSize(1));
+            assertThat(timer.count(), is(1L));
+            assertThat(nativeRegistry.meters(), hasSize(2));
         }
     }
 }
