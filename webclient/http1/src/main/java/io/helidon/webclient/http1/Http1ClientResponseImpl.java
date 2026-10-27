@@ -451,11 +451,11 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
             int length = Math.min(estimate, MAX_STAGING_SIZE);
             byte[] bytes = stagingBytes;
             BufferData previous = stagingBuffer;
-            if (bytes == null || previous == null || bytes.length != length || !previous.consumed()) {
+            if (bytes == null || previous == null || bytes.length < length || !previous.consumed()) {
                 bytes = new byte[length];
             }
             // Copies have independent cursors; never revive an older stream's consumed buffer.
-            BufferData bufferData = BufferData.create(bytes).clear();
+            BufferData bufferData = BufferData.create(bytes, 0, length).clear();
             stagingBytes = bytes;
             stagingBuffer = bufferData;
             int bytesRead = bufferData.readFrom(inputStream);
