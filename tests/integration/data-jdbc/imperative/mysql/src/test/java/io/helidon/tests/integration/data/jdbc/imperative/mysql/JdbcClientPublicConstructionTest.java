@@ -15,6 +15,11 @@
  */
 package io.helidon.tests.integration.data.jdbc.imperative.mysql;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -41,6 +46,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @ExtendWith(MySqlTestDatabase.class)
 class JdbcClientPublicConstructionTest {
 
+    private static final Duration SESSION_CLEANUP_TIMEOUT = Duration.ofSeconds(5);
+    private static final Duration SESSION_POLL_INTERVAL = Duration.ofMillis(20);
     private static final AtomicLong DATABASE_SEQUENCE = new AtomicLong();
     private static final JdbcClient.RowMapper<Pokemon> POKEMON_MAPPER = row ->
             new Pokemon(row.get("ID", Integer.class), row.get("NAME", String.class));
@@ -100,7 +107,7 @@ class JdbcClientPublicConstructionTest {
      * and close owned connections after successful and failed operations.
      */
     @Test
-    void executesThroughDirectConnectionAndClosesOwnedConnections() {
+    void executesThroughDirectConnectionAndClosesOwnedConnections() throws Exception {
         String url = MySqlTestDatabase.jdbcUrl("jdbc_client_direct_" + DATABASE_SEQUENCE.incrementAndGet());
         JdbcClient client = JdbcClient.builder()
                 .name("direct-client")
@@ -111,36 +118,64 @@ class JdbcClientPublicConstructionTest {
                         .password(MySqlTestDatabase.password()))
                 .build();
 
-        client.create("CREATE TABLE POKEMON (ID INT PRIMARY KEY, NAME VARCHAR(40) NOT NULL)")
-                .execute();
-        assertThat(openSessions(client), is(1L));
-        assertThat(client.create("INSERT INTO POKEMON (ID, NAME) VALUES (?, ?)")
-                           .bind(1, 7)
-                           .bind(2, "Squirtle")
-                           .execute(),
-                   is(1L));
-        assertThat(openSessions(client), is(1L));
-        assertThat(client.create("SELECT ID, NAME FROM POKEMON")
-                           .map(POKEMON_MAPPER)
-                           .list(),
-                   is(List.of(new Pokemon(7, "Squirtle"))));
-        assertThat(openSessions(client), is(1L));
+        // Reuse an independent observer so polling does not create additional sessions to clean up.
+        try (Connection observer = DriverManager.getConnection(url,
+                                                              MySqlTestDatabase.username(),
+                                                              MySqlTestDatabase.password())) {
+            client.create("CREATE TABLE POKEMON (ID INT PRIMARY KEY, NAME VARCHAR(40) NOT NULL)")
+                    .execute();
+            assertOwnedConnectionsClosed(observer);
+            assertThat(client.create("INSERT INTO POKEMON (ID, NAME) VALUES (?, ?)")
+                               .bind(1, 7)
+                               .bind(2, "Squirtle")
+                               .execute(),
+                       is(1L));
+            assertOwnedConnectionsClosed(observer);
+            assertThat(client.create("SELECT ID, NAME FROM POKEMON")
+                               .map(POKEMON_MAPPER)
+                               .list(),
+                       is(List.of(new Pokemon(7, "Squirtle"))));
+            assertOwnedConnectionsClosed(observer);
 
-        assertThrows(DataException.class,
-                     () -> client.create("SELECT MISSING_COLUMN FROM POKEMON")
-                             .map(String.class)
-                             .list());
-        assertThat(openSessions(client), is(1L));
+            assertThrows(DataException.class,
+                         () -> client.create("SELECT MISSING_COLUMN FROM POKEMON")
+                                 .map(String.class)
+                                 .list());
+            assertOwnedConnectionsClosed(observer);
+        }
     }
 
     private static void assertPoolIdle(HikariDataSource dataSource) {
         assertThat(dataSource.getHikariPoolMXBean().getActiveConnections(), is(0));
     }
 
-    private static long openSessions(JdbcClient client) {
-        return client.create("SELECT COUNT(*) FROM INFORMATION_SCHEMA.PROCESSLIST WHERE DB = DATABASE()")
-                .map(Long.class)
-                .one();
+    private static void assertOwnedConnectionsClosed(Connection observer) throws SQLException, InterruptedException {
+        long started = System.nanoTime();
+        List<String> sessions = new ArrayList<>();
+        try (var statement = observer.createStatement()) {
+            statement.setQueryTimeout((int) SESSION_CLEANUP_TIMEOUT.toSeconds());
+            while (true) {
+                sessions.clear();
+                try (var rows = statement.executeQuery(
+                        "SELECT ID, COMMAND, STATE FROM INFORMATION_SCHEMA.PROCESSLIST"
+                                + " WHERE DB = DATABASE() AND ID <> CONNECTION_ID() ORDER BY ID")) {
+                    while (rows.next()) {
+                        sessions.add("id=" + rows.getLong("ID")
+                                             + ", command=" + rows.getString("COMMAND")
+                                             + ", state=" + rows.getString("STATE"));
+                    }
+                }
+                if (sessions.isEmpty()) {
+                    return;
+                }
+                if (System.nanoTime() - started >= SESSION_CLEANUP_TIMEOUT.toNanos()) {
+                    break;
+                }
+                // Connector/J close does not wait for MySQL to remove the server-side session.
+                Thread.sleep(SESSION_POLL_INTERVAL);
+            }
+        }
+        assertThat("Owned MySQL sessions still open after " + SESSION_CLEANUP_TIMEOUT, sessions, is(List.of()));
     }
 
     private record Pokemon(int id, String name) {

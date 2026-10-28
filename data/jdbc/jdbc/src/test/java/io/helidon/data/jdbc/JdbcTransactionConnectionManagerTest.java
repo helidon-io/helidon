@@ -526,29 +526,29 @@ class JdbcTransactionConnectionManagerTest {
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
             switch (method.getName()) {
-                case "equals" -> {
-                    return proxy == args[0];
+            case "equals" -> {
+                return proxy == args[0];
+            }
+            case "hashCode" -> {
+                return System.identityHashCode(proxy);
+            }
+            case "getAutoCommit" -> record("getAutoCommit", Failure.GET_AUTO_COMMIT);
+            case "setAutoCommit" -> {
+                boolean autoCommit = (boolean) args[0];
+                record("setAutoCommit:" + autoCommit,
+                       autoCommit ? Failure.RESET_AUTO_COMMIT : Failure.DISABLE_AUTO_COMMIT);
+            }
+            case "commit" -> record("commit", Failure.COMMIT);
+            case "rollback" -> record("rollback", Failure.ROLLBACK);
+            case "abort" -> {
+                events.add("abort");
+                if (failures.contains(Failure.ABORT)) {
+                    throw new IllegalStateException("abort failed");
                 }
-                case "hashCode" -> {
-                    return System.identityHashCode(proxy);
-                }
-                case "getAutoCommit" -> record("getAutoCommit", Failure.GET_AUTO_COMMIT);
-                case "setAutoCommit" -> {
-                    boolean autoCommit = (boolean) args[0];
-                    record("setAutoCommit:" + autoCommit,
-                           autoCommit ? Failure.RESET_AUTO_COMMIT : Failure.DISABLE_AUTO_COMMIT);
-                }
-                case "commit" -> record("commit", Failure.COMMIT);
-                case "rollback" -> record("rollback", Failure.ROLLBACK);
-                case "abort" -> {
-                    events.add("abort");
-                    if (failures.contains(Failure.ABORT)) {
-                        throw new IllegalStateException("abort failed");
-                    }
-                }
-                case "close" -> record("close", Failure.CLOSE);
-                default -> {
-                }
+            }
+            case "close" -> record("close", Failure.CLOSE);
+            default -> {
+            }
             }
             try {
                 return method.invoke(delegate, args);
