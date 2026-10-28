@@ -21,11 +21,12 @@ also changed.
 | --- | --- | --- | --- |
 | H2 | `com.h2database:h2` | `org.h2.Driver` | In-memory H2 database |
 | MySQL | `com.mysql:mysql-connector-j` | `com.mysql.cj.jdbc.Driver` | Testcontainers MySQL using `container-registry.oracle.com/mysql/community-server:9.7.3` |
-| PostgreSQL | `org.postgresql:postgresql` | `org.postgresql.Driver` | Testcontainers image built from `common/src/pgsql/docker` |
-| Oracle Database | `com.oracle.database.jdbc:ojdbc17-production` | `oracle.jdbc.OracleDriver` | Testcontainers Oracle Database Free using `container-registry.oracle.com/database/free:latest-lite` |
+| PostgreSQL | `org.postgresql:postgresql` | `org.postgresql.Driver` | Testcontainers image built from `common/fixtures/pgsql/src/main/resources/db/pgsql/docker` |
+| Oracle Database | `com.oracle.database.jdbc:ojdbc17-production` | `oracle.jdbc.OracleDriver` | Testcontainers Oracle Database Free using `container-registry.oracle.com/database/free:23.26.3.0-lite` |
 
 External database tests require a working Docker/Testcontainers environment.
-H2 tests do not require Docker.
+The retained imperative and declarative H2 suites do not require Docker.
+The mixed-provider application uses a Testcontainers MySQL database.
 
 ## Test database credentials
 
@@ -36,19 +37,19 @@ H2 tests do not require Docker.
 
 The MySQL username is `test`, and its password is `mysql123`. To change these
 values, update the `withUsername` and `withPassword` calls in
-`common/src/mysql/java/io/helidon/data/jdbc/tests/database/MySqlDatabase.java`.
+`common/fixtures/mysql/src/main/java/io/helidon/tests/integration/data/jdbc/database/mysql/MySqlDatabase.java`.
 
 The PostgreSQL username is `test`, and its password is `pgsql123`. To change
 these values, update the password passed to `withPassword` and the default
 username in
-`common/src/pgsql/java/io/helidon/data/jdbc/tests/database/PostgreSqlDatabase.java`.
+`common/fixtures/pgsql/src/main/java/io/helidon/tests/integration/data/jdbc/database/pgsql/PostgreSqlDatabase.java`.
 Also update the fallback username and password in
-`common/src/pgsql/docker/entrypoint.sh`.
+`common/fixtures/pgsql/src/main/resources/db/pgsql/docker/entrypoint.sh`.
 
 The Oracle Database password is `oracle123`. The tests use it for the built-in
 `system` account and for each generated integration test schema. To change this
 password, update the `PASSWORD` constant in
-`common/src/oracle/java/io/helidon/data/jdbc/tests/database/OracleDatabase.java`.
+`common/fixtures/oracle/src/main/java/io/helidon/tests/integration/data/jdbc/database/oracle/OracleDatabase.java`.
 That constant supplies the container password, the JDBC password, and the
 generated schema password.
 
@@ -65,49 +66,107 @@ The main reactor is `tests/integration/data-jdbc/pom.xml`.
 
 ```text
 tests/integration/data-jdbc/
-  common/
-    src/main/java/        Shared contracts, application adapters, repositories, and support code.
-    src/<db>/java/        Database-specific fixtures and configuration helpers.
-    src/<db>/resources/   Database-specific Testcontainers initialization resources.
-  h2/                     Provider-level H2 integration tests.
+  common/                  Shared-code aggregator.
+    application/
+      src/main/java/       Shared models, repositories, adapters, contracts, and helpers.
+      src/main/resources/  Portable SQL resources.
+      src/test/java/       Tests of shared helpers.
+    fixtures/
+      h2/
+      mysql/
+      oracle/
+      pgsql/               Database fixture JARs with src/main/java and src/main/resources.
   imperative/
     h2/
-    mysql/
+    mysql/                 Includes public client and resource-ownership regressions.
     oracle/
-    pgsql/                Imperative JdbcClient tests by database.
+    pgsql/                 Imperative JdbcClient tests by database.
   declarative/
     h2/
-    mysql/
+    mysql/                 Includes generated repository/client-configuration regressions.
     oracle/
-    pgsql/                Generated repository tests by database.
-  mixed-provider/         H2/Hikari application combining Jakarta Persistence and JDBC repositories.
+    pgsql/                 Generated repository tests by database.
+  mixed-provider/          MySQL/Hikari application combining Jakarta Persistence and JDBC repositories.
 ```
 
-The imperative and declarative database leaves add the appropriate
-`common/src/<db>` source and resource directories as test roots. Keep
-database-specific setup in the database leaf or `common/src/<db>`; keep portable
-test contracts in `common/src/main/java`.
+Integration applications and test support use the base package
+`io.helidon.tests.integration.data.jdbc`. Database fixtures use
+`.database.h2`, `.database.mysql`, `.database.oracle`, and `.database.pgsql`
+beneath this base.
+Public client regressions use `.imperative.mysql`; generated repository
+configuration regressions use `.declarative.mysql`.
+
+All integration sources use `io.helidon.tests.integration.data.jdbc.*`.
+Package-private JDBC implementation tests live with the provider tests under
+`data/jdbc/jdbc/src/test/java/io/helidon/data/jdbc`. The former top-level H2
+module has been removed; its public client and transaction regressions now run
+against MySQL in
+`imperative/mysql`, and its repository configuration coverage runs in
+`declarative/mysql`.
+
+The existing imperative and declarative H2 leaves remain available without
+Docker. Their H2-specific scalar-binding, generated SQL name-collision, and
+standalone client coverage remains in those leaves.
+
+Database leaves depend on their fixture JAR with test scope. Fixture resources
+are loaded from the classpath, including PostgreSQL's Dockerfile and entrypoint,
+so running a leaf does not depend on the shell's working directory. Database
+fixtures do not depend on the shared test application.
+
+The `common` modules are isolated Maven test fixtures outside the public BOM.
+Their inter-fixture dependencies use `${project.version}`, as permitted by
+DEV-GUIDELINES.md Rule 11.3. Reusable fixture classes use compile-scoped testing
+APIs where needed; consuming suites depend on fixture JARs with test scope.
+
+The imperative and declarative modules continue to compile
+`common/application/src/main/java` as test sources. Their annotation processors differ:
+imperative leaves generate services, while declarative leaves also generate
+JDBC repositories. Keep this application compilation local to each consumer;
+do not also add the application JAR to their dependencies. This preserves generated
+service discovery and tests that inspect locally generated repository sources.
+
+`common/fixtures/mysql` also supplies `MySqlTestDatabase`, a suite-owned JUnit
+extension that provisions isolated schemas for regression tests. It uses a
+separate root-enabled container from the portable MySQL contract fixture.
+Mockito-based connection instrumentation stays in the tests that need it.
+The declarative client-configuration regression explicitly loads
+`jdbc-client-config.yaml`, keeping its configuration isolated from the other
+MySQL contracts in the same module.
 
 The `mixed-provider` module is an independent application and test suite. It
 uses both Jakarta Persistence and JDBC annotation processors, verifies the
 generated repository implementations and their provider-specific qualifiers,
 and invokes application endpoints backed by a Jakarta Persistence repository,
 a declarative JDBC repository, and the imperative `JdbcClient` API. Its Hikari
-pool uses an in-memory H2 database initialized from `mixed-provider/src/main/resources/init.sql`.
+pool uses a Testcontainers MySQL database initialized by Jakarta Persistence
+from `mixed-provider/src/main/resources/init.sql`. The test supplies the
+container connection settings before resolving application services and closes
+the HTTP client, server, and registry before the container stops.
 
 ## Maven profiles
 
-The MySQL, PostgreSQL, and Oracle Database modules are in the `long-tests`
-Maven profile. This profile is enabled by default so the complete integration
-suite continues to run without additional command-line options.
+The `long-tests` profile is defined once in the Data JDBC reactor. It includes
+`imperative`, `declarative`, and `mixed-provider`, covering H2 as well as every
+container-backed suite. The style aggregators include their database leaves
+without further profile gates. The `common` aggregator includes its `application` and `fixtures` modules
+regardless of this profile; these modules do not start databases during their
+builds.
 
-The Maven options have different meanings:
+As in the DbClient integration reactor, `long-tests` activates automatically
+when the Maven property of the same name is absent. Container-backed tests skip
+when Docker is unavailable. Explicitly disabling `long-tests` also excludes
+the H2 integration suites and mixed-provider application; the provider unit
+tests remain independent of this profile.
 
 | Option | Meaning in this reactor |
 | --- | --- |
-| `-Plong-tests` | Explicitly activates the `long-tests` Maven profile and includes the MySQL, PostgreSQL, and Oracle Database modules. |
-| `-P-long-tests` | Explicitly deactivates the `long-tests` Maven profile and leaves only the H2 modules enabled. |
-| `-Dlong-tests` | Defines a Maven property. Because the profile is automatically activated only when this property is absent (`!long-tests`), defining it also excludes the external database modules. It does not enable them. |
+| No option | Includes all suites because the `long-tests` property is absent. |
+| `-Plong-tests` | Explicitly activates the profile and includes all suites. |
+| `-P-long-tests` | Explicitly deactivates the profile; only support modules remain. |
+| `-Dlong-tests` or `-Dlong-tests=false` | Defines the property, preventing automatic activation; only support modules remain unless the profile is explicitly activated. |
+
+The profile controls reactor membership, not execution of an explicitly targeted
+leaf. A direct leaf build still runs that leaf's tests.
 
 The commands below use explicit profile activation or deactivation to avoid
 depending on the `!long-tests` automatic-activation rule.
@@ -123,24 +182,16 @@ run:
 mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests verify
 ```
 
-This command runs the provider-level H2 tests, the mixed-provider test, and the
+This command runs the mixed-provider test and the
 imperative and declarative test suites for H2, MySQL, PostgreSQL, and Oracle
 Database. The external database tests use Testcontainers. They are skipped when
 Docker is unavailable, so a successful Maven build does not by itself prove
 that those database tests ran.
 
-### Run only H2 tests
-
-Explicitly deactivate the profile to run the provider-level, mixed-provider,
-imperative, and declarative H2 tests without Docker:
+### Run one database across both styles
 
 ```bash
-mvn -f tests/integration/data-jdbc/pom.xml -P-long-tests verify
-```
-
-### Run one external database across both styles
-
-```bash
+mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests -pl imperative/h2,declarative/h2 -am verify
 mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests -pl imperative/mysql,declarative/mysql -am verify
 mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests -pl imperative/pgsql,declarative/pgsql -am verify
 mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests -pl imperative/oracle,declarative/oracle -am verify
@@ -153,25 +204,85 @@ mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests -pl imperative/h2,impera
 mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests -pl declarative/h2,declarative/mysql,declarative/pgsql,declarative/oracle -am verify
 ```
 
-### Run only the provider-level H2 tests
-
-```bash
-mvn -f tests/integration/data-jdbc/pom.xml -pl h2 -am verify
-```
-
 ### Run only the mixed-provider test
 
 ```bash
-mvn -f tests/integration/data-jdbc/pom.xml -pl mixed-provider -am clean package
+mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests -pl mixed-provider -am clean package
+```
+
+### Run a single leaf locally
+
+Selecting a leaf from the reactor is recommended because `-am` builds its
+required fixture modules:
+
+```bash
+mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests -pl imperative/mysql -am clean verify
+```
+
+To invoke a leaf directly, first install the test parent POMs and support
+artifacts at the current Helidon version. The parent POM steps are needed if
+they have not already been installed by a repository test build; installing
+only the Data JDBC reactor does not install its ancestors:
+
+```bash
+mvn -N -f tests/pom.xml install
+mvn -N -f tests/integration/pom.xml install
+mvn -f tests/integration/data-jdbc/pom.xml -P-long-tests install
+mvn -f tests/integration/data-jdbc/imperative/mysql/pom.xml clean verify
+```
+
+The final command can also be run as `mvn clean verify` from the leaf directory.
+Maven does not build sibling fixture modules automatically during a direct leaf
+build. Both approaches require the usual Helidon dependencies to be available
+from a prior repository build or the configured artifact repositories.
+
+### Build support without running database suites
+
+```bash
+mvn -f tests/integration/data-jdbc/pom.xml -P-long-tests verify
+```
+
+## Transaction test coverage
+
+The former top-level H2 transaction-manager suites contained 31 scenarios.
+Their coverage is split between 17 database-independent provider tests in
+`data/jdbc/jdbc/src/test/java/io/helidon/data/jdbc/JdbcTransactionConnectionManagerTest.java`
+and 14 MySQL integration scenarios in `imperative/mysql`:
+`JdbcTransactionIntegrationTest` covers registry wiring, auto-commit changes,
+executor reuse, thread isolation, and independent transaction outcomes;
+`JdbcTransactionPoolTest` covers pool reuse, lifecycle observer failures, and
+unknown completion outcomes. An additional integration test verifies physical
+connection reuse for queries, updates, and generated keys, followed by release
+at commit.
+
+The integration tests use public `JdbcClient`, `Tx`, and transaction SPI contracts.
+They register observers through `Service.ServicesFactory<TxLifeCycle>` and reset
+scenario factories during cleanup. They do not construct provider implementation
+types or access private provider state.
+
+To run the provider unit tests without Docker:
+
+```bash
+mvn -f data/jdbc/jdbc/pom.xml test
+```
+
+To run the focused MySQL transaction scenarios:
+
+```bash
+mvn -f tests/integration/data-jdbc/pom.xml -Plong-tests -pl imperative/mysql -am \
+    -Dit.test=JdbcTransactionIntegrationTest,JdbcTransactionPoolTest \
+    -Dfailsafe.failIfNoSpecifiedTests=false verify
 ```
 
 ## Test design notes
 
-- Prefer portable contracts in `common/src/main/java` and small database leaves
+- Prefer portable contracts in `common/application/src/main/java` and small database leaves
   that only provide configuration and fixture differences.
+- Keep reusable database setup in `common/fixtures/<db>/src/main` and consume it through
+  a test-scoped dependency instead of adding sibling database source roots.
 - Keep database-specific SQL and generated-key behavior explicit. Some drivers
   legitimately differ; for example, MySQL Connector/J exposes generated keys
-  differently from H2, PostgreSQL, and Oracle.
+  differently from PostgreSQL and Oracle.
 - Use HikariCP one-connection pools when a test must prove that a failed
   operation returned its connection lease.
 - Do not let application-visible failures expose configured SQL, secret bind
