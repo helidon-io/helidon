@@ -20,7 +20,6 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.context.Contexts;
-import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.http.Method;
 import io.helidon.security.ClassToInstanceStore;
@@ -171,8 +170,8 @@ class SecurityConfigSupport {
         }
 
         @Prototype.ConfigFactoryMethod("methods")
-        static Method createMethods(Config config) {
-            return config.asString().map(Method::create).orElseThrow();
+        static Method createMethods(String method) {
+            return Method.create(method);
         }
 
     }

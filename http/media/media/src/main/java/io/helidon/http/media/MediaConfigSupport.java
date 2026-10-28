@@ -19,7 +19,6 @@ package io.helidon.http.media;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
-import io.helidon.config.Config;
 import io.helidon.http.HttpMediaType;
 
 final class MediaConfigSupport {
@@ -31,17 +30,13 @@ final class MediaConfigSupport {
         }
 
         @Prototype.ConfigFactoryMethod("contentType")
-        static HttpMediaType createContentType(Config config) {
-            return config.asString()
-                    .as(HttpMediaType::create)
-                    .get();
+        static HttpMediaType createContentType(String contentType) {
+            return HttpMediaType.create(contentType);
         }
 
         @Prototype.ConfigFactoryMethod("acceptedMediaTypes")
-        static MediaType createAcceptedType(Config config) {
-            return config.asString()
-                    .as(MediaTypes::create)
-                    .get();
+        static MediaType createAcceptedType(String acceptedMediaType) {
+            return MediaTypes.create(acceptedMediaType);
         }
     }
 }
