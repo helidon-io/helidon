@@ -17,8 +17,11 @@
 package io.helidon.messaging;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
@@ -38,7 +41,8 @@ final class MessagingMetrics {
     private static final String FAILURES = "messaging.processing.failures";
     private static final String ORIGIN = MessagingGraph.class.getName();
     private static final System.Logger LOGGER = System.getLogger(MessagingMetrics.class.getName());
-    private static final ThreadLocal<Boolean> REGISTERING = new ThreadLocal<>();
+    private static final ThreadLocal<Set<MeterRegistry>> REGISTERING =
+            ThreadLocal.withInitial(() -> Collections.newSetFromMap(new IdentityHashMap<>()));
     private static final Recorder NOOP_RECORDER = new Recorder(null, null);
     private static final MessagingMetrics NOOP = new MessagingMetrics(null, null);
 
@@ -72,12 +76,12 @@ final class MessagingMetrics {
         if (registry == null || closed) {
             return NOOP_RECORDER;
         }
-        if (Boolean.TRUE.equals(REGISTERING.get())) {
+        Set<MeterRegistry> registering = REGISTERING.get();
+        if (!registering.add(registry)) {
             failures.report(new IllegalStateException("Reentrant messaging metrics registration "
                                                              + "from a metrics provider callback"));
             return NOOP_RECORDER;
         }
-        REGISTERING.set(true);
         try {
             // Provider callbacks may close this graph; never invoke them while holding the graph's metrics lock.
             Registration registration = register(channel);
@@ -99,7 +103,10 @@ final class MessagingMetrics {
             failures.report(e);
             return NOOP_RECORDER;
         } finally {
-            REGISTERING.remove();
+            registering.remove(registry);
+            if (registering.isEmpty()) {
+                REGISTERING.remove();
+            }
         }
     }
 

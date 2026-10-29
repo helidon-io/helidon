@@ -710,7 +710,8 @@ work and return from the listener; wait only outside the callback.
 
 An ordinary metrics provider failure disables the affected recording and is logged once per graph without changing
 delivery or retry behavior. If a listener invoked during messaging meter registration creates another graph on the same
-thread, the nested registration uses no-op metrics and logs a warning to avoid sharing partially registered meters.
+thread using the same registry, the nested registration uses no-op metrics and logs a warning to avoid sharing partially
+registered meters. A nested graph using an independent registry registers its metrics normally.
 
 ### Graph health
 
