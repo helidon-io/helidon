@@ -42,6 +42,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MessagingMetricsTest {
     private static final String DURATION = "messaging.processing.duration";
@@ -122,6 +123,78 @@ class MessagingMetricsTest {
             assertThat(first.counter("orders").count(), is(1L));
             assertThat(second.timer("orders").count(), is(1L));
             assertThat(second.counter("orders").count(), is(0L));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void nestedGraphRecordsWithIndependentRegistry(boolean returnToFirstRegistry) {
+        // A -> B must record normally; an optional B -> A callback must still skip the recursive registration.
+        try (MetricsTestSupport first = new MetricsTestSupport();
+             MetricsTestSupport second = new MetricsTestSupport()) {
+            AtomicBoolean enteredFirst = new AtomicBoolean();
+            AtomicBoolean enteredSecond = new AtomicBoolean();
+            AtomicReference<MessagingGraph> nested = new AtomicReference<>();
+            MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
+            first.registry.onMeterAdded(_ -> {
+                if (enteredFirst.compareAndSet(false, true)) {
+                    nested.set(second.graph(channel));
+                }
+            });
+            second.registry.onMeterAdded(_ -> {
+                if (returnToFirstRegistry && enteredSecond.compareAndSet(false, true)) {
+                    MessagingMetrics.Recorder recursive = first.observe().channel("recursive");
+                    recursive.finish(recursive.start(), true);
+                }
+            });
+
+            try (MessagingGraph outer = first.graph(channel)) {
+                // Record after both callbacks return: the nested graph must retain working metrics.
+                MessagingGraph inner = nested.get();
+                outer.emitter(channel).emit("outer");
+                inner.emitter(channel).emit("inner");
+                assertThrows(BatchDeliveryException.class, () -> inner.emitter(channel).emit("fail"));
+                assertThat(first.timer("orders").count(), is(1L));
+                assertThat(first.counter("orders").count(), is(0L));
+                assertThat(second.timer("orders").count(), is(2L));
+                assertThat(second.counter("orders").count(), is(1L));
+                assertThat(first.registry.timer(DURATION, first.tags("recursive")).isEmpty(), is(true));
+            } finally {
+                if (nested.get() != null) {
+                    nested.get().close();
+                }
+            }
+        }
+    }
+
+    @Test
+    void nestedRegistrationFailurePreservesOuterGuardAndAllowsRetry() {
+        // B's failed registration must release B while A remains guarded until its callback returns.
+        try (MetricsTestSupport first = new MetricsTestSupport();
+             MetricsTestSupport second = new MetricsTestSupport()) {
+            AtomicBoolean entered = new AtomicBoolean();
+            AtomicBoolean fail = new AtomicBoolean(true);
+            second.registry.onMeterAdded(meter -> {
+                if (meter.id().name().equals(FAILURES) && fail.compareAndSet(true, false)) {
+                    throw new AssertionError("Nested registration failure");
+                }
+            });
+            first.registry.onMeterAdded(_ -> {
+                if (entered.compareAndSet(false, true)) {
+                    assertThrows(AssertionError.class, () -> second.observe().channel("orders"));
+                    MessagingMetrics.Recorder retry = second.observe().channel("orders");
+                    retry.finish(retry.start(), true);
+                    MessagingMetrics.Recorder recursive = first.observe().channel("recursive");
+                    recursive.finish(recursive.start(), true);
+                }
+            });
+
+            MessagingMetrics.Recorder outer = first.observe().channel("orders");
+            outer.finish(outer.start(), false);
+            assertThat(first.timer("orders").count(), is(1L));
+            assertThat(second.timer("orders").count(), is(1L));
+            assertThat(second.counter("orders").count(), is(1L));
+            assertThat(first.registry.timer(DURATION, first.tags("recursive")).isEmpty(), is(true));
         }
     }
 
