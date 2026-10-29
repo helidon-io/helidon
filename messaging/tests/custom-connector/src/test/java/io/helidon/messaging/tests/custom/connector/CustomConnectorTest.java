@@ -25,6 +25,7 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.faulttolerance.Retry;
 import io.helidon.faulttolerance.RetryConfig;
+import io.helidon.health.HealthCheckResponse;
 import io.helidon.messaging.FailureDisposition;
 import io.helidon.messaging.Message;
 import io.helidon.messaging.MessagingChannel;
@@ -34,23 +35,82 @@ import io.helidon.messaging.MessagingGraph;
 import io.helidon.messaging.MessagingRuntime;
 import io.helidon.messaging.spi.MessagingIncomingConfig;
 import io.helidon.messaging.spi.MessagingOutgoingConfig;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItems;
 
 @Timeout(10)
+@Testing.Test(perMethod = true)
+@Execution(ExecutionMode.SAME_THREAD)
 @SuppressWarnings({"helidon:api:internal", "helidon:api:preview"})
 class CustomConnectorTest {
     private static final Duration WAIT = Duration.ofSeconds(5);
+
+    @Test
+    void observabilityWithoutMetricsProviderPreservesProcessingAndHealth() {
+        // This module intentionally has no metrics provider; optional observation must leave processing and health usable.
+        ServiceRegistryManager manager = ServiceRegistryManager.create();
+        try {
+            // Application startup selects the registry once; the testing extension isolates this test's global lookup.
+            Services.registry(manager.registry());
+            MeterRegistry meters = manager.registry().get(MeterRegistry.class);
+            assertThat(meters.isMeterEnabled("messaging.processing.duration"), is(false));
+            AtomicInteger deliveries = new AtomicInteger();
+            MessagingChannel<String> channel = MessagingChannel.create("without-provider", String.class);
+            try (MessagingGraph graph = MessagingGraph.builder()
+                    .channel(channel).payloadSink(channel, _ -> deliveries.incrementAndGet()).build().start()) {
+                graph.emitter(channel).emit("first");
+
+                assertThat(deliveries.get(), is(1));
+                assertThat(graph.healthChecks().stream().map(check -> check.call().status()).toList(),
+                           is(List.of(HealthCheckResponse.Status.UP, HealthCheckResponse.Status.UP)));
+                assertThat(meters.meters(), empty());
+            }
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    @Test
+    void observabilityWorksWithServiceDiscoveryDisabled() {
+        // Explicit graph checks remain available when both provider discovery and service discovery are disabled.
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                .discoverServices(false)
+                .discoverServicesFromServiceLoader(false)
+                .build());
+        try {
+            // Select a discovery-free application registry, rather than overriding the registry on an individual graph.
+            Services.registry(manager.registry());
+            assertThat(manager.registry().first(MeterRegistry.class).isEmpty(), is(true));
+            AtomicInteger deliveries = new AtomicInteger();
+            MessagingChannel<String> channel = MessagingChannel.create("without-discovery", String.class);
+            try (MessagingGraph graph = MessagingGraph.builder()
+                    .channel(channel).payloadSink(channel, _ -> deliveries.incrementAndGet()).build().start()) {
+                graph.emitter(channel).emit("first");
+
+                assertThat(deliveries.get(), is(1));
+                assertThat(graph.healthChecks().stream().map(check -> check.call().status()).toList(),
+                           is(List.of(HealthCheckResponse.Status.UP, HealthCheckResponse.Status.UP)));
+            }
+        } finally {
+            manager.shutdown();
+        }
+    }
 
     @Test
     void roundTripsMessageThroughImperativeConnector() throws InterruptedException {
