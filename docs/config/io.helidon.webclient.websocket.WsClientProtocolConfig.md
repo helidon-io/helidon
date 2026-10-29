@@ -52,6 +52,18 @@ WebSocket client protocol configuration
 </td>
 <td>Name of this protocol configuration</td>
 </tr>
+<tr>
+<td>
+<code>max-<wbr>frame-<wbr>size</code>
+</td>
+<td>
+<code>Size</code>
+</td>
+<td>
+<code>1 Mi<wbr>B</code>
+</td>
+<td>Maximum WebSocket frame payload size accepted by the client, from <code>1 B</code> through <code>Integer.<wbr>MAX_<wbr>VALUE</code> bytes; the default is 1 MiB, replacing the earlier effectively unbounded behavior, and exceeding the configured limit causes the client to close the connection with status code <code>1009</code> (<code>Message Too Big</code>)</td>
+</tr>
 </tbody>
 </table>
 
