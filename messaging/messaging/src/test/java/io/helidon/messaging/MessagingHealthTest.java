@@ -175,11 +175,13 @@ class MessagingHealthTest {
         AtomicReference<MessagingGraph> owner = new AtomicReference<>();
         MessagingChannel<String> channel = MessagingChannel.create("events", String.class);
         MessagingGraph graph = graph(registry, builder()
+                // Let the latch control completion within the test's 60-second timeout.
+                .shutdownTimeout(Duration.ofMinutes(2))
                 .channel(channel)
                 .payloadSink(channel, _ -> {
                     owner.get().close();
                     closeReturned.countDown();
-                    await(finishCallback);
+                    awaitUninterruptibly(finishCallback);
                 }));
         owner.set(graph);
         graph.start();
@@ -190,8 +192,11 @@ class MessagingHealthTest {
             assertHealth(aggregate, DOWN, UP);
         } finally {
             finishCallback.countDown();
-            emitted.get(5, TimeUnit.SECONDS);
-            graph.close();
+            try {
+                emitted.get(5, TimeUnit.SECONDS);
+            } finally {
+                graph.close();
+            }
         }
         assertHealth(graph.healthChecks(), DOWN, UP);
         assertHealth(aggregate, UP, UP);
