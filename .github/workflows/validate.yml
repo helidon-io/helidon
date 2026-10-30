@@ -232,10 +232,10 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        os: [ ubuntu-22.04, macos-14 ]
+        os: [ ubuntu-22.04, macos-15 ]
         include:
           - { os: ubuntu-22.04, platform: linux }
-          - { os: macos-14, platform: macos }
+          - { os: macos-15, platform: macos }
     runs-on: ${{ matrix.os }}
     name: quickstarts/${{ matrix.platform }}
     steps:
@@ -255,10 +255,10 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        os: [ ubuntu-22.04, macos-14 ]
+        os: [ ubuntu-22.04, macos-15 ]
         include:
           - { os: ubuntu-22.04, platform: linux }
-          - { os: macos-14, platform: macos }
+          - { os: macos-15, platform: macos }
     runs-on: ${{ matrix.os }}
     name: examples/${{ matrix.platform }}
     steps:
@@ -333,11 +333,11 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        os: [ ubuntu-22.04, macos-14, windows-2022 ]
+        os: [ ubuntu-22.04, macos-15, windows-2022 ]
         packaging: [ jar, jlink, fat-jar ]
         include:
           - { os: ubuntu-22.04, platform: linux }
-          - { os: macos-14, platform: macos }
+          - { os: macos-15, platform: macos }
           - { os: windows-2022, platform: windows }
     runs-on: ${{ matrix.os }}
     name: tests/packaging-${{ matrix.packaging }}-${{ matrix.platform }}
@@ -360,11 +360,11 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        os: [ ubuntu-22.04, macos-14, windows-2022 ]
+        os: [ ubuntu-22.04, macos-15, windows-2022 ]
         module: [ se-1, inject ]
         include:
           - { os: ubuntu-22.04, platform: linux }
-          - { os: macos-14, platform: macos }
+          - { os: macos-15, platform: macos }
           - { os: windows-2022, platform: windows }
     runs-on: ${{ matrix.os }}
     name: tests/native-image-${{ matrix.module }}-${{ matrix.platform }}
