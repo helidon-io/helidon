@@ -36,6 +36,7 @@
         <module>lexical</module>
         <module>codegen</module>
         <module>jdbc</module>
+        <module>health</module>
     </modules>
 
 </project>
