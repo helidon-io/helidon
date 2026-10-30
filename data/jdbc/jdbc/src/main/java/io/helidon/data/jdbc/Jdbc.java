@@ -61,7 +61,12 @@ public final class Jdbc {
         /**
          * Executes the statement as an update.
          */
-        UPDATE
+        UPDATE,
+
+        /**
+         * Executes complete parameter sets through one prepared JDBC batch.
+         */
+        BATCH
     }
 
     /**
@@ -96,7 +101,7 @@ public final class Jdbc {
      * validates the repository method and bind markers but does not parse
      * database grammar, split scripts, or validate statement boundaries
      * specific to a database. The value must therefore describe exactly one
-     * SQL statement. SQL scripts, batches, compound or multiple statement
+     * SQL statement. SQL scripts, compound or multiple statement
      * strings specific to a JDBC driver, stored procedure calls, SQL that
      * controls transactions, and commands that change connection or session
      * state, including auto-commit mode, are not supported.

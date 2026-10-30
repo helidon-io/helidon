@@ -73,6 +73,15 @@ class GeneratedJdbcDataTest {
                    is("Typed SQL null binding requires a statement created by Helidon's JDBC provider."));
     }
 
+    @Test
+    void alternateProviderRetainsDefaultBatchBoundaryWithoutTraversal() {
+        AlternateStatement statement = new AlternateStatement();
+        Iterable<Integer> source = () -> { throw new AssertionError("The source must not be traversed."); };
+        assertThrows(NullPointerException.class, () -> statement.executeBatch(null, null));
+        assertThrows(NullPointerException.class, () -> statement.executeBatch(source, null));
+        assertThrows(UnsupportedOperationException.class, () -> statement.executeBatch(source, (_, _) -> { }));
+    }
+
     private static final class AlternateClient implements JdbcClient {
         private static final JdbcClientConfig CONFIG = JdbcClientConfig.builder()
                 .dataSourceName("test-data-source")
