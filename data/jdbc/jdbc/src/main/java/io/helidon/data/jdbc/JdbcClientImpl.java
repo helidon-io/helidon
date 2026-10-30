@@ -17,6 +17,7 @@ package io.helidon.data.jdbc;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 
 import javax.sql.DataSource;
 
@@ -37,6 +38,8 @@ final class JdbcClientImpl implements JdbcClient {
 
     private final JdbcClientConfig prototype;
     private final JdbcRunner runner;
+    private final DataSource dataSource;
+    private final JdbcConnectionLease.Provider leaseProvider;
     private final CachePolicy cachePolicy;
     private final LruCache<String, Integer> parameterCounts;
 
@@ -53,6 +56,8 @@ final class JdbcClientImpl implements JdbcClient {
                    JdbcConnectionLease.Provider leaseProvider,
                    CachePolicy cachePolicy) {
         this.prototype = prototype;
+        this.dataSource = dataSource;
+        this.leaseProvider = leaseProvider;
         this.runner = new JdbcRunner(dataSource, leaseProvider);
         this.cachePolicy = cachePolicy;
         this.parameterCounts = cachePolicy.capacity() == 0 ? null : LruCache.create(cachePolicy.capacity());
@@ -129,6 +134,26 @@ final class JdbcClientImpl implements JdbcClient {
      */
     Statement createGenerated(String sql, int parameterCount) {
         return new JdbcStatement(runner, sql, parameterCount);
+    }
+
+    /**
+     * Binds a probe to the resolved source while preserving the ordinary lease provider.
+     *
+     * @param sql The query has passed lexical validation.
+     * @param timeout The timeout contains validated JDBC seconds.
+     * @return Each invocation owns a fresh independent acquisition.
+     */
+    BooleanSupplier createProbe(String sql, int timeout) {
+        return () -> {
+            if (leaseProvider instanceof JdbcTransactionConnectionManager manager) {
+                try {
+                    manager.checkProbeContext();
+                } catch (RuntimeException _) {
+                    return false;
+                }
+            }
+            return JdbcHealthProbe.execute(dataSource, sql, timeout);
+        };
     }
 
     /**

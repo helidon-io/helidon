@@ -30,4 +30,11 @@
         <Method name="~lambda\$prepare\$[0-9]+"/>
         <Bug pattern="SQL_INJECTION_JDBC"/>
     </Match>
+    <Match>
+        <!-- The probe prepares trusted application configuration after SELECT lexical validation. It neither accepts
+             bind values nor builds SQL from application data. -->
+        <Class name="io.helidon.data.jdbc.JdbcHealthProbe"/>
+        <Method name="execute"/>
+        <Bug pattern="SQL_INJECTION_JDBC"/>
+    </Match>
 </FindBugsFilter>
