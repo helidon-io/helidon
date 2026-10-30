@@ -19,7 +19,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.BaseStream;
+import java.util.stream.Stream;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.RoundContext;
@@ -36,7 +38,7 @@ import io.helidon.common.types.TypedElementInfo;
 /**
  * Validated compile-time plan for one JDBC repository method.
  * <p>
- * Planning resolves execution, materialized cardinality, mapping, generated
+ * Planning resolves execution, result shape, mapping, generated
  * keys, and SQL bindings before source emission. No generated method needs to
  * interpret annotations or SQL structure at runtime.
  */
@@ -109,7 +111,29 @@ final class JdbcMethodPlan {
             throw failure(method, "The SQL statement declared by @Jdbc.Statement must not be blank.");
         }
 
-        Return result = returnPlan(method);
+        List<TypedElementInfo> controls = method.parameterArguments().stream()
+                .filter(parameter -> roundContext.typeHierarchyResolver()
+                        .resolveSupertype(parameter.typeName(), TypeName.create(Consumer.class)).isPresent())
+                .toList();
+        Return result;
+        if (controls.isEmpty()) {
+            result = returnPlan(method);
+        } else {
+            if (controls.size() != 1 || !method.typeName().equals(TypeNames.PRIMITIVE_VOID)
+                    || method.hasAnnotation(JdbcCodegenTypes.JDBC_GENERATED_KEYS)
+                    || JdbcExecutionSelection.create(method) == JdbcExecutionSelection.UPDATE) {
+                throw failure(method, "A streaming query must return void, have one consumer, and request no update or keys.");
+            }
+            TypeName control = controls.getFirst().typeName();
+            if (!control.equals(TypeName.create(Consumer.class))) {
+                throw failure(method, "A streaming control must declare Consumer<Stream<T>> directly.");
+            }
+            TypeName stream = singleTypeArgument(method, control);
+            if (!stream.equals(TypeName.create(Stream.class))) {
+                throw failure(method, "A streaming control must declare Consumer<Stream<T>>.");
+            }
+            result = new Return(ReturnShape.STREAM, singleTypeArgument(method, stream));
+        }
         boolean generatedKeys = method.hasAnnotation(JdbcCodegenTypes.JDBC_GENERATED_KEYS);
         Annotation rowMapperAnnotation = method.findAnnotation(JdbcCodegenTypes.JDBC_ROW_MAPPER).orElse(null);
         boolean rowMapperRequested = rowMapperAnnotation != null;
@@ -136,7 +160,8 @@ final class JdbcMethodPlan {
                                   result.mappedType(),
                                   rowMapperRequested,
                                   explicitMapper);
-        JdbcSqlParameterPlan parameters = JdbcSqlParameterPlan.create(sql, method.parameterArguments(), method);
+        JdbcSqlParameterPlan parameters = JdbcSqlParameterPlan.create(sql, method.parameterArguments().stream()
+                .filter(parameter -> !controls.contains(parameter)).toList(), method);
         return new JdbcMethodPlan(method,
                                   operation,
                                   result.shape(),
@@ -161,6 +186,12 @@ final class JdbcMethodPlan {
 
     TypedElementInfo method() {
         return method;
+    }
+
+    String streamControl() {
+        return method.parameterArguments().stream()
+                .filter(parameter -> parameter.typeName().equals(TypeName.create(Consumer.class)))
+                .findFirst().orElseThrow().elementName();
     }
 
     Operation operation() {
@@ -248,6 +279,9 @@ final class JdbcMethodPlan {
         if (generatedKeys) {
             return Operation.UPDATE;
         }
+        if (result.shape() == ReturnShape.STREAM) {
+            return Operation.QUERY;
+        }
         // AUTO inference uses only the Java method shape because the provider must not parse SQL to guess intent.
         if (rowMapper || result.shape() == ReturnShape.OPTIONAL || result.shape() == ReturnShape.LIST) {
             return Operation.QUERY;
@@ -317,7 +351,7 @@ final class JdbcMethodPlan {
             }
             return;
         }
-        if (method.typeName().equals(TypeNames.PRIMITIVE_VOID)) {
+        if (method.typeName().equals(TypeNames.PRIMITIVE_VOID) && result.shape() != ReturnShape.STREAM) {
             throw failure(method, "QUERY and generated keys operations must return a materialized result.");
         }
         TypeName mappedType = result.mappedType();
@@ -543,12 +577,13 @@ final class JdbcMethodPlan {
     }
 
     /**
-     * Supported materialized cardinalities.
+     * Supported repository result shapes.
      */
     enum ReturnShape {
         ITEM,
         OPTIONAL,
-        LIST
+        LIST,
+        STREAM
     }
 
     /**

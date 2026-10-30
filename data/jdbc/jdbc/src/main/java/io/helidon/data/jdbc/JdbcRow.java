@@ -36,6 +36,7 @@ final class JdbcRow implements JdbcClient.Row {
     private final JdbcColumnLayout columns;
     private final JdbcOperation operation;
     private final Thread callbackThread;
+    private final JdbcStreamScope streamScope;
 
     // Volatile makes expiration visible to code that retained the row after the callback.
     private volatile boolean active = true;
@@ -48,6 +49,11 @@ final class JdbcRow implements JdbcClient.Row {
      * @param operation current operation
      */
     JdbcRow(ResultSet resultSet, JdbcColumnLayout columns, JdbcOperation operation) {
+        this(resultSet, columns, operation, null);
+    }
+
+    JdbcRow(ResultSet resultSet, JdbcColumnLayout columns, JdbcOperation operation, JdbcStreamScope streamScope) {
+        this.streamScope = streamScope;
         this.resultSet = resultSet;
         this.columns = columns;
         this.operation = operation;
@@ -70,7 +76,7 @@ final class JdbcRow implements JdbcClient.Row {
         if (label.isBlank()) {
             throw new IllegalArgumentException("The column label must not be blank.");
         }
-        return Optional.ofNullable(read(columns.index(label), type));
+        return Optional.ofNullable(read(columnIndex(label), type));
     }
 
     @Override
@@ -80,7 +86,8 @@ final class JdbcRow implements JdbcClient.Row {
         validateIndex(index);
         T value = read(index, type);
         if (value == null) {
-            throw new DataException("The result column " + index + " contains SQL NULL.");
+            DataException failure = new DataException("The result column " + index + " contains SQL NULL.");
+            throw streamScope == null ? failure : streamScope.fail(failure);
         }
         return value;
     }
@@ -93,9 +100,10 @@ final class JdbcRow implements JdbcClient.Row {
         if (label.isBlank()) {
             throw new IllegalArgumentException("The column label must not be blank.");
         }
-        T value = read(columns.index(label), type);
+        T value = read(columnIndex(label), type);
         if (value == null) {
-            throw new DataException("The result column '" + label + "' contains SQL NULL.");
+            DataException failure = new DataException("The result column '" + label + "' contains SQL NULL.");
+            throw streamScope == null ? failure : streamScope.fail(failure);
         }
         return value;
     }
@@ -129,11 +137,29 @@ final class JdbcRow implements JdbcClient.Row {
             T result = (T) value;
             return result;
         } catch (SQLException e) {
-            throw JdbcExceptionTranslator.translate(operation, e);
+            RuntimeException failure = JdbcExceptionTranslator.translate(operation, e);
+            throw streamScope == null ? failure : streamScope.fail(failure);
+        } catch (Error failure) {
+            if (streamScope != null) {
+                streamScope.record(failure);
+            }
+            throw failure;
         } catch (RuntimeException _) {
             // Some drivers report conversion or protocol failures as runtime exceptions. Sanitize them here,
             // while their JDBC origin is known, so exceptions thrown by application row mappers remain unchanged.
-            throw JdbcExceptionTranslator.resultValueFailure();
+            RuntimeException failure = JdbcExceptionTranslator.resultValueFailure();
+            throw streamScope == null ? failure : streamScope.fail(failure);
+        }
+    }
+
+    private int columnIndex(String label) {
+        try {
+            return columns.index(label);
+        } catch (RuntimeException | Error failure) {
+            if (streamScope != null) {
+                throw streamScope.fail(failure);
+            }
+            throw failure;
         }
     }
 
@@ -154,6 +180,9 @@ final class JdbcRow implements JdbcClient.Row {
      * Verifies that the current callback can read this row.
      */
     private void ensureReadable() {
+        if (streamScope != null) {
+            streamScope.check();
+        }
         if (!active) {
             throw new IllegalStateException("A JDBC row is valid only during its mapper callback.");
         }

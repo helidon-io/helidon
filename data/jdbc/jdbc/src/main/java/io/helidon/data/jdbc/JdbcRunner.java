@@ -23,6 +23,8 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
@@ -139,6 +141,13 @@ final class JdbcRunner {
         case GENERATED_KEYS -> run(operation, UNBOUNDED, scope -> updateHandler.list(scope, mapper));
         case UPDATE -> throw incompatibleTerminal(operation, "list");
         };
+    }
+
+    <T> void useStream(JdbcOperation operation, JdbcClient.RowMapper<T> mapper, Consumer<Stream<T>> action) {
+        run(operation, UNBOUNDED, scope -> {
+            queryHandler.useStream(scope, mapper, action);
+            return null;
+        }, true);
     }
 
     /**
@@ -312,6 +321,10 @@ final class JdbcRunner {
         if (previousFailure == null) {
             return failure;
         }
+        if (failure instanceof Error && !(previousFailure instanceof Error)) {
+            failure.addSuppressed(previousFailure);
+            return failure;
+        }
         if (failure != null) {
             previousFailure.addSuppressed(cleanupException(operation, failure));
         }
@@ -333,8 +346,18 @@ final class JdbcRunner {
         try {
             resource.close();
         } catch (Throwable closeFailure) {
-            // Preserve a primary fatal error. An error attached below another failure is sanitized.
-            if (previousFailure == null && closeFailure instanceof Error) {
+            if (closeFailure instanceof Error) {
+                if (previousFailure == null) {
+                    return closeFailure;
+                }
+                if (previousFailure instanceof Error) {
+                    if (previousFailure != closeFailure) {
+                        previousFailure.addSuppressed(closeFailure);
+                    }
+                    return previousFailure;
+                }
+                closeFailure.addSuppressed(JdbcExceptionTranslator.sanitize("retaining an earlier cleanup failure",
+                                                                            previousFailure));
                 return closeFailure;
             }
             if (previousFailure == null) {
@@ -403,6 +426,10 @@ final class JdbcRunner {
     private <T> T run(JdbcOperation operation,
                       ExecutionOptions options,
                       HandlerAction<T> action) {
+        return run(operation, options, action, false);
+    }
+
+    private <T> T run(JdbcOperation operation, ExecutionOptions options, HandlerAction<T> action, boolean streaming) {
         // Explicit cleanup preserves every failure in resource ownership order.
         JdbcConnectionLease lease = null;
         PreparedStatement statement = null;
@@ -421,6 +448,9 @@ final class JdbcRunner {
                 }
                 throw leaseFailure;
             }
+            if (streaming) {
+                lease.reserve();
+            }
             Connection connection = lease.connection();
             statement = prepare(connection, operation);
             applyOptions(statement, options);
@@ -433,11 +463,36 @@ final class JdbcRunner {
 
         ResultSet resultSet = scope == null ? null : scope.resultSet();
         failure = closeAll(operation, resultSet, statement, lease, failure);
+        if (streaming && lease != null) {
+            if (failure != null) {
+                lease.processingFailed();
+            }
+            lease.releaseReservation();
+        }
         if (failure != null) {
             rethrow(operation, failure);
         }
         return result;
     }
+
+    /**
+     * Operation-specific work performed inside the resource boundary.
+     *
+     * @param <T> terminal result type
+     */
+    @FunctionalInterface
+    private interface HandlerAction<T> {
+
+        /**
+         * Executes against a prepared and bound statement.
+         *
+         * @param scope runner-owned execution scope
+         * @return terminal result
+         * @throws SQLException when JDBC work fails
+         */
+        T execute(ExecutionScope scope) throws SQLException;
+    }
+
 
     /**
      * Runner-owned view of one prepared operation.
@@ -619,22 +674,5 @@ final class JdbcRunner {
         }
     }
 
-    /**
-     * Operation-specific work performed inside the resource boundary.
-     *
-     * @param <T> terminal result type
-     */
-    @FunctionalInterface
-    private interface HandlerAction<T> {
-
-        /**
-         * Executes against a prepared and bound statement.
-         *
-         * @param scope runner-owned execution scope
-         * @return terminal result
-         * @throws SQLException when JDBC work fails
-         */
-        T execute(ExecutionScope scope) throws SQLException;
-    }
 
 }

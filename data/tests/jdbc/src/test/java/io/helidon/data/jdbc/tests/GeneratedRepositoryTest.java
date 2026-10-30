@@ -17,6 +17,8 @@ package io.helidon.data.jdbc.tests;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
 import io.helidon.data.jdbc.JdbcClient;
 
@@ -31,9 +33,34 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class GeneratedRepositoryTest {
+
+    /**
+     * The generated method checks its callback before staging SQL and binds colliding inputs as values.
+     */
+    @Test
+    void streamsThroughThePublicClientPathAndValidatesBeforeStaging() {
+        JdbcClient client = mock(JdbcClient.class);
+        StreamingQueryRepository repository = new StreamingQueryRepository__Jdbc(client);
+        assertThrows(NullPointerException.class, () -> repository.values("input", null));
+        verify(client, never()).create(anyString());
+        JdbcClient.Statement statement = mock(JdbcClient.Statement.class);
+        @SuppressWarnings("unchecked")
+        JdbcClient.Rows<String> rows = mock(JdbcClient.Rows.class);
+        when(client.create(anyString())).thenReturn(statement);
+        when(statement.bind(anyInt(), any())).thenReturn(statement);
+        when(statement.map(String.class)).thenReturn(rows);
+        var action = new AtomicReference<Stream<String>>();
+        repository.values("input", action::set);
+        verify(statement).bind(1, "input");
+        verify(statement).bind(2, "input");
+        verify(statement).bind(3, "input");
+        verify(rows).useStream(any());
+    }
 
     /**
      * Proves generated {@code int} update methods preserve overflow instead of

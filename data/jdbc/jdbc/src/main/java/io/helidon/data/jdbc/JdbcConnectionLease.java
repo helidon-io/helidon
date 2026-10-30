@@ -48,6 +48,24 @@ interface JdbcConnectionLease extends AutoCloseable {
     Connection connection();
 
     /**
+     * Reserves this lease for a streaming terminal.
+     */
+    default void reserve() {
+    }
+
+    /**
+     * Records a streaming failure in the participating transaction.
+     */
+    default void processingFailed() {
+    }
+
+    /**
+     * Releases the reservation after resource cleanup finishes.
+     */
+    default void releaseReservation() {
+    }
+
+    /**
      * Releases the logical lease.
      *
      * @throws io.helidon.data.DataException when validation or release fails

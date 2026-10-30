@@ -16,10 +16,13 @@
 package io.helidon.data.jdbc;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 /**
- * Materialized cardinality stage for a mapped JDBC result.
+ * Result stage for a mapped JDBC query or generated keys.
  *
  * @param <T> mapped type
  */
@@ -84,11 +87,12 @@ final class JdbcRows<T> implements JdbcClient.Rows<T> {
                 : statement.optionalScalar(optionalScalarType, plan);
     }
 
-    /**
-     * Executes and materializes every row.
-     *
-     * @return mapped values in encounter order
-     */
+    @Override
+    public void useStream(Consumer<Stream<T>> action) {
+        Objects.requireNonNull(action, "The stream consumer must not be null.");
+        statement.useStream(mapper, plan, action);
+    }
+
     @Override
     public List<T> list() {
         return statement.list(mapper, plan);
