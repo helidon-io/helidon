@@ -20,7 +20,7 @@
 module io.helidon.codegen.testing {
     requires transitive io.helidon.common;
     requires transitive java.compiler;
-    requires transitive hamcrest.all;
+    requires transitive org.hamcrest;
 
     requires static org.jetbrains.annotations;
 

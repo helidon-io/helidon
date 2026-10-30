@@ -19,7 +19,7 @@
 module io.helidon.data.tests.common {
 
     requires org.junit.jupiter.api;
-    requires hamcrest.all;
+    requires org.hamcrest;
 
     requires io.helidon.transaction;
     requires io.helidon.data;

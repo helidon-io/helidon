@@ -25,6 +25,6 @@ module io.helidon.telemetry.testing.tracing {
     requires io.helidon.json;
 
     requires io.opentelemetry.exporter.logging.otlp;
-    requires hamcrest.all;
+    requires org.hamcrest;
 
 }

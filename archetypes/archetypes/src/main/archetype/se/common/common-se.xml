@@ -46,7 +46,7 @@
                 </map>
                 <map order="0">
                     <value key="groupId">org.hamcrest</value>
-                    <value key="artifactId">hamcrest-all</value>
+                    <value key="artifactId">hamcrest</value>
                     <value key="scope">test</value>
                 </map>
                 <map order="0">
