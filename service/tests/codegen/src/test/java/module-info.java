@@ -25,7 +25,7 @@ module io.helidon.service.tests.codegen.test {
     requires io.helidon.common;
     requires java.compiler;
 
-    requires hamcrest.all;
+    requires org.hamcrest;
     requires org.junit.jupiter.api;
     requires io.helidon.service.metadata;
     requires io.helidon.testing.junit5;
