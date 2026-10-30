@@ -103,10 +103,11 @@ final class JdbcMethodPlan {
         Annotation statement = method.findAnnotation(JdbcCodegenTypes.JDBC_STATEMENT)
                 .orElseThrow(() -> failure(method,
                                            "An abstract JDBC repository method must declare @Jdbc.Statement."));
-        String sql = statement.stringValue()
-                .orElseThrow(() -> failure(method, "The @Jdbc.Statement annotation must declare an SQL statement."));
-        if (sql.isBlank()) {
-            throw failure(method, "The SQL statement declared by @Jdbc.Statement must not be blank.");
+        String sql = statement.stringValue().orElse("");
+        String name = statement.stringValue("name").orElse("");
+        if ((!sql.isEmpty() && sql.isBlank()) || (!name.isEmpty() && name.isBlank())
+                || sql.isBlank() == name.isBlank()) {
+            throw failure(method, "The @Jdbc.Statement annotation must declare exactly one nonblank SQL value or name.");
         }
 
         Return result = returnPlan(method);
@@ -136,7 +137,12 @@ final class JdbcMethodPlan {
                                   result.mappedType(),
                                   rowMapperRequested,
                                   explicitMapper);
-        JdbcSqlParameterPlan parameters = JdbcSqlParameterPlan.create(sql, method.parameterArguments(), method);
+        JdbcSqlParameterPlan parameters = name.isEmpty()
+                ? JdbcSqlParameterPlan.create(sql, method.parameterArguments(), method)
+                : JdbcSqlParameterPlan.configured(name,
+                                                  method.parameterArguments(),
+                                                  method,
+                                                  roundContext.typeHierarchyResolver());
         return new JdbcMethodPlan(method,
                                   operation,
                                   result.shape(),
@@ -181,6 +187,10 @@ final class JdbcMethodPlan {
 
     JdbcSqlParameterPlan parameterPlan() {
         return parameterPlan;
+    }
+
+    boolean configured() {
+        return method.annotation(JdbcCodegenTypes.JDBC_STATEMENT).stringValue("name").filter(it -> !it.isEmpty()).isPresent();
     }
 
     String jdbcSql() {

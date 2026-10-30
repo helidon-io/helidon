@@ -134,6 +134,7 @@ final class JdbcClientConfigSupport {
         public void decorate(JdbcClientConfig.BuilderBase<?, ?> builder) {
             Objects.requireNonNull(builder, "The JDBC client configuration builder must not be null.");
             validateClient(builder.name(), builder.dataSourceName());
+            JdbcConfiguredStatement.catalog(builder.statements());
             cachePolicy(builder.parameterCountCacheCapacity(), builder.parameterCountCacheMaxSqlLength());
         }
     }

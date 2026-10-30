@@ -15,6 +15,9 @@
  */
 package io.helidon.codegen.apt;
 
+import java.io.IOException;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -29,12 +32,15 @@ import java.util.function.Function;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
+import javax.tools.JavaFileObject;
 
 import io.helidon.codegen.TypeHierarchy;
 import io.helidon.codegen.TypeHierarchyResolver;
@@ -66,6 +72,53 @@ final class AptTypeHierarchyResolver extends TypeHierarchyResolver {
         this.types = resolvedEnvironment.getTypeUtils();
         this.exceptionType = elements.getTypeElement(Exception.class.getName()).asType();
         this.runtimeExceptionType = elements.getTypeElement(RuntimeException.class.getName()).asType();
+    }
+
+    @Override
+    protected boolean environmentParameterNameAvailable(TypedElementInfo parameter) {
+        Objects.requireNonNull(parameter, "The parameter must not be null.");
+        if (!(parameter.originatingElementValue() instanceof VariableElement variable)) {
+            return super.environmentParameterNameAvailable(parameter);
+        }
+        if (!(variable.getEnclosingElement() instanceof ExecutableElement method)) {
+            return false;
+        }
+        int index = method.getParameters().indexOf(variable);
+        if (index < 0) {
+            return false;
+        }
+        try {
+            JavaFileObject file = elements.getFileObjectOf(variable);
+            if (file == null) {
+                return false;
+            }
+            if (file.getKind() == JavaFileObject.Kind.SOURCE) {
+                return true;
+            }
+            if (file.getKind() != JavaFileObject.Kind.CLASS) {
+                return false;
+            }
+            StringBuilder descriptor = new StringBuilder("(");
+            for (VariableElement input : method.getParameters()) {
+                descriptor.append(descriptor(input.asType()));
+            }
+            descriptor.append(')').append(descriptor(method.getReturnType()));
+            // The original declaration supplies the descriptor even when the child specializes its generic types.
+            try (var input = file.openInputStream()) {
+                return ClassFile.of().parse(input.readAllBytes()).methods().stream()
+                        .filter(candidate -> candidate.methodName().equalsString(method.getSimpleName().toString())
+                                && candidate.methodType().equalsString(descriptor.toString()))
+                        .findFirst()
+                        .flatMap(candidate -> candidate.findAttribute(Attributes.methodParameters()))
+                        .filter(attribute -> index < attribute.parameters().size())
+                        .flatMap(attribute -> attribute.parameters().get(index).name())
+                        .filter(name -> name.equalsString(parameter.elementName()))
+                        .isPresent();
+            }
+        } catch (IOException | IllegalArgumentException | UnsupportedOperationException _) {
+            // Unavailable or unreadable metadata cannot establish a declared binding name.
+            return false;
+        }
     }
 
     // Resolve an inherited declaration in the root interface's generic context, then copy the compiler-resolved
@@ -200,6 +253,25 @@ final class AptTypeHierarchyResolver extends TypeHierarchyResolver {
             pending.addAll(types.directSupertypes(current));
         }
         return Optional.empty();
+    }
+
+    private String descriptor(TypeMirror type) {
+        TypeMirror erased = types.erasure(type);
+        return switch (erased.getKind()) {
+            case BOOLEAN -> "Z";
+            case BYTE -> "B";
+            case SHORT -> "S";
+            case CHAR -> "C";
+            case INT -> "I";
+            case LONG -> "J";
+            case FLOAT -> "F";
+            case DOUBLE -> "D";
+            case VOID -> "V";
+            case ARRAY -> "[" + descriptor(((ArrayType) erased).getComponentType());
+            case DECLARED -> "L" + elements.getBinaryName((TypeElement) ((DeclaredType) erased).asElement())
+                    .toString().replace('.', '/') + ";";
+            default -> throw new IllegalArgumentException("The compiler type has no JVM descriptor.");
+        };
     }
 
     // Project a source declaration into the inspected interface so inherited type arguments are substituted by the

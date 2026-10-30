@@ -73,6 +73,21 @@ class GeneratedJdbcDataTest {
                    is("Typed SQL null binding requires a statement created by Helidon's JDBC provider."));
     }
 
+    @Test
+    void namedDefaultsPreserveAlternateImplementationsAndNullPrecedence() {
+        AlternateClient client = new AlternateClient();
+        AlternateStatement statement = client.statement;
+        assertThrows(NullPointerException.class, () -> client.createNamed(null));
+        assertThrows(UnsupportedOperationException.class, () -> client.createNamed("configured"));
+        assertThrows(NullPointerException.class, () -> statement.bind(null, "value"));
+        assertThrows(NullPointerException.class, () -> statement.bind("name", null));
+        assertThrows(UnsupportedOperationException.class, () -> statement.bind("name", "value"));
+        assertThrows(NullPointerException.class, () -> GeneratedJdbcData.bindNull(null, "name", JDBCType.INTEGER));
+        assertThrows(NullPointerException.class, () -> GeneratedJdbcData.bindNull(statement, (String) null, JDBCType.INTEGER));
+        assertThrows(NullPointerException.class, () -> GeneratedJdbcData.bindNull(statement, "name", null));
+        assertThrows(UnsupportedOperationException.class, () -> GeneratedJdbcData.bindNull(statement, "name", JDBCType.INTEGER));
+    }
+
     private static final class AlternateClient implements JdbcClient {
         private static final JdbcClientConfig CONFIG = JdbcClientConfig.builder()
                 .dataSourceName("test-data-source")

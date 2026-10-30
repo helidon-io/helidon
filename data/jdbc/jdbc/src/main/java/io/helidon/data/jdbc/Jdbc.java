@@ -128,7 +128,15 @@ public final class Jdbc {
          *
          * @return one SQL statement
          */
-        String value();
+        String value() default "";
+
+        /**
+         * Selects a statement from the configured client catalog. Exactly one of
+         * {@code value} and {@code name} must contain a nonblank value.
+         *
+         * @return The configured statement name.
+         */
+        String name() default "";
     }
 
     /**

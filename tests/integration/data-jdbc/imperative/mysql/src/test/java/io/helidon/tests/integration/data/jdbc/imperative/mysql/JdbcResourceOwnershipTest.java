@@ -20,6 +20,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -107,6 +108,29 @@ class JdbcResourceOwnershipTest {
 
             assertThat(client.create("SELECT COUNT(*) FROM TEST_VALUE").map(Long.class).one(), is(1L));
             assertThat(dataSource.getHikariPoolMXBean().getActiveConnections(), is(0));
+        }
+    }
+
+    /**
+     * Proves configured queries, updates, keys, and mapper failures release the sole pool lease.
+     */
+    @Test
+    void returnsConfiguredLeasesAfterSuccessAndFailure() {
+        try (HikariDataSource source = dataSource()) {
+            JdbcClient initial = initializedClient(source);
+            JdbcClient client = JdbcClient.builder().from(initial.prototype()).statements(Map.of(
+                    "insert", "INSERT INTO TEST_VALUE(DATA_VALUE) VALUES (:value)",
+                    "find", "SELECT DATA_VALUE FROM TEST_VALUE WHERE ID = :id OR ID = :id",
+                    "delete", "DELETE FROM TEST_VALUE WHERE ID = :id")).build();
+            long key = client.createNamed("insert").bind("value", "configured").generatedKeys().addColumn("ID")
+                    .map(row -> row.get(1, Long.class)).one();
+            assertThat(client.createNamed("find").bind("id", key).map(String.class).one(), is("configured"));
+            assertThrows(IllegalStateException.class, () -> client.createNamed("find").bind("id", key).map(_ -> {
+                throw new IllegalStateException("The application mapper rejected this row.");
+            }).list());
+            assertThat(source.getHikariPoolMXBean().getActiveConnections(), is(0));
+            assertThat(client.createNamed("delete").bind("id", key).execute(), is(1L));
+            assertThat(source.getHikariPoolMXBean().getActiveConnections(), is(0));
         }
     }
 

@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import io.helidon.codegen.CodegenException;
+import io.helidon.codegen.TypeHierarchyResolver;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypedElementInfo;
 
@@ -69,6 +70,31 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
             case POSITIONAL -> positionalBindings(parsed.markers().size(), parameters, method);
         };
         return new JdbcSqlParameterPlan(parsed.sql(), binds);
+    }
+
+    /**
+     * Resolves logical inputs without reading deployment SQL. Positions remain
+     * unknown until the selected client supplies its immutable catalog plan.
+     *
+     * @param name The configured statement name.
+     * @param parameters The repository inputs.
+     * @param method The enclosing method.
+     * @param resolver The compiler environment used to validate parameter names.
+     * @return The logical binding plan.
+     */
+    static JdbcSqlParameterPlan configured(String name,
+                                            List<TypedElementInfo> parameters,
+                                            TypedElementInfo method,
+                                            TypeHierarchyResolver resolver) {
+        validateParameters(parameters, method);
+        for (int index = 0; index < parameters.size(); index++) {
+            if (!resolver.parameterNameAvailable(parameters.get(index))) {
+                throw failure(method, "The name of parameter " + (index + 1) + " of method " + method.elementName()
+                        + " is unavailable. Recompile the parent with -parameters or redeclare the method "
+                        + "in this repository with an explicit parameter name.");
+            }
+        }
+        return new JdbcSqlParameterPlan(name, parameters.stream().map(parameter -> binding(0, parameter)).toList());
     }
 
     /**

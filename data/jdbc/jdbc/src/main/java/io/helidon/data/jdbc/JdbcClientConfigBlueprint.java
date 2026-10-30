@@ -15,6 +15,8 @@
  */
 package io.helidon.data.jdbc;
 
+import java.util.Map;
+
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Api;
@@ -43,6 +45,17 @@ interface JdbcClientConfigBlueprint extends SqlConfig, Prototype.Factory<JdbcCli
     @Option.Configured
     @Option.Default(Service.Named.DEFAULT_NAME)
     String name();
+
+    /**
+     * Defines the confidential SQL catalog for this client. Definitions are copied
+     * when the configuration is built. An empty catalog disables named lookup.
+     * SQL accepts named markers or no markers and uses the portable lexical policy.
+     *
+     * @return The immutable statement definitions.
+     */
+    @Option.Configured
+    @Option.Confidential
+    Map<String, String> statements();
 
     /**
      * The maximum number of SQL marker counts retained by this client must be between zero and 4096 inclusive,

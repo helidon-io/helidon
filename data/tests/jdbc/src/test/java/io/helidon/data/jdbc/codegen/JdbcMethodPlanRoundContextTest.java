@@ -249,13 +249,13 @@ class JdbcMethodPlanRoundContextTest {
                 CodegenException.class,
                 () -> JdbcMethodPlan.create(missingSql, new TypesRoundContext(Map.of())));
         assertThat(missingSqlFailure.getMessage(),
-                   is("The @Jdbc.Statement annotation must declare an SQL statement."));
+                   is("The @Jdbc.Statement annotation must declare exactly one nonblank SQL value or name."));
 
         CodegenException blank = assertThrows(
                 CodegenException.class,
                 () -> JdbcMethodPlan.create(repositoryMethod("blankStatement", TypeNames.STRING, null, "  "),
                                             new TypesRoundContext(Map.of())));
-        assertThat(blank.getMessage(), is("The SQL statement declared by @Jdbc.Statement must not be blank."));
+        assertThat(blank.getMessage(), is("The @Jdbc.Statement annotation must declare exactly one nonblank SQL value or name."));
     }
 
     private static TypedElementInfo repositoryMethod(String name, TypeName returnType, TypeName mapperType) {

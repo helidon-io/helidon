@@ -147,6 +147,22 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
     Statement create(String sql);
 
     /**
+     * Creates a fresh stage by exact lookup in this client. Lookup and binding
+     * acquire no JDBC resources. Definitions remain fixed for the client lifetime.
+     *
+     * @param name The configured statement name.
+     * @return A fresh statement stage.
+     * @throws NullPointerException The name is null.
+     * @throws IllegalArgumentException The name is blank.
+     * @throws io.helidon.data.DataException The name is not configured.
+     * @throws UnsupportedOperationException The provider does not support configured statements.
+     */
+    default Statement createNamed(String name) {
+        Objects.requireNonNull(name, "The configured statement name must not be null.");
+        throw new UnsupportedOperationException("This JDBC client does not support configured statements.");
+    }
+
+    /**
      * Describes one prepared JDBC operation.
      * <p>
      * Bind positions use JDBC indexes, which start at one. The stage accepts
@@ -166,6 +182,24 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          * @throws IllegalStateException if a terminal operation has started
          */
         Statement bind(int index, Object value);
+
+        /**
+         * Binds a supported nonnull scalar to every occurrence of a configured marker.
+         * All destination slots are validated before any assignment.
+         *
+         * @param name The marker name without a colon.
+         * @param value The supported scalar value.
+         * @return This statement.
+         * @throws NullPointerException The name or value is null.
+         * @throws IllegalArgumentException The name, value, or assignment is invalid.
+         * @throws IllegalStateException The stage is consumed or does not support named bindings.
+         * @throws UnsupportedOperationException The provider does not support named bindings.
+         */
+        default Statement bind(String name, Object value) {
+            Objects.requireNonNull(name, "The bind name must not be null.");
+            Objects.requireNonNull(value, "The bind value must not be null.");
+            throw new UnsupportedOperationException("This JDBC statement does not support named bindings.");
+        }
 
         /**
          * Executes an update and returns its update count as a {@code long} value.
