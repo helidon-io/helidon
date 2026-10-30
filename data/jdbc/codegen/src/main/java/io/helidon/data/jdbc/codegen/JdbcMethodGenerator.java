@@ -84,6 +84,9 @@ final class JdbcMethodGenerator {
 
         int nullableBindCount = 0;
         for (JdbcMethodPlan plan : plans) {
+            if (plan.operation() == JdbcMethodPlan.Operation.BATCH) {
+                continue;
+            }
             for (JdbcSqlParameterPlan.Bind bind : plan.parameterPlan().binds()) {
                 if (bind.nullable() && !plan.configured()) {
                     nullableBindCount++;
@@ -255,6 +258,10 @@ final class JdbcMethodGenerator {
         // Repository parameter names are in method scope, so the generated statement variable must avoid them.
         while (generatedParameterNames.contains(statementName)) {
             statementName = JdbcCodegenConstants.JDBC_STATEMENT_NAME + statementNameSuffix++;
+        }
+        if (plan.operation() == JdbcMethodPlan.Operation.BATCH) {
+            JdbcBatchGenerator.generate(plan, method, parameterNames, generatedParameterNames, statementName);
+            return;
         }
         method.addContent(JdbcCodegenTypes.JDBC_CLIENT_STATEMENT)
                 .addContent(" ")

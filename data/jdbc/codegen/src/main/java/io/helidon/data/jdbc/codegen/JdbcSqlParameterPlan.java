@@ -53,13 +53,13 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
     static JdbcSqlParameterPlan create(String sql,
                                        List<TypedElementInfo> parameters,
                                        TypedElementInfo method) {
-        validateParameters(parameters, method);
         JdbcSqlMarkerLexer.Result parsed;
         try {
             parsed = JdbcSqlMarkerLexer.parse(sql);
         } catch (IllegalArgumentException e) {
             throw failure(method, e.getMessage());
         }
+        validateParameters(parameters, method, parsed.style() == JdbcSqlMarkerLexer.MarkerStyle.NAMED);
         if (parsed.style() == JdbcSqlMarkerLexer.MarkerStyle.POSITIONAL
                 && parameters.stream().anyMatch(parameter -> parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM))) {
             throw failure(method, "@Data.Param requires named SQL markers and cannot be used with positional SQL.");
@@ -125,8 +125,9 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
      *
      * @param parameters repository parameters
      * @param method enclosing method
+     * @param uniqueNames Whether names must identify distinct logical inputs.
      */
-    private static void validateParameters(List<TypedElementInfo> parameters, TypedElementInfo method) {
+    private static void validateParameters(List<TypedElementInfo> parameters, TypedElementInfo method, boolean uniqueNames) {
         Set<String> names = new HashSet<>();
         for (TypedElementInfo parameter : parameters) {
             String name = effectiveName(parameter);
@@ -147,7 +148,7 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
                 }
             }
             // An alias must also remain distinct from Java names used by parameters without an alias.
-            if (!names.add(name)) {
+            if (uniqueNames && !names.add(name)) {
                 throw failure(method, "The effective repository parameter name '" + name + "' is duplicated.");
             }
             if (!JdbcScalarTypes.isScalar(parameter.typeName())) {
