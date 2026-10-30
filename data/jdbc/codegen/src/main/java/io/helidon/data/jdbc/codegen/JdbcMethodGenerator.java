@@ -84,7 +84,7 @@ final class JdbcMethodGenerator {
         int nullableBindCount = 0;
         for (JdbcMethodPlan plan : plans) {
             for (JdbcSqlParameterPlan.Bind bind : plan.parameterPlan().binds()) {
-                if (bind.nullable()) {
+                if (bind.nullable() && !plan.configured()) {
                     nullableBindCount++;
                 }
             }
@@ -220,6 +220,8 @@ final class JdbcMethodGenerator {
         Set<String> generatedFieldNames = new HashSet<>();
         generatedFieldNames.add(JdbcCodegenConstants.JDBC_CLIENT_NAME);
         generatedFieldNames.add(plan.sqlFieldName());
+        generatedFieldNames.add(JdbcCodegenConstants.OPTIONAL_VALUE_PARAMETER_NAME);
+        generatedFieldNames.add(JdbcCodegenConstants.ROW_PARAMETER_NAME);
         if (plan.mappingKind() != JdbcMethodPlan.MappingKind.SCALAR) {
             generatedFieldNames.add(plan.mapperFieldName());
         }
@@ -248,17 +250,24 @@ final class JdbcMethodGenerator {
         method.addContent(JdbcCodegenTypes.JDBC_CLIENT_STATEMENT)
                 .addContent(" ")
                 .addContent(statementName)
-                .addContent(" = ")
-                .addContent(JdbcCodegenTypes.GENERATED_JDBC_DATA)
-                .addContent(".createGenerated(")
-                .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME)
-                .addContent(", ")
-                .addContent(plan.sqlFieldName())
-                .addContent(", ")
-                .addContent(String.valueOf(plan.parameterPlan().parameterCount()))
-                .addContentLine(");");
+                .addContent(" = ");
+        if (plan.configured()) {
+            method.addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME)
+                    .addContent(".createNamed(")
+                    .addContent(plan.sqlFieldName())
+                    .addContentLine(");");
+        } else {
+            method.addContent(JdbcCodegenTypes.GENERATED_JDBC_DATA)
+                    .addContent(".createGenerated(")
+                    .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME)
+                    .addContent(", ")
+                    .addContent(plan.sqlFieldName())
+                    .addContent(", ")
+                    .addContent(String.valueOf(plan.parameterPlan().parameterCount()))
+                    .addContentLine(");");
+        }
         for (JdbcSqlParameterPlan.Bind bind : plan.parameterPlan().binds()) {
-            addBind(method, statementName, parameterNames, bind, bindParameterMethodName);
+            addBind(method, statementName, parameterNames, bind, plan.configured() ? null : bindParameterMethodName);
         }
         addTerminal(plan, method, statementName);
     }
@@ -278,10 +287,13 @@ final class JdbcMethodGenerator {
                                 JdbcSqlParameterPlan.Bind bind,
                                 String bindParameterMethodName) {
         String parameterName = parameterNames.get(bind.parameter().elementName());
+        String destination = bind.position() == 0
+                ? "\"" + bind.parameter().elementName() + "\""
+                : String.valueOf(bind.position());
         if (!bind.nullable()) {
             method.addContent(statementName)
                     .addContent(".bind(")
-                    .addContent(String.valueOf(bind.position()))
+                    .addContent(destination)
                     .addContent(", ")
                     .addContent(parameterName)
                     .addContentLine(");");
@@ -294,7 +306,7 @@ final class JdbcMethodGenerator {
                     .addContent("(")
                     .addContent(statementName)
                     .addContent(", ")
-                    .addContent(String.valueOf(bind.position()))
+                    .addContent(destination)
                     .addContent(", ")
                     .addContent(parameterName)
                     .addContent(", ")
@@ -311,7 +323,7 @@ final class JdbcMethodGenerator {
                 .addContent(".bindNull(")
                 .addContent(statementName)
                 .addContent(", ")
-                .addContent(String.valueOf(bind.position()))
+                .addContent(destination)
                 .addContent(", ")
                 .addContent(JdbcCodegenTypes.JDBC_TYPE)
                 .addContent(".")
@@ -321,7 +333,7 @@ final class JdbcMethodGenerator {
                 .addContentLine("} else {")
                 .addContent(statementName)
                 .addContent(".bind(")
-                .addContent(String.valueOf(bind.position()))
+                .addContent(destination)
                 .addContent(", ")
                 .addContent(parameterName)
                 .addContentLine(");")

@@ -134,6 +134,21 @@ final class JdbcTypeHierarchy {
         if (declarations.size() < 2) {
             return;
         }
+        Optional<String> configuredName = declarations.getFirst()
+                .findAnnotation(JdbcCodegenTypes.JDBC_STATEMENT)
+                .flatMap(annotation -> annotation.stringValue("name"))
+                .filter(name -> !name.isEmpty());
+        if (configuredName.isPresent()) {
+            List<String> names = declarations.getFirst().parameterArguments().stream()
+                    .map(TypedElementInfo::elementName).toList();
+            for (TypedElementInfo declaration : declarations) {
+                if (!names.equals(declaration.parameterArguments().stream().map(TypedElementInfo::elementName).toList())) {
+                    throw new CodegenException("Inherited configured statements have incompatible parameter names.",
+                                               declaration.originatingElementValue());
+                }
+            }
+            return;
+        }
         Optional<String> sql = declarations.getFirst()
                 .findAnnotation(JdbcCodegenTypes.JDBC_STATEMENT)
                 .flatMap(Annotation::stringValue);

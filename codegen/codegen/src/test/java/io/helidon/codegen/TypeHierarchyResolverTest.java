@@ -66,6 +66,7 @@ class TypeHierarchyResolverTest {
                 .typeName(TypeNames.STRING).build();
         assertThrows(IllegalArgumentException.class,
                      () -> resolver.parameterAnnotationCandidates(interfaceInfo, field, 0, annotationType));
+        assertThrows(NullPointerException.class, () -> resolver.parameterNameAvailable(null));
         assertThrows(NullPointerException.class, () -> resolver.resolveSupertype(null, TypeNames.OBJECT));
         assertThrows(NullPointerException.class, () -> resolver.resolveSupertype(TypeNames.STRING, null));
         assertThrows(NullPointerException.class,
@@ -86,6 +87,7 @@ class TypeHierarchyResolverTest {
         TypedElementInfo declaration = method("find", TypeNames.STRING, Modifier.ABSTRACT);
 
         assertThrows(NullPointerException.class, () -> resolver.resolveEnvironmentMember(null, declaration));
+        assertThrows(NullPointerException.class, () -> resolver.environmentParameterNameAvailable(null));
         assertThrows(NullPointerException.class, () -> resolver.resolveEnvironmentMember(interfaceInfo, null));
         assertThrows(NullPointerException.class,
                      () -> resolver.environmentOverrides(null, declaration, declaration));
@@ -103,6 +105,23 @@ class TypeHierarchyResolverTest {
                      () -> resolver.resolveEnvironmentSupertype(null, TypeNames.OBJECT));
         assertThrows(NullPointerException.class,
                      () -> resolver.resolveEnvironmentSupertype(TypeNames.STRING, null));
+    }
+
+    /**
+     * Explicit model names remain valid even when their spelling resembles a compiler placeholder.
+     */
+    @Test
+    void recognizesExplicitModelParameterNames() {
+        TypeHierarchyResolver resolver = TypeHierarchyResolver.create(_ -> Optional.empty());
+        TypedElementInfo parameter = TypedElementInfo.builder()
+                .kind(ElementKind.PARAMETER)
+                .elementName("arg0")
+                .typeName(TypeNames.STRING)
+                .build();
+        assertThat(resolver.parameterNameAvailable(parameter), is(true));
+        assertThat(resolver.parameterNameAvailable(TypedElementInfo.builder(parameter).elementName("").build()), is(false));
+        assertThrows(IllegalArgumentException.class,
+                     () -> resolver.parameterNameAvailable(method("find", TypeNames.STRING, Modifier.ABSTRACT)));
     }
 
     /**

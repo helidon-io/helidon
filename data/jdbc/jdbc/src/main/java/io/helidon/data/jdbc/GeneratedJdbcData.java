@@ -95,4 +95,28 @@ public final class GeneratedJdbcData {
         throw new UnsupportedOperationException(
                 "Typed SQL null binding requires a statement created by Helidon's JDBC provider.");
     }
+    /**
+     * Binds typed SQL NULL to every occurrence of a configured marker without JDBC work.
+     * Every destination is validated before any binding changes.
+     *
+     * @param statement The statement created by the Helidon JDBC provider.
+     * @param name The marker name without a colon.
+     * @param type The SQL type supplied by generated code.
+     * @return The same statement.
+     * @throws NullPointerException The statement, name, or type is null.
+     * @throws IllegalArgumentException The name or type is unsupported, or a slot is assigned.
+     * @throws IllegalStateException The stage is consumed or is not configured.
+     * @throws UnsupportedOperationException The statement belongs to another provider.
+     */
+    public static Statement bindNull(Statement statement, String name, JDBCType type) {
+        Objects.requireNonNull(statement, "The JDBC statement must not be null.");
+        Objects.requireNonNull(name, "The bind name must not be null.");
+        Objects.requireNonNull(type, "The JDBC null type must not be null.");
+        if (statement instanceof JdbcStatement jdbcStatement) {
+            return jdbcStatement.bindNull(name, type);
+        }
+        throw new UnsupportedOperationException(
+                "Typed SQL null binding requires a statement created by the Helidon JDBC provider.");
+    }
+
 }

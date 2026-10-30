@@ -32,6 +32,7 @@ final class JdbcStatement implements JdbcClient.Statement {
     private final JdbcRunner runner;
     private final String sql;
     private final JdbcOperation.Bind[] binds;
+    private final JdbcConfiguredStatement configured;
 
     // A terminal operation freezes the statement and places it in its terminal state.
     private boolean terminalState;
@@ -44,9 +45,17 @@ final class JdbcStatement implements JdbcClient.Statement {
      * @param parameterCount number of JDBC markers
      */
     JdbcStatement(JdbcRunner runner, String sql, int parameterCount) {
+        this.configured = null;
         this.runner = runner;
         this.sql = sql;
         this.binds = new JdbcOperation.Bind[parameterCount];
+    }
+
+    JdbcStatement(JdbcRunner runner, JdbcConfiguredStatement configured) {
+        this.runner = runner;
+        this.configured = configured;
+        this.sql = configured.sql();
+        this.binds = new JdbcOperation.Bind[configured.parameterCount()];
     }
 
     /**
@@ -65,6 +74,16 @@ final class JdbcStatement implements JdbcClient.Statement {
                             + value.getClass().getTypeName() + "' as a portable scalar.");
         }
         return bind(index, new JdbcOperation.Bind(value, null));
+    }
+
+    @Override
+    public JdbcClient.Statement bind(String name, Object value) {
+        Objects.requireNonNull(name, "The bind name must not be null.");
+        Objects.requireNonNull(value, "The bind value must not be null.");
+        if (!JdbcScalarAccess.supported(value.getClass())) {
+            throw new IllegalArgumentException("The bind value must be a supported portable scalar.");
+        }
+        return bind(name, new JdbcOperation.Bind(value, null));
     }
 
     /**
@@ -134,16 +153,13 @@ final class JdbcStatement implements JdbcClient.Statement {
      * @return this statement
      */
     JdbcClient.Statement bindNull(int index, JDBCType type) {
-        switch (type) {
-        case NULL, REF_CURSOR -> throw new IllegalArgumentException(
-                "The JDBC client does not support null values of type '" + type + "'.");
-        case ARRAY, DISTINCT, JAVA_OBJECT, REF, STRUCT -> throw new IllegalArgumentException(
-                "The JDBC client cannot bind a null value of type '" + type
-                        + "' without a database type name.");
-        default -> {
-        }
-        }
+        validateNullType(type);
         return bind(index, new JdbcOperation.Bind(null, type));
+    }
+
+    JdbcClient.Statement bindNull(String name, JDBCType type) {
+        validateNullType(type);
+        return bind(name, new JdbcOperation.Bind(null, type));
     }
 
     /**
@@ -201,6 +217,35 @@ final class JdbcStatement implements JdbcClient.Statement {
         if (terminalState) {
             throw new IllegalStateException("A JDBC statement can perform only one terminal operation.");
         }
+    }
+
+    private static void validateNullType(JDBCType type) {
+        switch (type) {
+        case NULL, REF_CURSOR -> throw new IllegalArgumentException(
+                "The JDBC client does not support null values of type '" + type + "'.");
+        case ARRAY, DISTINCT, JAVA_OBJECT, REF, STRUCT -> throw new IllegalArgumentException(
+                "The JDBC client cannot bind a null value of type '" + type
+                        + "' without a database type name.");
+        default -> {
+        }
+        }
+    }
+
+    private JdbcClient.Statement bind(String name, JdbcOperation.Bind value) {
+        ensureMutable();
+        if (configured == null) {
+            throw new IllegalStateException("Named bindings require a configured statement.");
+        }
+        List<Integer> slots = configured.positions(name);
+        for (int slot : slots) {
+            if (binds[slot - 1] != null) {
+                throw new IllegalArgumentException("A configured bind position has already been assigned.");
+            }
+        }
+        for (int slot : slots) {
+            binds[slot - 1] = value;
+        }
+        return this;
     }
 
     /**

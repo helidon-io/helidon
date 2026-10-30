@@ -15,6 +15,7 @@
  */
 package io.helidon.data.jdbc;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -35,6 +36,7 @@ import io.helidon.service.registry.Services;
  */
 final class JdbcClientImpl implements JdbcClient {
 
+    private final Map<String, JdbcConfiguredStatement> statements;
     private final JdbcClientConfig prototype;
     private final JdbcRunner runner;
     private final CachePolicy cachePolicy;
@@ -52,6 +54,7 @@ final class JdbcClientImpl implements JdbcClient {
                    DataSource dataSource,
                    JdbcConnectionLease.Provider leaseProvider,
                    CachePolicy cachePolicy) {
+        this.statements = JdbcConfiguredStatement.catalog(prototype.statements());
         this.prototype = prototype;
         this.runner = new JdbcRunner(dataSource, leaseProvider);
         this.cachePolicy = cachePolicy;
@@ -117,6 +120,19 @@ final class JdbcClientImpl implements JdbcClient {
         }
         int parameterCount = parameterCount(sql);
         return new JdbcStatement(runner, sql, parameterCount);
+    }
+
+    @Override
+    public Statement createNamed(String name) {
+        Objects.requireNonNull(name, "The configured statement name must not be null.");
+        if (name.isBlank()) {
+            throw new IllegalArgumentException("The configured statement name must not be blank.");
+        }
+        JdbcConfiguredStatement definition = statements.get(name);
+        if (definition == null) {
+            throw new DataException("The statement name is not configured for this JDBC client.");
+        }
+        return new JdbcStatement(runner, definition);
     }
 
     /**
