@@ -49,17 +49,64 @@ final class JdbcTypeHierarchy {
      * @return resolved abstract methods in declaration order
      */
     static List<TypedElementInfo> abstractMethods(TypeInfo repository, RoundContext context) {
-        return context.typeHierarchyResolver()
-                .effectiveInterfaceMethods(repository)
-                .stream()
-                .map(JdbcTypeHierarchy::validate)
-                .filter(method -> method.elementModifiers().contains(Modifier.ABSTRACT))
-                .toList();
+        TypeHierarchyResolver resolver = context.typeHierarchyResolver();
+        List<TypeHierarchyResolver.ResolvedMethod> methods = resolver.effectiveInterfaceMethods(repository);
+        List<TypedElementInfo> result = new ArrayList<>();
+        for (TypeHierarchyResolver.ResolvedMethod resolved : methods) {
+            TypedElementInfo method = resolved.method();
+            if (!method.elementModifiers().contains(Modifier.ABSTRACT)) {
+                validate(method, resolved.declarations());
+                continue;
+            }
+            List<Annotation> parameterAliases = new ArrayList<>();
+            for (int index = 0; index < method.parameterArguments().size(); index++) {
+                Annotation alias = null;
+                if (method.hasAnnotation(JdbcCodegenTypes.JDBC_STATEMENT)) {
+                    List<Annotation> values = resolver.parameterAnnotationCandidates(repository,
+                                                                                     method,
+                                                                                     index,
+                                                                                     JdbcCodegenTypes.DATA_PARAM);
+                    if (values.size() > 1) {
+                        throw new CodegenException("Inherited @Data.Param aliases conflict at parameter " + (index + 1)
+                                + " of method '" + method.elementName()
+                                + "'. Declare an explicit @Data.Param on the child override to resolve the conflict.",
+                                                   method.originatingElementValue());
+                    }
+                    if (!values.isEmpty()) {
+                        alias = values.getFirst();
+                    }
+                }
+                parameterAliases.add(alias);
+            }
+            List<TypedElementInfo> declarations = resolved.declarations().stream()
+                    .map(declaration -> withAliases(declaration, parameterAliases))
+                    .toList();
+            method = withAliases(method, parameterAliases);
+            validate(method, declarations);
+            result.add(method);
+        }
+        return List.copyOf(result);
     }
 
-    private static TypedElementInfo validate(TypeHierarchyResolver.ResolvedMethod resolvedMethod) {
-        TypedElementInfo method = resolvedMethod.method();
-        List<TypedElementInfo> declarations = resolvedMethod.declarations();
+    private static TypedElementInfo withAliases(TypedElementInfo method, List<Annotation> aliases) {
+        List<TypedElementInfo> parameters = new ArrayList<>();
+        for (int index = 0; index < method.parameterArguments().size(); index++) {
+            TypedElementInfo parameter = method.parameterArguments().get(index);
+            Annotation alias = aliases.get(index);
+            if (alias != null) {
+                parameter = TypedElementInfo.builder(parameter)
+                        .annotations(parameter.annotations().stream()
+                                .filter(annotation -> !annotation.typeName().equals(JdbcCodegenTypes.DATA_PARAM))
+                                .toList())
+                        .addAnnotation(alias)
+                        .build();
+            }
+            parameters.add(parameter);
+        }
+        return TypedElementInfo.builder(method).parameterArguments(parameters).build();
+    }
+
+    private static void validate(TypedElementInfo method, List<TypedElementInfo> declarations) {
         ElementSignature signature = TypeHierarchy.methodSignature(method);
         TypedElementInfo first = declarations.getFirst();
         for (int index = 1; index < declarations.size(); index++) {
@@ -76,7 +123,6 @@ final class JdbcTypeHierarchy {
         if (method.elementModifiers().contains(Modifier.ABSTRACT)) {
             validateParameterBindings(signature, declarations);
         }
-        return method;
     }
 
     private static void validateParameterBindings(ElementSignature signature, List<TypedElementInfo> declarations) {

@@ -36,6 +36,12 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.tests.integration.data.jdbc</groupId>
+            <artifactId>helidon-tests-integration-data-jdbc-common-parameter-contracts</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
             <scope>test</scope>

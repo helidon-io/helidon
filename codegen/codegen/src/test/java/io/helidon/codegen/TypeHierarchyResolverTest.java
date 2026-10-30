@@ -50,6 +50,22 @@ class TypeHierarchyResolverTest {
 
         assertThrows(NullPointerException.class, () -> new TypeHierarchyResolver(null));
         assertThrows(NullPointerException.class, () -> resolver.effectiveInterfaceMethods(null));
+        TypedElementInfo declaration = method("find", TypeNames.STRING, Modifier.ABSTRACT);
+        TypeName annotationType = TypeName.create("example.Bind");
+        assertThrows(NullPointerException.class,
+                     () -> resolver.parameterAnnotationCandidates(null, declaration, -1, annotationType));
+        assertThrows(NullPointerException.class,
+                     () -> resolver.parameterAnnotationCandidates(interfaceInfo, null, -1, annotationType));
+        assertThrows(NullPointerException.class,
+                     () -> resolver.parameterAnnotationCandidates(interfaceInfo, declaration, -1, null));
+        assertThrows(IllegalArgumentException.class,
+                     () -> resolver.parameterAnnotationCandidates(interfaceInfo, declaration, -1, annotationType));
+        assertThrows(IllegalArgumentException.class,
+                     () -> resolver.parameterAnnotationCandidates(interfaceInfo, declaration, 0, annotationType));
+        TypedElementInfo field = TypedElementInfo.builder().kind(ElementKind.FIELD).elementName("value")
+                .typeName(TypeNames.STRING).build();
+        assertThrows(IllegalArgumentException.class,
+                     () -> resolver.parameterAnnotationCandidates(interfaceInfo, field, 0, annotationType));
         assertThrows(NullPointerException.class, () -> resolver.resolveSupertype(null, TypeNames.OBJECT));
         assertThrows(NullPointerException.class, () -> resolver.resolveSupertype(TypeNames.STRING, null));
         assertThrows(NullPointerException.class,
@@ -520,6 +536,48 @@ class TypeHierarchyResolverTest {
                    is("Inherited method 'find()' has incompatible return types: "
                               + "'java.lang.Integer', 'java.lang.String'."));
         assertThat(failure.originatingElements(), is(List.of(stringOrigin, integerOrigin)));
+    }
+
+    /**
+     * Resolves parameter annotations independently of unrelated parent return types and preserves child overrides.
+     * Primitive and reference arrays retain the covariant signature selected from the complete hierarchy.
+     */
+    @Test
+    void preservesCovariantSignaturesDuringParameterAnnotationResolution() {
+        TypeName annotationType = TypeName.create("example.Bind");
+        Annotation key = Annotation.builder().typeName(annotationType).value("key").build();
+        Annotation other = Annotation.builder().typeName(annotationType).value("other").build();
+        Annotation chosen = Annotation.builder().typeName(annotationType).value("chosen").build();
+        TypedElementInfo parameter = TypedElementInfo.builder().kind(ElementKind.PARAMETER).elementName("value")
+                .typeName(TypeNames.STRING).addAnnotation(key).build();
+        TypeHierarchyResolver resolver = TypeHierarchyResolver.create(_ -> Optional.empty());
+        for (TypeName result : List.of(TypeNames.STRING, TypeName.create(byte[].class), TypeName.create(String[].class))) {
+            TypedElementInfo leftMethod = TypedElementInfo.builder(method("find",
+                    result.array() ? TypeName.create(Cloneable.class) : TypeName.create(CharSequence.class),
+                    Modifier.ABSTRACT)).addParameterArgument(parameter).build();
+            for (Annotation rightAlias : List.of(key, other)) {
+                TypedElementInfo rightMethod = TypedElementInfo.builder(method("find", TypeName.create(Serializable.class),
+                                                                          Modifier.ABSTRACT))
+                        .addParameterArgument(TypedElementInfo.builder(parameter).annotations(List.of(rightAlias)).build())
+                        .build();
+                TypedElementInfo childMethod = TypedElementInfo.builder(method("find", result, Modifier.ABSTRACT))
+                        .addParameterArgument(TypedElementInfo.builder(parameter).annotations(List.of()).build()).build();
+                TypeInfo child = TypeInfo.builder(repository(repository("example.Left", leftMethod),
+                                                            repository("example.Right", rightMethod)))
+                        .addElementInfo(childMethod).build();
+                TypedElementInfo resolved = resolver.effectiveInterfaceMethods(child).getFirst().method();
+                assertThat(resolved.typeName(), is(result));
+                assertThat(resolver.parameterAnnotationCandidates(child, resolved, 0, annotationType),
+                           is(rightAlias.equals(key) ? List.of(key) : List.of(key, other)));
+                TypedElementInfo explicit = TypedElementInfo.builder(childMethod)
+                        .parameterArguments(List.of(TypedElementInfo.builder(parameter).annotations(List.of(chosen)).build()))
+                        .build();
+                TypeInfo overridden = TypeInfo.builder(child).elementInfo(List.of(explicit)).build();
+                assertThat(resolver.parameterAnnotationCandidates(overridden,
+                           resolver.effectiveInterfaceMethods(overridden).getFirst().method(), 0, annotationType),
+                           is(List.of(chosen)));
+            }
+        }
     }
 
     /**

@@ -15,6 +15,7 @@
  */
 package io.helidon.data;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -36,6 +37,26 @@ public final class Data {
 
     private Data() {
         throw new UnsupportedOperationException("No instances of Data are allowed");
+    }
+
+    /**
+     * Associates a repository input with a named marker in {@code Jdbc.Statement} SQL.
+     * The alias is retained across separate compilation and takes precedence over the Java parameter name.
+     * An override without an alias preserves inherited aliases. Conflicting inherited aliases require an explicit override.
+     * This annotation does not change {@link Query} or Jakarta Persistence parameter binding.
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.PARAMETER)
+    public @interface Param {
+        /**
+         * Returns the case sensitive marker name without the colon prefix.
+         * The value must be an untrimmed, nonblank name accepted by the named marker syntax.
+         * Aliases are not supported on positional inputs or provider control parameters.
+         *
+         * @return The required marker name.
+         */
+        String value();
     }
 
     /**

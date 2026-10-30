@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import io.helidon.codegen.CodegenException;
+import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypedElementInfo;
 
 /**
@@ -58,6 +59,10 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
         } catch (IllegalArgumentException e) {
             throw failure(method, e.getMessage());
         }
+        if (parsed.style() == JdbcSqlMarkerLexer.MarkerStyle.POSITIONAL
+                && parameters.stream().anyMatch(parameter -> parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM))) {
+            throw failure(method, "@Data.Param requires named SQL markers and cannot be used with positional SQL.");
+        }
         List<Bind> binds = switch (parsed.style()) {
             case NONE -> noMarkers(parameters, method);
             case NAMED -> namedBindings(parsed.markers(), parameters, method);
@@ -77,6 +82,18 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
     }
 
     /**
+     * Returns the alias when present and otherwise uses the compiler exposed Java name.
+     *
+     * @param parameter The repository parameter supplies the name.
+     * @return The effective binding name.
+     */
+    private static String effectiveName(TypedElementInfo parameter) {
+        return parameter.findAnnotation(JdbcCodegenTypes.DATA_PARAM)
+                .flatMap(Annotation::stringValue)
+                .orElse(parameter.elementName());
+    }
+
+    /**
      * Validates the fixed declarative scalar input boundary.
      *
      * @param parameters repository parameters
@@ -85,8 +102,20 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
     private static void validateParameters(List<TypedElementInfo> parameters, TypedElementInfo method) {
         Set<String> names = new HashSet<>();
         for (TypedElementInfo parameter : parameters) {
-            if (!names.add(parameter.elementName())) {
-                throw failure(method, "The repository parameter name '" + parameter.elementName() + "' is duplicated.");
+            String name = effectiveName(parameter);
+            if (parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM)) {
+                JdbcSqlMarkerLexer.Result alias;
+                try {
+                    alias = JdbcSqlMarkerLexer.parse(":" + name);
+                } catch (IllegalArgumentException _) {
+                    throw failure(method, "@Data.Param must declare a complete marker name without a colon or whitespace.");
+                }
+                if (name.isBlank() || !alias.sql().equals("?") || !alias.markers().equals(List.of(name))) {
+                    throw failure(method, "@Data.Param must declare a complete marker name without a colon or whitespace.");
+                }
+            }
+            if (!names.add(name)) {
+                throw failure(method, "The effective repository parameter name '" + name + "' is duplicated.");
             }
             if (!JdbcScalarTypes.isScalar(parameter.typeName())) {
                 throw failure(method, "Declarative SQL does not support the parameter type '"
@@ -121,7 +150,7 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
                                             List<TypedElementInfo> parameters,
                                             TypedElementInfo method) {
         Map<String, TypedElementInfo> byName = new HashMap<>(parameters.size());
-        parameters.forEach(parameter -> byName.put(parameter.elementName(), parameter));
+        parameters.forEach(parameter -> byName.put(effectiveName(parameter), parameter));
         Set<String> used = new HashSet<>();
         List<Bind> binds = new ArrayList<>(markers.size());
         // Named SQL binds in marker encounter order because repeated names must produce repeated JDBC positions.
@@ -129,14 +158,15 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
             String marker = markers.get(index);
             TypedElementInfo parameter = byName.get(marker);
             if (parameter == null) {
-                throw failure(method, "SQL marker ':" + marker + "' has no matching repository parameter.");
+                throw failure(method, "SQL marker ':" + marker + "' has no matching repository parameter. "
+                        + "Declare @Data.Param, use positional SQL, or preserve Java parameter names with -parameters.");
             }
             used.add(marker);
             binds.add(binding(index + 1, parameter));
         }
         for (TypedElementInfo parameter : parameters) {
-            if (!used.contains(parameter.elementName())) {
-                throw failure(method, "Repository parameter '" + parameter.elementName()
+            if (!used.contains(effectiveName(parameter))) {
+                throw failure(method, "Repository parameter '" + effectiveName(parameter)
                                               + "' is not used by the SQL statement.");
             }
         }

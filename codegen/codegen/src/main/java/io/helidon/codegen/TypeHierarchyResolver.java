@@ -91,17 +91,48 @@ public class TypeHierarchyResolver {
      */
     public final List<ResolvedMethod> effectiveInterfaceMethods(TypeInfo interfaceInfo) {
         Objects.requireNonNull(interfaceInfo, "The interface information must not be null.");
-        Map<ElementSignature, List<MethodCandidate>> methods = new LinkedHashMap<>();
-        collectMethods(interfaceInfo,
-                       interfaceInfo,
-                       Map.of(),
-                       interfaceInfo.typeName().genericTypeName(),
-                       false,
-                       new HashSet<>(),
-                       methods);
+        Map<ElementSignature, List<MethodCandidate>> methods = methodCandidates(interfaceInfo);
         return methods.entrySet()
                 .stream()
                 .map(entry -> effectiveMethod(interfaceInfo, entry.getKey(), entry.getValue()))
+                .toList();
+    }
+
+    /**
+     * Returns distinct directly declared candidates for a parameter annotation on an already resolved method.
+     * A declaration with the requested annotation suppresses candidates on methods it overrides.
+     * A declaration without that annotation preserves inherited candidates, including candidates from unrelated parents.
+     * Method types are substituted in the inspected interface context without selecting a return type again.
+     *
+     * @param interfaceInfo The inspected interface supplies the hierarchy.
+     * @param method The resolved method identifies the parameter contract.
+     * @param parameterIndex The zero based index identifies the parameter.
+     * @param annotationType The annotation type identifies the candidates.
+     * @return The distinct candidate annotations are returned in declaration order.
+     * @throws NullPointerException A reference argument is null.
+     * @throws IllegalArgumentException The element is not a method or the parameter index is outside its parameter list.
+     */
+    public final List<Annotation> parameterAnnotationCandidates(TypeInfo interfaceInfo,
+                                                               TypedElementInfo method,
+                                                               int parameterIndex,
+                                                               TypeName annotationType) {
+        Objects.requireNonNull(interfaceInfo, "The interface information must not be null.");
+        Objects.requireNonNull(method, "The resolved method must not be null.");
+        Objects.requireNonNull(annotationType, "The annotation type must not be null.");
+        if (method.kind() != ElementKind.METHOD) {
+            throw new IllegalArgumentException("Parameter annotation candidates require a method element.");
+        }
+        if (parameterIndex < 0 || parameterIndex >= method.parameterArguments().size()) {
+            throw new IllegalArgumentException("The parameter index must identify a parameter of the resolved method.");
+        }
+        List<MethodCandidate> candidates = methodCandidates(interfaceInfo)
+                .getOrDefault(TypeHierarchy.methodSignature(method), List.of())
+                .stream()
+                .filter(candidate -> candidate.method().parameterArguments().get(parameterIndex).hasAnnotation(annotationType))
+                .toList();
+        return maximallySpecificDeclarations(interfaceInfo, candidates).stream()
+                .map(candidate -> candidate.method().parameterArguments().get(parameterIndex).annotation(annotationType))
+                .distinct()
                 .toList();
     }
 
@@ -579,6 +610,27 @@ public class TypeHierarchyResolver {
         }
     }
 
+    private Map<ElementSignature, List<MethodCandidate>> methodCandidates(TypeInfo interfaceInfo) {
+        Map<ElementSignature, List<MethodCandidate>> methods = new LinkedHashMap<>();
+        collectMethods(interfaceInfo,
+                       interfaceInfo,
+                       Map.of(),
+                       interfaceInfo.typeName().genericTypeName(),
+                       false,
+                       new HashSet<>(),
+                       methods);
+        return methods;
+    }
+
+    private List<MethodCandidate> maximallySpecificDeclarations(TypeInfo interfaceInfo, List<MethodCandidate> declarations) {
+        return declarations.stream()
+                .filter(candidate -> declarations.stream()
+                        .noneMatch(other -> other != candidate
+                                && environmentOverrides(interfaceInfo, other.method(), candidate.method())
+                                        .orElseGet(() -> isSubtype(other.owner(), candidate.owner()))))
+                .toList();
+    }
+
     private void collectMethods(TypeInfo rootInterface,
                                 TypeInfo typeInfo,
                                 Map<String, TypeName> inheritedSubstitutions,
@@ -620,12 +672,7 @@ public class TypeHierarchyResolver {
     private ResolvedMethod effectiveMethod(TypeInfo interfaceInfo,
                                            ElementSignature signature,
                                            List<MethodCandidate> declarations) {
-        List<MethodCandidate> candidates = declarations.stream()
-                .filter(candidate -> declarations.stream()
-                        .noneMatch(other -> other != candidate
-                                && environmentOverrides(interfaceInfo, other.method(), candidate.method())
-                                        .orElseGet(() -> isSubtype(other.owner(), candidate.owner()))))
-                .toList();
+        List<MethodCandidate> candidates = maximallySpecificDeclarations(interfaceInfo, declarations);
         MethodCandidate selected = null;
         for (MethodCandidate candidate : candidates) {
             boolean compatible = candidates.stream()
