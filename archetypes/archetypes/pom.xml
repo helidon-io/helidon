@@ -37,6 +37,16 @@
         <dependency>
             <groupId>io.helidon.build-tools.archetype</groupId>
             <artifactId>helidon-archetype-engine-v2</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.hamcrest</groupId>
+                    <artifactId>hamcrest-all</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest</artifactId>
         </dependency>
     </dependencies>
 
