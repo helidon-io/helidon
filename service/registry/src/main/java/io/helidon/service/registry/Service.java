@@ -440,20 +440,21 @@ public final class Service {
     }
 
     /**
-     * Instruction for the Helidon Service Codegen to generate an application binding placeholder.
-     * This allows a custom main class to reference the binding during compilation.
-     * The Helidon Service Maven or Gradle plugin generates the complete binding after compilation,
-     * using the full runtime classpath.
+     * Generates a compile-time {@link Binding} placeholder.
      * <p>
-     * Presence of this annotation triggers generation of an empty application binding class, which the selected
-     * build plugin replaces with the complete binding.
+     * The placeholder lets application sources reference the binding during compilation:
+     * <pre><code>
+     *  ServiceRegistryManager.start(ApplicationBinding.create());
+     * </code></pre>
+     * <p>
+     * After compilation, an application linker can replace it with an optimized implementation that hard-wires service metadata
+     * and injection plans to avoid classpath scanning and reflection, improving bootstrap and startup time.
      */
     @Retention(RetentionPolicy.CLASS)
     @Target(ElementType.TYPE)
     public @interface GenerateBinding {
         /**
-         * Name of the application binding class. The selected Maven or Gradle build plugin must use
-         * the same name.
+         * Name of the application binding class.
          *
          * @return application binding class name
          */
@@ -462,9 +463,6 @@ public final class Service {
         /**
          * Package name of the generated binding. Defaults to the package of the type annotated
          * with this annotation.
-         * <p>
-         * The selected Maven or Gradle build plugin must use the same package, either through configuration
-         * or package inference.
          *
          * @return package name of the generated application binding class
          */

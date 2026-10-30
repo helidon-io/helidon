@@ -26,12 +26,11 @@
     </parent>
     <artifactId>helidon-service-tests-gradle-plugin</artifactId>
     <name>Helidon Service Tests Gradle Plugin</name>
+
     <properties>
-        <!-- Exercise repository URI quoting in every publication test. -->
-        <published.plugin.repository.base>${project.build.directory}/it-repo/published-plugin's-repository</published.plugin.repository.base>
-        <published.plugin.repository>${published.plugin.repository.base}</published.plugin.repository>
-        <published.plugin.repository.prefix>installed</published.plugin.repository.prefix>
+        <it.repo.path>${project.build.directory}/it-repo</it.repo.path>
     </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.service</groupId>
@@ -95,84 +94,81 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
     <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
+                <artifactId>maven-invoker-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>fixture-runtime-classpath</id>
-                        <phase>generate-test-resources</phase>
-                        <goals><goal>build-classpath</goal></goals>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>install</goal>
+                        </goals>
                         <configuration>
-                            <includeScope>runtime</includeScope>
-                            <outputFile>${project.build.directory}/fixture-runtime-classpath.txt</outputFile>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>fixture-tool-classpath</id>
-                        <phase>generate-test-resources</phase>
-                        <goals><goal>build-classpath</goal></goals>
-                        <configuration>
-                            <includeScope>test</includeScope>
-                            <outputFile>${project.build.directory}/fixture-tool-classpath.txt</outputFile>
+                            <localRepositoryPath>${project.build.directory}/it-repo</localRepositoryPath>
+                            <scope>test</scope>
+                            <extraArtifacts>
+                                <extraArtifact>io.helidon.service:io.helidon.service.gradle.plugin:${project.version}:pom</extraArtifact>
+                                <extraArtifact>io.helidon.service:helidon-service-gradle-plugin:${project.version}</extraArtifact>
+                                <extraArtifact>io.helidon.service:helidon-service-codegen:${project.version}</extraArtifact>
+                                <extraArtifact>io.helidon.codegen:helidon-codegen-apt:${project.version}</extraArtifact>
+                                <!-- imported boms -->
+                                <extraArtifact>com.google.protobuf:protobuf-bom:${version.lib.google-protobuf}:pom</extraArtifact>
+                                <extraArtifact>io.grpc:grpc-bom:${version.lib.grpc}:pom</extraArtifact>
+                                <extraArtifact>com.oracle.database.jdbc:ojdbc-bom:${version.lib.ojdbc}:pom</extraArtifact>
+                                <extraArtifact>com.fasterxml.jackson:jackson-bom:${version.lib.jackson}:pom</extraArtifact>
+                                <extraArtifact>io.opentelemetry:opentelemetry-bom:${version.lib.opentelemetry}:pom</extraArtifact>
+                                <extraArtifact>io.prometheus:prometheus-metrics-bom:${version.lib.prometheus}:pom</extraArtifact>
+                                <extraArtifact>org.apache.logging.log4j:log4j-bom:${version.lib.log4j}:pom</extraArtifact>
+                                <extraArtifact>org.slf4j:slf4j-bom:${version.lib.slf4j}:pom</extraArtifact>
+                                <extraArtifact>org.junit:junit-bom:${version.lib.junit}:pom</extraArtifact>
+                                <extraArtifact>io.smallrye.common:smallrye-common-bom:${version.lib.smallrye.common}:pom</extraArtifact>
+                            </extraArtifacts>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <systemPropertyVariables>
-                        <fixture.classpaths>${project.build.directory}</fixture.classpaths>
-                    </systemPropertyVariables>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-invoker-plugin</artifactId>
-                <configuration>
-                    <localRepositoryPath>${published.plugin.repository.base}</localRepositoryPath>
-                    <scope>runtime</scope>
-                    <extraArtifacts>
-                        <extraArtifact>io.helidon.service:io.helidon.service.gradle.plugin:${project.version}:pom</extraArtifact>
-                        <extraArtifact>io.helidon.service:helidon-service-gradle-plugin:${project.version}</extraArtifact>
-                        <extraArtifact>io.helidon.service:helidon-service-codegen:${project.version}</extraArtifact>
-                        <extraArtifact>io.helidon.codegen:helidon-codegen-apt:${project.version}</extraArtifact>
-                        <!-- Gradle parses imported BOM metadata from Helidon's parent POMs even for
-                             unused managed dependencies; Invoker does not stage these imports automatically. -->
-                        <extraArtifact>com.google.protobuf:protobuf-bom:${version.lib.google-protobuf}:pom</extraArtifact>
-                        <extraArtifact>io.grpc:grpc-bom:${version.lib.grpc}:pom</extraArtifact>
-                        <extraArtifact>com.oracle.database.jdbc:ojdbc-bom:${version.lib.ojdbc}:pom</extraArtifact>
-                        <extraArtifact>com.fasterxml.jackson:jackson-bom:${version.lib.jackson}:pom</extraArtifact>
-                        <extraArtifact>io.opentelemetry:opentelemetry-bom:${version.lib.opentelemetry}:pom</extraArtifact>
-                        <extraArtifact>io.prometheus:prometheus-metrics-bom:${version.lib.prometheus}:pom</extraArtifact>
-                        <extraArtifact>org.apache.logging.log4j:log4j-bom:${version.lib.log4j}:pom</extraArtifact>
-                        <extraArtifact>org.slf4j:slf4j-bom:${version.lib.slf4j}:pom</extraArtifact>
-                        <extraArtifact>org.junit:junit-bom:${version.lib.junit}:pom</extraArtifact>
-                        <extraArtifact>io.smallrye.common:smallrye-common-bom:${version.lib.smallrye.common}:pom</extraArtifact>
-                    </extraArtifacts>
-                </configuration>
+                <artifactId>maven-resources-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>published-plugin-repository</id>
-                        <phase>pre-integration-test</phase>
-                        <goals><goal>install</goal></goals>
+                        <id>copy-gradle-fixtures</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/it/projects</outputDirectory>
+                            <useDefaultDelimiters>false</useDefaultDelimiters>
+                            <delimiters>
+                                <delimiter>@</delimiter>
+                            </delimiters>
+                            <resources>
+                                <resource>
+                                    <directory>src/it/projects</directory>
+                                    <filtering>true</filtering>
+                                    <includes>
+                                        <include>**/*.gradle</include>
+                                    </includes>
+                                </resource>
+                                <resource>
+                                    <directory>src/it/projects</directory>
+                                    <filtering>false</filtering>
+                                    <excludes>
+                                        <exclude>**/*.gradle</exclude>
+                                    </excludes>
+                                </resource>
+                            </resources>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
-                <configuration>
-                    <systemPropertyVariables>
-                        <fixture.version>${project.version}</fixture.version>
-                        <fixture.repository>${published.plugin.repository}</fixture.repository>
-                        <fixture.directory>${project.build.directory}/gradle-it</fixture.directory>
-                    </systemPropertyVariables>
-                </configuration>
                 <executions>
                     <execution>
                         <goals>
@@ -184,11 +180,10 @@
             </plugin>
         </plugins>
     </build>
+
     <profiles>
-        <!-- Invoker installs with the enclosing Maven session's repository layout. Expose its
-             installed-artifact root to Gradle without changing that session or its repositories. -->
         <profile>
-            <id>published-plugin-split-repository</id>
+            <id>split-it-repo</id>
             <activation>
                 <property>
                     <name>aether.enhancedLocalRepository.split</name>
@@ -196,18 +191,18 @@
                 </property>
             </activation>
             <properties>
-                <published.plugin.repository>${published.plugin.repository.base}/${published.plugin.repository.prefix}</published.plugin.repository>
+                <it.repo.path>${project.build.directory}/it-repo/installed</it.repo.path>
             </properties>
         </profile>
         <profile>
-            <id>published-plugin-repository-prefix</id>
+            <id>prefixed-it-repo</id>
             <activation>
                 <property>
                     <name>aether.enhancedLocalRepository.localPrefix</name>
                 </property>
             </activation>
             <properties>
-                <published.plugin.repository.prefix>${aether.enhancedLocalRepository.localPrefix}</published.plugin.repository.prefix>
+                <it.repo.path>${project.build.directory}/it-repo/${aether.enhancedLocalRepository.localPrefix}</it.repo.path>
             </properties>
         </profile>
     </profiles>

@@ -20,10 +20,7 @@ import io.helidon.common.Api;
 import org.gradle.api.provider.Property;
 
 /**
- * Gradle {@code helidonService} extension. Annotation processors must be configured separately
- * using Gradle's {@code annotationProcessor} and {@code testAnnotationProcessor} configurations.
- * This extension and its inherited options form the plugin's incubating build configuration API.
- * The JavaBean accessors and public constructor support Gradle managed properties and DSL decoration.
+ * DSL configuration for the {@link io.helidon.service.gradle.plugin.HelidonServicePlugin}.
  */
 @Api.Incubating
 public abstract class HelidonServiceExtension extends BindingOptions {
@@ -38,18 +35,21 @@ public abstract class HelidonServiceExtension extends BindingOptions {
     /**
      * Whether to generate test bindings, default true. When false, tests use their compiler output
      * without a generated test binding.
+     *
      * @return test generation property
      */
     public abstract Property<Boolean> getGenerateTestBinding();
 
     /**
      * Test binding simple name, default {@code TestApplicationBinding}.
+     *
      * @return test binding class property
      */
     public abstract Property<String> getTestBindingClassName();
 
     /**
      * Test generated package, inferred from test and application sources when absent.
+     *
      * @return test package property
      */
     public abstract Property<String> getTestPackageName();

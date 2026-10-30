@@ -22,10 +22,9 @@ import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.Optional;
 
 /**
- * Options shared by application and test binding generation.
- * These properties configure the {@link HelidonServiceExtension helidonService} extension and
- * each {@link GenerateBindings} task through its {@code options} property.
- * The JavaBean accessors and public constructor support Gradle managed properties and DSL decoration.
+ * Configuration for Helidon binding generation, shared by the
+ * {@link HelidonServiceExtension helidonService} extension and each
+ * {@link GenerateBindings} task's {@link GenerateBindings#getOptions() options}.
  */
 @Api.Incubating
 public abstract class BindingOptions {
@@ -44,6 +43,7 @@ public abstract class BindingOptions {
 
     /**
      * Generated package, inferred from application sources when absent.
+     *
      * @return package property
      */
     @Input
@@ -52,6 +52,7 @@ public abstract class BindingOptions {
 
     /**
      * Module name, inferred from module-info.java when absent.
+     *
      * @return module name property
      */
     @Input
@@ -60,6 +61,7 @@ public abstract class BindingOptions {
 
     /**
      * Binding class simple name, default {@code ApplicationBinding}.
+     *
      * @return binding class property
      */
     @Input
@@ -67,6 +69,7 @@ public abstract class BindingOptions {
 
     /**
      * Main class simple name, default {@code ApplicationMain}.
+     *
      * @return main class property
      */
     @Input
@@ -74,6 +77,7 @@ public abstract class BindingOptions {
 
     /**
      * Whether to generate static bindings, default true.
+     *
      * @return generation property
      */
     @Input
@@ -81,6 +85,7 @@ public abstract class BindingOptions {
 
     /**
      * Whether to generate an application main, default false.
+     *
      * @return main generation property
      */
     @Input
@@ -88,6 +93,7 @@ public abstract class BindingOptions {
 
     /**
      * Whether to validate the application, default true.
+     *
      * @return validation property
      */
     @Input
@@ -95,6 +101,7 @@ public abstract class BindingOptions {
 
     /**
      * Whether errors fail generation, default true.
+     *
      * @return error policy property
      */
     @Input
@@ -102,6 +109,7 @@ public abstract class BindingOptions {
 
     /**
      * Whether warnings fail generation, default false.
+     *
      * @return warning policy property
      */
     @Input

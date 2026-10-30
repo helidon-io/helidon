@@ -12,7 +12,7 @@ This guide describes Helidon’s support for Gradle projects.
 While most of Helidon’s examples use Maven, you can also use Helidon with a
 Gradle project. Helidon 28 requires Java 27. Use Gradle 9.8.1 or later, which
 supports Java 27 for both the Gradle runtime and Java toolchains. See
-[Gradle's Java compatibility matrix](https://docs.gradle.org/current/userguide/compatibility.html).
+[Gradle's Java compatibility matrix][gradle-java].
 
 ## Gradle Example
 
@@ -20,20 +20,59 @@ The Helidon [Quickstart Example][quickstart-examp] contains a `build.gradle`
 file that you can use as an example for building your Helidon application using
 Gradle.
 
+## Dependency Management
+
+Gradle can use the Helidon Dependencies POM as an enforced platform. After you
+import it, declare managed dependencies without versions.
+
+```groovy [build.gradle]
+dependencies {
+    // Import Helidon dependency management
+    implementation enforcedPlatform("io.helidon:helidon-dependencies:${helidonVersion}")
+
+    // Use Helidon dependencies without specifying the version
+    implementation 'io.helidon.http.media:helidon-http-media-jsonp'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
+}
+```
+
 ## Declarative Applications
 
-The `io.helidon.service` Gradle plugin generates application bindings after
-Java compilation. It discovers service descriptors and resolves their
-dependencies during the build, using the same generator as
-`helidon-service-maven-plugin`. The resulting binding registers the services
-and their injection plans, avoiding discovery and dependency binding at
-runtime.
+Helidon Declarative uses build-time annotation processing. The following
+minimal setup enables annotation processing:
 
-Annotation processing is also required: it generates service descriptors and
-a placeholder for a binding referenced by application source code. The Gradle
-plugin replaces that placeholder with the complete application binding.
+```groovy [build.gradle]
+plugins {
+    id 'application'
+}
 
-Add Maven Central to plugin resolution in `settings.gradle`:
+def helidonVersion = '28.0.0'
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(27)
+    }
+}
+
+dependencies {
+    // Import Helidon dependency management
+    implementation enforcedPlatform("io.helidon:helidon-dependencies:${helidonVersion}")
+
+    // Required for Helidon Declarative service descriptors.
+    annotationProcessor("io.helidon.bundles:helidon-bundles-apt:${helidonVersion}")
+    testAnnotationProcessor("io.helidon.bundles:helidon-bundles-apt:${helidonVersion}")
+}
+```
+
+An application binding is an optional build-time linker. It can hard-wire
+service metadata and injection plans to avoid classpath scanning and reflection
+during bootstrap. The linker runs after compilation and before packaging.
+
+To enable it, add Maven Central to plugin resolution in `settings.gradle`:
 
 ```groovy [settings.gradle]
 pluginManagement {
@@ -45,13 +84,12 @@ pluginManagement {
 rootProject.name = 'my-application'
 ```
 
-Apply the plugin and configure annotation processing in `build.gradle`. Use
-the same Helidon 28 release version for the plugin, dependencies and processors,
-replacing `28.0.0` below with your selected release.
+Then apply the service plugin in addition to configuring annotation processing:
 
 ```groovy [build.gradle]
 plugins {
     id 'application'
+    // Helidon Service Gradle Plugin
     id 'io.helidon.service' version '28.0.0'
 }
 
@@ -68,11 +106,13 @@ java {
 }
 
 dependencies {
+    // Import Helidon dependency management
     implementation enforcedPlatform("io.helidon:helidon-dependencies:${helidonVersion}")
     implementation 'io.helidon.applications:helidon-se'
 
-    annotationProcessor "io.helidon.bundles:helidon-bundles-apt:${helidonVersion}"
-    testAnnotationProcessor "io.helidon.bundles:helidon-bundles-apt:${helidonVersion}"
+    // Required for Helidon Declarative service descriptors
+    annotationProcessor("io.helidon.bundles:helidon-bundles-apt:${helidonVersion}")
+    testAnnotationProcessor("io.helidon.bundles:helidon-bundles-apt:${helidonVersion}")
 }
 
 helidonService {
@@ -85,31 +125,19 @@ application {
 }
 ```
 
-Alternatively, use your own main class annotated with `@Service.GenerateBinding`
-and call `ServiceRegistryManager.start(ApplicationBinding.create())` from the
-same package as the binding. Leave `generateMain` at its default of `false`.
+Alternatively, use your own main class annotated with
+`@Service.GenerateBinding` and start the registry with
+`ApplicationBinding.create()`. Leave `generateMain` at its default of `false`.
 
 ### Build Tasks
 
-`generateApplicationBindings` runs after `compileJava` and `processResources`.
-It reads the compiler outputs and generates binding and optional main classes
-in its own directory, without copying or modifying compiler output. The generated
-directory comes first in the source set's class directories so completed bindings
-take precedence over annotation processor placeholders. Other language compilers,
-such as Groovy, can still consume Java compiler output before binding generation.
-The combined class directories are used by `classes`, `run`, distributions and
-test compilation. The application `jar` task excludes a raw placeholder only when
-the generated binding is included at the same archive path.
-`generateTestApplicationBindings` runs after test compilation and
-resource processing, and generates `TestApplicationBinding` containing both
-application and test services before `test` runs.
+`generateApplicationBindings` links the compiled application before `classes`
+and `jar`. Generated classes are kept in their own output directory and are
+placed before compiler output, so a completed binding shadows its compile-time
+placeholder. The application JAR omits the shadowed placeholder.
 
-Generation calls the same typed generator API as the Maven plugin directly in
-the Gradle daemon. The generator is included in the plugin's implementation
-dependencies and uses the daemon's JDK and Java compiler. Run Gradle on Java 27
-or later, using a JDK that can load the application's compiled classes and compile
-its selected Java release. Selecting a newer application toolchain alone does
-not change the JDK used for binding generation.
+`generateTestApplicationBindings` runs after test compilation. It creates a
+test binding containing both application and test services before `test` runs.
 
 Run the usual Gradle tasks:
 
@@ -120,38 +148,15 @@ Run the usual Gradle tasks:
 
 Generated sources are under `build/generated/sources/helidon/main` and
 `build/generated/sources/helidon/test`. Generated classes are under
-`build/classes/helidon/main` and `build/classes/helidon/test`. These directories
-are task outputs; do not add the generated sources to `compileJava` or modify
-the generated class directories yourself. Compilation outputs remain separate so
-unchanged builds can stay up to date. Changes to application classes,
-resources, runtime dependencies or generation options regenerate the binding
-and remove obsolete generated output.
-
-The plugin leaves processed resources and additional compiler outputs in their
-own directories. It reads those directories when generating bindings; it does
-not copy or merge them into the generated output. Archive exclusions apply only
-to shadowed class entries in the application JAR; resources and other archives
-retain their usual behavior. The existing compiler directories and other contributions
-are retained. Other plugins and
-build scripts can continue adding outputs through Gradle's source-set model.
-When several compiler outputs contain resources with the same path, directory
-execution preserves those resources separately. Combining them in a single
-archive requires the build's usual resource-merging or duplicate-handling policy;
-the Helidon plugin does not choose that policy.
-
-Configure a Java compiler's raw output with its `destinationDirectory` property.
-Configure the generated class output with `classesDirectory` on
-`generateApplicationBindings` (or `generateTestApplicationBindings`). Both follow
-`layout.buildDirectory` by default. Each generation task modifies only its own
-generated output.
+`build/classes/helidon/main` and `build/classes/helidon/test`.
 
 ### Customize Binding Tasks
 
 `GenerateBindings` is an incubating public task type. Use `tasks.named` to
 extend a task created by the plugin. Its `classpath` and `sourceRoots` are
 additive file collections, so `from(...)` retains the plugin's existing inputs.
-For example, an additional Java compiler can contribute service classes and
-their sources:
+
+This example adds the output of another Java compiler to the default binding:
 
 ```groovy [build.gradle]
 import io.helidon.service.gradle.plugin.GenerateBindings
@@ -160,7 +165,9 @@ def compileExtra = tasks.register('compileExtraJava', JavaCompile) {
     dependsOn tasks.named('compileJava')
     source = fileTree('src/extra/java')
     classpath = sourceSets.main.compileClasspath + files(
-            tasks.named('compileJava', JavaCompile).flatMap { it.destinationDirectory })
+            tasks.named('compileJava', JavaCompile).flatMap {
+                it.destinationDirectory
+            })
     options.annotationProcessorPath = configurations.annotationProcessor
     destinationDirectory = layout.buildDirectory.dir('classes/extra/main')
 }
@@ -169,17 +176,14 @@ tasks.named('generateApplicationBindings', GenerateBindings) {
     dependsOn compileExtra
     classpath.from(compileExtra.flatMap { it.destinationDirectory })
     sourceRoots.from(file('src/extra/java'))
-    classesDirectory = layout.buildDirectory.dir('custom/completed-main')
 }
 
-// Include the additional classes in application packaging and execution too.
+// Include the additional compiler output in packaging and execution.
 sourceSets.main.output.classesDirs.from(
         compileExtra.flatMap { it.destinationDirectory })
 ```
 
-Use `tasks.register` for a separate binding target. The following example adds
-an independent `other` source set, whose classes reference an `OtherBinding`
-placeholder generated with `@Service.GenerateBinding("OtherBinding")`:
+Use `tasks.register` for an independent binding target:
 
 ```groovy [build.gradle]
 import io.helidon.service.gradle.plugin.GenerateBindings
@@ -190,11 +194,14 @@ configurations {
     otherAnnotationProcessor.extendsFrom annotationProcessor
 }
 
-def compileOther = tasks.named(sourceSets.other.compileJavaTaskName, JavaCompile)
-def generateOtherBinding = tasks.register('generateOtherBinding', GenerateBindings) {
+def compileOther = tasks.named(
+        sourceSets.other.compileJavaTaskName, JavaCompile)
+def generateOtherBinding = tasks.register(
+        'generateOtherBinding', GenerateBindings) {
     dependsOn compileOther
-    classpath.from(compileOther.flatMap { it.destinationDirectory },
-                   configurations.otherRuntimeClasspath)
+    classpath.from(
+            compileOther.flatMap { it.destinationDirectory },
+            configurations.otherRuntimeClasspath)
     sourceRoots.from(sourceSets.other.allJava.sourceDirectories)
     options.bindingClassName = 'OtherBinding'
     prependClassesTo(sourceSets.other)
@@ -212,67 +219,34 @@ tasks.register('otherJar', Jar) { jar ->
 }
 ```
 
-`prependClassesTo(sourceSet)` puts this task's generated class directory first
-while retaining the source set's compiler outputs and their producer dependencies.
-It also includes those compiler outputs in generation inputs. Supply runtime
-dependencies through `classpath`; do not add the generated output back to that
-input collection. `addExclusionsTo(jarTask)` configures the archive to keep
-completed bindings and omit their compiler placeholders, and makes it depend on
-the generation task. Declare the archive's dependency outside the generation
-task's registration action, as above, so requesting `otherJar` directly realizes
-and connects the generation task.
-
-Standalone tasks default to scope `main`, the Gradle JVM's Java release, no
-additional compiler arguments, and binding generation enabled. Their output
-directories are `build/classes/helidon/<taskName>` and
-`build/generated/sources/helidon/<taskName>`; their `mainSourceRoots` default to
-`sourceRoots`. Configure binding options through `options`, using the same
-property names as the extension below. The plugin-created application and test
-tasks retain their `main` and `test` output directories and inherit options from
-`helidonService`.
+`prependClassesTo(sourceSet)` puts the task's generated class directory first,
+retains existing class directories, and adds those directories to the task's
+inputs. `addExclusionsTo(jarTask)` makes the archive depend on generation and
+omits placeholders shadowed by generated bindings.
 
 ### Configuration
 
-The `helidonService` extension accepts these options. They correspond to the
-Maven generator options where applicable.
+The `helidonService` extension accepts these options:
 
 | Option | Default | Purpose |
 | --- | --- | --- |
-| `packageName` | Inferred from sources or module exports | Package for generated application classes |
-| `moduleName` | Module name, otherwise `unnamed/<package>` | Binding's application name |
-| `bindingClassName` | `ApplicationBinding` | Application binding simple class name |
-| `generateBinding` | `true` | Generate the application binding |
-| `generateMain` | `false` | Generate a main class that starts the registry using the binding |
-| `mainClassName` | `ApplicationMain` | Generated main simple class name |
-| `validate` | `true` | Validate services during generation |
-| `failOnError` | `true` | Fail the build on generation errors |
-| `failOnWarning` | `false` | Fail the build on generation warnings |
-| `generateTestBinding` | `true` | Generate a binding for application and test services |
-| `testBindingClassName` | `TestApplicationBinding` | Test binding simple class name |
-| `testPackageName` | Inferred from application and test sources | Package for the test binding |
+| `packageName` | Inferred | Package for generated classes |
+| `moduleName` | Inferred | Application name in the binding |
+| `bindingClassName` | `ApplicationBinding` | Binding simple name |
+| `generateBinding` | `true` | Generate an application binding |
+| `generateMain` | `false` | Generate a registry main class |
+| `mainClassName` | `ApplicationMain` | Generated main simple name |
+| `validate` | `true` | Validate services during linking |
+| `failOnError` | `true` | Fail on linking errors |
+| `failOnWarning` | `false` | Fail on linking warnings |
+| `generateTestBinding` | `true` | Generate a test binding |
+| `testBindingClassName` | `TestApplicationBinding` | Test binding name |
+| `testPackageName` | Inferred | Package for the test binding |
 
-Generation uses the release and arguments configured on the corresponding
-Gradle `JavaCompile` task, with the Gradle daemon's compiler. Compiler options
-must therefore be supported by that compiler. Keep the plugin version aligned
-with the application dependencies; the generator version follows the plugin.
+Keep the plugin version aligned with the application dependencies. The plugin
+uses the Gradle daemon's JDK and Java compiler, so run Gradle on Java 27 or
+later.
 
-## Dependency Management
-
-Gradle supports using a Maven POM to perform dependency management. You can use
-the Helidon Dependencies POM for this purpose. Once you import the Helidon
-dependency management POM you can specify dependencies without providing a
-version.
-
-```groovy [build.gradle] <!-- @icon i-vscode-icons-file-type-gradle -->
-dependencies {
-    // import Helidon dependency management
-    implementation enforcedPlatform("io.helidon:helidon-dependencies:${project.helidonversion}")
-
-    implementation 'io.helidon.applications:helidon-se'
-    implementation 'io.helidon.http.media:helidon-http-media-jsonp'
-
-    testImplementation 'org.junit.jupiter:junit-jupiter-api'
-}
-```
-
-[quickstart-examp]: https://github.com/helidon-io/helidon-examples/tree/helidon-28.x/examples/quickstarts/helidon-quickstart-se
+[gradle-java]: https://docs.gradle.org/current/userguide/compatibility.html
+[quickstart-examp]:
+  https://github.com/helidon-io/helidon-examples/tree/helidon-28.x/examples/quickstarts/helidon-quickstart-se

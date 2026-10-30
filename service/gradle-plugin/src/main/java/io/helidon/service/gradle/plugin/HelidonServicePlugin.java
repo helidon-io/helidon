@@ -30,11 +30,10 @@ import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.language.jvm.tasks.ProcessResources;
 
 /**
- * Native Gradle integration for declarative application binding generation.
- * Application and test outputs contain completed bindings before packaging or execution.
- * Apply the plugin using the {@code io.helidon.service} plugin ID and configure the
- * {@link HelidonServiceExtension helidonService extension}. This implementation type is internal;
- * its public visibility and constructor support Gradle plugin instantiation.
+ * Gradle integration for the Helidon Service Registry.
+ * It provides a post-compilation step that generates an optimized {@link io.helidon.service.registry.Binding} implementation.
+ *
+ * @see io.helidon.service.registry.Service.GenerateBinding
  */
 @Api.Internal
 public final class HelidonServicePlugin implements Plugin<Project> {
@@ -90,16 +89,14 @@ public final class HelidonServicePlugin implements Plugin<Project> {
                                                            SourceSet main,
                                                            HelidonServiceExtension extension) {
         TaskProvider<JavaCompile> compile = project.getTasks().named(sourceSet.getCompileJavaTaskName(), JavaCompile.class);
-        TaskProvider<ProcessResources> resources = project.getTasks().named(sourceSet.getProcessResourcesTaskName(),
-                                                                          ProcessResources.class);
+        TaskProvider<ProcessResources> resources = project.getTasks()
+                .named(sourceSet.getProcessResourcesTaskName(), ProcessResources.class);
         Configuration runtime = project.getConfigurations().getByName(sourceSet.getRuntimeClasspathConfigurationName());
         return project.getTasks().register(taskName, GenerateBindings.class, task -> {
             task.setGroup("build");
             task.setDescription("Generates Helidon declarative bindings for " + sourceSet.getName());
             task.dependsOn(compile, resources);
-            task.getClasspath().from(compile.flatMap(JavaCompile::getDestinationDirectory),
-                                     resources.map(ProcessResources::getDestinationDir),
-                                     runtime);
+            task.getClasspath().from(resources.map(ProcessResources::getDestinationDir), runtime);
             task.getSourceRoots().from(sourceSet.getAllJava().getSourceDirectories());
             task.getMainSourceRoots().from(main.getAllJava().getSourceDirectories());
             task.getScope().set(sourceSet.getName());
@@ -107,10 +104,9 @@ public final class HelidonServicePlugin implements Plugin<Project> {
             task.getRelease().set(compile.flatMap(compilation -> compilation.getOptions().getRelease())
                                           .map(String::valueOf)
                                           .orElse(compile.map(JavaCompile::getTargetCompatibility)));
-            task.getClassesDirectory().convention(project.getLayout().getBuildDirectory()
-                                                          .dir("classes/helidon/" + sourceSet.getName()));
-            task.getGeneratedSourceDirectory().convention(project.getLayout().getBuildDirectory()
-                                                                  .dir("generated/sources/helidon/" + sourceSet.getName()));
+            var buildDir = project.getLayout().getBuildDirectory();
+            task.getClassesDirectory().convention(buildDir.dir("classes/helidon/" + sourceSet.getName()));
+            task.getGeneratedSourceDirectory().convention(buildDir.dir("generated/sources/helidon/" + sourceSet.getName()));
             options(task.getOptions(), extension);
         });
     }

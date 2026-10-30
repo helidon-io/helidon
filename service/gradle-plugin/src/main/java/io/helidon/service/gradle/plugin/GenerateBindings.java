@@ -56,18 +56,10 @@ import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskAction;
 import org.gradle.api.tasks.bundling.Jar;
-import org.gradle.api.tasks.compile.JavaCompile;
 import org.gradle.work.DisableCachingByDefault;
 
 /**
  * Generates application binding classes separately from compiler outputs using the Gradle JVM's Java compiler.
- * Each execution replaces its own output, so deleted services and renamed bindings cannot remain in application artifacts.
- * Configure the plugin-created tasks by name, or register this type for an independent binding target.
- * Add compiler outputs and runtime dependencies to {@link #getClasspath() classpath}, and add the corresponding
- * sources to {@link #getSourceRoots() sourceRoots}. Do not include this task's generated output in its inputs.
- * Generation options are available through {@link #getOptions() options}; the full plugin supplies conventions
- * from the {@link HelidonServiceExtension helidonService extension}.
- * JavaBean accessors and the injected constructor support Gradle task instantiation and managed properties.
  */
 @Api.Incubating
 @DisableCachingByDefault(because = "Only local up-to-date checking is supported for generation and classpath scanning")
@@ -89,24 +81,19 @@ public abstract class GenerateBindings extends DefaultTask {
         getScope().convention("main");
         getRelease().convention(String.valueOf(Runtime.version().feature()));
         getMainSourceRoots().convention(getSourceRoots());
-        getClassesDirectory().convention(getProject().getLayout().getBuildDirectory()
-                                                .dir("classes/helidon/" + getName()));
-        getGeneratedSourceDirectory().convention(getProject().getLayout().getBuildDirectory()
-                                                        .dir("generated/sources/helidon/" + getName()));
+        var buildDir = getProject().getLayout().getBuildDirectory();
+        getClassesDirectory().convention(buildDir.dir("classes/helidon/" + getName()));
+        getGeneratedSourceDirectory().convention(buildDir.dir("generated/sources/helidon/" + getName()));
     }
 
     static FileCollection prependClasses(Project project, SourceSet sourceSet, FileCollection generatedClasses) {
-        var compile = project.getTasks().named(sourceSet.getCompileJavaTaskName(), JavaCompile.class);
         if (!(sourceSet.getOutput().getClassesDirs() instanceof ConfigurableFileCollection classes)) {
             throw new GradleException("The Helidon service plugin requires configurable Java class directories: "
                                               + sourceSet.getName());
         }
         // Preserve compiler outputs and give completed bindings precedence on consumer classpaths.
         var contributions = new ArrayList<>(classes.getFrom());
-        // Task-level compiler destinations can differ from the source directory set's convention.
-        var compilerClasses = project.files(compile.flatMap(JavaCompile::getDestinationDirectory))
-                .minus(project.files(sourceSet.getJava().getDestinationDirectory()));
-        classes.setFrom(generatedClasses, contributions, compilerClasses);
+        classes.setFrom(generatedClasses, contributions);
         // Follow later additive registrations without feeding this generator's output back into its own inputs.
         return project.files(project.provider(() -> classes.getFrom().stream()
                         .filter(source -> source != generatedClasses)
@@ -226,10 +213,7 @@ public abstract class GenerateBindings extends DefaultTask {
     public abstract DirectoryProperty getGeneratedSourceDirectory();
 
     /**
-     * Prepends this task's generated classes to a source set while preserving existing compiler outputs.
-     * The compiler outputs are also added to this task's classpath, including later additive registrations.
-     * Call during configuration, and connect the source set's lifecycle or consuming archive to this task explicitly.
-     * Runtime dependencies and source roots remain configured through this task's inputs.
+     * Prepends this task's generated classes to a source set and adds its other class directories to this task's classpath.
      *
      * @param sourceSet source set receiving the generated classes
      */
@@ -276,10 +260,6 @@ public abstract class GenerateBindings extends DefaultTask {
         } catch (IOException e) {
             throw new GradleException("Cannot prepare application binding generation", e);
         }
-    }
-
-    private static List<Path> paths(FileCollection files) {
-        return files.getFiles().stream().map(File::toPath).toList();
     }
 
     private void generateApplication(Path classes, Path sources) {
@@ -336,5 +316,9 @@ public abstract class GenerateBindings extends DefaultTask {
         } else {
             getLogger().log(level, event.message());
         }
+    }
+
+    private static List<Path> paths(FileCollection files) {
+        return files.getFiles().stream().map(File::toPath).toList();
     }
 }
