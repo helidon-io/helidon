@@ -15,6 +15,7 @@
  */
 package io.helidon.data.jdbc;
 
+import java.sql.BatchUpdateException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -74,6 +75,45 @@ final class JdbcRunner {
      */
     long execute(JdbcOperation operation) {
         return run(operation, UNBOUNDED, updateHandler::execute);
+    }
+
+    /**
+     * Executes captured bindings through the existing lease and cleanup boundary.
+     *
+     * @param operation The operation supplies literal SQL and preparation rules.
+     * @param items The items contain complete immutable binding snapshots.
+     * @return The result contains detached execution evidence.
+     */
+    JdbcClient.BatchResult executeBatch(JdbcOperation operation, List<JdbcOperation.Bind[]> items) {
+        JdbcBatchResult[] evidence = {JdbcBatchResult.capture(items.size(), null)};
+        if (items.isEmpty()) {
+            return evidence[0];
+        }
+        try {
+            return run(operation, UNBOUNDED, scope -> {
+                for (JdbcOperation.Bind[] item : items) {
+                    bind(scope.statement(), item);
+                    JdbcExceptionTranslator.invokeVoid("adding a JDBC batch item", scope.statement()::addBatch);
+                }
+                int[] counts;
+                try {
+                    counts = JdbcExceptionTranslator.invoke("executing a JDBC batch", scope.statement()::executeBatch);
+                } catch (BatchUpdateException failure) {
+                    evidence[0] = JdbcBatchResult.capture(items.size(), failure.getUpdateCounts());
+                    throw failure;
+                }
+                evidence[0] = JdbcBatchResult.capture(items.size(), counts);
+                if (counts == null || counts.length != items.size()
+                        || evidence[0].entries().stream().anyMatch(entry ->
+                                entry.status() == JdbcClient.BatchResult.Status.EXECUTE_FAILED
+                                        || entry.status() == JdbcClient.BatchResult.Status.NOT_REPORTED)) {
+                    throw JdbcExceptionTranslator.safeException("The JDBC batch returned malformed execution evidence.");
+                }
+                return evidence[0];
+            });
+        } catch (RuntimeException failure) {
+            throw new JdbcBatchException(evidence[0], JdbcExceptionTranslator.sanitize("executing a JDBC batch", failure));
+        }
     }
 
     /**
@@ -312,6 +352,10 @@ final class JdbcRunner {
         if (previousFailure == null) {
             return failure;
         }
+        if (failure instanceof Error && !(previousFailure instanceof Error)) {
+            failure.addSuppressed(previousFailure);
+            return failure;
+        }
         if (failure != null) {
             previousFailure.addSuppressed(cleanupException(operation, failure));
         }
@@ -333,14 +377,7 @@ final class JdbcRunner {
         try {
             resource.close();
         } catch (Throwable closeFailure) {
-            // Preserve a primary fatal error. An error attached below another failure is sanitized.
-            if (previousFailure == null && closeFailure instanceof Error) {
-                return closeFailure;
-            }
-            if (previousFailure == null) {
-                return JdbcExceptionTranslator.prepare(operation, closeFailure);
-            }
-            previousFailure = JdbcExceptionTranslator.suppress(previousFailure, operation, closeFailure);
+            return JdbcExceptionTranslator.mergeInfrastructure(previousFailure, operation, closeFailure);
         }
         return previousFailure;
     }
@@ -439,6 +476,23 @@ final class JdbcRunner {
         return result;
     }
 
+    /**
+     * Operation-specific work performed inside the resource boundary.
+     *
+     * @param <T> terminal result type
+     */
+    @FunctionalInterface
+    private interface HandlerAction<T> {
+
+        /**
+         * Executes against a prepared and bound statement.
+         *
+         * @param scope runner-owned execution scope
+         * @return terminal result
+         * @throws SQLException when JDBC work fails
+         */
+        T execute(ExecutionScope scope) throws SQLException;
+    }
     /**
      * Runner-owned view of one prepared operation.
      */
@@ -617,24 +671,6 @@ final class JdbcRunner {
                 throw new IllegalArgumentException("The maximum row count must not be negative.");
             }
         }
-    }
-
-    /**
-     * Operation-specific work performed inside the resource boundary.
-     *
-     * @param <T> terminal result type
-     */
-    @FunctionalInterface
-    private interface HandlerAction<T> {
-
-        /**
-         * Executes against a prepared and bound statement.
-         *
-         * @param scope runner-owned execution scope
-         * @return terminal result
-         * @throws SQLException when JDBC work fails
-         */
-        T execute(ExecutionScope scope) throws SQLException;
     }
 
 }

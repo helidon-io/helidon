@@ -16,6 +16,7 @@
 package io.helidon.data.jdbc;
 
 import java.sql.JDBCType;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -84,6 +85,34 @@ final class JdbcStatement implements JdbcClient.Statement {
             throw new IllegalArgumentException("The bind value must be a supported portable scalar.");
         }
         return bind(name, new JdbcOperation.Bind(value, null));
+    }
+
+    @Override
+    public <T> JdbcClient.BatchResult executeBatch(Iterable<T> items, JdbcClient.BatchBinder<? super T> binder) {
+        Objects.requireNonNull(items, "The batch source must not be null.");
+        Objects.requireNonNull(binder, "The batch binder must not be null.");
+        if (configured != null) {
+            throw new UnsupportedOperationException("Reusable statement definitions do not support batch execution.");
+        }
+        ensureMutable();
+        for (JdbcOperation.Bind bind : binds) {
+            if (bind != null) {
+                throw new IllegalArgumentException("Statement bindings cannot accompany batch bindings.");
+            }
+        }
+        terminalState = true;
+        List<JdbcOperation.Bind[]> captured = new ArrayList<>();
+        for (T item : items) {
+            Objects.requireNonNull(item, "The batch item must not be null.");
+            JdbcBatchBindings bindings = new JdbcBatchBindings(binds.length);
+            try {
+                binder.bind(bindings, item);
+                captured.add(bindings.complete());
+            } finally {
+                bindings.close();
+            }
+        }
+        return runner.executeBatch(new JdbcOperation(sql, new JdbcOperation.Bind[0], JdbcPreparationPlan.update()), captured);
     }
 
     /**
