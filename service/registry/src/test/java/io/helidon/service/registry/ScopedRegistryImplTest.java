@@ -16,31 +16,216 @@
 
 package io.helidon.service.registry;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import io.helidon.common.types.TypeName;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DynamicContainer;
+import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.api.function.Executable;
+import org.junit.jupiter.api.parallel.Isolated;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.DynamicContainer.dynamicContainer;
+import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
+@Isolated("Changes the scoped registry logger level")
 class ScopedRegistryImplTest {
     private static final long TIMEOUT_SECONDS = 5;
     private static final ServiceDescriptor<Object> BLOCKING_DESCRIPTOR = new TestDescriptor("Blocking", 1);
     private static final ServiceDescriptor<Object> PENDING_DESCRIPTOR = new TestDescriptor("Pending", 0);
 
-    @Test
-    void handedOutInitActivatorIsTerminalAfterShutdown() {
+    @TestFactory
+    Stream<DynamicContainer> shutdownAtEachLogLevel() {
+        return Stream.of(false, true)
+                .map(debug -> dynamicContainer("DEBUG=" + debug, Stream.of(
+                        dynamicTest("INIT activator becomes terminal",
+                                    () -> withDebug(debug, this::handedOutInitActivatorIsTerminalAfterShutdown)),
+                        dynamicTest("INIT activator rejects activation during shutdown",
+                                    () -> withDebug(debug, this::initActivatorIsUnavailableDuringShutdown)),
+                        dynamicTest("shutdown interrupts construction",
+                                    () -> withDebug(debug, () -> inProgressInitActivatorIsDestroyedDuringShutdown(
+                                            ActivationPhase.CONSTRUCTING, ActivationPhase.ACTIVE, false))),
+                        dynamicTest("shutdown interrupts injection",
+                                    () -> withDebug(debug, () -> inProgressInitActivatorIsDestroyedDuringShutdown(
+                                            ActivationPhase.INJECTING, ActivationPhase.ACTIVE, false))),
+                        dynamicTest("staged activation preserves the service instance",
+                                    () -> withDebug(debug, this::stagedActivationPreservesInstance)),
+                        dynamicTest("staged supplier activation publishes its value once",
+                                    () -> withDebug(debug, this::stagedSupplierPublishesValueOnce)),
+                        dynamicTest("failed callbacks are retried without replaying completed callbacks",
+                                    () -> withDebug(debug, this::failedCallbacksAreRetried)),
+                        dynamicTest("admitted limited post construction continuation owns cleanup",
+                                    () -> withDebug(debug, () -> limitedPostConstructContinuationDuringShutdown(true))),
+                        dynamicTest("shutdown before continuation admission skips cleanup",
+                                    () -> withDebug(debug, () -> limitedPostConstructContinuationDuringShutdown(false))),
+                        dynamicTest("shutdown reports unresolved cleanup during full post construction",
+                                    () -> withDebug(debug, () -> inProgressInitActivatorIsDestroyedDuringShutdown(
+                                            ActivationPhase.POST_CONSTRUCTING, ActivationPhase.ACTIVE, true))),
+                        dynamicTest("shutdown reports unresolved cleanup before activation finishing",
+                                    () -> withDebug(debug, () -> inProgressInitActivatorIsDestroyedDuringShutdown(
+                                            ActivationPhase.POST_CONSTRUCTING, ActivationPhase.ACTIVATION_FINISHING, true))),
+                        dynamicTest("shutdown interrupts limited post construction",
+                                    () -> withDebug(debug, () -> inProgressInitActivatorIsDestroyedDuringShutdown(
+                                            ActivationPhase.POST_CONSTRUCTING, ActivationPhase.POST_CONSTRUCTING, false))),
+                        dynamicTest("completed construction skips pre destroy",
+                                    () -> withDebug(debug, this::completedConstructionIsNotPreDestroyedDuringShutdown)),
+                        dynamicTest("completed injection skips pre destroy",
+                                    () -> withDebug(debug, this::completedInjectionIsNotPreDestroyedDuringShutdown)),
+                        dynamicTest("completed post construction runs pre destroy",
+                                    () -> withDebug(debug, this::completedPostConstructIsPreDestroyedDuringShutdown)),
+                        dynamicTest("shutdown at post construction handoff runs pre destroy",
+                                    () -> withDebug(debug, () -> shutdownAtPostConstructHandoff(null))),
+                        dynamicTest("shutdown at post construction handoff reports cleanup failure",
+                                    () -> withDebug(debug, () -> shutdownAtPostConstructHandoff(
+                                            new IllegalStateException("Handoff cleanup failed")))),
+                        dynamicTest("queued pre destroy reports failure",
+                                    () -> withDebug(debug, this::queuedCleanupFailureIsReported)),
+                        dynamicTest("active activator runs pre destroy",
+                                    () -> withDebug(debug, this::activeActivatorIsPreDestroyedDuringShutdown)),
+                        dynamicTest("cleanup failures aggregate after all services are attempted",
+                                    () -> withDebug(debug, this::deactivationFailuresAreAggregated)),
+                        dynamicTest("limited activation skips pre destroy",
+                                    () -> withDebug(debug, this::limitedActivationSkipsPreDestroy)),
+                        dynamicTest("completed limited post construction skips queued pre destroy",
+                                    () -> withDebug(debug, () -> completedCallbackIsDeactivatedDuringShutdown(
+                                            ActivationPhase.POST_CONSTRUCTING, ActivationPhase.POST_CONSTRUCTING, 1, 0, null))),
+                        dynamicTest("failed initialization skips pre destroy",
+                                    () -> withDebug(debug, this::failedInitializationSkipsPreDestroy))
+                )));
+    }
+
+    private static void withDebug(boolean debug, Executable action) throws Throwable {
+        Logger logger = Logger.getLogger(ScopedRegistryImpl.class.getName());
+        Level previousLevel = logger.getLevel();
+        try {
+            logger.setLevel(debug ? Level.FINE : Level.INFO);
+            assertThat("actual DEBUG logging", System.getLogger(logger.getName()).isLoggable(System.Logger.Level.DEBUG),
+                       is(debug));
+            action.execute();
+        } finally {
+            logger.setLevel(previousLevel);
+        }
+    }
+
+    private static void completedCallbackIsDeactivatedDuringShutdown(ActivationPhase blockedPhase,
+                                                                     ActivationPhase targetPhase,
+                                                                     int expectedPostConstructInvocations,
+                                                                     int expectedPreDestroyInvocations,
+                                                                     Throwable cleanupFailure)
+            throws InterruptedException {
+        CountDownLatch activationStarted = new CountDownLatch(1);
+        CountDownLatch continueActivation = new CountDownLatch(1);
+        CountDownLatch deactivationStarted = new CountDownLatch(1);
+        CountDownLatch continueDeactivation = new CountDownLatch(1);
+        CountDownLatch pendingDeactivationStarted = new CountDownLatch(1);
+        ScopedRegistryImpl registry = registry();
+        TestActivator blocker = TestActivator.active(BLOCKING_DESCRIPTOR,
+                                                      deactivationStarted,
+                                                      continueDeactivation);
+        BlockingActivationActivator pending = new BlockingActivationActivator(PENDING_DESCRIPTOR,
+                                                                                 activationStarted,
+                                                                                 continueActivation,
+                                                                                 pendingDeactivationStarted,
+                                                                                 blockedPhase,
+                                                                                 cleanupFailure);
+        registry.activator(blocker.descriptor(), () -> blocker);
+        registry.activator(pending.descriptor(), () -> pending);
+
+        AtomicReference<ActivationResult> activationResult = new AtomicReference<>();
+        AtomicReference<Throwable> activationFailure = new AtomicReference<>();
+        Thread activationThread = Thread.ofVirtual()
+                .name("service-activation")
+                .unstarted(() -> {
+                    try {
+                        activationResult.set(pending.activate(ActivationRequest.builder()
+                                                                        .targetPhase(targetPhase)
+                                                                        .build()));
+                    } catch (Throwable t) {
+                        activationFailure.set(t);
+                    }
+                });
+        AtomicReference<Throwable> shutdownFailure = new AtomicReference<>();
+        Thread shutdownThread = Thread.ofVirtual()
+                .name("scoped-registry-shutdown")
+                .unstarted(() -> {
+                    try {
+                        registry.deactivate();
+                    } catch (Throwable t) {
+                        shutdownFailure.set(t);
+                    }
+                });
+
+        activationThread.start();
+        try {
+            assertThat("activation started", activationStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS), is(true));
+            assertThat("blocked callback phase", pending.phase(), is(blockedPhase));
+            shutdownThread.start();
+            assertThat("higher run-level deactivation started",
+                       deactivationStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS),
+                       is(true));
+            continueActivation.countDown();
+            activationThread.join(TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS));
+            assertThat("activation completed before pending deactivation", activationThread.isAlive(), is(false));
+            assertThat("pending deactivation not started", pendingDeactivationStarted.getCount(), is(1L));
+            assertThat("pre destroy waits for pending deactivation", pending.preDestroyInvocations(), is(0));
+        } finally {
+            continueActivation.countDown();
+            continueDeactivation.countDown();
+            activationThread.join(TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS));
+            shutdownThread.join(TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS));
+        }
+
+        assertThat("activation completed", activationThread.isAlive(), is(false));
+        assertThat("shutdown completed", shutdownThread.isAlive(), is(false));
+        assertThat("activation failure", activationFailure.get(), nullValue());
+        assertThat("activation result", activationResult.get(), notNullValue());
+        assertThat("activation interrupted", activationResult.get().failure(), is(true));
+        if (cleanupFailure == null) {
+            assertThat("shutdown failure", shutdownFailure.get(), nullValue());
+        } else {
+            assertThat("shutdown failure", shutdownFailure.get(), instanceOf(ServiceRegistryException.class));
+            assertThat("suppressed failures", shutdownFailure.get().getSuppressed().length, is(1));
+            assertThat("cleanup failure", shutdownFailure.get().getSuppressed()[0], sameInstance(cleanupFailure));
+        }
+        assertThat("target instances not published", pending.targetInstancesSet(), is(false));
+        assertThat("pending deactivation started", pendingDeactivationStarted.getCount(), is(0L));
+        assertThat("post construct invocations", pending.postConstructInvocations(), is(expectedPostConstructInvocations));
+        assertThat("pre destroy invocations", pending.preDestroyInvocations(), is(expectedPreDestroyInvocations));
+        assertThat(pending.phase(), is(ActivationPhase.DESTROYED));
+    }
+
+    private static ScopedRegistryImpl registry() {
+        ScopedRegistryImpl registry = new ScopedRegistryImpl(null,
+                                                             Service.Singleton.TYPE,
+                                                             "test",
+                                                             Map.of());
+        registry.activate();
+        return registry;
+    }
+
+    private void handedOutInitActivatorIsTerminalAfterShutdown() {
         ScopedRegistryImpl registry = registry();
         TestActivator pending = TestActivator.init(PENDING_DESCRIPTOR);
         Activator<Object> handedOut = registry.activator(pending.descriptor(), () -> pending);
@@ -51,8 +236,7 @@ class ScopedRegistryImplTest {
         assertThat(pending.phase(), is(ActivationPhase.DESTROYED));
     }
 
-    @Test
-    void initActivatorIsUnavailableDuringShutdown() throws InterruptedException {
+    private void initActivatorIsUnavailableDuringShutdown() throws InterruptedException {
         CountDownLatch deactivationStarted = new CountDownLatch(1);
         CountDownLatch continueDeactivation = new CountDownLatch(1);
         ScopedRegistryImpl registry = registry();
@@ -100,8 +284,9 @@ class ScopedRegistryImplTest {
         assertThat(pending.phase(), is(ActivationPhase.DESTROYED));
     }
 
-    @Test
-    void inProgressInitActivatorIsDestroyedDuringShutdown() throws InterruptedException {
+    private void inProgressInitActivatorIsDestroyedDuringShutdown(ActivationPhase blockedPhase,
+                                                                 ActivationPhase targetPhase,
+                                                                 boolean expectedShutdownFailure) throws InterruptedException {
         CountDownLatch activationStarted = new CountDownLatch(1);
         CountDownLatch continueActivation = new CountDownLatch(1);
         CountDownLatch deactivationStarted = new CountDownLatch(1);
@@ -111,7 +296,8 @@ class ScopedRegistryImplTest {
                                                                                  activationStarted,
                                                                                  continueActivation,
                                                                                  deactivationStarted,
-                                                                                 ActivationPhase.POST_CONSTRUCTING);
+                                                                                 blockedPhase,
+                                                                                 null);
         registry.activator(pending.descriptor(), () -> pending);
 
         AtomicReference<ActivationResult> activationResult = new AtomicReference<>();
@@ -121,7 +307,7 @@ class ScopedRegistryImplTest {
                 .unstarted(() -> {
                     try {
                         activationResult.set(pending.activate(ActivationRequest.builder()
-                                                                        .targetPhase(ActivationPhase.ACTIVE)
+                                                                        .targetPhase(targetPhase)
                                                                         .build()));
                     } catch (Throwable t) {
                         activationFailure.set(t);
@@ -143,7 +329,7 @@ class ScopedRegistryImplTest {
         activationThread.start();
         try {
             assertThat("activation started", activationStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS), is(true));
-            assertThat("activator phase", pending.phase(), is(ActivationPhase.POST_CONSTRUCTING));
+            assertThat("activator phase", pending.phase(), is(blockedPhase));
             shutdownThread.start();
             assertThat("deactivation started", deactivationStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS), is(true));
             assertThat("shutdown completed during activation",
@@ -161,29 +347,301 @@ class ScopedRegistryImplTest {
         assertThat("activation failure", activationFailure.get(), nullValue());
         assertThat("activation result", activationResult.get(), notNullValue());
         assertThat("activation interrupted", activationResult.get().failure(), is(true));
-        assertThat("shutdown failure", shutdownFailure.get(), nullValue());
+        if (expectedShutdownFailure) {
+            assertThat("shutdown failure", shutdownFailure.get(), instanceOf(ServiceRegistryException.class));
+            assertThat("suppressed failures", shutdownFailure.get().getSuppressed().length, is(1));
+            Throwable cleanupFailure = shutdownFailure.get().getSuppressed()[0];
+            assertThat("cleanup failure", cleanupFailure, instanceOf(ServiceRegistryException.class));
+            assertThat("cleanup failure message", cleanupFailure.getMessage(),
+                       containsString("Cannot assure cleanup after interrupted post construction"));
+        } else {
+            assertThat("shutdown failure", shutdownFailure.get(), nullValue());
+        }
         assertThat("target instances not published", pending.targetInstancesSet(), is(false));
         assertThat("pre destroy skipped for interrupted callback", pending.preDestroyInvocations(), is(0));
         assertThat(pending.phase(), is(ActivationPhase.DESTROYED));
     }
 
-    @Test
-    void completedConstructionIsNotPreDestroyedDuringShutdown() throws InterruptedException {
-        completedCallbackIsDeactivatedDuringShutdown(ActivationPhase.CONSTRUCTING, 0);
+    private void completedConstructionIsNotPreDestroyedDuringShutdown() throws InterruptedException {
+        completedCallbackIsDeactivatedDuringShutdown(ActivationPhase.CONSTRUCTING, ActivationPhase.ACTIVE, 0, 0, null);
     }
 
-    @Test
-    void completedInjectionIsNotPreDestroyedDuringShutdown() throws InterruptedException {
-        completedCallbackIsDeactivatedDuringShutdown(ActivationPhase.INJECTING, 0);
+    private void completedInjectionIsNotPreDestroyedDuringShutdown() throws InterruptedException {
+        completedCallbackIsDeactivatedDuringShutdown(ActivationPhase.INJECTING, ActivationPhase.ACTIVE, 0, 0, null);
     }
 
-    @Test
-    void completedPostConstructIsPreDestroyedDuringShutdown() throws InterruptedException {
-        completedCallbackIsDeactivatedDuringShutdown(ActivationPhase.POST_CONSTRUCTING, 1);
+    private void completedPostConstructIsPreDestroyedDuringShutdown() throws InterruptedException {
+        completedCallbackIsDeactivatedDuringShutdown(ActivationPhase.POST_CONSTRUCTING, ActivationPhase.ACTIVE, 1, 1, null);
     }
 
-    @Test
-    void activeActivatorIsPreDestroyedDuringShutdown() {
+    private void stagedActivationPreservesInstance() {
+        for (ActivationPhase limit : List.of(ActivationPhase.CONSTRUCTING,
+                                             ActivationPhase.INJECTING,
+                                             ActivationPhase.POST_CONSTRUCTING,
+                                             ActivationPhase.ACTIVATION_FINISHING)) {
+            exerciseContinuation(limit, null, ActivationPhase.ACTIVE);
+        }
+    }
+
+    private void failedCallbacksAreRetried() {
+        for (ActivationPhase failedPhase : List.of(ActivationPhase.CONSTRUCTING,
+                                                   ActivationPhase.INJECTING,
+                                                   ActivationPhase.POST_CONSTRUCTING,
+                                                   ActivationPhase.ACTIVATION_FINISHING)) {
+            exerciseContinuation(failedPhase, failedPhase, failedPhase);
+            exerciseContinuation(failedPhase, failedPhase, ActivationPhase.ACTIVE);
+        }
+    }
+
+    private void stagedSupplierPublishesValueOnce() {
+        Object produced = new Object();
+        AtomicInteger supplierInvocations = new AtomicInteger();
+        AtomicInteger cleanupInvocations = new AtomicInteger();
+        Supplier<Object> supplier = () -> {
+            supplierInvocations.incrementAndGet();
+            return produced;
+        };
+        ServiceDescriptor<Object> descriptor = new ServiceDescriptor<>() {
+            @Override
+            public TypeName serviceType() {
+                return TypeName.create(Supplier.class);
+            }
+
+            @Override
+            public TypeName descriptorType() {
+                return TypeName.create("StagedSupplierDescriptor");
+            }
+
+            @Override
+            public Object instantiate(DependencyContext ctx, InterceptionMetadata interceptionMetadata) {
+                return supplier;
+            }
+
+            @Override
+            public void preDestroy(Object instance) {
+                assertThat("cleanup receives the supplier", instance, sameInstance(supplier));
+                cleanupInvocations.incrementAndGet();
+            }
+        };
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                              .discoverServices(false)
+                                                                              .discoverServicesFromServiceLoader(false)
+                                                                              .interceptionEnabled(false)
+                                                                              .build());
+        ScopedRegistryImpl registry = registry();
+        try {
+            var provider = new ServiceProvider<>((CoreServiceRegistry) manager.registry(), descriptor);
+            var activator = new Activators.SupplierActivator<>(provider, DependencyContext.create(Map.of()));
+            registry.activator(descriptor, () -> activator);
+            assertThat("limited supplier activation", activator.activate(ActivationRequest.builder()
+                                                                                .targetPhase(ActivationPhase.CONSTRUCTING)
+                                                                                .build()).success(), is(true));
+            assertThat("limited activation publishes the supplier value", supplierInvocations.get(), is(1));
+            assertThat("supplier continuation", activator.activate(ActivationRequest.builder()
+                                                                            .targetPhase(ActivationPhase.ACTIVE)
+                                                                            .build()).success(), is(true));
+            assertThat("published supplier value", activator.instances(Lookup.EMPTY).orElseThrow().getFirst().get(),
+                       sameInstance(produced));
+            assertThat("cached supplier value", activator.instances(Lookup.EMPTY).orElseThrow().getFirst().get(),
+                       sameInstance(produced));
+            assertThat("continuation and lookups do not republish", supplierInvocations.get(), is(1));
+            registry.deactivate();
+            registry.deactivate();
+            assertThat("supplier cleanup occurs once", cleanupInvocations.get(), is(1));
+        } finally {
+            try {
+                registry.deactivate();
+            } finally {
+                manager.shutdown();
+            }
+        }
+    }
+
+    private void exerciseContinuation(ActivationPhase limit, ActivationPhase failedPhase, ActivationPhase retryTarget) {
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                              .discoverServices(false)
+                                                                              .discoverServicesFromServiceLoader(false)
+                                                                              .interceptionEnabled(false)
+                                                                              .build());
+        ScopedRegistryImpl registry = registry();
+        RecordingDescriptor descriptor = new RecordingDescriptor(failedPhase);
+        RecordingSingleActivator activator = new RecordingSingleActivator(
+                new ServiceProvider<>((CoreServiceRegistry) manager.registry(), descriptor),
+                descriptor);
+        registry.activator(descriptor, () -> activator);
+        String scenario = "limit=" + limit + ", failed=" + failedPhase + ", retry=" + retryTarget;
+        try {
+            ActivationRequest first = ActivationRequest.builder().targetPhase(limit).build();
+            if (failedPhase == null) {
+                assertThat(scenario + " initial activation", activator.activate(first).success(), is(true));
+            } else {
+                assertThat(scenario + " callback failure",
+                           assertThrows(IllegalStateException.class, () -> activator.activate(first)),
+                           sameInstance(descriptor.failure));
+            }
+            assertThat(scenario + " continuation", activator.activate(ActivationRequest.builder()
+                                                                             .targetPhase(retryTarget)
+                                                                             .build()).success(), is(true));
+            if (failedPhase != null) {
+                int failedCallbackInvocations = switch (failedPhase) {
+                    case CONSTRUCTING -> descriptor.constructInvocations;
+                    case INJECTING -> descriptor.injectInvocations;
+                    case POST_CONSTRUCTING -> descriptor.postConstructInvocations;
+                    case ACTIVATION_FINISHING -> activator.finishInvocations;
+                    default -> throw new AssertionError("Unexpected failed phase " + failedPhase);
+                };
+                assertThat(scenario + " failed callback retried before returning success", failedCallbackInvocations, is(2));
+            }
+            assertThat(scenario + " completion", activator.activate(ActivationRequest.builder()
+                                                                           .targetPhase(ActivationPhase.ACTIVE)
+                                                                           .build()).success(), is(true));
+            Object instance = activator.instances(Lookup.EMPTY).orElseThrow().getFirst().get();
+            assertThat(scenario + " published instance", instance, sameInstance(descriptor.instance));
+            assertThat(scenario + " cached instance",
+                       activator.instances(Lookup.EMPTY).orElseThrow().getFirst().get(), sameInstance(instance));
+            assertThat(scenario + " constructor invocations", descriptor.constructInvocations,
+                       is(failedPhase == ActivationPhase.CONSTRUCTING ? 2 : 1));
+            assertThat(scenario + " injection invocations", descriptor.injectInvocations,
+                       is(failedPhase == ActivationPhase.INJECTING ? 2 : 1));
+            assertThat(scenario + " post construct invocations", descriptor.postConstructInvocations,
+                       is(failedPhase == ActivationPhase.POST_CONSTRUCTING ? 2 : 1));
+            assertThat(scenario + " finishing invocations", activator.finishInvocations,
+                       is(failedPhase == ActivationPhase.ACTIVATION_FINISHING ? 2 : 1));
+            registry.deactivate();
+            registry.deactivate();
+            assertThat(scenario + " cleanup invocations", descriptor.preDestroyInvocations, is(1));
+            assertThat(scenario + " cleanup instance", descriptor.destroyedInstance, sameInstance(instance));
+        } finally {
+            try {
+                registry.deactivate();
+            } finally {
+                manager.shutdown();
+            }
+        }
+    }
+
+    private void limitedPostConstructContinuationDuringShutdown(boolean admitted) {
+        AtomicBoolean continuation = new AtomicBoolean();
+        AtomicBoolean shutdownStarted = new AtomicBoolean();
+        ScopedRegistryImpl registry = new ScopedRegistryImpl(null, Service.Singleton.TYPE, "continuation", Map.of()) {
+            @Override
+            boolean activationAllowed() {
+                if (!admitted && continuation.get() && shutdownStarted.compareAndSet(false, true)) {
+                    deactivate();
+                }
+                return super.activationAllowed();
+            }
+        };
+        registry.activate();
+        List<ActivationPhase> callbacks = new ArrayList<>();
+        LifecycleActivator activator = new LifecycleActivator(PENDING_DESCRIPTOR) {
+            @Override
+            void construct(ActivationResult.Builder response) {
+                callbacks.add(ActivationPhase.CONSTRUCTING);
+            }
+
+            @Override
+            void inject(ActivationResult.Builder response) {
+                callbacks.add(ActivationPhase.INJECTING);
+            }
+
+            @Override
+            void postConstruct(ActivationResult.Builder response) {
+                callbacks.add(ActivationPhase.POST_CONSTRUCTING);
+            }
+
+            @Override
+            void finishActivation(ActivationResult.Builder response) {
+                callbacks.add(ActivationPhase.ACTIVATION_FINISHING);
+                if (admitted && shutdownStarted.compareAndSet(false, true)) {
+                    registry.deactivate();
+                }
+            }
+        };
+        registry.activator(activator.descriptor(), () -> activator);
+        try {
+            assertThat("limited activation", activator.activate(ActivationRequest.builder()
+                                                                       .targetPhase(ActivationPhase.POST_CONSTRUCTING)
+                                                                       .build()).success(), is(true));
+            continuation.set(true);
+            ActivationResult result = activator.activate(ActivationRequest.builder()
+                                                                .targetPhase(ActivationPhase.ACTIVE)
+                                                                .build());
+            assertThat("shutdown reached the selected ordering", shutdownStarted.get(), is(true));
+            assertThat("continuation cancelled", result.failure(), is(true));
+            assertThat("completed callbacks are not replayed", callbacks,
+                       is(admitted ? List.of(ActivationPhase.CONSTRUCTING, ActivationPhase.INJECTING,
+                                             ActivationPhase.POST_CONSTRUCTING, ActivationPhase.ACTIVATION_FINISHING)
+                                  : List.of(ActivationPhase.CONSTRUCTING, ActivationPhase.INJECTING,
+                                            ActivationPhase.POST_CONSTRUCTING)));
+            assertThat("cleanup ownership follows admission", activator.preDestroyInvocations(), is(admitted ? 1 : 0));
+            assertThat("terminal phase", activator.phase(), is(ActivationPhase.DESTROYED));
+            registry.deactivate();
+            assertThat("cleanup is not repeated", activator.preDestroyInvocations(), is(admitted ? 1 : 0));
+        } finally {
+            registry.deactivate();
+        }
+    }
+
+    private void shutdownAtPostConstructHandoff(Throwable cleanupFailure) {
+        AtomicBoolean postConstructCompleted = new AtomicBoolean();
+        AtomicBoolean shutdownStarted = new AtomicBoolean();
+        AtomicReference<Throwable> shutdownFailure = new AtomicReference<>();
+        ScopedRegistryImpl registry = new ScopedRegistryImpl(null, Service.Singleton.TYPE, "handoff", Map.of()) {
+            @Override
+            boolean activationAllowed() {
+                // Reenter shutdown at the first eligibility check after the callback returned, before activation
+                // has handled interruption. This exposes the handoff without depending on thread scheduling.
+                if (postConstructCompleted.get() && shutdownStarted.compareAndSet(false, true)) {
+                    try {
+                        deactivate();
+                    } catch (Throwable t) {
+                        shutdownFailure.set(t);
+                    }
+                }
+                return super.activationAllowed();
+            }
+        };
+        registry.activate();
+        LifecycleActivator activator = new LifecycleActivator(PENDING_DESCRIPTOR, response -> {
+            if (cleanupFailure != null) {
+                response.success(false).error(cleanupFailure);
+            }
+        }) {
+            @Override
+            void postConstruct(ActivationResult.Builder response) {
+                postConstructCompleted.set(true);
+            }
+        };
+        registry.activator(activator.descriptor(), () -> activator);
+
+        ActivationResult result = activator.activate(ActivationRequest.builder().targetPhase(ActivationPhase.ACTIVE).build());
+
+        assertThat("shutdown reached the post construct handoff", shutdownStarted.get(), is(true));
+        assertThat("activation interrupted", result.failure(), is(true));
+        assertThat("target instances not published", activator.targetInstancesSet(), is(false));
+        assertThat("pre destroy invocations", activator.preDestroyInvocations(), is(1));
+        assertThat("terminal phase", activator.phase(), is(ActivationPhase.DESTROYED));
+        if (cleanupFailure == null) {
+            assertThat("shutdown failure", shutdownFailure.get(), nullValue());
+        } else {
+            assertThat("shutdown failure", shutdownFailure.get(), instanceOf(ServiceRegistryException.class));
+            assertThat("suppressed failures", shutdownFailure.get().getSuppressed().length, is(1));
+            assertThat("cleanup failure", shutdownFailure.get().getSuppressed()[0], sameInstance(cleanupFailure));
+        }
+        registry.deactivate();
+        assertThat("pre destroy is not repeated", activator.preDestroyInvocations(), is(1));
+    }
+
+    private void queuedCleanupFailureIsReported() throws InterruptedException {
+        completedCallbackIsDeactivatedDuringShutdown(ActivationPhase.POST_CONSTRUCTING,
+                                                    ActivationPhase.ACTIVE,
+                                                    1,
+                                                    1,
+                                                    new IllegalStateException("Queued cleanup failed"));
+    }
+
+    private void activeActivatorIsPreDestroyedDuringShutdown() {
         ScopedRegistryImpl registry = registry();
         LifecycleActivator activator = new LifecycleActivator(PENDING_DESCRIPTOR);
         registry.activator(activator.descriptor(), () -> activator);
@@ -198,90 +656,197 @@ class ScopedRegistryImplTest {
         assertThat(activator.phase(), is(ActivationPhase.DESTROYED));
     }
 
-    private static void completedCallbackIsDeactivatedDuringShutdown(ActivationPhase blockedPhase,
-                                                                     int expectedLifecycleInvocations)
-            throws InterruptedException {
-        CountDownLatch activationStarted = new CountDownLatch(1);
-        CountDownLatch continueActivation = new CountDownLatch(1);
-        CountDownLatch deactivationStarted = new CountDownLatch(1);
-        CountDownLatch continueDeactivation = new CountDownLatch(1);
-        CountDownLatch pendingDeactivationStarted = new CountDownLatch(1);
+    private void deactivationFailuresAreAggregated() {
+        List<String> cleanupOrder = new ArrayList<>();
+        var cause = new IllegalStateException("Returned cleanup failure");
+        var thrown = new IllegalArgumentException("Thrown cleanup failure");
+        LifecycleActivator withCause = new LifecycleActivator(new TestDescriptor("WithCause", 100), response -> {
+            cleanupOrder.add("WithCause");
+            response.success(false).error(cause);
+        });
+        LifecycleActivator withoutCause = new LifecycleActivator(new TestDescriptor("WithoutCause", 0), response -> {
+            cleanupOrder.add("WithoutCause");
+            response.success(false);
+        });
+        LifecycleActivator throwing = new LifecycleActivator(new TestDescriptor("Throwing", -100), _ -> {
+            cleanupOrder.add("Throwing");
+            throw thrown;
+        });
+        LifecycleActivator remaining = new LifecycleActivator(new TestDescriptor("Remaining", -200), _ -> {
+            cleanupOrder.add("Remaining");
+        });
         ScopedRegistryImpl registry = registry();
-        TestActivator blocker = TestActivator.active(BLOCKING_DESCRIPTOR,
-                                                      deactivationStarted,
-                                                      continueDeactivation);
-        BlockingActivationActivator pending = new BlockingActivationActivator(PENDING_DESCRIPTOR,
-                                                                                 activationStarted,
-                                                                                 continueActivation,
-                                                                                 pendingDeactivationStarted,
-                                                                                 blockedPhase);
-        registry.activator(blocker.descriptor(), () -> blocker);
-        registry.activator(pending.descriptor(), () -> pending);
-
-        AtomicReference<ActivationResult> activationResult = new AtomicReference<>();
-        AtomicReference<Throwable> activationFailure = new AtomicReference<>();
-        Thread activationThread = Thread.ofVirtual()
-                .name("service-activation")
-                .unstarted(() -> {
-                    try {
-                        activationResult.set(pending.activate(ActivationRequest.builder()
-                                                                        .targetPhase(ActivationPhase.ACTIVE)
-                                                                        .build()));
-                    } catch (Throwable t) {
-                        activationFailure.set(t);
-                    }
-                });
-        AtomicReference<Throwable> shutdownFailure = new AtomicReference<>();
-        Thread shutdownThread = Thread.ofVirtual()
-                .name("scoped-registry-shutdown")
-                .unstarted(() -> {
-                    try {
-                        registry.deactivate();
-                    } catch (Throwable t) {
-                        shutdownFailure.set(t);
-                    }
-                });
-
-        activationThread.start();
-        try {
-            assertThat("activation started", activationStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS), is(true));
-            assertThat("blocked callback phase", pending.phase(), is(blockedPhase));
-            shutdownThread.start();
-            assertThat("higher run-level deactivation started",
-                       deactivationStarted.await(TIMEOUT_SECONDS, TimeUnit.SECONDS),
+        List<LifecycleActivator> activators = List.of(withCause, withoutCause, throwing, remaining);
+        for (LifecycleActivator activator : activators) {
+            registry.activator(activator.descriptor(), () -> activator);
+            assertThat(activator.activate(ActivationRequest.builder().targetPhase(ActivationPhase.ACTIVE).build()).success(),
                        is(true));
-            continueActivation.countDown();
-            activationThread.join(TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS));
-            assertThat("activation completed before pending deactivation", activationThread.isAlive(), is(false));
-            assertThat("pending deactivation not started", pendingDeactivationStarted.getCount(), is(1L));
-            assertThat("pre destroy waits for pending deactivation", pending.preDestroyInvocations(), is(0));
-        } finally {
-            continueActivation.countDown();
-            continueDeactivation.countDown();
-            activationThread.join(TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS));
-            shutdownThread.join(TimeUnit.SECONDS.toMillis(TIMEOUT_SECONDS));
         }
+        // Dependencies take precedence over run level, even when a dependent's cleanup fails.
+        registry.dependency(withCause.descriptor(), withoutCause.descriptor());
 
-        assertThat("activation completed", activationThread.isAlive(), is(false));
-        assertThat("shutdown completed", shutdownThread.isAlive(), is(false));
-        assertThat("activation failure", activationFailure.get(), nullValue());
-        assertThat("activation result", activationResult.get(), notNullValue());
-        assertThat("activation interrupted", activationResult.get().failure(), is(true));
-        assertThat("shutdown failure", shutdownFailure.get(), nullValue());
-        assertThat("target instances not published", pending.targetInstancesSet(), is(false));
-        assertThat("pending deactivation started", pendingDeactivationStarted.getCount(), is(0L));
-        assertThat("post construct invocations", pending.postConstructInvocations(), is(expectedLifecycleInvocations));
-        assertThat("pre destroy invocations", pending.preDestroyInvocations(), is(expectedLifecycleInvocations));
-        assertThat(pending.phase(), is(ActivationPhase.DESTROYED));
+        ServiceRegistryException failure = assertThrows(ServiceRegistryException.class, registry::deactivate);
+
+        assertThat(failure.getMessage(), is("Deactivation failed"));
+        assertThat(cleanupOrder, is(List.of("WithoutCause", "WithCause", "Throwing", "Remaining")));
+        Throwable[] suppressed = failure.getSuppressed();
+        assertThat(suppressed.length, is(3));
+        assertThat(suppressed[0], instanceOf(ServiceRegistryException.class));
+        assertThat(suppressed[0].getMessage(), containsString("Failed to deactivate WithoutCause"));
+        assertThat(suppressed[0].getMessage(), containsString("no exception received"));
+        assertThat(suppressed[1], sameInstance(cause));
+        assertThat(suppressed[2], instanceOf(ServiceRegistryException.class));
+        assertThat(suppressed[2].getMessage(), containsString("Failed to deactivate Throwing"));
+        assertThat(suppressed[2].getCause(), sameInstance(thrown));
+        assertThrows(ScopeNotActiveException.class,
+                     () -> registry.existingActivator(remaining.descriptor()));
+
+        registry.deactivate();
+        for (LifecycleActivator activator : activators) {
+            assertThat(activator.description() + " cleanup invocations", activator.preDestroyInvocations(), is(1));
+        }
     }
 
-    private static ScopedRegistryImpl registry() {
-        ScopedRegistryImpl registry = new ScopedRegistryImpl(null,
-                                                             Service.Singleton.TYPE,
-                                                             "test",
-                                                             Map.of());
-        registry.activate();
-        return registry;
+    private void limitedActivationSkipsPreDestroy() {
+        for (ActivationPhase limit : List.of(ActivationPhase.CONSTRUCTING,
+                                             ActivationPhase.INJECTING,
+                                             ActivationPhase.POST_CONSTRUCTING)) {
+            ScopedRegistryImpl registry = registry();
+            LifecycleActivator activator = new LifecycleActivator(PENDING_DESCRIPTOR);
+            registry.activator(activator.descriptor(), () -> activator);
+            ActivationResult result = activator.activate(ActivationRequest.builder().targetPhase(limit).build());
+            assertThat(limit + " activation result", result.success(), is(true));
+            assertThat(limit + " phase before shutdown", activator.phase(), is(limit));
+
+            registry.deactivate();
+            registry.deactivate();
+
+            assertThat(limit + " cleanup invocations", activator.preDestroyInvocations(), is(0));
+            assertThat(limit + " terminal phase", activator.phase(), is(ActivationPhase.DESTROYED));
+        }
+    }
+
+    private void failedInitializationSkipsPreDestroy() {
+        for (ActivationPhase phase : List.of(ActivationPhase.CONSTRUCTING,
+                                             ActivationPhase.INJECTING,
+                                             ActivationPhase.POST_CONSTRUCTING)) {
+            ScopedRegistryImpl registry = registry();
+            var cause = new IllegalStateException("Initialization failed during " + phase);
+            LifecycleActivator activator = new LifecycleActivator(PENDING_DESCRIPTOR) {
+                @Override
+                void construct(ActivationResult.Builder response) {
+                    if (phase == ActivationPhase.CONSTRUCTING) {
+                        throw cause;
+                    }
+                }
+
+                @Override
+                void inject(ActivationResult.Builder response) {
+                    if (phase == ActivationPhase.INJECTING) {
+                        throw cause;
+                    }
+                }
+
+                @Override
+                void postConstruct(ActivationResult.Builder response) {
+                    if (phase == ActivationPhase.POST_CONSTRUCTING) {
+                        throw cause;
+                    }
+                }
+            };
+            registry.activator(activator.descriptor(), () -> activator);
+            assertThat(assertThrows(IllegalStateException.class,
+                                    () -> activator.activate(ActivationRequest.builder()
+                                                                    .targetPhase(ActivationPhase.ACTIVE)
+                                                                    .build())),
+                       sameInstance(cause));
+
+            registry.deactivate();
+
+            assertThat(phase + " cleanup invocations", activator.preDestroyInvocations(), is(0));
+            assertThat(phase + " terminal phase", activator.phase(), is(ActivationPhase.DESTROYED));
+        }
+    }
+
+    private static final class RecordingDescriptor implements ServiceDescriptor<Object> {
+        private final ActivationPhase failedPhase;
+        private final IllegalStateException failure = new IllegalStateException("First callback attempt failed");
+        private Object instance;
+        private Object destroyedInstance;
+        private int constructInvocations;
+        private int injectInvocations;
+        private int postConstructInvocations;
+        private int preDestroyInvocations;
+
+        private RecordingDescriptor(ActivationPhase failedPhase) {
+            this.failedPhase = failedPhase;
+        }
+
+        @Override
+        public TypeName serviceType() {
+            return TypeName.create(Object.class);
+        }
+
+        @Override
+        public TypeName descriptorType() {
+            return TypeName.create(RecordingDescriptor.class);
+        }
+
+        @Override
+        public Object instantiate(DependencyContext ctx, InterceptionMetadata interceptionMetadata) {
+            constructInvocations++;
+            if (failedPhase == ActivationPhase.CONSTRUCTING && constructInvocations == 1) {
+                throw failure;
+            }
+            if (instance != null) {
+                throw new IllegalStateException("A completed constructor must not be invoked again");
+            }
+            instance = new Object();
+            return instance;
+        }
+
+        @Override
+        public void inject(DependencyContext ctx, InterceptionMetadata interceptionMetadata,
+                           Set<String> injected, Object instance) {
+            assertThat("injection receives the constructed instance", instance, sameInstance(this.instance));
+            injectInvocations++;
+            if (failedPhase == ActivationPhase.INJECTING && injectInvocations == 1) {
+                throw failure;
+            }
+        }
+
+        @Override
+        public void postConstruct(Object instance) {
+            assertThat("post construct receives the constructed instance", instance, sameInstance(this.instance));
+            postConstructInvocations++;
+            if (failedPhase == ActivationPhase.POST_CONSTRUCTING && postConstructInvocations == 1) {
+                throw failure;
+            }
+        }
+
+        @Override
+        public void preDestroy(Object instance) {
+            preDestroyInvocations++;
+            destroyedInstance = instance;
+        }
+    }
+
+    private static final class RecordingSingleActivator extends Activators.SingleServiceActivator<Object> {
+        private final RecordingDescriptor descriptor;
+        private int finishInvocations;
+
+        private RecordingSingleActivator(ServiceProvider<Object> provider, RecordingDescriptor descriptor) {
+            super(provider, DependencyContext.create(Map.of()));
+            this.descriptor = descriptor;
+        }
+
+        @Override
+        void finishActivation(ActivationResult.Builder response) {
+            finishInvocations++;
+            if (descriptor.failedPhase == ActivationPhase.ACTIVATION_FINISHING && finishInvocations == 1) {
+                throw descriptor.failure;
+            }
+        }
     }
 
     private static final class TestDescriptor implements ServiceDescriptor<Object> {
@@ -315,6 +880,7 @@ class ScopedRegistryImplTest {
         private final CountDownLatch continueActivation;
         private final CountDownLatch deactivationStarted;
         private final ActivationPhase blockedPhase;
+        private final Throwable cleanupFailure;
         private int postConstructInvocations;
         private int preDestroyInvocations;
         private boolean targetInstancesSet;
@@ -323,13 +889,15 @@ class ScopedRegistryImplTest {
                                              CountDownLatch activationStarted,
                                              CountDownLatch continueActivation,
                                              CountDownLatch deactivationStarted,
-                                             ActivationPhase blockedPhase) {
+                                             ActivationPhase blockedPhase,
+                                             Throwable cleanupFailure) {
             super(null, null);
             this.descriptor = descriptor;
             this.activationStarted = activationStarted;
             this.continueActivation = continueActivation;
             this.deactivationStarted = deactivationStarted;
             this.blockedPhase = blockedPhase;
+            this.cleanupFailure = cleanupFailure;
         }
 
         @Override
@@ -367,6 +935,9 @@ class ScopedRegistryImplTest {
         @Override
         void preDestroy(ActivationResult.Builder response) {
             preDestroyInvocations++;
+            if (cleanupFailure != null) {
+                response.success(false).error(cleanupFailure);
+            }
         }
 
         @Override
@@ -402,14 +973,20 @@ class ScopedRegistryImplTest {
         }
     }
 
-    private static final class LifecycleActivator extends Activators.BaseActivator<Object> {
+    private static class LifecycleActivator extends Activators.BaseActivator<Object> {
         private final ServiceDescriptor<Object> descriptor;
+        private final Consumer<ActivationResult.Builder> cleanup;
         private int preDestroyInvocations;
         private boolean targetInstancesSet;
 
         private LifecycleActivator(ServiceDescriptor<Object> descriptor) {
+            this(descriptor, _ -> { });
+        }
+
+        private LifecycleActivator(ServiceDescriptor<Object> descriptor, Consumer<ActivationResult.Builder> cleanup) {
             super(null, null);
             this.descriptor = descriptor;
+            this.cleanup = cleanup;
         }
 
         @Override
@@ -425,6 +1002,7 @@ class ScopedRegistryImplTest {
         @Override
         void preDestroy(ActivationResult.Builder response) {
             preDestroyInvocations++;
+            cleanup.accept(response);
         }
 
         @Override
