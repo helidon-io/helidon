@@ -322,6 +322,10 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         return http1Client;
     }
 
+    ClientUri redirectUri(String location) {
+        return resolveRedirectUri(location);
+    }
+
     private static boolean sameOrigin(ClientUri sourceUri, ClientUri targetUri) {
         return sourceUri.scheme().equalsIgnoreCase(targetUri.scheme())
                 && sourceUri.host().equalsIgnoreCase(targetUri.host())
