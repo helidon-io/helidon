@@ -24,7 +24,10 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -40,6 +43,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.InflaterInputStream;
 
+import io.helidon.common.Size;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
@@ -71,6 +75,245 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class Http1ClientResponseImplTest {
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void interleavedEntityReadersKeepIndependentStagedBytes(boolean repeatedEntity) throws IOException {
+        byte[] content = ("a".repeat(512)
+                + "b".repeat(512)
+                + "c".repeat(512)
+                + "d".repeat(512)
+                + "e".repeat(512)).getBytes(StandardCharsets.UTF_8);
+        var connection = new TestConnection();
+        var response = response(contentLengthHeaders(content.length), new ByteArrayInputStream(content), connection);
+        var firstEntity = response.entity();
+        var secondEntity = repeatedEntity ? response.entity() : firstEntity.copy(() -> { });
+        InputStream first = firstEntity.inputStream();
+        InputStream second = secondEntity.inputStream();
+        byte[] target = new byte[512];
+
+        assertThat(first.read(), is((int) 'a'));
+        assertThat(second.read(target), is(target.length));
+        assertThat(target, is("b".repeat(512).getBytes(StandardCharsets.UTF_8)));
+        assertThat(second.read(target), is(target.length));
+        assertThat(target, is("c".repeat(512).getBytes(StandardCharsets.UTF_8)));
+        assertThat(first.readNBytes(511), is("a".repeat(511).getBytes(StandardCharsets.UTF_8)));
+
+        // The first reader refills while the second still retains its consumed old cursor.
+        assertThat(first.read(), is((int) 'd'));
+        assertThat(second.read(), is((int) 'e'));
+        assertThat(first.readNBytes(511), is("d".repeat(511).getBytes(StandardCharsets.UTF_8)));
+        assertThat(second.readNBytes(511), is("e".repeat(511).getBytes(StandardCharsets.UTF_8)));
+        assertThat(first.read(), is(-1));
+        response.close();
+        assertThat(connection.releaseCount(), is(1));
+        assertThat(connection.closeCount(), is(0));
+    }
+
+    @Test
+    void preservesOutstandingStagingWhenAnotherReaderCompletesResponse() throws IOException {
+        byte[] content = ("a".repeat(512) + "b".repeat(512)).getBytes(StandardCharsets.UTF_8);
+        var connection = new TestConnection();
+        var response = response(contentLengthHeaders(content.length), new ByteArrayInputStream(content), connection);
+        InputStream first = response.entity().inputStream();
+        InputStream second = response.entity().inputStream();
+
+        assertThat(first.read(), is((int) 'a'));
+        assertThat(second.readNBytes(512), is("b".repeat(512).getBytes(StandardCharsets.UTF_8)));
+        assertThat(second.read(), is(-1));
+        assertThat(connection.releaseCount(), is(1));
+        assertThat(first.readNBytes(511), is("a".repeat(511).getBytes(StandardCharsets.UTF_8)));
+        assertThat(assertThrows(IllegalStateException.class, first::read).getMessage(), is("Response is closed"));
+        response.close();
+        assertThat(connection.releaseCount(), is(1));
+        assertThat(connection.closeCount(), is(0));
+    }
+
+    @Test
+    void boundsStagingReadsAcrossSizeChangesPartialReadsAndZeroProgress() throws IOException {
+        byte[] content = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+-".getBytes(StandardCharsets.UTF_8);
+        var requestedLengths = new ArrayList<Integer>();
+        var source = new ByteArrayInputStream(content) {
+            private boolean zeroReturned;
+
+            @Override
+            public int read(byte[] bytes, int offset, int length) {
+                requestedLengths.add(length);
+                if (!zeroReturned) {
+                    zeroReturned = true;
+                    return 0;
+                }
+                return super.read(bytes, offset, Math.min(length, 7));
+            }
+        };
+        var connection = new TestConnection();
+        var response = response(contentLengthHeaders(content.length), source, connection);
+        InputStream stream = response.inputStream();
+        byte[] target = new byte[65536];
+
+        assertThat(stream.read(target, 0, 0), is(0));
+        assertThat(requestedLengths, is(List.of()));
+        assertThat(stream.read(target, 0, 64), is(0));
+        int position = 0;
+        for (int length : new int[] {1, 64, 512, 8192, 65536, 64}) {
+            int count = Math.min(length, 7);
+            assertThat(stream.read(target, 0, length), is(count));
+            assertThat(Arrays.copyOf(target, count), is(Arrays.copyOfRange(content, position, position + count)));
+            position += count;
+        }
+        stream.close();
+        response.close();
+
+        assertThat(requestedLengths, is(List.of(64, 1, 64, 512, 8192, 8192, 64, 1)));
+        assertThat(connection.closeCount(), is(1));
+        assertThat(connection.releaseCount(), is(0));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1})
+    void keepsCloseProbeAtOneByteAfterAnEightKiBLease(int remaining) throws IOException {
+        byte[] content = new byte[8192 + remaining];
+        Arrays.fill(content, (byte) 'x');
+        var requestedLengths = new ArrayList<Integer>();
+        var source = new ByteArrayInputStream(content) {
+            @Override
+            public int read(byte[] bytes, int offset, int length) {
+                requestedLengths.add(length);
+                return super.read(bytes, offset, length);
+            }
+        };
+        var connection = new TestConnection();
+        var response = response(contentLengthHeaders(content.length), source, connection);
+        InputStream stream = response.inputStream();
+
+        assertThat(stream.read(new byte[65536]), is(8192));
+        stream.close();
+        response.close();
+
+        assertThat(requestedLengths, is(List.of(8192, 1)));
+        assertThat(connection.releaseCount(), is(remaining == 0 ? 1 : 0));
+        assertThat(connection.closeCount(), is(remaining == 0 ? 0 : 1));
+        if (remaining == 1) {
+            assertThat(stream.read(), is((int) 'x'));
+            assertThrows(IllegalStateException.class, stream::read);
+        }
+    }
+
+    @Test
+    void stagedReadFailurePreservesOutstandingBytesAndCleanupFailures() throws IOException {
+        var readFailure = new IOException("read failed");
+        var decoderCloseFailure = new IOException("decoder close failed");
+        var connectionCloseFailure = new IllegalStateException("connection close failed");
+        var decoderCloses = new AtomicInteger();
+        var source = new ByteArrayInputStream("data".getBytes(StandardCharsets.UTF_8)) {
+            @Override
+            public int read(byte[] bytes, int offset, int length) {
+                if (available() == 0) {
+                    throw new UncheckedIOException(readFailure);
+                }
+                return super.read(bytes, offset, length);
+            }
+
+            @Override
+            public void close() throws IOException {
+                decoderCloses.incrementAndGet();
+                throw decoderCloseFailure;
+            }
+        };
+        var connection = new TestConnection(DataReader.create(() -> null), connectionCloseFailure);
+        var response = response(contentLengthHeaders(), source, connection);
+        InputStream first = response.entity().inputStream();
+        InputStream second = response.entity().inputStream();
+
+        assertThat(first.read(), is((int) 'd'));
+        var failure = assertThrows(UncheckedIOException.class, second::read);
+
+        assertThat(failure.getCause(), sameInstance(readFailure));
+        assertThat(failure.getSuppressed().length, is(2));
+        assertThat(failure.getSuppressed()[0], sameInstance(connectionCloseFailure));
+        assertThat(failure.getSuppressed()[1], sameInstance(decoderCloseFailure));
+        assertThat(first.readNBytes(3), is("ata".getBytes(StandardCharsets.UTF_8)));
+        assertThat(assertThrows(IllegalStateException.class, first::read).getCause(), sameInstance(failure));
+        response.close();
+        assertThat(decoderCloses.get(), is(1));
+        assertThat(connection.closeCount(), is(1));
+        assertThat(connection.releaseCount(), is(0));
+    }
+
+    @Test
+    void exactChunkedReadThenCloseConsumesAdvertisedTrailers() throws IOException {
+        var connection = new TestConnection(dataReader("4\r\ndata\r\n0\r\nX-Result: done\r\n\r\n"));
+        var source = new Http1CallChainBase.ChunkedInputStream(connection,
+                                                             connection.reader(),
+                                                             new CompletableFuture<>(),
+                                                             new AtomicReference<>(),
+                                                             true,
+                                                             new Http1ConnectionListener() { },
+                                                             null);
+        var headers = WritableHeaders.create();
+        headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+        headers.add(HeaderNames.TRAILER, "X-Result");
+        var response = response(ClientResponseHeaders.create(headers), source, connection);
+
+        try (InputStream stream = response.inputStream()) {
+            assertThat(stream.readNBytes(4), is("data".getBytes(StandardCharsets.UTF_8)));
+            assertThat(connection.releaseCount(), is(0));
+        }
+
+        assertThat(response.trailers().get(HeaderNames.create("X-Result")).get(), is("done"));
+        assertThat(connection.reader().available(), is(0));
+        assertThat(connection.releaseCount(), is(1));
+        assertThat(connection.closeCount(), is(0));
+    }
+
+    @Test
+    void trailerFailurePreservesOutstandingStagingAndRetiresConnection() throws IOException {
+        var connection = new TestConnection(dataReader("X-Result: done\r\n\r\nunexpected"));
+        var decoderCloses = new AtomicInteger();
+        var source = new ByteArrayInputStream("a".repeat(512).getBytes(StandardCharsets.UTF_8)) {
+            @Override
+            public void close() {
+                decoderCloses.incrementAndGet();
+            }
+        };
+        var headers = WritableHeaders.create();
+        headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+        headers.add(HeaderNames.TRAILER, "X-Result");
+        var response = response(ClientResponseHeaders.create(headers), source, connection);
+        InputStream first = response.entity().inputStream();
+        InputStream second = response.entity().inputStream();
+
+        assertThat(first.read(), is((int) 'a'));
+        var failure = assertThrows(IllegalStateException.class, second::read);
+
+        assertThat(failure.getMessage(), is("Unexpected data after response trailers"));
+        assertThat(first.readNBytes(511), is("a".repeat(511).getBytes(StandardCharsets.UTF_8)));
+        assertThat(assertThrows(IllegalStateException.class, first::read).getCause(), sameInstance(failure));
+        response.close();
+        assertThat(decoderCloses.get(), is(1));
+        assertThat(connection.closeCount(), is(1));
+        assertThat(connection.releaseCount(), is(0));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void decodedBufferLimitStillCountsAcrossStagingLeases(boolean gzip) throws IOException {
+        var decoderCloses = new AtomicInteger();
+        InputStream decoder = decoder(gzip, false, decoderCloses::incrementAndGet, "a".repeat(16384));
+        var connection = new TestConnection();
+        var protocolConfig = Http1ClientProtocolConfig.builder()
+                .maxBufferedEntitySize(Size.create(8192))
+                .build();
+        var response = response(contentLengthHeaders(), decoder, connection, protocolConfig);
+
+        var failure = assertThrows(IllegalStateException.class, () -> response.entity().buffer());
+
+        assertThat(failure.getMessage(), is("Maximum buffered entity length exceeded"));
+        assertThat(decoderCloses.get(), is(1));
+        assertThat(assertThrows(IOException.class, decoder::read).getMessage(), is("Stream closed"));
+        assertThat(connection.releaseCount(), is(1));
+        assertThat(connection.closeCount(), is(0));
+    }
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
@@ -438,9 +681,14 @@ class Http1ClientResponseImplTest {
     }
 
     private static InputStream decoder(boolean gzip, boolean truncated, Runnable whenSourceCloses) throws IOException {
+        return decoder(gzip, truncated, whenSourceCloses, "data");
+    }
+
+    private static InputStream decoder(boolean gzip, boolean truncated, Runnable whenSourceCloses, String content)
+            throws IOException {
         var encoded = new ByteArrayOutputStream();
         try (var encoder = gzip ? new GZIPOutputStream(encoded) : new DeflaterOutputStream(encoded)) {
-            encoder.write("data".getBytes(StandardCharsets.UTF_8));
+            encoder.write(content.getBytes(StandardCharsets.UTF_8));
         }
         byte[] bytes = encoded.toByteArray();
         var source = new ByteArrayInputStream(bytes, 0, truncated ? bytes.length - 3 : bytes.length) {
@@ -468,8 +716,15 @@ class Http1ClientResponseImplTest {
     private static Http1ClientResponseImpl response(ClientResponseHeaders headers,
                                                     InputStream inputStream,
                                                     TestConnection connection) {
+        return response(headers, inputStream, connection, Http1ClientProtocolConfig.create());
+    }
+
+    private static Http1ClientResponseImpl response(ClientResponseHeaders headers,
+                                                    InputStream inputStream,
+                                                    TestConnection connection,
+                                                    Http1ClientProtocolConfig protocolConfig) {
         return new Http1ClientResponseImpl(HttpClientConfig.builder().build(),
-                                           Http1ClientProtocolConfig.create(),
+                                           protocolConfig,
                                            Status.OK_200,
                                            Method.GET,
                                            ClientRequestHeaders.create(WritableHeaders.create()),
@@ -494,8 +749,12 @@ class Http1ClientResponseImplTest {
     }
 
     private static ClientResponseHeaders contentLengthHeaders() {
+        return contentLengthHeaders(4);
+    }
+
+    private static ClientResponseHeaders contentLengthHeaders(int length) {
         WritableHeaders<?> headers = WritableHeaders.create();
-        headers.add(HeaderNames.CONTENT_LENGTH, "4");
+        headers.add(HeaderNames.CONTENT_LENGTH, Integer.toString(length));
         return ClientResponseHeaders.create(headers);
     }
 
