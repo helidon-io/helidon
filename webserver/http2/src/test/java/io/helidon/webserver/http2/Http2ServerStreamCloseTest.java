@@ -260,6 +260,7 @@ class Http2ServerStreamCloseTest {
         stream.abortConnection();
 
         verify(handler).close();
+        verify(handler, never()).rstStream(any());
         verify(handler).streamFinished();
         assertThat(finishThread.get(), sameInstance(runner));
         var order = inOrder(handler);
@@ -294,6 +295,7 @@ class Http2ServerStreamCloseTest {
             assertThat(failure.get(), nullValue());
             assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
             verify(handler, times(1)).close();
+            verify(handler, never()).rstStream(any());
             verify(handler).streamFinished();
         } finally {
             release.countDown();
@@ -334,10 +336,12 @@ class Http2ServerStreamCloseTest {
             assertThat(failure.get(), nullValue());
             assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
             verify(handler, never()).init();
+            verify(handler).rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
             verify(handler).close();
             verify(handler).streamFinished();
             assertThat(finishThread.get(), sameInstance(selectionThread.get()));
             var order = inOrder(handler);
+            order.verify(handler).rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
             order.verify(handler).close();
             order.verify(handler).streamFinished();
         } finally {
@@ -374,6 +378,7 @@ class Http2ServerStreamCloseTest {
             verify(handler).close();
             stream.abortConnection();
             stream.run();
+            verify(handler, never()).rstStream(any());
             verify(handler).streamFinished();
         } finally {
             thread.interrupt();
