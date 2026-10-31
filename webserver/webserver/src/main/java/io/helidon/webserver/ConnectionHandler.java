@@ -274,6 +274,16 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext, C
     }
 
     @Override
+    public void abortSocket() {
+        try {
+            // Bypass graceful TLS close, which can wait for the very writer being aborted.
+            socket.close();
+        } catch (IOException e) {
+            LOGGER.log(TRACE, "Failed to abort connection socket", e);
+        }
+    }
+
+    @Override
     public ConnectionObservation httpTransportObservation() {
         return httpTransportObservation;
     }
