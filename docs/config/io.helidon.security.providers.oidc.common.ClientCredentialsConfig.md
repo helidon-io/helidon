@@ -32,10 +32,10 @@ Configuration of the OIDC client credentials flow
 
 ## Usages
 
-- <a href="io.helidon.security.providers.oidc.common.OidcConfig.md#client-credentials-config"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>client-<wbr>credentials-<wbr>config</code></a>
-- <a href="io.helidon.security.providers.oidc.OidcProvider.md#client-credentials-config"><code>security.<wbr>providers.<wbr>oidc.<wbr>client-<wbr>credentials-<wbr>config</code></a>
-- <a href="io.helidon.security.providers.oidc.common.OidcConfig.md#client-credentials-config"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>client-<wbr>credentials-<wbr>config</code></a>
-- <a href="io.helidon.security.providers.oidc.OidcProvider.md#client-credentials-config"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>client-<wbr>credentials-<wbr>config</code></a>
+- <a href="io.helidon.security.providers.oidc.common.OidcConfig.md#client-credentials"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>client-<wbr>credentials</code></a>
+- <a href="io.helidon.security.providers.oidc.OidcProvider.md#client-credentials"><code>security.<wbr>providers.<wbr>oidc.<wbr>client-<wbr>credentials</code></a>
+- <a href="io.helidon.security.providers.oidc.common.OidcConfig.md#client-credentials"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>client-<wbr>credentials</code></a>
+- <a href="io.helidon.security.providers.oidc.OidcProvider.md#client-credentials"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>client-<wbr>credentials</code></a>
 
 ---
 
