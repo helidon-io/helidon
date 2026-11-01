@@ -922,6 +922,7 @@ class Http2ServerStream extends Http2SubProtocolWriter implements Runnable, Http
                 }
             }
         } catch (Http2Exception writeFailure) {
+            streamFailed();
             try {
                 if (rejectedStreamCompleted.compareAndSet(false, true)) {
                     boolean resetRequestBodyAfterFailure = prepareRejectedStream(true);
