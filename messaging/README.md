@@ -229,9 +229,13 @@ Message<Order> local = Message.builder(order)
         .build();
 ```
 
-A new message starts with empty local metadata unless its builder or implementation explicitly copies a snapshot. To
-publish a value, the application must explicitly redact and bound it and then add it as a portable header or payload
-field.
+A new message starts with empty local metadata unless its builder or implementation explicitly copies a snapshot.
+Connectors must not automatically copy or serialize metadata entries into message payloads, headers, or properties.
+They may interpret explicitly documented entries as per-message delivery options, such as a delivery delay, including
+through provider APIs or provider-defined message control properties. The connector documents each option's name,
+value type, validation, and behavior when messages are reused, forwarded, or wrapped for dead-letter routing.
+Unrecognized entries and failure diagnostics remain local. To publish a local value as message data, the application
+must explicitly redact and bound it and then add it as a portable header or payload field.
 
 `MessageHeaders` and `MessageMetadata` are sealed read-only interfaces. Sealing prevents lambda implementations, which
 cannot provide the required value equality, and keeps immutable snapshots and metadata-safe `toString()` behavior
@@ -410,9 +414,11 @@ the messaging graph starts.
 Portable dead-letter headers contain the source channel and attempt count. Failure type and message are stored in the
 dead-letter envelope's `localMetadata()` under `FAILURE_TYPE_METADATA` and `FAILURE_MESSAGE_METADATA`; the convenience
 accessors `failureType()` and `failureMessage()` read those values. The original message's other local metadata is
-retained, but a connector never maps local metadata to the wire. Failure diagnostics may expose sensitive implementation
-details or unbounded exception text. To publish them, a local dead-letter consumer must create a new message with
-explicitly redacted and bounded application headers.
+retained; each connector documents whether its metadata delivery options apply to dead-letter envelopes. Connectors
+must not copy or serialize the failure diagnostics into transport payloads, headers, or properties, or interpret them
+as delivery options. Failure diagnostics may expose sensitive implementation details or unbounded exception text. To
+publish them, a local dead-letter consumer must create a new message with explicitly redacted and bounded application
+headers.
 
 The policy belongs to the incoming channel and retained delivery, not only to the annotated method call. It covers
 sibling receivers and downstream outputs reached by that delivery. If several receivers on one channel declare a
@@ -1259,10 +1265,13 @@ concurrently with an active send.
 
 ### 7. Map transport messages and enforce limits
 
-- Treat `headers()` as the portable, wire-eligible data plane. `localMetadata()` belongs only to the in-process message
-  envelope: it may be retained when the runtime derives another local envelope, but a connector must never generically
-  map or serialize it. Publishing a local metadata value requires an explicit application decision to redact, bound,
-  and promote it to a portable header.
+- Treat `headers()` as the portable, wire-eligible data plane. `localMetadata()` follows the in-process message envelope
+  and may be retained when the runtime derives another local envelope. Do not automatically copy or serialize metadata
+  entries into message payloads, headers, or properties. A connector may interpret explicitly documented entries as
+  per-message delivery options, including through provider APIs or provider-defined message control properties.
+  Document their recognized names, value types, validation, and behavior on reuse, forwarding, and dead-letter routing.
+  Unrecognized entries and failure diagnostics remain local. Publishing a local value as message data requires an
+  explicit application decision to redact, bound, and promote it to a portable header or payload field.
 - Convert each incoming transport record to an immutable `Message<T>` and copy portable headers into globally ordered
   `MessageHeader` entries. Preserve duplicate names, exact spelling, typed values, and immutable binary snapshots when
   the transport exposes them.

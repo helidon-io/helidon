@@ -28,9 +28,11 @@ import io.helidon.common.Api;
  * <p>
  * Local metadata follows the same message envelope while it is used in-process. A newly created message starts with
  * empty local metadata unless its builder or implementation explicitly supplies a snapshot. Local metadata is separate
- * from {@link Message#headers() portable headers}; connectors and generic message mappers must never serialize it or
- * map it to a transport. Publishing a local value requires an explicit, application-controlled promotion to a
- * portable header, including any necessary redaction and size limit.
+ * from {@link Message#headers() portable headers}; connectors and generic message mappers must not automatically copy
+ * or serialize its entries into message payloads, headers, or properties. Connectors may interpret explicitly documented
+ * entries as per-message delivery options, including through provider APIs or provider-defined message control
+ * properties. Unrecognized entries and failure diagnostics remain local. Publishing a local value as message data
+ * requires an explicit application decision, including any necessary redaction and size limit.
  * <p>
  * This interface is sealed because its single abstract accessor would otherwise make it a lambda target. Lambdas
  * cannot implement the value-based {@link Object#equals(Object)} and {@link Object#hashCode()} required by this type.
