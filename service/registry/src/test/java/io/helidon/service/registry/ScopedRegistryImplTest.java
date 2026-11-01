@@ -80,6 +80,24 @@ class ScopedRegistryImplTest {
                                     () -> withDebug(debug, () -> limitedPostConstructContinuationDuringShutdown(true))),
                         dynamicTest("shutdown before continuation admission skips cleanup",
                                     () -> withDebug(debug, () -> limitedPostConstructContinuationDuringShutdown(false))),
+                        dynamicTest("explicit INIT continuation preserves the service instance",
+                                    () -> withDebug(debug, () -> exerciseContinuation(ActivationPhase.POST_CONSTRUCTING,
+                                            null, ActivationPhase.ACTIVE, Optional.of(ActivationPhase.INIT)))),
+                        dynamicTest("explicit DESTROYED continuation preserves the service instance",
+                                    () -> withDebug(debug, () -> exerciseContinuation(ActivationPhase.POST_CONSTRUCTING,
+                                            null, ActivationPhase.ACTIVE, Optional.of(ActivationPhase.DESTROYED)))),
+                        dynamicTest("admitted INIT continuation retains cleanup",
+                                    () -> withDebug(debug, () -> explicitStartingPhaseContinuationDuringShutdown(
+                                            ActivationPhase.INIT, true))),
+                        dynamicTest("admitted DESTROYED continuation retains cleanup",
+                                    () -> withDebug(debug, () -> explicitStartingPhaseContinuationDuringShutdown(
+                                            ActivationPhase.DESTROYED, true))),
+                        dynamicTest("shutdown before INIT continuation admission skips cleanup",
+                                    () -> withDebug(debug, () -> explicitStartingPhaseContinuationDuringShutdown(
+                                            ActivationPhase.INIT, false))),
+                        dynamicTest("shutdown before DESTROYED continuation admission skips cleanup",
+                                    () -> withDebug(debug, () -> explicitStartingPhaseContinuationDuringShutdown(
+                                            ActivationPhase.DESTROYED, false))),
                         dynamicTest("shutdown reports unresolved cleanup during full post construction",
                                     () -> withDebug(debug, () -> inProgressInitActivatorIsDestroyedDuringShutdown(
                                             ActivationPhase.POST_CONSTRUCTING, ActivationPhase.ACTIVE, true))),
@@ -379,7 +397,7 @@ class ScopedRegistryImplTest {
                                              ActivationPhase.INJECTING,
                                              ActivationPhase.POST_CONSTRUCTING,
                                              ActivationPhase.ACTIVATION_FINISHING)) {
-            exerciseContinuation(limit, null, ActivationPhase.ACTIVE);
+            exerciseContinuation(limit, null, ActivationPhase.ACTIVE, Optional.empty());
         }
     }
 
@@ -388,8 +406,8 @@ class ScopedRegistryImplTest {
                                                    ActivationPhase.INJECTING,
                                                    ActivationPhase.POST_CONSTRUCTING,
                                                    ActivationPhase.ACTIVATION_FINISHING)) {
-            exerciseContinuation(failedPhase, failedPhase, failedPhase);
-            exerciseContinuation(failedPhase, failedPhase, ActivationPhase.ACTIVE);
+            exerciseContinuation(failedPhase, failedPhase, failedPhase, Optional.empty());
+            exerciseContinuation(failedPhase, failedPhase, ActivationPhase.ACTIVE, Optional.empty());
         }
     }
 
@@ -457,7 +475,10 @@ class ScopedRegistryImplTest {
         }
     }
 
-    private void exerciseContinuation(ActivationPhase limit, ActivationPhase failedPhase, ActivationPhase retryTarget) {
+    private void exerciseContinuation(ActivationPhase limit,
+                                      ActivationPhase failedPhase,
+                                      ActivationPhase retryTarget,
+                                      Optional<ActivationPhase> startingPhase) {
         ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
                                                                               .discoverServices(false)
                                                                               .discoverServicesFromServiceLoader(false)
@@ -469,7 +490,7 @@ class ScopedRegistryImplTest {
                 new ServiceProvider<>((CoreServiceRegistry) manager.registry(), descriptor),
                 descriptor);
         registry.activator(descriptor, () -> activator);
-        String scenario = "limit=" + limit + ", failed=" + failedPhase + ", retry=" + retryTarget;
+        String scenario = "limit=" + limit + ", failed=" + failedPhase + ", retry=" + retryTarget + ", start=" + startingPhase;
         try {
             ActivationRequest first = ActivationRequest.builder().targetPhase(limit).build();
             if (failedPhase == null) {
@@ -479,9 +500,9 @@ class ScopedRegistryImplTest {
                            assertThrows(IllegalStateException.class, () -> activator.activate(first)),
                            sameInstance(descriptor.failure));
             }
-            assertThat(scenario + " continuation", activator.activate(ActivationRequest.builder()
-                                                                             .targetPhase(retryTarget)
-                                                                             .build()).success(), is(true));
+            var continuation = ActivationRequest.builder().targetPhase(retryTarget);
+            startingPhase.ifPresent(continuation::startingPhase);
+            assertThat(scenario + " continuation", activator.activate(continuation.build()).success(), is(true));
             if (failedPhase != null) {
                 int failedCallbackInvocations = switch (failedPhase) {
                     case CONSTRUCTING -> descriptor.constructInvocations;
@@ -580,6 +601,63 @@ class ScopedRegistryImplTest {
             assertThat("cleanup is not repeated", activator.preDestroyInvocations(), is(admitted ? 1 : 0));
         } finally {
             registry.deactivate();
+        }
+    }
+
+    private void explicitStartingPhaseContinuationDuringShutdown(ActivationPhase startingPhase, boolean admitted) {
+        AtomicBoolean continuation = new AtomicBoolean();
+        AtomicInteger allowanceChecks = new AtomicInteger();
+        int shutdownCheck = admitted ? 2 : 1;
+        ScopedRegistryImpl registry = new ScopedRegistryImpl(null, Service.Singleton.TYPE, "explicit-start", Map.of()) {
+            @Override
+            boolean activationAllowed() {
+                if (continuation.get() && allowanceChecks.incrementAndGet() == shutdownCheck) {
+                    // The first check admits the continuation; the next observes its published starting phase.
+                    deactivate();
+                }
+                return super.activationAllowed();
+            }
+        };
+        registry.activate();
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                              .discoverServices(false)
+                                                                              .discoverServicesFromServiceLoader(false)
+                                                                              .interceptionEnabled(false)
+                                                                              .build());
+        RecordingDescriptor descriptor = new RecordingDescriptor(null);
+        RecordingSingleActivator activator = new RecordingSingleActivator(
+                new ServiceProvider<>((CoreServiceRegistry) manager.registry(), descriptor), descriptor);
+        registry.activator(descriptor, () -> activator);
+        String scenario = "startingPhase=" + startingPhase + ", admitted=" + admitted;
+        try {
+            assertThat(scenario + " limited activation", activator.activate(ActivationRequest.builder()
+                                                                                    .targetPhase(ActivationPhase.POST_CONSTRUCTING)
+                                                                                    .build()).success(), is(true));
+            continuation.set(true);
+            ActivationResult result = activator.activate(ActivationRequest.builder()
+                                                                .startingPhase(startingPhase)
+                                                                .targetPhase(ActivationPhase.ACTIVE)
+                                                                .build());
+            assertThat(scenario + " shutdown reached the selected allowance check", allowanceChecks.get(), is(shutdownCheck));
+            assertThat(scenario + " continuation cancelled", result.failure(), is(true));
+            assertThat(scenario + " cancellation cause", result.error().orElseThrow(), instanceOf(IllegalStateException.class));
+            assertThat(scenario + " constructor invocations", descriptor.constructInvocations, is(1));
+            assertThat(scenario + " injection invocations", descriptor.injectInvocations, is(1));
+            assertThat(scenario + " post construct invocations", descriptor.postConstructInvocations, is(1));
+            assertThat(scenario + " finishing invocations", activator.finishInvocations, is(0));
+            assertThat(scenario + " cleanup ownership follows admission", descriptor.preDestroyInvocations,
+                       is(admitted ? 1 : 0));
+            assertThat(scenario + " cleanup instance", descriptor.destroyedInstance,
+                       admitted ? sameInstance(descriptor.instance) : nullValue());
+            assertThat(scenario + " terminal phase", activator.phase(), is(ActivationPhase.DESTROYED));
+            registry.deactivate();
+            assertThat(scenario + " cleanup is not repeated", descriptor.preDestroyInvocations, is(admitted ? 1 : 0));
+        } finally {
+            try {
+                registry.deactivate();
+            } finally {
+                manager.shutdown();
+            }
         }
     }
 

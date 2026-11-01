@@ -413,6 +413,10 @@ final class Activators {
                 if (phase == ActivationPhase.POST_CONSTRUCTING) {
                     postConstructCleanupRequired = response.targetActivationPhase().ordinal() > phase.ordinal();
                 }
+                if (activationCleanupPending && !phase.eligibleForDeactivation()) {
+                    // An explicit starting phase must not hide cleanup already owned by this continuation.
+                    phase = currentPhase;
+                }
                 stateTransitionStart(response, phase);
                 return true;
             } finally {
