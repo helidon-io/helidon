@@ -28,6 +28,7 @@ import io.helidon.webserver.spi.ServerConnection;
 @Api.Internal
 public final class Http1UpgradeResult {
     private static final Http1UpgradeResult RESPONDED = new Http1UpgradeResult(Kind.RESPONDED, Optional.empty());
+    private static final Http1UpgradeResult NOT_APPLICABLE = new Http1UpgradeResult(Kind.NOT_APPLICABLE, Optional.empty());
 
     private final Kind kind;
     private final Optional<ServerConnection> connection;
@@ -54,6 +55,17 @@ public final class Http1UpgradeResult {
      */
     public static Http1UpgradeResult responded() {
         return RESPONDED;
+    }
+
+    /**
+     * Create a result for a request that did not actually match the prepared
+     * protocol upgrade.
+     *
+     * @return not applicable result
+     * @since 28.0.0
+     */
+    public static Http1UpgradeResult notApplicable() {
+        return NOT_APPLICABLE;
     }
 
     /**
@@ -85,6 +97,12 @@ public final class Http1UpgradeResult {
         /**
          * HTTP response was sent and no protocol switch should happen.
          */
-        RESPONDED
+        RESPONDED,
+        /**
+         * Protocol upgrade did not apply; ordinary HTTP routing should continue.
+         *
+         * @since 28.0.0
+         */
+        NOT_APPLICABLE
     }
 }

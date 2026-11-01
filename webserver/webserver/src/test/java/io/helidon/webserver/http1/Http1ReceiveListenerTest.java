@@ -22,7 +22,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.MatchResult;
+import java.util.regex.Pattern;
 
+import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.concurrency.limits.FixedLimit;
@@ -34,12 +37,16 @@ import io.helidon.http.Headers;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Status;
 import io.helidon.http.encoding.ContentEncodingContext;
+import io.helidon.http.media.MediaContext;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
+import io.helidon.webserver.http.spi.ProtocolUpgradeHandler;
 import io.helidon.webserver.http1.spi.Http1RoutedUpgrade;
 import io.helidon.webserver.http1.spi.Http1RoutedUpgrader;
 import io.helidon.webserver.http1.spi.Http1UpgradeResult;
@@ -50,6 +57,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -266,6 +274,94 @@ class Http1ReceiveListenerTest {
         assertThat(originalHeaders.get().contains(filterHeader), is(false));
     }
 
+    @Test
+    void inapplicableUpgradeResumesOrdinaryRoutingOnce() throws InterruptedException {
+        var calls = new ArrayList<String>();
+        var upgrader = mock(Http1RoutedUpgrader.class);
+        when(upgrader.routedUpgrade(any(), any(), any())).thenReturn(Optional.of(response -> {
+            calls.add("upgrade:" + response.requestHeaders().get(HeaderNames.HOST).get());
+            return Http1UpgradeResult.notApplicable();
+        }));
+        var routing = HttpRouting.builder()
+                .addFilter((chain, request, _) -> {
+                    calls.add("filter");
+                    request.header(HeaderValues.create(HeaderNames.HOST, "filtered.example"));
+                    chain.proceed();
+                })
+                .any(new ProtocolUpgradeHandler() {
+                    @Override
+                    public void handleProtocolUpgrade(ServerRequest request, ServerResponse response) {
+                        calls.add("policy");
+                        response.next();
+                    }
+
+                    @Override
+                    public void handle(ServerRequest request, ServerResponse response) {
+                        calls.add("ordinary-policy");
+                        response.next();
+                    }
+                })
+                .get("/", (request, response) -> {
+                    calls.add("endpoint:" + request.headers().get(HeaderNames.HOST).get());
+                    response.send("fallback");
+                });
+
+        connection(reader(UPGRADE_REQUEST), new RecordingListener(), Map.of("test", upgrader), routing)
+                .handle(FixedLimit.create());
+
+        assertThat(calls, contains("filter", "policy", "upgrade:filtered.example", "ordinary-policy",
+                                   "endpoint:filtered.example"));
+    }
+
+    @Test
+    void inapplicableUpgradeToUnmatchedRouteSendsOneNotFoundAndKeepsAlive() throws InterruptedException {
+        var routing = HttpRouting.builder().get("/", (_, response) -> response.send("continued"));
+
+        String wire = inapplicableUpgradeErrorResponse(routing);
+
+        assertThat(Pattern.compile("HTTP/1\\.1 [^\\r]+")
+                           .matcher(wire).results().map(MatchResult::group).toList(),
+                   contains("HTTP/1.1 404 Not Found", "HTTP/1.1 200 OK"));
+        assertThat(wire, containsString("continued"));
+    }
+
+    @Test
+    void inapplicableUpgradeHandlerErrorSendsOneHandledResponseAndKeepsAlive() throws InterruptedException {
+        var routing = HttpRouting.builder()
+                .get("/missing", (_, _) -> {
+                    throw new IllegalStateException("rejected");
+                })
+                .error(IllegalStateException.class, (_, response, _) -> response.status(Status.CONFLICT_409).send("handled"))
+                .get("/", (_, response) -> response.send("continued"));
+
+        String wire = inapplicableUpgradeErrorResponse(routing);
+
+        assertThat(Pattern.compile("HTTP/1\\.1 [^\\r]+")
+                           .matcher(wire).results().map(MatchResult::group).toList(),
+                   contains("HTTP/1.1 409 Conflict", "HTTP/1.1 200 OK"));
+        assertThat(wire, containsString("handled"));
+        assertThat(wire, containsString("continued"));
+    }
+
+    private static String inapplicableUpgradeErrorResponse(HttpRouting.Builder routing) throws InterruptedException {
+        var wire = new StringBuilder();
+        var writer = mock(DataWriter.class, invocation -> {
+            for (Object argument : invocation.getArguments()) {
+                if (argument instanceof BufferData buffer) {
+                    wire.append(new String(buffer.readBytes(), StandardCharsets.US_ASCII));
+                }
+            }
+            return null;
+        });
+        var upgrader = mock(Http1RoutedUpgrader.class);
+        when(upgrader.routedUpgrade(any(), any(), any()))
+                .thenReturn(Optional.of(_ -> Http1UpgradeResult.notApplicable()));
+        connection(reader(KEEP_ALIVE_UPGRADE_REQUEST.replace("GET / ", "GET /missing "), REQUEST),
+                   new RecordingListener(), Map.of("test", upgrader), routing, writer)
+                .handle(FixedLimit.create());
+        return wire.toString();
+    }
+
     private static DataReader reader(String... chunks) {
         var bytes = List.of(chunks).stream()
                 .map(chunk -> chunk.getBytes(StandardCharsets.US_ASCII))
@@ -284,15 +380,24 @@ class Http1ReceiveListenerTest {
                                               Http1ConnectionListener listener,
                                               Map<String, Http1Upgrader> upgraders,
                                               HttpRouting.Builder routing) {
+        return connection(reader, listener, upgraders, routing, mock(DataWriter.class));
+    }
+
+    private static Http1Connection connection(DataReader reader,
+                                              Http1ConnectionListener listener,
+                                              Map<String, Http1Upgrader> upgraders,
+                                              HttpRouting.Builder routing,
+                                              DataWriter writer) {
         var listenerContext = mock(ListenerContext.class);
         when(listenerContext.contentEncodingContext()).thenReturn(ContentEncodingContext.create());
+        when(listenerContext.mediaContext()).thenReturn(MediaContext.create());
         when(listenerContext.config()).thenReturn(WebServer.builder().buildPrototype());
         when(listenerContext.directHandlers()).thenReturn(DirectHandlers.create());
         var peerInfo = mock(PeerInfo.class);
         when(peerInfo.tlsCertificates()).thenReturn(Optional.empty());
         var context = mock(ConnectionContext.class);
         when(context.listenerContext()).thenReturn(listenerContext);
-        when(context.dataWriter()).thenReturn(mock(DataWriter.class));
+        when(context.dataWriter()).thenReturn(writer);
         when(context.dataReader()).thenReturn(reader);
         when(context.router()).thenReturn(Router.builder().addRouting(routing).build());
         when(context.remotePeer()).thenReturn(peerInfo);
