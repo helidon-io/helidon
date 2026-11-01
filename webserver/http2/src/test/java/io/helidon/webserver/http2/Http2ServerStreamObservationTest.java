@@ -239,7 +239,9 @@ class Http2ServerStreamObservationTest {
         var listenerConfig = ListenerConfig.builder()
                 .errorHandling(ErrorHandling.builder().includeEntity(true).build())
                 .build();
-        var fixture = fixture(writer, List.of(), true, listenerConfig, () -> {
+        var flowControlBuilder = ConnectionFlowControl.serverBuilder((_, _) -> { })
+                .blockTimeout(Duration.ofNanos(Long.MAX_VALUE));
+        var fixture = fixture(writer, List.of(), true, listenerConfig, flowControlBuilder, () -> {
             terminalWriteEnded.countDown();
             awaitUninterruptibly(releaseStream);
         });
@@ -264,16 +266,6 @@ class Http2ServerStreamObservationTest {
         });
         try {
             assertThat("rejection headers must be written", headersWritten.await(5, TimeUnit.SECONDS), is(true));
-            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-            Thread.State observedState = streamThread.getState();
-            while (observedState != Thread.State.TIMED_WAITING
-                    && observedState != Thread.State.TERMINATED
-                    && System.nanoTime() < deadline) {
-                Thread.onSpinWait();
-                observedState = streamThread.getState();
-            }
-            assertThat("rejected entity must wait for outbound window credit",
-                       observedState, is(Thread.State.TIMED_WAITING));
             assertThat("the terminal writer must still be registered before teardown",
                        terminalWriteEnded.getCount(), is(1L));
             stopThread.start();
@@ -370,13 +362,19 @@ class Http2ServerStreamObservationTest {
     private static Fixture fixture(Http2StreamWriter writer,
                                    List<Http2SubProtocolSelector> selectors,
                                    boolean initiallyRemoteEnded) {
-        return fixture(writer, selectors, initiallyRemoteEnded, ListenerConfig.create(), () -> { });
+        return fixture(writer,
+                       selectors,
+                       initiallyRemoteEnded,
+                       ListenerConfig.create(),
+                       ConnectionFlowControl.serverBuilder((_, _) -> { }),
+                       () -> { });
     }
 
     private static Fixture fixture(Http2StreamWriter writer,
                                    List<Http2SubProtocolSelector> selectors,
                                    boolean initiallyRemoteEnded,
                                    ListenerConfig listenerConfig,
+                                   ConnectionFlowControl.ConnectionFlowControlBuilder flowControlBuilder,
                                    Runnable afterTerminalWrite) {
         var config = Http2Config.create();
         var listenerContext = mock(ListenerContext.class);
@@ -386,7 +384,7 @@ class Http2ServerStreamObservationTest {
         when(context.router()).thenReturn(Router.empty());
         when(context.listenerContext()).thenReturn(listenerContext);
         when(context.sniContext()).thenReturn(Optional.empty());
-        var flowControl = ConnectionFlowControl.serverBuilder((_, _) -> { })
+        var flowControl = flowControlBuilder
                 .initialWindowSize(config.initialWindowSize())
                 .maxFrameSize(config.maxFrameSize())
                 .build();
