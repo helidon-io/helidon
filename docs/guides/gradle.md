@@ -108,7 +108,7 @@ java {
 dependencies {
     // Import Helidon dependency management
     implementation enforcedPlatform("io.helidon:helidon-dependencies:${helidonVersion}")
-    implementation 'io.helidon.applications:helidon-se'
+    implementation 'io.helidon.service:helidon-service-registry'
 
     // Required for Helidon Declarative service descriptors
     annotationProcessor("io.helidon.bundles:helidon-bundles-apt:${helidonVersion}")
