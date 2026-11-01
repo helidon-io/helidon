@@ -28,7 +28,8 @@
     <name>Helidon Service Tests Gradle Plugin</name>
 
     <properties>
-        <it.repo.path>${project.build.directory}/it-repo</it.repo.path>
+        <!-- Resolve from each staged Gradle project so cached fixtures remain relocatable across platforms. -->
+        <it.repo.path>../../../it-repo</it.repo.path>
     </properties>
 
     <dependencies>
@@ -191,7 +192,7 @@
                 </property>
             </activation>
             <properties>
-                <it.repo.path>${project.build.directory}/it-repo/installed</it.repo.path>
+                <it.repo.path>../../../it-repo/installed</it.repo.path>
             </properties>
         </profile>
         <profile>
@@ -202,7 +203,7 @@
                 </property>
             </activation>
             <properties>
-                <it.repo.path>${project.build.directory}/it-repo/${aether.enhancedLocalRepository.localPrefix}</it.repo.path>
+                <it.repo.path>../../../it-repo/${aether.enhancedLocalRepository.localPrefix}</it.repo.path>
             </properties>
         </profile>
     </profiles>

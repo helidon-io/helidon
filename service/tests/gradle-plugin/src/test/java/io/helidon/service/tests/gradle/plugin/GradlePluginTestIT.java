@@ -32,6 +32,7 @@ import org.gradle.testkit.runner.TaskOutcome;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -336,7 +337,7 @@ class GradlePluginTestIT {
         var source = root.resolve("src/main/java/example/Main.java");
         var first = runner(root, "clean", "jar").build();
         assertTask(first, ":generateApplicationBindings", TaskOutcome.SUCCESS);
-        assertThat(Files.readString(source), containsString("@Service.GenerateBinding\n"));
+        assertThat(Files.readAllLines(source), hasItem("@Service.GenerateBinding"));
         var oldSource = root.resolve("build/generated/sources/helidon/main/example/ApplicationBinding.java");
         assertThat(Files.exists(oldSource), is(true));
 
@@ -366,7 +367,7 @@ class GradlePluginTestIT {
         assertTask(repeated, ":jar", TaskOutcome.UP_TO_DATE);
 
         runner(root, "clean").build();
-        assertThat(Files.readString(source), containsString("@Service.GenerateBinding\n"));
+        assertThat(Files.readAllLines(source), hasItem("@Service.GenerateBinding"));
         assertThat(Files.readString(source), not(containsString("RenamedBinding")));
         assertThat(Files.exists(root.resolve("build")), is(false));
     }
