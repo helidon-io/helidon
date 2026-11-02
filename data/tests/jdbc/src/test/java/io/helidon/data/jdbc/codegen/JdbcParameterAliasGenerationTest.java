@@ -128,7 +128,10 @@ class JdbcParameterAliasGenerationTest {
                     String find(@Data.Param("%s") String value);
                     """.formatted(alias));
             assertThat(alias + result.diagnostics(), result.success(), is(false));
-            assertThat(result.diagnostics().toString(), containsString("complete marker name"));
+            assertThat(result.diagnostics().toString(),
+                       containsString("The @Data.Param value for parameter 'value' must not be empty "
+                                              + "and must follow Java identifier character rules. "
+                                              + "Do not include the ':' prefix or whitespace."));
         }
         for (String declaration : List.of(
                 "@Jdbc.Statement(\"SELECT :key\") String find(@Data.Param(\"key\") String value, String key);",

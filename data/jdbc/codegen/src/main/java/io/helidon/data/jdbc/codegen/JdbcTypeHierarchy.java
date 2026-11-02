@@ -61,6 +61,8 @@ final class JdbcTypeHierarchy {
             List<Annotation> parameterAliases = new ArrayList<>();
             for (int index = 0; index < method.parameterArguments().size(); index++) {
                 Annotation alias = null;
+                // Data.Param belongs to the common API, but only Jdbc.Statement interprets its aliases right now.
+                // Data.Query and Jakarta Persistence methods retain their existing parameter binding.
                 if (method.hasAnnotation(JdbcCodegenTypes.JDBC_STATEMENT)) {
                     List<Annotation> values = resolver.parameterAnnotationCandidates(repository,
                                                                                      method,
@@ -78,6 +80,8 @@ final class JdbcTypeHierarchy {
                 }
                 parameterAliases.add(alias);
             }
+            // Compare inherited binding positions after applying effective aliases. Renamed Java parameters must not
+            // make declarations of the same aliased contract appear incompatible.
             List<TypedElementInfo> declarations = resolved.declarations().stream()
                     .map(declaration -> withAliases(declaration, parameterAliases))
                     .toList();
@@ -90,6 +94,7 @@ final class JdbcTypeHierarchy {
 
     private static TypedElementInfo withAliases(TypedElementInfo method, List<Annotation> aliases) {
         List<TypedElementInfo> parameters = new ArrayList<>();
+        // Overlay only alias metadata. Preserve Java names for generated code and declared types for typed SQL NULL binding.
         for (int index = 0; index < method.parameterArguments().size(); index++) {
             TypedElementInfo parameter = method.parameterArguments().get(index);
             Annotation alias = aliases.get(index);

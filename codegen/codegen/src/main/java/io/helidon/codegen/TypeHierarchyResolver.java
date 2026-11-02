@@ -125,12 +125,15 @@ public class TypeHierarchyResolver {
         if (parameterIndex < 0 || parameterIndex >= method.parameterArguments().size()) {
             throw new IllegalArgumentException("The parameter index must identify a parameter of the resolved method.");
         }
+        // A child returning String can override parents returning CharSequence and Serializable. Selecting a method
+        // again from only annotated parents would reject that valid override when the child omits the annotation.
         List<MethodCandidate> candidates = methodCandidates(interfaceInfo)
                 .getOrDefault(TypeHierarchy.methodSignature(method), List.of())
                 .stream()
                 .filter(candidate -> candidate.method().parameterArguments().get(parameterIndex).hasAnnotation(annotationType))
                 .toList();
-        return maximallySpecificDeclarations(interfaceInfo, candidates).stream()
+        // Override selection sees only annotated declarations, so omission on a child preserves inherited candidates.
+        return mostSpecificDeclarations(interfaceInfo, candidates).stream()
                 .map(candidate -> candidate.method().parameterArguments().get(parameterIndex).annotation(annotationType))
                 .distinct()
                 .toList();
@@ -622,7 +625,9 @@ public class TypeHierarchyResolver {
         return methods;
     }
 
-    private List<MethodCandidate> maximallySpecificDeclarations(TypeInfo interfaceInfo, List<MethodCandidate> declarations) {
+    private List<MethodCandidate> mostSpecificDeclarations(TypeInfo interfaceInfo, List<MethodCandidate> declarations) {
+        // Hierarchy depth does not establish overriding. Keep unrelated declarations so callers can detect
+        // incompatible return types or conflicting annotation values.
         return declarations.stream()
                 .filter(candidate -> declarations.stream()
                         .noneMatch(other -> other != candidate
@@ -672,7 +677,7 @@ public class TypeHierarchyResolver {
     private ResolvedMethod effectiveMethod(TypeInfo interfaceInfo,
                                            ElementSignature signature,
                                            List<MethodCandidate> declarations) {
-        List<MethodCandidate> candidates = maximallySpecificDeclarations(interfaceInfo, declarations);
+        List<MethodCandidate> candidates = mostSpecificDeclarations(interfaceInfo, declarations);
         MethodCandidate selected = null;
         for (MethodCandidate candidate : candidates) {
             boolean compatible = candidates.stream()

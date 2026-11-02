@@ -15,7 +15,6 @@
  */
 package io.helidon.data;
 
-import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -40,12 +39,12 @@ public final class Data {
     }
 
     /**
-     * Associates a repository input with a named marker in {@code Jdbc.Statement} SQL.
+     * Associates a repository input with a named SQL marker.
      * The alias is retained across separate compilation and takes precedence over the Java parameter name.
      * An override without an alias preserves inherited aliases. Conflicting inherited aliases require an explicit override.
-     * This annotation does not change {@link Query} or Jakarta Persistence parameter binding.
+     * This annotation is interpreted only for repository methods using {@code Jdbc.Statement}.
+     * It is ignored by {@link Query} and Jakarta Persistence repository generation.
      */
-    @Documented
     @Retention(RetentionPolicy.CLASS)
     @Target(ElementType.PARAMETER)
     public @interface Param {

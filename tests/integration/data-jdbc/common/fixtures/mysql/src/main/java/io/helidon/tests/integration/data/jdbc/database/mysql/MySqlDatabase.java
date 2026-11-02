@@ -21,6 +21,7 @@ import java.util.Objects;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -43,7 +44,7 @@ public final class MySqlDatabase {
      * @return container
      */
     public static MySQLContainer<?> container() {
-        return new MySQLContainer<>(IMAGE)
+        return new MySqlContainer()
                 .withUsername("test")
                 .withPassword("mysql123")
                 .withDatabaseName("test")
@@ -69,5 +70,25 @@ public final class MySqlDatabase {
                 "data.clients.jdbc.0.connection.username", container.getUsername(),
                 "data.clients.jdbc.0.connection.password", container.getPassword(),
                 "data.clients.jdbc.0.connection.jdbc-driver-class-name", "com.mysql.cj.jdbc.Driver")));
+    }
+
+    private static final class MySqlContainer extends MySQLContainer<MySqlContainer> {
+
+        private MySqlContainer() {
+            super(MySqlDatabase.IMAGE);
+        }
+
+        @Override
+        public void start() {
+            // Inspect the Docker daemon because it may run on a different architecture from the JVM.
+            // Defer the lookup until startup so constructing a fixture does not require a Docker connection.
+            String architecture = DockerClientFactory.instance().client().versionCmd().exec().getArch();
+            DockerImageName image = MySqlDatabase.IMAGE;
+            if ("arm64".equals(architecture) || "aarch64".equals(architecture)) {
+                image = image.withTag(image.getVersionPart() + "-aarch64");
+            }
+            setDockerImageName(image.asCanonicalNameString());
+            super.start();
+        }
     }
 }

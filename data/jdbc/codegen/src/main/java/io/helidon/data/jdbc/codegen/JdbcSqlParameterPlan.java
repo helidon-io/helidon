@@ -104,16 +104,22 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
         for (TypedElementInfo parameter : parameters) {
             String name = effectiveName(parameter);
             if (parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM)) {
+                String invalidAliasMessage = "The @Data.Param value for parameter '" + parameter.elementName()
+                        + "' must not be empty and must follow Java identifier character rules. "
+                        + "Do not include the ':' prefix or whitespace.";
                 JdbcSqlMarkerLexer.Result alias;
                 try {
+                    // Reuse the SQL scanner so alias validation accepts exactly the same Unicode marker names as SQL.
                     alias = JdbcSqlMarkerLexer.parse(":" + name);
                 } catch (IllegalArgumentException _) {
-                    throw failure(method, "@Data.Param must declare a complete marker name without a colon or whitespace.");
+                    throw failure(method, invalidAliasMessage);
                 }
+                // Parsing a valid prefix is not enough. The entire value must become exactly one unchanged marker name.
                 if (name.isBlank() || !alias.sql().equals("?") || !alias.markers().equals(List.of(name))) {
-                    throw failure(method, "@Data.Param must declare a complete marker name without a colon or whitespace.");
+                    throw failure(method, invalidAliasMessage);
                 }
             }
+            // An alias must also remain distinct from Java names used by parameters without an alias.
             if (!names.add(name)) {
                 throw failure(method, "The effective repository parameter name '" + name + "' is duplicated.");
             }
@@ -150,6 +156,7 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
                                             List<TypedElementInfo> parameters,
                                             TypedElementInfo method) {
         Map<String, TypedElementInfo> byName = new HashMap<>(parameters.size());
+        // Index by binding name without renaming the parameter metadata used by generated Java code.
         parameters.forEach(parameter -> byName.put(effectiveName(parameter), parameter));
         Set<String> used = new HashSet<>();
         List<Bind> binds = new ArrayList<>(markers.size());
