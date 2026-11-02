@@ -112,6 +112,7 @@ class HttpServerRequestEventTest {
                 .get("/" + "long".repeat(70), (request, response) -> response.send()))
                 .build().start();
         try (var recording = new Recording()) {
+            recording.enable(EVENT_NAME).with("throttle", "off");
             recording.start();
             assertThat(exchange(server, "/items/secret-value?credential=secret-query"), containsString("200 OK"));
             assertThat(exchange(server, "/failure"), containsString("500 Internal Server Error"));
@@ -166,6 +167,7 @@ class HttpServerRequestEventTest {
                     throw new BadRequestException("invalid request data");
                 })).build().start();
         try (var recording = new Recording()) {
+            recording.enable(EVENT_NAME).with("throttle", "off");
             recording.start();
             assertThat(exchange(server, "/escaped"), containsString("400 Bad Request"));
             List<RecordedEvent> events = events(recording, "escaped.jfr");
@@ -186,6 +188,7 @@ class HttpServerRequestEventTest {
                     throw new CloseConnectionException("close after response");
                 })).build().start();
         try (var recording = new Recording()) {
+            recording.enable(EVENT_NAME).with("throttle", "off");
             recording.start();
             assertThat(exchange(server, "/sent"), containsString("503 Service Unavailable"));
             List<RecordedEvent> events = events(recording, "sent.jfr");
@@ -214,6 +217,7 @@ class HttpServerRequestEventTest {
                     response.send("ok");
                 })).build().start();
         try (var recording = new Recording(); var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            recording.enable(EVENT_NAME).with("throttle", "off");
             recording.enable(Marker.class);
             recording.start();
             var first = executor.submit(() -> exchange(server, "/parallel/one"));
@@ -256,6 +260,7 @@ class HttpServerRequestEventTest {
                        (request, response) -> response.send(request.prologue().method().text())))
                 .build().start();
         try (var recording = new Recording()) {
+            recording.enable(EVENT_NAME).with("throttle", "off");
             recording.start();
             String response = exchange(server, method, "/method");
             assertThat(response, containsString("200 OK"));
@@ -277,6 +282,7 @@ class HttpServerRequestEventTest {
                 .collect(Collectors.toMap(setting -> setting.getName(), setting -> setting.getDefaultValue()));
         assertThat(defaults.get("enabled"), is("true"));
         assertThat(defaults.get("threshold"), is("0 ms"));
+        assertThat(defaults.get("throttle"), is("100/s"));
         assertThat(defaults.get("stackTrace"), is("false"));
         for (String field : List.of("serverSocketId", "socketId", "requestId", "requestName")) {
             assertThat(type.getField(field).getAnnotation(Contextual.class), notNullValue());
@@ -288,6 +294,22 @@ class HttpServerRequestEventTest {
             recording.start();
             assertThat(exchange(server, "/disabled"), containsString("200 OK"));
             assertThat(events(recording, "disabled.jfr"), hasSize(0));
+        } finally {
+            server.stop();
+        }
+    }
+
+    @Test
+    void throttleCanSuppressEventsWithoutChangingResponse() throws Exception {
+        var server = WebServer.builder().port(0).routing(rules -> rules.get("/throttled", (req, res) -> res.send("ok")))
+                .build().start();
+        try (var recording = new Recording()) {
+            recording.enable(HttpServerRequestEvent.class).with("throttle", "0/s");
+            recording.start();
+            String response = exchange(server, "/throttled");
+            assertThat(response, containsString("200 OK"));
+            assertThat(response, containsString("ok"));
+            assertThat(events(recording, "throttled.jfr"), hasSize(0));
         } finally {
             server.stop();
         }

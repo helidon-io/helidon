@@ -27,6 +27,7 @@ import jdk.jfr.Label;
 import jdk.jfr.Name;
 import jdk.jfr.StackTrace;
 import jdk.jfr.Threshold;
+import jdk.jfr.Throttle;
 
 @Name("io.helidon.RequestTraceContext")
 @Label("HTTP Request Trace Context")
@@ -34,6 +35,7 @@ import jdk.jfr.Threshold;
 @Description("Existing tracing context during synchronous downstream request processing on this thread")
 @Enabled(true)
 @Threshold("0 ms")
+@Throttle("100/s")
 @StackTrace(false)
 final class RequestTraceContextEvent extends Event {
     private static final RequestTraceContextEvent TYPE = new RequestTraceContextEvent();

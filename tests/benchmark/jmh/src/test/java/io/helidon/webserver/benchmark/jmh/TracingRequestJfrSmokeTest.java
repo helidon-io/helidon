@@ -58,6 +58,10 @@ class TracingRequestJfrSmokeTest {
                 observations.add(new Observation(context.traceId(), context.spanId(), Span.current().isPresent(),
                                                  Thread.currentThread().threadId()));
             });
+            if ("ENABLED".equals(mode)) {
+                state.recording().enable(HttpRequestJfrJmhBenchmark.REQUEST_EVENT).with("throttle", "off");
+                state.recording().enable(TracingRequestJfrJmhBenchmark.TRACE_EVENT).with("throttle", "off");
+            }
             observations.clear();
             assertThat(state.tracedKeepAliveExchange(), is("Hello, World!"));
             assertThat(state.tracedKeepAliveExchange(), is("Hello, World!"));

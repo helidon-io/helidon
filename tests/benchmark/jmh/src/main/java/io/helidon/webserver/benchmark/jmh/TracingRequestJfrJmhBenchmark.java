@@ -33,6 +33,7 @@ import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.propagation.ContextPropagators;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import jdk.jfr.Recording;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Mode;
@@ -142,5 +143,9 @@ public class TracingRequestJfrJmhBenchmark {
 
     void dump(Path destination) throws IOException {
         transport.dump(destination);
+    }
+
+    Recording recording() {
+        return transport.recording();
     }
 }

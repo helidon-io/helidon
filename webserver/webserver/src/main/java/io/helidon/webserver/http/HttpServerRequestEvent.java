@@ -29,6 +29,7 @@ import jdk.jfr.Label;
 import jdk.jfr.Name;
 import jdk.jfr.StackTrace;
 import jdk.jfr.Threshold;
+import jdk.jfr.Throttle;
 
 @Name("io.helidon.HttpServerRequest")
 @Label("HTTP Server Request")
@@ -36,6 +37,7 @@ import jdk.jfr.Threshold;
 @Description("Synchronous routing and filters on the request thread; excludes transport delivery and child tasks")
 @Enabled(true)
 @Threshold("0 ms")
+@Throttle("100/s")
 @StackTrace(false)
 final class HttpServerRequestEvent extends Event {
     private static final HttpServerRequestEvent TYPE = new HttpServerRequestEvent();

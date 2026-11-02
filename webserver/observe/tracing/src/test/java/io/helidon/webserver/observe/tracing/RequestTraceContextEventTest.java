@@ -99,6 +99,7 @@ class RequestTraceContextEventTest {
         assertThat(type.getField("traceId").getAnnotation(Contextual.class), notNullValue());
         assertThat(setting(type, "enabled"), is("true"));
         assertThat(setting(type, "threshold"), is("0 ms"));
+        assertThat(setting(type, "throttle"), is("100/s"));
         assertThat(setting(type, "stackTrace"), is("false"));
         List<RecordedEvent> events = record(fixture, false, false);
         List<RecordedEvent> contexts = contexts(events);
@@ -205,6 +206,23 @@ class RequestTraceContextEventTest {
     }
 
     @Test
+    void throttleCanSuppressSupplementWithoutChangingTracing() throws IOException {
+        Fixture fixture = fixture(TracingConfig.ENABLED, Optional.empty(), TRACE_ID);
+        Path file = directory.resolve("throttled-trace.jfr");
+        try (var recording = new Recording()) {
+            recording.enable(RequestTraceContextEvent.class).with("throttle", "0/s");
+            recording.start();
+            fixture.filter.filter(fixture.chain, fixture.request, fixture.response);
+            recording.stop();
+            recording.dump(file);
+        }
+        assertThat(contexts(RecordingFile.readAllEvents(file)), hasSize(0));
+        verify(fixture.chain).proceed();
+        verify(fixture.span).end();
+        verify(fixture.scope).close();
+    }
+
+    @Test
     void exceptionalDownstreamCommitsContextAndPreservesSpanFailure() throws IOException {
         Fixture fixture = fixture(TracingConfig.ENABLED, Optional.empty(), TRACE_ID);
         var failure = new IllegalStateException("sensitive failure detail");
@@ -272,6 +290,7 @@ class RequestTraceContextEventTest {
         Path file = directory.resolve("trace.jfr");
         try (var recording = new Recording()) {
             EventType.getEventType(RequestTraceContextEvent.class);
+            recording.enable(EVENT_NAME).with("throttle", "off");
             recording.enable(DownstreamEvent.class);
             if (disabled) {
                 recording.disable(EVENT_NAME);

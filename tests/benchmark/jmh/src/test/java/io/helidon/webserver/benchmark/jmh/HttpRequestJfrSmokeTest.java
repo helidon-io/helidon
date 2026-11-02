@@ -40,6 +40,9 @@ class HttpRequestJfrSmokeTest {
         state.recordingMode = mode;
         try {
             state.setup();
+            if ("ENABLED".equals(mode)) {
+                state.recording().enable(HttpRequestJfrJmhBenchmark.REQUEST_EVENT).with("throttle", "off");
+            }
             assertThat(state.keepAliveExchange(), is("Hello, World!"));
             assertThat(state.keepAliveExchange(), is("Hello, World!"));
             if (!"OFF".equals(mode)) {
