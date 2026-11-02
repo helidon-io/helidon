@@ -26,12 +26,12 @@ import io.helidon.common.configurable.Resource;
 /**
  * PEM files based keys - accepts private key and certificate chain.
  * <p>
- * If you have "standard" linux/unix private key, you must run "
- * {@code openssl pkcs8 -topk8 -in ./id_rsa -out ./id_rsa.p8}" on it to work with this builder for password protected
- * file; or "{@code openssl pkcs8 -topk8 -in ./id_rsa -out ./id_rsa_nocrypt.p8 -nocrypt}" for unprotected file.
- * <p>
- * The only supported format is PKCS#8. If you have a different format, you must transform it to PKCS8 PEM format (to
- * use this builder), or to PKCS#12 keystore format (and use {@link io.helidon.common.pki.KeystoreKeys.Builder}).
+ * Private keys are decoded using {@link java.security.PEMDecoder}, including PKCS#8, encrypted PKCS#8, and
+ * unencrypted RSA PKCS#1 keys. Other private key formats must be converted to one of these formats or to a PKCS#12
+ * keystore (using {@link io.helidon.common.pki.KeystoreKeys.Builder}). A configured passphrase is used for encrypted
+ * keys and does not prevent loading an unencrypted key.
+ * PEM resources may contain multiple objects; the first matching key is loaded, while certificate resources load
+ * all certificates in input order.
  */
 @Api.Stable
 @Prototype.Configured

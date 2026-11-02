@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,9 @@ package io.helidon.common.pki;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyStore;
+import java.security.PEMDecoder;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.List;
@@ -50,18 +53,20 @@ class KeysBuilderDecorator implements Prototype.BuilderDecorator<Keys.BuilderBas
     private void updateFromPem(Keys.BuilderBase<?, ?> builder, PemKeys pemConfig) {
         if (builder.privateKey().isEmpty()) {
             pemConfig.key().ifPresent(resource -> {
-                char[] passphrase = pemConfig.keyPassphrase().orElse(null);
-                builder.privateKey(PemReader.readPrivateKey(resource.stream(), passphrase));
+                PEMDecoder decoder = pemConfig.keyPassphrase()
+                        .map(passphrase -> PEMDecoder.of().withDecryption(passphrase))
+                        .orElseGet(PEMDecoder::of);
+                builder.privateKey(PkiUtil.readPem(resource.stream(), decoder, PrivateKey.class));
             });
         }
         if (builder.publicKey().isEmpty()) {
             pemConfig.publicKey().ifPresent(resource -> {
-                builder.publicKey(PemReader.readPublicKey(resource.stream()));
+                builder.publicKey(PkiUtil.readPem(resource.stream(), PEMDecoder.of(), PublicKey.class));
             });
         }
 
         List<X509Certificate> certs = pemConfig.certChain()
-                .map(resource -> PemReader.readCertificates(resource.stream()))
+                .map(resource -> PkiUtil.readPemCertificates(resource.stream()))
                 .orElseGet(List::of);
 
         certs.forEach(builder::addCertChain);
@@ -71,7 +76,7 @@ class KeysBuilderDecorator implements Prototype.BuilderDecorator<Keys.BuilderBas
 
         pemConfig.certificates()
                 .stream()
-                .map(resource -> PemReader.readCertificates(resource.stream()))
+                .map(resource -> PkiUtil.readPemCertificates(resource.stream()))
                 .flatMap(Collection::stream)
                 .forEach(builder::addCert);
     }
