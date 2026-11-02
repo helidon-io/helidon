@@ -249,6 +249,10 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         super.sanitizeRedirectSensitiveHeaders(requestUri, requestHeaders);
     }
 
+    ClientUri redirectUri(String location) {
+        return resolveRedirectUri(location);
+    }
+
     boolean canReplayEntityTo(ClientUri requestUri) {
         return clientConfig().followCrossOriginEntityRedirects() || !crossesRedirectOriginBoundary(requestUri);
     }
