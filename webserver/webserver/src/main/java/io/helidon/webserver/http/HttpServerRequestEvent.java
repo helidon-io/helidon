@@ -25,7 +25,6 @@ import jdk.jfr.Contextual;
 import jdk.jfr.Description;
 import jdk.jfr.Enabled;
 import jdk.jfr.Event;
-import jdk.jfr.EventType;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
 import jdk.jfr.StackTrace;
@@ -39,7 +38,7 @@ import jdk.jfr.Threshold;
 @Threshold("0 ms")
 @StackTrace(false)
 final class HttpServerRequestEvent extends Event {
-    private static final EventType TYPE = EventType.getEventType(HttpServerRequestEvent.class);
+    private static final HttpServerRequestEvent TYPE = new HttpServerRequestEvent();
     private static final Set<String> METHODS = Set.of("GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT",
                                                        "OPTIONS", "TRACE", "PATCH", "QUERY");
 

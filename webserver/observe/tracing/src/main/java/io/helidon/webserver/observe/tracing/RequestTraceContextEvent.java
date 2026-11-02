@@ -23,7 +23,6 @@ import jdk.jfr.Contextual;
 import jdk.jfr.Description;
 import jdk.jfr.Enabled;
 import jdk.jfr.Event;
-import jdk.jfr.EventType;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
 import jdk.jfr.StackTrace;
@@ -37,7 +36,7 @@ import jdk.jfr.Threshold;
 @Threshold("0 ms")
 @StackTrace(false)
 final class RequestTraceContextEvent extends Event {
-    private static final EventType TYPE = EventType.getEventType(RequestTraceContextEvent.class);
+    private static final RequestTraceContextEvent TYPE = new RequestTraceContextEvent();
     private static final String INVALID_TRACE_ID = "00000000000000000000000000000000";
     private static final int MAX_TRACE_ID_LENGTH = 128;
 

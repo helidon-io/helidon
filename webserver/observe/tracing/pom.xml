@@ -28,6 +28,10 @@
     <name>Helidon WebServer Observe Tracing</name>
     <description>WebServer Tracing observability support</description>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>
