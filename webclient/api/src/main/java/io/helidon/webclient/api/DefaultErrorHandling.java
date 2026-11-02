@@ -70,8 +70,7 @@ class DefaultErrorHandling implements RestClient.ErrorHandling {
         public Optional<? extends RuntimeException> handleError(String requestUri,
                                                                 ClientRequestHeaders requestHeaders,
                                                                 HttpClientResponse response) {
-            return Optional.of(new HttpException("Failed when invoking a client call to " + requestUri
-                                                         + ", status: " + response.status(),
+            return Optional.of(new HttpException("Failed when invoking a client call, status: " + response.status(),
                                                  response.status()));
         }
 
@@ -84,8 +83,7 @@ class DefaultErrorHandling implements RestClient.ErrorHandling {
                     && response.status().code() == Status.NOT_FOUND_404.code()) {
                 return Optional.empty();
             }
-            return Optional.of(new HttpException("Failed when invoking a client call to " + requestUri
-                                                         + ", status: " + response.status(),
+            return Optional.of(new HttpException("Failed when invoking a client call, status: " + response.status(),
                                                  response.status()));
         }
     }

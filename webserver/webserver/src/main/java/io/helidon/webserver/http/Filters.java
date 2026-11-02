@@ -34,6 +34,7 @@ import io.helidon.webserver.WebServer;
  * Handler of HTTP filters.
  */
 public final class Filters implements ServerLifecycle {
+    private static final System.Logger LOGGER = System.getLogger(Filters.class.getName());
     private final ErrorHandlers errorHandlers;
     private final List<Filter> filters;
     private final boolean noFilters;
@@ -128,9 +129,13 @@ public final class Filters implements ServerLifecycle {
                 FilterProceeder proceeder = new FilterProceeder(this);
                 filter.filter(proceeder, request, response);
                 if (!proceeder.proceeded && !response.isSent()) {
-                    throw new HttpException("Filter " + filter + ", class: " + filter.getClass().getName()
-                                                    + " neither called proceed() on filter chain, nor sent a response, "
-                                                    + " nor threw an exception. This is invalid filter behavior.",
+                    ctx.log(LOGGER,
+                            System.Logger.Level.WARNING,
+                            "A filter neither called proceed() on the filter chain, nor sent a response, nor threw an "
+                                    + "exception. Filter class: %s",
+                            filter.getClass().getName());
+                    throw new HttpException("A filter neither called proceed() on the filter chain, nor sent a response, "
+                                                    + "nor threw an exception. This is invalid filter behavior.",
                                             Status.INTERNAL_SERVER_ERROR_500);
                 }
             } else {

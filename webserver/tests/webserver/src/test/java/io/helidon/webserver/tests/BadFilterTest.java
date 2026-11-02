@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.time.Duration;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.Filter;
 import io.helidon.webserver.http.FilterChain;
 import io.helidon.webserver.http.HttpRouting;
@@ -32,11 +33,14 @@ import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 class BadFilterTest {
+    private static final String BAD_FILTER_DETAILS = "sensitive-filter-details";
     private final Http1Client client;
 
     BadFilterTest(Http1Client client) {
@@ -54,18 +58,26 @@ class BadFilterTest {
 
     @Test
     void testRequest() {
-        var response = client.method(Method.GET)
+        try (Http1ClientResponse response = client.method(Method.GET)
                 .readTimeout(Duration.ofSeconds(1))
-                .request(String.class);
+                .request()) {
+            String entity = response.entity().as(String.class);
 
-        assertThat(response.status(), is(Status.INTERNAL_SERVER_ERROR_500));
+            assertThat(response.status(), is(Status.INTERNAL_SERVER_ERROR_500));
+            assertThat(entity, not(containsString(BAD_FILTER_DETAILS)));
+            assertThat(entity, not(containsString(BadFilter.class.getName())));
+        }
     }
 
     private static class BadFilter implements Filter {
         @Override
         public void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
-            // forgot to call chain.proceed()
-            System.out.println();
+            // intentionally neither proceed nor send a response
+        }
+
+        @Override
+        public String toString() {
+            return BAD_FILTER_DETAILS;
         }
     }
 }
