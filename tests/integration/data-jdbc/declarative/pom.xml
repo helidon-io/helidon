@@ -30,23 +30,10 @@
 
     <modules>
         <module>h2</module>
+        <module>mysql</module>
+        <module>oracle</module>
+        <module>pgsql</module>
     </modules>
-
-    <profiles>
-        <profile>
-            <id>long-tests</id>
-            <activation>
-                <property>
-                    <name>!long-tests</name>
-                </property>
-            </activation>
-            <modules>
-                <module>mysql</module>
-                <module>oracle</module>
-                <module>pgsql</module>
-            </modules>
-        </profile>
-    </profiles>
 
     <dependencies>
         <dependency>
@@ -107,7 +94,7 @@
                 <directory>${project.basedir}/src/test/resources</directory>
             </testResource>
             <testResource>
-                <directory>${project.parent.basedir}/../common/src/main/resources</directory>
+                <directory>${project.basedir}/../../common/application/src/main/resources</directory>
             </testResource>
         </testResources>
         <plugins>
@@ -123,7 +110,7 @@
                         </goals>
                         <configuration>
                             <sources>
-                                <source>${project.parent.basedir}/../common/src/main/java</source>
+                                <source>${project.basedir}/../../common/application/src/main/java</source>
                             </sources>
                         </configuration>
                     </execution>
@@ -191,7 +178,7 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
                     <includes>
-                        <include>io/helidon/data/jdbc/tests/declarative/*/**/*Test.class</include>
+                        <include>io/helidon/tests/integration/data/jdbc/declarative/*/**/*Test.class</include>
                     </includes>
                 </configuration>
                 <executions>
