@@ -62,6 +62,7 @@ final class HttpServerRequestEvent extends Event {
     @Description("Bounded configured template of the last selected route, or absent when provenance is unknown")
     private String routeTemplate;
     @Label("Status Code")
+    @Description("HTTP status at routing completion, or 0 if routing failed before a response was sent")
     private int statusCode;
     @Label("Outcome")
     @Description("HTTP status class, or ESCAPED_FAILURE if routing did not return normally")
@@ -97,7 +98,7 @@ final class HttpServerRequestEvent extends Event {
         end();
         if (shouldCommit()) {
             requestName = method + " " + (routeTemplate == null ? "<unknown>" : routeTemplate);
-            if (statusCode == 0) {
+            if (statusCode == 0 && (completed || response.isSent())) {
                 statusCode = response.status().code();
             }
             outcome = completed ? switch (statusCode / 100) {

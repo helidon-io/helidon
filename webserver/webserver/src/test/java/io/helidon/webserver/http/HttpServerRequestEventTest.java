@@ -30,11 +30,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import io.helidon.common.uri.UriPath;
+import io.helidon.http.BadRequestException;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
 import io.helidon.http.Status;
+import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.WebServer;
 
 import jdk.jfr.Contextual;
@@ -146,6 +148,49 @@ class HttpServerRequestEventTest {
                 String template = event.getString("routeTemplate");
                 assertThat(template == null || !template.contains("secret"), is(true));
             }
+        } finally {
+            server.stop();
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false", "true"})
+    void recordsUnknownStatusWhenFailureEscapesBeforeResponseIsSent(boolean configureStatus) throws Exception {
+        var identities = new ConcurrentHashMap<String, Identity>();
+        var server = WebServer.builder().port(0).routing(rules -> rules
+                .get("/escaped", (request, response) -> {
+                    identities.put("request", Identity.of(request));
+                    if (configureStatus) {
+                        response.status(Status.SERVICE_UNAVAILABLE_503);
+                    }
+                    throw new BadRequestException("invalid request data");
+                })).build().start();
+        try (var recording = new Recording()) {
+            recording.start();
+            assertThat(exchange(server, "/escaped"), containsString("400 Bad Request"));
+            List<RecordedEvent> events = events(recording, "escaped.jfr");
+            assertThat(events, hasSize(1));
+            assertRequest(events, identities.get("request"), "/escaped", 0, "ESCAPED_FAILURE");
+        } finally {
+            server.stop();
+        }
+    }
+
+    @Test
+    void preservesSentStatusWhenFailureEscapesRouting() throws Exception {
+        var identities = new ConcurrentHashMap<String, Identity>();
+        var server = WebServer.builder().port(0).routing(rules -> rules
+                .get("/sent", (request, response) -> {
+                    identities.put("request", Identity.of(request));
+                    response.status(Status.SERVICE_UNAVAILABLE_503).send();
+                    throw new CloseConnectionException("close after response");
+                })).build().start();
+        try (var recording = new Recording()) {
+            recording.start();
+            assertThat(exchange(server, "/sent"), containsString("503 Service Unavailable"));
+            List<RecordedEvent> events = events(recording, "sent.jfr");
+            assertThat(events, hasSize(1));
+            assertRequest(events, identities.get("request"), "/sent", 503, "ESCAPED_FAILURE");
         } finally {
             server.stop();
         }
