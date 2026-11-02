@@ -30,6 +30,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.util.List;
+import java.util.Map;
 
 import javax.sql.DataSource;
 
@@ -37,6 +38,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -209,6 +211,61 @@ class JdbcBindingMatrixTest {
         }
 
         verify(dataSource, never()).getConnection();
+    }
+
+    @Test
+    void validatesEverySlotBeforeMutationAndPreservesPositionalNullBridge() throws Exception {
+        DataSource source = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        PreparedStatement prepared = mock(PreparedStatement.class);
+        when(source.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true);
+        when(connection.prepareStatement("update T set A = ?, B = ?, C = ?")).thenReturn(prepared);
+        when(prepared.getLargeUpdateCount()).thenReturn(1L, -1L);
+        JdbcClient client = JdbcClient.builder().dataSource(source).statements(Map.of("update",
+                "update T set A = :value, B = :other, C = :value")).build();
+        JdbcClient.Statement stage = client.createNamed("update");
+        GeneratedJdbcData.bindNull(stage, 3, JDBCType.VARCHAR);
+        assertThrows(IllegalArgumentException.class, () -> GeneratedJdbcData.bindNull(stage, "value", JDBCType.VARCHAR));
+        // Slot one must remain unassigned after the later duplicate slot rejects the named assignment.
+        stage.bind(1, "first");
+        assertThrows(IllegalArgumentException.class, () -> GeneratedJdbcData.bindNull(stage, "other", JDBCType.STRUCT));
+        assertThrows(IllegalArgumentException.class, () -> GeneratedJdbcData.bindNull(stage, "absent", JDBCType.VARCHAR));
+        assertThrows(IllegalStateException.class, stage::execute);
+        assertThrows(NullPointerException.class, () -> stage.bind("other", null));
+        assertThat(GeneratedJdbcData.bindNull(stage, "other", JDBCType.INTEGER), sameInstance(stage));
+        verifyZeroInteractions(source);
+        assertThat(stage.execute(), is(1L));
+        verify(prepared).setString(1, "first");
+        verify(prepared).setNull(2, JDBCType.INTEGER.getVendorTypeNumber());
+        verify(prepared).setNull(3, JDBCType.VARCHAR.getVendorTypeNumber());
+        verify(prepared).close();
+        verify(connection).close();
+        assertThrows(IllegalStateException.class, () -> stage.bind("other", 1));
+        assertThrows(NullPointerException.class, () -> GeneratedJdbcData.bindNull(stage, (String) null, JDBCType.INTEGER));
+        assertThrows(NullPointerException.class, () -> GeneratedJdbcData.bindNull(stage, "value", null));
+        assertThrows(NullPointerException.class, () -> stage.bind(null, 1));
+    }
+
+    @Test
+    void repeatsValuesAndTypedNullsWithoutPrematureAcquisition() throws Exception {
+        DataSource source = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        PreparedStatement prepared = mock(PreparedStatement.class);
+        when(source.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true);
+        when(connection.prepareStatement("update T set A = ?, B = ?")).thenReturn(prepared);
+        when(prepared.getLargeUpdateCount()).thenReturn(1L, -1L);
+        JdbcClient client = JdbcClient.builder().dataSource(source).statements(Map.of("repeat",
+                "update T set A = :value, B = :value")).build();
+        JdbcClient.Statement stage = client.createNamed("repeat");
+        GeneratedJdbcData.bindNull(stage, "value", JDBCType.VARCHAR);
+        assertThrows(IllegalArgumentException.class, () -> stage.bind("value", "VALUE_CANARY"));
+        verifyZeroInteractions(source);
+        stage.execute();
+        verify(prepared).setNull(1, JDBCType.VARCHAR.getVendorTypeNumber());
+        verify(prepared).setNull(2, JDBCType.VARCHAR.getVendorTypeNumber());
+        assertThrows(IllegalStateException.class, () -> client.create("select ?").bind("value", 1));
     }
 
     private void assertBinding(Object value) throws Exception {
