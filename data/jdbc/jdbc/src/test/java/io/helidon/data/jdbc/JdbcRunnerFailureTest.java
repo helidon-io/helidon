@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -1151,6 +1152,29 @@ class JdbcRunnerFailureTest {
         order.verify(resultSet).close();
         order.verify(statement).close();
         order.verify(connection).close();
+    }
+
+    @Test
+    void sanitizesConfiguredInfrastructureFailuresAndReleasesResources() throws Exception {
+        DataSource source = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        PreparedStatement prepared = mock(PreparedStatement.class);
+        when(source.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true);
+        when(connection.prepareStatement("update T set A = ? /* SQL_CANARY */")).thenReturn(prepared);
+        when(prepared.execute()).thenThrow(new SQLException("DRIVER_CANARY SQL_CANARY VALUE_CANARY", "42000", 17));
+        JdbcClient client = JdbcClient.builder().dataSource(source).statements(Map.of("name",
+                "update T set A = :value /* SQL_CANARY */")).build();
+        DataException failure = assertThrows(DataException.class,
+                () -> client.createNamed("name").bind("value", "VALUE_CANARY").execute());
+        for (Throwable current = failure; current != null; current = current.getCause()) {
+            assertThat(current.toString(), not(containsString("CANARY")));
+            for (Throwable suppressed : current.getSuppressed()) {
+                assertThat(suppressed.toString(), not(containsString("CANARY")));
+            }
+        }
+        verify(prepared).close();
+        verify(connection).close();
     }
 
     private static void assertCleanupFailure(ThrowingInvocation invocation, SQLException expected) {

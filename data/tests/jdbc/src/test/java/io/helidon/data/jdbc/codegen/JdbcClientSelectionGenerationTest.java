@@ -247,6 +247,60 @@ class JdbcClientSelectionGenerationTest {
         }
     }
 
+    @Test
+    void validatesAnnotationSelectionAndDefersDeploymentChecks() {
+        for (String annotation : List.of("@Jdbc.Statement", "@Jdbc.Statement(\" \")",
+                "@Jdbc.Statement(name = \" \")", "@Jdbc.Statement(value = \"select 1\", name = \"find\")",
+                "@Jdbc.Statement(value = \" \u0020\", name = \"find\")")) {
+            TestCompiler.Result result = compile("Invalid.java", """
+                    package example;
+                    import io.helidon.data.Data;
+                    import io.helidon.data.jdbc.Jdbc;
+                    @Data.Repository @Data.Provider("jdbc")
+                    interface Invalid {
+                        %s
+                        String find();
+                    }
+                    """.formatted(annotation));
+            assertThat(String.join("\n", result.diagnostics()), result.success(), is(false));
+        }
+        TestCompiler.Result valid = compile("Valid.java", """
+                package example;
+                import io.helidon.data.Data;
+                import io.helidon.data.jdbc.Jdbc;
+                @Data.Repository @Data.Provider("jdbc")
+                interface Valid {
+                    @Jdbc.Statement(name = "deployment-only")
+                    String find(String unknownUntilDeployment);
+                    @Jdbc.Statement("select 1")
+                    String literal();
+                    @Jdbc.Statement(value = "", name = "keys") @Jdbc.GeneratedKeys("ID")
+                    java.util.Optional<Long> insert(String value, String data__value, String statement,
+                            String jdbcClient, String SQL_INSERT, String result, String rows);
+                }
+                """);
+        assertThat(String.join("\n", valid.diagnostics()), valid.success(), is(true));
+    }
+
+    @Test
+    void rejectsAvailableUnsupportedResultAndControlShapes() {
+        for (String declaration : List.of("java.util.stream.Stream<String> find();",
+                "void find(java.util.function.Consumer<java.util.stream.Stream<String>> callback);",
+                "String find(java.util.Iterator<String> values);")) {
+            TestCompiler.Result result = compile("Invalid.java", """
+                    package example;
+                    import io.helidon.data.Data;
+                    import io.helidon.data.jdbc.Jdbc;
+                    @Data.Repository @Data.Provider("jdbc")
+                    interface Invalid {
+                        @Jdbc.Statement(name = "configured")
+                        %s
+                    }
+                    """.formatted(declaration));
+            assertThat(String.join("\n", result.diagnostics()), result.success(), is(false));
+        }
+    }
+
     private static TestCompiler.Result compile(String fileName, String source) {
         return TestCompiler.builder()
                 .currentRelease()

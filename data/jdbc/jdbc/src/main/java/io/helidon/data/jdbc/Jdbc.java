@@ -88,15 +88,18 @@ public final class Jdbc {
      * Declares one SQL statement executed by a repository method.
      * <p>
      * Every abstract JDBC repository method must declare this annotation.
-     * The SQL statement may use named markers matching Java parameter names or
-     * positional JDBC markers. A statement must use one style consistently.
+     * Exactly one of {@link #value()} and {@link #name()} must contain a nonblank value.
+     * Literal SQL may use named markers matching Java parameter names or
+     * positional JDBC markers. A literal statement must use one style consistently.
+     * Configured SQL selected by name may use named markers or no markers.
+     * Configured SQL must not use positional JDBC markers.
      * <p>
      * A repository invocation supplies the SQL, after rewriting any named bind
      * markers, to the driver as one {@link java.sql.PreparedStatement}. Helidon
      * validates the repository method and bind markers but does not parse
      * database grammar, split scripts, or validate statement boundaries
-     * specific to a database. The value must therefore describe exactly one
-     * SQL statement. SQL scripts, batches, compound or multiple statement
+     * specific to a database. The literal or configured SQL must therefore describe
+     * exactly one SQL statement. SQL scripts, batches, compound or multiple statement
      * strings specific to a JDBC driver, stored procedure calls, SQL that
      * controls transactions, and commands that change connection or session
      * state, including auto-commit mode, are not supported.
@@ -124,17 +127,18 @@ public final class Jdbc {
     public @interface Statement {
 
         /**
-         * Returns the SQL statement.
+         * Returns the literal SQL statement. The default empty string leaves
+         * literal SQL unset so that {@link #name()} can select a configured statement.
          *
-         * @return one SQL statement
+         * @return The literal SQL statement, or an empty string when a configured name is used.
          */
         String value() default "";
 
         /**
-         * Selects a statement from the configured client catalog. Exactly one of
-         * {@code value} and {@code name} must contain a nonblank value.
+         * Selects a statement from the configured client catalog. The default empty
+         * string leaves configured selection unset so that {@link #value()} can supply literal SQL.
          *
-         * @return The configured statement name.
+         * @return The configured statement name, or an empty string when literal SQL is used.
          */
         String name() default "";
     }

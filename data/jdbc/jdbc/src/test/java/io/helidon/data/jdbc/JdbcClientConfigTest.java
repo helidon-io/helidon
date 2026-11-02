@@ -20,6 +20,7 @@ import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -440,6 +441,61 @@ class JdbcClientConfigTest {
         JdbcClientConfig config = builder.buildPrototype();
         assertThat(config.dataSourceName().orElseThrow(), is("inventory-source"));
         assertThat(config.dataSource(), is(Optional.empty()));
+    }
+
+    @Test
+    void copiesConfigurationAndProvidesExactClientLocalLookup() {
+        DataSource source = mock(DataSource.class);
+        Map<String, String> definitions = new HashMap<>(Map.of("find", "select :secret"));
+        JdbcClientConfig config = JdbcClientConfig.builder().dataSource(source).statements(definitions).buildPrototype();
+        definitions.put("find", "select :replacement");
+        JdbcClient client = config.build();
+        assertThat(config.statements(), is(Map.of("find", "select :secret")));
+        assertThrows(UnsupportedOperationException.class, () -> config.statements().put("x", "select 1"));
+        assertThat(config.toString(), not(containsString("secret")));
+        assertThat(JdbcClientConfig.builder().from(config).toString(), not(containsString("secret")));
+        assertThat(client.createNamed("find"), not(sameInstance(client.createNamed("find"))));
+        client.createNamed("find").bind("secret", "VALUE_CANARY");
+        assertThrows(DataException.class, () -> client.createNamed("FIND"));
+        assertThrows(DataException.class, () -> client.createNamed(" find"));
+        assertThrows(IllegalArgumentException.class, () -> client.createNamed(" "));
+        assertThrows(NullPointerException.class, () -> client.createNamed(null));
+        JdbcClient other = JdbcClient.builder().dataSource(source).statements(definitions).build();
+        assertThrows(IllegalArgumentException.class, () -> other.createNamed("find").bind("secret", "x"));
+        assertThrows(DataException.class, () -> JdbcClient.builder().dataSource(source).build().createNamed("find"));
+        verifyZeroInteractions(source);
+    }
+
+    @Test
+    void configurationAndBuilderHaveEquivalentCatalogs() {
+        Config node = Config.builder().sources(ConfigSources.create(Map.of(
+                "data-source", "test", "statements.find", "select :value"))).build();
+        JdbcClientConfig configured = JdbcClientConfig.builder().config(node).buildPrototype();
+        JdbcClientConfig built = JdbcClientConfig.builder().dataSourceName("test")
+                .statements(Map.of("find", "select :value")).buildPrototype();
+        assertThat(configured.statements(), is(built.statements()));
+        assertThat(configured.toString(), not(containsString("select :value")));
+    }
+
+    @Test
+    void validatesCatalogsAndProtectedMarkersWithoutAcquisition() {
+        DataSource source = mock(DataSource.class);
+        for (String sql : new String[] {" ", "select ?", "select :value, ?", "select 'unterminated",
+                "select /* nested /* comment */ */ 1", "select :value.field", "select 1--ambiguous"}) {
+            IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                    () -> JdbcClient.builder().dataSource(source).statements(Map.of("name", sql)).build());
+            if (!sql.isBlank()) {
+                assertThat(failure.toString(), not(containsString(sql)));
+            }
+        }
+        assertThrows(IllegalArgumentException.class, () -> JdbcClient.builder().dataSource(source)
+                .statements(Map.of(" ", "select 1")).build());
+        JdbcClient client = JdbcClient.builder().dataSource(source).statements(Map.of("protected",
+                "select ':fake ?', nq'[ :fake ? ]', $$:fake ?$$, `:fake ?`, \":fake ?\", :𐐀value "
+                        + "/* :fake ? */ -- :fake ?\n, :𐐀value")).build();
+        client.createNamed("protected").bind("𐐀value", 1);
+        assertThrows(IllegalArgumentException.class, () -> client.createNamed("protected").bind("fake", 1));
+        verifyZeroInteractions(source);
     }
 
     private static void assertSourceConflict(Runnable construction) {
