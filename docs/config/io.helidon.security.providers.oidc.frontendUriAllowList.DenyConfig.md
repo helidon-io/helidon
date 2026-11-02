@@ -59,7 +59,7 @@ Configuration for security.providers.oidc.frontend-uri-allow-list.deny
 
 ## Usages
 
-- <a href="io.helidon.common.configurable.AllowList.md#deny"><code>security.<wbr>providers.<wbr>oidc.<wbr>frontend-<wbr>uri-<wbr>allow-<wbr>list.<wbr>deny</code></a>
+- <a href="io.helidon.security.providers.oidc.OidcProvider.md#frontend-uri-allow-list"><code>security.<wbr>providers.<wbr>oidc.<wbr>frontend-<wbr>uri-<wbr>allow-<wbr>list.<wbr>deny</code></a>
 
 ---
 
