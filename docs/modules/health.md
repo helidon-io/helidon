@@ -66,6 +66,17 @@ you wish. You can also use configuration to tailor some of the behavior of the
 health component (such as changing the URI path from `/observe/health` to
 something else).
 
+### Health Response Details
+
+When details are enabled, responses include check names, statuses, and data
+returned by health checks. Unexpected check exceptions are logged on the server;
+their class names and messages are omitted from the response. Database health
+checks also omit backend exception details.
+
+Data explicitly returned by custom health checks is included without filtering.
+Keep credentials and sensitive backend information out of that data, and restrict
+access to health endpoints when application health data is confidential.
+
 ### Writing Custom Health Checks
 
 In many cases, the ability of your application to do its job depends on
