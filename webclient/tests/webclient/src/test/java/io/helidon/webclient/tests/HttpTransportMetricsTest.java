@@ -23,9 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
@@ -72,6 +70,7 @@ import io.grpc.ServerServiceDefinition;
 import io.grpc.protobuf.ProtoUtils;
 import io.grpc.stub.ServerCalls;
 import org.hamcrest.Matcher;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -83,6 +82,7 @@ import static org.hamcrest.Matchers.emptyIterable;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 class HttpTransportMetricsTest {
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
@@ -131,10 +131,11 @@ class HttpTransportMetricsTest {
                 await(role + " duration count", () -> streamDuration(fixture.registry, protocol, role)
                         .map(Timer::count).orElse(0L), is(1L));
                 Timer timer = streamDuration(fixture.registry, protocol, role).orElseThrow();
-                assertThat(role + " total duration", timer.totalTime(TimeUnit.NANOSECONDS), greaterThan(0D));
+                // Count and total are published separately by the metrics provider.
+                await(role + " total duration", () -> timer.totalTime(TimeUnit.NANOSECONDS), greaterThan(0D));
+                await(role + " snapshot total", () -> timer.snapshot().total(TimeUnit.NANOSECONDS), greaterThan(0D));
                 var snapshot = timer.snapshot();
                 assertThat(role + " snapshot count", snapshot.count(), is(1L));
-                assertThat(role + " snapshot total", snapshot.total(TimeUnit.NANOSECONDS), greaterThan(0D));
                 assertThat(role + " disabled percentiles", snapshot.percentileValues(), emptyIterable());
             }
         }
@@ -399,7 +400,6 @@ class HttpTransportMetricsTest {
             var builder = WebServer.builder()
                     .host("localhost")
                     .port(-1)
-                    .shutdownGracePeriod(Duration.ZERO)
                     .featuresDiscoverServices(false)
                     .protocolsDiscoverServices(false)
                     .addProtocol(websocket)
@@ -450,19 +450,27 @@ class HttpTransportMetricsTest {
         }
 
         @Override
-        public void close() throws InterruptedException, ExecutionException, TimeoutException {
-            CompletableFuture<?>[] completions = clients.stream()
-                    .map(ReleasableResource::closeResourceAsync)
-                    .map(completion -> completion.toCompletableFuture())
-                    .toArray(CompletableFuture<?>[]::new);
-            server.stop();
-            CompletableFuture.allOf(completions).get(TIMEOUT.toSeconds(), TimeUnit.SECONDS);
-            for (MeterRegistry meterRegistry : registries) {
-                await("Transport meter cleanup", () -> meterRegistry.meters().stream()
-                        .filter(meter -> meter.id().name().startsWith("helidon.http."))
-                        .count(), is(0L));
-                meterRegistry.close();
+        public void close() {
+            var completions = new ArrayList<CompletableFuture<?>>();
+            var cleanup = new ArrayList<Executable>();
+            for (ReleasableResource client : clients) {
+                cleanup.add(() -> completions.add(client.closeResourceAsync().toCompletableFuture()));
             }
+            cleanup.add(server::stop);
+            cleanup.add(() -> CompletableFuture.allOf(completions.toArray(CompletableFuture<?>[]::new))
+                    .get(TIMEOUT.toSeconds(), TimeUnit.SECONDS));
+            for (MeterRegistry meterRegistry : registries) {
+                cleanup.add(() -> {
+                    try {
+                        await("Transport meter cleanup", () -> meterRegistry.meters().stream()
+                                .filter(meter -> meter.id().name().startsWith("helidon.http."))
+                                .count(), is(0L));
+                    } finally {
+                        meterRegistry.close();
+                    }
+                });
+            }
+            assertAll("Transport fixture cleanup", cleanup);
         }
 
         private MeterRegistry addRegistry() {

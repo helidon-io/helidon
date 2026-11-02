@@ -18,12 +18,16 @@ package io.helidon.webserver.http2;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.buffers.DataWriter;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.HttpTransportObserver.ConnectionObservation;
@@ -42,6 +46,7 @@ import io.helidon.http.http2.Http2Exception;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2FrameHeader;
+import io.helidon.http.http2.Http2FrameType;
 import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2RstStream;
@@ -49,6 +54,7 @@ import io.helidon.http.http2.Http2Settings;
 import io.helidon.http.http2.Http2StreamState;
 import io.helidon.http.http2.Http2StreamWriter;
 import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ErrorHandling;
 import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
@@ -62,12 +68,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -213,6 +223,78 @@ class Http2ServerStreamObservationTest {
     }
 
     @Test
+    void interruptedRejectedEntityPublishesErrorBeforeConnectionObservationStops() throws InterruptedException {
+        CountDownLatch headersWritten = new CountDownLatch(1);
+        CountDownLatch terminalWriteEnded = new CountDownLatch(1);
+        CountDownLatch releaseStream = new CountDownLatch(1);
+        DataWriter dataWriter = mock(DataWriter.class);
+        doAnswer(invocation -> {
+            BufferData data = invocation.getArgument(0);
+            if (Http2FrameHeader.create(data.copy()).type() == Http2FrameType.HEADERS) {
+                headersWritten.countDown();
+            }
+            return null;
+        }).when(dataWriter).writeNow(any(BufferData.class));
+        var writer = new Http2ConnectionWriter(mock(ConnectionContext.class), dataWriter, List.of());
+        var listenerConfig = ListenerConfig.builder()
+                .errorHandling(ErrorHandling.builder().includeEntity(true).build())
+                .build();
+        var flowControlBuilder = ConnectionFlowControl.serverBuilder((_, _) -> { })
+                .blockTimeout(Duration.ofNanos(Long.MAX_VALUE));
+        var fixture = fixture(writer, List.of(), true, listenerConfig, flowControlBuilder, () -> {
+            terminalWriteEnded.countDown();
+            awaitUninterruptibly(releaseStream);
+        });
+        fixture.stream().prologue(prologue(Method.CONNECT));
+        fixture.stream().headers(requestHeaders(), true);
+        fixture.stream().flowControl().outbound().resetStreamWindowSize(0);
+        AtomicReference<Throwable> streamFailure = new AtomicReference<>();
+        Thread streamThread = Thread.ofVirtual().start(() -> {
+            try {
+                fixture.stream().run();
+            } catch (Throwable failure) {
+                streamFailure.set(failure);
+            }
+        });
+        AtomicReference<Throwable> stopFailure = new AtomicReference<>();
+        Thread stopThread = Thread.ofVirtual().unstarted(() -> {
+            try {
+                fixture.observation().stop(Duration.ZERO, () -> { });
+            } catch (Throwable failure) {
+                stopFailure.set(failure);
+            }
+        });
+        try {
+            assertThat("rejection headers must be written", headersWritten.await(5, TimeUnit.SECONDS), is(true));
+            assertThat("the terminal writer must still be registered before teardown",
+                       terminalWriteEnded.getCount(), is(1L));
+            stopThread.start();
+            assertThat("observation teardown must terminate", stopThread.join(Duration.ofSeconds(5)), is(true));
+            assertThat("observation teardown must succeed", stopFailure.get(), is(nullValue()));
+            assertThat("ERROR must be published before teardown returns",
+                       fixture.outcomes(), is(List.of(StreamOutcome.ERROR)));
+            releaseStream.countDown();
+            assertThat("rejected stream must terminate", streamThread.join(Duration.ofSeconds(5)), is(true));
+            assertThat(streamFailure.get(), instanceOf(Http2Exception.class));
+            Http2Exception failure = (Http2Exception) streamFailure.get();
+            assertThat("shutdown must interrupt the flow-control wait", failure.code(), is(Http2ErrorCode.FLOW_CONTROL));
+            assertThat("failed reset admission must be retained", failure.getSuppressed().length, is(1));
+            assertThat(failure.getSuppressed()[0], instanceOf(IllegalStateException.class));
+            assertThat("late stream cleanup must not duplicate the outcome",
+                       fixture.outcomes(), is(List.of(StreamOutcome.ERROR)));
+        } finally {
+            releaseStream.countDown();
+            streamThread.interrupt();
+            boolean streamTerminated = streamThread.join(Duration.ofSeconds(5));
+            boolean stopTerminated = stopThread.getState() == Thread.State.NEW || stopThread.join(Duration.ofSeconds(5));
+            assertAll(
+                    () -> assertThat("stream cleanup must terminate", streamTerminated, is(true)),
+                    () -> assertThat("observation cleanup must terminate", stopTerminated, is(true))
+            );
+        }
+    }
+
+    @Test
     void requestFailureAfterApplicationStartsIsError() {
         var handler = completedHandler();
         doThrow(RequestException.builder().status(Status.BAD_REQUEST_400).message("Invalid request").build())
@@ -280,15 +362,29 @@ class Http2ServerStreamObservationTest {
     private static Fixture fixture(Http2StreamWriter writer,
                                    List<Http2SubProtocolSelector> selectors,
                                    boolean initiallyRemoteEnded) {
+        return fixture(writer,
+                       selectors,
+                       initiallyRemoteEnded,
+                       ListenerConfig.create(),
+                       ConnectionFlowControl.serverBuilder((_, _) -> { }),
+                       () -> { });
+    }
+
+    private static Fixture fixture(Http2StreamWriter writer,
+                                   List<Http2SubProtocolSelector> selectors,
+                                   boolean initiallyRemoteEnded,
+                                   ListenerConfig listenerConfig,
+                                   ConnectionFlowControl.ConnectionFlowControlBuilder flowControlBuilder,
+                                   Runnable afterTerminalWrite) {
         var config = Http2Config.create();
         var listenerContext = mock(ListenerContext.class);
-        when(listenerContext.config()).thenReturn(ListenerConfig.create());
+        when(listenerContext.config()).thenReturn(listenerConfig);
         when(listenerContext.directHandlers()).thenReturn(DirectHandlers.create());
         var context = mock(ConnectionContext.class);
         when(context.router()).thenReturn(Router.empty());
         when(context.listenerContext()).thenReturn(listenerContext);
         when(context.sniContext()).thenReturn(Optional.empty());
-        var flowControl = ConnectionFlowControl.serverBuilder((_, _) -> { })
+        var flowControl = flowControlBuilder
                 .initialWindowSize(config.initialWindowSize())
                 .maxFrameSize(config.maxFrameSize())
                 .build();
@@ -306,14 +402,22 @@ class Http2ServerStreamObservationTest {
                                            writer,
                                            flowControl,
                                            new InboundDataBudget(16, 65536),
-                                           new Http2ConnectionChecks(config, mock(Http2Connection.class)));
+                                           new Http2ConnectionChecks(config, mock(Http2Connection.class))) {
+            @Override
+            void endTerminalWrite() {
+                super.endTerminalWrite();
+                // Hold the runner's final cleanup beyond connection observation teardown.
+                afterTerminalWrite.run();
+            }
+        };
         streams.put(new Http2Connection.StreamContext(STREAM_ID, config.initialWindowSize(), stream));
         List<StreamOutcome> outcomes = new ArrayList<>();
         var observation = mock(ConnectionObservation.class);
         when(observation.streamOpened(Direction.BIDIRECTIONAL, Initiator.REMOTE)).thenReturn(outcomes::add);
-        stream.observe(new Http2TransportObservation(observation), initiallyRemoteEnded);
+        var transportObservation = new Http2TransportObservation(observation);
+        stream.observe(transportObservation, initiallyRemoteEnded);
         stream.prologue(prologue(Method.GET));
-        return new Fixture(stream, outcomes);
+        return new Fixture(stream, outcomes, transportObservation);
     }
 
     private static Http2SubProtocolSelector.SubProtocolHandler completedHandler() {
@@ -360,6 +464,28 @@ class Http2ServerStreamObservationTest {
                                                                   Http2Flag.NoFlags.create());
     }
 
-    private record Fixture(Http2ServerStream stream, List<StreamOutcome> outcomes) {
+    private static void awaitUninterruptibly(CountDownLatch latch) {
+        boolean interrupted = false;
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
+        try {
+            while (true) {
+                try {
+                    assertThat("terminal runner must be released",
+                               latch.await(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS), is(true));
+                    return;
+                } catch (InterruptedException _) {
+                    interrupted = true;
+                }
+            }
+        } finally {
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    private record Fixture(Http2ServerStream stream,
+                           List<StreamOutcome> outcomes,
+                           Http2TransportObservation observation) {
     }
 }

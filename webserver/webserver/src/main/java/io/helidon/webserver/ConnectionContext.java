@@ -92,4 +92,14 @@ public interface ConnectionContext extends SocketContext {
     default HelidonSocket serverSocket() {
         throw new UnsupportedOperationException("Not supported");
     }
+
+    /**
+     * Abort the underlying transport to unblock pending reads and writes during connection teardown.
+     * The default implementation closes {@link #serverSocket()}; network implementations can close
+     * the transport directly without attempting a graceful protocol shutdown.
+     */
+    @Api.Internal
+    default void abortSocket() {
+        serverSocket().close();
+    }
 }

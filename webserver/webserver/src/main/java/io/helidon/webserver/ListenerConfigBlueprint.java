@@ -224,8 +224,11 @@ interface ListenerConfigBlueprint {
     int writeBufferSize();
 
     /**
-     * Grace period in ISO 8601 duration format to allow running tasks to complete before listener's shutdown.
+     * Grace period in ISO 8601 duration format to allow running tasks to complete before listener shutdown
+     * or teardown of HTTP/2 connections with HTTP transport observation.
      * Default is {@code 500} milliseconds.
+     * HTTP/2 teardown waits for admitted terminal response writes before interrupting pending writers
+     * and aborting the transport.
      * <p>Configuration file values example: {@code PT0.5S}, {@code PT2S}.
      *
      * @return grace period
