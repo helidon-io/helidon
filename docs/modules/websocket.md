@@ -133,6 +133,16 @@ it. By default, Helidon requires the `Origin` authority to match the request
 allowlist instead. Requests without an `Origin` header are allowed so
 non-browser clients continue to work.
 
+For unexpected listener exceptions, automatically generated WebSocket CLOSE
+frames use status `1011` and the reason `Internal server error`. The original
+exception is logged on the server; frame-processing failures are also passed to
+`WsListener.onError`. Exception messages, including null or lengthy messages,
+are not used as automatic close reasons.
+
+Applications can still provide an explicit reason using
+`WsSession.close(code, reason)`. A deliberate `WsCloseException` during frame
+processing retains its configured close code and reason.
+
 ## Reference
 
 - [Helidon WebSocket Javadoc][helidon-websocke]

@@ -170,7 +170,8 @@ public class WsConnection implements ServerConnection, WsSession {
         } catch (CloseConnectionException e) {
             throw e;
         } catch (Exception e) {
-            close(WsCloseCodes.UNEXPECTED_CONDITION, e.getMessage());
+            ctx.log(LOGGER, Level.WARNING, "WebSocket listener failed during onOpen", e);
+            close(WsCloseCodes.UNEXPECTED_CONDITION, "Internal server error");
             return;
         }
 
@@ -214,8 +215,9 @@ public class WsConnection implements ServerConnection, WsSession {
                     }
                     throw new IllegalStateException(e);
                 }
+                ctx.log(LOGGER, Level.WARNING, "WebSocket listener failed during frame processing", e);
                 listener.onError(this, e);
-                this.close(WsCloseCodes.UNEXPECTED_CONDITION, e.getMessage());
+                this.close(WsCloseCodes.UNEXPECTED_CONDITION, "Internal server error");
                 return;
             } finally {
                 WsCloseException close = pendingClose;
