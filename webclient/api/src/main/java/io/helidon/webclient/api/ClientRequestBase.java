@@ -798,6 +798,26 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         return toResolve;
     }
 
+    /**
+     * Resolve a redirect target's scheme and authority against this request.
+     *
+     * @param location Location header value
+     * @return resolved redirect URI
+     */
+    protected final ClientUri resolveRedirectUri(String location) {
+        URI locationUri = URI.create(Objects.requireNonNull(location));
+        ClientUri redirectUri = ClientUri.create(locationUri);
+        ClientUri sourceUri = resolvedUri();
+        if (locationUri.getScheme() == null) {
+            redirectUri.scheme(sourceUri.scheme());
+        }
+        if (locationUri.getRawAuthority() == null) {
+            redirectUri.host(sourceUri.host());
+            redirectUri.port(sourceUri.port());
+        }
+        return redirectUri;
+    }
+
     private static String nextRequestId(String protocolId) {
         AtomicLong counter = COUNTERS.computeIfAbsent(protocolId, it -> new AtomicLong());
         return "client-" + protocolId + "-" + Long.toHexString(counter.getAndIncrement());
