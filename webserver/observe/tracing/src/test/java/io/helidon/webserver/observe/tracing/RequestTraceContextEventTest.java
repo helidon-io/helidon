@@ -34,6 +34,7 @@ import io.helidon.tracing.Tracer;
 import io.helidon.tracing.config.ComponentTracingConfig;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.tracing.config.TracingConfig;
+import io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry;
 import io.helidon.webserver.http.Filter;
 import io.helidon.webserver.http.FilterChain;
 import io.helidon.webserver.http.HttpFeature;
@@ -43,6 +44,9 @@ import io.helidon.webserver.http.RoutingResponse;
 import io.helidon.webserver.observe.tracing.spi.TracingSemanticConventionsProvider;
 import io.helidon.webserver.spi.ServerFeature;
 
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.trace.TraceFlags;
+import io.opentelemetry.api.trace.TraceState;
 import jdk.jfr.Contextual;
 import jdk.jfr.Event;
 import jdk.jfr.EventType;
@@ -142,6 +146,54 @@ class RequestTraceContextEventTest {
                        contexts(record(fixture(TracingConfig.ENABLED, Optional.empty(), id), false, false)),
                        hasSize(0));
         }
+    }
+
+    @Test
+    void openTelemetryNoOpServerSpanDoesNotRecordTraceContext() throws IOException {
+        var span = OpenTelemetry.noop().getTracer("request-context-test")
+                .spanBuilder("request").setNoParent().startSpan();
+        assertThat(span.getSpanContext().isValid(), is(false));
+        Fixture fixture = fixture(TracingConfig.ENABLED, Optional.empty(), null);
+        when(fixture.span.context()).thenReturn(HelidonOpenTelemetry.create(span).context());
+        assertThat(contexts(record(fixture, false, false)), hasSize(0));
+        verify(fixture.chain).proceed();
+        verify(fixture.span).end();
+        verify(fixture.scope).close();
+    }
+
+    @Test
+    void openTelemetryNoOpInboundContextDoesNotRecordTraceContext() throws IOException {
+        var span = OpenTelemetry.noop().getTracer("request-context-test")
+                .spanBuilder("request").setNoParent().startSpan();
+        assertThat(span.getSpanContext().isValid(), is(false));
+        var inbound = HelidonOpenTelemetry.create(span).context();
+        Fixture fixture = fixture(DISABLED_SERVER_SPAN, Optional.of(inbound), null);
+        assertThat(contexts(record(fixture, false, false)), hasSize(0));
+        verify(fixture.chain).proceed();
+        verify(fixture.tracer, never()).spanBuilder(anyString());
+    }
+
+    @Test
+    void validUnsampledOpenTelemetryContextsAreRecorded() throws IOException {
+        var spanContext = io.opentelemetry.api.trace.SpanContext.create(TRACE_ID,
+                                                                     "0123456789abcdef",
+                                                                     TraceFlags.getDefault(),
+                                                                     TraceState.getDefault());
+        assertThat(spanContext.isValid(), is(true));
+        assertThat(spanContext.isSampled(), is(false));
+        var context = HelidonOpenTelemetry.create(io.opentelemetry.api.trace.Span.wrap(spanContext)).context();
+        Fixture serverSpanFixture = fixture(TracingConfig.ENABLED, Optional.empty(), null);
+        when(serverSpanFixture.span.context()).thenReturn(context);
+        List<RecordedEvent> serverSpanEvents = contexts(record(serverSpanFixture, false, false));
+        assertThat(serverSpanEvents, hasSize(1));
+        assertThat(serverSpanEvents.getFirst().getString("traceId"), is(TRACE_ID));
+        assertThat(serverSpanEvents.getFirst().getString("origin"), is("serverSpan"));
+
+        Fixture inboundFixture = fixture(DISABLED_SERVER_SPAN, Optional.of(context), null);
+        List<RecordedEvent> inboundEvents = contexts(record(inboundFixture, false, false));
+        assertThat(inboundEvents, hasSize(1));
+        assertThat(inboundEvents.getFirst().getString("traceId"), is(TRACE_ID));
+        assertThat(inboundEvents.getFirst().getString("origin"), is("inboundContext"));
     }
 
     @Test

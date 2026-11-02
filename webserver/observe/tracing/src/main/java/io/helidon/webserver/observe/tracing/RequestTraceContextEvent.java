@@ -38,6 +38,7 @@ import jdk.jfr.Threshold;
 @StackTrace(false)
 final class RequestTraceContextEvent extends Event {
     private static final EventType TYPE = EventType.getEventType(RequestTraceContextEvent.class);
+    private static final String INVALID_TRACE_ID = "00000000000000000000000000000000";
     private static final int MAX_TRACE_ID_LENGTH = 128;
 
     @Label("Trace ID")
@@ -54,7 +55,8 @@ final class RequestTraceContextEvent extends Event {
             return null;
         }
         String traceId = context.traceId();
-        if (traceId == null || traceId.length() > MAX_TRACE_ID_LENGTH || traceId.isBlank() || "no-op".equals(traceId)) {
+        if (traceId == null || traceId.length() > MAX_TRACE_ID_LENGTH || traceId.isBlank()
+                || "no-op".equals(traceId) || INVALID_TRACE_ID.equals(traceId)) {
             return null;
         }
         var event = new RequestTraceContextEvent();
