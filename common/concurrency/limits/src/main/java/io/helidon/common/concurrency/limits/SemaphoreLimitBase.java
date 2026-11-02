@@ -314,6 +314,7 @@ abstract class SemaphoreLimitBase extends LimitAlgorithmDeprecatedBase implement
                         startWait,
                         endWait);
             }
+            rejectedRequests.getAndIncrement();
             return Outcome.deferredRejection(originName, type(), startWait, endWait);
         }
         rejectedRequests.getAndIncrement();
