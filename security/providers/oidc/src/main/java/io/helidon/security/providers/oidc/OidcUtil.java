@@ -17,10 +17,7 @@
 package io.helidon.security.providers.oidc;
 
 import java.net.IDN;
-import java.net.Inet6Address;
-import java.net.InetAddress;
 import java.net.URI;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Locale;
@@ -28,7 +25,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.common.parameters.Parameters;
-import io.helidon.common.uri.UriValidator;
+import io.helidon.common.uri.UriHost;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
@@ -138,11 +135,11 @@ class OidcUtil {
             return null;
         }
         if (host.startsWith("[") && host.endsWith("]")) {
-            String normalizedHost = normalizedIpv6(host);
-            if (normalizedHost == null) {
+            try {
+                host = '[' + UriHost.create(host.substring(1, host.length() - 1)).value() + ']';
+            } catch (IllegalArgumentException _) {
                 return null;
             }
-            host = normalizedHost;
         } else {
             try {
                 host = IDN.toASCII(host, IDN.USE_STD3_ASCII_RULES).toLowerCase(Locale.ROOT);
@@ -201,68 +198,5 @@ class OidcUtil {
             }
         }
         return true;
-    }
-
-    private static String normalizedIpv6(String host) {
-        String addressText = host.substring(1, host.length() - 1);
-        if (addressText.indexOf('%') >= 0 || addressText.indexOf(':') < 0) {
-            return null;
-        }
-        try {
-            // Validate embedded IPv4 octets before InetAddress parses a mixed IPv6 literal.
-            UriValidator.validateIpLiteral(host);
-            InetAddress address = InetAddress.getByName(addressText);
-            byte[] addressBytes = address.getAddress();
-            if (!(address instanceof Inet6Address)) {
-                byte[] mappedAddress = new byte[16];
-                mappedAddress[10] = (byte) 0xff;
-                mappedAddress[11] = (byte) 0xff;
-                System.arraycopy(addressBytes, 0, mappedAddress, 12, addressBytes.length);
-                addressBytes = mappedAddress;
-            }
-            return '[' + normalizedIpv6(addressBytes) + ']';
-        } catch (UnknownHostException | IllegalArgumentException _) {
-            return null;
-        }
-    }
-
-    private static String normalizedIpv6(byte[] address) {
-        int[] segments = new int[8];
-        for (int i = 0; i < segments.length; i++) {
-            segments[i] = Byte.toUnsignedInt(address[i * 2]) << 8
-                    | Byte.toUnsignedInt(address[i * 2 + 1]);
-        }
-
-        int longestZeroStart = -1;
-        int longestZeroLength = 1;
-        for (int i = 0; i < segments.length;) {
-            if (segments[i] != 0) {
-                i++;
-                continue;
-            }
-            int zeroStart = i;
-            while (i < segments.length && segments[i] == 0) {
-                i++;
-            }
-            int zeroLength = i - zeroStart;
-            if (zeroLength > longestZeroLength) {
-                longestZeroStart = zeroStart;
-                longestZeroLength = zeroLength;
-            }
-        }
-
-        StringBuilder result = new StringBuilder();
-        for (int i = 0; i < segments.length;) {
-            if (i == longestZeroStart) {
-                result.append("::");
-                i += longestZeroLength;
-            } else {
-                if (!result.isEmpty() && result.charAt(result.length() - 1) != ':') {
-                    result.append(':');
-                }
-                result.append(Integer.toHexString(segments[i++]));
-            }
-        }
-        return result.toString();
     }
 }
