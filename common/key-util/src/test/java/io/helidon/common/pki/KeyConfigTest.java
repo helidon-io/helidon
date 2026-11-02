@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,8 +63,11 @@ class KeyConfigTest {
     @ParameterizedTest
     @CsvSource({"512", "1024", "2048"})
     void testPkcs1(String length) {
-        PrivateKey privateKey = PemReader.readPrivateKey(KeyConfigTest.class.getResourceAsStream("/keystore/pkcs1-" + length +
-                                                                                                         ".pem"), null);
+        PrivateKey privateKey = Keys.builder()
+                .pem(pem -> pem.key(Resource.create("keystore/pkcs1-" + length + ".pem")))
+                .build()
+                .privateKey()
+                .orElseThrow();
         assertThat(privateKey, notNullValue());
         assertThat(privateKey.getAlgorithm(), is("RSA"));
     }
