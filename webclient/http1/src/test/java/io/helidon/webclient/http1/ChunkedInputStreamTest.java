@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -35,6 +36,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -127,6 +129,109 @@ class ChunkedInputStreamTest {
         assertThat(failure.getMessage(), is("HTTP response chunk data is not followed by CRLF"));
         assertThat(connection.closes, is(1));
         assertThat(complete.isCompletedExceptionally(), is(true));
+    }
+
+    @Test
+    void closingWithPendingMalformedDelimiterPreservesFramingFailure() throws Exception {
+        var segments = new ArrayDeque<byte[]>();
+        segments.add(bytes("1\r\nA"));
+        segments.add(bytes("\rX0\r\n\r\n"));
+        DataReader reader = DataReader.create(segments::poll);
+        var connection = new TestConnection(reader);
+        var complete = new CompletableFuture<WebClientServiceResponse>();
+        var input = input(connection, complete);
+
+        assertThat(input.read(), is((int) 'A'));
+        IllegalStateException failure = assertThrows(IllegalStateException.class, input::close);
+        assertThat(failure.getMessage(), is("HTTP response chunk data is not followed by CRLF"));
+        CompletionException completion = assertThrows(CompletionException.class, complete::join);
+        assertThat(completion.getCause(), sameInstance(failure));
+        assertThat(connection.closes, is(1));
+        assertThat(assertThrows(IllegalStateException.class, input::read).getMessage(), is(failure.getMessage()));
+    }
+
+    @Test
+    void rejectsBufferedMalformedDelimiterBeforeDeliveringPayload() throws Exception {
+        DataReader reader = DataReader.create(() -> bytes("1\r\nA\rX0\r\n\r\n"));
+        var connection = new TestConnection(reader);
+        var complete = new CompletableFuture<WebClientServiceResponse>();
+
+        try (var input = input(connection, complete)) {
+            IllegalStateException failure = assertThrows(IllegalStateException.class, input::read);
+            assertThat(failure.getMessage(), is("HTTP response chunk data is not followed by CRLF"));
+            assertThat(connection.closes, is(1));
+            assertThat(complete.isCompletedExceptionally(), is(true));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void rejectsBufferedMalformedDelimiterBeforeLargeChunkPayload(boolean fragmented) throws Exception {
+        String payload = "A".repeat(8193);
+        String header = Integer.toHexString(payload.length()) + "\r\n";
+        var segments = new ArrayDeque<byte[]>();
+        if (fragmented) {
+            segments.add(bytes(header + payload.substring(0, 8192)));
+            segments.add(bytes(payload.substring(8192) + "\r"));
+            segments.add(bytes("X0\r\n\r\n"));
+        } else {
+            segments.add(bytes(header + payload + "\rX0\r\n\r\n"));
+        }
+        DataReader reader = DataReader.create(segments::poll);
+        if (fragmented) {
+            reader.pullData();
+            reader.pullData();
+            reader.pullData();
+        }
+        var connection = new TestConnection(reader);
+        var complete = new CompletableFuture<WebClientServiceResponse>();
+
+        try (var input = input(connection, complete)) {
+            IllegalStateException failure = assertThrows(IllegalStateException.class, input::read);
+            assertThat(failure.getMessage(), is("HTTP response chunk data is not followed by CRLF"));
+            assertThat(connection.closes, is(1));
+            assertThat(complete.isCompletedExceptionally(), is(true));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void deliversBufferedLargeChunkInBoundedSlices(boolean fragmented) throws Exception {
+        String payload = "A".repeat(16385);
+        String chunk = Integer.toHexString(payload.length()) + "\r\n" + payload;
+        var segments = new ArrayDeque<byte[]>();
+        if (fragmented) {
+            segments.add(bytes(chunk + "\r"));
+            segments.add(bytes("\n0\r\n\r\n"));
+        } else {
+            segments.add(bytes(chunk + "\r\n0\r\n\r\n"));
+        }
+        AtomicInteger pulls = new AtomicInteger();
+        DataReader reader = DataReader.create(() -> {
+            byte[] segment = segments.poll();
+            if (segment == null) {
+                throw new AssertionError("Buffered chunk must not pull more data");
+            }
+            pulls.incrementAndGet();
+            return segment;
+        });
+        if (fragmented) {
+            reader.pullData();
+            reader.pullData();
+        }
+        var complete = new CompletableFuture<WebClientServiceResponse>();
+
+        try (var input = input(reader, complete)) {
+            byte[] slice = new byte[payload.length()];
+            assertThat(input.read(slice), is(8192));
+            assertThat(new String(slice, 0, 8192, StandardCharsets.US_ASCII), is("A".repeat(8192)));
+            assertThat(input.read(slice), is(8192));
+            assertThat(new String(slice, 0, 8192, StandardCharsets.US_ASCII), is("A".repeat(8192)));
+            assertThat(input.read(), is((int) 'A'));
+            assertThat(input.read(), is(-1));
+            assertThat(complete.isDone(), is(true));
+            assertThat(pulls.get(), is(fragmented ? 2 : 1));
+        }
     }
 
     @Test
