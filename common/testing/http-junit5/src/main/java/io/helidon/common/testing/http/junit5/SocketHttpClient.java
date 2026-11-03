@@ -59,6 +59,7 @@ public class SocketHttpClient implements AutoCloseable {
 
     private static final String EOL = "\r\n";
     private static final Pattern FIRST_LINE_PATTERN = Pattern.compile("HTTP/\\d+\\.\\d+ (\\d\\d\\d) (.*)");
+    private static final Pattern HEADER_SEPARATOR_PATTERN = Pattern.compile("\r?\n\r?\n");
     private static final Consumer<Socket> NO_OP_SOCKET_CONFIGURATOR = socket -> {
     };
     private final String host;
@@ -165,7 +166,7 @@ public class SocketHttpClient implements AutoCloseable {
     }
 
     /**
-     * Find headers in response and parse them.
+     * Find headers in response and parse them. Accepts CRLF and LF line endings.
      *
      * @param response full HTTP response
      * @return headers map
@@ -174,12 +175,9 @@ public class SocketHttpClient implements AutoCloseable {
         WritableHeaders<?> headers = WritableHeaders.create();
 
         assertThat(response, notNullValue());
-        int index = response.indexOf("\n\n");
-        if (index < 0) {
-            throw new AssertionError("Missing end of headers in response!");
-        }
-        String hdrsPart = response.substring(0, index);
-        String[] lines = hdrsPart.split("\\n");
+        Matcher separator = headerSeparator(response);
+        String hdrsPart = response.substring(0, separator.start());
+        String[] lines = hdrsPart.split("\r?\n");
         if (lines.length <= 1) {
             return ClientResponseHeaders.create(headers);
         }
@@ -222,7 +220,7 @@ public class SocketHttpClient implements AutoCloseable {
     }
 
     /**
-     * Get entity from response.
+     * Get entity from response. Accepts CRLF and LF header line endings and preserves the entity unchanged.
      *
      * @param response             response with initial line, headers, and entity
      * @param validateHeaderFormat whether to validate headers are correctly formatted
@@ -230,20 +228,17 @@ public class SocketHttpClient implements AutoCloseable {
      */
     public static String entityFromResponse(String response, boolean validateHeaderFormat) {
         assertThat(response, notNullValue());
-        int index = response.indexOf("\n\n");
-        if (index < 0) {
-            throw new AssertionError("Missing end of headers in response!");
-        }
+        Matcher separator = headerSeparator(response);
         if (validateHeaderFormat) {
-            String headers = response.substring(0, index);
-            String[] lines = headers.split("\\n");
+            String headers = response.substring(0, separator.start());
+            String[] lines = headers.split("\r?\n");
             assertThat(lines[0], startsWith("HTTP/"));
             for (int i = 1; i < lines.length; i++) {
                 assertThat(lines[i], containsString(":"));
             }
         }
 
-        return response.substring(index + 2);
+        return response.substring(separator.end());
     }
 
     @Override
@@ -328,7 +323,8 @@ public class SocketHttpClient implements AutoCloseable {
     }
 
     /**
-     * Read the data from the socket. If socket is closed, an empty string is returned.
+     * Read the data from the socket, preserving CRLF and LF line endings as received.
+     * If socket is closed, an empty string is returned.
      *
      * @return the read data
      */
@@ -339,7 +335,7 @@ public class SocketHttpClient implements AutoCloseable {
             String t;
             boolean ending = false;
             int contentLength = -1;
-            while ((t = br.readLine()) != null) {
+            while ((t = readResponseLine(br, sb)) != null) {
 
                 LOGGER.log(System.Logger.Level.TRACE, "< " + t);
 
@@ -347,9 +343,6 @@ public class SocketHttpClient implements AutoCloseable {
                     int k = t.indexOf(':');
                     contentLength = Integer.parseInt(t.substring(k + 1).trim());
                 }
-
-                sb.append(t)
-                        .append("\n");
 
                 if ("".equalsIgnoreCase(t) && contentLength >= 0) {
                     char[] content = new char[contentLength];
@@ -698,5 +691,30 @@ public class SocketHttpClient implements AutoCloseable {
             pw.print(EOL);
             pw.print(payload);
         }
+    }
+
+    private static Matcher headerSeparator(String response) {
+        Matcher separator = HEADER_SEPARATOR_PATTERN.matcher(response);
+        if (!separator.find()) {
+            throw new AssertionError("Missing end of headers in response!");
+        }
+        return separator;
+    }
+
+    private static String readResponseLine(BufferedReader reader, StringBuilder response) throws IOException {
+        StringBuilder line = new StringBuilder();
+        int next;
+        while ((next = reader.read()) != -1) {
+            char character = (char) next;
+            response.append(character);
+            if (character == '\n') {
+                if (!line.isEmpty() && line.charAt(line.length() - 1) == '\r') {
+                    line.setLength(line.length() - 1);
+                }
+                return line.toString();
+            }
+            line.append(character);
+        }
+        return line.isEmpty() ? null : line.toString();
     }
 }
