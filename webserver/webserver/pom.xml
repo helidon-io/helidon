@@ -126,13 +126,13 @@
         </dependency>
         <!-- Put JSON media support on test classpath to see whether it's loaded or not. -->
         <dependency>
-            <artifactId>helidon-http-media-jsonp</artifactId>
+            <artifactId>helidon-http-media-json</artifactId>
             <groupId>io.helidon.http.media</groupId>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>jakarta.json</groupId>
-            <artifactId>jakarta.json-api</artifactId>
+            <groupId>io.helidon.json</groupId>
+            <artifactId>helidon-json</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

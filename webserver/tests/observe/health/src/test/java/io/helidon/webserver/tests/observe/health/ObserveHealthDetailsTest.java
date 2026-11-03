@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import java.io.IOException;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServerConfig;
@@ -29,8 +31,6 @@ import io.helidon.webserver.observe.health.HealthObserver;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -38,7 +38,6 @@ import static io.helidon.health.HealthCheckResponse.Status.DOWN;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.hasSize;
 
 @ServerTest
 class ObserveHealthDetailsTest {
@@ -72,10 +71,10 @@ class ObserveHealthDetailsTest {
 
             assertThat(response.status(), is(Status.OK_200));
             JsonObject json = response.as(JsonObject.class);
-            assertThat(json.getString("status"), is("UP"));
-            JsonArray checks = json.getJsonArray("checks");
+            assertThat(json.stringValue("status").orElseThrow(), is("UP"));
+            JsonArray checks = json.arrayValue("checks").orElseThrow();
             assertThat(checks, notNullValue());
-            assertThat(checks, hasSize(1));
+            assertThat(checks.size(), is(1));
         }
 
         try (Http1ClientResponse response = httpClient.method(Method.HEAD)
@@ -93,10 +92,10 @@ class ObserveHealthDetailsTest {
                 .request()) {
             assertThat(response.status(), is(Status.SERVICE_UNAVAILABLE_503));
             JsonObject json = response.as(JsonObject.class);
-            assertThat(json.getString("status"), is("DOWN"));
-            JsonArray checks = json.getJsonArray("checks");
+            assertThat(json.stringValue("status").orElseThrow(), is("DOWN"));
+            JsonArray checks = json.arrayValue("checks").orElseThrow();
             assertThat(checks, notNullValue());
-            assertThat(checks, hasSize(1));
+            assertThat(checks.size(), is(1));
         }
 
         try (Http1ClientResponse response = httpClient.method(Method.HEAD)
@@ -118,10 +117,10 @@ class ObserveHealthDetailsTest {
 
             assertThat(response.status(), is(Status.OK_200));
             JsonObject json = response.as(JsonObject.class);
-            assertThat(json.getString("status"), is("UP"));
-            JsonArray checks = json.getJsonArray("checks");
+            assertThat(json.stringValue("status").orElseThrow(), is("UP"));
+            JsonArray checks = json.arrayValue("checks").orElseThrow();
             assertThat(checks, notNullValue());
-            assertThat(checks, hasSize(0));
+            assertThat(checks.size(), is(0));
         }
 
         healthCheck.status(DOWN);
@@ -130,10 +129,10 @@ class ObserveHealthDetailsTest {
 
             assertThat(response.status(), is(Status.OK_200));
             JsonObject json = response.as(JsonObject.class);
-            assertThat(json.getString("status"), is("UP"));
-            JsonArray checks = json.getJsonArray("checks");
+            assertThat(json.stringValue("status").orElseThrow(), is("UP"));
+            JsonArray checks = json.arrayValue("checks").orElseThrow();
             assertThat(checks, notNullValue());
-            assertThat(checks, hasSize(0));
+            assertThat(checks.size(), is(0));
         }
     }
 
@@ -144,10 +143,10 @@ class ObserveHealthDetailsTest {
 
             assertThat(response.status(), is(Status.OK_200));
             JsonObject json = response.as(JsonObject.class);
-            assertThat(json.getString("status"), is("UP"));
-            JsonArray checks = json.getJsonArray("checks");
+            assertThat(json.stringValue("status").orElseThrow(), is("UP"));
+            JsonArray checks = json.arrayValue("checks").orElseThrow();
             assertThat(checks, notNullValue());
-            assertThat(checks, hasSize(0));
+            assertThat(checks.size(), is(0));
         }
 
         healthCheck.status(DOWN);
@@ -156,10 +155,10 @@ class ObserveHealthDetailsTest {
 
             assertThat(response.status(), is(Status.OK_200));
             JsonObject json = response.as(JsonObject.class);
-            assertThat(json.getString("status"), is("UP"));
-            JsonArray checks = json.getJsonArray("checks");
+            assertThat(json.stringValue("status").orElseThrow(), is("UP"));
+            JsonArray checks = json.arrayValue("checks").orElseThrow();
             assertThat(checks, notNullValue());
-            assertThat(checks, hasSize(0));
+            assertThat(checks.size(), is(0));
         }
     }
 
@@ -170,10 +169,10 @@ class ObserveHealthDetailsTest {
 
             assertThat(response.status(), is(Status.OK_200));
             JsonObject json = response.as(JsonObject.class);
-            assertThat(json.getString("status"), is("UP"));
-            JsonArray checks = json.getJsonArray("checks");
+            assertThat(json.stringValue("status").orElseThrow(), is("UP"));
+            JsonArray checks = json.arrayValue("checks").orElseThrow();
             assertThat(checks, notNullValue());
-            assertThat(checks, hasSize(1));
+            assertThat(checks.size(), is(1));
         }
 
         healthCheck.status(DOWN);
@@ -181,10 +180,10 @@ class ObserveHealthDetailsTest {
                 .request()) {
             assertThat(response.status(), is(Status.SERVICE_UNAVAILABLE_503));
             JsonObject json = response.as(JsonObject.class);
-            assertThat(json.getString("status"), is("DOWN"));
-            JsonArray checks = json.getJsonArray("checks");
+            assertThat(json.stringValue("status").orElseThrow(), is("DOWN"));
+            JsonArray checks = json.arrayValue("checks").orElseThrow();
             assertThat(checks, notNullValue());
-            assertThat(checks, hasSize(1));
+            assertThat(checks.size(), is(1));
         }
     }
 
@@ -195,10 +194,10 @@ class ObserveHealthDetailsTest {
 
             assertThat(response.status(), is(Status.OK_200));
             JsonObject json = response.as(JsonObject.class);
-            assertThat(json.getString("status"), is("UP"));
-            assertThat(json.getString("name"), is("ready-1"));
-            JsonObject data = json.getJsonObject("data");
-            assertThat(data.getString("detail"), is("message"));
+            assertThat(json.stringValue("status").orElseThrow(), is("UP"));
+            assertThat(json.stringValue("name").orElseThrow(), is("ready-1"));
+            JsonObject data = json.objectValue("data").orElseThrow();
+            assertThat(data.stringValue("detail").orElseThrow(), is("message"));
         }
 
         healthCheck.status(DOWN);
@@ -206,10 +205,10 @@ class ObserveHealthDetailsTest {
                 .request()) {
             assertThat(response.status(), is(Status.SERVICE_UNAVAILABLE_503));
             JsonObject json = response.as(JsonObject.class);
-            assertThat(json.getString("status"), is("DOWN"));
-            assertThat(json.getString("name"), is("ready-1"));
-            JsonObject data = json.getJsonObject("data");
-            assertThat(data.getString("detail"), is("message"));
+            assertThat(json.stringValue("status").orElseThrow(), is("DOWN"));
+            assertThat(json.stringValue("name").orElseThrow(), is("ready-1"));
+            JsonObject data = json.objectValue("data").orElseThrow();
+            assertThat(data.stringValue("detail").orElseThrow(), is("message"));
         }
     }
 
@@ -220,10 +219,10 @@ class ObserveHealthDetailsTest {
 
             assertThat(response.status(), is(Status.OK_200));
             JsonObject json = response.as(JsonObject.class);
-            assertThat(json.getString("status"), is("UP"));
-            assertThat(json.getString("name"), is("ready-1"));
-            JsonObject data = json.getJsonObject("data");
-            assertThat(data.getString("detail"), is("message"));
+            assertThat(json.stringValue("status").orElseThrow(), is("UP"));
+            assertThat(json.stringValue("name").orElseThrow(), is("ready-1"));
+            JsonObject data = json.objectValue("data").orElseThrow();
+            assertThat(data.stringValue("detail").orElseThrow(), is("message"));
         }
 
         healthCheck.status(DOWN);
@@ -231,10 +230,10 @@ class ObserveHealthDetailsTest {
                 .request()) {
             assertThat(response.status(), is(Status.SERVICE_UNAVAILABLE_503));
             JsonObject json = response.as(JsonObject.class);
-            assertThat(json.getString("status"), is("DOWN"));
-            assertThat(json.getString("name"), is("ready-1"));
-            JsonObject data = json.getJsonObject("data");
-            assertThat(data.getString("detail"), is("message"));
+            assertThat(json.stringValue("status").orElseThrow(), is("DOWN"));
+            assertThat(json.stringValue("name").orElseThrow(), is("ready-1"));
+            JsonObject data = json.objectValue("data").orElseThrow();
+            assertThat(data.stringValue("detail").orElseThrow(), is("message"));
         }
     }
 }

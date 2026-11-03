@@ -15,14 +15,14 @@
  */
 package io.helidon.openapi;
 
-import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Map;
 
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonReader;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
+import io.helidon.json.JsonValueType;
+
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
@@ -45,16 +45,15 @@ class SimpleOpenApiManagerTest {
                       + "null: null\n"
                       + "binary: !!binary \"" + HELLO_BASE64 + "\"\n";
         String formatted = manager.format(raw, OpenApiFormat.JSON);
-        JsonReader reader = Json.createReader(new StringReader(formatted));
-        JsonObject jsonObject = reader.readObject();
-        assertThat(jsonObject.getBoolean("plain-boolean"), is(true));
-        assertThat(jsonObject.getString("quoted-boolean"), is("true"));
-        assertThat(jsonObject.getString("yaml-boolean"), is("on"));
-        assertThat(jsonObject.getString("date"), is("2026-08-13"));
-        assertThat(jsonObject.getInt("integer"), is(100));
-        assertThat(jsonObject.getJsonNumber("float").doubleValue(), is(1.1D));
-        assertThat(jsonObject.isNull("null"), is(true));
-        assertThat(jsonObject.getString("binary"), is(HELLO_BASE64));
+        JsonObject jsonObject = JsonParser.create(formatted).readJsonValue().asObject();
+        assertThat(jsonObject.booleanValue("plain-boolean").orElseThrow(), is(true));
+        assertThat(jsonObject.stringValue("quoted-boolean").orElseThrow(), is("true"));
+        assertThat(jsonObject.stringValue("yaml-boolean").orElseThrow(), is("on"));
+        assertThat(jsonObject.stringValue("date").orElseThrow(), is("2026-08-13"));
+        assertThat(jsonObject.intValue("integer").orElseThrow(), is(100));
+        assertThat(jsonObject.doubleValue("float").orElseThrow(), is(1.1D));
+        assertThat(jsonObject.value("null").orElseThrow().type(), is(JsonValueType.NULL));
+        assertThat(jsonObject.stringValue("binary").orElseThrow(), is(HELLO_BASE64));
     }
 
     @Test

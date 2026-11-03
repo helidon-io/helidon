@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package io.helidon.webserver;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
@@ -29,13 +28,12 @@ import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.UnsupportedTypeException;
-import io.helidon.http.media.jsonp.JsonpSupport;
+import io.helidon.http.media.json.JsonSupport;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 import io.helidon.webserver.spi.ProtocolConfig;
 import io.helidon.webserver.spi.ServerConnectionSelector;
 
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonStructure;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -104,24 +102,24 @@ public class WebServerConfigTest {
         EntityWriter<JsonObject> writer = mediaContext.writer(GenericType.create(JsonObject.class), writableHeaders);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
         writer.write(GenericType.create(JsonObject.class),
-                     Json.createObjectBuilder()
-                             .add("name", "John Smith")
+                     JsonObject.builder()
+                             .set("name", "John Smith")
                              .build(),
                      outputStream,
                      writableHeaders);
         outputStream.close();
         // Verify written data
-        JsonObject verify = Json.createObjectBuilder()
-                .add("name", "John Smith")
+        JsonObject verify = JsonObject.builder()
+                .set("name", "John Smith")
                 .build();
-        JsonStructure js = Json.createReader(new ByteArrayInputStream(outputStream.toByteArray())).read();
-        assertThat(js.asJsonObject(), is(verify));
+        JsonObject json = JsonParser.create(outputStream.toByteArray()).readJsonObject();
+        assertThat(json, is(verify));
     }
 
     // Check that WebServer MediaContext builder produces expected provider using MediaContext configuration from Config file:
     //  - java service loader disabled in server node of application.yaml
     //  - JSON should not be present
-    // Writing JsonObject should work and produce valid JSON data.
+    // Writing JsonObject should fail on missing JSON media support.
     @Test
     void testMediaSupportFileConfigNoJson() throws IOException {
         Config config = Config.create();
@@ -133,8 +131,8 @@ public class WebServerConfigTest {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
         assertThrows(UnsupportedTypeException.class, () -> writer.write(
                           GenericType.create(JsonObject.class),
-                          Json.createObjectBuilder()
-                                  .add("name", "John Smith")
+                          JsonObject.builder()
+                                  .set("name", "John Smith")
                                   .build(),
                           outputStream,
                           writableHeaders));
@@ -152,7 +150,7 @@ public class WebServerConfigTest {
                 .config(config.get("server"))
                 .mediaContext(MediaContext.builder()
                                       .mediaSupportsDiscoverServices(false)
-                                      .addMediaSupport(JsonpSupport.create(Config.empty()))
+                                      .addMediaSupport(JsonSupport.create())
                                       .build())
                 .buildPrototype();
         MediaContext mediaContext = wsConfig.mediaContext().orElseThrow();
@@ -161,24 +159,24 @@ public class WebServerConfigTest {
         EntityWriter<JsonObject> writer = mediaContext.writer(GenericType.create(JsonObject.class), writableHeaders);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream(1024);
         writer.write(GenericType.create(JsonObject.class),
-                     Json.createObjectBuilder()
-                             .add("name", "John Smith")
+                     JsonObject.builder()
+                             .set("name", "John Smith")
                              .build(),
                      outputStream,
                      writableHeaders);
         outputStream.close();
         // Verify written data
-        JsonObject verify = Json.createObjectBuilder()
-                .add("name", "John Smith")
+        JsonObject verify = JsonObject.builder()
+                .set("name", "John Smith")
                 .build();
-        JsonStructure js = Json.createReader(new ByteArrayInputStream(outputStream.toByteArray())).read();
-        assertThat(js.asJsonObject(), is(verify));
+        JsonObject json = JsonParser.create(outputStream.toByteArray()).readJsonObject();
+        assertThat(json, is(verify));
     }
 
     // Check that WebServer MediaContext builder produces expected provider using manually built MediaContext:
     //  - java service loader disabled
     //  - JSON not added manually
-    // Writing JsonObject should fail on missing JSOn media support.
+    // Writing JsonObject should fail on missing JSON media support.
     @Test
     void testMediaSupportManualConfigNoJson() throws IOException {
         Config config = Config.create();
@@ -196,8 +194,8 @@ public class WebServerConfigTest {
         assertThrows(UnsupportedTypeException.class,
                      () -> writer.write(
                           GenericType.create(JsonObject.class),
-                          Json.createObjectBuilder()
-                                  .add("name", "John Smith")
+                          JsonObject.builder()
+                                  .set("name", "John Smith")
                                   .build(),
                           outputStream,
                           writableHeaders));

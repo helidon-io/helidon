@@ -20,7 +20,8 @@ import java.util.List;
 import java.util.Map;
 
 import io.helidon.http.media.MediaContext;
-import io.helidon.http.media.jsonp.JsonpSupport;
+import io.helidon.http.media.json.JsonSupport;
+import io.helidon.json.JsonObject;
 import io.helidon.tracing.Tracer;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
@@ -30,7 +31,6 @@ import io.helidon.webserver.WebServer;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.sdk.trace.data.EventData;
 import io.opentelemetry.sdk.trace.data.SpanData;
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -107,7 +107,7 @@ class TracingTest extends TestParent {
                 .servicesDiscoverServices(false)
                 .addService(WebClientTracing.create(tracer))
                 .mediaContext(MediaContext.builder()
-                        .addMediaSupport(JsonpSupport.create())
+                        .addMediaSupport(JsonSupport.create())
                         .build())
                 .config(CONFIG.get("client"))
                 .build();

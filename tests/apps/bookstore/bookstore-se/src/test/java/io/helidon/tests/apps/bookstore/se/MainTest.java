@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,20 @@
 
 package io.helidon.tests.apps.bookstore.se;
 
-import io.helidon.webserver.testing.junit5.ServerTest;
-import io.helidon.webserver.testing.junit5.SetUpServer;
-import io.helidon.webserver.WebServer;
-import io.helidon.webserver.WebServerConfig;
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonReader;
-import org.junit.jupiter.api.Test;
-
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
+import io.helidon.webserver.WebServer;
+import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.testing.junit5.ServerTest;
+import io.helidon.webserver.testing.junit5.SetUpServer;
+
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -86,9 +86,11 @@ public class MainTest {
         assertThat(getBookRes.statusCode(), is(200));
         assertThat(getBookRes.version(), is(HttpClient.Version.HTTP_1_1));
         assertThat(getBooksRes.headers().firstValue("content-length").orElse(null), notNullValue());
-        JsonReader jsonReader = Json.createReader(getBookRes.body());
-        JsonObject jsonObject = jsonReader.readObject();
-        assertThat("Checking if correct ISBN", jsonObject.getString("isbn"), is("123456"));
+        JsonObject jsonObject;
+        try (var input = getBookRes.body()) {
+            jsonObject = JsonParser.create(input).readJsonValue().asObject();
+        }
+        assertThat("Checking if correct ISBN", jsonObject.stringValue("isbn").orElseThrow(), is("123456"));
 
 
         HttpRequest deleteBookReq = HttpRequest.newBuilder()

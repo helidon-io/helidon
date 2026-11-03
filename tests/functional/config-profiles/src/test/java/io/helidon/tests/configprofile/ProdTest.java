@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 
 package io.helidon.tests.configprofile;
 
+import io.helidon.json.JsonObject;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.http.HttpRouting;
 
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
@@ -52,6 +52,6 @@ class ProdTest {
         JsonObject jsonObject = client.get()
                 .path("/greet")
                 .requestEntity(JsonObject.class);
-        assertThat(jsonObject.getString("message"), is("Hello Prod World!"));
+        assertThat(jsonObject.stringValue("message").orElseThrow(), is("Hello Prod World!"));
     }
 }

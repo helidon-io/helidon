@@ -29,12 +29,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Queue;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 
@@ -43,9 +45,6 @@ import com.oracle.bedrock.runtime.LocalPlatform;
 import com.oracle.bedrock.runtime.console.CapturingApplicationConsole;
 import com.oracle.bedrock.runtime.options.Arguments;
 import com.oracle.bedrock.runtime.options.Console;
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -221,14 +220,13 @@ class MainTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"se"})
-    void basicTestJsonB(String edition) throws Exception {
-        runJsonFunctionalTest(edition, "jsonb");
+    void basicTestJsonBinding(String edition) throws Exception {
+        runJsonFunctionalTest(edition, "json_binding");
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"se"})
-    void basicTestJackson(String edition) throws Exception {
-        runJsonFunctionalTest(edition, "jackson");
+    @Test
+    void basicTestJsonBindingModules() throws Exception {
+        runJsonFunctionalTest("se", "json_binding", true);
     }
 
     @ParameterizedTest
@@ -238,13 +236,8 @@ class MainTest {
     }
 
     @Test
-    void basicTestMetricsHealthJsonB() throws Exception {
-        runMetricsAndHealthTest("se", "jsonb", false);
-    }
-
-    @Test
-    void basicTestMetricsHealthJackson() throws Exception {
-        runMetricsAndHealthTest("se", "jackson", false);
+    void basicTestMetricsHealthJsonBinding() throws Exception {
+        runMetricsAndHealthTest("se", "json_binding", false);
     }
 
     @ParameterizedTest
@@ -253,17 +246,26 @@ class MainTest {
         runMetricsAndHealthTest(edition, "", true);
     }
 
+    @Test
+    void basicTestMetricsHealthJsonBindingModules() throws Exception {
+        runMetricsAndHealthTest("se", "json_binding", true);
+    }
+
     /**
      * Run some basic CRUD operations on the server. The server supports
-     * running with any of our three JSON libraries: jsonp, jsonb, jackson.
+     * running with Helidon JSON trees or native JSON binding.
      * So we set a system property to select the library to use before starting
      * the server
      *
      * @param edition "se"
-     * @param jsonLibrary "jsonp" or "jsonb"
+     * @param jsonLibrary "json" or "json_binding"
      * @throws Exception on test failure
      */
     private void runJsonFunctionalTest(String edition, String jsonLibrary) throws Exception {
+        runJsonFunctionalTest(edition, jsonLibrary, false);
+    }
+
+    private void runJsonFunctionalTest(String edition, String jsonLibrary, boolean useModules) throws Exception {
         JsonObject json = getBookAsJsonObject();
         int numberOfBooks = 1000;
         List<String> systemPropertyArgs = new LinkedList<>();
@@ -273,7 +275,9 @@ class MainTest {
             systemPropertyArgs.add("-Dapp.json-library=" + jsonLibrary);
         }
 
-        HelidonApplication application = startTheApplication(editionToJarPath(edition), systemPropertyArgs);
+        HelidonApplication application = useModules
+                ? startTheApplicationModule(editionToJarPath(edition), systemPropertyArgs, editionToModuleName(edition))
+                : startTheApplication(editionToJarPath(edition), systemPropertyArgs);
         try {
             WebClient webClient = WebClient.builder()
                     .baseUri(application.getBaseUrl().toURI())
@@ -292,7 +296,21 @@ class MainTest {
             JsonObject book = webClient
                     .get("/books/123456")
                     .requestEntity(JsonObject.class);
-            assertThat("Checking if correct ISBN", book.getString("isbn"), is("123456"));
+            assertThat("Checking if correct ISBN", book.stringValue("isbn").orElseThrow(), is("123456"));
+            assertThat("Checking all book fields and nested authors", book, is(json));
+
+            JsonObject updatedBook = JsonObject.builder()
+                    .from(book)
+                    .set("title", "Updated title")
+                    .set("authors", JsonArray.create(JsonObject.builder()
+                            .set("first", "Updated")
+                            .set("last", "Author")
+                            .build()))
+                    .build();
+            response = webClient.put("/books/123456").submit(updatedBook);
+            assertThat("HTTP response PUT", response.status(), is(Status.OK_200));
+            book = webClient.get("/books/123456").requestEntity(JsonObject.class);
+            assertThat("Checking updated book and nested authors", book, is(updatedBook));
 
             response = webClient.get()
                     .path("/books/0000")
@@ -315,12 +333,12 @@ class MainTest {
 
     /**
      * Run some basic metrics and health operations on the server. The server supports
-     * running with any of our three JSON libraries: jsonp, jsonb, jackson.
+     * running with Helidon JSON trees or native JSON binding.
      * So we set a system property to select the library to use before starting
      * the server
      *
      * @param edition "se"
-     * @param jsonLibrary "jsonp", "jsonb" or "jackson"
+     * @param jsonLibrary "json" or "json_binding"
      * @param useModules true to use modulepath, false to use classpath
      * @throws Exception on test failure
      */
@@ -352,25 +370,22 @@ class MainTest {
 
             JsonObject jsonObject;
 
-            // current metrics implementation not compatible with Jackson
-            if (!Objects.equals(jsonLibrary, "jackson")) {
-                var response = webClient.get()
-                        .path("/metrics")
-                        .header(HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON_VALUE)
-                        .request(JsonObject.class);
+            var response = webClient.get()
+                    .path("/metrics")
+                    .header(HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON_VALUE)
+                    .request(JsonObject.class);
 
-                assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.status(), is(Status.OK_200));
 
-                jsonObject = response.entity();
-                assertThat("Checking request count",
-                        jsonObject.getInt("requests.count"), greaterThan(0));
-            }
+            jsonObject = response.entity();
+            assertThat("Checking request count",
+                    jsonObject.intValue("requests.count").orElseThrow(), greaterThan(0));
 
             jsonObject = webClient.get()
                     .path("/health")
                     .header(HeaderNames.ACCEPT, MediaTypes.APPLICATION_JSON.text())
                     .requestEntity(JsonObject.class);
-            assertThat("Checking health status", jsonObject.getString("status"), is("UP"));
+            assertThat("Checking health status", jsonObject.stringValue("status").orElseThrow(), is("UP"));
         } finally {
             application.stop();
         }
@@ -396,11 +411,12 @@ class MainTest {
     }
 
     private JsonObject getBookAsJsonObject() throws IOException {
-        InputStream is = getClass().getClassLoader().getResourceAsStream("book.json");
-        if (is != null) {
-            return Json.createReader(is).readObject();
-        } else {
-            throw new IOException("Could not find resource book.json");
+        try (InputStream is = getClass().getClassLoader().getResourceAsStream("book.json")) {
+            if (is != null) {
+                return JsonParser.create(is).readJsonValue().asObject();
+            } else {
+                throw new IOException("Could not find resource book.json");
+            }
         }
     }
 

@@ -1,8 +1,5 @@
 # Bookstore Functional Test
 
-This test runs and tests the Bookstore application. It 
-tests the following variations
-
-* Helidon Bookstore with JSON-P
-* Helidon Bookstore with JSON-B
-* Helidon Bookstore with Jackson
+This test runs the Bookstore application using Helidon JSON trees (the default)
+and native Helidon JSON binding. Both variants cover CRUD operations, metrics,
+and health. Module-path startup, lifecycle, and routing checks are also included.

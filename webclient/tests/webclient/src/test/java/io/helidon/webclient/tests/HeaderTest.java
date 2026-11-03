@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.webclient.tests;
 import java.util.List;
 
 import io.helidon.http.HeaderNames;
+import io.helidon.json.JsonObject;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
@@ -26,7 +27,6 @@ import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.spi.WebClientService;
 import io.helidon.webserver.WebServer;
 
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;

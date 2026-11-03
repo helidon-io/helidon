@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,13 @@
 
 package io.helidon.tests.apps.bookstore.common;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
-import io.helidon.tests.apps.bookstore.common.AuthorMapper;
-import io.helidon.tests.apps.bookstore.common.Book;
-
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonArrayBuilder;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 
 public class BookMapper {
 
@@ -39,12 +36,6 @@ public class BookMapper {
     private static final String COPYRIGHT = "copyright";
     private static final String AUTHORS = "authors";
 
-    /*
-     * Use JsonBuilderFactory (and not the Json factory) to create builders.
-     * This lets us cache the builder factory and improves performance dramatically.
-     */
-    private static final JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(null);
-
     private BookMapper() {
     }
 
@@ -53,34 +44,34 @@ public class BookMapper {
      * @param book Book to convert to JSON
      * @return new JsonObject representing book
      */
-    public static JsonObject encodeJsonp(Book book) {
-        JsonObject jo = JSON_FACTORY.createObjectBuilder()
-                .add(ISBN, book.getIsbn())
-                .add(TITLE, book.getTitle())
-                .add(DESCRIPTION, book.getDescription())
-                .add(SUMMARY, book.getSummary())
-                .add(GENRE, book.getGenre())
-                .add(CATEGORY, book.getCategory())
-                .add(PUBLISHER, book.getPublisher())
-                .add(COPYRIGHT, book.getCopyright())
-                .add(AUTHORS, AuthorMapper.encode(book.getAuthors()))
+    public static JsonObject encode(Book book) {
+        JsonObject jo = JsonObject.builder()
+                .set(ISBN, book.getIsbn())
+                .set(TITLE, book.getTitle())
+                .set(DESCRIPTION, book.getDescription())
+                .set(SUMMARY, book.getSummary())
+                .set(GENRE, book.getGenre())
+                .set(CATEGORY, book.getCategory())
+                .set(PUBLISHER, book.getPublisher())
+                .set(COPYRIGHT, book.getCopyright())
+                .set(AUTHORS, AuthorMapper.encode(book.getAuthors()))
                 .build();
         return jo;
     }
 
-    public static JsonArray encodeJsonp(Collection<Book> books) {
-        JsonArrayBuilder builder = JSON_FACTORY.createArrayBuilder();
+    public static JsonArray encode(Collection<Book> books) {
+        List<JsonValue> values = new ArrayList<>();
         for (Book b : books) {
-            builder.add(encodeJsonp(b));
+            values.add(encode(b));
         }
-        return builder.build();
+        return JsonArray.create(values);
     }
 
     /**
      * @param jo JsonObject representation to convert to Book pojo
      * @return New Book pojo
      */
-    public static Book decodeJsonp(JsonObject jo) {
+    public static Book decode(JsonObject jo) {
         return updateBook(new Book(), jo);
     }
 
@@ -90,15 +81,33 @@ public class BookMapper {
      * @return Updated book
      */
     private static Book updateBook(Book book, JsonObject jo) {
-        if (jo.containsKey(ISBN)) book.setIsbn(jo.getString(ISBN));
-        if (jo.containsKey(TITLE)) book.setTitle(jo.getString(TITLE));
-        if (jo.containsKey(DESCRIPTION)) book.setDescription(jo.getString(DESCRIPTION));
-        if (jo.containsKey(SUMMARY)) book.setSummary(jo.getString(SUMMARY));
-        if (jo.containsKey(GENRE)) book.setGenre(jo.getString(GENRE));
-        if (jo.containsKey(CATEGORY)) book.setCategory(jo.getString(CATEGORY));
-        if (jo.containsKey(PUBLISHER)) book.setPublisher(jo.getString(PUBLISHER));
-        if (jo.containsKey(COPYRIGHT)) book.setCopyright(jo.getString(COPYRIGHT));
-        if (jo.containsKey(AUTHORS)) book.setAuthors(AuthorMapper.decode(jo.getJsonArray(AUTHORS)));
+        if (jo.containsKey(ISBN)) {
+            book.setIsbn(jo.stringValue(ISBN).orElseThrow());
+        }
+        if (jo.containsKey(TITLE)) {
+            book.setTitle(jo.stringValue(TITLE).orElseThrow());
+        }
+        if (jo.containsKey(DESCRIPTION)) {
+            book.setDescription(jo.stringValue(DESCRIPTION).orElseThrow());
+        }
+        if (jo.containsKey(SUMMARY)) {
+            book.setSummary(jo.stringValue(SUMMARY).orElseThrow());
+        }
+        if (jo.containsKey(GENRE)) {
+            book.setGenre(jo.stringValue(GENRE).orElseThrow());
+        }
+        if (jo.containsKey(CATEGORY)) {
+            book.setCategory(jo.stringValue(CATEGORY).orElseThrow());
+        }
+        if (jo.containsKey(PUBLISHER)) {
+            book.setPublisher(jo.stringValue(PUBLISHER).orElseThrow());
+        }
+        if (jo.containsKey(COPYRIGHT)) {
+            book.setCopyright(jo.stringValue(COPYRIGHT).orElseThrow());
+        }
+        if (jo.containsKey(AUTHORS)) {
+            book.setAuthors(AuthorMapper.decode(jo.arrayValue(AUTHORS).orElseThrow()));
+        }
         return book;
     }
 }

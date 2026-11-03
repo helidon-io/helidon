@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,16 +24,15 @@ module io.helidon.tests.apps.bookstore.se {
     requires io.helidon.config;
     requires io.helidon.health.checks;
     requires io.helidon.health;
-    requires io.helidon.http.media.jackson;
-    requires io.helidon.http.media.jsonb;
-    requires io.helidon.http.media.jsonp;
+    requires io.helidon.http.media.json.binding;
+    requires io.helidon.http.media.json;
     requires io.helidon.logging.common;
     requires io.helidon.logging.jul;
     requires io.helidon.tests.apps.bookstore.common;
     requires io.helidon.webserver.observe.health;
     requires io.helidon.webserver.observe.metrics;
     requires io.helidon.webserver;
-    requires jakarta.json;
+    requires io.helidon.json;
 
     exports io.helidon.tests.apps.bookstore.se;
 	

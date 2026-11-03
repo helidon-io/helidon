@@ -30,9 +30,6 @@ import io.helidon.json.schema.Schema;
 import io.helidon.json.schema.spi.JsonSchemaProvider;
 import io.helidon.service.registry.Service;
 
-import jakarta.json.bind.annotation.JsonbCreator;
-import jakarta.json.bind.annotation.JsonbProperty;
-import jakarta.json.bind.annotation.JsonbTransient;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -115,9 +112,9 @@ class SchemaTypesTest {
 
         checkField(toCheck, checked, fields, "LAZY_VALUE", LazyValue.class);
 
-        checkField(toCheck, checked, fields, "JSONB_TRANSIENT", JsonbTransient.class);
-        checkField(toCheck, checked, fields, "JSONB_PROPERTY", JsonbProperty.class);
-        checkField(toCheck, checked, fields, "JSONB_CREATOR", JsonbCreator.class);
+        checkField(toCheck, checked, fields, "JSONB_TRANSIENT", "jakarta.json.bind.annotation.JsonbTransient");
+        checkField(toCheck, checked, fields, "JSONB_PROPERTY", "jakarta.json.bind.annotation.JsonbProperty");
+        checkField(toCheck, checked, fields, "JSONB_CREATOR", "jakarta.json.bind.annotation.JsonbCreator");
 
         checkField(toCheck, checked, fields, "SERVICE_NAMED_BY_TYPE", Service.NamedByType.class);
         checkField(toCheck, checked, fields, "SERVICE_SINGLETON", Service.Singleton.class);
@@ -128,13 +125,21 @@ class SchemaTypesTest {
                             Map<String, Field> namesToFields,
                             String name,
                             Class<?> expectedType) {
+        checkField(namesToCheck, checkedNames, namesToFields, name, expectedType.getCanonicalName());
+    }
+
+    private void checkField(Set<String> namesToCheck,
+                            Set<String> checkedNames,
+                            Map<String, Field> namesToFields,
+                            String name,
+                            String expectedType) {
         Field field = namesToFields.get(name);
         assertThat("Field " + name + " does not exist in the class", field, notNullValue());
         try {
             namesToCheck.remove(name);
             if (checkedNames.add(name)) {
                 TypeName value = (TypeName) field.get(null);
-                assertThat("Field " + name, value.fqName(), is(expectedType.getCanonicalName()));
+                assertThat("Field " + name, value.fqName(), is(expectedType));
             } else {
                 fail("Field " + name + " is checked more than once.class");
             }

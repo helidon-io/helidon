@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,15 @@
 package io.helidon.webclient.tests;
 
 import java.io.InputStream;
-import java.util.Collections;
 
 import io.helidon.http.Status;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.UnsupportedTypeException;
+import io.helidon.json.JsonObject;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
 
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation;
 import org.junit.jupiter.api.Order;
@@ -48,7 +45,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @TestMethodOrder(OrderAnnotation.class)
 public class MediaContextTest extends TestParent {
 
-    private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());
     private static final String DEFAULT_GREETING;
     private static final JsonObject JSON_GREETING;
     private static final JsonObject JSON_NEW_GREETING;
@@ -56,12 +52,12 @@ public class MediaContextTest extends TestParent {
     static {
         DEFAULT_GREETING = CONFIG.get("app.greeting").asString().orElse("Hello");
 
-        JSON_GREETING = JSON_BUILDER.createObjectBuilder()
-                .add("message", DEFAULT_GREETING + " World!")
+        JSON_GREETING = JsonObject.builder()
+                .set("message", DEFAULT_GREETING + " World!")
                 .build();
 
-        JSON_NEW_GREETING = JSON_BUILDER.createObjectBuilder()
-                .add("greeting", "Hola")
+        JSON_NEW_GREETING = JsonObject.builder()
+                .set("greeting", "Hola")
                 .build();
     }
 
@@ -115,7 +111,7 @@ public class MediaContextTest extends TestParent {
         Http1Client client = Http1Client.builder()
                 .baseUri("http://localhost:" + server.port() + "/greet")
                 .mediaContext(MediaContext.builder()
-                        //.addMediaReader(JsonpSupport.create().reader())
+                        //.addMediaReader(JsonSupport.create().reader())
                         .mediaSupportsDiscoverServices(false)
                         .build())
                 .build();
@@ -138,7 +134,7 @@ public class MediaContextTest extends TestParent {
         Http1Client client = Http1Client.builder()
                 .baseUri("http://localhost:" + server.port() + "/greet")
                 .mediaContext(MediaContext.builder()
-                        //.addMediaWriter(JsonpSupport.create().writer())
+                        //.addMediaWriter(JsonSupport.create().writer())
                         .mediaSupportsDiscoverServices(false)
                         .build())
                 .build();
@@ -150,6 +146,6 @@ public class MediaContextTest extends TestParent {
                 response.as(JsonObject.class);
             }
         });
-        assertThat(ex.getMessage(), startsWith("No client response media support for interface"));
+        assertThat(ex.getMessage(), startsWith("No client response media support for class"));
     }
 }
