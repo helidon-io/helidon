@@ -28,7 +28,7 @@ import javax.net.ssl.X509TrustManager;
 
 import io.grpc.ManagedChannel;
 import io.opentelemetry.api.metrics.MeterProvider;
-import io.opentelemetry.exporter.internal.grpc.GrpcExporterBuilder;
+import io.opentelemetry.exporter.otlp.internal.GrpcExporterBuilder;
 import io.opentelemetry.sdk.common.internal.StandardComponentId;
 
 import static io.opentelemetry.api.internal.Utils.checkArgument;

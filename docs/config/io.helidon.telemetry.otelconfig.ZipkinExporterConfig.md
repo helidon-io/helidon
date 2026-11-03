@@ -2,7 +2,7 @@
 
 ## Description
 
-Configuration for the deprecated OpenTelemetry Zipkin exporter
+Configuration for the deprecated Helidon Zipkin HTTP exporter
 
 ## Configuration options
 

@@ -594,16 +594,18 @@ Here we enable MicroProfile Telemetry, set tracer to "otlp" and give a name,
 which will be used to identify our service in the tracer.
 
 > [!WARNING]
-> The OpenTelemetry Zipkin exporter is deprecated. OpenTelemetry stopped
-> publishing it in 1.65.0, and Helidon 27 removes support for it. Existing
-> Helidon 4 applications can continue using `otel.traces.exporter=zipkin` with
-> the corresponding dependency shown below, but should migrate to the OTLP
-> exporter:
+> OpenTelemetry stopped publishing its Zipkin exporter in 1.65.0. Helidon 4
+> provides a deprecated compatibility bridge using Helidon WebClient to send
+> Zipkin HTTP/HTTPS requests. Replace the old OTel exporter dependency with:
 >
 >     <dependency>
->         <groupId>io.opentelemetry</groupId>
->         <artifactId>opentelemetry-exporter-zipkin</artifactId>
+>         <groupId>io.helidon.tracing</groupId>
+>         <artifactId>helidon-tracing-exporter-zipkin</artifactId>
 >     </dependency>
+>
+> Keep `otel.traces.exporter=zipkin`, `otel.exporter.zipkin.endpoint`, and
+> `otel.exporter.zipkin.timeout` unchanged. Do not include both exporters.
+> Migrate to an OTLP exporter for long-term support.
 
 ### Tracing at Method Level
 

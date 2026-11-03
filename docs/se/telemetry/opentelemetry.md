@@ -339,10 +339,11 @@ See [Configuration options][io-helidon-telem-5].
 
 
 > [!WARNING]
-> The OpenTelemetry Zipkin exporter is deprecated. OpenTelemetry stopped
-> publishing it in 1.65.0, and Helidon 27 removes support for it. Existing
-> Helidon 4 applications can continue using the exporter with the aligned OTel
-> version, but should migrate to the OTLP exporter.
+> OpenTelemetry stopped publishing its Zipkin exporter in 1.65.0. Replace
+> that dependency with `io.helidon.tracing:helidon-tracing-exporter-zipkin`.
+> The Helidon replacement is a deprecated compatibility bridge using WebClient
+> for HTTP/HTTPS transport. Existing Zipkin configuration remains supported.
+> Do not include both exporters; migrate to OTLP for long-term support.
 
 ### Zipkin Exporter
 
@@ -397,7 +398,7 @@ If you need to use an exporter that is *not* in the table:
 - Prepare the Helidon OpenTelemetry builders programmatically and add your
   exporter instance to the builder.
 
-In the table below, the Maven artifacts are all in the `io.opentelemetry` group.
+In the table below, Maven artifacts are in the `io.opentelemetry` group unless a group is shown explicitly.
 
 <table>
 <thead>
@@ -419,7 +420,7 @@ In the table below, the Maven artifacts are all in the `io.opentelemetry` group.
 <tr>
 <td><a href="../../config/io.helidon.telemetry.otelconfig.ZipkinExporterConfig.md"><code>zipkin</code></a> (deprecated)</td>
 <td><code>ZipkinSpanExporter</code> (deprecated)</td>
-<td><code>opentelemetry-exporter-zipkin</code> (last published before OTel 1.65.0)</td>
+<td><code>io.helidon.tracing:helidon-tracing-exporter-zipkin</code></td>
 </tr>
 <tr>
 <td><code>console</code></td>

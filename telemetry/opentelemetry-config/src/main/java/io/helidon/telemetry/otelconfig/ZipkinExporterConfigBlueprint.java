@@ -30,7 +30,7 @@ import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.reporter.Sender;
 
 /**
- * Configuration for the deprecated OpenTelemetry Zipkin exporter.
+ * Configuration for the deprecated Helidon Zipkin HTTP exporter.
  *
  * @deprecated OpenTelemetry stopped publishing the Zipkin exporter in 1.65.0. This configuration is removed in
  * Helidon 27. Use {@link OtlpExporterConfig} instead.

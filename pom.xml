@@ -197,7 +197,7 @@
         <javadoc.link.typesafe-config>https://static.javadoc.io/com.typesafe/config/${version.lib.typesafe-config}</javadoc.link.typesafe-config>
         <javadoc.link.opentracing>https://static.javadoc.io/io.opentracing/opentracing-api/${version.lib.opentracing}</javadoc.link.opentracing>
         <javadoc.link.prometheus>https://static.javadoc.io/io.prometheus/simpleclient/${version.lib.prometheus}</javadoc.link.prometheus>
-        <javadoc.link.zipkin>https://static.javadoc.io/io.zipkin.reporter2/zipkin-reporter/2.12.3</javadoc.link.zipkin>
+        <javadoc.link.zipkin>https://javadoc.io/doc/io.zipkin.reporter2/zipkin-reporter/${version.lib.zipkin.reporter}</javadoc.link.zipkin>
         <javadoc.link.grpc-api>https://grpc.github.io/grpc-java/javadoc</javadoc.link.grpc-api>
 
         <!--suppress UnresolvedMavenProperty -->

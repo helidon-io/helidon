@@ -36,8 +36,6 @@ import io.opentelemetry.exporter.otlp.http.logs.OtlpHttpLogRecordExporter;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
 import io.opentelemetry.exporter.otlp.logs.OtlpGrpcLogRecordExporter;
 import io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter;
-import io.opentelemetry.exporter.zipkin.ZipkinSpanExporter;
-import io.opentelemetry.exporter.zipkin.ZipkinSpanExporterBuilder;
 import io.opentelemetry.sdk.common.export.ProxyOptions;
 import io.opentelemetry.sdk.common.export.RetryPolicy;
 import io.opentelemetry.sdk.logs.export.LogRecordExporter;
@@ -118,23 +116,15 @@ class OtlpExporterConfigSupport {
 
         @Deprecated(since = "4.5.4", forRemoval = true)
         @SuppressWarnings({"deprecation", "removal"})
-        static ZipkinSpanExporter createZipkinSpanExporter(Config config) {
+        static SpanExporter createZipkinSpanExporter(Config config) {
             LOGGER.log(System.Logger.Level.WARNING,
-                       "The OpenTelemetry Zipkin exporter is deprecated and is removed in Helidon 27 because "
-                               + "OpenTelemetry stopped publishing it in 1.65.0. Migrate to the OTLP exporter.");
-            ZipkinSpanExporterBuilder builder = ZipkinSpanExporter.builder();
-
-            var zipkinConfig = ZipkinExporterConfig.create(config);
-
-            zipkinConfig.compression().map(CompressionType::lowerCase).ifPresent(builder::setCompression);
-            zipkinConfig.encoder().ifPresent(builder::setEncoder);
-            zipkinConfig.endpoint().map(URI::toASCIIString).ifPresent(builder::setEndpoint);
-            zipkinConfig.timeout().ifPresent(builder::setReadTimeout);
-            zipkinConfig.sender().ifPresent(builder::setSender);
-            zipkinConfig.localIpAddressSupplier().ifPresent(builder::setLocalIpAddressSupplier);
-            zipkinConfig.meterProvider().ifPresent(builder::setMeterProvider);
-
-            return builder.build();
+                       "The Helidon Zipkin exporter is a deprecated compatibility bridge. Migrate to the OTLP exporter.");
+            try {
+                return ZipkinExporterConfigSupport.createExporter(config);
+            } catch (NoClassDefFoundError e) {
+                throw new IllegalStateException("Zipkin exporter dependencies are missing. Add "
+                                                        + "io.helidon.tracing:helidon-tracing-exporter-zipkin.");
+            }
         }
 
         @SuppressWarnings("checkstyle:ParameterNumber") // we need all of them

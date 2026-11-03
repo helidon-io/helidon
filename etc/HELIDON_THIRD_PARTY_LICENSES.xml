@@ -9193,6 +9193,35 @@ See full text at the bottom of this document for license: Apache-2.0
 </attribution>
         </dependency>
         <dependency>
+            <name>opentelemetry-exporter-zipkin (adapted source)</name>
+            <version>1.64.0</version>
+            <licensor>OpenTelemetry authors</licensor>
+            <licenseName>Apache 2.0</licenseName>
+            <consumers>
+                <consumer>helidon-tracing-exporter-zipkin</consumer>
+            </consumers>
+            <attribution>OpenTelemetry Java Zipkin exporter conversion and metric definitions
+  Copyright The OpenTelemetry Authors
+  Apache License Version 2.0
+</attribution>
+        </dependency>
+        <dependency>
+            <name>zipkin-reporter</name>
+            <version>3.5.3</version>
+            <licensor>OpenZipkin</licensor>
+            <licenseName>Apache 2.0</licenseName>
+            <consumers>
+                <consumer>helidon-tracing-exporter-zipkin</consumer>
+            </consumers>
+            <attribution>Zipkin Reporter Core (io.zipkin.reporter2:zipkin-reporter)
+  Copyright The OpenZipkin Authors
+  Apache License Version 2.0
+  Zipkin Core Library (io.zipkin.zipkin2:zipkin:2.27.1)
+  Copyright The OpenZipkin Authors
+  Apache License Version 2.0
+</attribution>
+        </dependency>
+        <dependency>
             <id>142932</id>
             <name>opentelemetry-exporter-jaeger</name>
             <version>1.22.0</version>
@@ -10077,7 +10106,7 @@ See full text at the bottom of this document for license: Apache-2.0
         <dependency>
             <id>150715</id>
             <name>zipkin-sender-urlconnection</name>
-            <version>2.16.4</version>
+            <version>3.5.3</version>
             <licensor>OpenZipkin</licensor>
             <licenseName>Apache 2.0</licenseName>
             <consumers>

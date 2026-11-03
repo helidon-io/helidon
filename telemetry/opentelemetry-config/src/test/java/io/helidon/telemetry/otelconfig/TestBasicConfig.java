@@ -22,11 +22,11 @@ import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.tracing.exporter.zipkin.ZipkinSpanExporter;
 
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.context.propagation.ContextPropagators;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
-import io.opentelemetry.exporter.zipkin.ZipkinSpanExporter;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.samplers.Sampler;
