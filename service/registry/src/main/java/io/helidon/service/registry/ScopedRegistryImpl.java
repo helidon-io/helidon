@@ -117,17 +117,20 @@ class ScopedRegistryImpl implements ScopedRegistry {
             for (Activator<?> managedService : toShutdown) {
                 try {
                     ActivationResult activationResult = managedService.deactivate();
-                    if (activationResult.failure() && LOGGER.isLoggable(Level.DEBUG)) {
-                        if (activationResult.error().isPresent()) {
-                            LOGGER.log(Level.DEBUG,
-                                       "[" + id + "] Failed to deactivate " + managedService.description(),
-                                       activationResult.error().get());
-                            exceptions.add(activationResult.error().get());
-                        } else {
-                            LOGGER.log(Level.DEBUG,
-                                       "[" + id + "] Failed to deactivate " + managedService.description());
-                            exceptions.add(new ServiceRegistryException("Failed to deactivate " + managedService.description()
-                                                                                + ", no exception received."));
+                    if (activationResult.failure()) {
+                        exceptions.add(activationResult.error()
+                                               .orElseGet(() -> new ServiceRegistryException(
+                                                       "Failed to deactivate " + managedService.description()
+                                                               + ", no exception received.")));
+                        if (LOGGER.isLoggable(Level.DEBUG)) {
+                            if (activationResult.error().isPresent()) {
+                                LOGGER.log(Level.DEBUG,
+                                           "[" + id + "] Failed to deactivate " + managedService.description(),
+                                           activationResult.error().get());
+                            } else {
+                                LOGGER.log(Level.DEBUG,
+                                           "[" + id + "] Failed to deactivate " + managedService.description());
+                            }
                         }
                     }
                 } catch (Exception e) {
