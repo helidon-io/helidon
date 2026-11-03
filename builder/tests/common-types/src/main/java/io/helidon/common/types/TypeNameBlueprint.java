@@ -50,6 +50,7 @@ import io.helidon.common.Api;
 @Prototype.Blueprint(decorator = TypeNameSupport.Decorator.class, createEmptyPublic = false)
 @Prototype.CustomMethods(TypeNameSupport.class)
 @Prototype.Implement("java.lang.Comparable<TypeName>")
+@Prototype.IncludeDefaultMethods("enclosingType")
 interface TypeNameBlueprint extends Annotated {
     /**
      * Functions similar to {@link Class#getPackageName()}.
@@ -89,6 +90,18 @@ interface TypeNameBlueprint extends Annotated {
      */
     @Option.Singular
     List<String> enclosingNames();
+
+    /**
+     * Immediate enclosing declared type, including its annotations and type arguments, when this metadata is available.
+     * The enclosing type may itself have an enclosing type. This metadata is independent of {@link #enclosingNames()},
+     * which remains the source of enclosing class names for type identity and name rendering.
+     *
+     * @return immediate enclosing type, or empty when no enclosing type metadata is available
+     */
+    @Option.Redundant
+    default Optional<TypeName> enclosingType() {
+        return Optional.empty();
+    }
 
     /**
      * Functions similar to {@link Class#isPrimitive()}.

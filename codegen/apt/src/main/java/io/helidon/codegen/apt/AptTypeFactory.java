@@ -193,6 +193,7 @@ final class AptTypeFactory {
                 .upperBounds(typeName.upperBounds().stream().map(it -> resolveImportedTypes(it, imports)).toList())
                 .lowerBounds(typeName.lowerBounds().stream().map(it -> resolveImportedTypes(it, imports)).toList());
         typeName.componentType().ifPresent(it -> builder.componentType(resolveImportedTypes(it, imports)));
+        typeName.enclosingType().ifPresent(it -> builder.enclosingType(resolveImportedTypes(it, imports)));
         return builder.build();
     }
 
@@ -201,7 +202,8 @@ final class AptTypeFactory {
                 || typeName.typeArguments().stream().anyMatch(AptTypeFactory::hasUnqualifiedClass)
                 || typeName.upperBounds().stream().anyMatch(AptTypeFactory::hasUnqualifiedClass)
                 || typeName.lowerBounds().stream().anyMatch(AptTypeFactory::hasUnqualifiedClass)
-                || typeName.componentType().map(AptTypeFactory::hasUnqualifiedClass).orElse(false);
+                || typeName.componentType().map(AptTypeFactory::hasUnqualifiedClass).orElse(false)
+                || typeName.enclosingType().map(AptTypeFactory::hasUnqualifiedClass).orElse(false);
     }
 
     private static boolean unqualifiedClass(TypeName typeName) {
@@ -304,11 +306,16 @@ final class AptTypeFactory {
 
                 result = decorateTypeName(result, typeMirror, elements);
 
-                if (typeParams.isEmpty()) {
+                TypeMirror enclosingType = declaredType.getEnclosingType();
+                if (typeParams.isEmpty() && !(enclosingType instanceof DeclaredType)) {
                     return Optional.of(result);
                 }
 
-                return Optional.of(TypeName.builder(result).typeArguments(typeParams).build());
+                TypeName.Builder builder = TypeName.builder(result).typeArguments(typeParams);
+                if (enclosingType instanceof DeclaredType declaredEnclosingType) {
+                    createTypeName(elements, inProgress, declaredEnclosingType).ifPresent(builder::enclosingType);
+                }
+                return Optional.of(builder.build());
             } finally {
                 inProgress.remove(typeMirror);
             }

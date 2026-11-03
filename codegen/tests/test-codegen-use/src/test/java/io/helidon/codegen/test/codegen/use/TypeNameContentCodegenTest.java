@@ -46,6 +46,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static io.helidon.codegen.testing.CodegenMatchers.matches;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -372,6 +373,79 @@ public class TypeNameContentCodegenTest {
 
         assertThat(source, containsString(".enclosingType(TypeName.create(\"" + enclosingType.fqName() + "\"))"));
         assertClassGenerated(result, "ElementInfo");
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1, 2})
+    void testEnclosingTypeMetadataCompiles(int annotationMode) throws IOException, ReflectiveOperationException {
+        Annotation outerAnnotation = Annotation.builder()
+                .typeName(TypeName.create("com.example.OuterAnnotation"))
+                .build();
+        Annotation middleAnnotation = Annotation.builder()
+                .typeName(TypeName.create("com.example.MiddleAnnotation"))
+                .build();
+        Annotation innerAnnotation = Annotation.builder()
+                .typeName(TypeName.create("com.example.InnerAnnotation"))
+                .build();
+        Annotation argumentAnnotation = randomAnnotation();
+        TypeName outer = TypeName.builder()
+                .packageName("com.example")
+                .className("Outer")
+                .annotations(annotationMode > 0 ? List.of(outerAnnotation) : List.of())
+                .addTypeArgument(TypeName.builder(TypeNames.STRING)
+                                         .annotations(annotationMode > 0 ? List.of(argumentAnnotation) : List.of())
+                                         .build())
+                .build();
+        TypeName middle = TypeName.builder()
+                .packageName("com.example")
+                .addEnclosingName("Outer")
+                .className("Middle")
+                .enclosingType(outer)
+                .annotations(annotationMode == 2 ? List.of(middleAnnotation) : List.of())
+                .build();
+        TypeName typeName = TypeName.builder()
+                .packageName("com.example")
+                .enclosingNames(List.of("Outer", "Middle"))
+                .className("Inner")
+                .enclosingType(middle)
+                .annotations(annotationMode == 2 ? List.of(innerAnnotation) : List.of())
+                .build();
+        GeneratedModel model = typeNameModel("EnclosingTypeName", typeName);
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addProcessor(new ContentProcessor(model))
+                .addClasspath(List.of(Builder.class,
+                                      Prototype.class,
+                                      Annotation.class,
+                                      ElementKind.class,
+                                      TypeName.class,
+                                      TypedElementInfo.class))
+                .printDiagnostics(false)
+                .addSource("io/helidon/codegen/test/codegen/use/generated/Trigger.java", """
+                        package io.helidon.codegen.test.codegen.use.generated;
+
+                        final class Trigger {
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
+        assertClassGenerated(result, "EnclosingTypeName");
+
+        TypeName generated = generatedTypeName(result, "EnclosingTypeName");
+        TypeName generatedMiddle = generated.enclosingType().orElseThrow();
+        TypeName generatedOuter = generatedMiddle.enclosingType().orElseThrow();
+        assertThat("inner annotations", generated.annotations(), is(typeName.annotations()));
+        assertThat("middle annotations", generatedMiddle.annotations(), is(middle.annotations()));
+        assertThat("outer annotations", generatedOuter.annotations(), is(outer.annotations()));
+        assertThat("outer type arguments", generatedOuter.typeArguments(), is(outer.typeArguments()));
+        assertThat("outer argument annotations", generatedOuter.typeArguments().getFirst().annotations(),
+                   is(outer.typeArguments().getFirst().annotations()));
+        assertThat("outer nesting", generatedOuter.enclosingType().isEmpty(), is(true));
+        assertThat("middle name", generatedMiddle.fqName(), is("com.example.Outer.Middle"));
+        assertThat("inner name", generated.fqName(), is("com.example.Outer.Middle.Inner"));
+        assertThat("resolved name", generated.resolvedName(), is(typeName.resolvedName()));
+        assertThat("type identity", generated, is(typeName));
     }
 
     @ParameterizedTest
