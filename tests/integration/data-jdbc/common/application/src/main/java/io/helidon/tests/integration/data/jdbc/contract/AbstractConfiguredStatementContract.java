@@ -52,6 +52,60 @@ public abstract class AbstractConfiguredStatementContract {
     }
 
     @Test
+    protected void rejectsPositionalMarkersFromApplicationYamlBeforeSourceResolution() {
+        Config application = Config.just(ConfigSources.classpath("configured-statements/invalid/application.yaml"));
+        for (String scenario : List.of("positional", "mixed")) {
+            Config client = application.get(scenario).get("data.clients.jdbc.0");
+            // The source is deliberately unavailable so successful source resolution cannot hide late validation.
+            IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                    () -> JdbcClient.builder().config(client).build());
+            assertThat(failure.getMessage(), is("Configured SQL does not support positional markers."));
+        }
+    }
+
+    @Test
+    protected void loadsApplicationYamlStatementsThroughTheApplicationRegistry() {
+        Config application = Config.just(ConfigSources.classpath("configured-statements/application.yaml"));
+        Map<String, String> configuration = new HashMap<>(databaseConfig().asMap().get());
+        // Only connection settings come from the dynamic database fixture. The YAML file supplies every statement.
+        configuration.putAll(application.asMap().get());
+        TestConfigFactory.config(Config.just(ConfigSources.create(configuration)));
+        try {
+            ServiceRegistryManager manager = ServiceRegistryManager.start();
+            try {
+                DatabaseFixture database = manager.registry().get(DatabaseFixture.class);
+                database.reset();
+                ConfiguredOperations operations = manager.registry().get(operationsType());
+                assertThat(operations.find("beta", "alpha@example.test"), is(List.of(
+                        new ContactView(1L, "alpha", Optional.of("alpha@example.test")),
+                        new ContactView(2L, "beta", Optional.empty()))));
+                if (nullableInputs()) {
+                    assertThat(operations.find("beta", null),
+                            is(List.of(new ContactView(2L, "beta", Optional.empty()))));
+                    assertThat(operations.find(null, null), is(List.of()));
+                }
+                long key = operations.insert("yaml-key").orElseThrow();
+                assertThat(database.committedByName("yaml-key").orElseThrow().id(), is(key));
+                Tx.transaction(Tx.Type.REQUIRED, () -> {
+                    assertThat(operations.rename("yaml-commit", 1L), is(1L));
+                    return null;
+                });
+                assertThat(database.committedByName("yaml-commit").isPresent(), is(true));
+                assertThrows(TxException.class, () -> Tx.transaction(Tx.Type.REQUIRED, () -> {
+                    operations.rename("yaml-rollback", 1L);
+                    throw new IllegalStateException("The application rejected the YAML transaction.");
+                }));
+                assertThat(database.committedByName("yaml-rollback"), is(Optional.empty()));
+                assertThat(operations.find("yaml-commit", "absent").size(), is(1));
+            } finally {
+                manager.shutdown();
+            }
+        } finally {
+            TestConfigFactory.reset();
+        }
+    }
+
+    @Test
     protected void replacesReordersAndRepeatsInputsWithTheSameCompiledRepository() {
         for (String predicate : List.of("NAME = :name OR EMAIL = :email",
                 "EMAIL = :email OR NAME = :name OR EMAIL = :email")) {
