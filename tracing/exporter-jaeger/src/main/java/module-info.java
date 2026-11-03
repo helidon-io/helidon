@@ -32,6 +32,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.tracing.exporter.jaeger {
 
     requires io.opentelemetry.exporter.internal;
+    requires io.opentelemetry.exporter.otlp;
     requires io.opentelemetry.sdk.common;
     requires io.opentelemetry.sdk.trace;
     requires io.opentelemetry.api;

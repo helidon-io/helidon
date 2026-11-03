@@ -4,6 +4,23 @@ The following software (or subsets of the software) are third party dependencies
 of Helidon. They are identified by the Helidon module(s) that use them.
 
 =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+OpenTelemetry Java Zipkin exporter (adapted source, version 1.64.0)
+Apache 2.0
+Used by: [helidon-tracing-exporter-zipkin]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Span conversion, event annotation, and metric definitions adapted from OpenTelemetry Java.
+Copyright The OpenTelemetry Authors
+See full text at the bottom of this document for license: Apache-2.0
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Zipkin Reporter Core (version 3.5.3) and Zipkin Core Library (version 2.27.1)
+Apache 2.0
+Used by: [helidon-tracing-exporter-zipkin]
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+Copyright The OpenZipkin Authors
+See full text at the bottom of this document for license: Apache-2.0
+
+=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 Brave OpenTracing Java Bridge for Zipkin  The OpenZipkin Authors
 Apache 2.0
 Used by: [helidon-tracing-providers-zipkin]

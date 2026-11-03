@@ -38,6 +38,7 @@
         <module>providers</module>
         <module>provider-tests</module>
         <module>exporter-jaeger</module>
+        <module>exporter-zipkin</module>
     </modules>
 
     <profiles>

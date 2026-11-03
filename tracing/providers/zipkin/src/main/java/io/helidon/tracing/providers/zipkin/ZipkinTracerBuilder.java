@@ -37,11 +37,11 @@ import io.opentracing.Tracer;
 import io.opentracing.noop.NoopTracerFactory;
 import io.opentracing.util.GlobalTracer;
 import zipkin2.Span;
-import zipkin2.codec.BytesEncoder;
-import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.reporter.AsyncReporter;
+import zipkin2.reporter.BytesEncoder;
 import zipkin2.reporter.Reporter;
 import zipkin2.reporter.Sender;
+import zipkin2.reporter.SpanBytesEncoder;
 import zipkin2.reporter.urlconnection.URLConnectionSender;
 
 /**

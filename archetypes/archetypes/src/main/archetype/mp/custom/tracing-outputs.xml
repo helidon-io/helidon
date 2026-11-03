@@ -39,8 +39,8 @@
                 <model>
                     <list key="dependencies">
                         <map order="800">
-                            <value key="groupId">io.opentelemetry</value>
-                            <value key="artifactId">opentelemetry-exporter-zipkin</value>
+                            <value key="groupId">io.helidon.tracing</value>
+                            <value key="artifactId">helidon-tracing-exporter-zipkin</value>
                         </map>
                     </list>
                     <value key="tracing.provider.for.otel">zipkin</value>
@@ -69,7 +69,7 @@
                 <value template="mustache"><![CDATA[
 #OpenTelemetry
 otel.sdk.disabled=false
-{{#tracing.provider.deprecated}}# WARNING: The OpenTelemetry Zipkin exporter is deprecated; migrate to OTLP.
+{{#tracing.provider.deprecated}}# WARNING: The Helidon Zipkin exporter is a deprecated compatibility bridge; migrate to OTLP.
 {{/tracing.provider.deprecated}}
 otel.traces.exporter={{tracing.provider.for.otel}}
 otel.service.name=helidon-tracing-service]]></value>

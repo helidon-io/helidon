@@ -150,7 +150,7 @@
         <!-- Force upgrade okhttp3 for dependency convergence -->
         <version.lib.okhttp3>4.12.0</version.lib.okhttp3>
         <version.lib.opentelemetry.semconv>1.37.0</version.lib.opentelemetry.semconv>
-        <version.lib.opentelemetry>1.62.0</version.lib.opentelemetry>
+        <version.lib.opentelemetry>1.65.0</version.lib.opentelemetry>
         <version.lib.opentelemetry.instrumentation.annotations>2.27.0</version.lib.opentelemetry.instrumentation.annotations>
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
@@ -168,8 +168,9 @@
         <version.lib.weld-api>5.0.SP3</version.lib.weld-api>
         <version.lib.weld>5.1.6.Final</version.lib.weld>
         <version.lib.yasson>3.0.4</version.lib.yasson>
-        <version.lib.zipkin.sender-urlconnection>2.16.4</version.lib.zipkin.sender-urlconnection>
-        <version.lib.zipkin>2.12.5</version.lib.zipkin>
+        <version.lib.zipkin.reporter>3.5.3</version.lib.zipkin.reporter>
+        <version.lib.zipkin.sender-urlconnection>3.5.3</version.lib.zipkin.sender-urlconnection>
+        <version.lib.zipkin>2.27.1</version.lib.zipkin>
         <version.lib.zookeeper>3.5.7</version.lib.zookeeper>
         <version.lib.crac>1.5.0</version.lib.crac>
     </properties>
@@ -492,6 +493,11 @@
                 <groupId>io.zipkin.zipkin2</groupId>
                 <artifactId>zipkin</artifactId>
                 <version>${version.lib.zipkin}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.zipkin.reporter2</groupId>
+                <artifactId>zipkin-reporter</artifactId>
+                <version>${version.lib.zipkin.reporter}</version>
             </dependency>
             <dependency>
                 <groupId>io.zipkin.reporter2</groupId>

@@ -18,11 +18,14 @@ package io.helidon.telemetry.otelconfig;
 
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.LazyValue;
+import io.helidon.config.Config;
+import io.helidon.tracing.exporter.zipkin.ZipkinSpanExporter;
+import io.helidon.tracing.exporter.zipkin.ZipkinSpanExporterConfig;
 
-import io.opentelemetry.exporter.zipkin.ZipkinSpanExporterBuilder;
+import io.opentelemetry.sdk.trace.export.SpanExporter;
 
 /**
- * Compatibility support for the deprecated OpenTelemetry Zipkin exporter.
+ * Compatibility support for the deprecated Helidon Zipkin HTTP exporter.
  */
 @SuppressWarnings({"deprecation", "removal"})
 class ZipkinExporterConfigSupport {
@@ -30,19 +33,34 @@ class ZipkinExporterConfigSupport {
     private ZipkinExporterConfigSupport() {
     }
 
+    static SpanExporter createExporter(Config config) {
+        var builder = ZipkinSpanExporter.builder();
+        var zipkinConfig = ZipkinExporterConfig.create(config);
+        zipkinConfig.compression().map(CompressionType::lowerCase).ifPresent(builder::compression);
+        zipkinConfig.encoder().ifPresent(builder::encoder);
+        zipkinConfig.endpoint().ifPresent(builder::endpoint);
+        zipkinConfig.timeout().ifPresent(builder::timeout);
+        zipkinConfig.sender().ifPresent(builder::sender);
+        zipkinConfig.localIpAddressSupplier().ifPresent(builder::localIpAddressSupplier);
+        zipkinConfig.meterProvider().ifPresent(builder::meterProvider);
+        return builder.build();
+    }
+
     static class BuilderDecorator implements Prototype.BuilderDecorator<ZipkinExporterConfig.BuilderBase<?, ?>> {
 
         @Override
         public void decorate(ZipkinExporterConfig.BuilderBase<?, ?> target) {
 
-            LazyValue<ZipkinSpanExporterBuilder> builder = LazyValue.create(ZipkinSpanExporterBuilder::new);
+            LazyValue<ZipkinSpanExporterConfig.Builder> builder = LazyValue.create(ZipkinSpanExporter::builder);
 
-            target.compression().ifPresent(v -> builder.get().setCompression(v.lowerCase()));
-            target.endpoint().ifPresent(v -> builder.get().setEndpoint(v.toASCIIString()));
-            target.timeout().ifPresent(v -> builder.get().setReadTimeout(v));
-            target.sender().ifPresent(v -> builder.get().setSender(v));
-            target.localIpAddressSupplier().ifPresent(v -> builder.get().setLocalIpAddressSupplier(v));
-            target.meterProvider().ifPresent(v -> builder.get().setMeterProvider(v));
+            target.compression().ifPresent(v -> builder.get().compression(v.lowerCase()));
+            target.endpoint().ifPresent(v -> builder.get().endpoint(v));
+            target.timeout().ifPresent(v -> builder.get().timeout(v));
+            target.sender().ifPresent(v -> builder.get().sender(v));
+            target.localIpAddressSupplier().ifPresent(v -> builder.get().localIpAddressSupplier(v));
+            target.meterProvider().ifPresent(v -> builder.get().meterProvider(v));
+            target.encoder().ifPresent(v -> builder.get().encoder(v));
+            builder.get().buildPrototype();
 
         }
     }

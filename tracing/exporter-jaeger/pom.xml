@@ -59,6 +59,10 @@
             <artifactId>opentelemetry-exporter-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-otlp</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-api</artifactId>
         </dependency>
