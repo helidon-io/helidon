@@ -736,6 +736,29 @@ class TypeHierarchyTest {
     }
 
     @Test
+    void mergeTypeNameAnnotationsChecksEnclosingArgumentsIndependently() {
+        Annotation notBlank = Annotation.create(NOT_BLANK);
+        TypeName owner = TypeName.create("io.helidon.codegen.test.Outer");
+        TypeName inner = TypeName.create("io.helidon.codegen.test.Outer.Inner");
+        TypeName target = TypeName.builder(inner)
+                .enclosingType(TypeName.builder(owner).addTypeArgument(TypeNames.STRING).build())
+                .build();
+        TypeName source = TypeName.builder(inner)
+                .addAnnotation(notBlank)
+                .enclosingType(TypeName.builder(owner)
+                                       .addTypeArgument(TypeName.create(Integer.class))
+                                       .addAnnotation(notBlank)
+                                       .build())
+                .build();
+
+        TypeName merged = TypeHierarchy.mergeTypeNameAnnotations(target, source);
+
+        assertThat(merged.annotations(), is(List.of(notBlank)));
+        assertThat(merged.enclosingType().orElseThrow().annotations(), is(List.of()));
+        assertThat(merged.enclosingType().orElseThrow().typeArguments(), is(List.of(TypeNames.STRING)));
+    }
+
+    @Test
     void mergeTypeNameAnnotationsIgnoresFormalTypeParameterNames() {
         Annotation notBlank = Annotation.create(NOT_BLANK);
         TypeName targetType = TypeName.builder(TypeNames.LIST)

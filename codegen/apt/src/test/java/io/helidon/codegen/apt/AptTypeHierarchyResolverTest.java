@@ -228,6 +228,62 @@ class AptTypeHierarchyResolverTest {
         assertThat(processor.rounds, is(1));
     }
 
+    @Test
+    void preservesInnerAnnotationsWhenEnclosingArgumentsAreResolved() {
+        TypeName annotation = TypeName.create("example.A");
+        var processor = new HierarchyProcessor((round, _) -> {
+            TypeInfo child = round.typeInfo(TypeName.create("example.Child")).orElseThrow();
+            List<TypeHierarchyResolver.ResolvedMethod> methods = round.typeHierarchyResolver().effectiveInterfaceMethods(child);
+            TypeName returnType = method(methods, "value").method().typeName();
+            TypeName parameterType = method(methods, "accept").method().parameterArguments().getFirst().typeName();
+
+            assertAll(() -> assertThat("inherited return annotations",
+                                       returnType.annotations().stream().map(it -> it.typeName()).toList(),
+                                       is(List.of(annotation))),
+                      () -> assertThat("inherited parameter annotations",
+                                       parameterType.annotations().stream().map(it -> it.typeName()).toList(),
+                                       is(List.of(annotation))),
+                      () -> assertThat("resolved return owner argument",
+                                       returnType.enclosingType().orElseThrow().typeArguments(),
+                                       is(List.of(TypeNames.STRING))),
+                      () -> assertThat("resolved parameter owner argument",
+                                       parameterType.enclosingType().orElseThrow().typeArguments(),
+                                       is(List.of(TypeNames.STRING))));
+        });
+
+        var result = TestCompiler.builder()
+                .addProcessor(processor)
+                .currentRelease()
+                .addSource("example/Child.java", """
+                        package example;
+
+                        import java.lang.annotation.ElementType;
+                        import java.lang.annotation.Retention;
+                        import java.lang.annotation.RetentionPolicy;
+                        import java.lang.annotation.Target;
+
+                        @Target(ElementType.TYPE_USE)
+                        @Retention(RetentionPolicy.CLASS)
+                        @interface A {}
+
+                        class Outer<T> {
+                            class Inner {}
+                        }
+
+                        interface Parent<T> {
+                            Outer<T>.@A Inner value();
+                            void accept(Outer<T>.@A Inner value);
+                        }
+
+                        interface Child extends Parent<String> {}
+                        """)
+                .build()
+                .compile();
+
+        assertThat(result.diagnostics().toString(), result.success(), is(true));
+        assertThat(processor.rounds, is(1));
+    }
+
     private static TypedElementInfo element(TypeInfo type, String name) {
         return type.elementInfo().stream().filter(element -> element.elementName().equals(name)).findFirst().orElseThrow();
     }

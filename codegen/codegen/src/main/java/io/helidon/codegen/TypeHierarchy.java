@@ -524,7 +524,8 @@ public final class TypeHierarchy {
      * Matching type names merge direct and inherited annotations on the root type, type arguments, wildcard bounds,
      * array component types, and enclosing types present in both names. When both type names contain the same annotation
      * type at a matching position, the target annotation is preserved. Formal type parameter names and absent enclosing-type
-     * metadata do not block merging.
+     * metadata do not block merging. Enclosing types are checked independently so their type arguments do not prevent
+     * merging annotations on a matching inner type.
      *
      * @param typeName       target type name
      * @param sourceTypeName source type name
@@ -595,10 +596,7 @@ public final class TypeHierarchy {
                 && sameStructure(typeName.typeArguments(), sourceTypeName.typeArguments())
                 && sameStructure(typeName.lowerBounds(), sourceTypeName.lowerBounds())
                 && sameStructure(typeName.upperBounds(), sourceTypeName.upperBounds())
-                && sameStructure(typeName.componentType(), sourceTypeName.componentType())
-                && (typeName.enclosingType().isEmpty()
-                    || sourceTypeName.enclosingType().isEmpty()
-                    || sameStructure(typeName.enclosingType().get(), sourceTypeName.enclosingType().get()));
+                && sameStructure(typeName.componentType(), sourceTypeName.componentType());
     }
 
     private static boolean sameStructure(List<TypeName> typeNames, List<TypeName> sourceTypeNames) {
