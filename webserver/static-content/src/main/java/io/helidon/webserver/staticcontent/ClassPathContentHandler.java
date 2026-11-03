@@ -30,9 +30,14 @@ import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiFunction;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
@@ -55,6 +60,10 @@ class ClassPathContentHandler extends FileBasedContentHandler {
 
     // URL's hash code and equal are not suitable for map or set
     private final Map<String, ExtractedJarEntry> extracted = new ConcurrentHashMap<>();
+    private final ReadWriteLock cacheLock = new ReentrantReadWriteLock();
+    private final Lock shutdownHookLock = new ReentrantLock();
+
+    private Thread shutdownHook;
 
     ClassPathContentHandler(StaticContentSupport.ClassPathBuilder builder) {
         super(builder);
@@ -80,6 +89,30 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                     throw new HttpException("Static content processing issue", Http.Status.INTERNAL_SERVER_ERROR_500, e);
                 }
             };
+        }
+    }
+
+    static String fileName(URL url) {
+        String path = url.getPath();
+        int index = path.lastIndexOf('/');
+        if (index > -1) {
+            return path.substring(index + 1);
+        }
+
+        return path;
+    }
+
+    @Override
+    void releaseCache() {
+        cacheLock.writeLock().lock();
+        try {
+            extracted.entrySet().removeIf(entry -> entry.getValue().tempFile == null
+                    || deleteTempFile(entry.getValue().tempFile));
+            if (extracted.isEmpty()) {
+                removeShutdownHook();
+            }
+        } finally {
+            cacheLock.writeLock().unlock();
         }
     }
 
@@ -154,29 +187,44 @@ class ClassPathContentHandler extends FileBasedContentHandler {
 
         LOGGER.fine(() -> "Sending static content from classpath: " + url);
 
-        ExtractedJarEntry extrEntry = extracted
-                .compute(requestedResource, (key, entry) -> existOrCreate(url, entry));
-        if (extrEntry.tempFile == null) {
+        cacheLock.readLock().lock();
+        try {
+            ExtractedJarEntry extrEntry = extracted
+                    .compute(requestedResource, (key, entry) -> existOrCreate(url, entry));
+            if (extrEntry.tempFile == null) {
+                return false;
+            }
+            if (extrEntry.lastModified != null) {
+                processEtag(String.valueOf(extrEntry.lastModified.toEpochMilli()), request.headers(), response.headers());
+                processModifyHeaders(extrEntry.lastModified, request.headers(), response.headers());
+            }
+
+            String entryName = (extrEntry.entryName == null) ? fileName(url) : extrEntry.entryName;
+
+            processContentType(entryName,
+                               request.headers(),
+                               response.headers());
+
+            if (method == Http.Method.HEAD) {
+                response.send();
+            } else {
+                send(response, extrEntry.tempFile);
+            }
+
+            return true;
+        } finally {
+            cacheLock.readLock().unlock();
+        }
+    }
+
+    private static boolean deleteTempFile(Path path) {
+        try {
+            Files.deleteIfExists(path);
+            return true;
+        } catch (IOException | SecurityException exception) {
+            LOGGER.log(Level.WARNING, "Cannot delete extracted static resource " + path, exception);
             return false;
         }
-        if (extrEntry.lastModified != null) {
-            processEtag(String.valueOf(extrEntry.lastModified.toEpochMilli()), request.headers(), response.headers());
-            processModifyHeaders(extrEntry.lastModified, request.headers(), response.headers());
-        }
-
-        String entryName = (extrEntry.entryName == null) ? fileName(url) : extrEntry.entryName;
-
-        processContentType(entryName,
-                           request.headers(),
-                           response.headers());
-
-        if (method == Http.Method.HEAD) {
-            response.send();
-        } else {
-            send(response, extrEntry.tempFile);
-        }
-
-        return true;
     }
 
     private ExtractedJarEntry existOrCreate(URL url, ExtractedJarEntry entry) {
@@ -219,38 +267,79 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                               .map(DataChunk::create));
     }
 
-    static String fileName(URL url) {
-        String path = url.getPath();
-        int index = path.lastIndexOf('/');
-        if (index > -1) {
-            return path.substring(index + 1);
-        }
-
-        return path;
-    }
-
     private ExtractedJarEntry extractJarEntry(URL url) {
+        Path tempFile = null;
+        boolean completed = false;
         try {
             JarURLConnection jarUrlConnection = (JarURLConnection) url.openConnection();
             JarFile jarFile = jarUrlConnection.getJarFile();
-            JarEntry jarEntry = jarUrlConnection.getJarEntry();
-            if (jarEntry.isDirectory()) {
-                return new ExtractedJarEntry(jarEntry.getName()); // a directory
-            }
-            Instant lastModified = getLastModified(jarFile.getName());
+            ExtractedJarEntry result;
+            try {
+                JarEntry jarEntry = jarUrlConnection.getJarEntry();
+                if (jarEntry.isDirectory()) {
+                    result = new ExtractedJarEntry(jarEntry.getName());
+                } else {
+                    Instant lastModified = getLastModified(jarFile.getName());
 
-            // Extract JAR entry to file
-            try (InputStream is = jarFile.getInputStream(jarEntry)) {
-                Path tempFile = tmpFile.apply("ws", ".je");
-                Files.copy(is, tempFile, StandardCopyOption.REPLACE_EXISTING);
-                return new ExtractedJarEntry(tempFile, lastModified, jarEntry.getName());
+                    try (InputStream is = jarFile.getInputStream(jarEntry)) {
+                        tempFile = tmpFile.apply("ws", ".je");
+                        Files.copy(is, tempFile, StandardCopyOption.REPLACE_EXISTING);
+                    }
+                    result = new ExtractedJarEntry(tempFile, lastModified, jarEntry.getName());
+                }
             } finally {
                 if (!jarUrlConnection.getUseCaches()) {
                     jarFile.close();
                 }
             }
+            if (tempFile != null) {
+                registerShutdownHook();
+            }
+            completed = true;
+            return result;
         } catch (IOException ioe) {
             throw new HttpException("Cannot load JAR file!", Http.Status.INTERNAL_SERVER_ERROR_500, ioe);
+        } finally {
+            if (!completed && tempFile != null) {
+                deleteTempFile(tempFile);
+            }
+        }
+    }
+
+    private void registerShutdownHook() {
+        shutdownHookLock.lock();
+        try {
+            if (shutdownHook == null) {
+                try {
+                    Thread hook = new Thread(this::releaseCache, "helidon-static-content-cleanup");
+                    hook.setContextClassLoader(null);
+                    Runtime.getRuntime().addShutdownHook(hook);
+                    shutdownHook = hook;
+                } catch (SecurityException e) {
+                    LOGGER.log(Level.FINE, "JVM cleanup hook is not permitted; using WebServer shutdown cleanup", e);
+                }
+            }
+        } finally {
+            shutdownHookLock.unlock();
+        }
+    }
+
+    private void removeShutdownHook() {
+        shutdownHookLock.lock();
+        try {
+            if (shutdownHook != null) {
+                try {
+                    Runtime.getRuntime().removeShutdownHook(shutdownHook);
+                } catch (IllegalStateException e) {
+                    LOGGER.log(Level.FINEST, "JVM shutdown is in progress", e);
+                } catch (SecurityException e) {
+                    LOGGER.log(Level.FINE, "Cannot remove JVM cleanup hook", e);
+                    return;
+                }
+                shutdownHook = null;
+            }
+        } finally {
+            shutdownHookLock.unlock();
         }
     }
 
