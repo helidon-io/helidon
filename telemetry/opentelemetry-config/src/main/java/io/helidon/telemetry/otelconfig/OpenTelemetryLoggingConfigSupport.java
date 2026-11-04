@@ -85,10 +85,9 @@ class OpenTelemetryLoggingConfigSupport {
             return OtelConfigSupport.createProcessorConfig(config);
         }
 
-        @Prototype.ConfigFactoryMethod("logLimits")
-        static LogLimits createLogLimits(Config config) {
+        @Prototype.RuntimeTypeFactoryMethod("logLimits")
+        static LogLimits createLogLimits(LogLimitsConfig logLimitsConfig) {
             var builder = LogLimits.builder();
-            var logLimitsConfig = LogLimitsConfig.create(config);
 
             logLimitsConfig.maxAttributeValueLength().ifPresent(builder::setMaxAttributeValueLength);
             logLimitsConfig.maxNumberOfAttributes().ifPresent(builder::setMaxNumberOfAttributes);
@@ -96,8 +95,8 @@ class OpenTelemetryLoggingConfigSupport {
             return builder.build();
         }
 
-        @Prototype.ConfigFactoryMethod("attributes")
-        static AttributesBuilder createAttributesBuilder(Config config) {
+        @Prototype.RuntimeTypeFactoryMethod("attributes")
+        static AttributesBuilder createAttributesBuilder(TypedAttributes config) {
             return OtelConfigSupport.createAttributesBuilder(config);
         }
     }

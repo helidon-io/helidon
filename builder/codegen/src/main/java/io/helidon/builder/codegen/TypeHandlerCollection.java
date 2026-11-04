@@ -183,6 +183,25 @@ abstract class TypeHandlerCollection extends TypeHandlerContainer {
                 // maybe we should add @SuppressWarnings("unchecked")
             }
 
+        } else if (option().runtimeType().isPresent()
+                && option().runtimeType().get().factoryMethod().isPresent()) {
+            RuntimeTypeInfo runtimeTypeInfo = option().runtimeType().get();
+            FactoryMethod fm = runtimeTypeInfo.factoryMethod().get();
+            TypeName configType = fm.parameterType()
+                    .orElse(runtimeTypeInfo.optionBuilder().builderMethodType());
+            method.addContent(configGet(optionConfigured)
+                                      + ".asNodeList()"
+                                      + ".map(nodeList -> nodeList.stream()"
+                                      + ".map(cfg -> cfg.as(")
+                    .addContent(configType.genericTypeName())
+                    .addContent("::create).as(")
+                    .addContent(fm.declaringType().genericTypeName())
+                    .addContent("::")
+                    .addContent(fm.methodName())
+                    .addContent(").get()).");
+            collector.accept(method);
+            method.addContentLine(").ifPresent(this::" + setterName + ");");
+
         } else {
             method.addContent(configGet(optionConfigured)
                                       + ".asNodeList()"
@@ -198,10 +217,21 @@ abstract class TypeHandlerCollection extends TypeHandlerContainer {
     void generateMapListFromConfig(ContentBuilder<?> content, FactoryMethod factoryMethod) {
         var declaringType = factoryMethod.declaringType();
         var methodName = factoryMethod.methodName();
+        var parameterType = factoryMethod.parameterType().orElse(null);
 
-        content.addContent(declaringType.genericTypeName())
-                .addContent("::")
-                .addContent(methodName);
+        if (parameterType != null && !(parameterType.equals(Types.CONFIG) || parameterType.equals(Types.COMMON_CONFIG))) {
+            content.addContent("cfg -> cfg.as(")
+                    .addContent(parameterType.boxed().genericTypeName())
+                    .addContent(".class).as(")
+                    .addContent(declaringType.genericTypeName())
+                    .addContent("::")
+                    .addContent(methodName)
+                    .addContent(").get()");
+        } else {
+            content.addContent(declaringType.genericTypeName())
+                    .addContent("::")
+                    .addContent(methodName);
+        }
     }
 
     protected abstract String decoratorSetMethodName();
