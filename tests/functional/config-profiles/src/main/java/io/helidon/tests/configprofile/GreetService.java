@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,18 @@
 
 package io.helidon.tests.configprofile;
 
-import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.config.Config;
+import io.helidon.json.JsonObject;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
-
 public class GreetService implements HttpService {
 
     private final AtomicReference<String> greeting = new AtomicReference<>();
-
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
 
     GreetService(Config config) {
         greeting.set(config.get("app.greeting").asString().orElse("Ciao"));
@@ -51,8 +45,8 @@ public class GreetService implements HttpService {
     private void sendResponse(ServerResponse response, String name) {
         String msg = String.format("%s %s!", greeting.get(), name);
 
-        JsonObject returnObject = JSON.createObjectBuilder()
-                .add("message", msg)
+        JsonObject returnObject = JsonObject.builder()
+                .set("message", msg)
                 .build();
         response.send(returnObject);
     }

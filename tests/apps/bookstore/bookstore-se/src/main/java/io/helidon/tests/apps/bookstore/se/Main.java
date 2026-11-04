@@ -23,9 +23,8 @@ import io.helidon.config.Config;
 import io.helidon.health.checks.DeadlockHealthCheck;
 import io.helidon.health.checks.DiskSpaceHealthCheck;
 import io.helidon.health.checks.HeapMemoryHealthCheck;
-import io.helidon.http.media.jackson.JacksonSupport;
-import io.helidon.http.media.jsonb.JsonbSupport;
-import io.helidon.http.media.jsonp.JsonpSupport;
+import io.helidon.http.media.json.JsonSupport;
+import io.helidon.http.media.json.binding.JsonBindingSupport;
 import io.helidon.logging.common.LogConfig;
 import io.helidon.webserver.Routing;
 import io.helidon.webserver.WebServer;
@@ -120,7 +119,7 @@ public final class Main {
                 .asString()
                 .map(String::toUpperCase)
                 .map(JsonLibrary::valueOf)
-                .orElse(JsonLibrary.JSONP);
+                .orElse(JsonLibrary.JSON);
     }
 
     private static void configureJsonSupport(WebServerConfig.Builder wsBuilder, Config config) {
@@ -129,10 +128,11 @@ public final class Main {
         wsBuilder.mediaContext(context -> {
             context.mediaSupportsDiscoverServices(false);
             switch (jsonLibrary) {
-            case JSONP -> context.addMediaSupport(JsonpSupport.create(config));
-            case JSONB -> context.addMediaSupport(JsonbSupport.create(config));
-            case JACKSON -> context.addMediaSupport(JacksonSupport.create(config));
-            default -> throw new RuntimeException("Unknown JSON library " + jsonLibrary);
+            case JSON -> context.addMediaSupport(JsonSupport.create());
+            case JSON_BINDING -> {
+                context.addMediaSupport(JsonSupport.create());
+                context.addMediaSupport(JsonBindingSupport.create(config));
+            }
             }
         });
     }
@@ -173,8 +173,7 @@ public final class Main {
     }
 
     enum JsonLibrary {
-        JSONP,
-        JSONB,
-        JACKSON
+        JSON,
+        JSON_BINDING
     }
 }

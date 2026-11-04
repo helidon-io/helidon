@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 package io.helidon.webclient.tests;
 
 import io.helidon.http.Status;
+import io.helidon.json.JsonObject;
 import io.helidon.security.EndpointConfig;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.security.WebClientSecurity;
 import io.helidon.webserver.WebServer;
 
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -56,7 +56,7 @@ public class SecurityTest extends TestParent {
                 .request()) {
 
             assertThat(response.status(), is(Status.OK_200));
-            assertThat(response.as(JsonObject.class).getString("message"), is("Hello jack!"));
+            assertThat(response.as(JsonObject.class).stringValue("message").orElseThrow(), is("Hello jack!"));
         }
     }
 

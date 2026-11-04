@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.sse.SseEvent;
+import io.helidon.json.JsonObject;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.sse.SseSource;
@@ -32,7 +33,6 @@ import io.helidon.webserver.sse.SseSink;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.http.HeaderValues.ACCEPT_EVENT_STREAM;
@@ -148,7 +148,7 @@ class SseClientTest extends SseBaseTest {
             r.source(SseSource.TYPE, event -> {
                 JsonObject json = event.data(JsonObject.class);
                 assertThat(json, is(notNullValue()));
-                assertThat(json.getString("hello"), is("world"));
+                assertThat(json.stringValue("hello").orElseThrow(), is("world"));
                 latch.countDown();
             });
             assertThat(latch.await(5, TimeUnit.SECONDS), is(true));

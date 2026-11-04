@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,24 +19,14 @@ package io.helidon.tests.apps.bookstore.common;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.helidon.tests.apps.bookstore.common.Author;
-
-import jakarta.json.Json;
-import jakarta.json.JsonArray;
-import jakarta.json.JsonArrayBuilder;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 
 class AuthorMapper {
 
     private static final String FIRST = "first";
     private static final String LAST = "last";
-
-    /*
-     * Use JsonBuilderFactory (and not the Json factory) to create builders.
-     * This lets us cache the builder factory and improves performance dramatically.
-     */
-    private static final JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(null);
 
     private AuthorMapper() {
     }
@@ -47,9 +37,9 @@ class AuthorMapper {
      * @return new JsonObject representing author
      */
     static JsonObject encode(Author author) {
-        JsonObject jo = JSON_FACTORY.createObjectBuilder()
-                .add(FIRST, author.getFirst())
-                .add(LAST, author.getLast())
+        JsonObject jo = JsonObject.builder()
+                .set(FIRST, author.getFirst())
+                .set(LAST, author.getLast())
                 .build();
         return jo;
     }
@@ -69,23 +59,27 @@ class AuthorMapper {
      * @return Updated author
      */
     private static Author updateAuthor(Author author, JsonObject jo) {
-        if (jo.containsKey(FIRST)) author.setFirst(jo.getString(FIRST));
-        if (jo.containsKey(LAST)) author.setLast(jo.getString(LAST));
+        if (jo.containsKey(FIRST)) {
+            author.setFirst(jo.stringValue(FIRST).orElseThrow());
+        }
+        if (jo.containsKey(LAST)) {
+            author.setLast(jo.stringValue(LAST).orElseThrow());
+        }
         return author;
     }
 
     static JsonArray encode(List<Author> authors) {
-        JsonArrayBuilder builder = JSON_FACTORY.createArrayBuilder();
+        List<JsonValue> values = new ArrayList<>();
         for (Author a : authors) {
-            builder.add(encode(a));
+            values.add(encode(a));
         }
-        return builder.build();
+        return JsonArray.create(values);
     }
 
     static List<Author> decode(JsonArray authors) {
         List<Author> list = new ArrayList<>();
-        for (JsonObject jo : authors.getValuesAs(JsonObject.class)) {
-            list.add(decode(jo));
+        for (JsonValue value : authors.values()) {
+            list.add(decode(value.asObject()));
         }
         return list;
     }

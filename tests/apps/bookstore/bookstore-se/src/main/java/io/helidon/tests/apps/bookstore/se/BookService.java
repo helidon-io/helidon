@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,11 @@
 package io.helidon.tests.apps.bookstore.se;
 
 import java.util.Collection;
+import java.util.List;
 
 import io.helidon.config.Config;
 import io.helidon.http.Status;
+import io.helidon.json.JsonObject;
 import io.helidon.tests.apps.bookstore.common.Book;
 import io.helidon.tests.apps.bookstore.common.BookMapper;
 import io.helidon.tests.apps.bookstore.common.BookStore;
@@ -27,8 +29,6 @@ import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
-
-import jakarta.json.JsonObject;
 
 /**
  * Implements book service.
@@ -63,12 +63,11 @@ public class BookService implements HttpService {
     private void getBooks(ServerRequest request, ServerResponse response) {
         Collection<Book> books = BOOK_STORE.getAll();
         switch (jsonLibrary) {
-            case JSONP:
-                response.send(BookMapper.encodeJsonp(books));
+            case JSON:
+                response.send(BookMapper.encode(books));
                 break;
-            case JSONB:
-            case JACKSON:
-                response.send(books);
+            case JSON_BINDING:
+                response.send(List.copyOf(books));
                 break;
             default:
                 throw new RuntimeException("Unknown JSON library " + jsonLibrary);
@@ -77,12 +76,11 @@ public class BookService implements HttpService {
 
     private void postBook(ServerRequest request, ServerResponse response) {
         switch (jsonLibrary) {
-            case JSONP:
+            case JSON:
                 JsonObject jo = request.content().as(JsonObject.class);
-                addBook(BookMapper.decodeJsonp(jo), response);
+                addBook(BookMapper.decode(jo), response);
                 break;
-            case JSONB:
-            case JACKSON:
+            case JSON_BINDING:
                 Book book = request.content().as(Book.class);
                 addBook(book, response);
                 break;
@@ -110,11 +108,10 @@ public class BookService implements HttpService {
         }
 
         switch (jsonLibrary) {
-            case JSONP:
-                response.send(BookMapper.encodeJsonp(book));
+            case JSON:
+                response.send(BookMapper.encode(book));
                 break;
-            case JSONB:
-            case JACKSON:
+            case JSON_BINDING:
                 response.send(book);
                 break;
             default:
@@ -124,12 +121,11 @@ public class BookService implements HttpService {
 
     private void putBook(ServerRequest request, ServerResponse response) {
         switch (jsonLibrary) {
-            case JSONP:
+            case JSON:
                 JsonObject jo = request.content().as(JsonObject.class);
-                updateBook(BookMapper.decodeJsonp(jo), response);
+                updateBook(BookMapper.decode(jo), response);
                 break;
-            case JSONB:
-            case JACKSON:
+            case JSON_BINDING:
                 Book book = request.content().as(Book.class);
                 updateBook(book, response);
                 break;

@@ -19,7 +19,11 @@
  */
 module io.helidon.tests.apps.bookstore.common {
 
-    requires jakarta.json;
+    requires io.helidon.common;
+    requires io.helidon.common.buffers;
+    requires io.helidon.json;
+    requires io.helidon.json.binding;
+    requires io.helidon.service.registry;
 
     exports io.helidon.tests.apps.bookstore.common;
 

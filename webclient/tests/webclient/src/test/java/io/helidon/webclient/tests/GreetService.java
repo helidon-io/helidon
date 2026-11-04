@@ -18,7 +18,6 @@ package io.helidon.webclient.tests;
 
 import java.lang.System.Logger.Level;
 import java.security.Principal;
-import java.util.Collections;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -32,6 +31,8 @@ import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
+import io.helidon.json.JsonException;
+import io.helidon.json.JsonObject;
 import io.helidon.security.SecurityContext;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
@@ -40,11 +41,6 @@ import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
-
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonException;
-import jakarta.json.JsonObject;
 
 /**
  * A simple service to greet you. Examples:
@@ -63,7 +59,6 @@ import jakarta.json.JsonObject;
 
 public class GreetService implements HttpService {
 
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final System.Logger LOGGER = System.getLogger(GreetService.class.getName());
 
     /**
@@ -212,8 +207,8 @@ public class GreetService implements HttpService {
             updateGreetingFromJson(jsonObject, response);
         } catch (JsonException ex) {
             LOGGER.log(Level.DEBUG, "Invalid JSON", ex);
-            JsonObject jsonErrorObject = JSON.createObjectBuilder()
-                    .add("error", "Invalid JSON")
+            JsonObject jsonErrorObject = JsonObject.builder()
+                    .set("error", "Invalid JSON")
                     .build();
             response.status(Status.BAD_REQUEST_400).send(jsonErrorObject);
         }
@@ -222,8 +217,8 @@ public class GreetService implements HttpService {
     private void sendResponse(ServerResponse response, String name) {
         String msg = String.format("%s %s!", greeting.get(), name);
 
-        JsonObject returnObject = JSON.createObjectBuilder()
-                .add("message", msg)
+        JsonObject returnObject = JsonObject.builder()
+                .set("message", msg)
                 .build();
         response.send(returnObject);
     }
@@ -231,21 +226,21 @@ public class GreetService implements HttpService {
     private void updateGreetingFromJson(JsonObject jo, ServerResponse response) {
 
         if (!jo.containsKey("greeting")) {
-            JsonObject jsonErrorObject = JSON.createObjectBuilder()
-                    .add("error", "No greeting provided")
+            JsonObject jsonErrorObject = JsonObject.builder()
+                    .set("error", "No greeting provided")
                     .build();
             response.status(Status.BAD_REQUEST_400)
                     .send(jsonErrorObject);
             return;
         }
 
-        greeting.set(jo.getString("greeting"));
+        greeting.set(jo.stringValue("greeting").orElseThrow());
         response.status(Status.NO_CONTENT_204).send();
     }
 
     private void notFoundWithEntity(ServerRequest request, ServerResponse response) {
-        JsonObject jsonErrorObject = JSON.createObjectBuilder()
-                .add("error", "Not Found")
+        JsonObject jsonErrorObject = JsonObject.builder()
+                .set("error", "Not Found")
                 .build();
         response.status(Status.NOT_FOUND_404)
                 .send(jsonErrorObject);

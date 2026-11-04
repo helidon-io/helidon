@@ -16,6 +16,9 @@
 
 package io.helidon.tests.integration.packaging.se1;
 
+import io.helidon.json.binding.Json;
+
+@Json.Entity
 public class Animal {
     private TYPE type;
     private String name;

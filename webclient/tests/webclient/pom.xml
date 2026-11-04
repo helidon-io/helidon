@@ -87,7 +87,7 @@
         </dependency>
         <dependency>
             <groupId>io.helidon.http.media</groupId>
-            <artifactId>helidon-http-media-jsonp</artifactId>
+            <artifactId>helidon-http-media-json</artifactId>
         </dependency>
         <dependency>
             <artifactId>helidon-common-testing-junit5</artifactId>

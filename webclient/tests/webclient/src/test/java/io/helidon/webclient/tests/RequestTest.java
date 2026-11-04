@@ -17,19 +17,16 @@
 package io.helidon.webclient.tests;
 
 import java.net.URI;
-import java.util.Collections;
 import java.util.Optional;
 
 import io.helidon.common.GenericType;
 import io.helidon.http.Status;
+import io.helidon.json.JsonObject;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.http1.Http1ClientRequest;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
 
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -43,16 +40,15 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 class RequestTest extends TestParent {
 
-    private static final JsonBuilderFactory JSON_BUILDER = Json.createBuilderFactory(Collections.emptyMap());
     private static final JsonObject JSON_NEW_GREETING;
     private static final JsonObject JSON_OLD_GREETING;
 
     static {
-        JSON_NEW_GREETING = JSON_BUILDER.createObjectBuilder()
-                .add("greeting", "Hola")
+        JSON_NEW_GREETING = JsonObject.builder()
+                .set("greeting", "Hola")
                 .build();
-        JSON_OLD_GREETING = JSON_BUILDER.createObjectBuilder()
-                .add("greeting", CONFIG.get("app.greeting").asString().orElse("Hello"))
+        JSON_OLD_GREETING = JsonObject.builder()
+                .set("greeting", CONFIG.get("app.greeting").asString().orElse("Hello"))
                 .build();
     }
 
@@ -63,7 +59,7 @@ class RequestTest extends TestParent {
     @Test
     public void testHelloWorld() {
         JsonObject jsonObject = client.get().requestEntity(JsonObject.class);
-        assertThat(jsonObject.getString("message"), is("Hello World!"));
+        assertThat(jsonObject.stringValue("message").orElseThrow(), is("Hello World!"));
     }
 
     @Test
@@ -80,7 +76,7 @@ class RequestTest extends TestParent {
         JsonObject jsonObject = client.get()
                 .path("/redirect")
                 .requestEntity(JsonObject.class);
-        assertThat(jsonObject.getString("message"), is("Hello World!"));
+        assertThat(jsonObject.stringValue("message").orElseThrow(), is("Hello World!"));
 
         try (Http1ClientResponse response = client.get()
                 .path("/redirect")
@@ -93,7 +89,7 @@ class RequestTest extends TestParent {
     @Test
     public void testFollowRedirectPath() {
         JsonObject jsonObject = client.get("/redirectPath").requestEntity(JsonObject.class);
-        assertThat(jsonObject.getString("message"), is("Hello World!"));
+        assertThat(jsonObject.stringValue("message").orElseThrow(), is("Hello World!"));
     }
 
     @Test
@@ -113,7 +109,7 @@ class RequestTest extends TestParent {
         }
 
         JsonObject jsonObject = client.get().requestEntity(JsonObject.class);
-        assertThat(jsonObject.getString("message"), is("Hola World!"));
+        assertThat(jsonObject.stringValue("message").orElseThrow(), is("Hola World!"));
 
         try (Http1ClientResponse restoreResponse = client.put("/greeting").submit(JSON_OLD_GREETING)) {
             assertThat(restoreResponse.status().code(), is(204));
@@ -185,10 +181,10 @@ class RequestTest extends TestParent {
         Http1ClientRequest request = client.get();
         JsonObject response = request.requestEntity(JsonObject.class);
         assertThat(response, notNullValue());
-        assertThat(response.getString("message"), is("Hello World!"));
+        assertThat(response.stringValue("message").orElseThrow(), is("Hello World!"));
         response = request.requestEntity(JsonObject.class);
         assertThat(response, notNullValue());
-        assertThat(response.getString("message"), is("Hello World!"));
+        assertThat(response.stringValue("message").orElseThrow(), is("Hello World!"));
     }
 
 }

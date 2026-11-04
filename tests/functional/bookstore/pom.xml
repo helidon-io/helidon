@@ -49,6 +49,16 @@
     </build>
 
     <dependencies>
+        <dependency>
+            <groupId>io.helidon.json</groupId>
+            <artifactId>helidon-json</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.http.media</groupId>
+            <artifactId>helidon-http-media-json</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- We depend on bookstore app to make sure it is built first -->
         <dependency>
             <groupId>io.helidon.tests.apps.bookstore.bookstore-se</groupId>

@@ -23,13 +23,12 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.sse.SseEvent;
+import io.helidon.json.JsonObject;
+import io.helidon.json.binding.Json;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 import io.helidon.webserver.sse.SseSink;
-
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -93,8 +92,8 @@ class SseBaseTest {
     }
 
     static void sseJson1(ServerRequest req, ServerResponse res) {
-        JsonObject json = Json.createObjectBuilder()
-                .add("hello", "world")
+        JsonObject json = JsonObject.builder()
+                .set("hello", "world")
                 .build();
         try (SseSink sseSink = res.sink(SseSink.TYPE)) {
             SseEvent event = SseEvent.builder()
@@ -105,6 +104,7 @@ class SseBaseTest {
         }
     }
 
+    @Json.Entity
     public static class HelloWorld {
 
         private String hello;
@@ -131,25 +131,25 @@ class SseBaseTest {
     }
 
     static void sseMixed(ServerRequest req, ServerResponse res) {
-        JsonObject jsonp = Json.createObjectBuilder()
-                .add("hello", "world")
+        JsonObject tree = JsonObject.builder()
+                .set("hello", "world")
                 .build();
-        SseServerTest.HelloWorld jsonb = new SseServerTest.HelloWorld();
-        jsonb.setHello("world");
+        SseServerTest.HelloWorld pojo = new SseServerTest.HelloWorld();
+        pojo.setHello("world");
 
         try (SseSink sseSink = res.sink(SseSink.TYPE)) {
-            SseEvent eventJsonP = SseEvent.builder()
-                    .data(jsonp)
+            SseEvent eventTree = SseEvent.builder()
+                    .data(tree)
                     .mediaType(MediaTypes.APPLICATION_JSON)
                     .build();
-            SseEvent eventJsonb = SseEvent.builder()
-                    .data(jsonb)
+            SseEvent eventPojo = SseEvent.builder()
+                    .data(pojo)
                     .mediaType(MediaTypes.APPLICATION_JSON)
                     .build();
             sseSink.emit(SseEvent.create("hello"))
                     .emit(SseEvent.create("world"))
-                    .emit(eventJsonP)
-                    .emit(eventJsonb);
+                    .emit(eventTree)
+                    .emit(eventPojo);
         }
     }
 

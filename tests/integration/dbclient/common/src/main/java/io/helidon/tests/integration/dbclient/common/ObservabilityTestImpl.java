@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package io.helidon.tests.integration.dbclient.common;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
@@ -27,15 +28,15 @@ import io.helidon.dbclient.health.DbClientHealthCheck;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.http.Status;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 import io.helidon.tests.integration.dbclient.common.model.Pokemon;
 import io.helidon.tests.integration.dbclient.common.model.Types;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
 
-import jakarta.json.JsonArray;
-import jakarta.json.JsonObject;
-import jakarta.json.JsonValue;
 import org.hamcrest.CoreMatchers;
 
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -83,10 +84,10 @@ public final class ObservabilityTestImpl extends AbstractTestImpl implements Obs
         ClientResponseTyped<JsonObject> response = get("/details/health").request(JsonObject.class);
         assertThat(response.status(), equalTo(Status.OK_200));
 
-        JsonArray checks = response.entity().asJsonObject().getJsonArray("checks");
+        JsonArray checks = response.entity().arrayValue("checks").orElseThrow();
         assertThat(checks.size(), greaterThan(0));
-        for (JsonValue check : checks) {
-            String status = check.asJsonObject().getString("status");
+        for (JsonValue check : checks.values()) {
+            String status = check.asObject().stringValue("status").orElseThrow();
             assertThat(status, equalTo("UP"));
         }
     }
@@ -98,10 +99,10 @@ public final class ObservabilityTestImpl extends AbstractTestImpl implements Obs
                 .accept(MediaTypes.APPLICATION_JSON)
                 .requestEntity(JsonObject.class);
 
-        int origSelectCount = application.getInt("db.counter.select-pokemons", 0);
-        int origInsertCount = application.getInt("db.counter.insert-pokemon", 0);
-        JsonObject insertTimer = application.getJsonObject("db.timer.insert-pokemon");
-        int origInsertTimerCount = insertTimer == null ? 0 : insertTimer.getInt("count", 0);
+        int origSelectCount = application.intValue("db.counter.select-pokemons", 0);
+        int origInsertCount = application.intValue("db.counter.insert-pokemon", 0);
+        Optional<JsonObject> origInsertTimer = application.objectValue("db.timer.insert-pokemon");
+        int origInsertTimerCount = origInsertTimer.map(timer -> timer.intValue("count", 0)).orElse(0);
 
         // Call select-pokemons
         List<DbRow> ignored = db.execute().namedQuery("select-pokemons").toList();
@@ -115,20 +116,20 @@ public final class ObservabilityTestImpl extends AbstractTestImpl implements Obs
                 .accept(MediaTypes.APPLICATION_JSON)
                 .requestEntity(JsonObject.class);
 
-        int actualSelectCount = application.getInt("db.counter.select-pokemons", 0);
+        int actualSelectCount = application.intValue("db.counter.select-pokemons", 0);
         assertThat(actualSelectCount, is(origSelectCount + 1));
 
-        int actualInsertCount = application.getInt("db.counter.insert-pokemon", 0);
+        int actualInsertCount = application.intValue("db.counter.insert-pokemon", 0);
         assertThat(actualInsertCount, equalTo(origInsertCount + 1));
         assertThat(application.containsKey("db.timer.insert-pokemon"), equalTo(true));
 
-        insertTimer = application.getJsonObject("db.timer.insert-pokemon");
+        JsonObject insertTimer = application.objectValue("db.timer.insert-pokemon").orElseThrow();
         assertThat(insertTimer, is(not(nullValue())));
         assertThat(insertTimer.containsKey("count"), equalTo(true));
         assertThat(insertTimer.containsKey("mean"), equalTo(true));
         assertThat(insertTimer.containsKey("max"), equalTo(true));
 
-        int actualInsertTimerCount = insertTimer.getInt("count");
+        int actualInsertTimerCount = insertTimer.intValue("count").orElseThrow();
         assertThat(actualInsertTimerCount, equalTo(origInsertTimerCount + 1));
     }
 

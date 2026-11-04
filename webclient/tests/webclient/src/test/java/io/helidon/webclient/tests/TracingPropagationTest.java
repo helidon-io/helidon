@@ -23,7 +23,8 @@ import java.util.Map;
 import io.helidon.config.Config;
 import io.helidon.http.Status;
 import io.helidon.http.media.MediaContext;
-import io.helidon.http.media.jsonp.JsonpSupport;
+import io.helidon.http.media.json.JsonSupport;
+import io.helidon.json.JsonObject;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.tracing.WebClientTracing;
@@ -37,7 +38,6 @@ import io.helidon.webserver.testing.junit5.SetUpServer;
 
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.sdk.trace.data.SpanData;
-import jakarta.json.JsonObject;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
@@ -66,7 +66,7 @@ class TracingPropagationTest {
                 .servicesDiscoverServices(false)
                 .addService(WebClientTracing.create(tracing.tracer()))
                 .mediaContext(MediaContext.builder()
-                        .addMediaSupport(JsonpSupport.create())
+                        .addMediaSupport(JsonSupport.create())
                         .build())
                 .build();
     }

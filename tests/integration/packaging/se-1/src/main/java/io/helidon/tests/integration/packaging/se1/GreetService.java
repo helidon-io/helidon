@@ -16,26 +16,21 @@
 
 package io.helidon.tests.integration.packaging.se1;
 
-import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.config.Config;
 import io.helidon.http.Status;
+import io.helidon.json.JsonObject;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
-
-import jakarta.json.Json;
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonObject;
 
 /**
  * A simple service to greet you.
  */
 class GreetService implements HttpService {
 
-    private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     /**
      * The config value for the key {@code greeting}.
      */
@@ -86,8 +81,8 @@ class GreetService implements HttpService {
     private void sendResponse(ServerResponse response, String name) {
         String msg = String.format("%s %s!", greeting.get(), name);
 
-        JsonObject returnObject = JSON.createObjectBuilder()
-                .add("message", msg)
+        JsonObject returnObject = JsonObject.builder()
+                .set("message", msg)
                 .build();
         response.send(returnObject);
     }
@@ -102,15 +97,15 @@ class GreetService implements HttpService {
                                        ServerResponse response) {
         JsonObject jo = request.content().as(JsonObject.class);
         if (!jo.containsKey("greeting")) {
-            JsonObject jsonErrorObject = JSON.createObjectBuilder()
-                    .add("error", "No greeting provided")
+            JsonObject jsonErrorObject = JsonObject.builder()
+                    .set("error", "No greeting provided")
                     .build();
             response.status(Status.BAD_REQUEST_400)
                     .send(jsonErrorObject);
             return;
         }
 
-        greeting.set(jo.getString("greeting"));
+        greeting.set(jo.stringValue("greeting").orElseThrow());
         response.status(Status.NO_CONTENT_204).send();
     }
 
