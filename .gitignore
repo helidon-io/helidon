@@ -86,3 +86,6 @@ docs/modules/config/images
 
 # Baseline results for regression tests
 jmh-baseline.json
+
+# Local archetype notes
+/archetypes/archetypes/src/main/archetype/README.md
