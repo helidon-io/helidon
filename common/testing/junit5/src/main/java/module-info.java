@@ -25,7 +25,7 @@ module io.helidon.common.testing.junit5 {
 
     requires java.logging;
 
-    requires hamcrest.all;
+    requires org.hamcrest;
     requires org.junit.jupiter.api;
 
     exports io.helidon.common.testing.junit5;

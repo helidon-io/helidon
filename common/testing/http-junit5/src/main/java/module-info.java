@@ -21,7 +21,7 @@ module io.helidon.common.testing.http.junit5 {
 
     requires static io.helidon.common;
 
-    requires hamcrest.all;
+    requires org.hamcrest;
     requires io.helidon.http;
     requires org.junit.jupiter.api;
 

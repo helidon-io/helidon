@@ -19,7 +19,7 @@
  */
 module io.helidon.config.testing {
 
-    requires hamcrest.all;
+    requires org.hamcrest;
     requires io.helidon.config;
     requires transitive io.helidon.common.testing.junit5;
     requires org.junit.jupiter.api;

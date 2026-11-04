@@ -37,7 +37,7 @@ POM provides this management; importing only `helidon-bom` does not.
 </dependency>
 <dependency>
   <groupId>org.hamcrest</groupId>
-  <artifactId>hamcrest-all</artifactId>
+  <artifactId>hamcrest</artifactId>
   <scope>test</scope>
 </dependency>
 ```

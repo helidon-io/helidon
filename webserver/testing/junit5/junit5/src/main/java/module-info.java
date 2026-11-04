@@ -28,7 +28,7 @@ module io.helidon.webserver.testing.junit5 {
     requires io.helidon.common.testing.virtualthreads;
     requires io.helidon.config.yaml;
 
-    requires transitive hamcrest.all;
+    requires transitive org.hamcrest;
     requires transitive io.helidon.common.testing.http.junit5;
     requires transitive io.helidon.webclient;
     requires transitive io.helidon.webserver;

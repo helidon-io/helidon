@@ -27,7 +27,7 @@ module io.helidon.tracing.provider.tests {
     requires io.helidon.common.testing.junit5;
 
     requires org.junit.jupiter.api;
-    requires hamcrest.all;
+    requires org.hamcrest;
 
     provides io.helidon.tracing.SpanListener with io.helidon.tracing.providers.tests.AutoLoadedSpanListener;
 }
