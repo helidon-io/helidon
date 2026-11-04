@@ -1,0 +1,23 @@
+
+## Building the Docker Image
+
+{{#multi-module}}
+Run Docker commands from the aggregator directory, which contains the Dockerfiles and all modules.
+
+{{/multi-module}}
+```shell
+docker build -t {{artifactId}} .
+```
+
+## Running the Docker Image
+
+{{#docker-run-readme-section}}
+{{.}}
+{{/docker-run-readme-section}}
+{{^docker-run-readme-section}}
+```shell
+docker run --rm -p 8080:8080 {{artifactId}}:latest
+```
+{{/docker-run-readme-section}}
+
+Exercise the application as described above.

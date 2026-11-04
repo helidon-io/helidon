@@ -1,0 +1,12 @@
+### Database Setup
+
+In the `pom.xml` and `application.yaml` we provide configuration needed for {{server}} database.
+Start your database before running this example.
+
+The generated tests start and stop a separate MySQL database using Testcontainers.
+A Docker-compatible container runtime is required to run them, including when
+the application is configured for Oracle DB or MongoDB. These tests are skipped
+when Docker is unavailable.
+
+Example docker commands to start databases in temporary containers:
+{{start-db}}

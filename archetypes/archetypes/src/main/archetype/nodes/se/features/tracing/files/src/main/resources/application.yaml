@@ -1,0 +1,2 @@
+tracing:
+  service: helidon-tracing-service
