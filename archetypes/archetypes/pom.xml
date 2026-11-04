@@ -31,28 +31,12 @@
 
     <properties>
         <archetype.test.maxVariations>3510</archetype.test.maxVariations>
-        <version.helidon-cli>3.0.6</version.helidon-cli>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>io.helidon.build-tools.archetype</groupId>
             <artifactId>helidon-archetype-engine-v2</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-params</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -94,7 +78,7 @@
                             <goal>integration-test</goal>
                         </goals>
                         <configuration>
-                            <invokerId>io.helidon.build-tools.cli:helidon-cli-impl:zip:${version.helidon-cli}</invokerId>
+                            <invokerId>io.helidon.build-tools.cli:helidon-cli-impl:zip:3.0.6</invokerId>
                             <plansFile>${project.basedir}/src/test/archetype/plans.xml</plansFile>
                             <maxVariations>${archetype.test.maxVariations}</maxVariations>
                             <validations>
@@ -118,62 +102,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <executions>
-                    <!-- The helidon-archetype lifecycle does not compile Java tests by default. -->
-                    <execution>
-                        <id>compile-cli-tests</id>
-                        <phase>test-compile</phase>
-                        <goals>
-                            <goal>testCompile</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>unpack-test-cli</id>
-                        <phase>pre-integration-test</phase>
-                        <goals>
-                            <goal>unpack</goal>
-                        </goals>
-                        <configuration>
-                            <artifactItems>
-                                <artifactItem>
-                                    <groupId>io.helidon.build-tools.cli</groupId>
-                                    <artifactId>helidon-cli-impl</artifactId>
-                                    <version>${version.helidon-cli}</version>
-                                    <type>zip</type>
-                                    <outputDirectory>${project.build.directory}/test-cli</outputDirectory>
-                                </artifactItem>
-                            </artifactItems>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>integration-test</goal>
-                            <goal>verify</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <systemPropertyVariables>
-                        <helidon.cli.jar>${project.build.directory}/test-cli/helidon-${version.helidon-cli}/helidon-cli.jar</helidon.cli.jar>
-                        <helidon.archetype.cli-data>${project.build.directory}/cli-data</helidon.archetype.cli-data>
-                    </systemPropertyVariables>
-                </configuration>
             </plugin>
         </plugins>
     </build>
