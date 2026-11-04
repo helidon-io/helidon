@@ -52,6 +52,7 @@ import static java.lang.System.Logger.Level.DEBUG;
  * HTTP/2 headers combining pseudo headers and {@link io.helidon.http.Headers}.
  * HTTP/2 headers are all lower case.
  */
+@Api.Stable
 public class Http2Headers {
     /*
      * Pseudo headers

@@ -21,12 +21,14 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 
 /**
  * Readable HTTP entity.
  * This may be server request entity, or client response entity.
  */
+@Api.Stable
 public interface ReadableEntity {
     /**
      * Input stream to read bytes of the entity.

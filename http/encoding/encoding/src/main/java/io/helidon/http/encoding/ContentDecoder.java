@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,13 @@ package io.helidon.http.encoding;
 import java.io.InputStream;
 import java.util.function.UnaryOperator;
 
+import io.helidon.common.Api;
+
 /**
  * Content decoder.
  */
 @FunctionalInterface
+@Api.Stable
 public interface ContentDecoder extends UnaryOperator<InputStream> {
     /**
      * No op content decoder.

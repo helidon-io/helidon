@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.config.Config;
 import io.helidon.http.Headers;
@@ -35,6 +36,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * {@link java.util.ServiceLoader} provider implementation for Jackson media support.
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
+@Api.Stable
 public class JacksonSupport extends MediaSupportBase<JacksonSupportConfig> implements RuntimeType.Api<JacksonSupportConfig> {
     static final String ID = "jackson";
 

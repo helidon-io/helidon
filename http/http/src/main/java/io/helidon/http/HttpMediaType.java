@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Predicate;
 
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.media.type.ParserMode;
@@ -34,6 +35,7 @@ import io.helidon.common.media.type.ParserMode;
  *
  * @see io.helidon.http.HttpMediaTypes
  */
+@Api.Stable
 public sealed interface HttpMediaType extends Predicate<HttpMediaType>,
                                               Comparable<HttpMediaType>,
                                               MediaType permits HttpMediaTypeImpl {

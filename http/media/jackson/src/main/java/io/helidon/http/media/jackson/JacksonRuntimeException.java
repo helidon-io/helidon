@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 
 package io.helidon.http.media.jackson;
 
+import io.helidon.common.Api;
+
 /**
  * A {@link RuntimeException} that indicates a problem was encountered
  * while performing JSON manipulation with Jackson.
  */
+@Api.Stable
 public class JacksonRuntimeException extends RuntimeException {
 
     /**

@@ -24,6 +24,7 @@ import io.helidon.http.media.spi.MediaSupportProvider;
 /**
  * {@link java.util.ServiceLoader} provider implementation for support of multipart.
  */
+@Api.Internal
 public class MultiPartSupportProvider implements MediaSupportProvider {
 
     /**

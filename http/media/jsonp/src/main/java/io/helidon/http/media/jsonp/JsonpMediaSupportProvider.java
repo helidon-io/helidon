@@ -25,6 +25,7 @@ import io.helidon.http.media.spi.MediaSupportProvider;
 /**
  * {@link java.util.ServiceLoader} provider implementation for JSON Processing media support.
  */
+@Api.Internal
 public class JsonpMediaSupportProvider implements MediaSupportProvider, Weighted {
 
     /**

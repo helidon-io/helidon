@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.config.Config;
 import io.helidon.http.Headers;
@@ -37,6 +38,7 @@ import jakarta.json.JsonStructure;
  * Media support implementation for JSON Processing media support.
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
+@Api.Stable
 public class JsonpSupport extends MediaSupportBase<JsonpSupportConfig> implements RuntimeType.Api<JsonpSupportConfig> {
     /**
      * Json object generic type.

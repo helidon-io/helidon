@@ -21,6 +21,7 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.media.MediaSupportConfig;
@@ -34,6 +35,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Prototype.Blueprint(decorator = JacksonConfigSupport.Decorator.class)
 @Prototype.Configured(value = JacksonSupport.ID, root = false)
 @Prototype.Provides(MediaSupportProvider.class)
+@Api.Stable
 interface JacksonSupportConfigBlueprint extends MediaSupportConfig, Prototype.Factory<JacksonSupport> {
 
     @Option.Default(JacksonSupport.ID)

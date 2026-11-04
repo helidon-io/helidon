@@ -18,6 +18,7 @@ package io.helidon.http.encoding;
 
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.config.NamedService;
 
 /**
@@ -25,6 +26,7 @@ import io.helidon.config.NamedService;
  * or directly implemented.
  * Content encoding/decoding modifies bytes on the wire, for example to compress it.
  */
+@Api.Stable
 public interface ContentEncoding extends NamedService {
     /**
      * Identification(s) of this scheme.

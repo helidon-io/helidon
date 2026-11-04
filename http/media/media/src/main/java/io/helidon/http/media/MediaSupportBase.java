@@ -16,6 +16,7 @@
 
 package io.helidon.http.media;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.Headers;
@@ -30,6 +31,7 @@ import io.helidon.http.HttpMediaType;
  *
  * @param <T> the configuration object used by the subtype, must extend {@link io.helidon.http.media.MediaSupportConfig}
  */
+@Api.Stable
 public abstract class MediaSupportBase<T extends MediaSupportConfig> implements MediaSupport {
     private final T config;
     private final String type;

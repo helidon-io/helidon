@@ -19,12 +19,14 @@ package io.helidon.http.http2;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.HeaderName;
 
 /**
  * HTTP/2 utility.
  */
+@Api.Internal
 public final class Http2Util {
     private static final byte[] PRIOR_KNOWLEDGE_PREFACE =
             "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n".getBytes(StandardCharsets.UTF_8);

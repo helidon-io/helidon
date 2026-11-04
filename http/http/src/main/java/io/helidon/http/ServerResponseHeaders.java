@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 
 import static io.helidon.http.HeaderNames.EXPIRES;
@@ -31,6 +32,7 @@ import static io.helidon.http.HeaderNames.LOCATION;
 /**
  * Mutable headers of a server response.
  */
+@Api.Stable
 public interface ServerResponseHeaders extends ClientResponseHeaders,
                                                WritableHeaders<ServerResponseHeaders> {
 

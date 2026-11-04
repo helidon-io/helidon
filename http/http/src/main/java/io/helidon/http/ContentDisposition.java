@@ -29,6 +29,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperException;
 import io.helidon.common.mapper.Value;
@@ -50,6 +51,7 @@ import io.helidon.common.mapper.Value;
  * </li>
  * </ul>
  */
+@Api.Stable
 public class ContentDisposition implements Header {
     private static final String NAME_PARAMETER = "name";
     private static final String FILENAME_PARAMETER = "filename";

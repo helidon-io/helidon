@@ -16,12 +16,14 @@
 
 package io.helidon.http.media.spi;
 
+import io.helidon.common.Api;
 import io.helidon.config.ConfiguredProvider;
 import io.helidon.http.media.MediaSupport;
 
 /**
  * {@link java.util.ServiceLoader} service provider for media supports.
  */
+@Api.Stable
 public interface MediaSupportProvider extends ConfiguredProvider<MediaSupport> {
 
 }

@@ -19,6 +19,7 @@ package io.helidon.http;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.mapper.Value;
 
@@ -27,6 +28,7 @@ import io.helidon.common.mapper.Value;
  *
  * @see io.helidon.http.HeaderValues
  */
+@Api.Stable
 public interface Header extends Value<String> {
 
     /**

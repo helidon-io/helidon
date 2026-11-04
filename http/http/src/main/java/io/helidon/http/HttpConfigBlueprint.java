@@ -18,6 +18,7 @@ package io.helidon.http;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.Size;
 
 /**
@@ -26,6 +27,7 @@ import io.helidon.common.Size;
 @Prototype.Blueprint(decorator = HttpConfigSupport.BuilderDecorator.class)
 @Prototype.Configured
 @Prototype.IncludeDefaultMethods
+@Api.Stable
 interface HttpConfigBlueprint {
     /**
      * Configure the maximum allowed headers size, which must be greater than {@code 0}.

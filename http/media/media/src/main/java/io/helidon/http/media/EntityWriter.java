@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.http.media;
 
 import java.io.OutputStream;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.http.Headers;
 import io.helidon.http.WritableHeaders;
@@ -27,6 +28,7 @@ import io.helidon.http.WritableHeaders;
  *
  * @param <T> type of entity
  */
+@Api.Stable
 public interface EntityWriter<T> {
     /**
      * Whether this entity writer can provide more information about each entity instance, such as content length.

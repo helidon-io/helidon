@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import io.helidon.common.Api;
+
 /**
  * The DataChunk represents a part of the HTTP body content.
  * <p>
@@ -37,6 +39,7 @@ import java.util.concurrent.CompletableFuture;
  * threads may result in a race condition unless an external synchronization is used.
  */
 @FunctionalInterface
+@Api.Stable
 public interface DataChunk extends Iterable<ByteBuffer> {
 
     /**

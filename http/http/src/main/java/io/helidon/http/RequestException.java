@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,14 @@
 
 package io.helidon.http;
 
+import io.helidon.common.Api;
+
 /**
  * Exception that will be handled by {@link DirectHandler}, unless server request and server response
  * are already available, in which case it would be handled by appropriate error handler of routing.
  * This exception is not used by clients.
  */
+@Api.Stable
 public class RequestException extends RuntimeException {
     /**
      * Type of this event.

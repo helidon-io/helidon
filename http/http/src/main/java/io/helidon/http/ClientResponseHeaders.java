@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.media.type.ParserMode;
 
 import static io.helidon.http.HeaderNames.ACCEPT_PATCH;
@@ -33,6 +34,7 @@ import static io.helidon.http.HeaderNames.LOCATION;
 /**
  * HTTP Headers of a client response.
  */
+@Api.Stable
 public interface ClientResponseHeaders extends Headers {
     /**
      * Create a new instance from headers parsed from client response.

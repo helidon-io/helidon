@@ -18,6 +18,8 @@ package io.helidon.http;
 
 import java.util.Objects;
 
+import io.helidon.common.Api;
+
 /**
  * Commonly used status codes defined by HTTP, see
  * <a href="http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#sec10">HTTP/1.1 documentation</a>.
@@ -34,6 +36,7 @@ import java.util.Objects;
  * <p>
  * For each status, there is also a constant with the status code (int), to allow usage in annotations.
  */
+@Api.Stable
 public class Status {
     /**
      * 100 Continue,
