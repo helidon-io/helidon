@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2024 Oracle and/or its affiliates.
+    Copyright (c) 2024, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,27 +22,13 @@
     <methods>
         <method name="output">
             <output>
-                <transformation id="z-dot-jlink">
-                    <replace regex="^(.*)$" replacement="$1.jlink"/>
-                </transformation>
-                <file source="files/.dockerignore" target="dockerignore"/>
-                <templates engine="mustache" transformations="hbs,basedir">
+                <file source="files/.dockerignore" target=".dockerignore"/>
+                <templates engine="mustache" transformations="hbs">
                     <directory>files</directory>
                     <includes>
                         <include>Dockerfile.hbs</include>
+                        <include if="${docker.jlink-image}">Dockerfile.jlink.hbs</include>
                     </includes>
-                    <model>
-                        <value key="jlink">false</value>
-                    </model>
-                </templates>
-                <templates engine="mustache" transformations="hbs,z-dot-jlink,basedir" if="${docker.jlink-image}">
-                    <directory>files</directory>
-                    <includes>
-                        <include>Dockerfile.hbs</include>
-                    </includes>
-                    <model>
-                        <value key="jlink">true</value>
-                    </model>
                 </templates>
                 <model>
                     <list key="readme-sections">

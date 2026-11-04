@@ -1,6 +1,10 @@
 
 ## Building the Docker Image
 
+{{#multi-module}}
+Run Docker commands from the aggregator directory, which contains the Dockerfiles and all modules.
+
+{{/multi-module}}
 ```shell
 docker build -t {{artifactId}} .
 ```

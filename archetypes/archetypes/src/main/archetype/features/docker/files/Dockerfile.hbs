@@ -18,16 +18,13 @@ WORKDIR /helidon
 ADD pom.xml .
 {{#multi-module}}
 {{#module-names}}
-ADD {{.}}/pom.xml {{.}}/pom.xml
+ADD {{module-name}}/pom.xml {{module-name}}/pom.xml
 {{/module-names}}
 {{/multi-module}}
 RUN mvn package \
 {{#multi-module}}
     -pl {{module-name}} -am \
 {{/multi-module}}
-{{#jlink}}
-    -Pjlink-image -DskipJavaImage \
-{{/jlink}}
 {{#eclipselink}}
     -Declipselink.weave.skip \
 {{/eclipselink}}
@@ -40,34 +37,20 @@ RUN mvn package \
 # Incremental docker builds will resume here when you change sources
 {{#multi-module}}
 {{#module-names}}
-ADD {{.}}/src {{.}}/src
+ADD {{module-name}}/src {{module-name}}/src
 {{/module-names}}
 RUN mvn package \
     -pl {{module-name}} -am \
-{{#jlink}}
-    -Pjlink-image \
-{{/jlink}}
     -Dmaven.test.skip
 {{/multi-module}}
 {{^multi-module}}
 ADD src src
 RUN mvn package \
-{{#jlink}}
-    -Pjlink-image \
-{{/jlink}}
     -Dmaven.test.skip
 {{/multi-module}}
-
 RUN echo "done!"
 
 # 2nd stage, build the runtime image
-{{#jlink}}
-FROM container-registry.oracle.com/os/oraclelinux:9-slim
-WORKDIR /helidon
-COPY --from=build /helidon/target/{{artifactId}}-jri ./
-ENTRYPOINT ["/bin/bash", "/helidon/bin/start"]
-{{/jlink}}
-{{^jlink}}
 FROM container-registry.oracle.com/java/openjdk:27-oraclelinux9
 WORKDIR /helidon
 
@@ -80,8 +63,6 @@ COPY --from=build /helidon/{{module-name}}/target/libs ./libs
 COPY --from=build /helidon/target/{{artifactId}}.jar ./
 COPY --from=build /helidon/target/libs ./libs
 {{/multi-module}}
-
-CMD ["java", "-jar", "{{basedir}}/{{artifactId}}.jar"]
-{{/jlink}}
+CMD ["java", "-jar", "{{artifactId}}.jar"]
 
 EXPOSE 8080

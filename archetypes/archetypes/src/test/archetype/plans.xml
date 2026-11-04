@@ -121,6 +121,31 @@
         </rules>
     </plan>
 
+    <plan id="se/health-jpms" extends="se/custom, no-docker">
+        <values>
+            <media>json</media>
+            <media.json-lib>jsonp</media.json-lib>
+            <extra>none</extra>
+            <health>true</health>
+            <health.builtin>false</health.builtin>
+            <metrics>true</metrics>
+            <metrics.builtin>true</metrics.builtin>
+            <tracing>false</tracing>
+            <jpms>true</jpms>
+        </values>
+    </plan>
+
+    <plan id="se/docker-multi-module" extends="se/custom, no-observability, docker">
+        <values>
+            <media>json</media>
+            <media.json-lib>jsonp</media.json-lib>
+            <extra>none</extra>
+            <multi-module>true</multi-module>
+            <module-name>app</module-name>
+            <jpms>false</jpms>
+        </values>
+    </plan>
+
     <plan id="se/security" extends="se/custom, security, no-observability, no-docker">
         <values>
             <media>none</media>
