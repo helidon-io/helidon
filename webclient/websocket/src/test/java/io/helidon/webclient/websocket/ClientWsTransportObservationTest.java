@@ -48,6 +48,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ClientWsTransportObservationTest {
@@ -131,6 +132,23 @@ class ClientWsTransportObservationTest {
     @Test
     void truncatedFramePayloadIsReportedAsError() {
         assertTruncatedFrame(new byte[] {(byte) 0x82, 4, 1});
+    }
+
+    @Test
+    void oversizedFrameReportsFailureBeforeClosing() {
+        BufferData frameHeader = BufferData.growing(10);
+        frameHeader.write(0x82);
+        frameHeader.write(127);
+        frameHeader.writeInt64(1024 * 1024 + 1L);
+        var connection = new TestConnection(frameHeader.readBytes());
+
+        run(connection, new WsListener() { });
+
+        assertAll(
+                () -> assertThat(connection.outcomes, contains(ConnectionOutcome.ERROR, ConnectionOutcome.LOCAL_CLOSE)),
+                () -> assertThat(connection.writes.size(), is(1)),
+                () -> assertThat(connection.closed, is(1))
+        );
     }
 
     @Test
