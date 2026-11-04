@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,12 @@ package io.helidon.tracing;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.common.Api;
+
 /**
  * API used to configure headers when propagating tracing information across service boundaries.
  */
+@Api.Stable
 public interface HeaderConsumer extends HeaderProvider {
     /**
      * Create a header consumer over a map of headers (must be mutable).

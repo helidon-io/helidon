@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.api;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -25,6 +26,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  *     <em>Do not</em> use this for controlling overall metrics. Use {@link io.helidon.metrics.api.MetricsConfig} instead.
  * </p>
  */
+@Api.Stable
 public interface ComponentMetricsSettings {
 
     /**

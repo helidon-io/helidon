@@ -26,6 +26,7 @@ import javax.net.ssl.X509TrustManager;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.configurable.Resource;
 
 import io.opentelemetry.api.metrics.MeterProvider;
@@ -39,6 +40,7 @@ import io.opentelemetry.sdk.common.export.RetryPolicy;
  * @see io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporterBuilder
  * @see io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporterBuilder
  */
+@Api.Stable
 @Prototype.Configured
 @Prototype.Blueprint
 @Prototype.CustomMethods(OtlpExporterConfigSupport.CustomMethods.class)

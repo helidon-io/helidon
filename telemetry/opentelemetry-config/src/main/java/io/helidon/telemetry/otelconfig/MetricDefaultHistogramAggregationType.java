@@ -16,9 +16,12 @@
 
 package io.helidon.telemetry.otelconfig;
 
+import io.helidon.common.Api;
+
 /**
  * OpenTelemetry default histogram aggregation types.
  */
+@Api.Stable
 public enum MetricDefaultHistogramAggregationType {
 
     /**

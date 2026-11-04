@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MetricsPublisherConfig;
 import io.helidon.metrics.spi.MetricsPublisherProvider;
@@ -32,6 +33,7 @@ import io.micrometer.registry.otlp.AggregationTemporality;
 /**
  * Settings for the Micrometer OTLP publisher.
  */
+@Api.Stable
 @Prototype.Configured(value = OtlpPublisherProvider.TYPE, root = false)
 @Prototype.Blueprint
 @Prototype.Provides(MetricsPublisherProvider.class)

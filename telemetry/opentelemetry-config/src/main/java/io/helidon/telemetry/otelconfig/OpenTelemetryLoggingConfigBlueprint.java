@@ -22,6 +22,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.api.logs.Severity;
@@ -33,6 +34,7 @@ import io.opentelemetry.sdk.logs.export.LogRecordExporter;
  * Configuration settings for OpenTelemetry logging. Optional values left unspecified in the configuration defer to the
  * OpenTelemetry defaults.
  */
+@Api.Stable
 @Prototype.Configured
 @Prototype.Blueprint(decorator = OpenTelemetryLoggingConfigSupport.BuilderDecorator.class)
 @Prototype.CustomMethods(OpenTelemetryLoggingConfigSupport.CustomMethods.class)

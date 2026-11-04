@@ -22,6 +22,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.sdk.trace.SpanLimits;
@@ -32,6 +33,7 @@ import io.opentelemetry.sdk.trace.samplers.Sampler;
 /**
  * OpenTelemetry tracer settings. Optional values left unspecified in the configuration defer to the OpenTelemetry defaults.
  */
+@Api.Stable
 @Prototype.Configured
 @Prototype.Blueprint(decorator = OpenTelemetryTracingConfigSupport.BuilderDecorator.class)
 @Prototype.CustomMethods(OpenTelemetryTracingConfigSupport.CustomMethods.class)

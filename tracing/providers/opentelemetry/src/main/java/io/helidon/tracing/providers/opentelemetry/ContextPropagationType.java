@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
+
 import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.propagation.TextMapPropagator;
@@ -34,6 +36,7 @@ import io.opentelemetry.extension.trace.propagation.OtTracePropagator;
  * OTel configuration of propagation uses lower-case names. For user-friendliness, we allow users
  * to use the Otel-friendly names (lowercase) or the enum names (UPPERCASE) in config sources.
  */
+@Api.Stable
 public enum ContextPropagationType {
 
     /*

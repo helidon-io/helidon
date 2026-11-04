@@ -54,6 +54,7 @@ import jdk.jfr.consumer.RecordingStream;
  * JFR delivers events in batches. For performance the values we track are stored as longs without
  * concern for concurrent updates which should not happen anyway.
  */
+@Api.Internal
 public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutdownHandler, Resumable, AutoCloseable {
 
     // Parts of the meter names.

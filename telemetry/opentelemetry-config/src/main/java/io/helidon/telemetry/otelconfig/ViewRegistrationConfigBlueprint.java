@@ -21,6 +21,7 @@ import java.util.function.Predicate;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 import io.opentelemetry.sdk.metrics.Aggregation;
 import io.opentelemetry.sdk.metrics.InstrumentSelector;
@@ -28,6 +29,7 @@ import io.opentelemetry.sdk.metrics.InstrumentSelector;
 /**
  * Settings for an OpenTelemetry metrics view registration.
  */
+@Api.Stable
 @Prototype.Blueprint
 @Prototype.Configured
 @Prototype.CustomMethods(ViewRegistrationConfigSupport.CustomMethods.class)

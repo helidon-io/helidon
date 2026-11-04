@@ -29,6 +29,7 @@ import io.helidon.tracing.spi.TracerProvider;
  * Service loader provider implementation for {@link io.helidon.tracing.spi.TracerProvider}.
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 50)
+@Api.Internal
 public class OpenTelemetryTracerProvider implements TracerProvider {
     private static final AtomicBoolean APPLICATION_OPEN_TELEMETRY_SELECTED = new AtomicBoolean();
 

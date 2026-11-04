@@ -21,6 +21,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Services;
 
 /**
@@ -28,6 +29,7 @@ import io.helidon.service.registry.Services;
  * {@link java.time.Duration} value, and reports statistics over all samples (count, total time, mean, max) as well as grouping
  * samples using percentiles or bucket boundaries.
  */
+@Api.Stable
 public interface Timer extends Meter, HistogramSupport {
 
     /**

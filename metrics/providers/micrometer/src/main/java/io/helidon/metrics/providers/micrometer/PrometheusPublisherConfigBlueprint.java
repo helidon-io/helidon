@@ -21,12 +21,14 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.metrics.api.MetricsPublisherConfig;
 import io.helidon.metrics.spi.MetricsPublisherProvider;
 
 /**
  * Settings for a Micrometer Prometheus meter registry.
  */
+@Api.Stable
 @Prototype.Configured(value = PrometheusPublisherProvider.CONFIG_KEY, root = false)
 @Prototype.Blueprint
 @Prototype.Provides(MetricsPublisherProvider.class)

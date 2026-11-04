@@ -16,6 +16,7 @@
 package io.helidon.logging.slf4j;
 
 
+import io.helidon.common.Api;
 import io.helidon.logging.common.spi.MdcProvider;
 
 import org.slf4j.MDC;
@@ -24,6 +25,7 @@ import org.slf4j.MDC;
  * Provider for setting MDC values to the Slf4j MDC support.
  * This class is loaded and used via SPI.
  */
+@Api.Internal
 public class Slf4jMdcProvider implements MdcProvider {
 
     /**

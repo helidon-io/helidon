@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -33,6 +34,7 @@ import io.micrometer.registry.otlp.OtlpMeterRegistry;
 /**
  * Metrics publisher for OTLP output.
  */
+@Api.Stable
 public class OtlpPublisher implements MicrometerMetricsPublisher,
                                       RuntimeType.Api<OtlpPublisherConfig> {
 

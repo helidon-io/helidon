@@ -19,9 +19,12 @@ package io.helidon.health;
 import java.util.Map;
 import java.util.TreeMap;
 
+import io.helidon.common.Api;
+
 /**
  * Health check response.
  */
+@Api.Stable
 public interface HealthCheckResponse {
     /**
      * A new response builder.

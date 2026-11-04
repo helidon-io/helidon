@@ -34,6 +34,7 @@ import io.helidon.service.registry.ServiceRegistry;
 /**
  * Provides the Micrometer meter registry to use as a delegate for the implementation of the Helidon metrics API.
  */
+@Api.Internal
 @Weight(Weighted.DEFAULT_WEIGHT + 10)
 public class MicrometerMetricsFactoryProvider implements MetricsFactoryProvider {
 

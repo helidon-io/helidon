@@ -26,6 +26,7 @@ import io.helidon.service.registry.Service;
 /**
  * Provides SE defaults for config values defaulted in a flavor-dependent way.
  */
+@Api.Internal
 @Weight(Weighted.DEFAULT_WEIGHT - 50)
 @Service.Singleton
 public class SeMetricsProgrammaticConfig implements MetricsProgrammaticConfig {

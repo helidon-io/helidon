@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 import io.opentelemetry.context.propagation.TextMapPropagator;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
@@ -28,6 +29,7 @@ import io.opentelemetry.sdk.OpenTelemetrySdk;
 /**
  * OpenTelemetry settings.
  */
+@Api.Stable
 @Prototype.Blueprint(decorator = OpenTelemetryConfigSupport.BuildDecorator.class)
 @Prototype.Configured("telemetry")
 @Prototype.CustomMethods(OpenTelemetryConfigSupport.CustomMethods.class)

@@ -20,12 +20,14 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 
 import io.opentelemetry.api.OpenTelemetry;
 
 /**
  * Public access to OpenTelemetry as managed via Helidon config and builders.
  */
+@Api.Stable
 public interface HelidonOpenTelemetry extends RuntimeType.Api<OpenTelemetryConfig> {
 
     /**

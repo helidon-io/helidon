@@ -17,6 +17,7 @@ package io.helidon.health.checks;
 
 import java.lang.management.ManagementFactory;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.health.HealthCheck;
 
@@ -25,6 +26,7 @@ import io.helidon.health.HealthCheck;
  *
  * @see #healthChecks()
  */
+@Api.Stable
 public final class HealthChecks {
 
     static final String CONFIG_KEY_HEALTH_PREFIX = "helidon.health";

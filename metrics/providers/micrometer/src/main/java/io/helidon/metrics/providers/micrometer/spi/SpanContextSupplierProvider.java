@@ -15,12 +15,15 @@
  */
 package io.helidon.metrics.providers.micrometer.spi;
 
+import io.helidon.common.Api;
+
 import io.prometheus.metrics.tracer.common.SpanContext;
 
 /**
  * Returns a {@link io.prometheus.metrics.tracer.common.SpanContext} for use in linking trace information
  * to meters via exemplars.
  */
+@Api.Stable
 public interface SpanContextSupplierProvider {
 
     /**

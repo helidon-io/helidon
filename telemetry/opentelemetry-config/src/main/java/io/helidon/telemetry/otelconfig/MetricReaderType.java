@@ -16,9 +16,12 @@
 
 package io.helidon.telemetry.otelconfig;
 
+import io.helidon.common.Api;
+
 /**
  * OpenTelemetry metric reader types.
  */
+@Api.Stable
 public enum MetricReaderType {
 
     /*

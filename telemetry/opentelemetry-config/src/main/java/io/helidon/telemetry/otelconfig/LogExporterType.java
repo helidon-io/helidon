@@ -15,11 +15,14 @@
  */
 package io.helidon.telemetry.otelconfig;
 
+import io.helidon.common.Api;
+
 /**
  * Types of OpenTelemetry log exporters supported via Helidon telemetry logging configuration.
  * <p>
  * See <a href="https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters">OTel exporters</a>.
  */
+@Api.Stable
 public enum LogExporterType {
 
     /*

@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.logging.common.spi.MdcProvider;
 
@@ -36,6 +37,7 @@ import io.helidon.logging.common.spi.MdcProvider;
  * but also manages its own map of key/supplier pairs. Helidon resolves each lookup using that map
  * if possible, delegating a look-up to the loaded MDC providers only if there is no supplier for a key.
  */
+@Api.Stable
 public final class HelidonMdc {
 
     private static final List<MdcProvider> MDC_PROVIDERS = HelidonServiceLoader

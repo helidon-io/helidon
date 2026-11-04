@@ -16,6 +16,8 @@
 
 package io.helidon.telemetry.otelconfig;
 
+import io.helidon.common.Api;
+
 import io.opentelemetry.sdk.metrics.export.AggregationTemporalitySelector;
 
 /**
@@ -25,6 +27,7 @@ import io.opentelemetry.sdk.metrics.export.AggregationTemporalitySelector;
  *     metrics temporality preference</a>.
  *
  */
+@Api.Stable
 public enum MetricTemporalityPreferenceType {
     /**
      * Delta.

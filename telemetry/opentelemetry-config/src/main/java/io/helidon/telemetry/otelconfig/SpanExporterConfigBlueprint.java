@@ -18,7 +18,9 @@ package io.helidon.telemetry.otelconfig;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
+@Api.Stable
 @Prototype.Configured
 @Prototype.Blueprint
 interface SpanExporterConfigBlueprint {

@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.api;
 
+import io.helidon.common.Api;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.service.registry.Services;
@@ -22,6 +23,7 @@ import io.helidon.service.registry.Services;
 /**
  * Behavior of a tag for further identifying meters.
  */
+@Api.Stable
 @Configured
 public interface Tag extends Wrapper {
 

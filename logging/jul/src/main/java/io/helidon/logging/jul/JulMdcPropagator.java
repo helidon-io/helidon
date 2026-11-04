@@ -17,12 +17,14 @@ package io.helidon.logging.jul;
 
 import java.util.Map;
 
+import io.helidon.common.Api;
 import io.helidon.common.context.spi.DataPropagationProvider;
 
 /**
  * This is propagator of JUL MDC values between different threads.
  * This class is loaded and used via SPI.
  */
+@Api.Internal
 public class JulMdcPropagator implements DataPropagationProvider<Map<String, String>> {
 
     /**

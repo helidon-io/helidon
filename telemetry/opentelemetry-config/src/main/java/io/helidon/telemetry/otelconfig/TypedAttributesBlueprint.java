@@ -20,10 +20,12 @@ import java.util.Map;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Abstraction of typed attributes settable on OpenTelemetry elements.
  */
+@Api.Stable
 @Prototype.Blueprint
 @Prototype.Configured
 interface TypedAttributesBlueprint {

@@ -15,9 +15,12 @@
  */
 package io.helidon.metrics.api;
 
+import io.helidon.common.Api;
+
 /**
  * Choices for the output format for built-in meter names.
  */
+@Api.Stable
 public enum BuiltInMeterNameFormat {
     /**
      * Snake-case (i.e. {@code snake_case}).

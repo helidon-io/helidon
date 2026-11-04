@@ -20,10 +20,12 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Settings for the base 2 exponential histogram aggregation.
  */
+@Api.Stable
 @Prototype.Configured
 @Prototype.Blueprint(decorator = Base2ExponentialHistogramAggregationSupport.BuilderDecorator.class)
 @Prototype.CustomMethods(Base2ExponentialHistogramAggregationSupport.CustomMethods.class)

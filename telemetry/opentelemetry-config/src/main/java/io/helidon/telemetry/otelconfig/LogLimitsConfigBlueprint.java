@@ -19,10 +19,12 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Settings for log limits.
  */
+@Api.Stable
 @Prototype.Configured
 @Prototype.Blueprint
 interface LogLimitsConfigBlueprint {

@@ -15,9 +15,12 @@
  */
 package io.helidon.tracing;
 
+import io.helidon.common.Api;
+
 /**
  * Context of a tracing {@link io.helidon.tracing.Span}.
  */
+@Api.Stable
 public interface SpanContext {
     /**
      * Trace ID of the associated span.

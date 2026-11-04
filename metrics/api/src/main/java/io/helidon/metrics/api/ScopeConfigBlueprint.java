@@ -21,12 +21,14 @@ import java.util.regex.Pattern;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Scope configuration retained for compatibility; core metrics ignores its settings.
  *
  * @deprecated Core metrics ignores these settings, and this type will be removed.
  */
+@Api.Stable
 @Deprecated(forRemoval = true, since = "27.0.0")
 @Prototype.Annotated("java.lang.Deprecated(forRemoval = true, since = \"27.0.0\")")
 @Prototype.Configured(metadata = false)

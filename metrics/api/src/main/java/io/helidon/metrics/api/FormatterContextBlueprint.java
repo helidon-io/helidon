@@ -21,6 +21,7 @@ import java.util.Map;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 
 /**
@@ -30,6 +31,7 @@ import io.helidon.common.media.type.MediaType;
  * @see io.helidon.metrics.spi.MeterRegistryFormatterProvider#formatter(FormatterContext, MeterRegistry)
  * @since 28.0.0
  */
+@Api.Stable
 @Prototype.Blueprint(decorator = FormatterContextSupport.BuilderDecorator.class)
 @Prototype.CustomMethods(FormatterContextSupport.class)
 interface FormatterContextBlueprint {

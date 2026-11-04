@@ -16,9 +16,12 @@
 
 package io.helidon.telemetry.otelconfig;
 
+import io.helidon.common.Api;
+
 /**
  * Type of OpenTelemetry metric aggregations.
  */
+@Api.Stable
 public enum AggregationType {
 
     /**

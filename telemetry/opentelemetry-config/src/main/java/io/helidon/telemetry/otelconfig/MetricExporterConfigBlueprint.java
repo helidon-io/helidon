@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 import io.opentelemetry.sdk.metrics.export.AggregationTemporalitySelector;
 import io.opentelemetry.sdk.metrics.export.DefaultAggregationSelector;
@@ -27,6 +28,7 @@ import io.opentelemetry.sdk.metrics.export.DefaultAggregationSelector;
 /**
  * OpenTelemetry metric exporter settings.
  */
+@Api.Stable
 @Prototype.Configured
 @Prototype.Blueprint
 @Prototype.CustomMethods(MetricExporterConfigSupport.CustomMethods.class)

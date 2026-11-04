@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.logging.log4j;
 
 import java.util.Map;
 
+import io.helidon.common.Api;
 import io.helidon.common.context.spi.DataPropagationProvider;
 
 import org.apache.logging.log4j.ThreadContext;
@@ -25,6 +26,7 @@ import org.apache.logging.log4j.ThreadContext;
  * This is propagator of Log4j MDC values between different threads.
  * This class is loaded and used via SPI.
  */
+@Api.Internal
 public class Log4jMdcPropagator implements DataPropagationProvider<Map<String, String>> {
 
     @Override

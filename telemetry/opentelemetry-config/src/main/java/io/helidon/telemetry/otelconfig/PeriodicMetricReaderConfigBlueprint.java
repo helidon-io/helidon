@@ -22,10 +22,12 @@ import java.util.concurrent.ScheduledExecutorService;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Settings for OpenTelemetry periodic metric reader.
  */
+@Api.Stable
 @Prototype.Blueprint
 @Prototype.Configured
 interface PeriodicMetricReaderConfigBlueprint extends MetricReaderConfigBlueprint {

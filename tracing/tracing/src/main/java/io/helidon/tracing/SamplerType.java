@@ -16,9 +16,12 @@
 
 package io.helidon.tracing;
 
+import io.helidon.common.Api;
+
 /**
  * Sampler types (abbreviated list).
  */
+@Api.Stable
 public enum SamplerType {
 
     /**

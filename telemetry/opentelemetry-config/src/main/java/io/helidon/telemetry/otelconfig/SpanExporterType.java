@@ -16,11 +16,14 @@
 
 package io.helidon.telemetry.otelconfig;
 
+import io.helidon.common.Api;
+
 /**
  * Types of OpenTelemetry span exporters supported via Helidon {@code tracing} configuration.
  * <p>
  * See <a href="https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters">OTel exporters</a>.
  */
+@Api.Stable
 public enum SpanExporterType {
 
     /*

@@ -18,6 +18,7 @@ package io.helidon.metrics.api;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Services;
 
 /**
@@ -26,6 +27,7 @@ import io.helidon.service.registry.Services;
  *
  * @param <N> subtype of {@link Number} which a specific gauge reports
  */
+@Api.Stable
 public interface Gauge<N extends Number> extends Meter {
 
     /**
