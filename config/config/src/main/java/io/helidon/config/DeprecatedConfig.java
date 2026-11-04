@@ -18,12 +18,15 @@ package io.helidon.config;
 
 import java.lang.System.Logger.Level;
 
+import io.helidon.common.Api;
+
 /**
  * A utility class to handle configuration properties that should no longer be used.
  * <p>
  * For one major release, the property is retrieved through this class, to warn about the usage.
  * In next major release, the deprecated property is removed (as is use of this class).
  */
+@Api.Internal
 public final class DeprecatedConfig {
     private static final System.Logger LOGGER = System.getLogger(DeprecatedConfig.class.getName());
 

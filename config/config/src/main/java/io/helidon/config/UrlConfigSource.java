@@ -28,6 +28,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.spi.ChangeWatcher;
@@ -44,6 +45,7 @@ import io.helidon.config.spi.WatchableSource;
  *
  * @see AbstractConfigSourceBuilder
  */
+@Api.Stable
 public final class UrlConfigSource extends AbstractConfigSource
         implements WatchableSource<URL>, ParsableSource, PollableSource<Instant> {
 

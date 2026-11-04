@@ -15,6 +15,7 @@
  */
 package io.helidon.config.spi;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 
 /**
@@ -24,6 +25,7 @@ import io.helidon.config.Config;
  * @see ConfigFilterProvider
  */
 @FunctionalInterface
+@Api.Stable
 public interface ConfigFilterFactory {
     /**
      * Creates a new config filter.

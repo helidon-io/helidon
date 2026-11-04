@@ -17,6 +17,7 @@ package io.helidon.config;
 
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.ServiceRegistry;
 
 /**
@@ -24,6 +25,7 @@ import io.helidon.service.registry.ServiceRegistry;
  *
  * @param <T> type of the service this provider provides
  */
+@Api.Stable
 public interface ConfiguredProvider<T extends NamedService> {
     /**
      * Key this service implementation is stored under. This is also considered the service "type" when used

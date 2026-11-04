@@ -15,6 +15,7 @@
  */
 package io.helidon.config.spi;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Service;
 
 /**
@@ -24,6 +25,7 @@ import io.helidon.service.registry.Service;
  */
 @FunctionalInterface
 @Service.Contract
+@Api.Stable
 public interface ConfigFilterProvider {
     /**
      * Creates a factory once for each invocation of {@link io.helidon.config.Config.Builder#build()}.

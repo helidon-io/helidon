@@ -38,6 +38,7 @@ import io.helidon.service.registry.ServiceRegistry;
  * {@link io.helidon.builder.api.Prototype.Configured} is used.
  */
 @SuppressWarnings("ALL")
+@Api.Internal
 public final class ConfigBuilderSupport {
     // matches string between ${ } with a negative lookbehind if there is no backslash
     private static final String REGEX_REFERENCE = "(?<!\\\\)\\$\\{([^}:]+)(:.+?)?}";

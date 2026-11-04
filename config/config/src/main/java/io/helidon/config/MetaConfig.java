@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.config.spi.ChangeWatcher;
@@ -69,6 +70,7 @@ import io.helidon.service.registry.ServiceRegistry;
  *     <li>Classpath resource config source for resource {@code default.yaml} that is mandatory</li>
  * </ul>
  */
+@Api.Stable
 public final class MetaConfig {
     private static final System.Logger LOGGER = System.getLogger(MetaConfig.class.getName());
     private static final Set<MediaType> SUPPORTED_MEDIA_TYPES;

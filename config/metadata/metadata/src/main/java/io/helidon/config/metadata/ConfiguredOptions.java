@@ -22,12 +22,15 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.common.Api;
+
 /**
  * Configured options when defined on a class/interface.
  */
 @Target(ElementType.METHOD)
 @Inherited
 @Retention(RetentionPolicy.SOURCE)
+@Api.Stable
 public @interface ConfiguredOptions {
     /**
      * Group of options when used on a type.

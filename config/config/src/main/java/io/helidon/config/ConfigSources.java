@@ -32,6 +32,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigNode;
@@ -45,6 +46,7 @@ import io.helidon.config.spi.NodeConfigSource;
  *
  * @see ConfigSource
  */
+@Api.Stable
 public final class ConfigSources {
 
     static final String DEFAULT_MAP_NAME = "map";

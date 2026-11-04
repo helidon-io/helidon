@@ -28,6 +28,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.config.spi.ConfigFilter;
@@ -243,6 +244,7 @@ import io.helidon.service.registry.Services;
  * have priority over values from config sources with lower weight.
  */
 @Service.Contract
+@Api.Stable
 public interface Config {
     /**
      * Generic type of configuration.

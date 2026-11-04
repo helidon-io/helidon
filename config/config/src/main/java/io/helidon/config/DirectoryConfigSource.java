@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ConfigContent.NodeContent;
 import io.helidon.config.spi.ConfigNode;
@@ -36,6 +37,7 @@ import static java.nio.file.FileVisitOption.FOLLOW_LINKS;
 /**
  * {@link ConfigSource} implementation that loads configuration content from a directory on a filesystem.
  */
+@Api.Stable
 public class DirectoryConfigSource extends AbstractConfigSource
         implements PollableSource<Instant>,
                    WatchableSource<Path>,

@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 
@@ -36,6 +37,7 @@ import io.helidon.config.spi.ConfigNode.ObjectNode;
  *             this implementation will become package-private
  */
 @Deprecated(since = "28.0.0", forRemoval = true)
+@Api.Internal
 public class ObjectNodeImpl extends AbstractMap<String, ConfigNode> implements ObjectNode, MergeableNode {
 
     private final Map<String, ConfigNode> members;

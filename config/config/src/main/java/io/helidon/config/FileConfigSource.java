@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.FileSourceHelper.DataAndDigest;
@@ -40,6 +41,7 @@ import io.helidon.config.spi.WatchableSource;
  *
  * @see io.helidon.config.FileConfigSource.Builder
  */
+@Api.Stable
 public class FileConfigSource extends AbstractConfigSource
         implements WatchableSource<Path>, ParsableSource, PollableSource<byte[]> {
 

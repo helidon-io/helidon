@@ -23,12 +23,14 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.config.spi.ConfigMapper;
 
 /**
  * Factory for config values.
  */
+@Api.Stable
 public final class ConfigValues {
     private ConfigValues() {
     }

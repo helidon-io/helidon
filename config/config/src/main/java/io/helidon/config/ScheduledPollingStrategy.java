@@ -30,12 +30,14 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiFunction;
 
+import io.helidon.common.Api;
 import io.helidon.config.spi.ChangeEventType;
 import io.helidon.config.spi.PollingStrategy;
 
 /**
  * A strategy which allows the user to schedule periodically fired polling event.
  */
+@Api.Stable
 public final class ScheduledPollingStrategy implements PollingStrategy {
     private static final System.Logger LOGGER = System.getLogger(ScheduledPollingStrategy.class.getName());
 

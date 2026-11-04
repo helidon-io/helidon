@@ -15,6 +15,7 @@
  */
 package io.helidon.config.spi;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 
 /**
@@ -22,6 +23,7 @@ import io.helidon.config.Config;
  *
  * @see ConfigFilterProvider
  */
+@Api.Stable
 public interface ConfigFilterContext {
     /**
      * Returns the initial unfiltered source configuration for this runtime.

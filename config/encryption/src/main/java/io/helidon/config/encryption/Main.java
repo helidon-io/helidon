@@ -21,12 +21,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.PublicKey;
 
+import io.helidon.common.Api;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.pki.Keys;
 
 /**
  * Cli access to secret encryption.
  */
+@Api.Internal
 public final class Main {
     private Main() {
         throw new IllegalStateException("Main class");

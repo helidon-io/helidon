@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.config.spi.RetryPolicy;
 
 import static java.lang.Math.min;
@@ -42,6 +43,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * <li>an executor service</li>
  * </ul>
  */
+@Api.Stable
 public final class SimpleRetryPolicy implements RetryPolicy {
 
     private static final System.Logger LOGGER = System.getLogger(SimpleRetryPolicy.class.getName());

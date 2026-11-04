@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.config;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.PollableSource;
 import io.helidon.config.spi.PollingStrategy;
@@ -33,6 +34,7 @@ import io.helidon.config.spi.WatchableSource;
  * @param <B> type of implementation class of the builder
  * @param <U> type of target for watchable sources, use {@code Void} if not supported
  */
+@Api.Stable
 public abstract class AbstractSourceBuilder<B extends AbstractSourceBuilder<B, U>, U> implements Source.Builder<B> {
 
     private PollingStrategy pollingStrategy;

@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.common.pki.Keys;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigItem;
@@ -60,6 +61,7 @@ import io.helidon.config.spi.ConfigFilter;
  * @see ConfigProperties#MASTER_PASSWORD_CONFIG_KEY
  * @see ConfigProperties#REQUIRE_ENCRYPTION_ENV_VARIABLE
  */
+@Api.Stable
 public final class EncryptionFilter implements ConfigFilter {
     static final String PREFIX_GCM = "${GCM=";
     static final String PREFIX_ENC = "${ENC=";

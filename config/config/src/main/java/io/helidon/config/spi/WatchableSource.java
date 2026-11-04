@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.config.spi;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
+
 /**
  * A source implementing this interface provides a target that a {@link io.helidon.config.spi.ChangeWatcher} can
  * use.
@@ -25,6 +27,7 @@ import java.util.Optional;
  * @param <T> Type of target of this config source
  * @see io.helidon.config.spi.ChangeWatcher
  */
+@Api.Stable
 public interface WatchableSource<T> {
     /**
      * Target type as supported by this source.

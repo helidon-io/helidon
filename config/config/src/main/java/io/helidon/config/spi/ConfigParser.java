@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
 import io.helidon.service.registry.Service;
@@ -51,6 +52,7 @@ import io.helidon.service.registry.Service;
  * @see io.helidon.config.ConfigParsers ConfigParsers - access built-in implementations.
  */
 @Service.Contract
+@Api.Stable
 public interface ConfigParser {
     /**
      * Returns set of supported media types by the parser.

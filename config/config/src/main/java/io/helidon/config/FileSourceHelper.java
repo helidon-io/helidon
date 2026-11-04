@@ -35,6 +35,8 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
+
 /**
  * Utilities for file-related source classes.
  *
@@ -42,6 +44,7 @@ import java.util.stream.Collectors;
  * @see FileOverrideSource
  * @see io.helidon.config.DirectoryConfigSource
  */
+@Api.Internal
 public final class FileSourceHelper {
 
     /**

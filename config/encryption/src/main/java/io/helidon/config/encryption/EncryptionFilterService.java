@@ -16,6 +16,7 @@
 
 package io.helidon.config.encryption;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigItem;
 import io.helidon.config.spi.ConfigFilter;
@@ -23,6 +24,7 @@ import io.helidon.config.spi.ConfigFilter;
 /**
  * A Java service for {@link EncryptionFilter}.
  */
+@Api.Internal
 public class EncryptionFilterService implements ConfigFilter {
     private ConfigFilter filter;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.common.Api;
 import io.helidon.config.spi.ConfigFilter;
 
 /**
@@ -89,6 +90,7 @@ import io.helidon.config.spi.ConfigFilter;
  * </li>
  * </ol>
  */
+@Api.Stable
 public class ValueResolvingFilter implements ConfigFilter {
 
     private static final System.Logger LOGGER = System.getLogger(ValueResolvingFilter.class.getName());

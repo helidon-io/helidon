@@ -23,6 +23,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.config.spi.ConfigContent.OverrideContent;
 import io.helidon.config.spi.OverrideSource;
 
@@ -50,6 +51,7 @@ import io.helidon.config.spi.OverrideSource;
  * No removal release or timing has been decided.
  */
 @Deprecated(since = "28.0.0", forRemoval = true)
+@Api.Stable
 public class ClasspathOverrideSource extends AbstractSource implements OverrideSource {
     private final String resource;
     private final URL resourceUrl;

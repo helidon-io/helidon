@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.config.ConfigException;
 
@@ -27,6 +28,7 @@ import io.helidon.config.ConfigException;
  * An eager source that can read all data from the underlying origin as a stream that can be
  * parsed based on its media type (or using an explicit {@link io.helidon.config.spi.ConfigParser}.
  */
+@Api.Stable
 public interface ParsableSource extends Source {
     /**
      * Loads the underlying source data. This method is only called when the source {@link #exists()}.

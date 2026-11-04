@@ -18,6 +18,7 @@ package io.helidon.config.hocon;
 
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.common.Builder;
 import io.helidon.config.spi.ConfigParser;
 
@@ -32,6 +33,7 @@ import com.typesafe.config.ConfigResolveOptions;
  * It is possible to {@link #resolvingEnabled(boolean)} enable this feature or specify custom
  * {@link #resolveOptions(ConfigResolveOptions) ConfigResolveOptions}.
  */
+@Api.Stable
 public final class HoconConfigParserBuilder implements Builder<HoconConfigParserBuilder, ConfigParser> {
 
     private boolean resolvingEnabled;

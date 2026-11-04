@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
@@ -38,6 +39,7 @@ import io.helidon.config.spi.ParsableSource;
  * {@link io.helidon.config.spi.ConfigSource} implementation that loads configuration content from a resource on a classpath.
  * Classpath config source does not support changes (neither through polling nor through change notifications).
  */
+@Api.Stable
 public class ClasspathConfigSource extends AbstractConfigSource implements ConfigSource,
                                                                            ParsableSource {
     private final String resource;

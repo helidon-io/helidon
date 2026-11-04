@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
@@ -45,6 +46,7 @@ import io.helidon.config.spi.ConfigSource;
  * @see io.helidon.config.spi.PollableSource
  * @see io.helidon.config.spi.ParsableSource
  */
+@Api.Stable
 public abstract class AbstractConfigSource extends AbstractSource implements ConfigSource {
     private final Optional<MediaType> mediaType;
     private final Optional<ConfigParser> parser;
