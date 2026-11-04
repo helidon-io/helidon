@@ -56,7 +56,7 @@ class DefaultResponseHeaderValidationTest {
         String response = socketHttpClient.sendAndReceive(Method.GET, "/header", null);
 
         assertThat(SocketHttpClient.statusFromResponse(response), is(Status.INTERNAL_SERVER_ERROR_500));
-        assertThat(response, not(containsString("\n" + INJECTED_HEADER + "\n")));
+        assertThat(response, not(containsString("\r\n" + INJECTED_HEADER + "\r\n")));
     }
 
     @Test
@@ -64,6 +64,6 @@ class DefaultResponseHeaderValidationTest {
         String response = socketHttpClient.sendAndReceive(Method.GET, "/reason-phrase", null);
 
         assertThat(SocketHttpClient.statusFromResponse(response), is(Status.INTERNAL_SERVER_ERROR_500));
-        assertThat(response, not(containsString("\n" + INJECTED_HEADER + "\n")));
+        assertThat(response, not(containsString("\r\n" + INJECTED_HEADER + "\r\n")));
     }
 }
