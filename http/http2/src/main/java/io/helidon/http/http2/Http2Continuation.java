@@ -22,7 +22,7 @@ import io.helidon.common.buffers.BufferData;
 /**
  * HTTP/2 Continuation frame.
  */
-@Api.Stable
+@Api.Internal
 public final class Http2Continuation implements Http2Frame<Http2Flag.ContinuationFlags> {
     private final BufferData data;
 

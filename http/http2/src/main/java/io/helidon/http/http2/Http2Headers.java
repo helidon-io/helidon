@@ -122,6 +122,7 @@ public class Http2Headers {
      * @return new headers parsed from the frames
      * @throws Http2Exception in case of protocol errors
      */
+    @Api.Internal
     public static Http2Headers create(Http2Stream stream,
                                       DynamicTable table,
                                       Http2HuffmanDecoder huffman,
@@ -142,6 +143,7 @@ public class Http2Headers {
      * @return new headers parsed from the frames
      * @throws Http2Exception in case of protocol errors
      */
+    @Api.Internal
     public static Http2Headers create(Http2Stream stream,
                                       DynamicTable table,
                                       Http2HuffmanDecoder huffman,
@@ -244,6 +246,7 @@ public class Http2Headers {
      * @return new headers parsed from the frames
      * @throws Http2Exception in case of protocol errors
      */
+    @Api.Internal
     public static Http2Headers create(Http2Stream stream,
                                       DynamicTable table,
                                       Http2HuffmanDecoder huffman,
@@ -505,6 +508,7 @@ public class Http2Headers {
      * @param huffman       huffman encoder to use
      * @param growingBuffer buffer to write to
      */
+    @Api.Internal
     public void write(DynamicTable table, Http2HuffmanEncoder huffman, BufferData growingBuffer) {
         int initialBufferSize = growingBuffer.available();
         table.beginEncoding();
@@ -1401,6 +1405,7 @@ public class Http2Headers {
      * This is to minimize the size of headers on the transport.
      * The table caches header names and values and then uses indexes only when transferring headers over network.
      */
+    @Api.Internal
     public static class DynamicTable {
         private final List<DynamicHeader> headers = new ArrayList<>();
         private volatile long protocolMaxTableSize;

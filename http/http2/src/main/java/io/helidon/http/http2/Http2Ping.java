@@ -22,7 +22,7 @@ import io.helidon.common.buffers.BufferData;
 /**
  * Ping frame.
  */
-@Api.Stable
+@Api.Internal
 public final class Http2Ping implements Http2Frame<Http2Flag.PingFlags> {
     private static final byte[] EMPTY_PING_DATA = new byte[8];
     private final BufferData data;

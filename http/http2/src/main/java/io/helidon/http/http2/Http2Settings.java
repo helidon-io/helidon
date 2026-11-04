@@ -30,7 +30,7 @@ import static java.lang.System.Logger.Level.DEBUG;
 /**
  * HTTP settings frame.
  */
-@Api.Stable
+@Api.Internal
 public final class Http2Settings implements Http2Frame<Http2Flag.SettingsFlags> {
     private static final System.Logger LOGGER = System.getLogger(Http2Settings.class.getName());
     private final Map<Integer, SettingValue> values;

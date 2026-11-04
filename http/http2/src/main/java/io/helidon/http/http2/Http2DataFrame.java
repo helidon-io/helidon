@@ -22,7 +22,7 @@ import io.helidon.common.buffers.BufferData;
 /**
  * Data frame.
  */
-@Api.Stable
+@Api.Internal
 public final class Http2DataFrame implements Http2Frame<Http2Flag.DataFlags> {
     private final BufferData bufferData;
 

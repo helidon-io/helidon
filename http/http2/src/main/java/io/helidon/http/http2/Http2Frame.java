@@ -23,7 +23,7 @@ import io.helidon.common.Api;
  *
  * @param <T> type of supported flags
  */
-@Api.Stable
+@Api.Internal
 public sealed interface Http2Frame<T extends Http2Flag>
         permits Http2Continuation,
                 Http2DataFrame,

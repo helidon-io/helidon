@@ -23,7 +23,7 @@ import io.helidon.common.buffers.BufferData;
  * HTTP/2 stream.
  * A stream represents a single request/response exchange in HTTP/2.
  */
-@Api.Stable
+@Api.Internal
 public interface Http2Stream {
     /**
      * Close the stream.

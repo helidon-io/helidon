@@ -24,7 +24,7 @@ import io.helidon.common.buffers.BufferData;
  *
  * @param errorCode error code of this frame
  */
-@Api.Stable
+@Api.Internal
 public record Http2RstStream(Http2ErrorCode errorCode) implements Http2Frame<Http2Flag.NoFlags> {
     /**
      * Create a RST stream from frame data.

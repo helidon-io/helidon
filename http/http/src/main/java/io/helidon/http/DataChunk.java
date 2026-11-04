@@ -37,9 +37,12 @@ import io.helidon.common.Api;
  * The instances of this class are expected to be accessed by a single thread. Calling
  * the methods of this class (such as {@link #data()}, {@link #release()} from different
  * threads may result in a race condition unless an external synchronization is used.
+ *
+ * @deprecated this class is not used anymore, and will be removed
  */
 @FunctionalInterface
 @Api.Stable
+@Deprecated(forRemoval = true, since = "28.0.0")
 public interface DataChunk extends Iterable<ByteBuffer> {
 
     /**

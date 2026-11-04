@@ -24,7 +24,7 @@ import io.helidon.common.Api;
 /**
  * HTTP/2 frame flag support.
  */
-@Api.Stable
+@Api.Internal
 public class Http2Flag {
     /**
      * End of stream flag (used by headers, and data).

@@ -30,7 +30,7 @@ import static io.helidon.common.buffers.BufferData.EMPTY_BYTES;
  * @param errorCode    error code
  * @param details      details message
  */
-@Api.Stable
+@Api.Internal
 public record Http2GoAway(int lastStreamId, Http2ErrorCode errorCode, String details)
         implements Http2Frame<Http2Flag.NoFlags> {
 

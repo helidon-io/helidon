@@ -25,7 +25,7 @@ import io.helidon.common.buffers.BufferData;
  * @param header frame header
  * @param data   frame data
  */
-@Api.Stable
+@Api.Internal
 public record Http2FrameData(Http2FrameHeader header, BufferData data) {
 
     /**

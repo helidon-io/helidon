@@ -20,7 +20,7 @@ import io.helidon.common.Api;
 /**
  * Flow control used by HTTP/2 for backpressure.
  */
-@Api.Stable
+@Api.Internal
 public interface FlowControl {
 
     /**

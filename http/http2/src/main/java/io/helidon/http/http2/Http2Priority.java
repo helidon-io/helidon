@@ -26,7 +26,7 @@ import io.helidon.common.buffers.BufferData;
  * @param streamId  stream ID this priority is for
  * @param weight    weigth of this stream
  */
-@Api.Stable
+@Api.Internal
 public record Http2Priority(boolean exclusive, int streamId, int weight) implements Http2Frame<Http2Flag.NoFlags> {
 
     /**

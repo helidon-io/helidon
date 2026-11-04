@@ -26,7 +26,7 @@ import io.helidon.common.buffers.BufferData;
  *
  * @param <T> type of the setting
  */
-@Api.Stable
+@Api.Internal
 public interface Http2Setting<T> {
     /**
      * Setting for header table size.

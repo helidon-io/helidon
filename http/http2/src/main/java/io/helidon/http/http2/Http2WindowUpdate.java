@@ -24,7 +24,7 @@ import io.helidon.common.buffers.BufferData;
  *
  * @param windowSizeIncrement window size increment
  */
-@Api.Stable
+@Api.Internal
 public record Http2WindowUpdate(int windowSizeIncrement) implements Http2Frame<Http2Flag.NoFlags> {
     /**
      * Create from frame data.

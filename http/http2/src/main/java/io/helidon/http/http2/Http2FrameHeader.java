@@ -23,7 +23,7 @@ import io.helidon.common.buffers.BufferData;
  * Frame header.
  * HTTP/2 frame header has a fixed length of {@value #LENGTH} bytes.
  */
-@Api.Stable
+@Api.Internal
 public class Http2FrameHeader {
     /**
      * Frame header length in bytes.

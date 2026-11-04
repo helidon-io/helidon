@@ -26,7 +26,7 @@ import io.helidon.common.buffers.HuffmanCodec;
 /**
  * Implementation of HPACK Huffman decoding.
  */
-@Api.Stable
+@Api.Internal
 public class Http2HuffmanDecoder {
     private static final String EMPTY_STRING = "";
 

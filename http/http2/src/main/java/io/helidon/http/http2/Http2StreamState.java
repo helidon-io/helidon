@@ -25,7 +25,7 @@ import io.helidon.common.Api;
  * <a
  * href="https://datatracker.ietf.org/doc/html/rfc7540#section-5.1">https://datatracker.ietf.org/doc/html/rfc7540#section-5.1</a>
  */
-@Api.Stable
+@Api.Internal
 public enum Http2StreamState {
     /**
      * The initial state of a stream.

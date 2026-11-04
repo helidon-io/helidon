@@ -24,7 +24,7 @@ import io.helidon.common.Api;
 /**
  * HTTP/2 frame types.
  */
-@Api.Stable
+@Api.Internal
 public enum Http2FrameType {
     /**
      * Data frame.

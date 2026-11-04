@@ -31,7 +31,7 @@ import io.helidon.http.http2.Http2FrameTypeUtil.FrameTypeImpl;
  *
  * @param <T> type of flags
  */
-@Api.Stable
+@Api.Internal
 public interface Http2FrameTypes<T extends Http2Flag> {
     /**
      * Data frame types.

@@ -32,7 +32,7 @@ import io.helidon.common.Api;
  * Each, inbound and inbound keeps 2 separate credit windows, connection one which is common to all streams
  * and stream window.
  */
-@Api.Stable
+@Api.Internal
 public class StreamFlowControl {
     private final FlowControl.Outbound outboundFlowControl;
     private final FlowControl.Inbound inboundFlowControl;

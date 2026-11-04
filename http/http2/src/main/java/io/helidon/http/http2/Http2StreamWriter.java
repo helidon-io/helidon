@@ -21,7 +21,7 @@ import io.helidon.common.Api;
 /**
  * Writer for a single stream.
  */
-@Api.Stable
+@Api.Internal
 public interface Http2StreamWriter {
     /**
      * Write a frame.
