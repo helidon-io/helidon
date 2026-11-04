@@ -11,6 +11,11 @@ navigation:
 > that MP OpenTracing is based on is no longer maintained. The MP OpenTracing
 > specification is no longer required by MicroProfile. The specification is
 > superseded by the [MicroProfile Telemetry specification][microprofile-tel].
+>
+> The Helidon Jaeger and Zipkin tracing providers used on this page are also
+> deprecated and marked for removal. Use [MicroProfile Telemetry](telemetry.md)
+> instead. These deprecations apply to the Helidon integrations, not the Jaeger
+> or Zipkin backend products.
 
 ## Overview
 
@@ -256,7 +261,7 @@ The project will be built and run from the helidon-quickstart-mp directory:
 cd helidon-quickstart-mp-2
 ```
 
-Add the following dependency to pom.xml:
+Add the following deprecated Helidon Jaeger provider dependency to pom.xml:
 
 ```xml [pom.xml]
 <dependency>
@@ -588,9 +593,14 @@ Response response = client.target(serviceEndpoint)
 
 ## Jaeger Tracing
 
+> [!WARNING]
+> The Helidon Jaeger tracing provider is deprecated and marked for removal.
+> The dependency and configuration below are retained for existing applications.
+> Use [MicroProfile Telemetry](telemetry.md) instead.
+
 ```xml [pom.xml]
 <dependency>
-  <groupId>io.helidon.tracing</groupId>
+  <groupId>io.helidon.tracing.providers</groupId>
   <artifactId>helidon-tracing-providers-jaeger</artifactId>
 </dependency>
 ```
@@ -620,6 +630,11 @@ As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger
 tracing in your Helidon application.
 
 ## Zipkin Tracing
+
+> [!WARNING]
+> The Helidon Zipkin tracing provider is deprecated and marked for removal.
+> The dependency and configuration below are retained for existing applications.
+> Use [MicroProfile Telemetry](telemetry.md) instead.
 
 ```xml [pom.xml]
 <dependency>

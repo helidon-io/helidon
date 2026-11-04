@@ -152,7 +152,8 @@ import io.opentelemetry.semconv.ServiceAttributes;
  * @deprecated Use another tracing provider, such as OpenTelemetry.
  */
 @Deprecated(since = "4.4.0", forRemoval = true)
-@Configured(prefix = "tracing", root = true, description = "Jaeger tracer configuration.")
+@Configured(prefix = "tracing", root = true,
+            description = "Deprecated Jaeger tracer configuration. Use the OpenTelemetry tracing provider instead.")
 public class JaegerTracerBuilder implements TracerBuilder<JaegerTracerBuilder> {
     static final System.Logger LOGGER = System.getLogger(JaegerTracerBuilder.class.getName());
 

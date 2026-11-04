@@ -8,6 +8,15 @@ navigation:
 This guide describes how to create a sample MicroProfile (MP) project that can
 be used to run some basic examples using tracing with Helidon MP.
 
+> [!WARNING]
+> This guide uses the deprecated MicroProfile OpenTracing integration and
+> Helidon Jaeger tracing provider. Both the Helidon Jaeger and Zipkin tracing
+> providers are deprecated and marked for removal. The examples are retained
+> for existing applications. For new applications, use
+> [MicroProfile Telemetry](../telemetry.md), which includes examples using
+> OpenTelemetry and a Jaeger backend over OTLP. These deprecations apply to the
+> Helidon integrations, not the Jaeger or Zipkin backend products.
+
 ## What You Need
 
 For this 30 minute tutorial, you will need the following:
@@ -136,11 +145,11 @@ http://localhost:16686/search
 
 ### Enable Tracing in the Helidon Application
 
-Update the pom.xml file and add the following Jaeger dependency to the
-`<dependencies>` section (**not** `<dependencyManagement>`). This will enable
+Update the pom.xml file and add the following deprecated Helidon Jaeger dependency
+to the `<dependencies>` section (**not** `<dependencyManagement>`). This will enable
 Helidon to use Jaeger at the default host and port, `localhost:14250`.
 
-Add the following dependency to pom.xml:
+Add the following deprecated Helidon Jaeger provider dependency to pom.xml:
 
 ```xml [pom.xml]
 <dependencies>
@@ -376,7 +385,7 @@ The project will be built and run from the helidon-quickstart-mp directory:
 cd helidon-quickstart-mp-2
 ```
 
-Add the following dependency to pom.xml:
+Add the following deprecated Helidon Jaeger provider dependency to pom.xml:
 
 ```xml [pom.xml]
 <dependency>
@@ -393,7 +402,6 @@ tracing.service=helidon-mp-2
 
 # MicroProfile server properties
 server.port=8081
-server.host=0.0.0.0
 ```
 
 Build the application, skipping unit tests, then run it:

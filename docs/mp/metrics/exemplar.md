@@ -47,8 +47,16 @@ Dependencies](../../dependency-management.md)).
 </dependency>
 ```
 
-Also, include the Helidon integration module for a tracing implementation (such
-as [Helidon Zipkin][helidon-zipkin])
+Also, include the Helidon integration module for a tracing implementation.
+
+> [!WARNING]
+> The Helidon Jaeger and [Zipkin][helidon-zipkin] tracing providers are deprecated
+> and marked for removal. The following legacy dependencies are retained for
+> existing applications. Use [MicroProfile Telemetry](../telemetry.md)
+> instead. This deprecation applies to the Helidon providers, not the backend
+> products.
+
+For Zipkin (deprecated):
 
 ```xml [pom.xml]
 <dependency>

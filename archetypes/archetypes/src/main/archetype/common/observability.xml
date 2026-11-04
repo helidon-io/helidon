@@ -208,17 +208,6 @@ curl -X GET http://localhost:8080/observe/health/ready
                                 </model>
                             </output>
                         </option>
-                        <option value="zipkin"
-                                name="Zipkin"
-                                description="Send traces to a Zipkin backend">
-                            <output>
-                                <model>
-                                    <list key="readme-sections">
-                                        <value file="/common/files/README.zipkin.md"/>
-                                    </list>
-                                </model>
-                            </output>
-                        </option>
                     </enum>
                 </inputs>
             </boolean>

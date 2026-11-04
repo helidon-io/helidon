@@ -2,7 +2,7 @@
 
 ## Description
 
-Zipkin tracer configuration
+Deprecated Zipkin tracer configuration. Use the OpenTelemetry tracing provider instead
 
 ## Configuration options
 

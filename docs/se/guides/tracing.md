@@ -146,9 +146,15 @@ Add the following dependencies to pom.xml:
 3. OpenTelemetry tracing provider.
 <!--@mdc :: -->
 
-Helidon offers several tracing providers: OpenTelemetry, Zipkin, and Jaeger
-(deprecated). All spans sent by Helidon to the backend need to be associated
-with a service, assigned by the `tracing.service` setting in the example below.
+This guide uses the OpenTelemetry tracing provider. All spans sent by Helidon
+to the backend need to be associated with a service, assigned by the
+`tracing.service` setting in the example below.
+
+> [!WARNING]
+> The Helidon Jaeger and Zipkin tracing providers are deprecated and marked for
+> removal. Use the [OpenTelemetry tracing provider](../tracing.md#opentelemetry-tracing)
+> instead, as this guide does. The Jaeger backend used here receives traces over
+> OTLP and is separate from the deprecated Helidon Jaeger tracing provider.
 
 Add the following lines to src/main/resources/application.yaml:
 
@@ -157,9 +163,6 @@ tracing:
   service: helidon-se-1
   tags:
     env: development
-  enabled: true
-  sampler-type: "const"
-  sampler-param: 1
   log-spans: true
   propagation: b3
 ```
@@ -361,15 +364,11 @@ tracing:
   service: helidon-se-2
   tags:
     env: development
-  enabled: true
-  sampler-type: "const"
-  sampler-param: 1
   log-spans: true
   propagation: b3
 
 server:
   port: 8081
-  host: 0.0.0.0
 ```
 
 > [!NOTE]
