@@ -63,6 +63,12 @@ class TestOpenTelemetryOwnership {
                 """
                         telemetry:
                           service: telemetry-owner
+                          signals:
+                            tracing:
+                              exporters:
+                                - type: console
+                              processors:
+                                - type: simple
                         """,
                 MediaTypes.APPLICATION_YAML));
         Services.set(Config.class, config);
@@ -91,6 +97,12 @@ class TestOpenTelemetryOwnership {
                         telemetry:
                           service: telemetry-owner
                           global: false
+                          signals:
+                            tracing:
+                              exporters:
+                                - type: console
+                              processors:
+                                - type: simple
                         """,
                 MediaTypes.APPLICATION_YAML));
         Services.set(Config.class, config);
@@ -244,6 +256,12 @@ class TestOpenTelemetryOwnership {
                 """
                         telemetry:
                           service: telemetry-owner
+                          signals:
+                            tracing:
+                              exporters:
+                                - type: console
+                              processors:
+                                - type: simple
                         tracing:
                           paths:
                           - path: "/health"
@@ -362,6 +380,12 @@ class TestOpenTelemetryOwnership {
                 """
                         telemetry:
                           service: telemetry-owner
+                          signals:
+                            tracing:
+                              exporters:
+                                - type: console
+                              processors:
+                                - type: simple
                         tracing:
                           service: tracing-owner
                         """,
