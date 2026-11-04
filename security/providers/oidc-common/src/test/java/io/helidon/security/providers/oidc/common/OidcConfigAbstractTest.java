@@ -79,8 +79,14 @@ abstract class OidcConfigAbstractTest {
     void testComputedValues() {
         OidcConfig config = getConfig();
         assertAll("All values computed either from configured or default values",
+                  () -> assertThat("Configured frontend URI",
+                                   config.frontendUri().orElseThrow(),
+                                   is("https://something:7001")),
                   () -> assertThat("Redirect URI with host",
                                    config.redirectUriWithHost(),
+                                   is("https://something:7001/oidc/redirect")),
+                  () -> assertThat("Configured frontend URI takes precedence over request origin",
+                                   config.redirectUriWithHost("https://request.example"),
                                    is("https://something:7001/oidc/redirect"))
         );
     }
