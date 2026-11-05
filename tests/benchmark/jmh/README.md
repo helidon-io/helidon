@@ -205,6 +205,106 @@ The runner writes `target/http-transport-dispatch-jmh-t1.json` and `target/http-
 `http.transport.dispatch.jmh.resultPrefix` override the corresponding defaults. Timed waves above the 1,024-action budget,
 repeated invocations within an iteration, and modes other than single-shot with batch size one are rejected.
 
+## HTTP request JFR events
+
+`HttpRequestJfrJmhBenchmark.keepAliveExchange` measures a single client performing complete, clear-text HTTP/1.1
+or HTTP/2 prior-knowledge exchanges. Both sockets use TCP_NODELAY, the client owns a private connection cache,
+discovery is disabled, and setup/teardown verify connection reuse. The fixture has no tracing observer: this measures
+the lower bound for the core request event, excluding trace-context supplementation. Client work and full response
+consumption are included; these results do not establish independent server throughput.
+
+The fixed six-cell matrix is `protocol={HTTP1,HTTP2}` and `recordingMode={OFF,DISABLED,ENABLED}`. OFF has no active
+recording; DISABLED runs an otherwise empty recording with the request event disabled; ENABLED enables only
+`io.helidon.HttpServerRequest` with zero threshold and no stack trace. All other Helidon events are explicitly disabled.
+No default/profile JDK configuration or CPU sampler runs during timing. Recordings exist only in this fixture.
+Active recordings are in memory: the comparison isolates in-memory JFR cost and makes no disk recording throughput claim.
+Smoke tests and the qualification probe stop the server producers, dump a snapshot while the recording is still running,
+then stop the recording; stopping an in-memory recording first would discard its data.
+
+After installing repository artifacts, run the deterministic fixture smoke tests separately from timing:
+
+```shell
+mvn test -Ptests -pl :helidon-tests-benchmark-jmh -Dtest=HttpRequestJfrSmokeTest
+```
+
+Use the identical benchmark/runner source overlay, JDK, flags and dependency versions on the comparison base and
+candidate. The base without request events can run the smoke test with `-Dhttp.request.jfr.expectEvents=false`.
+On the authorized benchmark host, run only the anchored runner:
+
+```shell
+mvn test -Ptests,jmh -pl :helidon-tests-benchmark-jmh -Dtest=HttpRequestJfrJmhRunnerTest \
+    -Dhttp.request.jfr.jmh.result=target/http-request-jfr-1.json
+```
+
+The runner uses three forks, five one-second warmups, eight one-second measurements, one client thread, a fixed
+1 GiB heap, and the GC profiler. Properties `http.request.jfr.jmh.forks`, `http.request.jfr.jmh.warmupIterations`,
+`http.request.jfr.jmh.measurementIterations`, and `http.request.jfr.jmh.result` override these defaults.
+Compare matched-cell confidence intervals and normalized allocation, retaining base and candidate JSON separately.
+
+`HttpRequestJfrSamplesProbe` is a separate explicitly invoked qualification main class under `src/test/java`;
+Surefire never selects it. It requires JDK 28 build 19 or newer (JDK-8386622). With the compiled main/test classes
+and benchmark dependencies on `BENCHMARK_TEST_CLASSPATH`, invoke it using the JDK being qualified and an existing
+output directory:
+
+```shell
+java -cp "$BENCHMARK_TEST_CLASSPATH" io.helidon.webserver.benchmark.jmh.HttpRequestJfrSamplesProbe target/jfr-samples-1
+```
+
+For each protocol, the probe performs 24 bounded requests containing Java CPU work and native Deflater compression.
+It enables both `jdk.ExecutionSample` and `jdk.NativeMethodSample` with a one-millisecond period, verifies recorded
+request contextual metadata and same-thread interval overlap for each sample type, then runs that JDK's `jfr print`.
+Both sample types must actually display the request name and matching request/socket/listener identifiers in contextual
+output. Merely coexisting events cannot pass. The JDK tool synthesizes `Context:` lines; these are not ordinary
+RecordingFile fields or JSON print output. Missing samples or contextual output fail with a host/JDK qualification
+message; sampling is probabilistic and this probe is intentionally excluded from deterministic reactor tests.
+Retain its protocol-specific `.jfr` and text outputs as qualification evidence, separately from JMH results.
+
+## Tracing observer JFR events
+
+`TracingRequestJfrJmhBenchmark.tracedKeepAliveExchange` is a separate tracing slice; the six-cell core request
+benchmark above retains its own selector and results. The tracing slice reuses that HTTP transport fixture,
+including protocol validation, connection reuse, private client cache, TCP_NODELAY, bounded timeouts and complete
+response consumption. Its real `TracingObserver` uses an owned OpenTelemetry SDK and SDK tracer provider with no
+span processors or exporters. It creates no exporter traffic and does not register or replace the global SDK.
+
+The twelve cells are `protocol={HTTP1,HTTP2}`, `recordingMode={OFF,DISABLED,ENABLED}`, and
+`tracingMode={SERVER_SPAN,INBOUND_CONTEXT}`. SERVER_SPAN sends no inbound trace headers: the real SDK creates
+a new root server span and unique trace ID for each request, including trace-ID encoding and JFR string-pool costs.
+INBOUND_CONTEXT sends a valid sampled W3C `traceparent` with a fixed nonzero trace ID, disables the HTTP Request
+server span and retains the extracted remote parent context. OFF has no active recording;
+DISABLED disables both request and trace-context events in an otherwise empty in-memory recording; ENABLED enables
+both `io.helidon.HttpServerRequest` and `io.helidon.RequestTraceContext` with zero threshold and no stack trace,
+representing their combined default workflow. Other Helidon events stay disabled and no JDK samplers run.
+The measurement includes tracing and client work, and does not measure export or disk recording throughput.
+
+Run the deterministic twelve-case smoke test separately from JMH:
+
+```shell
+mvn verify -Ptests -pl :helidon-tests-benchmark-jmh -Dtest=HttpRequestJfrSmokeTest,TracingRequestJfrSmokeTest
+```
+
+The smoke test checks both branch executions using the handler's actual context and span presence, valid nonzero
+trace and span IDs, unique root trace IDs versus retained remote-parent IDs, exact request/trace event counts,
+recorded trace IDs correlated with actual handler observations and threads, trace origin, and
+same-thread trace intervals enclosed by request intervals. It stops server producers before dumping the running
+in-memory recording. Copy the same benchmark, shared HTTP fixture, runner, smoke test and benchmark dependency
+overlay to each comparison revision; they reference event names rather than new event classes. The base without
+these events uses `-Dhttp.request.jfr.expectEvents=false` for smoke validation while retaining the tracing checks.
+
+On the authorized benchmark host, select only the dedicated runner:
+
+```shell
+mvn test -Ptests,jmh -pl :helidon-tests-benchmark-jmh -Dtest=TracingRequestJfrJmhRunnerTest \
+    -Dtracing.request.jfr.jmh.result=target/tracing-request-jfr-1.json
+```
+
+The anchored selector executes only `TracingRequestJfrJmhBenchmark.tracedKeepAliveExchange`: three forks,
+five one-second warmups, eight one-second measurements, one client thread, a fixed 1 GiB heap and the GC profiler.
+Properties `tracing.request.jfr.jmh.forks`, `tracing.request.jfr.jmh.warmupIterations`,
+`tracing.request.jfr.jmh.measurementIterations`, and `tracing.request.jfr.jmh.result` override these defaults.
+Keep these twelve-cell results separate from core-only evidence and compare matched-cell confidence intervals
+and normalized allocation on identical JDKs, flags and dependencies.
+
 ## Troubleshooting
 
 When tests fails repeatedly without any code change, try regenerating baseline file
