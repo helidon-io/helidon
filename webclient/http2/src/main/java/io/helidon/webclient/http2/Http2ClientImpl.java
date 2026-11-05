@@ -23,6 +23,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
+import io.helidon.common.Api;
 import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.HeaderNames;
@@ -55,6 +56,7 @@ import io.helidon.webclient.spi.HttpClientSpi;
 /**
  * Implementation of HTTP2 client.
  */
+@Api.Internal
 public class Http2ClientImpl implements Http2Client, HttpClientSpi {
     private final WebClient webClient;
     private final Http2ClientConfig clientConfig;

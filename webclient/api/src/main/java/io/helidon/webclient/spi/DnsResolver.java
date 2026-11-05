@@ -18,11 +18,13 @@ package io.helidon.webclient.spi;
 
 import java.net.InetAddress;
 
+import io.helidon.common.Api;
 import io.helidon.webclient.api.DnsAddressLookup;
 
 /**
  * DNS resolving interface.
  */
+@Api.Stable
 public interface DnsResolver {
 
     /**

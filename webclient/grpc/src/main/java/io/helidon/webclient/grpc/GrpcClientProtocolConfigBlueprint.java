@@ -20,6 +20,7 @@ import java.time.Duration;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.webclient.spi.ProtocolConfig;
 
 /**
@@ -27,6 +28,7 @@ import io.helidon.webclient.spi.ProtocolConfig;
  */
 @Prototype.Blueprint
 @Prototype.Configured
+@Api.Stable
 interface GrpcClientProtocolConfigBlueprint extends ProtocolConfig {
 
     /**

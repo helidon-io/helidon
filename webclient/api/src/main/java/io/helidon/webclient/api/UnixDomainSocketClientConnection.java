@@ -55,6 +55,7 @@ import static java.lang.System.Logger.Level.TRACE;
 /**
  * Client connection to a UNIX domain socket.
  */
+@Api.Internal
 public class UnixDomainSocketClientConnection implements ClientConnection, ConnectionObservationContext {
     private static final System.Logger LOGGER = System.getLogger(UnixDomainSocketClientConnection.class.getName());
 

@@ -23,6 +23,7 @@ import io.helidon.webclient.spi.ClientProtocolProvider;
 /**
  * Provider for {@link GrpcClient}.
  */
+@Api.Internal
 public class GrpcProtocolProvider implements ClientProtocolProvider<GrpcClient, GrpcClientProtocolConfig> {
     static final String CONFIG_KEY = "grpc";
 

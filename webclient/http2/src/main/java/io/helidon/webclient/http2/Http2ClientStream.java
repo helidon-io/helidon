@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.http.HeaderValues;
@@ -58,6 +59,7 @@ import static java.lang.System.Logger.Level.DEBUG;
 /**
  * Represents an HTTP/2 client stream.
  */
+@Api.Internal
 public class Http2ClientStream implements Http2Stream, ReleasableResource {
 
     private static final System.Logger LOGGER = System.getLogger(Http2ClientStream.class.getName());

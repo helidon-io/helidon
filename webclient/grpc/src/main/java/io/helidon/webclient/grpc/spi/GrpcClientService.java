@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.grpc.spi;
 
+import io.helidon.common.Api;
 import io.helidon.config.NamedService;
 import io.helidon.grpc.core.WeightedBag;
 
@@ -25,6 +26,7 @@ import io.grpc.ClientInterceptor;
  * Extension that can modify gRPC client behavior.
  */
 @FunctionalInterface
+@Api.Stable
 public interface GrpcClientService extends NamedService {
 
     @Override

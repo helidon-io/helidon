@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.http.Status;
@@ -38,6 +39,7 @@ import io.opentelemetry.api.metrics.DoubleHistogram;
  * Webclient service for providing metrics which comply with the OpenTelemetry semantic conventions for
  * client metrics.
  */
+@Api.Preview
 public class WebClientTelemetryMetrics implements WebClientService {
 
     /*

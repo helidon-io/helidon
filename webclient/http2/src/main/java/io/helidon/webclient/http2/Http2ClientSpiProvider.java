@@ -24,6 +24,7 @@ import io.helidon.webclient.spi.HttpClientSpiProvider;
 /**
  * {@link java.util.ServiceLoader} provider implementation for HTTP/2 protocol.
  */
+@Api.Internal
 public class Http2ClientSpiProvider implements HttpClientSpiProvider<Http2ClientProtocolConfig> {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

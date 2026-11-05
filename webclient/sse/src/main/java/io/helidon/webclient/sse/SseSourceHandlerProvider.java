@@ -24,6 +24,7 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.media.type.MediaTypes;
@@ -36,6 +37,7 @@ import io.helidon.webclient.spi.SourceHandlerProvider;
 /**
  * A handler for SSE sources.
  */
+@Api.Internal
 public class SseSourceHandlerProvider implements SourceHandlerProvider<SseEvent> {
 
     private static final char BOM = 0xFEFF;

@@ -19,6 +19,7 @@ package io.helidon.webclient.api;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+import io.helidon.common.Api;
 import io.helidon.webclient.spi.DnsResolver;
 
 /**
@@ -26,6 +27,7 @@ import io.helidon.webclient.spi.DnsResolver;
  *
  * @see io.helidon.webclient.api.WebClientConfig.Builder#dnsResolver(io.helidon.webclient.spi.DnsResolver)
  */
+@Api.Stable
 public final class DefaultDnsResolver implements DnsResolver {
 
     private DefaultDnsResolver() {

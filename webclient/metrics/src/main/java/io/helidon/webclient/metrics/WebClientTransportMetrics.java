@@ -24,6 +24,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.http.HttpTransportObserver;
@@ -46,6 +47,7 @@ import io.helidon.webclient.spi.WebClientService;
  * <p>The client owns the metrics lifecycle. Applications supplying a meter registry must keep it available until
  * the client has closed its connections and completed shutdown.
  */
+@Api.Stable
 public final class WebClientTransportMetrics implements WebClientService,
                                                         ObserverProvider,
                                                         RuntimeType.Api<WebClientTransportMetricsConfig> {

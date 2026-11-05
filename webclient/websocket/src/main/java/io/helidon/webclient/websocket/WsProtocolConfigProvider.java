@@ -23,6 +23,7 @@ import io.helidon.webclient.spi.ProtocolConfigProvider;
 /**
  * Implementation of protocol config provider.
  */
+@Api.Internal
 public class WsProtocolConfigProvider implements ProtocolConfigProvider<WsClientProtocolConfig> {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

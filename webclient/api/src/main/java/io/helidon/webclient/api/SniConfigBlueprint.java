@@ -20,12 +20,14 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Client-side TLS SNI configuration.
  */
 @Prototype.Configured
 @Prototype.Blueprint(decorator = SniConfigSupport.BuilderDecorator.class)
+@Api.Stable
 interface SniConfigBlueprint {
     /**
      * TLS peer host source mode for SNI and endpoint identification: {@code uri-host}, {@code host-header},

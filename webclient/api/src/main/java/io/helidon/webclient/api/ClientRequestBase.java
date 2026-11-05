@@ -57,6 +57,7 @@ import io.helidon.webclient.spi.WebClientService;
  * @param <T> type of the request
  * @param <R> type of the response
  */
+@Api.Stable
 public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends HttpClientResponse>
         implements FullClientRequest<T> {
     /**
@@ -113,6 +114,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      * @param clientUri request URI
      * @param properties request properties
      */
+    @Api.Internal
     protected ClientRequestBase(HttpClientConfig clientConfig,
                                 WebClientCookieManager cookieManager,
                                 String protocolId,
@@ -133,6 +135,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      * @param sendExpectContinue whether to send the {@code Expect: 100-Continue} header
      * @param properties request properties
      */
+    @Api.Internal
     protected ClientRequestBase(HttpClientConfig clientConfig,
                                 WebClientCookieManager cookieManager,
                                 String protocolId,
@@ -155,6 +158,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      * @param properties request properties
      * @param redirectSourceUri original request URI for redirect handling
      */
+    @Api.Internal
     protected ClientRequestBase(HttpClientConfig clientConfig,
                                 WebClientCookieManager cookieManager,
                                 String protocolId,
@@ -187,6 +191,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      * @param redirectSourceUri original request URI for redirect handling
      * @param crossOriginRedirect whether a previous redirect crossed an origin boundary
      */
+    @Api.Internal
     protected ClientRequestBase(HttpClientConfig clientConfig,
                                 WebClientCookieManager cookieManager,
                                 String protocolId,
@@ -378,6 +383,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     }
 
     @Override
+    @Api.Internal
     public T connection(ClientConnection connection) {
         this.connection = connection;
         return identity();
@@ -468,6 +474,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      * Protocol implementations providing additional streaming operations use the same validation and additional headers
      * as {@link #outputStream(io.helidon.webclient.api.ClientRequest.OutputStreamHandler)}.
      */
+    @Api.Internal
     protected void prepareOutputStreamRequest() {
         rejectHeadWithEntity();
         additionalHeaders();
@@ -484,6 +491,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     /**
      * Append additional headers before sending the request.
      */
+    @Api.Internal
     protected void additionalHeaders() {
         headers.setIfAbsent(USER_AGENT_HEADER);
     }
@@ -552,6 +560,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     }
 
     @Override
+    @Api.Internal
     public Optional<ClientConnection> connection() {
         return Optional.ofNullable(connection);
     }
@@ -607,6 +616,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      * @param entity request entity
      * @return HTTP client response
      */
+    @Api.Internal
     protected abstract R doSubmit(Object entity);
 
     /**
@@ -615,6 +625,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      * @param outputStreamHandler output stream handler
      * @return HTTP client response
      */
+    @Api.Internal
     protected abstract R doOutputStream(OutputStreamHandler outputStreamHandler);
 
     /**
@@ -626,6 +637,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      * @param usedUri       URI configured on the request, combined with the base URI of the client
      * @return web client service response
      */
+    @Api.Internal
     protected WebClientServiceResponse invokeServices(WebClientService.Chain httpCallChain,
                                                       CompletableFuture<WebClientServiceRequest> whenSent,
                                                       CompletableFuture<WebClientServiceResponse> whenComplete,
@@ -730,6 +742,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      *
      * @return client config
      */
+    @Api.Internal
     protected HttpClientConfig clientConfig() {
         return clientConfig;
     }
@@ -749,6 +762,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      * @param requestUri URI that will be used for the request
      * @param requestHeaders headers to sanitize
      */
+    @Api.Internal
     protected final void sanitizeRedirectSensitiveHeaders(ClientUri requestUri, ClientRequestHeaders requestHeaders) {
         if (redirectSensitiveHeadersShouldBeStripped(requestUri)) {
             redirectSensitiveHeaders.forEach(requestHeaders::remove);
@@ -762,6 +776,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      * @param requestUri redirect request URI
      * @return whether redirect-sensitive headers should be stripped
      */
+    @Api.Internal
     protected final boolean crossesRedirectOriginBoundary(ClientUri requestUri) {
         return crossOriginRedirect || !sameOrigin(resolvedUri(), requestUri);
     }
@@ -776,6 +791,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      *
      * @return media context
      */
+    @Api.Internal
     protected MediaContext mediaContext() {
         return mediaContext;
     }
@@ -787,6 +803,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      * @param toResolve client uri to update from the template
      * @return updated client uri
      */
+    @Api.Internal
     protected ClientUri resolveUri(ClientUri toResolve) {
         UriTemplateQuery templateQuery = uriTemplate;
         if (templateQuery != null) {
@@ -814,6 +831,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      * @param location Location header value
      * @return resolved redirect URI
      */
+    @Api.Internal
     protected final ClientUri resolveRedirectUri(String location) {
         URI locationUri = URI.create(Objects.requireNonNull(location));
         ClientUri redirectUri = ClientUri.create(locationUri);

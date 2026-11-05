@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.LruCache;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.tls.Tls;
@@ -33,6 +34,7 @@ import io.helidon.webclient.spi.HttpClientSpi;
  * This allows configuration of a request, such as setting headers, query parameters etc.
  * Terminating methods are {@link #submit(Object)} (and its variants), and {@link #request()} (and its variants).
  */
+@Api.Stable
 public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, HttpClientResponse> {
     private static final System.Logger LOGGER = System.getLogger(HttpClientRequest.class.getName());
     private static final Tls NO_TLS = Tls.builder().enabled(false).build();
@@ -94,11 +96,13 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
     }
 
     @Override
+    @Api.Internal
     protected HttpClientResponse doSubmit(Object entity) {
         return discoverHttpImplementation().submit(entity);
     }
 
     @Override
+    @Api.Internal
     protected HttpClientResponse doOutputStream(OutputStreamHandler outputStreamConsumer) {
         return discoverHttpImplementation().outputStream(outputStreamConsumer);
     }

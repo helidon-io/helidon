@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.media.type.MediaType;
@@ -48,6 +49,7 @@ import io.helidon.http.Status;
  *
  * @param <T> type of the implementation, to support fluent API
  */
+@Api.Stable
 public interface ClientRequest<T extends ClientRequest<T>> {
     /**
      * Configure URI.
@@ -441,6 +443,7 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      * @param connection connection to use for this request
      * @return updated client request
      */
+    @Api.Internal
     T connection(ClientConnection connection);
 
     /**

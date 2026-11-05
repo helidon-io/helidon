@@ -18,6 +18,7 @@ package io.helidon.webclient.http1;
 
 import java.util.NoSuchElementException;
 
+import io.helidon.common.Api;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.ClientResponseTrailers;
 import io.helidon.http.Status;
@@ -29,6 +30,7 @@ import io.helidon.webclient.api.HttpClientResponse;
 /**
  * Response to an upgrade attempt.
  */
+@Api.Internal
 public final class UpgradeResponse {
     private final boolean isUpgraded;
     private final ClientConnection connection;

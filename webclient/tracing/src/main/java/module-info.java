@@ -26,6 +26,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Path({"WebClient", "Tracing"})
 module io.helidon.webclient.tracing {
 
+    requires io.helidon.common;
     requires io.helidon.service.registry;
     requires io.helidon.webclient;
 

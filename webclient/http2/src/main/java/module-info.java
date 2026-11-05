@@ -26,6 +26,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Path({"WebClient", "HTTP/2"})
 module io.helidon.webclient.http2 {
 
+    requires io.helidon.common;
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 

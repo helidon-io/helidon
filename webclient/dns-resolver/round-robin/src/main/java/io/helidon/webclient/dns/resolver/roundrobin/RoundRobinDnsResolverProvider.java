@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.dns.resolver.roundrobin;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.webclient.spi.DnsResolver;
@@ -25,6 +26,7 @@ import io.helidon.webclient.spi.DnsResolverProvider;
  * Provider of the {@link RoundRobinDnsResolver} instance.
  */
 @Weight(Weighted.DEFAULT_WEIGHT + 50)
+@Api.Internal
 public final class RoundRobinDnsResolverProvider implements DnsResolverProvider {
 
     /**

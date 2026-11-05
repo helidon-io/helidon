@@ -20,12 +20,14 @@ import java.time.Duration;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.http.HttpConfig;
 import io.helidon.webclient.spi.ProtocolConfig;
 
 /**
  * Configuration of an HTTP/2 client.
  */
+@Api.Stable
 @Prototype.Blueprint(decorator = Http2ClientConfigSupport.ProtocolConfigDecorator.class)
 @Prototype.Configured
 @Prototype.IncludeDefaultMethods("maxBufferedEntitySize")

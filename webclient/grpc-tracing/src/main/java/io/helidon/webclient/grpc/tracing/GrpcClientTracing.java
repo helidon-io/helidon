@@ -18,6 +18,7 @@ package io.helidon.webclient.grpc.tracing;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.grpc.core.WeightedBag;
@@ -30,6 +31,7 @@ import io.grpc.ClientInterceptor;
 /**
  * gRPC client tracing service.
  */
+@Api.Stable
 public class GrpcClientTracing implements GrpcClientService {
 
     private final Config config;

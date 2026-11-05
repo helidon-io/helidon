@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.HeaderNames;
@@ -33,6 +34,7 @@ import io.helidon.http.HeaderNames;
 /**
  * Helidon WebClient cookie manager.
  */
+@Api.Stable
 public class WebClientCookieManager extends CookieManager implements RuntimeType.Api<WebClientCookieManagerConfig> {
 
     private static final String COOKIE = HeaderNames.COOKIE.defaultCase();

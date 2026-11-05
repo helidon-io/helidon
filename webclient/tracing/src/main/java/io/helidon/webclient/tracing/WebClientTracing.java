@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.http.ClientRequestHeaders;
@@ -47,6 +48,7 @@ import io.helidon.webclient.spi.WebClientService;
  * This service adds appropriate headers to the outbound request to propagate trace across services, so the spans
  * can form a hierarchy in a tracer, such as Jaeger.
  */
+@Api.Stable
 public class WebClientTracing implements WebClientService {
     private final LazyValue<Tracer> applicationTracer;
     private final Function<Context, Tracer> tracerFunction;

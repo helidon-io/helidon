@@ -29,6 +29,7 @@ import io.grpc.stub.StreamObserver;
  *
  * @see io.helidon.webclient.grpc.GrpcClient#serviceClient(io.helidon.webclient.grpc.GrpcServiceDescriptor)
  */
+@Api.Stable
 public interface GrpcServiceClient {
 
     /**

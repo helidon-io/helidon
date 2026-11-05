@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 
 package io.helidon.webclient.spi;
 
+import io.helidon.common.Api;
+
 /**
  * A {@link java.util.ServiceLoader} provider interface to obtain clients that support HTTP protocol.
  *
  * @param <T> type of configuration used by the provider implementation
  */
+@Api.Internal
 public interface HttpClientSpiProvider<T> extends ClientProtocolProvider<HttpClientSpi, T> {
 }

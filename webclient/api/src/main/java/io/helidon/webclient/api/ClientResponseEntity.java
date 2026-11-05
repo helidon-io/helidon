@@ -18,6 +18,7 @@ package io.helidon.webclient.api;
 
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.ClientRequestHeaders;
@@ -29,6 +30,7 @@ import io.helidon.http.media.ReadableEntityBase;
 /**
  * Client response entity.
  */
+@Api.Internal
 public final class ClientResponseEntity extends ReadableEntityBase implements ReadableEntity {
     private final ClientRequestHeaders requestHeaders;
     private final ClientResponseHeaders responseHeaders;

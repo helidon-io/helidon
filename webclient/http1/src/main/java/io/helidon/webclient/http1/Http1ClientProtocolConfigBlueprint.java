@@ -18,12 +18,14 @@ package io.helidon.webclient.http1;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.http.HttpConfig;
 import io.helidon.webclient.spi.ProtocolConfig;
 
 /**
  * Configuration of an HTTP/1.1 client.
  */
+@Api.Stable
 @Prototype.Blueprint(decorator = Http1ClientConfigSupport.ProtocolConfigDecorator.class)
 @Prototype.Configured
 @Prototype.IncludeDefaultMethods("maxBufferedEntitySize")

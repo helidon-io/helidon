@@ -19,6 +19,7 @@ package io.helidon.webclient.api;
 import java.util.Map;
 import java.util.concurrent.CompletionStage;
 
+import io.helidon.common.Api;
 import io.helidon.common.context.Context;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Method;
@@ -26,6 +27,7 @@ import io.helidon.http.Method;
 /**
  * Request to SPI {@link io.helidon.webclient.spi.WebClientService} that supports modification of the outgoing request.
  */
+@Api.Stable
 public interface WebClientServiceRequest {
     /**
      * URI helper for this client request.

@@ -19,12 +19,15 @@ import java.io.IOException;
 import java.net.Socket;
 import java.nio.channels.SocketChannel;
 
+import io.helidon.common.Api;
+
 /**
  * This interface provides callback methods that are invoked when the client connection is first established,
  * before any TLS or HTTP application traffic is sent. This can be used for cases such as the HAProxy
  * Proxy Protocol, which involves sending protocol-specific data bytes on the connection before the TLS
  * handshake occurs.
  */
+@Api.Stable
 public interface ConnectionListener {
     /**
      * Returns a {@link ConnectionListener} which does nothing.

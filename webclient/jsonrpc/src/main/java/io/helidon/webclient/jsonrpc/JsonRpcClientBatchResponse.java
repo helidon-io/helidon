@@ -15,11 +15,13 @@
  */
 package io.helidon.webclient.jsonrpc;
 
+import io.helidon.common.Api;
 import io.helidon.webclient.api.HttpClientResponse;
 
 /**
  * A representation for a JSON-RPC batch response.
  */
+@Api.Preview
 public interface JsonRpcClientBatchResponse extends Iterable<JsonRpcClientResponse>, HttpClientResponse {
 
     /**

@@ -20,6 +20,7 @@ import java.util.Map;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.discovery.Discovery;
 
 /**
@@ -31,6 +32,7 @@ import io.helidon.discovery.Discovery;
  */
 @Prototype.Blueprint
 @Prototype.Configured
+@Api.Stable
 interface WebClientDiscoveryConfigBlueprint extends Prototype.Factory<WebClientDiscovery> {
 
     /**

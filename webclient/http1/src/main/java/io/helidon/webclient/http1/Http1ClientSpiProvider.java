@@ -24,6 +24,7 @@ import io.helidon.webclient.spi.HttpClientSpiProvider;
 /**
  * {@link java.util.ServiceLoader} provider implementation for HTTP/1.1 protocol.
  */
+@Api.Internal
 public class Http1ClientSpiProvider implements HttpClientSpiProvider<Http1ClientProtocolConfig> {
 
     /**

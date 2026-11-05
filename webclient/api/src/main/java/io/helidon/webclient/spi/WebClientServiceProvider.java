@@ -16,10 +16,12 @@
 
 package io.helidon.webclient.spi;
 
+import io.helidon.common.Api;
 import io.helidon.config.ConfiguredProvider;
 
 /**
  * Java service loader interface for web client services.
  */
+@Api.Stable
 public interface WebClientServiceProvider extends ConfiguredProvider<WebClientService> {
 }

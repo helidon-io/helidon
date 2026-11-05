@@ -15,6 +15,7 @@
  */
 package io.helidon.webclient.metrics;
 
+import io.helidon.common.Api;
 import io.helidon.http.Method;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
@@ -22,6 +23,7 @@ import io.helidon.webclient.api.WebClientServiceResponse;
 /**
  * Client metric meter for all requests.
  */
+@Api.Internal
 public class WebClientMeter extends WebClientMetric {
 
     WebClientMeter(Builder builder) {

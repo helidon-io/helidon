@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,13 @@
 
 package io.helidon.webclient.http1;
 
+import io.helidon.common.Api;
 import io.helidon.webclient.api.HttpClientResponse;
 
 /**
  * Client response for HTTP/1.1. client.
  */
+@Api.Stable
 public interface Http1ClientResponse extends HttpClientResponse {
 
 }

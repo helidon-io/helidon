@@ -30,6 +30,7 @@ import io.helidon.webclient.spi.ProtocolConfig;
 /**
  * HTTP client.
  */
+@Api.Stable
 public interface WebClient extends RuntimeType.Api<WebClientConfig>, HttpClient<HttpClientRequest> {
 
     /**
