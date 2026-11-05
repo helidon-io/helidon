@@ -16,9 +16,13 @@
 
 package io.helidon.common.task;
 
+import java.util.Set;
+
 final class InterruptableTaskSupport {
     private static final RecursiveExecutionError RECURSIVE_EXECUTION = new RecursiveExecutionError();
-    private static final ThreadLocal<Invocation> INVOCATION = new ThreadLocal<>();
+    private static final ThreadLocal<InterruptableTask<?>> INVOCATION = new ThreadLocal<>();
+    private static final StackWalker STACK_WALKER = StackWalker.getInstance(Set.of(StackWalker.Option.RETAIN_CLASS_REFERENCE,
+                                                                                StackWalker.Option.SHOW_HIDDEN_FRAMES));
     private static final ClassValue<RunImplementation> RUN_IMPLEMENTED = new ClassValue<>() {
         @Override
         protected RunImplementation computeValue(Class<?> type) {
@@ -51,13 +55,11 @@ final class InterruptableTaskSupport {
 
     private static void runWithoutLookup(InterruptableTask<?> task) {
         var previous = INVOCATION.get();
-        for (var invocation = previous; invocation != null; invocation = invocation.previous()) {
-            if (invocation.task() == task) {
-                // Bypass the default run()'s Exception wrapper; the outer adapter translates this signal.
-                throw RECURSIVE_EXECUTION;
-            }
+        if (previous == task && defaultRunInvoked()) {
+            // Bypass the default run()'s Exception wrapper; the outer adapter translates this signal.
+            throw RECURSIVE_EXECUTION;
         }
-        INVOCATION.set(new Invocation(task, previous));
+        INVOCATION.set(task);
         try {
             task.run();
         } catch (RecursiveExecutionError _) {
@@ -71,13 +73,32 @@ final class InterruptableTaskSupport {
         }
     }
 
+    private static boolean defaultRunInvoked() {
+        return STACK_WALKER.walk(frames -> {
+            var iterator = frames.iterator();
+            StackWalker.StackFrame callee = null;
+            boolean currentInvocationSeen = false;
+            while (iterator.hasNext()) {
+                var frame = iterator.next();
+                if (frame.getDeclaringClass() == InterruptableTaskSupport.class
+                        && frame.getMethodName().equals("runWithoutLookup")) {
+                    if (currentInvocationSeen) {
+                        // An override can delegate to the default run(); inspect only the fallback's direct callee.
+                        return callee != null && callee.getDeclaringClass() == InterruptableTask.class
+                                && callee.getMethodName().equals("run");
+                    }
+                    currentInvocationSeen = true;
+                }
+                callee = frame;
+            }
+            throw new IllegalStateException("Cannot determine InterruptableTask run() dispatch");
+        });
+    }
+
     private enum RunImplementation {
         OVERRIDDEN,
         DEFAULT,
         UNRESOLVED
-    }
-
-    private record Invocation(InterruptableTask<?> task, Invocation previous) {
     }
 
     private static final class RecursiveExecutionError extends Error {

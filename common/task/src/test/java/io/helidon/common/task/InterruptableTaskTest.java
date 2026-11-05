@@ -17,12 +17,17 @@
 package io.helidon.common.task;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandles;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -263,6 +268,84 @@ class InterruptableTaskTest {
         }
     }
 
+    @ParameterizedTest
+    @ValueSource(classes = {OptionalSignatureTask.class, OptionalSignatureInheritedTask.class, OptionalSignatureDefaultTask.class})
+    void missingOptionalSignatureSupportsBoundedReentry(Class<?> taskType) throws Exception {
+        var executions = new AtomicInteger();
+        var reference = new AtomicReference<InterruptableTask<?>>();
+        Runnable action = () -> {
+            if (executions.incrementAndGet() == 1) {
+                callTask(reference.get());
+            }
+        };
+        var task = (InterruptableTask<?>) taskClassWithoutOptionalType(taskType)
+                .getConstructor(Runnable.class).newInstance(action);
+        reference.set(task);
+
+        assertThat(task.call(), nullValue());
+        assertThat(executions.get(), is(2));
+        assertThat(task.call(), nullValue());
+        assertThat(executions.get(), is(3));
+    }
+
+    @Test
+    void missingOptionalSignatureSupportsReentryThroughAnotherTask() throws Exception {
+        var executions = new AtomicInteger();
+        var reference = new AtomicReference<InterruptableTask<?>>();
+        var inner = optionalSignatureTask(() -> callTask(reference.get()));
+        var outer = optionalSignatureTask(() -> {
+            if (executions.incrementAndGet() == 1) {
+                callTask(inner);
+            }
+        });
+        reference.set(outer);
+
+        assertThat(outer.call(), nullValue());
+        assertThat(executions.get(), is(2));
+    }
+
+    @Test
+    void missingOptionalSignatureSupportsExplicitDefaultRunDelegation() throws Exception {
+        var executions = new AtomicInteger();
+        Consumer<MethodHandles.Lookup> lookupConsumer = _ -> { };
+        var task = (InterruptableTask<?>) taskClassWithoutOptionalType(OptionalSignatureDelegatingTask.class)
+                .getConstructor(AtomicInteger.class, Consumer.class).newInstance(executions, lookupConsumer);
+
+        assertThat(task.call(), nullValue());
+        assertThat(executions.get(), is(2));
+    }
+
+    @Test
+    void missingOptionalSignatureSupportsHiddenDefaultRunDelegation() throws Exception {
+        var lookup = new AtomicReference<MethodHandles.Lookup>();
+        Consumer<MethodHandles.Lookup> lookupConsumer = lookup::set;
+        var taskClass = taskClassWithoutOptionalType(OptionalSignatureDelegatingTask.class);
+        taskClass.getConstructor(AtomicInteger.class, Consumer.class).newInstance(new AtomicInteger(), lookupConsumer);
+        byte[] bytes;
+        var resource = "/" + OptionalSignatureDelegatingTask.class.getName().replace('.', '/') + ".class";
+        try (var input = OptionalSignatureDelegatingTask.class.getResourceAsStream(resource)) {
+            if (input == null) {
+                throw new IllegalStateException("Missing task fixture: " + resource);
+            }
+            bytes = input.readAllBytes();
+        }
+        var hiddenClass = lookup.get().defineHiddenClass(bytes, true).lookupClass();
+        var executions = new AtomicInteger();
+        var task = (InterruptableTask<?>) hiddenClass.getConstructor(AtomicInteger.class, Consumer.class)
+                .newInstance(executions, lookupConsumer);
+
+        assertThat(task.call(), nullValue());
+        assertThat(executions.get(), is(2));
+    }
+
+    private static void callTask(InterruptableTask<?> task) {
+        try {
+            task.call();
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     private static InterruptableTask<?> optionalSignatureTask(Runnable action) throws Exception {
         return (InterruptableTask<?>) taskClassWithoutOptionalType(OptionalSignatureTask.class)
                 .getConstructor(Runnable.class).newInstance(action);
@@ -300,6 +383,20 @@ class InterruptableTaskTest {
 
         @Override
         default void run() {
+        }
+    }
+
+    public interface OptionalRunDefault extends InterruptableTask<Void> {
+        Runnable action();
+
+        @Override
+        default boolean canInterrupt() {
+            return true;
+        }
+
+        @Override
+        default void run() {
+            action().run();
         }
     }
 
@@ -354,6 +451,58 @@ class InterruptableTaskTest {
         @Override
         public boolean canInterrupt() {
             return true;
+        }
+
+        public OptionalSignatureType unused() {
+            return null;
+        }
+    }
+
+    public static class OptionalSignatureInheritedTask extends OptionalSignatureTask {
+        public OptionalSignatureInheritedTask(Runnable action) {
+            super(action);
+        }
+
+        public OptionalSignatureType unrelated() {
+            return null;
+        }
+    }
+
+    public static class OptionalSignatureDefaultTask implements OptionalRunDefault {
+        private final Runnable action;
+
+        public OptionalSignatureDefaultTask(Runnable action) {
+            this.action = action;
+        }
+
+        @Override
+        public Runnable action() {
+            return action;
+        }
+
+        public OptionalSignatureType unused() {
+            return null;
+        }
+    }
+
+    public static class OptionalSignatureDelegatingTask implements InterruptableTask<Void> {
+        private final AtomicInteger executions;
+
+        public OptionalSignatureDelegatingTask(AtomicInteger executions, Consumer<MethodHandles.Lookup> lookupConsumer) {
+            this.executions = executions;
+            lookupConsumer.accept(MethodHandles.lookup());
+        }
+
+        @Override
+        public boolean canInterrupt() {
+            return true;
+        }
+
+        @Override
+        public void run() {
+            if (executions.incrementAndGet() == 1) {
+                InterruptableTask.super.run();
+            }
         }
 
         public OptionalSignatureType unused() {
