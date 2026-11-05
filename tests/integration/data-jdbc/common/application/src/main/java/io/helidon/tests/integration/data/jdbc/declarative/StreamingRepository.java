@@ -20,6 +20,8 @@ import java.util.stream.Stream;
 
 import io.helidon.data.Data;
 import io.helidon.data.jdbc.Jdbc;
+import io.helidon.tests.integration.data.jdbc.parameters.StreamingAlternateInputs;
+import io.helidon.tests.integration.data.jdbc.parameters.StreamingInputs;
 import io.helidon.transaction.Tx;
 
 /**
@@ -27,16 +29,7 @@ import io.helidon.transaction.Tx;
  */
 @Data.Repository
 @Data.Provider("jdbc")
-public interface StreamingRepository {
-    /**
-     * Streams ordered values with repeated nullable input bindings.
-     *
-     * @param value The input may represent typed SQL NULL.
-     * @param action The consumer owns no JDBC resources.
-     */
-    @Jdbc.Statement("SELECT DATA_VALUE FROM ST_VALUE WHERE :value IS NULL OR DATA_VALUE = :value ORDER BY ID")
-    void values(String value, Consumer<Stream<String>> action);
-
+public interface StreamingRepository extends StreamingInputs<String>, StreamingAlternateInputs<String> {
     /**
      * Streams mapped records with positional binding and a control before the input.
      *
@@ -55,6 +48,18 @@ public interface StreamingRepository {
     @Jdbc.RowMapper(StreamingValueMapper.class)
     @Jdbc.Statement("SELECT ID AS id, DATA_VALUE AS value FROM ST_VALUE ORDER BY ID")
     void mapped(Consumer<Stream<Value>> action);
+
+    /**
+     * Streams records with reordered and repeated aliases inside a local transaction.
+     *
+     * @param SQL_FILTERED The consumer processes detached records.
+     * @param jdbcClient The nullable input selects a value through its alias.
+     * @param rows The input selects the first identifier through its alias.
+     */
+    @Tx.Required
+    @Jdbc.Statement("SELECT ID AS id, DATA_VALUE AS value FROM ST_VALUE "
+            + "WHERE ID >= :minimum AND (:value IS NULL OR DATA_VALUE = :value) ORDER BY ID")
+    void filtered(Consumer<Stream<Value>> SQL_FILTERED, @Data.Param("value") String jdbcClient, @Data.Param("minimum") int rows);
 
     /**
      * Represents one detached query row.

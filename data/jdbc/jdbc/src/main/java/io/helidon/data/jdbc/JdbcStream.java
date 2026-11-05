@@ -288,9 +288,9 @@ final class JdbcStream<T> implements Stream<T> {
 
     @Override
     public <R> R collect(Supplier<R> arg0, BiConsumer<R, ? super T> arg1, BiConsumer<R, R> arg2) {
-        Objects.requireNonNull(arg0, "The stream argument must not be null.");
-        Objects.requireNonNull(arg1, "The stream argument must not be null.");
-        Objects.requireNonNull(arg2, "The stream argument must not be null.");
+        Objects.requireNonNull(arg0, "The supplier must not be null.");
+        Objects.requireNonNull(arg1, "The accumulator must not be null.");
+        Objects.requireNonNull(arg2, "The combiner must not be null.");
         claim();
         try {
             return delegate.collect(arg0, arg1, arg2);
@@ -301,7 +301,7 @@ final class JdbcStream<T> implements Stream<T> {
 
     @Override
     public <R, A> R collect(Collector<? super T, A, R> arg0) {
-        Objects.requireNonNull(arg0, "The stream argument must not be null.");
+        Objects.requireNonNull(arg0, "The collector must not be null.");
         claim();
         try {
             return delegate.collect(arg0);
@@ -430,7 +430,7 @@ final class JdbcStream<T> implements Stream<T> {
     public Stream<T> onClose(Runnable arg0) {
         Objects.requireNonNull(arg0, "The stream argument must not be null.");
         scope.check();
-        // The JDK rejects registration after consumption before the shared handler list changes.
+        // Registering an empty handler lets the JDK validate stream state before the shared handler list changes.
         delegate.onClose(() -> { });
         scope.onClose(arg0);
         return this;

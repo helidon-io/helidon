@@ -28,5 +28,5 @@ import io.helidon.data.jdbc.Jdbc;
 @Data.Provider("jdbc")
 interface StreamingQueryRepository {
     @Jdbc.Statement("SELECT :statement WHERE :statement = :statement")
-    void values(String statement, Consumer<Stream<String>> jdbcClient);
+    void values(@Data.Param("statement") String SQL_VALUES, Consumer<Stream<String>> jdbcClient);
 }

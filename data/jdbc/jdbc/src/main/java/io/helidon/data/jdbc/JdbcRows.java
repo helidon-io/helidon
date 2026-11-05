@@ -22,7 +22,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
- * Result stage for a mapped JDBC query or generated keys.
+ * Provides the result stage for a mapped JDBC query or generated keys.
  *
  * @param <T> mapped type
  */

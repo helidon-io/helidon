@@ -46,7 +46,7 @@ class PostgreSqlDeclarativeStreamingTest extends AbstractJdbcStreamingContract {
         return true;
     }
     /**
-     * The driver reports buffered fetches in auto commit and blocks within an explicit transaction.
+     * The driver buffers rows in automatic commit mode and fetches them in blocks within an explicit transaction.
      */
     @Override
     protected void verifyDriverFetching(Connection connection) throws Exception {

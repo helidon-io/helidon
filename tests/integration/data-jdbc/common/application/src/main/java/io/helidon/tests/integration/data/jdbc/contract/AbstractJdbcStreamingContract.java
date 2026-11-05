@@ -448,6 +448,32 @@ public abstract class AbstractJdbcStreamingContract {
         }
     }
 
+    /**
+     * Aliased SQL inputs retain their values while streaming preserves transaction reservations and pool recovery.
+     */
+    @Test
+    protected final void streamsBoundInputsAndRecoversPool() {
+        if (declarative()) {
+            StreamingRepository repository = manager.registry().get(StreamingRepository.class);
+            repository.values("value3", stream -> assertThat(stream.toList(), is(List.of("value3"))));
+            repository.filtered(stream -> {
+                assertThat(stream.toList(), is(List.of(new StreamingRepository.Value(3, "value3"))));
+                assertThrows(IllegalStateException.class, () -> client.create(QUERY).map(String.class).list());
+            }, "value3", 2);
+            repository.filtered(stream -> assertThat(stream.count(), is(0L)), "' OR 1=1", 0);
+            repository.filtered(stream -> assertThat(stream.toList(), is(List.of(
+                    new StreamingRepository.Value(62, "value62"), new StreamingRepository.Value(63, "value63")))), null, 62);
+        } else {
+            String sql = "SELECT DATA_VALUE FROM ST_VALUE WHERE ID >= ? AND DATA_VALUE = ? ORDER BY ID";
+            client.create(sql).bind(1, 2).bind(2, "value3").map(String.class)
+                    .useStream(stream -> assertThat(stream.toList(), is(List.of("value3"))));
+            client.create(sql).bind(1, 0).bind(2, "' OR 1=1").map(String.class)
+                    .useStream(stream -> assertThat(stream.count(), is(0L)));
+        }
+        assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
+        assertThat(client.create(QUERY).map(String.class).list().size(), is(ROWS));
+    }
+
     private void consume(Consumer<Stream<String>> action) {
         if (declarative()) {
             manager.registry().get(StreamingRepository.class).values(null, action);

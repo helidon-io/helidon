@@ -15,6 +15,7 @@
  */
 package io.helidon.data.jdbc.codegen;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -111,9 +112,9 @@ final class JdbcMethodPlan {
             throw failure(method, "The SQL statement declared by @Jdbc.Statement must not be blank.");
         }
 
+        List<TypedElementInfo> inputs = ordinaryParameters(method, roundContext);
         List<TypedElementInfo> controls = method.parameterArguments().stream()
-                .filter(parameter -> roundContext.typeHierarchyResolver()
-                        .resolveSupertype(parameter.typeName(), TypeName.create(Consumer.class)).isPresent())
+                .filter(parameter -> !inputs.contains(parameter))
                 .toList();
         Return result;
         if (controls.isEmpty()) {
@@ -122,7 +123,8 @@ final class JdbcMethodPlan {
             if (controls.size() != 1 || !method.typeName().equals(TypeNames.PRIMITIVE_VOID)
                     || method.hasAnnotation(JdbcCodegenTypes.JDBC_GENERATED_KEYS)
                     || JdbcExecutionSelection.create(method) == JdbcExecutionSelection.UPDATE) {
-                throw failure(method, "A streaming query must return void, have one consumer, and request no update or keys.");
+                throw failure(method, "A streaming query must return void, declare exactly one Consumer<Stream<T>> parameter, "
+                        + "and request neither UPDATE execution nor generated keys.");
             }
             TypeName control = controls.getFirst().typeName();
             if (!control.equals(TypeName.create(Consumer.class))) {
@@ -160,8 +162,7 @@ final class JdbcMethodPlan {
                                   result.mappedType(),
                                   rowMapperRequested,
                                   explicitMapper);
-        JdbcSqlParameterPlan parameters = JdbcSqlParameterPlan.create(sql, method.parameterArguments().stream()
-                .filter(parameter -> !controls.contains(parameter)).toList(), method);
+        JdbcSqlParameterPlan parameters = JdbcSqlParameterPlan.create(sql, inputs, method);
         return new JdbcMethodPlan(method,
                                   operation,
                                   result.shape(),
@@ -171,6 +172,30 @@ final class JdbcMethodPlan {
                                   generatedColumns,
                                   explicitMapper,
                                   mapping.recordComponents());
+    }
+
+    /**
+     * Selects SQL inputs without changing their original parameter identities.
+     * Both method generation and inherited binding comparison exclude streaming controls.
+     *
+     * @param method The repository method supplies the original parameters.
+     * @param context The generation round resolves consumer supertypes.
+     * @return The SQL inputs retain their declaration order.
+     */
+    static List<TypedElementInfo> ordinaryParameters(TypedElementInfo method, RoundContext context) {
+        List<TypedElementInfo> inputs = new ArrayList<>();
+        for (TypedElementInfo parameter : method.parameterArguments()) {
+            if (context.typeHierarchyResolver().resolveSupertype(parameter.typeName(), TypeName.create(Consumer.class))
+                    .isPresent()) {
+                if (parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM)) {
+                    throw new CodegenException("@Data.Param is not supported on a streaming control parameter.",
+                                               parameter.originatingElementValue());
+                }
+            } else {
+                inputs.add(parameter);
+            }
+        }
+        return List.copyOf(inputs);
     }
 
     /**
@@ -577,7 +602,7 @@ final class JdbcMethodPlan {
     }
 
     /**
-     * Supported repository result shapes.
+     * Identifies the supported repository result shapes.
      */
     enum ReturnShape {
         ITEM,

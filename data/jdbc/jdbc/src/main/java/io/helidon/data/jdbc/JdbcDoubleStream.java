@@ -38,7 +38,14 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 /**
- * Preserves query scope and processing failures across stream pipelines.
+ * Preserves query scope and processing failures for a {@link DoubleStream}.
+ * Each primitive stream type has its own JDK interface, so conversions from
+ * {@link JdbcStream} need this wrapper to retain the shared {@link JdbcStreamScope}.
+ * The scope enforces callback lifetime and thread confinement across pipeline conversions.
+ * <p>
+ * The wrapper records processing failures from terminal operations and iterators
+ * even when the callback catches them. This includes failures from buffered
+ * processing after JDBC traversal has finished.
  */
 final class JdbcDoubleStream implements DoubleStream {
 
@@ -201,9 +208,9 @@ final class JdbcDoubleStream implements DoubleStream {
 
     @Override
     public <R> R collect(Supplier<R> arg0, ObjDoubleConsumer<R> arg1, BiConsumer<R, R> arg2) {
-        Objects.requireNonNull(arg0, "The stream argument must not be null.");
-        Objects.requireNonNull(arg1, "The stream argument must not be null.");
-        Objects.requireNonNull(arg2, "The stream argument must not be null.");
+        Objects.requireNonNull(arg0, "The supplier must not be null.");
+        Objects.requireNonNull(arg1, "The accumulator must not be null.");
+        Objects.requireNonNull(arg2, "The combiner must not be null.");
         claim();
         try {
             return delegate.collect(arg0, arg1, arg2);
@@ -439,7 +446,7 @@ final class JdbcDoubleStream implements DoubleStream {
     public DoubleStream onClose(Runnable arg0) {
         Objects.requireNonNull(arg0, "The stream argument must not be null.");
         scope.check();
-        // The JDK rejects registration after consumption before the shared handler list changes.
+        // Registering an empty handler lets the JDK validate stream state before the shared handler list changes.
         delegate.onClose(() -> { });
         scope.onClose(arg0);
         return this;
