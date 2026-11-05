@@ -26,7 +26,7 @@ import io.helidon.service.codegen.RegistryRoundContext;
 /**
  * Processes events from inject extension.
  */
-@Api.Stable
+@Api.Internal
 public interface InjectCodegenObserver {
 
     /**

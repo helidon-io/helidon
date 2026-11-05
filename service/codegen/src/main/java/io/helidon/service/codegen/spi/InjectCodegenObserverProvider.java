@@ -26,7 +26,7 @@ import io.helidon.service.codegen.RegistryCodegenContext;
  * A {@link java.util.ServiceLoader} provider interface for observers that will be
  * called for code generation events.
  */
-@Api.Stable
+@Api.Internal
 public interface InjectCodegenObserverProvider {
     /**
      * The provider can add supported options.

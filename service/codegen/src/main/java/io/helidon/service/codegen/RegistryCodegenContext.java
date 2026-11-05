@@ -23,7 +23,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Codegen context adding methods suitable for Helidon Service Registry code generation.
  */
-@Api.Stable
+@Api.Internal
 public interface RegistryCodegenContext extends CodegenContext {
     /**
      * Create a new instance from an existing code generation context.

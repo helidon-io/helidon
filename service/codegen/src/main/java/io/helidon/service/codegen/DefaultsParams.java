@@ -30,7 +30,7 @@ import io.helidon.common.Generated;
  * @see #create()
  */
 @Generated(value = "io.helidon.builder.codegen.BuilderCodegen", trigger = "io.helidon.common.types.DefaultsParamsBlueprint")
-@Api.Stable
+@Api.Internal
 public interface DefaultsParams extends DefaultsParamsBlueprint, Prototype.Api {
 
     /**

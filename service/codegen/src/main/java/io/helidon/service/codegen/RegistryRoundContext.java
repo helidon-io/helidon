@@ -29,7 +29,7 @@ import io.helidon.common.types.TypeName;
  * Context of a single round of code generation.
  * For example the first round may generate types, that require additional code generation.
  */
-@Api.Stable
+@Api.Internal
 public interface RegistryRoundContext extends RoundContext {
     /**
      * Add a new service descriptor.

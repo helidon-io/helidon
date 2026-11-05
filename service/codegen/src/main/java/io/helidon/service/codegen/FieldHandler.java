@@ -29,7 +29,7 @@ import io.helidon.common.types.TypeName;
 /**
  * An element capable of handling constants on a type.
  */
-@Api.Stable
+@Api.Internal
 public interface FieldHandler {
     /**
      * Create a new constant handler for a class.

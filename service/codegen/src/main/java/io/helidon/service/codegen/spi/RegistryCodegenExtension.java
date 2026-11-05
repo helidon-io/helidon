@@ -22,7 +22,7 @@ import io.helidon.service.codegen.RegistryRoundContext;
 /**
  * Code generation extension for Helidon Service Registry.
  */
-@Api.Stable
+@Api.Internal
 public interface RegistryCodegenExtension {
     /**
      * Process a single round.

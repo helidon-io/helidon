@@ -26,7 +26,7 @@ import io.helidon.common.types.ResolvedType;
 /**
  * New service descriptor metadata with its class code.
  */
-@Api.Stable
+@Api.Internal
 public interface DescriptorClassCode {
     /**
      * Create a new instance.

@@ -48,7 +48,7 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_
  * In case the option {@link io.helidon.service.codegen.ServiceOptions#AUTO_ADD_NON_CONTRACT_INTERFACES} is set to
  * true, all types are eligible (including classes and not contract annotated types).
  */
-@Api.Stable
+@Api.Internal
 public class ServiceContracts {
     private static final TypeInfo OBJECT_INFO = TypeInfo.builder()
             .typeName(TypeNames.OBJECT)

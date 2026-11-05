@@ -35,7 +35,7 @@ import io.helidon.common.types.TypeName;
  * to provide source code mapping from {@link java.util.function.Supplier} to the type (always three: plain type,
  * {@link java.util.Optional} type, and a {@link java.util.List} of types).
  */
-@Api.Stable
+@Api.Internal
 public interface InjectAssignment {
     /**
      * Map the type to the correct one.

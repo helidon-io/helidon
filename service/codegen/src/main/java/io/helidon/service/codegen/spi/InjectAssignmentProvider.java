@@ -24,7 +24,7 @@ import io.helidon.common.Api;
  *
  * @see InjectAssignment
  */
-@Api.Stable
+@Api.Internal
 public interface InjectAssignmentProvider {
     /**
      * Create a new provider to customize assignments.

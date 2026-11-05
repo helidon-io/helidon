@@ -24,7 +24,7 @@ import io.helidon.common.types.TypeNames;
 /**
  * Types used in code generation of Helidon Service.
  */
-@Api.Stable
+@Api.Internal
 public final class ServiceCodegenTypes {
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Service.Singleton}.

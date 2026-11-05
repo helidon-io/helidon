@@ -45,7 +45,7 @@ import io.helidon.service.metadata.Descriptors;
  * The service descriptor is then discoverable at runtime through our own resource in
  * {@value Descriptors#SERVICE_REGISTRY_LOCATION}.
  */
-@Api.Stable
+@Api.Internal
 public class HelidonMetaInfServices {
     private final CodegenFiler filer;
     private final String resourceLocation;

@@ -26,7 +26,7 @@ import io.helidon.common.types.TypeName;
  * Definition of a super service type (if any).
  * Only classes can have super types, and only if they directly extend a class that has a service descriptor generated.
  */
-@Api.Stable
+@Api.Internal
 public final class ServiceSuperType {
     private final TypeInfo typeInfo;
     private final TypeName descriptorTypeName;

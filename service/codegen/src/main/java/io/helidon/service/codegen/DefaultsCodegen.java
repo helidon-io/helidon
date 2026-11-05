@@ -38,7 +38,7 @@ import static io.helidon.common.types.TypeNames.GENERIC_TYPE;
 /**
  * Code generation for handling of {@link io.helidon.common.Default} annotations.
  */
-@Api.Stable
+@Api.Internal
 public final class DefaultsCodegen {
     private static final TypeName VALUE_TYPE = TypeName.create(Default.Value.class);
     private static final TypeName INT_TYPE = TypeName.create(Default.Int.class);

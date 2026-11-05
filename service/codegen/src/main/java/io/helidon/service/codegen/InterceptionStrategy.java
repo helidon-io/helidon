@@ -24,7 +24,7 @@ import io.helidon.common.Api;
  * <p>
  * The strategy is (in Helidon service registry) only honored at compilation time. At runtime, it can only be enabled or disabled.
  */
-@Api.Stable
+@Api.Internal
 public enum InterceptionStrategy {
     /**
      * No annotations will qualify in triggering interceptor creation (interception is disabled).

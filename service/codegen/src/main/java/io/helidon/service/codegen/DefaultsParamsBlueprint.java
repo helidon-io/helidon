@@ -27,7 +27,7 @@ import io.helidon.common.Api;
  * Parameters to code generate default values.
  */
 @Prototype.Blueprint
-@Api.Stable
+@Api.Internal
 interface DefaultsParamsBlueprint {
     /**
      * Qualifier used when mapping string values to target type.

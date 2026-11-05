@@ -27,7 +27,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Supported options specific to Helidon Service Registry.
  */
-@Api.Stable
+@Api.Internal
 public final class ServiceOptions {
     /**
      * Treat all super types as a contract for a given service type being added.
