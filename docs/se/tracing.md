@@ -11,9 +11,15 @@ Distributed tracing is a critical feature of microservice based applications,
 since it traces workflow both within a service and across multiple services.
 This provides insight to sequence and timing data for specific blocks of work,
 which helps you identify performance and operational issues. Helidon includes
-support for distributed tracing through its own API, backed by either
-[OpenTelemetry][opentelemetry], [Jaeger](https://www.jaegertracing.io/), or
-[Zipkin](https://zipkin.io/). Tracing is integrated with WebServer and Security.
+support for distributed tracing through its own API, backed by
+[OpenTelemetry][opentelemetry]. Tracing is integrated with WebServer and Security.
+
+> [!WARNING]
+> The Helidon Jaeger and Zipkin tracing providers are deprecated and marked for
+> removal. Use the [OpenTelemetry tracing provider](#opentelemetry-tracing)
+> instead. This deprecation applies to the Helidon providers, not the Jaeger or
+> Zipkin backend products. For an example using OpenTelemetry with a Jaeger
+> backend over OTLP, see the [tracing guide](guides/tracing.md).
 
 > [!NOTE]
 > As OpenTelemetry has subsumed [OpenTracing](https://opentracing.io), Helidon
@@ -45,7 +51,7 @@ To enable Helidon Tracing, add the following dependency to your project’s
 To transmit tracing data from your service to a backend, you need to add a
 tracing provider to your project.
 
-For Jaeger:
+For Jaeger (deprecated):
 
 ```xml [pom.xml]
 <dependency>
@@ -55,7 +61,7 @@ For Jaeger:
 </dependency>
 ```
 
-For Zipkin:
+For Zipkin (deprecated):
 
 ```xml [pom.xml]
 <dependency>
@@ -474,9 +480,14 @@ String response = client.get()
 
 ## Jaeger Tracing
 
+> [!WARNING]
+> The Helidon Jaeger tracing provider is deprecated and marked for removal.
+> The dependency and configuration below are retained for existing applications.
+> Use the [OpenTelemetry tracing provider](#opentelemetry-tracing) instead.
+
 ```xml [pom.xml]
 <dependency>
-  <groupId>io.helidon.tracing</groupId>
+  <groupId>io.helidon.tracing.providers</groupId>
   <artifactId>helidon-tracing-providers-jaeger</artifactId>
 </dependency>
 ```
@@ -505,6 +516,11 @@ As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger
 tracing in your Helidon application.
 
 ## Zipkin Tracing
+
+> [!WARNING]
+> The Helidon Zipkin tracing provider is deprecated and marked for removal.
+> The dependency and configuration below are retained for existing applications.
+> Use the [OpenTelemetry tracing provider](#opentelemetry-tracing) instead.
 
 ```xml [pom.xml]
 <dependency>

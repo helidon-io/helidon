@@ -105,10 +105,13 @@ import zipkin2.reporter.urlconnection.URLConnectionSender;
  *     </tr>
  * </table>
  *
+ * @deprecated Use the OpenTelemetry tracing provider instead.
  * @see <a href="http://zipkin.io/pages/instrumenting.html#core-data-structures">Zipkin Attributes</a>
  * @see <a href="https://github.com/openzipkin/zipkin/issues/962">Zipkin Missing Service Name</a>
  */
-@Configured(prefix = "tracing", root = true, description = "Zipkin tracer configuration")
+@Deprecated(since = "4.5.7", forRemoval = true)
+@Configured(prefix = "tracing", root = true,
+            description = "Deprecated Zipkin tracer configuration. Use the OpenTelemetry tracing provider instead.")
 public class ZipkinTracerBuilder implements OpenTracingTracerBuilder<ZipkinTracerBuilder> {
     static final System.Logger LOGGER = System.getLogger(ZipkinTracerBuilder.class.getName());
     static final String DEFAULT_PROTOCOL = "http";

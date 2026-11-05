@@ -47,8 +47,16 @@ Dependencies](../../dependency-management.md)).
 </dependency>
 ```
 
-Also, include the Helidon integration module for a tracing implementation (such
-as [Helidon Zipkin][helidon-zipkin])
+Also, include the Helidon integration module for a tracing implementation.
+
+> [!WARNING]
+> The Helidon Jaeger and [Zipkin][helidon-zipkin] tracing providers are deprecated
+> and marked for removal. The following legacy dependencies are retained for
+> existing applications. Use the [OpenTelemetry tracing provider](../tracing.md#opentelemetry-tracing)
+> instead. This deprecation applies to the Helidon providers, not the backend
+> products.
+
+For Zipkin (deprecated):
 
 ```xml [pom.xml]
 <dependency>
@@ -78,7 +86,7 @@ Add the Helidon tracing component itself:
 To transmit tracing data from your service to a backend, you need to add a
 tracing provider to your project.
 
-For Jaeger:
+For Jaeger (deprecated):
 
 ```xml [pom.xml]
 <dependency>
@@ -88,7 +96,7 @@ For Jaeger:
 </dependency>
 ```
 
-For Zipkin:
+For Zipkin (deprecated):
 
 ```xml [pom.xml]
 <dependency>

@@ -2,7 +2,7 @@
 
 ## Description
 
-Jaeger tracer configuration
+Deprecated Jaeger tracer configuration. Use the OpenTelemetry tracing provider instead
 
 ## Configuration options
 
