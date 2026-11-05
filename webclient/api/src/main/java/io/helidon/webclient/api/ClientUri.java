@@ -32,7 +32,7 @@ import io.helidon.common.uri.UriValidator;
  */
 public class ClientUri implements UriInfo {
     private final UriInfo base;
-    private final UriQueryWriteable query;
+    private final ClientUriQuery query;
 
     private UriInfo.Builder uriBuilder;
     private boolean skipUriEncoding = false;
@@ -40,7 +40,7 @@ public class ClientUri implements UriInfo {
 
     private ClientUri() {
         this.base = null;
-        this.query = UriQueryWriteable.create();
+        this.query = new ClientUriQuery();
         this.uriBuilder = UriInfo.builder();
     }
 
@@ -48,7 +48,7 @@ public class ClientUri implements UriInfo {
         this.base = baseUri;
         this.uriBuilder = UriInfo.builder(base);
         this.skipUriEncoding = baseUri.skipUriEncoding;
-        this.query = UriQueryWriteable.create().from(baseUri.query());
+        this.query = new ClientUriQuery(baseUri.query());
         this.hasQuery = baseUri.hasQuery;
     }
 
@@ -57,7 +57,7 @@ public class ClientUri implements UriInfo {
         this.uriBuilder = UriInfo.builder(baseUri);
         scheme(baseUri.scheme());
         this.skipUriEncoding = false;
-        this.query = UriQueryWriteable.create().from(baseUri.query());
+        this.query = new ClientUriQuery(baseUri.query());
         this.hasQuery = !baseUri.query().rawValue().isEmpty();
     }
 
@@ -181,12 +181,19 @@ public class ClientUri implements UriInfo {
 
     /**
      * Resolve the provided URI against this URI.
+     * With URI encoding enabled, imported raw path and query representations are preserved. Query parameter
+     * mutations discard the imported query representation; reading parameters does not change it.
      *
      * @param uri URI to use
      * @return updated instance
      * @throws IllegalArgumentException if the authority cannot be parsed as a host and optional port
      */
     public ClientUri resolve(URI uri) {
+        // Encode non-ASCII characters without changing existing percent escapes.
+        String asciiUri = uri.toASCIIString();
+        if (!asciiUri.equals(uri.toString())) {
+            uri = URI.create(asciiUri);
+        }
         if (uri.isAbsolute()) {
             this.uriBuilder = UriInfo.builder();
             this.query.clear();
@@ -205,14 +212,11 @@ public class ClientUri implements UriInfo {
             uriBuilder.port(uri.getPort());
         }
 
-        uriBuilder.path(resolvePath(uriBuilder.path().path(), uri.getPath()));
+        uriBuilder.path(UriPath.create(resolvePath(uriBuilder.path().rawPath(), uri.getRawPath())));
 
         String queryString = uri.getRawQuery();
         if (queryString != null) {
-            // class URI does not decode +'s, so we do it here
-            if (!queryString.isEmpty()) {
-                query.fromQueryString(queryString.replaceAll("\\+", "%20"));
-            }
+            query.appendRawQuery(queryString);
             hasQuery = true;
         }
 
@@ -230,7 +234,8 @@ public class ClientUri implements UriInfo {
      * @return updated URI
      */
     public ClientUri resolvePath(String path) {
-        uriBuilder.path(resolvePath(uriBuilder.path().path(), path));
+        uriBuilder.path(UriPath.create(resolvePath(uriBuilder.path().rawPath(),
+                                                   UriPath.createFromDecoded(path).rawPath())));
         return this;
     }
 
@@ -243,8 +248,7 @@ public class ClientUri implements UriInfo {
     public ClientUri resolve(ClientUri uri) {
         this.uriBuilder.from(uri);
         scheme(uri.scheme());
-        this.query.clear();
-        this.query.from(uri.query());
+        this.query.replace(uri.query());
         this.hasQuery = uri.hasQuery();
         return this;
     }

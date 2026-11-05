@@ -51,6 +51,8 @@ import io.helidon.http.Status;
 public interface ClientRequest<T extends ClientRequest<T>> {
     /**
      * Configure URI.
+     * The string is encoded before it is resolved. To preserve an already encoded request-target,
+     * use {@link #uri(java.net.URI)}.
      *
      * @param uri uri to resolve against base URI, or to use if absolute
      * @return updated request
@@ -116,7 +118,13 @@ public interface ClientRequest<T extends ClientRequest<T>> {
     T proxy(Proxy proxy);
 
     /**
-     * Configure URI.
+     * Configure an existing URI.
+     * With URI encoding enabled (the default), the raw path and query of an absolute URI are preserved
+     * in the HTTP request-target. Non-ASCII characters are percent-encoded, an empty path is sent as {@code /},
+     * and fragments are not sent. Relative URIs are combined with the base URI.
+     * Reading query parameters does not change the target. Explicit query parameter mutations rebuild the query;
+     * changing the path leaves an unmodified query intact.
+     * This preservation does not apply when {@link #skipUriEncoding(boolean) skipUriEncoding} is enabled.
      *
      * @param uri uri to resolve against base URI, or to use if absolute
      * @return updated request

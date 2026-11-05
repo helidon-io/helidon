@@ -77,10 +77,24 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
                         .addAll(value);
             });
         } else {
+            String query = uriQuery.rawValue();
+            if (!query.isEmpty()) {
+                int start = 0;
+                while (true) {
+                    int and = query.indexOf('&', start);
+                    String segment = and == -1 ? query.substring(start) : query.substring(start, and);
+                    int eq = segment.indexOf('=');
+                    String name = eq == -1 ? segment : segment.substring(0, eq);
+                    String value = eq == -1 ? "" : segment.substring(eq + 1);
+                    rawQueryParams.computeIfAbsent(name, it -> new ArrayList<>())
+                            .add(value);
+                    if (and == -1) {
+                        break;
+                    }
+                    start = and + 1;
+                }
+            }
             for (String name : uriQuery.names()) {
-                List<String> raw = uriQuery.getAllRaw(name);
-                rawQueryParams.computeIfAbsent(name, it -> new ArrayList<>())
-                        .addAll(raw);
                 List<String> decoded = uriQuery.all(name);
                 decodedQueryParams.computeIfAbsent(name, it -> new ArrayList<>())
                         .addAll(decoded);

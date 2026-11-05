@@ -208,6 +208,32 @@ For more information about these methods, check out
 [ClientRequest][clientrequest] API, which is a parent class of
 [HttpClientRequest][httpclientreques].
 
+### Forwarding an Existing Request Target
+
+When forwarding a request whose HTTP signature covers its request-target,
+pass the existing URI to `uri(java.net.URI)` and keep URI encoding enabled
+(the default):
+
+```java
+URI target = URI.create("https://example.com/objects/a%2fb?b=2&a=1&b=3&flag");
+try (var response = client.get().uri(target).request()) {
+    // The transmitted path and query are /objects/a%2fb?b=2&a=1&b=3&flag.
+}
+```
+
+WebClient preserves the raw path and query, including percent-escape spelling,
+parameter order, repeated names, flags, and empty query tokens. Reading query
+parameters or copying a client URI does not change that representation.
+Changing query parameters rebuilds the query; changing the path leaves an
+unmodified query intact. Non-ASCII characters use their percent-encoded form,
+an empty path is sent as `/`, and URI fragments are never sent.
+
+Use an absolute URI when the entire target must remain unchanged. Relative
+URIs are combined with the client base URI. The request `uri(String)` overload
+encodes its input and supports templates; use the `URI` overload for an
+already encoded target. `skipUriEncoding(true)` selects decoded serialization
+and does not provide raw request-target preservation.
+
 ### Sending the Request
 
 Once the request setup is completed, the following methods can be used to send
