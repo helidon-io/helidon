@@ -45,9 +45,9 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.DeclarativeConfigSupport;
 import io.helidon.declarative.codegen.DeclarativeTypes;
 import io.helidon.declarative.codegen.DeclarativeUtils;
-import io.helidon.declarative.codegen.DelcarativeConfigSupport;
 import io.helidon.declarative.codegen.http.HttpCodegenValidation;
 import io.helidon.declarative.codegen.http.HttpFields;
 import io.helidon.declarative.codegen.http.RestExtensionBase;
@@ -1099,7 +1099,7 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
     }
 
     private void constructorUriHandling(Constructor.Builder ctr, ClientEndpoint endpoint) {
-        DelcarativeConfigSupport.assignResolveExpression(ctr,
+        DeclarativeConfigSupport.assignResolveExpression(ctr,
                                                          "config",
                                                          "uri",
                                                          endpoint.uri());
