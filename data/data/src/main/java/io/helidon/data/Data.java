@@ -39,6 +39,26 @@ public final class Data {
     }
 
     /**
+     * Associates a repository input with a named SQL marker.
+     * The alias is retained across separate compilation and takes precedence over the Java parameter name.
+     * An override without an alias preserves inherited aliases. Conflicting inherited aliases require an explicit override.
+     * This annotation is interpreted only for repository methods using {@code Jdbc.Statement}.
+     * It is ignored by {@link Query} and Jakarta Persistence repository generation.
+     */
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.PARAMETER)
+    public @interface Param {
+        /**
+         * Returns the case sensitive marker name without the colon prefix.
+         * The value must be an untrimmed, nonblank name accepted by the named marker syntax.
+         * Aliases are not supported on positional inputs or provider control parameters.
+         *
+         * @return The required marker name.
+         */
+        String value();
+    }
+
+    /**
      * Repository interface.
      * Data repository interface marked with this annotation will be processed by code generator.
      * This is a required repository annotation.

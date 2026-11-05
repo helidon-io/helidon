@@ -25,6 +25,7 @@ import javax.sql.DataSource;
 import com.mysql.cj.jdbc.MysqlDataSource;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.MySQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -35,6 +36,10 @@ public final class MySqlTestDatabase implements BeforeAllCallback {
 
     private static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace.create(MySqlTestDatabase.class);
     private static final String PASSWORD = "jdbc-test-password";
+    private static final DockerImageName IMAGE = DockerImageName.parse(
+                    "container-registry.oracle.com/mysql/community-server:9.7.3")
+            .asCompatibleSubstituteFor("mysql");
+
     private static volatile MySQLContainer<?> container;
 
     /**
@@ -116,8 +121,14 @@ public final class MySqlTestDatabase implements BeforeAllCallback {
         private final MySQLContainer<?> database;
 
         private Database() {
-            database = new MySQLContainer<>(DockerImageName.parse("container-registry.oracle.com/mysql/community-server:9.7.3")
-                                                   .asCompatibleSubstituteFor("mysql"))
+            // JUnit creates this resource during suite startup, when the Docker connection is needed.
+            // Inspect the daemon rather than the JVM because Docker may run on a different architecture.
+            String architecture = DockerClientFactory.instance().client().versionCmd().exec().getArch();
+            DockerImageName image = IMAGE;
+            if ("arm64".equals(architecture) || "aarch64".equals(architecture)) {
+                image = image.withTag(image.getVersionPart() + "-aarch64");
+            }
+            database = new MySQLContainer<>(image)
                     .withUsername(username())
                     .withPassword(password())
                     // OCR MySQL restricts root to localhost unless remote access is explicitly enabled.

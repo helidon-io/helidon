@@ -30,7 +30,9 @@ sed -e "s/^#listen_addresses = 'localhost'/listen_addresses = '*'/g" \
 
 printf 'host all all all %s\n' "$(postgres -C password_encryption)" >> "${PGDATA}/pg_hba.conf"
 
-pg_ctl -D "${PGDATA}" -w start
+# Keep the temporary server off TCP so JDBC readiness cannot succeed before the final server starts.
+# Redirect its logs so only the final server reports readiness in the container logs.
+pg_ctl -D "${PGDATA}" -o "-c listen_addresses=''" -l "${PGDATA}/bootstrap.log" -w start
 psql \
     --username "${POSTGRES_USER:-test}" \
     --no-password \

@@ -62,6 +62,8 @@ class MixedProviderCodegenTest {
         Path generated = generatedSource(GenericJakartaRepository.class, "__Jpa");
         assertThat(Files.isRegularFile(generated), is(true));
         assertThat(Files.readString(generated), containsString("SELECT e FROM JakartaEntity e"));
+        assertThat(Files.readString(generated), containsString(".setParameter(\"id\", id)"));
+        assertThat(Files.readString(generated).contains(":ignored alias"), is(false));
         assertThat(Files.exists(generatedSource(GenericJakartaRepository.class, "__Jdbc")), is(false));
     }
 

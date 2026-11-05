@@ -33,4 +33,14 @@ public interface GenericJakartaRepository extends GenericJakartaParent<JakartaEn
      */
     @Data.Query("SELECT e FROM JakartaEntity e")
     List<JakartaEntity> findAllByQuery();
+
+    /**
+     * Keeps Java parameter binding for Data.Query even when an unrelated JDBC alias is present.
+     *
+     * @param id The identifier retains its Java binding name.
+     * @return The matching entities are returned.
+     */
+    @Data.Query("SELECT e FROM JakartaEntity e WHERE e.id = :id")
+    List<JakartaEntity> findWithIgnoredAlias(@Data.Param(":ignored alias") Integer id);
+
 }

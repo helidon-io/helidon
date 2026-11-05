@@ -19,11 +19,20 @@ also changed.
 
 | Database | Driver dependency | Configured JDBC driver class | Runtime used by tests |
 | --- | --- | --- | --- |
-| MySQL | `com.mysql:mysql-connector-j` | `com.mysql.cj.jdbc.Driver` | Testcontainers MySQL using `container-registry.oracle.com/mysql/community-server:9.7.3` |
+| MySQL | `com.mysql:mysql-connector-j` | `com.mysql.cj.jdbc.Driver` | Testcontainers MySQL using `container-registry.oracle.com/mysql/community-server:9.7.3` on AMD64 and `9.7.3-aarch64` on ARM64 |
 | PostgreSQL | `org.postgresql:postgresql` | `org.postgresql.Driver` | Testcontainers image built from `common/fixtures/pgsql/src/main/resources/db/pgsql/docker` |
 | Oracle Database | `com.oracle.database.jdbc:ojdbc17-production` | `oracle.jdbc.OracleDriver` | Testcontainers Oracle Database Free using `container-registry.oracle.com/database/free:23.26.3.0-lite` |
 
 External database tests require a working Docker/Testcontainers environment.
+
+Both shared MySQL fixtures select the image when the container starts, using the
+Docker daemon architecture. This also selects the correct image when Docker runs
+on a remote host with a different architecture from the JVM.
+
+The PostgreSQL initialization server accepts only Unix socket connections and writes
+its logs to `${PGDATA}/bootstrap.log`. The JDBC readiness probe can therefore succeed
+only after the final server starts accepting TCP connections. Testcontainers then
+loads the schema initialization script.
 
 The shared Oracle fixture raises `PROCESSES` to 400 to accommodate bursts of
 short-lived, unpooled connections between listener load updates. Its startup

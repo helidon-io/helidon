@@ -29,6 +29,7 @@ import io.helidon.tests.integration.data.jdbc.application.ContactLabel;
 import io.helidon.tests.integration.data.jdbc.application.ContactView;
 import io.helidon.tests.integration.data.jdbc.application.EqualWeightContact;
 import io.helidon.tests.integration.data.jdbc.application.SingleMapperContact;
+import io.helidon.tests.integration.data.jdbc.declarative.repository.AliasRepository;
 import io.helidon.tests.integration.data.jdbc.declarative.repository.ContactRepository;
 import io.helidon.tests.integration.data.jdbc.declarative.repository.EqualWeightMapperRepository;
 import io.helidon.tests.integration.data.jdbc.declarative.repository.FailingMapperRepository;
@@ -47,6 +48,40 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public abstract class AbstractGeneratedRepositoryContract {
     private static final int CONCURRENT_MAPPER_INVOCATIONS = 16;
 
+
+    /**
+     * Executes retained aliases, repeated typed nulls, generated names, and rollback through the existing runtime.
+     * Subsequent reads verify that later operations succeed after an operation failure.
+     */
+    @Test
+    protected void executesAliasesFromASeparatelyCompiledGenericLibrary() {
+        ServiceRegistryManager manager = startApplication();
+        try {
+            AliasRepository aliases = manager.registry().get(AliasRepository.class);
+            ContactRepository contacts = manager.registry().get(ContactRepository.class);
+            assertThat(aliases.aliases(null), is(List.of("beta")));
+            assertThat(aliases.aliases("alpha@example.test"), is(List.of("alpha")));
+            assertThat(aliases.covariantName("alpha"), is("alpha"));
+            String input = "alias ' OR '1'='1";
+            long key = aliases.aliasInsert(input, null).orElseThrow();
+            assertThat(contacts.findByName(input).orElseThrow().id(), is(key));
+            assertThat(aliases.aliasUpdate(key, "alias-renamed"), is(1));
+            assertThat(aliases.covariantName("alias-renamed"), is("alias-renamed"));
+            assertThat(contacts.findByName("alias-renamed").orElseThrow().id(), is(key));
+            assertThrows(TxException.class, () -> Tx.transaction(Tx.Type.REQUIRED, () -> {
+                aliases.aliasUpdate(key, "alias-rolled-back");
+                throw new IllegalStateException("The transaction must roll back.");
+            }));
+            assertThat(contacts.findByName("alias-renamed").orElseThrow().id(), is(key));
+            assertThrows(DataException.class, () -> aliases.aliasInsert(null, null));
+            assertThrows(DataException.class, () -> aliases.covariantName("alias-missing"));
+            assertThat(aliases.covariantName("alias-renamed"), is("alias-renamed"));
+            assertThat(aliases.aliases("alpha@example.test"), is(List.of("alpha")));
+            assertThat(contacts.delete(key), is(1L));
+        } finally {
+            manager.shutdown();
+        }
+    }
 
     /**
      * Proves the generated repository resolves through the registry and

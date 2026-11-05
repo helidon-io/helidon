@@ -29,6 +29,7 @@
     <name>Helidon Tests Integration Data JDBC Common Project</name>
 
     <modules>
+        <module>parameter-contracts</module>
         <module>application</module>
         <module>fixtures</module>
     </modules>

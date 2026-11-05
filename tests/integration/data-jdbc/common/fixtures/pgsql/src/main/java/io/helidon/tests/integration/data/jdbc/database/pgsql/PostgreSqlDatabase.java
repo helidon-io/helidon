@@ -15,8 +15,6 @@
  */
 package io.helidon.tests.integration.data.jdbc.database.pgsql;
 
-import java.time.Duration;
-import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.Future;
@@ -25,7 +23,6 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
 import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.images.builder.ImageFromDockerfile;
 
 /**
@@ -76,10 +73,8 @@ public final class PostgreSqlDatabase {
 
         PostgreSQLContainer(Future<String> image) {
             super(image);
-            waitStrategy = new LogMessageWaitStrategy()
-                    .withRegEx(".*database system is ready to accept connections.*\\s")
-                    .withTimes(2)
-                    .withStartupTimeout(Duration.of(60, ChronoUnit.SECONDS));
+            // JdbcDatabaseContainer probes JDBC readiness before loading the schema. The entrypoint keeps the
+            // temporary server on its Unix socket so only the final server can satisfy that probe over TCP.
             addExposedPort(5432);
         }
 

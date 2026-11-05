@@ -18,6 +18,7 @@ package io.helidon.data.jdbc.codegen;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
@@ -73,4 +74,26 @@ class JdbcSqlParameterPlanTest {
         assertThat(plan.parameterCount(), is(1));
         assertThat(plan.binds().getFirst().parameter(), is(parameter));
     }
+    /**
+     * Preserves physical order, repeated positions, and declared SQL null types independently of Java names.
+     */
+    @Test
+    void plansRepeatedAliasesInPhysicalOrder() {
+        TypedElementInfo first = TypedElementInfo.builder()
+                .kind(ElementKind.PARAMETER).elementName("renamed").typeName(TypeNames.STRING)
+                .addAnnotation(Annotation.builder().typeName(JdbcCodegenTypes.DATA_PARAM).value("key").build()).build();
+        TypedElementInfo second = TypedElementInfo.builder()
+                .kind(ElementKind.PARAMETER).elementName("count").typeName(TypeNames.PRIMITIVE_LONG).build();
+        JdbcSqlParameterPlan plan = JdbcSqlParameterPlan.create(
+                "SELECT :count, :key, :key", List.of(first, second), first);
+        assertThat(plan.sql(), is("SELECT ?, ?, ?"));
+        assertThat(plan.parameterCount(), is(3));
+        assertThat(plan.binds().stream().map(JdbcSqlParameterPlan.Bind::parameter).toList(),
+                   is(List.of(second, first, first)));
+        assertThat(plan.binds().stream().map(JdbcSqlParameterPlan.Bind::nullJdbcTypeConstant).toList(),
+                   is(List.of("BIGINT", "VARCHAR", "VARCHAR")));
+        assertThat(plan.binds().stream().map(JdbcSqlParameterPlan.Bind::nullable).toList(),
+                   is(List.of(false, true, true)));
+    }
+
 }
