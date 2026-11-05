@@ -26,7 +26,7 @@ import io.helidon.common.Api;
  * This type is used internally in Helidon to allow gathering of registrations, and then re-applying them on a
  * different builder.
  */
-@Api.Stable
+@Api.Internal
 public interface Registration {
     /**
      * Create a registration for service(s) with a path.
