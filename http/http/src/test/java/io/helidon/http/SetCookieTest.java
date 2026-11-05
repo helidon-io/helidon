@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,6 +54,40 @@ public class SetCookieTest {
         assertThat(setCookie.sameSite(), optionalValue(is(SetCookie.SameSite.LAX)));
 
         assertThat("Generate same cookie value", setCookie.toString(), is(TEMPLATE));
+    }
+
+    @Test
+    void testZeroMaxAge() {
+        SetCookie cookie = SetCookie.builder("some-cookie", "")
+                .maxAge(Duration.ZERO)
+                .build();
+
+        assertThat(cookie.toString(), is("some-cookie=; Max-Age=0"));
+        assertThat(cookie.text(), is("some-cookie=; Max-Age=0"));
+        assertThat(SetCookie.builder(cookie).build().text(), is("some-cookie=; Max-Age=0"));
+    }
+
+    @Test
+    void testParseZeroMaxAge() {
+        String value = "some-cookie=; Expires=Fri, 1 Jan 2100 00:00:00 GMT; Max-Age=0; Path=/; HttpOnly";
+        SetCookie cookie = SetCookie.parse(value);
+
+        assertThat(cookie.maxAge(), optionalValue(is(Duration.ZERO)));
+        assertThat(cookie.toString(), is(value));
+    }
+
+    @Test
+    void testMaxAgeNotSet() {
+        assertThat(SetCookie.create("some-cookie", "some-value").text(), is("some-cookie=some-value"));
+    }
+
+    @Test
+    void testNegativeMaxAge() {
+        SetCookie cookie = SetCookie.builder("some-cookie", "some-value")
+                .maxAge(Duration.ofSeconds(-1))
+                .build();
+
+        assertThat(cookie.text(), is("some-cookie=some-value"));
     }
 
     @Test
