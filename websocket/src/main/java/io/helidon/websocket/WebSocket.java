@@ -31,7 +31,7 @@ import io.helidon.service.registry.Service;
  * <p>
  * Each annotated method can have an unqualified parameter {@link io.helidon.websocket.WsSession}.
  */
-@Api.Stable
+@Api.Preview
 public class WebSocket {
     private WebSocket() {
     }

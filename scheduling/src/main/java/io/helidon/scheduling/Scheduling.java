@@ -76,7 +76,7 @@ import static io.helidon.scheduling.FixedRate.DelayType.SINCE_PREVIOUS_START;
  * @see io.helidon.scheduling.Scheduling.Cron
  * @see io.helidon.scheduling.Scheduling.FixedRate
  */
-@Api.Stable
+@Api.Preview
 public final class Scheduling {
     static final String DEFAULT_THREAD_NAME_PREFIX = "scheduled-";
     static final LazyValue<ScheduledExecutorService> DEFAULT_SCHEDULER = LazyValue.create(() -> {

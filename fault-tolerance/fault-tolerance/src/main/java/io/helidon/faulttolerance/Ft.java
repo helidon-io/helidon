@@ -28,7 +28,7 @@ import io.helidon.service.registry.Interception;
 /**
  * Fault tolerance annotations and types for Helidon Declarative.
  */
-@Api.Stable
+@Api.Preview
 public final class Ft {
     private Ft() {
     }
