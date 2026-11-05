@@ -1288,13 +1288,13 @@ class Http2ServerStreamSniTest {
     }
 
     @Test
-    void connectionAbortCancelsNonInterruptibleInitialization() throws InterruptedException {
+    void connectionAbortClosesNonInterruptibleInitialization() throws InterruptedException {
         Http2ConnectionStreams streams = new Http2ConnectionStreams();
         CountDownLatch initEntered = new CountDownLatch(1);
         CountDownLatch interrupted = new CountDownLatch(1);
         CountDownLatch workerExited = new CountDownLatch(1);
         CountDownLatch initRelease = new CountDownLatch(1);
-        AtomicReference<Thread> resetThread = new AtomicReference<>();
+        AtomicReference<Thread> closeThread = new AtomicReference<>();
         Http2SubProtocolSelector.SubProtocolHandler handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
         doAnswer(_ -> {
             initEntered.countDown();
@@ -1313,14 +1313,14 @@ class Http2ServerStreamSniTest {
             return null;
         }).when(handler).init();
         doAnswer(_ -> {
-            resetThread.set(Thread.currentThread());
+            closeThread.set(Thread.currentThread());
             try {
                 interrupted.await(5, TimeUnit.SECONDS);
             } finally {
                 initRelease.countDown();
             }
             return null;
-        }).when(handler).rstStream(any(Http2RstStream.class));
+        }).when(handler).close();
         Http2SubProtocolSelector selector = (ctx,
                                              prologue,
                                              headers,
@@ -1348,16 +1348,23 @@ class Http2ServerStreamSniTest {
                 workerExited.countDown();
             }
         });
-        assertThat("handler entered", initEntered.await(5, TimeUnit.SECONDS), is(true));
+        try {
+            assertThat("handler entered", initEntered.await(5, TimeUnit.SECONDS), is(true));
 
-        stream.abortConnection();
+            stream.abortConnection();
 
-        assertThat("handler interrupted", interrupted.await(5, TimeUnit.SECONDS), is(true));
-        assertThat("worker exited", workerExited.await(5, TimeUnit.SECONDS), is(true));
-        worker.join();
-        verify(handler).rstStream(any(Http2RstStream.class));
-        assertThat("reset delivered by connection thread", resetThread.get(), sameInstance(Thread.currentThread()));
-        assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
+            assertThat("handler interrupted", interrupted.await(5, TimeUnit.SECONDS), is(true));
+            assertThat("worker exited", workerExited.await(5, TimeUnit.SECONDS), is(true));
+            worker.join();
+            verify(handler).close();
+            verify(handler, never()).rstStream(any(Http2RstStream.class));
+            assertThat("close delivered by connection thread", closeThread.get(), sameInstance(Thread.currentThread()));
+            assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
+        } finally {
+            initRelease.countDown();
+            worker.interrupt();
+            worker.join(5_000);
+        }
     }
 
     @Test
