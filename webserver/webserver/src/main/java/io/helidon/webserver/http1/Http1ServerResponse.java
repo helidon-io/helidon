@@ -69,10 +69,10 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
     private final DataWriter dataWriter;
     private final Http1ServerRequest request;
     private final ServerResponseHeaders headers;
-    private final ServerResponseTrailers trailers;
     private final boolean keepAlive;
     private final boolean validateHeaders;
 
+    private ServerResponseTrailers trailers;
     private boolean keepConnectionOpen;
     private boolean streamingEntity;
     private boolean isSent;
@@ -94,7 +94,6 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         this.dataWriter = dataWriter;
         this.request = request;
         this.headers = ServerResponseHeaders.create();
-        this.trailers = ServerResponseTrailers.create();
         this.keepAlive = keepAlive;
         this.keepConnectionOpen = keepAlive;
         this.validateHeaders = validateHeaders;
@@ -306,7 +305,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
     @Override
     public ServerResponseTrailers trailers() {
         if (request.headers().containsToken(HeaderValues.TE_TRAILERS) || headers.contains(HeaderNames.TRAILER)) {
-            return trailers;
+            return ensureTrailers();
         }
         throw new IllegalStateException(
                 "Trailers are supported only when request came with 'TE: trailers' header or "
@@ -356,7 +355,9 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
             return false;
         }
         streamResult = "";
-        trailers.clear();
+        if (trailers != null) {
+            trailers.clear();
+        }
         return true;
     }
 
@@ -500,6 +501,13 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         return responseBuffer;
     }
 
+    private ServerResponseTrailers ensureTrailers() {
+        if (trailers == null) {
+            trailers = ServerResponseTrailers.create();
+        }
+        return trailers;
+    }
+
     private OutputStream outputStream(boolean allowAutomaticEncoding) {
         if (isSent) {
             throw new IllegalStateException("Response already sent");
@@ -511,7 +519,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
 
         int writeBufferSize = ctx.listenerContext().config().writeBufferSize();
         BlockingOutputStream bos = new BlockingOutputStream(headers,
-                                                            trailers,
+                                                            ensureTrailers(),
                                                             beforeTrailers(),
                                                             this::status,
                                                             () -> streamResult,
