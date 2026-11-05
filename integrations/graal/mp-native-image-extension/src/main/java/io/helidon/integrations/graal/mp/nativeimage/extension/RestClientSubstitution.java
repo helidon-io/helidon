@@ -27,6 +27,11 @@ import com.oracle.svm.core.annotate.TargetClass;
  * Substitution for Method handles used in original class.
  */
 public class RestClientSubstitution {
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? RestClientSubstitution.class.getClassLoader() : classLoader;
+    }
+
     @TargetClass(className = "org.glassfish.jersey.microprofile.restclient.ReflectionUtil",
                  onlyWith = OnlyWhenOnClasspath.class)
     static final class ReflectionUtilSubstitution {
@@ -37,11 +42,6 @@ public class RestClientSubstitution {
             return (T) Proxy.newProxyInstance(cl,
                     new Class[] {restClientClass},
                     new DefaultMethodProxyHandler());
-        }
-
-        private static ClassLoader contextClassLoader() {
-            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-            return classLoader == null ? RestClientSubstitution.class.getClassLoader() : classLoader;
         }
     }
 
