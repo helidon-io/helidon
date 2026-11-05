@@ -63,6 +63,29 @@ escaped = "~" ( "0" / "1" )
 > in keys. To include a dot as a character in a key escape it as “~1”. To
 > include a tilde escape it as “~0”.
 
+### Source Names and Lookup Keys
+
+A name in a configuration source and the key passed to `Config.get` are
+different: lookup keys always use the escaping rules above. How a source name
+becomes part of the tree depends on the parser. HOCON quoted names and JSON
+member names are literal, while an unquoted HOCON `a.b` denotes a path. By
+default, the YAML parser interprets both quoted and unquoted names as Helidon
+paths, including the `~1` and `~0` escapes.
+
+The YAML parser's opt-in [literal keys mode](supported-formats.md#literal-yaml-keys)
+treats every map key as a literal name, including keys in nested maps and lists.
+For example:
+
+| YAML source with literal keys enabled | Lookup key |
+|--------------------------------------|------------|
+| `a.b: value`                          | `a~1b`     |
+| `a~1b: value`                         | `a~01b`    |
+| `a~b: value`                          | `a~0b`     |
+
+An ordinary nested map with `a` containing `b` still uses the lookup key `a.b`.
+For a name obtained at runtime, use `Config.Key.escapeName(name)` to encode a
+single literal name before passing it to `Config.get`.
+
 ## In-memory Representation of Configuration
 
 The following example is in [HOCON][hocon] (human-optimized config object

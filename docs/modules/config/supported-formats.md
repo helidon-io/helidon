@@ -95,6 +95,79 @@ Config config = Config.builder(classpath("application.yaml"))
 2. Explicit registration of the YAML parser is therefore required.
 <!--@mdc :: -->
 
+#### Literal YAML Keys
+
+By default, the YAML parser interprets map keys as Helidon configuration paths.
+For example, both `a.b: value` and `"a.b": value` create a node `b` below `a`.
+The `~1` and `~0` sequences represent a dot and a tilde, respectively. Quoting
+a YAML key does not change this behavior.
+
+To preserve map keys as literal names, enable `literalKeys` on the
+[`YamlConfigParser`][yamlconfigparser] builder and register the configured parser:
+
+```java
+YamlConfigParser parser = YamlConfigParser.builder()
+        .literalKeys(true)
+        .build();
+Config config = Config.create(ConfigSources.classpath("application.yaml")
+        .parser(parser));
+```
+
+Alternatively, register it with `Config.builder().addParser(parser)` when
+building configuration from YAML sources. The option defaults to `false`;
+the constructor, `create()`, and service-loaded parser retain their existing
+path interpretation.
+
+Literal keys apply recursively to all YAML maps, regardless of quoting or
+whether a key contains a scalar, map, or list. Normal YAML nesting and list
+indexes still define the tree structure:
+
+```yaml [application.yaml]
+a.b: literal dot
+a~1b: literal escape sequence
+a:
+  b: nested value
+group.name:
+  child.name: nested literal name
+items.list:
+  - item.name: list value
+```
+
+With literal keys enabled, read these values using encoded Helidon lookup keys:
+
+```java
+config.get("a~1b").asString().get();                 // literal dot
+config.get("a~01b").asString().get();               // literal escape sequence
+config.get("a.b").asString().get();                 // nested value
+config.get("group~1name.child~1name").asString().get(); // nested literal name
+config.get("items~1list.0.item~1name").asString().get(); // list value
+```
+
+The parser escapes each source name once. Write the actual name in YAML;
+use `~1` for a dot and `~0` for a tilde in lookup keys. For example, a literal
+source name `a~b` is retrieved with `config.get("a~0b")`. See
+[Source Names and Lookup Keys](hierarchical-features.md#source-names-and-lookup-keys).
+
+The builder also accepts a configuration node containing `literal-keys`:
+
+```properties [parser.properties]
+yaml.literal-keys=true
+```
+
+```java
+Config bootstrap = Config.create(ConfigSources.classpath("parser.properties"));
+YamlConfigParser parser = YamlConfigParser.builder()
+        .config(bootstrap.get("yaml"))
+        .build();
+Config config = Config.create(ConfigSources.classpath("application.yaml")
+        .parser(parser));
+```
+
+The application must load these bootstrap settings separately and pass the
+component node to the parser builder. A YAML source cannot configure its own
+parser, and metaconfiguration does not forward this option automatically.
+See the [YAML parser configuration reference](../../config/io.helidon.config.yaml.YamlConfigParser.md).
+
 ### HOCON/JSON
 
 The Helidon HOCON config module handles sources in the HOCON and JSON formats.

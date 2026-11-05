@@ -32,6 +32,8 @@ module io.helidon.config.yaml {
     requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.config;
+    requires transitive io.helidon.builder.api;
+    requires static io.helidon.config.metadata;
 
     exports io.helidon.config.yaml;
 

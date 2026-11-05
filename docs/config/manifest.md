@@ -21,6 +21,7 @@ See the [root type](config_reference.md).
 - [io.<wbr>helidon.<wbr>common.<wbr>tls.<wbr>TlsMaterial](io.helidon.common.tls.TlsMaterial.md)
 - [io.<wbr>helidon.<wbr>config.<wbr>overrides.<wbr>Override<wbr>Config<wbr>Filter<wbr>Provider](io.helidon.config.overrides.OverrideConfigFilterProvider.md)
 - [io.<wbr>helidon.<wbr>config.<wbr>overrides.<wbr>Override<wbr>Pattern<wbr>Config](io.helidon.config.overrides.OverridePatternConfig.md)
+- [io.<wbr>helidon.<wbr>config.<wbr>yaml.<wbr>Yaml<wbr>Config<wbr>Parser](io.helidon.config.yaml.YamlConfigParser.md)
 - [io.<wbr>helidon.<wbr>data.<wbr>jdbc.<wbr>Jdbc<wbr>Client](io.helidon.data.jdbc.JdbcClient.md)
 - [io.<wbr>helidon.<wbr>data.<wbr>sql.<wbr>common.<wbr>Connection<wbr>Config](io.helidon.data.sql.common.ConnectionConfig.md)
 - [io.<wbr>helidon.<wbr>data.<wbr>sql.<wbr>common.<wbr>SqlConfig](io.helidon.data.sql.common.SqlConfig.md)
