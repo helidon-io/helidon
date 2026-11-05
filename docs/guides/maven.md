@@ -13,41 +13,32 @@ Helidon supports Maven by providing the following:
 
 1.  The Helidon Application parent POM
 2.  Dependency management via the Helidon BOM and Dependencies POMs
-3.  The `helidon-maven-plugin`
+3.  The `helidon-service-maven-plugin` application linker
+4.  The `helidon-maven-plugin` for custom Java runtime images
 
 ## The Helidon Application POM
 
 Helidon examples and projects generated using the [Helidon
-Quickstart](quickstart.md) use a Helidon application POM as
-their parent. This parent POM provides the following:
+Quickstart](quickstart.md) use a Helidon application POM as their parent. This
+parent provides dependency management and plugin configuration for building
+and packaging a Helidon application.
 
-1.  Helidon dependency management.
-2.  Maven plugin configurations to help in the building and packaging of your
-    Helidon application.
-
-If you want to use your own parent POM, then take a look at the [standalone
-quickstart example][standalone-quick]. This example has a standalone POM that
-you can pattern your own application POM after.
+If you use your own parent POM, see the
+[standalone quickstart example][standalone-quick] for a complete example.
 
 ## Dependency Management
 
-In Maven, you use Dependency Management to manage the versions of the
-dependencies used by your project so that you do not need to specify versions
-when declaring project dependencies.
+Maven dependency management lets a project declare dependencies without
+repeating their versions.
 
-Helidon provides two POMs that are used together for dependency management:
+Helidon provides two BOMs:
 
-1.  The Helidon Bill of Materials (BOM) POM (`io.helidon:helidon-bom`): manages
-    the version of Helidon artifacts (to align with the Helidon version).
-2.  The Helidon Dependencies POM (`io.helidon:helidon-dependencies`): manages
-    the versions of third party dependencies to ensure consistency across
-    Helidon and your Helidon application. Inherits the Helidon BOM POM.
+1.  `io.helidon:helidon-bom` manages Helidon artifact versions.
+2.  `io.helidon:helidon-dependencies` inherits the Helidon BOM and manages
+    third-party dependency versions.
 
-When you use a Helidon Application POM as your project’s parent pom, you inherit
-Helidon’s dependency management. If you have your own parent, then you can
-import Helidon dependency management like this:
-
-Import Helidon Dependency Management:
+The Helidon Application POM already provides this dependency management. With
+another parent, import it explicitly:
 
 ```xml [pom.xml]
 <dependencyManagement>
@@ -55,7 +46,7 @@ Import Helidon Dependency Management:
     <dependency>
       <groupId>io.helidon</groupId>
       <artifactId>helidon-dependencies</artifactId>
-      <version>28.0.0-SNAPSHOT</version>
+      <version>28.0.0</version>
       <type>pom</type>
       <scope>import</scope>
     </dependency>
@@ -63,10 +54,7 @@ Import Helidon Dependency Management:
 </dependencyManagement>
 ```
 
-You then declare dependencies on Helidon (and other) components without
-specifying a version.
-
-Component dependency:
+You can then omit versions from managed dependencies:
 
 ```xml [pom.xml]
 <dependency>
@@ -75,6 +63,149 @@ Component dependency:
 </dependency>
 ```
 
+## Declarative Applications
+
+Helidon Declarative uses build-time annotation processing. The annotation
+processors generate service descriptors required by a declarative application.
+Configure them whether you use an application binding.
+
+Add the service registry dependency and configure annotation processing:
+
+```xml [pom.xml]
+<properties>
+  <helidon.version>28.0.0</helidon.version>
+</properties>
+
+<dependencies>
+  <dependency>
+    <groupId>io.helidon.service</groupId>
+    <artifactId>helidon-service-registry</artifactId>
+  </dependency>
+</dependencies>
+
+<build>
+  <plugins>
+    <!-- Required for Helidon Declarative service descriptors. -->
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-compiler-plugin</artifactId>
+      <version>3.16.0</version>
+      <configuration>
+        <release>27</release>
+        <annotationProcessorPaths>
+          <path>
+            <groupId>io.helidon.bundles</groupId>
+            <artifactId>helidon-bundles-apt</artifactId>
+            <version>${helidon.version}</version>
+          </path>
+        </annotationProcessorPaths>
+      </configuration>
+    </plugin>
+  </plugins>
+</build>
+```
+
+An application binding is an optional build-time linker. It can hard-wire
+service metadata and injection plans to avoid classpath scanning and reflection
+during bootstrap. The linker runs after compilation and before packaging.
+
+The following configuration shows annotation processing together with the
+optional linker:
+
+```xml [pom.xml]
+<properties>
+  <helidon.version>28.0.0</helidon.version>
+</properties>
+
+<build>
+  <plugins>
+    <!-- Required for Helidon Declarative service descriptors. -->
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-compiler-plugin</artifactId>
+      <version>3.16.0</version>
+      <configuration>
+        <release>27</release>
+        <annotationProcessorPaths>
+          <path>
+            <groupId>io.helidon.bundles</groupId>
+            <artifactId>helidon-bundles-apt</artifactId>
+            <version>${helidon.version}</version>
+          </path>
+        </annotationProcessorPaths>
+      </configuration>
+    </plugin>
+
+    <!-- Optional application linker. -->
+    <plugin>
+      <groupId>io.helidon.service</groupId>
+      <artifactId>helidon-service-maven-plugin</artifactId>
+      <version>${helidon.version}</version>
+      <configuration>
+        <packageName>com.example</packageName>
+        <generateMain>true</generateMain>
+      </configuration>
+      <executions>
+        <execution>
+          <id>create-application</id>
+          <goals>
+            <goal>create-application</goal>
+          </goals>
+        </execution>
+        <execution>
+          <id>test-application-create</id>
+          <goals>
+            <goal>test-application-create</goal>
+          </goals>
+        </execution>
+      </executions>
+    </plugin>
+  </plugins>
+</build>
+```
+
+`create-application` links main services after main compilation.
+`test-application-create` links main and test services after test compilation.
+Both goals use their lifecycle defaults, so no phase configuration is needed.
+
+Run the usual Maven lifecycle:
+
+```shell [Terminal]
+mvn verify
+```
+
+The example generates `com.example.ApplicationMain`. Alternatively, leave
+`generateMain` at its default of `false`, annotate your own main class with
+`@Service.GenerateBinding`, and start the registry with
+`ApplicationBinding.create()`.
+
+The service linker accepts these options:
+
+| Option             | Default              | Purpose                            |
+|--------------------|----------------------|------------------------------------|
+| `packageName`      | Inferred             | Package for generated classes      |
+| `moduleName`       | Inferred             | Application name in the binding    |
+| `bindingClassName` | `ApplicationBinding` | Binding simple name                |
+| `generateBinding`  | `true`               | Generate an application binding    |
+| `generateMain`     | `false`              | Generate a registry main class     |
+| `mainClassName`    | `ApplicationMain`    | Generated main simple name         |
+| `validate`         | `true`               | Validate services during linking   |
+| `failOnError`      | `true`               | Fail on linking errors             |
+| `failOnWarning`    | `false`              | Fail on linking warnings           |
+| `release`          | `27`                 | Java release for generated sources |
+| `compilerArgs`     | None                 | Additional compiler arguments      |
+
+The test goal defaults to `TestApplicationBinding` and never generates a main
+class. Put goal-specific options inside the corresponding `execution` when
+main and test linking need different values.
+
+The Helidon Application parent already provides Java compiler settings and
+dependency management. You must still add the annotation processor path and
+the service linker executions you want to use.
+
+The service linker is separate from the build-tools
+`helidon-maven-plugin` described below.
+
 ## The `helidon-maven-plugin`
 
 The Helidon Maven plugin provides the `jlink-image` goal to build a
@@ -82,21 +213,15 @@ The Helidon Maven plugin provides the `jlink-image` goal to build a
 
 GraalVM Native Image is not supported.
 
-For full documentation of the plugin please see the [Helidon Maven Plugin
-README][helidon-maven-pl].
+For full documentation, see the
+[Helidon Maven Plugin README][helidon-maven-pl].
 
-If you use the Helidon application parent POM you will have this plugin
-configured for you. If you need to customize the `helidon-maven-plugin` you can
-do so in a few ways:
-
-1.  Passing system properties to Maven on the command line.
-2.  Setting system properties in your project’s `pom.xml`
-3.  Overriding the plugin configuration by using `pluginManagment`
+If you use the Helidon Application parent POM, this plugin is already
+configured. You can customize it by passing system properties, declaring
+properties in the project POM, or overriding its `pluginManagement`
+configuration.
 
 ### Pass Property on Command Line
-
-You can override many of the plugin attributes by passing a system property to
-the `mvn` command:
 
 ```shell [Terminal]
 mvn package -Pjlink-image -Djlink.image.aotCache=false
@@ -104,21 +229,13 @@ mvn package -Pjlink-image -Djlink.image.aotCache=false
 
 ### Set Property in pom.xml
 
-Or you can set the properties in your project’s pom.xml:
-
-```xml
+```xml [pom.xml]
 <properties>
-    <jlink.image.aotCache>false</jlink.image.aotCache>
+  <jlink.image.aotCache>false</jlink.image.aotCache>
 </properties>
 ```
 
 ### Override Plugin Configuration using `pluginManagement`
-
-For full control you can override the plugin’s configuration using
-`pluginManagement`:
-
-Turn off generation of the AOT cache when generating a custom Java runtime
-image:
 
 ```xml [pom.xml]
 <build>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.codegen.compiler;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -108,9 +109,6 @@ class JavaC {
 
     private void doCompile(Result result, Path[] sourceFilesToCompile) {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-        StandardJavaFileManager fileManager = compiler.getStandardFileManager(result,
-                                                                              null,
-                                                                              StandardCharsets.UTF_8);
 
         List<String> optionList = new ArrayList<>();
         if (!classpath.isEmpty()) {
@@ -156,23 +154,27 @@ class JavaC {
             });
         }
 
-        Iterable<? extends JavaFileObject> compilationUnit = fileManager
-                .getJavaFileObjectsFromPaths(filesToCompile);
-        JavaCompiler.CompilationTask task = compiler
-                .getTask(null, fileManager, result, optionList, null, compilationUnit);
+        try (StandardJavaFileManager fileManager = compiler.getStandardFileManager(result, null, StandardCharsets.UTF_8)) {
+            Iterable<? extends JavaFileObject> compilationUnit = fileManager
+                    .getJavaFileObjectsFromPaths(filesToCompile);
+            JavaCompiler.CompilationTask task = compiler
+                    .getTask(null, fileManager, result, optionList, null, compilationUnit);
 
-        if (logger != null) {
-            logger.log(System.Logger.Level.DEBUG,
-                       "javac "
-                               + String.join(" ", optionList)
-                               + " "
-                               + Stream.of(sourceFilesToCompile).map(Path::toString).collect(Collectors.joining(" ")));
-        }
+            if (logger != null) {
+                logger.log(System.Logger.Level.DEBUG,
+                           "javac "
+                                   + String.join(" ", optionList)
+                                   + " "
+                                   + Stream.of(sourceFilesToCompile).map(Path::toString).collect(Collectors.joining(" ")));
+            }
 
-        Boolean taskResult = task.call();
-        // we do it like this to allow for warnings to be treated as errors
-        if (taskResult != null && !taskResult) {
-            result.isSuccessful = false;
+            Boolean taskResult = task.call();
+            // we do it like this to allow for warnings to be treated as errors
+            if (taskResult != null && !taskResult) {
+                result.isSuccessful = false;
+            }
+        } catch (IOException e) {
+            throw new CodegenException("Failed to close compiler resources", e);
         }
     }
 

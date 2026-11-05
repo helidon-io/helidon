@@ -15,26 +15,20 @@
  */
 
 /**
- * Maven-plugin module for code generating service registry components that require full runtime classpath.
+ * Maven integration for build-time declarative application binding generation.
  */
 module io.helidon.service.maven.plugin {
-
+    requires io.helidon.common;
+    requires io.helidon.service.application.codegen;
     requires io.helidon.codegen;
-    requires io.helidon.codegen.scan;
-    requires io.helidon.codegen.compiler;
     requires io.helidon.service.codegen;
-
+    requires io.helidon.common.types;
+    requires io.github.classgraph;
     requires maven.artifact;
     requires maven.model;
     requires maven.plugin.annotations;
     requires maven.plugin.api;
     requires maven.project;
-    requires java.xml;
-    requires io.github.classgraph;
-    requires io.helidon.service.registry;
-    requires io.helidon.service.metadata;
-    requires io.helidon.common;
-    requires io.helidon.common.types;
 
     exports io.helidon.service.maven.plugin;
 }

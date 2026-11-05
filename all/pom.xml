@@ -807,6 +807,14 @@
             <artifactId>helidon-service-maven-plugin</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-application-codegen</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-gradle-plugin</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.declarative</groupId>
             <artifactId>helidon-declarative-codegen-model</artifactId>
         </dependency>
