@@ -48,8 +48,8 @@ import io.helidon.service.registry.ServiceRegistryManager;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
@@ -300,7 +300,7 @@ class MessagingObservabilityTest {
             TestIncoming incoming = new TestIncoming();
             MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
             AtomicInteger attempts = new AtomicInteger();
-            try (MessagingGraph graph = fixture.graph(fixture.incomingBuilder(incoming, 2).channel(channel)
+            try (MessagingGraph _ = fixture.graph(fixture.incomingBuilder(incoming, 2).channel(channel)
                     .batchSink(channel, _ -> {
                         if (attempts.incrementAndGet() == 1) {
                             throw new IllegalStateException("retry this batch");
@@ -344,7 +344,7 @@ class MessagingObservabilityTest {
             MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
             List<List<String>> attempts = new ArrayList<>();
             IllegalStateException failure = new IllegalStateException("retry second message");
-            try (MessagingGraph graph = fixture.graph(fixture.incomingBuilder(incoming, 2).channel(channel)
+            try (MessagingGraph _ = fixture.graph(fixture.incomingBuilder(incoming, 2).channel(channel)
                     .batchSink(channel, current -> {
                         attempts.add(current.payloads());
                         if (attempts.size() == 1) {
@@ -369,7 +369,7 @@ class MessagingObservabilityTest {
             TestIncoming incoming = new TestIncoming();
             MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
             AtomicInteger deliveries = new AtomicInteger();
-            try (MessagingGraph graph = fixture.graph(fixture.incomingBuilder(incoming, 2).channel(channel)
+            try (MessagingGraph _ = fixture.graph(fixture.incomingBuilder(incoming, 2).channel(channel)
                     .payloadSink(channel, _ -> deliveries.incrementAndGet())).start()) {
                 try (ConnectorDeliveryReservation reservation = incoming.context.reserveDelivery();
                      ConnectorDelivery delivery = reservation.startFailed(batch("first"),

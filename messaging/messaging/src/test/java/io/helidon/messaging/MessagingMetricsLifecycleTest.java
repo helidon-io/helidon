@@ -54,7 +54,8 @@ class MessagingMetricsLifecycleTest {
         CountDownLatch closeEntered = new CountDownLatch(1);
         AtomicBoolean first = new AtomicBoolean(true);
         AtomicReference<MessagingGraph> newGraph = new AtomicReference<>();
-        try (MetricsTestSupport registering = new MetricsTestSupport(); MetricsTestSupport independent = new MetricsTestSupport()) {
+        try (MetricsTestSupport registering = new MetricsTestSupport();
+             MetricsTestSupport independent = new MetricsTestSupport()) {
             MetricsTestSupport closing = sharedRegistry ? registering : independent;
             MessagingChannel<String> existingChannel = MessagingChannel.create("existing", String.class);
             try (MessagingGraph existing = closing.graph(closing.builder().channel(existingChannel)
