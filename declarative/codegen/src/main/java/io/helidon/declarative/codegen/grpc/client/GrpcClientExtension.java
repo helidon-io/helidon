@@ -40,9 +40,9 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.DeclarativeConfigSupport;
 import io.helidon.declarative.codegen.DeclarativeTypes;
 import io.helidon.declarative.codegen.DeclarativeUtils;
-import io.helidon.declarative.codegen.DelcarativeConfigSupport;
 import io.helidon.declarative.codegen.grpc.GrpcMethodHierarchy;
 import io.helidon.declarative.codegen.grpc.GrpcProtoDescriptor;
 import io.helidon.declarative.codegen.grpc.GrpcProtoDescriptors;
@@ -507,7 +507,7 @@ class GrpcClientExtension implements RegistryCodegenExtension {
                 .addContentLine("}")
                 .addContentLine("if (declarative__client == null) {")
                 .increaseContentPadding()
-                .update(it -> DelcarativeConfigSupport.assignResolveExpression(it, "config", "uri", endpoint.uri()))
+                .update(it -> DeclarativeConfigSupport.assignResolveExpression(it, "config", "uri", endpoint.uri()))
                 .addContent("var declarative__clientBuilder = ")
                 .addContent(GRPC_CLIENT)
                 .addContentLine(".builder()")
