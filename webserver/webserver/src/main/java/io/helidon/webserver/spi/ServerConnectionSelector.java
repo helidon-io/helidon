@@ -25,7 +25,7 @@ import io.helidon.webserver.ConnectionContext;
 /**
  * Connection selector is given a chance to analyze request bytes and decide whether this is a connection it can accept.
  */
-@Api.Stable
+@Api.Internal
 public interface ServerConnectionSelector {
     /**
      * How many bytes are needed to identify this connection.

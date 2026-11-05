@@ -24,7 +24,7 @@ import io.helidon.common.concurrency.limits.Limit;
 /**
  * Server connection abstraction, used by any provider to handle a socket connection.
  */
-@Api.Stable
+@Api.Internal
 public interface ServerConnection {
     /**
      * Start handling the connection. Data is provided through
