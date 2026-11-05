@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,14 @@ import java.util.List;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.security.Security;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
 /**
  * Configuration of security feature fow webserver.
  */
+@Api.Stable
 @Prototype.Blueprint(decorator = SecurityConfigSupport.SecurityFeatureConfigDecorator.class)
 @Prototype.Configured(value = SecurityFeature.SECURITY_ID, root = false)
 @Prototype.Provides(ServerFeatureProvider.class)

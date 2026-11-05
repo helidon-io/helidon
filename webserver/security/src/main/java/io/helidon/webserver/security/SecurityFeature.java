@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.Weighted;
 import io.helidon.security.Security;
 import io.helidon.webserver.spi.ServerFeature;
@@ -40,6 +41,7 @@ import static io.helidon.webserver.WebServer.DEFAULT_SOCKET_NAME;
  * and registers {@link io.helidon.webserver.http.HttpRouting.Builder#security(io.helidon.webserver.http.HttpSecurity)}.
  * If configured, it also adds protection points to endpoints.
  */
+@Api.Stable
 public class SecurityFeature implements Weighted, ServerFeature, RuntimeType.Api<SecurityFeatureConfig> {
     static final double WEIGHT = 800;
     static final String SECURITY_ID = "security";

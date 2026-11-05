@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+import io.helidon.common.Api;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.PathMatcher;
@@ -30,6 +31,7 @@ import io.helidon.webserver.Route;
 /**
  * A basic HTTP route (should be usable by ANY HTTP protocol version).
  */
+@Api.Stable
 public interface HttpRoute extends Route {
     /**
      * Builder to build a new HTTP route.

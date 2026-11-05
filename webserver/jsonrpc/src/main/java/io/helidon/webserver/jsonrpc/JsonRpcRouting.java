@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.HeaderNames;
@@ -47,6 +48,7 @@ import static io.helidon.jsonrpc.core.JsonRpcError.PARSE_ERROR;
  * <p>
  * Simply register it with HTTP routing under a desired path.
  */
+@Api.Preview
 public class JsonRpcRouting implements HttpService {
 
     static final JsonRpcError INVALID_REQUEST_ERROR = JsonRpcError.create(

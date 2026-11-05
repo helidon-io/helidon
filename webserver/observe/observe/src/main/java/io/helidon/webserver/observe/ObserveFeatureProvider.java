@@ -36,6 +36,7 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
  */
 @Weight(ObserveFeature.WEIGHT)
 @Service.Singleton
+@Api.Internal
 public class ObserveFeatureProvider implements ServerFeatureProvider<ObserveFeature> {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

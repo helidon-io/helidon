@@ -20,6 +20,7 @@ import java.util.List;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.webserver.grpc.spi.GrpcServerServiceProvider;
 
 /**
@@ -28,6 +29,7 @@ import io.helidon.webserver.grpc.spi.GrpcServerServiceProvider;
 @Prototype.Blueprint
 @Prototype.Configured(value = GrpcSecurity.TYPE, root = false)
 @Prototype.Provides(GrpcServerServiceProvider.class)
+@Api.Preview
 interface GrpcSecurityConfigBlueprint {
     /**
      * Whether gRPC security is enabled.

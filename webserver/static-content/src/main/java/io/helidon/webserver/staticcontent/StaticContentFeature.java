@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.Weighted;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.config.Config;
@@ -35,6 +36,7 @@ import io.helidon.webserver.spi.ServerFeature;
 /**
  * WebServer feature to register static content.
  */
+@Api.Stable
 public class StaticContentFeature implements Weighted, ServerFeature, RuntimeType.Api<StaticContentConfig> {
     static final String STATIC_CONTENT_ID = "static-content";
     static final double WEIGHT = 95;

@@ -23,6 +23,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.http.Method;
 import io.helidon.http.PathMatcher;
 import io.helidon.webserver.ConnectionContext;
@@ -32,6 +33,7 @@ import io.helidon.webserver.Routing;
  * HTTP routing.
  * This routing is capable of handling any HTTP version.
  */
+@Api.Stable
 public interface HttpRouting extends Routing, Prototype.Api {
 
     /**

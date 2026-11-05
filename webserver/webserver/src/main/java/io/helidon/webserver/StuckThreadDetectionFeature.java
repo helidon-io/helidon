@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.webserver.spi.ServerFeature;
@@ -34,6 +35,7 @@ import io.helidon.webserver.spi.ServerFeature;
  * processing such as gRPC streams. A long-running request is not necessarily stuck, so this feature reports diagnostics but
  * never interrupts a request thread.
  */
+@Api.Stable
 public final class StuckThreadDetectionFeature
         implements Weighted, ServerFeature, RuntimeType.Api<StuckThreadDetectionConfig> {
     /**

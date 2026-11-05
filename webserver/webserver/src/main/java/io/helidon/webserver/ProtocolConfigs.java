@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,13 @@ package io.helidon.webserver;
 import java.util.List;
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.webserver.spi.ProtocolConfig;
 
 /**
  * Protocol configuration to obtain explicitly configured details for the current socket.
  */
+@Api.Internal
 public class ProtocolConfigs {
     private final List<ProtocolConfig> protocolConfigs;
 

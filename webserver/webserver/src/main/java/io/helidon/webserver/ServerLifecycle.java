@@ -16,9 +16,12 @@
 
 package io.helidon.webserver;
 
+import io.helidon.common.Api;
+
 /**
  * Basic server lifecycle operations.
  */
+@Api.Stable
 public interface ServerLifecycle {
     /**
      * Before server start.

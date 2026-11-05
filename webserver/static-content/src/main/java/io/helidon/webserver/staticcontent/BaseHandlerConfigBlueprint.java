@@ -23,11 +23,13 @@ import java.util.function.Function;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 
 /**
  * Configuration of static content handlers that is common for classpath and file system based handlers.
  */
+@Api.Stable
 @Prototype.Blueprint(createEmptyPublic = false, createFromConfigPublic = false)
 @Prototype.Configured
 @Prototype.CustomMethods(StaticContentConfigSupport.BaseMethods.class)

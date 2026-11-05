@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.spi;
 
+import io.helidon.common.Api;
 import io.helidon.webserver.ProtocolConfigs;
 
 /**
@@ -26,6 +27,7 @@ import io.helidon.webserver.ProtocolConfigs;
  *
  * @param <T> type of the protocol config
  */
+@Api.Internal
 public interface ServerConnectionSelectorProvider<T extends ProtocolConfig> {
     /**
      * Type of configuration supported by this connection provider.

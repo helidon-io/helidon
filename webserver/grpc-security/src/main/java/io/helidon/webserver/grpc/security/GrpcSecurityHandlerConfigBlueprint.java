@@ -22,6 +22,7 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.security.AuditEvent.AuditSeverity;
 import io.helidon.security.ClassToInstanceStore;
@@ -41,6 +42,7 @@ import io.helidon.security.SecurityLevel;
         "auditOkSeverity",
         "auditErrorSeverity"
 })
+@Api.Preview
 interface GrpcSecurityHandlerConfigBlueprint extends Prototype.Factory<GrpcSecurityHandler> {
     /**
      * An array of allowed roles for this gRPC method.

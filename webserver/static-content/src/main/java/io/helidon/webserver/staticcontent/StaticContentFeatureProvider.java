@@ -25,6 +25,7 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
  * {@link java.util.ServiceLoader} provider implementation for static-content feature for {@link io.helidon.webserver.WebServer}.
  */
 @Weight(StaticContentFeature.WEIGHT)
+@Api.Internal
 public class StaticContentFeatureProvider implements ServerFeatureProvider<StaticContentFeature> {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

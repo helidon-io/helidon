@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.http.ForbiddenException;
@@ -85,6 +86,7 @@ import io.helidon.webserver.http.ServerResponse;
  * rolesAllowed("user")})
  * </pre>
  */
+@Api.Stable
 public final class SecurityHttpFeature implements HttpSecurity, HttpFeature, Weighted {
     /**
      * Security can accept additional headers to be added to security request.

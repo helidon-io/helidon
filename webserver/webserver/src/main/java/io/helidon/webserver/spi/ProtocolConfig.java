@@ -25,6 +25,7 @@ import io.helidon.webserver.TransportBindingTypes;
 /**
  * Protocol configuration abstraction, used to setup a protocol.
  */
+@Api.Stable
 public interface ProtocolConfig extends NamedService {
     /**
      * Whether this protocol configuration is enabled.

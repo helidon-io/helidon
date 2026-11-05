@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.webserver.http.FilterChain;
@@ -34,6 +35,7 @@ import io.helidon.webserver.http.RoutingResponse;
 /**
  * Service that adds support for Access logging to Server.
  */
+@Api.Stable
 public final class AccessLogRoutingFeature implements HttpFeature, Weighted {
     /**
      * Name of the {@link System#getLogger(String)} used to log access log records.

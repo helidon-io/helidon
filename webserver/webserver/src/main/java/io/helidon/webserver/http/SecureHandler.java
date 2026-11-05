@@ -28,6 +28,7 @@ import io.helidon.webserver.http.spi.ProtocolUpgradeHandler;
  * A handler that enforces authentication and/or authorization.
  * When configured, it just validates that security was processed. If not, appropriate exception is thrown.
  */
+@Api.Stable
 public final class SecureHandler implements Handler, ProtocolUpgradeHandler {
     private static final String[] NO_ROLES = new String[0];
 

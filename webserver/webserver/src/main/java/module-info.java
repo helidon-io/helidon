@@ -24,6 +24,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("Helidon WebServer")
 @Features.Flavor(HelidonFlavor.SE)
 module io.helidon.webserver {
+    requires io.helidon.common;
     requires static io.helidon.config.metadata;
 
     requires io.helidon.builder.api;

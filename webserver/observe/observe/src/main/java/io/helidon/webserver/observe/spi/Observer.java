@@ -19,6 +19,7 @@ package io.helidon.webserver.observe.spi;
 import java.util.List;
 import java.util.function.UnaryOperator;
 
+import io.helidon.common.Api;
 import io.helidon.config.NamedService;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.observe.ObserverConfigBase;
@@ -34,6 +35,7 @@ import io.helidon.webserver.spi.ServerFeature;
  * Configuration of an observer is located under {@code observe.observer} root configuration node, with
  * {@link io.helidon.webserver.observe.spi.ObserveProvider#configKey()} key below it.
  */
+@Api.Stable
 public interface Observer extends NamedService {
     /**
      * Configuration of this observer.

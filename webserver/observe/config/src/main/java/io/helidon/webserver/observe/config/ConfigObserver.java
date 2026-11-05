@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.service.registry.Services;
 import io.helidon.webserver.http.HttpFeature;
@@ -35,6 +36,7 @@ import io.helidon.webserver.spi.ServerFeature;
 /**
  * Config Observer configuration.
  */
+@Api.Stable
 public class ConfigObserver implements Observer, RuntimeType.Api<ConfigObserverConfig> {
     private final ConfigObserverConfig config;
     private final List<Pattern> secretPatterns;

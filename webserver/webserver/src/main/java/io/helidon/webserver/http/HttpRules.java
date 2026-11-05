@@ -22,6 +22,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.http.Method;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
@@ -30,6 +31,7 @@ import io.helidon.http.PathMatchers;
  * HTTP Routing rules, used by both {@link HttpRouting.Builder}
  * and by {@link HttpService#routing(HttpRules)}.
  */
+@Api.Stable
 public interface HttpRules {
     /**
      * Register a service on the current path.

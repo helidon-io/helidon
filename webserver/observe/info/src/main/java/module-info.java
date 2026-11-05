@@ -27,6 +27,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Flavor(HelidonFlavor.SE)
 @Features.Path({"Observe", "Info"})
 module io.helidon.webserver.observe.info {
+    requires io.helidon.common;
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 

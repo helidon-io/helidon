@@ -16,10 +16,12 @@
 
 package io.helidon.webserver.grpc.spi;
 
+import io.helidon.common.Api;
 import io.helidon.config.ConfiguredProvider;
 
 /**
  * Java service loader interface for gRPC services.
  */
+@Api.Preview
 public interface GrpcServerServiceProvider extends ConfiguredProvider<GrpcServerService> {
 }

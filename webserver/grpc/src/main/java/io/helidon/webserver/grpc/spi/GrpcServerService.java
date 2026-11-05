@@ -18,6 +18,7 @@ package io.helidon.webserver.grpc.spi;
 
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.config.NamedService;
 import io.helidon.grpc.core.WeightedBag;
 import io.helidon.service.registry.ServiceRegistry;
@@ -28,6 +29,7 @@ import io.grpc.ServerInterceptor;
  * Extension that can modify gRPC server behavior.
  */
 @FunctionalInterface
+@Api.Preview
 public interface GrpcServerService extends NamedService {
 
     @Override

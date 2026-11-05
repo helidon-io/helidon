@@ -25,6 +25,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Flavor(HelidonFlavor.SE)
 @Features.Path({"WebServer", "AccessLog"})
 module io.helidon.webserver.accesslog {
+    requires io.helidon.common;
 
     requires io.helidon.common.security;
     requires io.helidon.webserver;

@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http.spi;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.webserver.http.ServerRequest;
 
@@ -24,6 +25,7 @@ import io.helidon.webserver.http.ServerRequest;
  *
  * @param <T> event type
  */
+@Api.Stable
 public interface SinkProvider<T> {
 
     /**

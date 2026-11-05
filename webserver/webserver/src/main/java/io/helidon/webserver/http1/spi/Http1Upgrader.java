@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http1.spi;
 
+import io.helidon.common.Api;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.WritableHeaders;
 import io.helidon.webserver.ConnectionContext;
@@ -24,6 +25,7 @@ import io.helidon.webserver.spi.ServerConnection;
 /**
  * HTTP/1.1 connection upgrader.
  */
+@Api.Stable
 public interface Http1Upgrader {
     /**
      * Expected value of the protocol upgrade, such as {@code h2c}, or {@code websocket}.

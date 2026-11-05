@@ -28,6 +28,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Preview
 @Features.Since("4.3.0")
 module io.helidon.webserver.jsonrpc {
+    requires io.helidon.common;
 
     requires io.helidon.builder.api;
     requires io.helidon.http.media.json;

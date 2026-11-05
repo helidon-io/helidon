@@ -18,6 +18,7 @@ package io.helidon.webserver;
 
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;
@@ -39,6 +40,7 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
  */
 @Service.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT + 900) // very high weight, so injection runs within request scope, but lower than context
+@Api.Internal
 public class RequestScopeFeatureProvider implements ServerFeatureProvider<RequestScopeFeature> {
     private final Supplier<Scopes> scopes;
 

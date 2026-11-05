@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 
+import io.helidon.common.Api;
 import io.helidon.common.context.Context;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.media.ReadableEntity;
@@ -31,6 +32,7 @@ import io.helidon.webserver.ProxyProtocolData;
  * HTTP server request.
  */
 @Service.Describe(Service.PerRequest.class)
+@Api.Stable
 public interface ServerRequest extends HttpRequest {
 
     /**

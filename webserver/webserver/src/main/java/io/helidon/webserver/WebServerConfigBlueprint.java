@@ -22,6 +22,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.context.Context;
 import io.helidon.webserver.spi.ServerFeature;
 import io.helidon.webserver.spi.ServerFeatureProvider;
@@ -34,6 +35,7 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
 @Prototype.CustomMethods(WebServerConfigSupport.CustomMethods.class)
 @Prototype.Configured("server")
 @Prototype.RegistrySupport
+@Api.Stable
 interface WebServerConfigBlueprint extends ListenerConfigBlueprint, Prototype.Factory<WebServer> {
     /**
      * Limits for internal server-error logging, shared across all listeners.

@@ -18,12 +18,15 @@ package io.helidon.webserver.http;
 
 import java.util.Objects;
 
+import io.helidon.common.Api;
+
 /**
  * A routing builder registration.
  * <p>
  * This type is used internally in Helidon to allow gathering of registrations, and then re-applying them on a
  * different builder.
  */
+@Api.Stable
 public interface Registration {
     /**
      * Create a registration for service(s) with a path.

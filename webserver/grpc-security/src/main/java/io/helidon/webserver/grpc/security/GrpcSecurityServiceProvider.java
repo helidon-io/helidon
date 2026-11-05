@@ -19,6 +19,7 @@ package io.helidon.webserver.grpc.security;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
 import io.helidon.security.Security;
@@ -29,6 +30,7 @@ import io.helidon.webserver.grpc.spi.GrpcServerServiceProvider;
 /**
  * Provider for gRPC security.
  */
+@Api.Internal
 public class GrpcSecurityServiceProvider implements GrpcServerServiceProvider {
     /**
      * Create a new gRPC security service provider.

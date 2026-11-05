@@ -18,12 +18,14 @@ package io.helidon.webserver.spi;
 
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.webserver.ConnectionContext;
 
 /**
  * Connection selector is given a chance to analyze request bytes and decide whether this is a connection it can accept.
  */
+@Api.Stable
 public interface ServerConnectionSelector {
     /**
      * How many bytes are needed to identify this connection.

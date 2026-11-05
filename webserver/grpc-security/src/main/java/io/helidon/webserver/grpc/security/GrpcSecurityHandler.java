@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.config.Config;
 import io.helidon.grpc.core.InterceptorWeights;
@@ -71,6 +72,7 @@ import static io.helidon.security.AuditEvent.AuditParam.plain;
  */
 @Weight(InterceptorWeights.CONTEXT)
 @SuppressWarnings("rawtypes")
+@Api.Preview
 public final class GrpcSecurityHandler implements ServerInterceptor,
         GrpcServiceDescriptor.Configurer,
         GrpcMethodDescriptor.Configurer,

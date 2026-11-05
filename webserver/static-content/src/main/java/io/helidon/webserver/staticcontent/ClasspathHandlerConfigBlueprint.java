@@ -20,11 +20,13 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Classpath based static content handler configuration.
  */
 @Prototype.Configured
+@Api.Stable
 @Prototype.Blueprint
 @Prototype.CustomMethods(StaticContentConfigSupport.ClasspathMethods.class)
 interface ClasspathHandlerConfigBlueprint extends BaseHandlerConfigBlueprint {

@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;
@@ -40,6 +41,7 @@ import io.helidon.webserver.spi.ServerFeature;
  */
 @Weight(CorsFeature.WEIGHT)
 @Service.Singleton
+@Api.Stable
 public class CorsFeature implements Weighted, ServerFeature, RuntimeType.Api<CorsConfig> {
     /**
      * Default weight of the feature.

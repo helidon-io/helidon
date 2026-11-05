@@ -25,6 +25,7 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
  * {@link java.util.ServiceLoader} provider implementation for access log feature for {@link io.helidon.webserver.WebServer}.
  */
 @Weight(AccessLogFeature.WEIGHT)
+@Api.Internal
 public class AccessLogFeatureProvider implements ServerFeatureProvider<AccessLogFeature> {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

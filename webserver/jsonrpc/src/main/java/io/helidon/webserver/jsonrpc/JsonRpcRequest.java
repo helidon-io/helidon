@@ -17,6 +17,7 @@ package io.helidon.webserver.jsonrpc;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonValue;
 import io.helidon.jsonrpc.core.JsonRpcParams;
@@ -25,6 +26,7 @@ import io.helidon.webserver.http.ServerRequest;
 /**
  * A representation of a JSON-RPC request.
  */
+@Api.Preview
 public interface JsonRpcRequest extends ServerRequest {
 
     /**

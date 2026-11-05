@@ -20,6 +20,7 @@ import java.util.List;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.http.MethodPredicate;
 import io.helidon.http.PathMatcher;
 
@@ -36,6 +37,7 @@ import io.helidon.http.PathMatcher;
 @Prototype.Configured
 @Prototype.Blueprint(decorator = AutoHttpMetricsPathConfigSupport.BuilderDecorator.class)
 @Prototype.CustomMethods(AutoHttpMetricsPathConfigSupport.CustomMethods.class)
+@Api.Stable
 interface AutoHttpMetricsPathConfigBlueprint {
 
     /**

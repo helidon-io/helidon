@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.http.Headers__ServiceDescriptor;
@@ -45,6 +46,7 @@ import io.helidon.webserver.spi.ServerFeature;
  * logic. Nevertheless it is supported, as this approach is sometimes used.
  */
 @Weight(Weighted.DEFAULT_WEIGHT + 900) // very high weight, so injection runs within request scope, but lower than context
+@Api.Stable
 public class RequestScopeFeature implements ServerFeature {
     private final boolean enabled;
     private final Supplier<Scopes> scopes;

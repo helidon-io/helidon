@@ -20,12 +20,14 @@ import java.util.List;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Configuration of gRPC service security.
  */
 @Prototype.Blueprint
 @Prototype.Configured
+@Api.Preview
 interface GrpcSecurityServiceConfigBlueprint {
     /**
      * Name of the gRPC service, either the full name such as {@code package.StringService} or the final

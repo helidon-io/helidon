@@ -24,6 +24,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("WebServer Tracing support")
 @Features.Flavor(HelidonFlavor.SE)
 module io.helidon.webserver.observe.tracing {
+    requires io.helidon.common;
 
     requires io.helidon.http;
     requires io.helidon.tracing.config;

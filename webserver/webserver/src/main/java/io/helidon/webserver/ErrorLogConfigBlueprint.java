@@ -19,6 +19,7 @@ import java.time.Duration;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Limits for WebServer's internal error diagnostics, shared by all listeners of a server.
@@ -26,6 +27,7 @@ import io.helidon.builder.api.Prototype;
  */
 @Prototype.Blueprint(decorator = ErrorLogConfigSupport.BuilderDecorator.class)
 @Prototype.Configured
+@Api.Stable
 interface ErrorLogConfigBlueprint {
     /**
      * Whether to limit internal error logging. Disabling restores unrestricted logging.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,14 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.webserver.ServerLifecycle;
 
 /**
  * Handle a server request and server response.
  * Handlers are used to construct routing.
  */
+@Api.Stable
 public interface Handler extends ServerLifecycle {
     /**
      * Create a handler that only runs code and returns {@link io.helidon.http.Status#OK_200}.

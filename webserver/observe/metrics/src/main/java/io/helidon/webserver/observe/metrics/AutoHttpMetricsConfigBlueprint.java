@@ -21,6 +21,7 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Automatic HTTP request and transport metrics collection settings.
@@ -29,6 +30,7 @@ import io.helidon.builder.api.Prototype;
 @Prototype.Configured
 @Prototype.CustomMethods(AutoHttpMetricsConfigSupport.CustomMethods.class)
 @Prototype.IncludeDefaultMethods
+@Api.Stable
 interface AutoHttpMetricsConfigBlueprint {
 
     /**

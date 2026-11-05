@@ -56,6 +56,7 @@ import io.helidon.webserver.spi.TransportBindingFactoryProvider;
 @Prototype.Blueprint(decorator = WebServerConfigSupport.ListenerConfigDecorator.class)
 @Prototype.CustomMethods(WebServerConfigSupport.ListenerCustomMethods.class)
 @Prototype.IncludeDefaultMethods({"bindings", "proxyProtocol"})
+@Api.Stable
 interface ListenerConfigBlueprint {
     /**
      * Configuration of protocols. This may be either protocol selectors, or protocol upgraders from HTTP/1.1.

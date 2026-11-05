@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.webserver.staticcontent;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.Size;
 
 /**
@@ -25,6 +26,7 @@ import io.helidon.common.Size;
  * The memory cache will cache the first {@link #capacity() bytes} that fit into the configured memory size for the
  * duration of the service uptime.
  */
+@Api.Stable
 @Prototype.Blueprint
 @Prototype.Configured
 interface MemoryCacheConfigBlueprint extends Prototype.Factory<MemoryCache> {

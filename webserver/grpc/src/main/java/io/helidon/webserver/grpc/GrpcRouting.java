@@ -54,6 +54,7 @@ import io.grpc.stub.ServerCalls;
 /**
  * gRPC specific routing.
  */
+@Api.Preview
 public class GrpcRouting implements Routing {
     private static final GrpcRouting EMPTY;
     private static final String SERVER_PROTOCOL_CONFIG_KEY = "server.protocols." + GrpcProtocolProvider.CONFIG_NAME;

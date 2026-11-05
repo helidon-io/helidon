@@ -25,6 +25,7 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
  * {@link java.util.ServiceLoader} provider implementation for context feature for {@link io.helidon.webserver.WebServer}.
  */
 @Weight(ContextFeature.WEIGHT)
+@Api.Internal
 public class ContextFeatureProvider implements ServerFeatureProvider<ContextFeature> {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

@@ -20,6 +20,7 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.webserver.spi.ProtocolConfig;
 import io.helidon.webserver.spi.ProtocolConfigProvider;
 import io.helidon.websocket.WsProtocolConfig;
@@ -30,6 +31,7 @@ import io.helidon.websocket.WsProtocolConfig;
 @Prototype.Blueprint
 @Prototype.Configured(root = false, value = WsUpgradeProvider.CONFIG_NAME)
 @Prototype.Provides(ProtocolConfigProvider.class)
+@Api.Stable
 interface WsConfigBlueprint extends ProtocolConfig, WsProtocolConfig {
     /**
      * WebSocket origins.

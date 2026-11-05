@@ -21,12 +21,14 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 import static io.helidon.webserver.cors.Cors.ALLOW_ALL;
 
 /**
  * Configuration of CORS for a specific path.
  */
+@Api.Stable
 @Prototype.Blueprint
 @Prototype.Configured
 @Prototype.CustomMethods(CorsConfigSupport.PathCustomMethods.class)

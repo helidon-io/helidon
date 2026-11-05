@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.http.Header;
@@ -37,6 +38,7 @@ import io.helidon.webserver.spi.ServerConnectionSelector;
 /**
  * HTTP/1.1 server connection selector.
  */
+@Api.Stable
 public class Http1ConnectionSelector implements ServerConnectionSelector, RuntimeType.Api<Http1ConnectionSelectorConfig> {
 
     private static final String PROTOCOL = " HTTP/1.1\r";
