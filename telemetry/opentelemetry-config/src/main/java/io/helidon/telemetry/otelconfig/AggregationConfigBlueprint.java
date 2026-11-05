@@ -23,7 +23,7 @@ import io.helidon.common.Api;
 /**
  * Settings for aggregating metrics data prior to transmission.
  */
-@Api.Stable
+@Api.Preview
 @Prototype.Configured
 @Prototype.Blueprint
 interface AggregationConfigBlueprint {

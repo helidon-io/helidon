@@ -31,7 +31,7 @@ import io.opentelemetry.sdk.metrics.export.MetricReader;
 /**
  * OpenTelemetry metrics settings.
  */
-@Api.Stable
+@Api.Preview
 @Prototype.Configured
 @Prototype.Blueprint(decorator = OpenTelemetryMetricsConfigSupport.BuilderDecorator.class)
 @Prototype.CustomMethods(OpenTelemetryMetricsConfigSupport.CustomMethods.class)

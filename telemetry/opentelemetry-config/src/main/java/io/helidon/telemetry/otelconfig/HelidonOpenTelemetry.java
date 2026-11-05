@@ -27,7 +27,7 @@ import io.opentelemetry.api.OpenTelemetry;
 /**
  * Public access to OpenTelemetry as managed via Helidon config and builders.
  */
-@Api.Stable
+@Api.Preview
 public interface HelidonOpenTelemetry extends RuntimeType.Api<OpenTelemetryConfig> {
 
     /**

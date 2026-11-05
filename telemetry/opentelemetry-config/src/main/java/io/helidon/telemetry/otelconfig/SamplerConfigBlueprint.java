@@ -25,7 +25,7 @@ import io.helidon.common.Api;
 /**
  * Tracing sampler settings.
  */
-@Api.Stable
+@Api.Preview
 @Prototype.Blueprint
 @Prototype.Configured
 interface SamplerConfigBlueprint {

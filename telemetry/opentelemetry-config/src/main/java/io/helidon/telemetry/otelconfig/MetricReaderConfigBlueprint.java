@@ -25,7 +25,7 @@ import io.helidon.common.Api;
 /**
  * Settings for a metric reader.
  */
-@Api.Stable
+@Api.Preview
 @Prototype.Configured
 @Prototype.Blueprint
 interface MetricReaderConfigBlueprint {

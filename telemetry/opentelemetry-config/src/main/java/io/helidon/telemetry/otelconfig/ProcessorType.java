@@ -21,7 +21,7 @@ import io.helidon.common.Api;
 /**
  * Processor type. Batch is default for production.
  */
-@Api.Stable
+@Api.Preview
 public enum ProcessorType {
 
     /*

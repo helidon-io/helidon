@@ -29,7 +29,7 @@ import io.opentelemetry.api.common.AttributesBuilder;
  * OpenTelemetry resource settings shared by all configured signals.
  * Optional values left unspecified do not add or override resource attributes.
  */
-@Api.Stable
+@Api.Preview
 @Prototype.Blueprint
 @Prototype.Configured
 @Prototype.CustomMethods(OpenTelemetryResourceConfigSupport.CustomMethods.class)

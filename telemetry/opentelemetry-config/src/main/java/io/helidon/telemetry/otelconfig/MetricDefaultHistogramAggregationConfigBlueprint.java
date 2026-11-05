@@ -23,7 +23,7 @@ import io.helidon.common.Api;
 /**
  * Default histogram aggregation settings.
  */
-@Api.Stable
+@Api.Preview
 @Prototype.Blueprint
 @Prototype.Configured
 interface MetricDefaultHistogramAggregationConfigBlueprint {

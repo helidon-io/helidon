@@ -21,7 +21,7 @@ import io.helidon.common.Api;
 /**
  * Types of compression supported by OpenTelemetry.
  */
-@Api.Stable
+@Api.Preview
 public enum CompressionType {
 
     /*

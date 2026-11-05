@@ -29,7 +29,7 @@ import io.helidon.common.Api;
  * <a href="https://opentelemetry.io/docs/languages/java/configuration/#properties-traces">Properties: traces; Properties
  * for sampler</a>.
  */
-@Api.Stable
+@Api.Preview
 public enum SamplerType {
 
     /*

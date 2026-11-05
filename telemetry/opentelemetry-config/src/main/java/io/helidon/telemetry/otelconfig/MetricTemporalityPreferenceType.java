@@ -27,7 +27,7 @@ import io.opentelemetry.sdk.metrics.export.AggregationTemporalitySelector;
  *     metrics temporality preference</a>.
  *
  */
-@Api.Stable
+@Api.Preview
 public enum MetricTemporalityPreferenceType {
     /**
      * Delta.

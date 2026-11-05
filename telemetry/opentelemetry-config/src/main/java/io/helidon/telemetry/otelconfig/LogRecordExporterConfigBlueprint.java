@@ -22,7 +22,7 @@ import io.helidon.common.Api;
 /**
  * Settings for a log record exporter.
  */
-@Api.Stable
+@Api.Preview
 @Prototype.Configured
 @Prototype.Blueprint
 interface LogRecordExporterConfigBlueprint extends OtlpExporterConfigBlueprint {

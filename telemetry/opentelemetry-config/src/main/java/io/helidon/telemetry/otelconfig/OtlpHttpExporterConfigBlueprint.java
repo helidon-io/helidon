@@ -26,7 +26,7 @@ import io.opentelemetry.sdk.common.export.ProxyOptions;
 /**
  * Settings common to HTTP-based OTLP exporters.
  */
-@Api.Stable
+@Api.Preview
 @Prototype.Configured
 @Prototype.Blueprint
 interface OtlpHttpExporterConfigBlueprint extends OtlpExporterConfigBlueprint {

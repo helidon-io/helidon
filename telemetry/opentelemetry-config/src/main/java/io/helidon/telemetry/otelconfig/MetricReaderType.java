@@ -21,7 +21,7 @@ import io.helidon.common.Api;
 /**
  * OpenTelemetry metric reader types.
  */
-@Api.Stable
+@Api.Preview
 public enum MetricReaderType {
 
     /*

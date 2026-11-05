@@ -21,7 +21,7 @@ import io.helidon.common.Api;
 /**
  * OpenTelemetry default histogram aggregation types.
  */
-@Api.Stable
+@Api.Preview
 public enum MetricDefaultHistogramAggregationType {
 
     /**

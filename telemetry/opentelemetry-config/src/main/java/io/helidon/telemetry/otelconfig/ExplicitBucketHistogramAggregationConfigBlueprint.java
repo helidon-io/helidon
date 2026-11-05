@@ -25,7 +25,7 @@ import io.helidon.common.Api;
 /**
  * Settings for explicit bucket histogram default aggregation.
  */
-@Api.Stable
+@Api.Preview
 @Prototype.Blueprint
 @Prototype.Configured
 @Prototype.CustomMethods(ExplicitBucketHistogramAggregationSupport.CustomMethods.class)

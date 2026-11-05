@@ -36,7 +36,7 @@ import io.opentelemetry.extension.trace.propagation.OtTracePropagator;
  * OTel configuration of propagation uses lower-case names. For user-friendliness, we allow users
  * to use the Otel-friendly names (lowercase) or the enum names (UPPERCASE) in config sources.
  */
-@Api.Stable
+@Api.Preview
 public enum ContextPropagationType {
 
     /*

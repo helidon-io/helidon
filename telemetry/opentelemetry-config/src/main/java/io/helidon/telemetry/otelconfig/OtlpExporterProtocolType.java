@@ -24,7 +24,7 @@ import io.helidon.config.Config;
 /**
  * Legal values for OTLP exporters.
  */
-@Api.Stable
+@Api.Preview
 public enum OtlpExporterProtocolType {
     /**
      * http/proto protocol type.

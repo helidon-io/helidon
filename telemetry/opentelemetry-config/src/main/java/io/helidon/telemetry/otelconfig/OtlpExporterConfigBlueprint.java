@@ -40,7 +40,7 @@ import io.opentelemetry.sdk.common.export.RetryPolicy;
  * @see io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporterBuilder
  * @see io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporterBuilder
  */
-@Api.Stable
+@Api.Preview
 @Prototype.Configured
 @Prototype.Blueprint
 @Prototype.CustomMethods(OtlpExporterConfigSupport.CustomMethods.class)

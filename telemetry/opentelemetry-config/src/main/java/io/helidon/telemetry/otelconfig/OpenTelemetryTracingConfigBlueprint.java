@@ -33,7 +33,7 @@ import io.opentelemetry.sdk.trace.samplers.Sampler;
 /**
  * OpenTelemetry tracer settings. Optional values left unspecified in the configuration defer to the OpenTelemetry defaults.
  */
-@Api.Stable
+@Api.Preview
 @Prototype.Configured
 @Prototype.Blueprint(decorator = OpenTelemetryTracingConfigSupport.BuilderDecorator.class)
 @Prototype.CustomMethods(OpenTelemetryTracingConfigSupport.CustomMethods.class)

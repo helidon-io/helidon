@@ -29,7 +29,7 @@ import io.opentelemetry.sdk.metrics.InstrumentType;
  * <p>
  * OpenTelemetry allows all values to be null, so this blueprint declares all as optional.
  */
-@Api.Stable
+@Api.Preview
 @Prototype.Blueprint
 @Prototype.Configured
 interface InstrumentSelectorConfigBlueprint {

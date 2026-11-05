@@ -27,7 +27,7 @@ import io.helidon.common.Api;
 /**
  * Settings for OpenTelemetry periodic metric reader.
  */
-@Api.Stable
+@Api.Preview
 @Prototype.Blueprint
 @Prototype.Configured
 interface PeriodicMetricReaderConfigBlueprint extends MetricReaderConfigBlueprint {

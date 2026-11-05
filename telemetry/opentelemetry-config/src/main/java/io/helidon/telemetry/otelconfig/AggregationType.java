@@ -21,7 +21,7 @@ import io.helidon.common.Api;
 /**
  * Type of OpenTelemetry metric aggregations.
  */
-@Api.Stable
+@Api.Preview
 public enum AggregationType {
 
     /**

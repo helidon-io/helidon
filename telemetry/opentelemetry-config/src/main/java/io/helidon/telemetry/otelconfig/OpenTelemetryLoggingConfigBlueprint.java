@@ -34,7 +34,7 @@ import io.opentelemetry.sdk.logs.export.LogRecordExporter;
  * Configuration settings for OpenTelemetry logging. Optional values left unspecified in the configuration defer to the
  * OpenTelemetry defaults.
  */
-@Api.Stable
+@Api.Preview
 @Prototype.Configured
 @Prototype.Blueprint(decorator = OpenTelemetryLoggingConfigSupport.BuilderDecorator.class)
 @Prototype.CustomMethods(OpenTelemetryLoggingConfigSupport.CustomMethods.class)

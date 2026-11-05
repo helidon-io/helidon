@@ -26,7 +26,7 @@ import io.helidon.common.Api;
 /**
  * Configuration for a batch processor.
  */
-@Api.Stable
+@Api.Preview
 @Prototype.Configured
 @Prototype.Blueprint
 interface BatchProcessorConfigBlueprint extends ProcessorConfigBlueprint {

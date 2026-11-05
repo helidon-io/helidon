@@ -26,7 +26,7 @@ import io.helidon.common.Api;
  * Generic configuration for a processor such as a {@link io.opentelemetry.sdk.trace.SpanProcessor}, linked to an
  * exporter such as a {@link io.opentelemetry.sdk.trace.export.SpanExporter} by its name in the configuration.
  */
-@Api.Stable
+@Api.Preview
 @Prototype.Blueprint
 @Prototype.Configured
 interface ProcessorConfigBlueprint {

@@ -24,7 +24,7 @@ import io.helidon.config.EnumMapperProvider;
 /**
  * Valid values for OpenTelemetry exporter protocol.
  */
-@Api.Stable
+@Api.Preview
 public enum OtlpExporterProtocol {
     /**
      * grpc OpenTelemetry protocol.

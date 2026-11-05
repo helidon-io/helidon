@@ -23,7 +23,7 @@ import io.helidon.common.Api;
  * <p>
  * See <a href="https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters">OTel metric exporters</a>.
  */
-@Api.Stable
+@Api.Preview
 public enum MetricExporterType {
 
     /*

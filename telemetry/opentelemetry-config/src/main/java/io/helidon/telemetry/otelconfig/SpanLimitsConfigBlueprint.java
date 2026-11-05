@@ -27,7 +27,7 @@ import io.helidon.common.Api;
  *
  * @see io.opentelemetry.sdk.trace.SpanLimitsBuilder
  */
-@Api.Stable
+@Api.Preview
 @Prototype.Blueprint
 @Prototype.Configured
 interface SpanLimitsConfigBlueprint {

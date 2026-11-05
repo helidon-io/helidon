@@ -24,7 +24,7 @@ import io.helidon.common.Api;
 /**
  * Settings for log limits.
  */
-@Api.Stable
+@Api.Preview
 @Prototype.Configured
 @Prototype.Blueprint
 interface LogLimitsConfigBlueprint {

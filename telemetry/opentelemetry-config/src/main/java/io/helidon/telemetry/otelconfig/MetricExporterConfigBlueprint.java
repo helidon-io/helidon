@@ -28,7 +28,7 @@ import io.opentelemetry.sdk.metrics.export.DefaultAggregationSelector;
 /**
  * OpenTelemetry metric exporter settings.
  */
-@Api.Stable
+@Api.Preview
 @Prototype.Configured
 @Prototype.Blueprint
 @Prototype.CustomMethods(MetricExporterConfigSupport.CustomMethods.class)

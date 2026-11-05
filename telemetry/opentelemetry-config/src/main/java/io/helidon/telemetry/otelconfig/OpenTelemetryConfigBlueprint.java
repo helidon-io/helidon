@@ -29,7 +29,7 @@ import io.opentelemetry.sdk.OpenTelemetrySdk;
 /**
  * OpenTelemetry settings.
  */
-@Api.Stable
+@Api.Preview
 @Prototype.Blueprint(decorator = OpenTelemetryConfigSupport.BuildDecorator.class)
 @Prototype.Configured("telemetry")
 @Prototype.CustomMethods(OpenTelemetryConfigSupport.CustomMethods.class)

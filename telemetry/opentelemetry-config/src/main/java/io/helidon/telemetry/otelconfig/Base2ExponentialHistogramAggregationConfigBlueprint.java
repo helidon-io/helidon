@@ -25,7 +25,7 @@ import io.helidon.common.Api;
 /**
  * Settings for the base 2 exponential histogram aggregation.
  */
-@Api.Stable
+@Api.Preview
 @Prototype.Configured
 @Prototype.Blueprint(decorator = Base2ExponentialHistogramAggregationSupport.BuilderDecorator.class)
 @Prototype.CustomMethods(Base2ExponentialHistogramAggregationSupport.CustomMethods.class)

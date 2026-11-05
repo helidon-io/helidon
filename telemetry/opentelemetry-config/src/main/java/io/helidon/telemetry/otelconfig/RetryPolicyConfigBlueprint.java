@@ -26,7 +26,7 @@ import io.helidon.common.Api;
 /**
  * Retry policy settings.
  */
-@Api.Stable
+@Api.Preview
 @Prototype.Configured
 @Prototype.Blueprint
 interface RetryPolicyConfigBlueprint {

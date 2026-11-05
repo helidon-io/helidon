@@ -25,7 +25,7 @@ import io.helidon.common.Api;
 /**
  * Abstraction of typed attributes settable on OpenTelemetry elements.
  */
-@Api.Stable
+@Api.Preview
 @Prototype.Blueprint
 @Prototype.Configured
 interface TypedAttributesBlueprint {

@@ -29,7 +29,7 @@ import io.opentelemetry.sdk.metrics.InstrumentSelector;
 /**
  * Settings for an OpenTelemetry metrics view registration.
  */
-@Api.Stable
+@Api.Preview
 @Prototype.Blueprint
 @Prototype.Configured
 @Prototype.CustomMethods(ViewRegistrationConfigSupport.CustomMethods.class)
