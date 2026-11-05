@@ -63,7 +63,7 @@
         <version.lib.gson>2.13.2</version.lib.gson>
         <version.lib.grpc>1.73.0</version.lib.grpc>
         <version.lib.google-findbugs-jsr305>3.0.2</version.lib.google-findbugs-jsr305>
-        <version.lib.guava>33.3.1-jre</version.lib.guava>
+        <version.lib.guava>33.8.0-jre</version.lib.guava>
         <version.lib.h2>2.4.240</version.lib.h2>
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.handlebars>4.5.2</version.lib.handlebars>
@@ -136,7 +136,7 @@
         <version.lib.microprofile-telemetry-tck>1.1</version.lib.microprofile-telemetry-tck>
         <version.lib.microprofile-tracing>3.0</version.lib.microprofile-tracing>
         <version.lib.microprofile-lra-api>2.0.1</version.lib.microprofile-lra-api>
-        <version.lib.mongodb>5.12.0</version.lib.mongodb>
+        <version.lib.mongodb>5.14.0</version.lib.mongodb>
         <version.lib.mssql-jdbc>8.4.1.jre8</version.lib.mssql-jdbc>
         <version.lib.mysql-connector-j>8.2.0</version.lib.mysql-connector-j>
         <version.lib.narayana>7.1.0.Final</version.lib.narayana>
