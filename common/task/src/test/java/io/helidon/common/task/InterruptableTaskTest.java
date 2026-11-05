@@ -16,6 +16,12 @@
 
 package io.helidon.common.task;
 
+import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -151,6 +157,141 @@ class InterruptableTaskTest {
         assertThat(assertThrows(AssertionError.class, task::run), sameInstance(expected));
     }
 
+    @Test
+    void missingOptionalSignatureDoesNotPreventRunAdaptation() throws Exception {
+        var executions = new AtomicInteger();
+        var task = optionalSignatureTask(executions::incrementAndGet);
+
+        task.run();
+        assertThat(task.call(), nullValue());
+        assertThat(task.call(), nullValue());
+
+        assertThat(executions.get(), is(3));
+    }
+
+    @Test
+    void missingOptionalSignatureDoesNotPreventIncompleteCallFailure() throws Exception {
+        var task = (InterruptableTask<?>) taskClassWithoutOptionalType(OptionalSignatureIncompleteTask.class)
+                .getConstructor().newInstance();
+
+        assertThat(assertThrows(UnsupportedOperationException.class, task::call).getMessage(), is(MISSING_IMPLEMENTATION));
+        assertThat(assertThrows(UnsupportedOperationException.class, task::call).getMessage(), is(MISSING_IMPLEMENTATION));
+    }
+
+    @Test
+    void missingOptionalSignatureDoesNotPreventIncompleteRunFailure() throws Exception {
+        var task = (InterruptableTask<?>) taskClassWithoutOptionalType(OptionalSignatureIncompleteTask.class)
+                .getConstructor().newInstance();
+
+        var exception = assertThrows(RuntimeException.class, task::run);
+
+        assertThat(exception.getCause(), instanceOf(UnsupportedOperationException.class));
+        assertThat(exception.getCause().getMessage(), is(MISSING_IMPLEMENTATION));
+    }
+
+    @Test
+    void missingOptionalSignaturePreservesTaskFailuresAndSubsequentExecution() throws Exception {
+        var executions = new AtomicInteger();
+        var expected = new IllegalStateException("run failure");
+        var task = optionalSignatureTask(() -> {
+            if (executions.incrementAndGet() == 1) {
+                throw expected;
+            }
+        });
+
+        assertThat(assertThrows(IllegalStateException.class, task::call), sameInstance(expected));
+        assertThat(task.call(), nullValue());
+        assertThat(executions.get(), is(2));
+    }
+
+    @Test
+    void missingOptionalSignaturePreservesTaskErrors() throws Exception {
+        var expected = new NoClassDefFoundError("task failure");
+        var task = optionalSignatureTask(() -> {
+            throw expected;
+        });
+
+        assertThat(assertThrows(NoClassDefFoundError.class, task::call), sameInstance(expected));
+        assertThat(assertThrows(NoClassDefFoundError.class, task::call), sameInstance(expected));
+    }
+
+    @Test
+    void missingOptionalSignatureSupportsNestedTasksOfTheSameClass() throws Exception {
+        var taskClass = taskClassWithoutOptionalType(OptionalSignatureTask.class);
+        var constructor = taskClass.getConstructor(Runnable.class);
+        var executions = new AtomicInteger();
+        Runnable action = executions::incrementAndGet;
+        var inner = (InterruptableTask<?>) constructor.newInstance(action);
+        Runnable nested = () -> {
+            try {
+                inner.call();
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        };
+        var outer = (InterruptableTask<?>) constructor.newInstance(nested);
+
+        assertThat(outer.call(), nullValue());
+        assertThat(outer.call(), nullValue());
+        assertThat(executions.get(), is(2));
+    }
+
+    @Test
+    void missingOptionalSignatureSupportsConcurrentExecutionOfTheSameTask() throws Exception {
+        var started = new CountDownLatch(2);
+        var release = new CountDownLatch(1);
+        var task = optionalSignatureTask(() -> {
+            started.countDown();
+            try {
+                release.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException(e);
+            }
+        });
+
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var first = executor.submit(task::call);
+            var second = executor.submit(task::call);
+            try {
+                assertThat("Both invocations enter run()", started.await(10, TimeUnit.SECONDS), is(true));
+            } finally {
+                release.countDown();
+            }
+            assertThat(first.get(10, TimeUnit.SECONDS), nullValue());
+            assertThat(second.get(10, TimeUnit.SECONDS), nullValue());
+        }
+    }
+
+    private static InterruptableTask<?> optionalSignatureTask(Runnable action) throws Exception {
+        return (InterruptableTask<?>) taskClassWithoutOptionalType(OptionalSignatureTask.class)
+                .getConstructor(Runnable.class).newInstance(action);
+    }
+
+    private static Class<?> taskClassWithoutOptionalType(Class<?> taskClass) throws IOException {
+        var loader = new ClassLoader(InterruptableTaskTest.class.getClassLoader()) {
+            @Override
+            protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+                if (name.equals(OptionalSignatureType.class.getName())) {
+                    throw new ClassNotFoundException(name);
+                }
+                return super.loadClass(name, resolve);
+            }
+
+            Class<?> loadTask() throws IOException {
+                var resource = "/" + taskClass.getName().replace('.', '/') + ".class";
+                try (var input = taskClass.getResourceAsStream(resource)) {
+                    if (input == null) {
+                        throw new IllegalStateException("Missing task fixture: " + resource);
+                    }
+                    byte[] bytes = input.readAllBytes();
+                    return defineClass(taskClass.getName(), bytes, 0, bytes.length);
+                }
+            }
+        };
+        return loader.loadTask();
+    }
+
     private interface DefaultRunTask extends InterruptableTask<Void> {
         @Override
         default boolean canInterrupt() {
@@ -185,5 +326,41 @@ class InterruptableTaskTest {
         public Integer call() {
             return ++executions;
         }
+    }
+
+    public static class OptionalSignatureTask implements InterruptableTask<Void> {
+        private final Runnable action;
+
+        public OptionalSignatureTask(Runnable action) {
+            this.action = action;
+        }
+
+        @Override
+        public boolean canInterrupt() {
+            return true;
+        }
+
+        @Override
+        public void run() {
+            action.run();
+        }
+
+        public OptionalSignatureType unused() {
+            return null;
+        }
+    }
+
+    public static class OptionalSignatureIncompleteTask implements InterruptableTask<Void> {
+        @Override
+        public boolean canInterrupt() {
+            return true;
+        }
+
+        public OptionalSignatureType unused() {
+            return null;
+        }
+    }
+
+    public static class OptionalSignatureType {
     }
 }

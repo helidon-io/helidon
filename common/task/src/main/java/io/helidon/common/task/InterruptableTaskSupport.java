@@ -17,11 +17,18 @@
 package io.helidon.common.task;
 
 final class InterruptableTaskSupport {
-    private static final ClassValue<Boolean> RUN_IMPLEMENTED = new ClassValue<>() {
+    private static final RecursiveExecutionError RECURSIVE_EXECUTION = new RecursiveExecutionError();
+    private static final ThreadLocal<Invocation> INVOCATION = new ThreadLocal<>();
+    private static final ClassValue<RunImplementation> RUN_IMPLEMENTED = new ClassValue<>() {
         @Override
-        protected Boolean computeValue(Class<?> type) {
+        protected RunImplementation computeValue(Class<?> type) {
             try {
-                return type.getMethod("run").getDeclaringClass() != InterruptableTask.class;
+                return type.getMethod("run").getDeclaringClass() == InterruptableTask.class
+                        ? RunImplementation.DEFAULT
+                        : RunImplementation.OVERRIDDEN;
+            } catch (NoClassDefFoundError _) {
+                // Reflection also resolves unrelated method signatures, which may use absent optional dependencies.
+                return RunImplementation.UNRESOLVED;
             } catch (NoSuchMethodException e) {
                 throw new IllegalStateException("InterruptableTask must expose run()", e);
             }
@@ -32,9 +39,52 @@ final class InterruptableTaskSupport {
     }
 
     static void run(InterruptableTask<?> task) {
-        if (!RUN_IMPLEMENTED.get(task.getClass())) {
+        var implementation = RUN_IMPLEMENTED.get(task.getClass());
+        if (implementation == RunImplementation.OVERRIDDEN) {
+            task.run();
+        } else if (implementation == RunImplementation.DEFAULT) {
             throw new UnsupportedOperationException("InterruptableTask must override run() or call()");
+        } else {
+            runWithoutLookup(task);
         }
-        task.run();
+    }
+
+    private static void runWithoutLookup(InterruptableTask<?> task) {
+        var previous = INVOCATION.get();
+        for (var invocation = previous; invocation != null; invocation = invocation.previous()) {
+            if (invocation.task() == task) {
+                // Bypass the default run()'s Exception wrapper; the outer adapter translates this signal.
+                throw RECURSIVE_EXECUTION;
+            }
+        }
+        INVOCATION.set(new Invocation(task, previous));
+        try {
+            task.run();
+        } catch (RecursiveExecutionError _) {
+            throw new UnsupportedOperationException("InterruptableTask must override run() or call()");
+        } finally {
+            if (previous == null) {
+                INVOCATION.remove();
+            } else {
+                INVOCATION.set(previous);
+            }
+        }
+    }
+
+    private enum RunImplementation {
+        OVERRIDDEN,
+        DEFAULT,
+        UNRESOLVED
+    }
+
+    private record Invocation(InterruptableTask<?> task, Invocation previous) {
+    }
+
+    private static final class RecursiveExecutionError extends Error {
+        private static final long serialVersionUID = 1L;
+
+        private RecursiveExecutionError() {
+            super(null, null, false, false);
+        }
     }
 }
