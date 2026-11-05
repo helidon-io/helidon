@@ -22,10 +22,12 @@ import java.util.concurrent.ExecutorService;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * {@link Timeout} configuration bean.
  */
+@Api.Stable
 @Prototype.Blueprint(decorator = FtBuilderSupport.TimeoutBuilderDecorator.class)
 @Prototype.Configured("fault-tolerance.timeouts")
 interface TimeoutConfigBlueprint extends Prototype.Factory<Timeout> {

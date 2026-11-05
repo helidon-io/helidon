@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,13 @@ package io.helidon.faulttolerance;
 
 import java.util.Set;
 
+import io.helidon.common.Api;
+
 /**
  * Support for checking {@code skipOn} and {@code applyOn} sets of throwables.
  */
 @FunctionalInterface
+@Api.Stable
 public interface ErrorChecker {
     /**
      * Returns ErrorChecker that skips if throwable is in skipOnSet or if applyOnSet

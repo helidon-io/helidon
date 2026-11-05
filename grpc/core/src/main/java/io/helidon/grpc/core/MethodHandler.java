@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package io.helidon.grpc.core;
 
 import java.util.concurrent.CompletionStage;
 
+import io.helidon.common.Api;
+
 import io.grpc.MethodDescriptor;
 import io.grpc.Status;
 import io.grpc.stub.ServerCalls;
@@ -28,6 +30,7 @@ import io.grpc.stub.StreamObserver;
  * @param <ReqT> the request type
  * @param <RespT> the response type
  */
+@Api.Stable
 public interface MethodHandler<ReqT, RespT>
         extends ServerCalls.UnaryMethod<ReqT, RespT>,
         ServerCalls.ClientStreamingMethod<ReqT, RespT>,

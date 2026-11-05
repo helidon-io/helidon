@@ -16,6 +16,7 @@
 
 package io.helidon.service.codegen;
 
+import io.helidon.common.Api;
 import io.helidon.common.Generated;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -23,6 +24,7 @@ import io.helidon.common.types.TypeNames;
 /**
  * Types used in code generation of Helidon Service.
  */
+@Api.Stable
 public final class ServiceCodegenTypes {
     /**
      * {@link io.helidon.common.types.TypeName} for {@code io.helidon.service.registry.Service.Singleton}.

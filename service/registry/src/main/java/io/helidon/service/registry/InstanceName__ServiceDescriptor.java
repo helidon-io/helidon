@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.service.registry;
 
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -30,6 +31,7 @@ import io.helidon.common.types.TypeNames;
  * as it may be used in generated binding.
  */
 @SuppressWarnings({"checkstyle:TypeName"}) // matches pattern of generated descriptors
+@Api.Internal
 public class InstanceName__ServiceDescriptor implements ServiceDescriptor<String> {
     /**
      * Singleton instance to be referenced when building bindings.

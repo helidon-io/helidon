@@ -16,6 +16,7 @@
 
 package io.helidon.faulttolerance;
 
+import io.helidon.common.Api;
 import io.helidon.common.Functions;
 import io.helidon.common.UncheckedException;
 import io.helidon.service.registry.Interception;
@@ -42,6 +43,7 @@ import io.helidon.service.registry.InterceptionContext;
  * such as {@code com.example.MyType.myMethod(java.lang.String,java.lang.String)}.
  * Fields do not have the part with parameters, constructor follows method format, where name is {@code <init>}.
  */
+@Api.Stable
 public final class FtSupport {
     private FtSupport() {
     }

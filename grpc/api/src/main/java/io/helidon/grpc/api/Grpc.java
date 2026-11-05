@@ -31,6 +31,7 @@ import io.grpc.MethodDescriptor;
 /**
  * The Helidon gRPC API.
  */
+@Api.Stable
 public interface Grpc {
 
     /**

@@ -18,6 +18,7 @@ package io.helidon.service.registry;
 
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 
@@ -27,6 +28,7 @@ import io.helidon.common.types.TypeName;
  *
  * @param <T> type of the instance
  */
+@Api.Stable
 public interface ServiceInstance<T> extends Service.QualifiedInstance<T> {
     /**
      * Type name of this interface. {@link io.helidon.common.types.TypeName} is used in various APIs of service registry.

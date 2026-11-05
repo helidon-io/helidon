@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,12 @@ package io.helidon.scheduling;
 
 import java.util.concurrent.ScheduledExecutorService;
 
+import io.helidon.common.Api;
+
 /**
  * {@link io.helidon.scheduling.Scheduling Scheduled} task.
  */
+@Api.Stable
 public interface Task {
     /**
      * Human-readable description of the task invocation interval.

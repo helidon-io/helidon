@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weighted;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
@@ -27,6 +28,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Service metadata.
  */
+@Api.Stable
 public interface ServiceInfo extends Weighted {
     /**
      * Type of the service this descriptor describes.

@@ -28,6 +28,7 @@ import io.helidon.spi.HelidonStartupProvider;
  * applications.
  */
 @Weight(Weighted.DEFAULT_WEIGHT) // explicit default weight, this should be the "default" startup class
+@Api.Internal
 public class RegistryStartupProvider implements HelidonStartupProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

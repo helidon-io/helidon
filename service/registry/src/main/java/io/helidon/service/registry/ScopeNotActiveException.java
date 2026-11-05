@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,13 @@ package io.helidon.service.registry;
 
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
 
 /**
  * An attempt was done to get a service instance from a scope that is not active.
  */
+@Api.Stable
 public class ScopeNotActiveException extends ServiceRegistryException {
     /**
      * Scope that was expected to be active.

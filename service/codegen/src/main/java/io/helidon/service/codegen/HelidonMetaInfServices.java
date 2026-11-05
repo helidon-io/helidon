@@ -30,6 +30,7 @@ import java.util.TreeSet;
 
 import io.helidon.codegen.CodegenFiler;
 import io.helidon.codegen.FilerResource;
+import io.helidon.common.Api;
 import io.helidon.metadata.MetadataConstants;
 import io.helidon.metadata.hson.Hson;
 import io.helidon.service.metadata.DescriptorMetadata;
@@ -44,6 +45,7 @@ import io.helidon.service.metadata.Descriptors;
  * The service descriptor is then discoverable at runtime through our own resource in
  * {@value Descriptors#SERVICE_REGISTRY_LOCATION}.
  */
+@Api.Stable
 public class HelidonMetaInfServices {
     private final CodegenFiler filer;
     private final String resourceLocation;

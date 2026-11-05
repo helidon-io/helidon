@@ -29,6 +29,7 @@ import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.spi.CodegenExtension;
 import io.helidon.codegen.spi.CodegenExtensionProvider;
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeInfo;
@@ -41,6 +42,7 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_BINDING_EMP
  * A {@link java.util.ServiceLoader} provider implementation for {@link io.helidon.codegen.spi.CodegenExtensionProvider}
  * that handles generation of ApplicationBinding class during annotation processing based on the GenerateBinding annotation.
  */
+@Api.Internal
 public class ServiceBindingCodegenProvider implements CodegenExtensionProvider {
     /**
      * Default binding class name.

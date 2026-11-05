@@ -20,11 +20,13 @@ import java.util.Objects;
 import java.util.Set;
 
 import io.helidon.codegen.ClassCode;
+import io.helidon.common.Api;
 import io.helidon.common.types.ResolvedType;
 
 /**
  * New service descriptor metadata with its class code.
  */
+@Api.Stable
 public interface DescriptorClassCode {
     /**
      * Create a new instance.

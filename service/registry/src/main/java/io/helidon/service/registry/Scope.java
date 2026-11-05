@@ -16,9 +16,12 @@
 
 package io.helidon.service.registry;
 
+import io.helidon.common.Api;
+
 /**
  * A scope, such as request scope.
  */
+@Api.Stable
 public interface Scope extends AutoCloseable {
     /**
      * Stop the scope, and destroy all service instances created within it.

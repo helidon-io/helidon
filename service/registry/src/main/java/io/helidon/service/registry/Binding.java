@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.service.registry;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -27,6 +28,7 @@ import io.helidon.common.types.TypeName;
  * <p>
  * Binding instances MUST NOT have injection points.
  */
+@Api.Stable
 public interface Binding {
     /**
      * Type name of this interface.

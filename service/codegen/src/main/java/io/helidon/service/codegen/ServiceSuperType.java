@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.service.codegen;
 
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 
@@ -25,6 +26,7 @@ import io.helidon.common.types.TypeName;
  * Definition of a super service type (if any).
  * Only classes can have super types, and only if they directly extend a class that has a service descriptor generated.
  */
+@Api.Stable
 public final class ServiceSuperType {
     private final TypeInfo typeInfo;
     private final TypeName descriptorTypeName;

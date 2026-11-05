@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,14 @@ import java.util.Map;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Helidon service registry configuration.
  */
 @Prototype.Blueprint
 @Prototype.CustomMethods(ServiceRegistryConfigSupport.CustomMethods.class)
+@Api.Stable
 interface ServiceRegistryConfigBlueprint {
     /**
      * Whether to discover services from the class path.

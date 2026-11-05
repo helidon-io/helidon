@@ -22,6 +22,7 @@ import java.util.Set;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.classmodel.ContentBuilder;
+import io.helidon.common.Api;
 import io.helidon.common.Default;
 import io.helidon.common.GenericType;
 import io.helidon.common.LazyValue;
@@ -37,6 +38,7 @@ import static io.helidon.common.types.TypeNames.GENERIC_TYPE;
 /**
  * Code generation for handling of {@link io.helidon.common.Default} annotations.
  */
+@Api.Stable
 public final class DefaultsCodegen {
     private static final TypeName VALUE_TYPE = TypeName.create(Default.Value.class);
     private static final TypeName INT_TYPE = TypeName.create(Default.Int.class);

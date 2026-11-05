@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.scheduling;
 
 import java.util.Collection;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Service;
 
 /**
@@ -27,6 +28,7 @@ import io.helidon.service.registry.Service;
  * {@link io.helidon.service.registry.ServiceRegistry} will be used.
  */
 @Service.Contract
+@Api.Stable
 public interface TaskManager {
     /**
      * Close all current tasks and remove them from this task manager.

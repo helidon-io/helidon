@@ -18,9 +18,12 @@ package io.helidon.service.registry;
 
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
+
 /**
  * Service registry of a specific scope.
  */
+@Api.Stable
 public interface ScopedRegistry {
     /**
      * Activate this registry instance. This method will prepare this registry for use.

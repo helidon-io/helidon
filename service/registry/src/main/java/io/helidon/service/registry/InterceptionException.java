@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 
 package io.helidon.service.registry;
 
+import io.helidon.common.Api;
+
 /**
  * Wraps any checked exceptions that are thrown during the {@link Interception.Interceptor}
  * invocations.
  */
+@Api.Stable
 public class InterceptionException extends ServiceRegistryException {
 
     /**

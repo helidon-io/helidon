@@ -20,6 +20,7 @@ import java.util.Base64;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.Api;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.WritableHeaders;
@@ -32,6 +33,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 /**
  * Utility class for gRPC metadata and timeout headers.
  */
+@Api.Internal
 public class GrpcHeadersUtil {
 
     private GrpcHeadersUtil() {

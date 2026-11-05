@@ -22,11 +22,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Interception;
 
 /**
  * Fault tolerance annotations and types for Helidon Declarative.
  */
+@Api.Stable
 public final class Ft {
     private Ft() {
     }

@@ -32,6 +32,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -43,6 +44,7 @@ import io.helidon.common.types.TypeNames;
  * To use a singleton service across application, either pass it through parameters, or use
  * {@link io.helidon.service.registry.GlobalServiceRegistry}.
  */
+@Api.Stable
 public final class ServiceRegistryManager {
     static final Comparator<ServiceInfo> SERVICE_INFO_COMPARATOR = Comparator
             .comparingDouble(ServiceInfo::weight)

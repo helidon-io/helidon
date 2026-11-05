@@ -20,6 +20,7 @@ import java.util.Set;
 
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.common.Api;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -28,6 +29,7 @@ import io.helidon.common.types.TypeName;
  * Context of a single round of code generation.
  * For example the first round may generate types, that require additional code generation.
  */
+@Api.Stable
 public interface RegistryRoundContext extends RoundContext {
     /**
      * Add a new service descriptor.

@@ -20,6 +20,8 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 import java.util.concurrent.CompletionStage;
 
+import io.helidon.common.Api;
+
 /**
  * Injection event types.
  * <p>
@@ -30,6 +32,7 @@ import java.util.concurrent.CompletionStage;
  * and have a single parameter that defines the event type. Observer parameters cannot use varargs syntax;
  * array parameters are supported for observing array events.
  */
+@Api.Stable
 public final class Event {
     private Event() {
     }

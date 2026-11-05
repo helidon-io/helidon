@@ -28,6 +28,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.service.jndi {
     requires static io.helidon.common.features.api;
 
+    requires io.helidon.common;
     requires io.helidon.common.context;
     requires io.helidon.service.metadata;
     requires io.helidon.service.registry;

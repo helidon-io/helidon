@@ -19,6 +19,8 @@ package io.helidon.faulttolerance;
 import java.time.Duration;
 import java.util.Optional;
 
+import io.helidon.common.Api;
+
 /**
  * Context of an invocation attempt handled by {@link Retry}.
  * <p>
@@ -26,6 +28,7 @@ import java.util.Optional;
  * throwable. Each subsequent attempt provides the delay preceding that attempt and the throwable from the previous
  * attempt. The context is created immediately before invoking the function for an attempt.
  */
+@Api.Stable
 public interface RetryContext {
     /**
      * Number of the current invocation attempt.

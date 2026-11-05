@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.service.codegen.spi;
 
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.service.codegen.RegistryRoundContext;
@@ -25,6 +26,7 @@ import io.helidon.service.codegen.RegistryRoundContext;
 /**
  * Processes events from inject extension.
  */
+@Api.Stable
 public interface InjectCodegenObserver {
 
     /**

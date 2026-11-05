@@ -16,12 +16,14 @@
 
 package io.helidon.websocket;
 
+import io.helidon.common.Api;
 import io.helidon.http.HttpPrologue;
 
 /**
  * An exception that may be thrown by {@link WsListener#onHttpUpgrade(HttpPrologue, io.helidon.http.Headers)}
  * during handshake process to reject a websocket upgrade.
  */
+@Api.Stable
 public class WsUpgradeException extends RuntimeException {
 
     /**

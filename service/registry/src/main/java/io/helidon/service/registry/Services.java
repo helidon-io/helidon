@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -56,6 +57,7 @@ import io.helidon.common.types.TypeName;
  * and it will be available for injection as expected.
  * To get an instance, inject it into your service, do not call methods on this class.
  */
+@Api.Stable
 public final class Services {
     private Services() {
     }

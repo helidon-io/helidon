@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 
@@ -30,6 +31,7 @@ import io.helidon.common.types.TypeName;
  * Service descriptor to enable dependency on services loaded via {@link java.util.ServiceLoader}.
  */
 @SuppressWarnings("checkstyle:TypeName") // matches pattern of generated descriptors
+@Api.Stable
 public abstract class ServiceLoader__ServiceDescriptor implements ServiceDescriptor<Object> {
     private static final TypeName DESCRIPTOR_TYPE = TypeName.create(ServiceLoader__ServiceDescriptor.class);
 

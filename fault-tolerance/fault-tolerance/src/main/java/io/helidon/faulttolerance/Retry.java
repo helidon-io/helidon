@@ -25,6 +25,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.service.registry.Services;
@@ -32,6 +33,7 @@ import io.helidon.service.registry.Services;
 /**
  * Retry supports retry policies to be applied on an execution of asynchronous tasks.
  */
+@Api.Stable
 public interface Retry extends FtHandler, RuntimeType.Api<RetryConfig> {
 
     /**

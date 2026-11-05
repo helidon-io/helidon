@@ -18,6 +18,7 @@ package io.helidon.service.registry;
 
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 
@@ -27,6 +28,7 @@ import io.helidon.common.types.TypeName;
  *
  * @param <T> type of the described service
  */
+@Api.Stable
 public interface ServiceDescriptor<T> extends ServiceInfo {
     /**
      * Create a new service instance.

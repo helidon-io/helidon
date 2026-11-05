@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collector;
 
+import io.helidon.common.Api;
+
 import io.grpc.stub.StreamObserver;
 
 /**
@@ -33,6 +35,7 @@ import io.grpc.stub.StreamObserver;
  * @param <U> the type of values observed
  * @param <V> the request type before conversion
  */
+@Api.Stable
 public class CollectingObserver<T, V, U, A, R> implements StreamObserver<V> {
 
     private final Collector<T, A, R> collector;

@@ -17,6 +17,7 @@
 package io.helidon.service.codegen.spi;
 
 import io.helidon.codegen.spi.CodegenProvider;
+import io.helidon.common.Api;
 import io.helidon.service.codegen.RegistryCodegenContext;
 
 /**
@@ -24,6 +25,7 @@ import io.helidon.service.codegen.RegistryCodegenContext;
  * The difference between this extension and a general {@link io.helidon.codegen.spi.CodegenExtensionProvider} is that
  * this provider has access to {@link io.helidon.service.codegen.RegistryCodegenContext}.
  */
+@Api.Stable
 public interface RegistryCodegenExtensionProvider extends CodegenProvider {
     /**
      * Whether this extension should also process services whose service contracts contain annotations

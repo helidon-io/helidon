@@ -22,6 +22,7 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
@@ -31,6 +32,7 @@ import io.helidon.common.types.TypeName;
  */
 @Prototype.Blueprint(createEmptyPublic = false)
 @Prototype.CustomMethods(LookupSupport.CustomMethods.class)
+@Api.Stable
 interface LookupBlueprint {
 
     /**

@@ -23,6 +23,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.concurrent.ScheduledExecutorService;
 
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.ScheduledThreadPoolSupplier;
 
@@ -75,6 +76,7 @@ import static io.helidon.scheduling.FixedRate.DelayType.SINCE_PREVIOUS_START;
  * @see io.helidon.scheduling.Scheduling.Cron
  * @see io.helidon.scheduling.Scheduling.FixedRate
  */
+@Api.Stable
 public final class Scheduling {
     static final String DEFAULT_THREAD_NAME_PREFIX = "scheduled-";
     static final LazyValue<ScheduledExecutorService> DEFAULT_SCHEDULER = LazyValue.create(() -> {

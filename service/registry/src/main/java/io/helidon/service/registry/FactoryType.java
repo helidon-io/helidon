@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,14 @@
 
 package io.helidon.service.registry;
 
+import io.helidon.common.Api;
+
 /**
  * Described service factory type.
  * <p>
  * Core services (services defined for core service registry) can be only {@link #SERVICE} or {@link #SUPPLIER}.
  */
+@Api.Stable
 public enum FactoryType {
     /**
      * This service descriptor cannot provide an instance (such as service descriptors generated from interfaces,

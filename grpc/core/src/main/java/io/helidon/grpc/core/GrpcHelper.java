@@ -16,6 +16,8 @@
 
 package io.helidon.grpc.core;
 
+import io.helidon.common.Api;
+
 import io.grpc.Status;
 import io.grpc.StatusException;
 import io.grpc.StatusRuntimeException;
@@ -23,6 +25,7 @@ import io.grpc.StatusRuntimeException;
 /**
  * Helper methods for common gRPC tasks.
  */
+@Api.Internal
 public final class GrpcHelper {
 
     /**

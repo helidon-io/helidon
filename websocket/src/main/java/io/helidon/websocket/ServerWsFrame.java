@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.websocket;
 
 import java.nio.charset.StandardCharsets;
 
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -26,6 +27,7 @@ import io.helidon.common.socket.SocketContext;
 /**
  * Frame from a server (never masked).
  */
+@Api.Internal
 public final class ServerWsFrame extends AbstractWsFrame {
     private static final System.Logger LOGGER = System.getLogger(ServerWsFrame.class.getName());
 
