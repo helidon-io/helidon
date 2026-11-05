@@ -41,6 +41,14 @@ import io.helidon.webserver.spi.ServerFeature;
 
 /**
  * Observer that registers health endpoint, and collects all health checks.
+ * Each aggregate health request invokes its checks concurrently in a structured task scope,
+ * using one named virtual thread per check. Checks must not depend on running on the request thread
+ * or on another check completing first. Results retain registration order.
+ * When the request is bound to a {@link io.helidon.common.context.Context}, checks inherit that same
+ * context through scoped values. The WebServer context feature can establish this binding and propagate
+ * configured request headers into it. Without a binding, no scoped context is available to the checks.
+ * Checks must coordinate access to mutable values shared through the context and must not rely on
+ * ordinary request-thread {@link java.lang.ThreadLocal} values being inherited.
  */
 public class HealthObserver implements Observer, RuntimeType.Api<HealthObserverConfig> {
     private final HealthObserverConfig config;
