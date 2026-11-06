@@ -15,6 +15,9 @@
  */
 package io.helidon.tests.integration.data.jdbc.contract;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,16 +25,21 @@ import java.sql.SQLException;
 import java.sql.SQLTimeoutException;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BooleanSupplier;
+import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
@@ -39,9 +47,12 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.data.jdbc.JdbcClient;
 import io.helidon.data.jdbc.JdbcClientConfig;
-import io.helidon.data.jdbc.JdbcHealthSupport;
-import io.helidon.data.jdbc.health.JdbcClientHealthCheck;
+import io.helidon.data.jdbc.JdbcClientHealthCheck;
 import io.helidon.data.sql.common.ConnectionConfig;
+import io.helidon.data.sql.datasource.DataSourceHealthCheck;
+import io.helidon.dbclient.DbClient;
+import io.helidon.dbclient.health.DbClientHealthCheck;
+import io.helidon.dbclient.jdbc.JdbcClientBuilder;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.health.HealthCheckType;
@@ -49,6 +60,7 @@ import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
+import io.helidon.tests.integration.data.jdbc.support.DataSourceHealthProcess;
 import io.helidon.tests.integration.data.jdbc.support.JdbcHealthApplication;
 import io.helidon.transaction.Tx;
 import io.helidon.transaction.TxException;
@@ -65,6 +77,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -89,6 +102,9 @@ import static org.mockito.Mockito.when;
 public abstract class AbstractJdbcHealthContract {
     private final List<Connection> acquisitions = new ArrayList<>();
     private final AtomicInteger acquisitionCount = new AtomicInteger();
+    @TempDir
+    Path healthProcessDirectory;
+
     private HikariDataSource pool;
     private DataSource source;
     private JdbcClient client;
@@ -156,11 +172,11 @@ public abstract class AbstractJdbcHealthContract {
     }
 
     /**
-     * Records real acquisitions and verifies that probes leave transaction control and datasource ownership untouched.
+     * Records real acquisitions and verifies that probes leave transaction control and data source ownership untouched.
      */
     @Test
     protected void freshProbesPreserveOwnershipAndOrdinaryReuse() throws Exception {
-        var probe = JdbcHealthSupport.createProbe(client, query(), Duration.ofSeconds(2));
+        var probe = probe(client, query(), Duration.ofSeconds(2));
         assertThat(acquisitionCount.get(), is(0));
         assertThat(probe.getAsBoolean(), is(true));
         assertThat(probe.getAsBoolean(), is(true));
@@ -180,14 +196,17 @@ public abstract class AbstractJdbcHealthContract {
      */
     @Test
     protected void poolExhaustionDoesNotBorrowCallerConnectionsAndRecovers() throws Exception {
-        var probe = JdbcHealthSupport.createProbe(client, query(), Duration.ofSeconds(2));
+        var probe = probe(client, query(), Duration.ofSeconds(2));
+        var sourceProbe = probe(source, query(), Duration.ofSeconds(2));
         try (Connection a = pool.getConnection(); Connection _ = pool.getConnection(); Connection _ = pool.getConnection()) {
             a.setAutoCommit(false);
             assertThat(probe.getAsBoolean(), is(false));
+            assertThat(sourceProbe.getAsBoolean(), is(false));
             assertThat(a.getAutoCommit(), is(false));
             a.rollback();
         }
         assertThat(probe.getAsBoolean(), is(true));
+        assertThat(sourceProbe.getAsBoolean(), is(true));
         assertThat(client.create(query()).map(row -> row.get(1, Integer.class)).one(), is(1));
     }
 
@@ -196,7 +215,7 @@ public abstract class AbstractJdbcHealthContract {
      */
     @Test
     protected void driverTimeoutAndSqlFailureLeaveThePoolUsable() throws Exception {
-        // Successful uncancelled execution proves that the timeout case uses valid server SQL.
+        // Executing without cancellation verifies the SQL before testing the query timeout.
         try (Connection connection = pool.getConnection();
              PreparedStatement statement = connection.prepareStatement(slowQuery())) {
             statement.setQueryTimeout(10);
@@ -211,20 +230,25 @@ public abstract class AbstractJdbcHealthContract {
             assertThat("The driver must report timeout or query cancellation.",
                        cancellation instanceof SQLTimeoutException || "57014".equals(cancellation.getSQLState()), is(true));
         }
-        assertThat(JdbcHealthSupport.createProbe(client, slowQuery(), Duration.ofSeconds(1)).getAsBoolean(), is(false));
+        assertThat(probe(client, slowQuery(), Duration.ofSeconds(1)).getAsBoolean(), is(false));
+        assertThat(probe(source, slowQuery(), Duration.ofSeconds(1)).getAsBoolean(), is(false));
+        var sourceFailure = DataSourceHealthCheck.builder().dataSource(source)
+                .query("SELECT * FROM JDBC_HEALTH_TABLE_MISSING").build().call();
+        assertThat(sourceFailure.status(), is(HealthCheckResponse.Status.DOWN));
+        assertThat(sourceFailure.details().isEmpty(), is(true));
         JdbcClientHealthCheck failed = JdbcClientHealthCheck.builder().client(client)
                 .query("SELECT * FROM JDBC_HEALTH_TABLE_MISSING").build();
         assertThat(failed.call().status(), is(HealthCheckResponse.Status.DOWN));
         assertThat(failed.call().details().isEmpty(), is(true));
-        assertThat(JdbcHealthSupport.createProbe(client, query(), Duration.ofSeconds(2)).getAsBoolean(), is(true));
+        assertThat(probe(client, query(), Duration.ofSeconds(2)).getAsBoolean(), is(true));
     }
 
     /**
-     * Observes pending writes from separate connections and verifies caller controlled commit and rollback.
+     * Observes pending writes from separate connections and verifies that the caller retains commit and rollback control.
      */
     @Test
     protected void callerTransactionRetainsPendingWorkAndCompletionOwnership() throws Exception {
-        // The registry client factory supplies a transaction aware client over the same physical pool.
+        // The registry client factory supplies a client that participates in transactions over the same pool.
         var manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder().build());
         GlobalServiceRegistry.registry(manager.registry());
         try {
@@ -234,14 +258,29 @@ public abstract class AbstractJdbcHealthContract {
             TxSupport transactions = manager.registry().get(TxSupport.class);
             JdbcClient observer = JdbcClient.builder().dataSource(pool).build();
             observer.create("DELETE FROM TX_MATRIX").execute();
-            var healthy = JdbcHealthSupport.createProbe(managed, query(), Duration.ofSeconds(2));
-            var broken = JdbcHealthSupport.createProbe(managed, "SELECT * FROM JDBC_HEALTH_TABLE_MISSING", Duration.ofSeconds(2));
+            var healthy = probe(managed, query(), Duration.ofSeconds(2));
+            var broken = probe(managed, "SELECT * FROM JDBC_HEALTH_TABLE_MISSING", Duration.ofSeconds(2));
+            var healthySource = probe(source, query(), Duration.ofSeconds(2));
+            var brokenSource = probe(source, "SELECT * FROM JDBC_HEALTH_TABLE_MISSING", Duration.ofSeconds(2));
             transactions.transaction(Tx.Type.REQUIRED, () -> {
                 managed.create("INSERT INTO TX_MATRIX (DATA_VALUE) VALUES ('health-pending')").execute();
                 int before = acquisitionCount.get();
                 assertThat(healthy.getAsBoolean(), is(true));
                 assertThat(broken.getAsBoolean(), is(false));
-                assertThat(acquisitionCount.get(), is(before + 2));
+                assertThat(healthySource.getAsBoolean(), is(true));
+                assertThat(brokenSource.getAsBoolean(), is(false));
+                assertThat(acquisitionCount.get(), is(before + 4));
+                Connection caller = acquisitions.get(before - 1);
+                try (Connection _ = pool.getConnection(); Connection _ = pool.getConnection()) {
+                    assertThat(healthy.getAsBoolean(), is(false));
+                    assertThat(broken.getAsBoolean(), is(false));
+                    assertThat(healthySource.getAsBoolean(), is(false));
+                    assertThat(brokenSource.getAsBoolean(), is(false));
+                    assertThat(acquisitionCount.get(), is(before + 4));
+                    assertThat(caller.getAutoCommit(), is(false));
+                    verify(caller, never()).commit();
+                    verify(caller, never()).rollback();
+                }
                 assertThat(observer.create("SELECT COUNT(*) FROM TX_MATRIX").map(row -> row.get(1, Long.class)).one(), is(0L));
                 assertThat(managed.create("SELECT COUNT(*) FROM TX_MATRIX").map(row -> row.get(1, Long.class)).one(), is(1L));
                 return null;
@@ -262,6 +301,8 @@ public abstract class AbstractJdbcHealthContract {
                 assertThat(joined.getCause(), sameInstance(application));
                 assertThat(healthy.getAsBoolean(), is(true));
                 assertThat(broken.getAsBoolean(), is(false));
+                assertThat(healthySource.getAsBoolean(), is(true));
+                assertThat(brokenSource.getAsBoolean(), is(false));
                 return null;
             }));
             assertThat(observer.create("SELECT COUNT(*) FROM TX_MATRIX").map(row -> row.get(1, Long.class)).one(), is(1L));
@@ -275,59 +316,25 @@ public abstract class AbstractJdbcHealthContract {
      */
     @Test
     protected void unsafeModesAndInjectedDriverFaultsInvalidateWithoutTransactionControl() throws Exception {
-        for (String fault : List.of("mode", "timeout", "traversal", "cleanup")) {
-            try (Connection physical = pool.getConnection()) {
-                if (fault.equals("mode")) {
-                    physical.setAutoCommit(false);
-                }
-                Connection connection = recordingConnection(physical);
-                DataSource failingSource = mock(DataSource.class);
-                when(failingSource.getConnection()).thenReturn(connection);
-                if (!fault.equals("mode")) {
-                    PreparedStatement delegate = physical.prepareStatement(query());
-                    PreparedStatement statement = mock(PreparedStatement.class, delegatesTo(delegate));
-                    doReturn(statement).when(connection).prepareStatement(query());
-                    switch (fault) {
-                        case "timeout" -> doThrow(new SQLException("Secret timeout diagnostic."))
-                                .when(statement).setQueryTimeout(2);
-                        case "traversal" -> {
-                            ResultSet rows = mock(ResultSet.class);
-                            doReturn(rows).when(statement).getResultSet();
-                            when(rows.next()).thenThrow(new SQLException("Secret traversal diagnostic."));
-                        }
-                        case "cleanup" -> doAnswer(_ -> {
-                            delegate.close();
-                            throw new SQLException("Secret cleanup diagnostic.");
-                        }).when(statement).close();
-                        default -> throw new AssertionError(fault);
-                    }
-                }
-                var failed = JdbcHealthSupport.createProbe(JdbcClient.builder().dataSource(failingSource).build(),
-                                                          query(), Duration.ofSeconds(2));
-                assertThat(fault, failed.getAsBoolean(), is(false));
-                verify(connection, never()).setAutoCommit(anyBoolean());
-                verify(connection, never()).commit();
-                verify(connection, never()).rollback();
-            }
-            assertThat(JdbcHealthSupport.createProbe(client, query(), Duration.ofSeconds(2)).getAsBoolean(), is(true));
-        }
+        verifyUnsafeProbeFailures(true);
+        verifyUnsafeProbeFailures(false);
     }
 
     /**
-     * Exercises direct driver configuration and a named source through the same public probe bridge.
+     * Exercises direct driver configuration and a named source through the same public client health check.
      */
     @Test
     protected void directAndNamedSourcesRemainBoundWithoutEagerAcquisition() {
         ConnectionConfig connection = ConnectionConfig.create(databaseConfig().get("data.clients.jdbc")
                 .asNodeList().orElseThrow().getFirst().get("connection"));
         JdbcClient direct = JdbcClient.builder().connection(connection).build();
-        assertThat(JdbcHealthSupport.createProbe(direct, query(), Duration.ofSeconds(2)).getAsBoolean(), is(true));
+        assertThat(probe(direct, query(), Duration.ofSeconds(2)).getAsBoolean(), is(true));
         var manager = ServiceRegistryManager.create();
         GlobalServiceRegistry.registry(manager.registry());
         try {
             Services.setNamed(DataSource.class, source, "health-source");
             JdbcClient named = JdbcClient.builder().dataSourceName("health-source").build();
-            var probe = JdbcHealthSupport.createProbe(named, query(), Duration.ofSeconds(2));
+            var probe = probe(named, query(), Duration.ofSeconds(2));
             assertThat(acquisitionCount.get(), is(0));
             assertThat(probe.getAsBoolean(), is(true));
             assertThat(acquisitionCount.get(), is(1));
@@ -341,42 +348,8 @@ public abstract class AbstractJdbcHealthContract {
      */
     @Test
     protected void concurrentProbesReleaseEveryAcquisition() throws Exception {
-        CountDownLatch entered = new CountDownLatch(3);
-        CountDownLatch release = new CountDownLatch(1);
-        DataSource coordinated = mock(DataSource.class);
-        when(coordinated.getConnection()).thenAnswer(_ -> {
-            Connection connection = source.getConnection();
-            entered.countDown();
-            try {
-                if (!release.await(5, TimeUnit.SECONDS)) {
-                    throw new IllegalStateException("The coordination wait expired.");
-                }
-                return connection;
-            } catch (Throwable failure) {
-                connection.close();
-                throw failure;
-            }
-        });
-        var probe = JdbcHealthSupport.createProbe(JdbcClient.builder().dataSource(coordinated).build(),
-                                                  query(), Duration.ofSeconds(2));
-        var executor = Executors.newFixedThreadPool(3);
-        List<Future<Boolean>> workers = new ArrayList<>();
-        try {
-            for (int index = 0; index < 3; index++) {
-                workers.add(executor.submit(probe::getAsBoolean));
-            }
-            assertThat(entered.await(5, TimeUnit.SECONDS), is(true));
-            release.countDown();
-            for (Future<Boolean> worker : workers) {
-                assertThat(worker.get(5, TimeUnit.SECONDS), is(true));
-            }
-        } finally {
-            release.countDown();
-            workers.forEach(worker -> worker.cancel(true));
-            executor.shutdownNow();
-            assertThat(executor.awaitTermination(5, TimeUnit.SECONDS), is(true));
-        }
-        assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
+        verifyConcurrentProbesReleaseEveryAcquisition(true);
+        verifyConcurrentProbesReleaseEveryAcquisition(false);
     }
 
     /**
@@ -447,7 +420,10 @@ public abstract class AbstractJdbcHealthContract {
             }
             try (Http1ClientResponse response = http.get("/observe/health/check/unexpected").request()) {
                 assertThat(response.status().code(), is(500));
-                assertThat(response.as(String.class).contains("Observer application failure."), is(true));
+                String body = response.as(String.class);
+                assertThat(body.contains("ERROR"), is(true));
+                assertThat(body.contains("Observer application failure."), is(false));
+                assertThat(body.contains("IllegalStateException"), is(false));
             }
         } finally {
             server.stop();
@@ -521,6 +497,304 @@ public abstract class AbstractJdbcHealthContract {
      */
     @Test
     protected void failedConcurrentProbeDoesNotStrandItsPeers() throws Exception {
+        verifyFailedConcurrentProbeDoesNotStrandItsPeers(true);
+        verifyFailedConcurrentProbeDoesNotStrandItsPeers(false);
+    }
+
+    /**
+     * Executes real data source probes and pool reuse in a process that cannot link the JDBC client runtime.
+     */
+    @Test
+    protected void datasourceOnlyHealthNeedsNoClientRuntime() throws Exception {
+        Config connection = databaseConfig().get("data.clients.jdbc").asNodeList().orElseThrow().getFirst().get("connection");
+        Properties settings = new Properties();
+        for (String name : List.of("url", "username", "password")) {
+            settings.setProperty(name, connection.get(name).asString().orElseThrow());
+        }
+        settings.setProperty("query", query());
+        poolProperties().forEach((name, value) -> settings.setProperty("property." + name, value));
+        String libraries = Arrays.stream(System.getProperty("surefire.test.class.path", System.getProperty("java.class.path"))
+                                                .split(File.pathSeparator))
+                .map(value -> Path.of(value.replace('\\', '/')).normalize())
+                .filter(path -> !path.endsWith(Path.of("data", "jdbc", "jdbc", "target", "classes"))
+                        && !path.getFileName().toString().matches("helidon-data-jdbc-[0-9].*\\.jar"))
+                .map(Path::toString)
+                .collect(Collectors.joining(File.pathSeparator));
+        String executable = System.getProperty("os.name").startsWith("Windows") ? "java.exe" : "java";
+        Path output = healthProcessDirectory.resolve("datasource-process.log");
+        Process process = new ProcessBuilder(Path.of(System.getProperty("java.home"), "bin", executable).toString(),
+                "--class-path", libraries, DataSourceHealthProcess.class.getName())
+                .redirectErrorStream(true).redirectOutput(output.toFile()).start();
+        Throwable primary = null;
+        try {
+            try (var input = process.getOutputStream()) {
+                settings.store(input, "Temporary database fixture settings.");
+            }
+            assertThat("The datasource process must finish within its bound.", process.waitFor(45, TimeUnit.SECONDS), is(true));
+            assertThat(Files.readString(output), process.exitValue(), is(0));
+        } catch (Exception | Error failure) {
+            primary = failure;
+            throw failure;
+        } finally {
+            try {
+                process.destroyForcibly();
+                assertThat(process.waitFor(5, TimeUnit.SECONDS), is(true));
+            } catch (Exception | Error failure) {
+                if (primary == null) {
+                    throw failure;
+                }
+                if (primary != failure) {
+                    primary.addSuppressed(failure);
+                }
+                if (failure instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+    }
+
+    /**
+     * Discovers a directly configured client with no data source definition and retains its ordinary query behavior.
+     */
+    @Test
+    protected void directClientDiscoveryDoesNotRequireDatasourceConfiguration() {
+        Config connection = databaseConfig().get("data.clients.jdbc").asNodeList().orElseThrow().getFirst().get("connection");
+        Map<String, String> values = new HashMap<>();
+        values.put("data.clients.jdbc.0.name", "direct");
+        values.put("data.clients.jdbc.0.health-check.enabled", "true");
+        values.put("data.clients.jdbc.0.health-check.name", "direct-db");
+        for (String name : List.of("url", "username", "password")) {
+            values.put("data.clients.jdbc.0.connection." + name, connection.get(name).asString().orElseThrow());
+        }
+        var manager = ServiceRegistryManager.create();
+        GlobalServiceRegistry.registry(manager.registry());
+        try {
+            Services.set(Config.class, Config.just(ConfigSources.create(values)));
+            List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
+            assertThat(checks.size(), is(1));
+            var check = (JdbcClientHealthCheck) checks.getFirst();
+            assertThat(check.prototype().query(), is("SELECT 1"));
+            assertThat(check.call().status(), is(HealthCheckResponse.Status.UP));
+            JdbcClient actual = manager.registry().getNamed(JdbcClient.class, "direct");
+            assertThat(check.prototype().client(), sameInstance(actual));
+            assertThat(actual.create(query()).map(row -> row.get(1, Integer.class)).one(), is(1));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    /**
+     * Keeps data source and shared-client checks individually addressable with independent SQL and membership.
+     */
+    @Test
+    protected void sharedSourceChecksKeepIndependentPolicyAndRoutes() throws Exception {
+        Config connection = databaseConfig().get("data.clients.jdbc").asNodeList().orElseThrow().getFirst().get("connection");
+        Map<String, String> values = new HashMap<>();
+        String sourcePrefix = "data.sources.sql.0";
+        values.put(sourcePrefix + ".name", "shared");
+        values.put(sourcePrefix + ".health-check.enabled", "true");
+        values.put(sourcePrefix + ".health-check.name", "source-db");
+        values.put(sourcePrefix + ".health-check.query", query().replace("1", "3"));
+        values.put(sourcePrefix + ".health-check.query-timeout", "PT3S");
+        for (String name : List.of("url", "username", "password")) {
+            values.put(sourcePrefix + ".provider.hikari." + name, connection.get(name).asString().orElseThrow());
+        }
+        values.put(sourcePrefix + ".provider.hikari.maximum-pool-size", "2");
+        values.put(sourcePrefix + ".provider.hikari.minimum-idle", "0");
+        values.put(sourcePrefix + ".provider.hikari.connection-timeout", "500");
+        for (int index = 0; index < 2; index++) {
+            String prefix = "data.clients.jdbc." + index;
+            values.put(prefix + ".name", "client-" + index);
+            values.put(prefix + ".data-source", "shared");
+            values.put(prefix + ".health-check.enabled", "true");
+            values.put(prefix + ".health-check.name", "client-db-" + index);
+        }
+        values.put("data.clients.jdbc.1.health-check.query", query().replace("1", "2"));
+        values.put("data.clients.jdbc.1.health-check.type", "liveness");
+        var manager = ServiceRegistryManager.create();
+        GlobalServiceRegistry.registry(manager.registry());
+        try {
+            Services.set(Config.class, Config.just(ConfigSources.create(values)));
+            Services.setNamed(DataSource.class, source, "shared");
+            List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
+            assertThat(checks.size(), is(3));
+            assertThat(checks.stream().filter(check -> check instanceof DataSourceHealthCheck).count(), is(1L));
+            var sourceCheck = (DataSourceHealthCheck) checks.stream().filter(check -> check.name().equals("source-db"))
+                    .findFirst().orElseThrow();
+            var clientCheck = (JdbcClientHealthCheck) checks.stream().filter(check -> check.name().equals("client-db-0"))
+                    .findFirst().orElseThrow();
+            assertThat(sourceCheck.prototype().dataSource(), sameInstance(source));
+            assertThat(sourceCheck.prototype().query(), is(query().replace("1", "3")));
+            assertThat(clientCheck.prototype().query(), is("SELECT 1"));
+            assertThat(clientCheck.prototype().queryTimeout(), is(Duration.ofSeconds(2)));
+            assertThat(acquisitionCount.get(), is(0));
+            var provider = manager.registry().get(ObserveFeatureProvider.class);
+            ObserveFeature feature = provider.create(Config.empty(), "observe", manager.registry());
+            WebServer server = WebServer.builder().host("127.0.0.1").port(0).featuresDiscoverServices(false)
+                    .addFeature(feature).build().start();
+            try {
+                Http1Client http = Http1Client.builder().baseUri("http://127.0.0.1:" + server.port()).build();
+                assertStatus(http, "/observe/health/ready/source-db", 204);
+                assertStatus(http, "/observe/health/check/source-db", 204);
+                assertThat(acquisitionCount.get(), is(2));
+                for (Connection acquisition : acquisitions) {
+                    verify(acquisition).prepareStatement(query().replace("1", "3"));
+                }
+                assertStatus(http, "/observe/health/ready", 204);
+                assertThat(acquisitionCount.get(), is(4));
+                assertStatus(http, "/observe/health/", 204);
+                assertThat(acquisitionCount.get(), is(7));
+                assertStatus(http, "/observe/health/ready/client-db-1", 404);
+                assertStatus(http, "/observe/health/live/client-db-1", 204);
+                assertStatus(http, "/observe/health/check/client-db-1", 204);
+                assertThat(acquisitionCount.get(), is(9));
+            } finally {
+                server.stop();
+            }
+            for (Connection acquisition : acquisitions) {
+                verify(acquisition, never()).setAutoCommit(anyBoolean());
+                verify(acquisition, never()).commit();
+                verify(acquisition, never()).rollback();
+            }
+            assertThat(pool.isClosed(), is(false));
+            assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    /**
+     * Preserves existing DbClient queries and health contracts beside the new source and client checks.
+     */
+    @Test
+    protected void existingDbClientHealthAndQueriesCoexist() {
+        try (DbClient legacy = JdbcClientBuilder.create().connectionPool(() -> {
+            try {
+                return pool.getConnection();
+            } catch (SQLException failure) {
+                throw new IllegalStateException("The legacy test client could not acquire a connection.", failure);
+            }
+        }).build()) {
+            var legacyCheck = DbClientHealthCheck.builder(legacy).name("legacy-db").statement(query()).build();
+            var sourceCheck = DataSourceHealthCheck.builder().dataSource(source).name("source-db").build();
+            var clientCheck = JdbcClientHealthCheck.builder().client(client).name("client-db").build();
+            assertThat(legacyCheck.type(), is(HealthCheckType.LIVENESS));
+            assertThat(legacyCheck.call().status(), is(HealthCheckResponse.Status.UP));
+            assertThat(sourceCheck.call().status(), is(HealthCheckResponse.Status.UP));
+            assertThat(clientCheck.call().status(), is(HealthCheckResponse.Status.UP));
+            HealthCheckResponse failure = DbClientHealthCheck.builder(legacy)
+                    .statement("SELECT * FROM JDBC_HEALTH_TABLE_MISSING").build().call();
+            assertThat(failure.status(), is(HealthCheckResponse.Status.DOWN));
+            assertThat(failure.details().containsKey("ErrorClass"), is(true));
+            assertThat(probe(source, "SELECT * FROM JDBC_HEALTH_TABLE_MISSING", Duration.ofSeconds(2))
+                               .getAsBoolean(), is(false));
+            assertThat(legacyCheck.call().status(), is(HealthCheckResponse.Status.UP));
+            try (var rows = legacy.execute().query(query())) {
+                assertThat(rows.map(row -> row.column(1).get(Number.class).intValue()).toList(), is(List.of(1)));
+            }
+            assertThat(client.create(query()).map(row -> row.get(1, Integer.class)).one(), is(1));
+            WebServer server = WebServer.builder().host("127.0.0.1").port(0).featuresDiscoverServices(false)
+                    .addFeature(ObserveFeature.just(HealthObserver.builder().useSystemServices(false)
+                            .addCheck(sourceCheck).addCheck(clientCheck).addCheck(legacyCheck).build())).build().start();
+            try {
+                Http1Client http = Http1Client.builder().baseUri("http://127.0.0.1:" + server.port()).build();
+                assertStatus(http, "/observe/health/ready", 204);
+                assertStatus(http, "/observe/health/ready/legacy-db", 404);
+                assertStatus(http, "/observe/health/live/legacy-db", 204);
+                assertStatus(http, "/observe/health/check/legacy-db", 204);
+            } finally {
+                server.stop();
+            }
+        }
+        assertThat(pool.isClosed(), is(false));
+        assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
+    }
+
+    private static void finishWorkers(CountDownLatch release,
+                                      List<Future<Boolean>> workers,
+                                      ExecutorService executor,
+                                      Throwable primary) throws InterruptedException {
+        try {
+            release.countDown();
+            workers.forEach(worker -> worker.cancel(true));
+            executor.shutdownNow();
+            assertThat(executor.awaitTermination(5, TimeUnit.SECONDS), is(true));
+        } catch (InterruptedException | RuntimeException | Error failure) {
+            if (primary == null) {
+                throw failure;
+            }
+            if (primary != failure) {
+                primary.addSuppressed(failure);
+            }
+            if (failure instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
+    private static BooleanSupplier probe(DataSource source, String query, Duration timeout) {
+        DataSourceHealthCheck check = DataSourceHealthCheck.builder()
+                .dataSource(source).query(query).queryTimeout(timeout).build();
+        return () -> check.call().status() == HealthCheckResponse.Status.UP;
+    }
+
+    private static BooleanSupplier probe(JdbcClient client, String query, Duration timeout) {
+        JdbcClientHealthCheck check = JdbcClientHealthCheck.builder().client(client).query(query).queryTimeout(timeout).build();
+        return () -> check.call().status() == HealthCheckResponse.Status.UP;
+    }
+
+    private static void assertStatus(Http1Client http, String path, int status) {
+        try (Http1ClientResponse response = http.get(path).request()) {
+            assertThat(path, response.status().code(), is(status));
+        }
+    }
+
+    private void verifyConcurrentProbesReleaseEveryAcquisition(boolean clientCheck) throws Exception {
+        CountDownLatch entered = new CountDownLatch(3);
+        CountDownLatch release = new CountDownLatch(1);
+        DataSource coordinated = mock(DataSource.class);
+        when(coordinated.getConnection()).thenAnswer(_ -> {
+            Connection connection = source.getConnection();
+            entered.countDown();
+            try {
+                if (!release.await(5, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("The coordination wait expired.");
+                }
+                return connection;
+            } catch (Throwable failure) {
+                try {
+                    connection.close();
+                } catch (Throwable closeFailure) {
+                    failure.addSuppressed(closeFailure);
+                }
+                throw failure;
+            }
+        });
+        var probe = clientCheck
+                ? probe(JdbcClient.builder().dataSource(coordinated).build(), query(), Duration.ofSeconds(2))
+                : probe(coordinated, query(), Duration.ofSeconds(2));
+        var executor = Executors.newFixedThreadPool(3);
+        List<Future<Boolean>> workers = new ArrayList<>();
+        Throwable primary = null;
+        try {
+            for (int index = 0; index < 3; index++) {
+                workers.add(executor.submit(probe::getAsBoolean));
+            }
+            assertThat(entered.await(5, TimeUnit.SECONDS), is(true));
+            release.countDown();
+            for (Future<Boolean> worker : workers) {
+                assertThat(worker.get(5, TimeUnit.SECONDS), is(true));
+            }
+        } catch (Exception | Error failure) {
+            primary = failure;
+            throw failure;
+        } finally {
+            finishWorkers(release, workers, executor, primary);
+        }
+        assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
+    }
+
+    private void verifyFailedConcurrentProbeDoesNotStrandItsPeers(boolean clientCheck) throws Exception {
         CountDownLatch entered = new CountDownLatch(2);
         CountDownLatch release = new CountDownLatch(1);
         AtomicInteger attempts = new AtomicInteger();
@@ -537,15 +811,21 @@ public abstract class AbstractJdbcHealthContract {
                 }
                 return connection;
             } catch (Throwable failure) {
-                connection.close();
+                try {
+                    connection.close();
+                } catch (Throwable closeFailure) {
+                    failure.addSuppressed(closeFailure);
+                }
                 throw failure;
             }
         });
-        var probe = JdbcHealthSupport.createProbe(JdbcClient.builder().dataSource(coordinated).build(),
-                                                  query(), Duration.ofSeconds(2));
+        var probe = clientCheck
+                ? probe(JdbcClient.builder().dataSource(coordinated).build(), query(), Duration.ofSeconds(2))
+                : probe(coordinated, query(), Duration.ofSeconds(2));
         var executor = Executors.newFixedThreadPool(3);
         var completed = new ExecutorCompletionService<Boolean>(executor);
         List<Future<Boolean>> workers = new ArrayList<>();
+        Throwable primary = null;
         try {
             for (int index = 0; index < 3; index++) {
                 workers.add(completed.submit(probe::getAsBoolean));
@@ -560,11 +840,11 @@ public abstract class AbstractJdbcHealthContract {
                 assertThat(success, notNullValue());
                 assertThat(success.get(5, TimeUnit.SECONDS), is(true));
             }
+        } catch (Exception | Error failure) {
+            primary = failure;
+            throw failure;
         } finally {
-            release.countDown();
-            workers.forEach(worker -> worker.cancel(true));
-            executor.shutdownNow();
-            assertThat(executor.awaitTermination(5, TimeUnit.SECONDS), is(true));
+            finishWorkers(release, workers, executor, primary);
         }
         assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
         assertThat(probe.getAsBoolean(), is(true));
@@ -576,9 +856,43 @@ public abstract class AbstractJdbcHealthContract {
         assertThat(client.create(query()).map(row -> row.get(1, Integer.class)).one(), is(1));
     }
 
-    private static void assertStatus(Http1Client http, String path, int status) {
-        try (Http1ClientResponse response = http.get(path).request()) {
-            assertThat(path, response.status().code(), is(status));
+    private void verifyUnsafeProbeFailures(boolean clientCheck) throws Exception {
+        for (String fault : List.of("mode", "timeout", "traversal", "cleanup")) {
+            try (Connection physical = pool.getConnection()) {
+                if (fault.equals("mode")) {
+                    physical.setAutoCommit(false);
+                }
+                Connection connection = recordingConnection(physical);
+                DataSource failingSource = mock(DataSource.class);
+                when(failingSource.getConnection()).thenReturn(connection);
+                if (!fault.equals("mode")) {
+                    PreparedStatement delegate = physical.prepareStatement(query());
+                    PreparedStatement statement = mock(PreparedStatement.class, delegatesTo(delegate));
+                    doReturn(statement).when(connection).prepareStatement(query());
+                    switch (fault) {
+                        case "timeout" -> doThrow(new SQLException("Secret timeout diagnostic."))
+                                .when(statement).setQueryTimeout(2);
+                        case "traversal" -> {
+                            ResultSet rows = mock(ResultSet.class);
+                            doReturn(rows).when(statement).getResultSet();
+                            when(rows.next()).thenThrow(new SQLException("Secret traversal diagnostic."));
+                        }
+                        case "cleanup" -> doAnswer(_ -> {
+                            delegate.close();
+                            throw new SQLException("Secret cleanup diagnostic.");
+                        }).when(statement).close();
+                        default -> throw new AssertionError(fault);
+                    }
+                }
+                var failed = clientCheck
+                        ? probe(JdbcClient.builder().dataSource(failingSource).build(), query(), Duration.ofSeconds(2))
+                        : probe(failingSource, query(), Duration.ofSeconds(2));
+                assertThat(fault, failed.getAsBoolean(), is(false));
+                verify(connection, never()).setAutoCommit(anyBoolean());
+                verify(connection, never()).commit();
+                verify(connection, never()).rollback();
+            }
+            assertThat(probe(client, query(), Duration.ofSeconds(2)).getAsBoolean(), is(true));
         }
     }
 

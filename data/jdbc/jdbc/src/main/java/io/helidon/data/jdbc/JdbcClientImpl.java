@@ -15,6 +15,7 @@
  */
 package io.helidon.data.jdbc;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -25,6 +26,8 @@ import javax.sql.DataSource;
 
 import io.helidon.common.LruCache;
 import io.helidon.data.DataException;
+import io.helidon.data.sql.datasource.DataSourceHealthCheck;
+import io.helidon.health.HealthCheckResponse;
 import io.helidon.service.registry.ServiceRegistryException;
 import io.helidon.service.registry.Services;
 
@@ -164,11 +167,16 @@ final class JdbcClientImpl implements JdbcClient {
     /**
      * Binds a probe to the resolved source while preserving the ordinary lease provider.
      *
-     * @param sql The query has passed lexical validation.
-     * @param timeout The timeout contains validated JDBC seconds.
+     * @param sql The trusted SELECT is validated during check construction.
+     * @param timeout The query timeout is validated before acquisition.
      * @return Each invocation owns a fresh independent acquisition.
      */
-    BooleanSupplier createProbe(String sql, int timeout) {
+    BooleanSupplier createProbe(String sql, Duration timeout) {
+        DataSourceHealthCheck check = DataSourceHealthCheck.builder()
+                .dataSource(dataSource)
+                .query(sql)
+                .queryTimeout(timeout)
+                .build();
         return () -> {
             if (leaseProvider instanceof JdbcTransactionConnectionManager manager) {
                 try {
@@ -177,7 +185,7 @@ final class JdbcClientImpl implements JdbcClient {
                     return false;
                 }
             }
-            return JdbcHealthProbe.execute(dataSource, sql, timeout);
+            return check.call().status() == HealthCheckResponse.Status.UP;
         };
     }
 
