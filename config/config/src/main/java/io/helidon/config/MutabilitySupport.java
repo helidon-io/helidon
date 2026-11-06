@@ -27,6 +27,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Consumer;
 
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 import io.helidon.config.spi.ChangeEventType;
 import io.helidon.config.spi.PollingStrategy;
@@ -38,6 +39,7 @@ import io.helidon.config.spi.PollingStrategy;
  * ({@link #poll(java.nio.file.Path, java.time.Duration, java.util.function.Consumer, java.util.function.Consumer)}) and
  * for file watching ({@link #watch(java.nio.file.Path, java.util.function.Consumer, java.util.function.Consumer)}).
  */
+@Api.Internal
 public final class MutabilitySupport {
     private static final System.Logger LOGGER = System.getLogger(MutabilitySupport.class.getName());
     private static final LazyValue<ScheduledExecutorService> EXECUTOR

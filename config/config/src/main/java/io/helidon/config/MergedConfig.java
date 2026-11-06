@@ -24,6 +24,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.config.spi.ConfigMapper;
 
@@ -35,6 +36,7 @@ import io.helidon.config.spi.ConfigMapper;
  * the value from the {@code primary} configuration takes precedence.
  * </p>
  */
+@Api.Stable
 public class MergedConfig implements Config {
 
     private final Config primaryDelegate;

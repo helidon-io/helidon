@@ -38,6 +38,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
+import io.helidon.common.Api;
 import io.helidon.config.spi.ChangeEventType;
 import io.helidon.config.spi.ChangeWatcher;
 
@@ -67,6 +68,7 @@ import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
  *
  * @see WatchService
  */
+@Api.Stable
 public final class FileSystemWatcher implements ChangeWatcher<Path> {
 
     private static final System.Logger LOGGER = System.getLogger(FileSystemWatcher.class.getName());

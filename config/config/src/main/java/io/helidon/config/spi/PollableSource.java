@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package io.helidon.config.spi;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
+
 /**
  * A source implementing this interface provides support for polling using a {@link io.helidon.config.spi.PollingStrategy}.
  * This is achieved through a stamp passed between the source and the strategy to check for changes.
@@ -26,6 +28,7 @@ import java.util.function.Supplier;
  *
  * @param <S> the type of the stamp used by the source (such as byte[] with a digest of a file)
  */
+@Api.Stable
 public interface PollableSource<S> {
     /**
      * This method is invoked to check if this source has changed.

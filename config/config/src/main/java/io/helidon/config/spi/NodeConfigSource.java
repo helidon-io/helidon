@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,13 @@ package io.helidon.config.spi;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.config.ConfigException;
 
 /**
  * An eager source that can read all data from the underlying origin as a configuration node.
  */
+@Api.Stable
 public interface NodeConfigSource extends ConfigSource {
     /**
      * Loads the underlying source data. This method is only called when the source {@link #exists()}.

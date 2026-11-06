@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,12 @@ package io.helidon.config;
 
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
+
 /**
  * Exception representing a specific failures related to a missing configuration value.
  */
+@Api.Stable
 public final class MissingValueException extends ConfigException {
 
     private static final long serialVersionUID = 1L;

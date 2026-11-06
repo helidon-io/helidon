@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
 
+import io.helidon.common.Api;
 import io.helidon.common.Builder;
 import io.helidon.config.ScheduledPollingStrategy.RegularRecurringPolicy;
 import io.helidon.config.spi.PollingStrategy;
@@ -34,6 +35,7 @@ import io.helidon.config.spi.PollingStrategy;
  * @see #nop()
  * @see io.helidon.config.spi.PollingStrategy
  */
+@Api.Stable
 public final class PollingStrategies {
 
     private PollingStrategies() {

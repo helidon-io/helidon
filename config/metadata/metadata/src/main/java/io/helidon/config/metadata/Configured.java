@@ -21,6 +21,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.common.Api;
+
 /**
  * A configured class can load its values from configuration.
  * There are two options for a supported type - either it is an interface/class
@@ -32,6 +34,7 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.SOURCE)
+@Api.Stable
 public @interface Configured {
     /**
      * Whether this is a root configuration object.

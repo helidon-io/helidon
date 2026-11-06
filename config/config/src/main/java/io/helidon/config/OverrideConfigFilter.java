@@ -24,6 +24,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
+import io.helidon.common.Api;
 import io.helidon.config.spi.ConfigFilter;
 
 /**
@@ -50,6 +51,7 @@ import io.helidon.config.spi.ConfigFilter;
  * See {@link io.helidon.config.spi.OverrideSource} for further migration considerations.
  */
 @Deprecated(since = "28.0.0", forRemoval = true)
+@Api.Stable
 public class OverrideConfigFilter implements ConfigFilter {
 
     private static final System.Logger LOGGER = System.getLogger(OverrideConfigFilter.class.getName());

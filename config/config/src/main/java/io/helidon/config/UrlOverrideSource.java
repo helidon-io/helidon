@@ -25,6 +25,7 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ConfigContent.OverrideContent;
 import io.helidon.config.spi.ConfigParser;
@@ -62,6 +63,7 @@ import io.helidon.config.spi.WatchableSource;
  * See {@link OverrideSource} for further migration considerations. No removal release or timing has been decided.
  */
 @Deprecated(since = "28.0.0", forRemoval = true)
+@Api.Stable
 public class UrlOverrideSource extends AbstractSource
         implements OverrideSource, PollableSource<Instant>, WatchableSource<URL> {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.config.spi;
 
+import io.helidon.common.Api;
 import io.helidon.config.ConfigSourceRuntime;
 
 /**
@@ -25,6 +26,7 @@ import io.helidon.config.ConfigSourceRuntime;
  * The context is typically used in implementations of {@link io.helidon.config.spi}
  * interfaces to share common information.
  */
+@Api.Stable
 public interface ConfigContext {
     /**
      * Create or find a runtime for a config source.

@@ -16,6 +16,7 @@
 
 package io.helidon.config.spi;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigItem;
 import io.helidon.service.registry.Service;
@@ -57,6 +58,7 @@ import io.helidon.service.registry.Service;
  */
 @FunctionalInterface
 @Service.Contract
+@Api.Stable
 public interface ConfigFilter {
 
     /**

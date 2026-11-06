@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,15 @@
  */
 package io.helidon.config.spi;
 
+import io.helidon.common.Api;
+
 /**
  * Type of changes that can happen in a {@link io.helidon.config.spi.PollingStrategy.Polled}
  * components.
  * The {@link PollingStrategy} may use this information to modify its
  * behavior.
  */
+@Api.Stable
 public enum ChangeEventType {
     /**
      * Nothing is changed.

@@ -58,6 +58,7 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
 import io.helidon.common.Size;
 
 /**
@@ -68,6 +69,7 @@ import io.helidon.common.Size;
  *
  * @see io.helidon.config.spi.ConfigMapperProvider
  */
+@Api.Stable
 public final class ConfigMappers {
 
     private static final Map<Class<?>, Function<Config, ?>> ESSENTIAL_MAPPERS = initEssentialMappers();

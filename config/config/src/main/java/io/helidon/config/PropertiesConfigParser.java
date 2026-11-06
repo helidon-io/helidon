@@ -44,6 +44,7 @@ import static io.helidon.common.media.type.MediaTypes.TEXT_PROPERTIES;
  * @see io.helidon.config.Config.Builder#disableParserServices()
  */
 @Weight(PropertiesConfigParser.WEIGHT)
+@Api.Stable
 public class PropertiesConfigParser implements ConfigParser {
 
     /**

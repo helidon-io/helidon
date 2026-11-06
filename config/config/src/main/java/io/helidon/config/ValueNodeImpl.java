@@ -19,6 +19,7 @@ package io.helidon.config;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.config.spi.ConfigNode.ValueNode;
 
 /**
@@ -27,6 +28,7 @@ import io.helidon.config.spi.ConfigNode.ValueNode;
  * @deprecated use {@link ValueNode#create(String)}; this implementation will become package-private
  */
 @Deprecated(since = "28.0.0", forRemoval = true)
+@Api.Internal
 public class ValueNodeImpl implements ValueNode, MergeableNode {
 
     private final String value;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,13 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import io.helidon.common.Api;
 import io.helidon.config.spi.ConfigNode;
 
 /**
  * Common Configuration utilities.
  */
+@Api.Internal
 public final class ConfigHelper {
     private ConfigHelper() {
         throw new AssertionError("Instantiation not allowed.");

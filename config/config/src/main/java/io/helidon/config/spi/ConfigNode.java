@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.config.ListNodeBuilderImpl;
 import io.helidon.config.ObjectNodeBuilderImpl;
 import io.helidon.config.ObjectNodeImpl;
@@ -30,6 +31,7 @@ import io.helidon.config.ValueNodeImpl;
 /**
  * A configuration node and its source description.
  */
+@Api.Stable
 public interface ConfigNode {
     /**
      * Get the type of this node.

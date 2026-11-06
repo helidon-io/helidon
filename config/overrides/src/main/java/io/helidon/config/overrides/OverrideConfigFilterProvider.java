@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.config.spi.ConfigFilterContext;
 import io.helidon.config.spi.ConfigFilterFactory;
 import io.helidon.config.spi.ConfigFilterProvider;
@@ -34,6 +35,7 @@ import io.helidon.config.spi.ConfigFilterProvider;
  * {@code config(Config)} method accepts the component node containing {@code expressions}, {@code patterns}, and
  * {@code sources}. Automatic discovery reads that node from {@code overrides} in the initial application configuration.
  */
+@Api.Stable
 public final class OverrideConfigFilterProvider implements ConfigFilterProvider, RuntimeType.Api<OverrideConfig> {
     private final OverrideConfig config;
 

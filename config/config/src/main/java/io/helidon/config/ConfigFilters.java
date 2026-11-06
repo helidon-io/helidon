@@ -19,6 +19,7 @@ package io.helidon.config;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.config.spi.ConfigFilter;
 
 /**
@@ -26,6 +27,7 @@ import io.helidon.config.spi.ConfigFilter;
  *
  * @see io.helidon.config.spi.ConfigFilter
  */
+@Api.Stable
 public final class ConfigFilters {
 
     private ConfigFilters() {

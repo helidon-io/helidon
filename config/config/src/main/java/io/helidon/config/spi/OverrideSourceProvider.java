@@ -15,6 +15,8 @@
  */
 package io.helidon.config.spi;
 
+import io.helidon.common.Api;
+
 /**
  * Java service loader service to provide a override source based on meta configuration.
  *
@@ -35,5 +37,6 @@ package io.helidon.config.spi;
  * See {@link OverrideSource} for further migration considerations. No removal release or timing has been decided.
  */
 @Deprecated(since = "28.0.0", forRemoval = true)
+@Api.Stable
 public interface OverrideSourceProvider extends MetaConfigurableProvider<OverrideSource> {
 }

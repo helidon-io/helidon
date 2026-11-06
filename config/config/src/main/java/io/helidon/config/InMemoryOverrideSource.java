@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
 import io.helidon.config.spi.ConfigContent.OverrideContent;
 import io.helidon.config.spi.OverrideSource;
 
@@ -48,6 +49,7 @@ import io.helidon.config.spi.OverrideSource;
  * No removal release or timing has been decided.
  */
 @Deprecated(since = "28.0.0", forRemoval = true)
+@Api.Stable
 public class InMemoryOverrideSource implements OverrideSource {
 
     private final OverrideData overrideData;

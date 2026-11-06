@@ -16,9 +16,12 @@
 
 package io.helidon.config;
 
+import io.helidon.common.Api;
+
 /**
  * Exception is thrown by {@link Config} implementations.
  */
+@Api.Stable
 public class ConfigException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;

@@ -18,6 +18,7 @@ package io.helidon.config.overrides;
 
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.config.spi.ConfigFilterContext;
 import io.helidon.config.spi.ConfigFilterFactory;
 import io.helidon.config.spi.ConfigFilterProvider;
@@ -28,6 +29,7 @@ import io.helidon.service.registry.Service;
  * This stateless service creates a configured provider for each configuration runtime. For manual configuration use
  * {@link OverrideConfigFilterProvider#builder()}.
  */
+@Api.Internal
 @Service.Singleton
 public final class OverrideConfigFilterService implements ConfigFilterProvider {
     /**

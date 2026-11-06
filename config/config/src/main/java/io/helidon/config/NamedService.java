@@ -15,9 +15,12 @@
  */
 package io.helidon.config;
 
+import io.helidon.common.Api;
+
 /**
  * To be used with {@link io.helidon.config.ConfiguredProvider}, each configured service may have a name.
  */
+@Api.Stable
 public interface NamedService {
     /**
      * Name of this implementation, as provided in {@link io.helidon.config.ConfiguredProvider#create(Config, String)}.

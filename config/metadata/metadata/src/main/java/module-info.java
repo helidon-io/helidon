@@ -17,6 +17,7 @@
  * Config metadata annotations.
  */
 module io.helidon.config.metadata {
+    requires static io.helidon.common;
 
     exports io.helidon.config.metadata;
 

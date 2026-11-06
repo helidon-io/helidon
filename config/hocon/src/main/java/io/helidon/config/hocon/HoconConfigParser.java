@@ -71,6 +71,7 @@ import com.typesafe.config.ConfigValueFactory;
  * @see io.helidon.config.Config.Builder#addParser(ConfigParser)
  * @see io.helidon.config.Config.Builder#disableParserServices()
  */
+@Api.Stable
 @Weight(HoconConfigParser.WEIGHT)
 public class HoconConfigParser implements ConfigParser {
 

@@ -22,12 +22,14 @@ import java.util.function.Supplier;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.config.spi.ConfigSource;
 
 /**
  * Configuration of an override filter provider.
  */
+@Api.Stable
 @Prototype.Blueprint
 @Prototype.Configured("overrides")
 interface OverrideConfigBlueprint extends Prototype.Factory<OverrideConfigFilterProvider> {

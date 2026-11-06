@@ -18,9 +18,12 @@ package io.helidon.config.spi;
 
 import java.util.function.BiConsumer;
 
+import io.helidon.common.Api;
+
 /**
  * A source that supports notifications when changed.
  */
+@Api.Stable
 public interface EventConfigSource {
     /**
      * Register a change listener.

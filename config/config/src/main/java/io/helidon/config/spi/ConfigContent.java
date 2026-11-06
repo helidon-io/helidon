@@ -18,6 +18,8 @@ package io.helidon.config.spi;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
+
 /**
  * Config content as provided by a config source that can read all its data at once (an "eager" config source).
  * This interface provides necessary support for changes of the underlying source and for parsable content.
@@ -27,6 +29,7 @@ import java.util.Optional;
  * <p>
  * The data stamp can be any object (to be decided by the {@link io.helidon.config.spi.ConfigSource}).
  */
+@Api.Stable
 public interface ConfigContent {
     /**
      * Close the content, as it is no longer needed.

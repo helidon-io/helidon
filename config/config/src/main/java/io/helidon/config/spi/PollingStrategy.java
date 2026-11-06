@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.config.spi;
 import java.time.Duration;
 import java.time.Instant;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.config.PollingStrategies;
 
@@ -88,6 +89,7 @@ import io.helidon.config.PollingStrategies;
  * @see io.helidon.config.spi.ChangeWatcher to implement change watchers that notify config system when a target actually changes
  */
 @FunctionalInterface
+@Api.Stable
 public interface PollingStrategy {
 
     /**

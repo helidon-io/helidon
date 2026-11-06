@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.spi.ConfigParser;
@@ -34,6 +35,7 @@ import io.helidon.config.spi.Source;
  * @param <B> Type of the builder implementation
  * @param <U> Type of a target if this builder supports change watching, use {@code Void} if not
  */
+@Api.Stable
 public abstract class AbstractConfigSourceBuilder<B extends AbstractConfigSourceBuilder<B, U>, U>
         extends AbstractSourceBuilder<B, U>
         implements Source.Builder<B> {

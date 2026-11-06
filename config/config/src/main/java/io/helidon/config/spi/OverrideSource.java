@@ -29,6 +29,7 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 
@@ -106,6 +107,7 @@ import io.helidon.config.ConfigException;
  * it replaces only existing values. Ordinary source precedence can add nodes and does not interpret wildcard keys.
  */
 @Deprecated(since = "28.0.0", forRemoval = true)
+@Api.Stable
 public interface OverrideSource extends Source, Supplier<OverrideSource> {
 
     @Override

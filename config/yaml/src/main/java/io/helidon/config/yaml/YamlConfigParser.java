@@ -51,6 +51,7 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
  * @see io.helidon.config.Config.Builder#addParser(ConfigParser)
  * @see io.helidon.config.Config.Builder#disableParserServices()
  */
+@Api.Stable
 @Weight(YamlConfigParser.WEIGHT)
 public class YamlConfigParser implements ConfigParser {
 

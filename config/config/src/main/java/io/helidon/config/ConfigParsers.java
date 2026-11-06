@@ -16,6 +16,7 @@
 
 package io.helidon.config;
 
+import io.helidon.common.Api;
 import io.helidon.config.spi.ConfigParser;
 
 /**
@@ -23,6 +24,7 @@ import io.helidon.config.spi.ConfigParser;
  *
  * @see io.helidon.config.spi.ConfigParser
  */
+@Api.Stable
 public final class ConfigParsers {
 
     private ConfigParsers() {

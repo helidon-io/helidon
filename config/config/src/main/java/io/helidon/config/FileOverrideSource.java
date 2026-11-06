@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.config.spi.ChangeWatcher;
 import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.OverrideSource;
@@ -56,6 +57,7 @@ import io.helidon.config.spi.WatchableSource;
  * No removal release or timing has been decided.
  */
 @Deprecated(since = "28.0.0", forRemoval = true)
+@Api.Stable
 public final class FileOverrideSource extends AbstractSource
         implements OverrideSource, PollableSource<byte[]>, WatchableSource<Path> {
 

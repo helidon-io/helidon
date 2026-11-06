@@ -19,10 +19,13 @@ package io.helidon.config.metadata;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
+import io.helidon.common.Api;
+
 /**
  * Can be used to define a list of possible values of an option.
  */
 @Retention(RetentionPolicy.SOURCE)
+@Api.Stable
 public @interface ConfiguredValue {
     /**
      * Value of the option.

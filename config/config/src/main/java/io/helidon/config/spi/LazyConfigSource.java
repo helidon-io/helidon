@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.config.spi;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
+
 /**
  * A source that is not capable of loading all keys at once.
  * Even though such a source can be used in Helidon Config, there are limitations to its use.
@@ -29,6 +31,7 @@ import java.util.Optional;
  *     <li>{@link io.helidon.config.Config#traverse()}</li>
  * </ul>
  */
+@Api.Stable
 public interface LazyConfigSource {
     /**
      * Provide a value for the node on the requested key.

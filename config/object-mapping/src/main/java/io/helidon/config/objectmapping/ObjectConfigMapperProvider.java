@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.config.Config;
 import io.helidon.config.objectmapping.ObjectConfigMappers.BuilderConfigMapper;
@@ -38,6 +39,7 @@ import static io.helidon.config.objectmapping.ReflectionUtil.findStaticMethodWit
 /**
  * Java beans support for configuration.
  */
+@Api.Internal
 @Weight(0) // priority should be low to be one of the last ones used
 public class ObjectConfigMapperProvider implements ConfigMapperProvider {
     private static final String METHOD_FROM = "from";

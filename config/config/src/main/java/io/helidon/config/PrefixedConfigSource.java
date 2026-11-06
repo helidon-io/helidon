@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
+import io.helidon.common.Api;
 import io.helidon.config.spi.ConfigContent;
 import io.helidon.config.spi.ConfigContext;
 import io.helidon.config.spi.ConfigNode;
@@ -36,6 +37,7 @@ import io.helidon.service.registry.ServiceRegistry;
  *
  * @see io.helidon.config.ConfigSources#prefixed(String, java.util.function.Supplier)
  */
+@Api.Stable
 public final class PrefixedConfigSource implements ConfigSource,
                                                    NodeConfigSource,
                                                    EventConfigSource {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,13 @@ package io.helidon.config.spi;
 
 import java.util.List;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 
 /**
  * Java service loader service to provide a config source based on meta configuration.
  */
+@Api.Stable
 public interface ConfigSourceProvider extends MetaConfigurableProvider<ConfigSource> {
     /**
      * Create a list of configuration sources from a single configuration.

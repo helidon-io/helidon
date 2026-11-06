@@ -23,6 +23,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.common.Api;
+
 /**
  * A single configuration option.
  * Must be used together with {@link io.helidon.config.metadata.Configured}.
@@ -48,6 +50,7 @@ import java.lang.annotation.Target;
 @Inherited
 @Retention(RetentionPolicy.SOURCE)
 @Repeatable(ConfiguredOptions.class)
+@Api.Stable
 public @interface ConfiguredOption {
     /**
      * A string meaning that a value is not specified (to allow empty String as a meaningful value).

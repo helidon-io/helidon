@@ -26,6 +26,7 @@ import java.util.Base64;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.Base64Value;
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
@@ -40,6 +41,7 @@ import io.helidon.config.ConfigValue;
 /**
  * Encryption utilities for secrets protection.
  */
+@Api.Stable
 public final class EncryptionUtil {
     private static final System.Logger LOGGER = System.getLogger(EncryptionUtil.class.getName());
 

@@ -18,12 +18,14 @@ package io.helidon.config;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 
+import io.helidon.common.Api;
 import io.helidon.config.spi.ConfigNode;
 
 /**
  * The runtime of a config source. For a single {@link Config}, there is one source runtime for each configured
  * config source.
  */
+@Api.Stable
 public interface ConfigSourceRuntime {
     /**
      * Change support for a runtime.

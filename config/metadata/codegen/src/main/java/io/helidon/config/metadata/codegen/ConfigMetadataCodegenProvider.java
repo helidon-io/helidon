@@ -31,6 +31,7 @@ import static io.helidon.config.metadata.codegen.ConfigMetadataTypes.OPTIONS;
 /**
  * A Java {@link java.util.ServiceLoader} service implementation to add config metadata code generation.
  */
+@Api.Internal
 public class ConfigMetadataCodegenProvider implements CodegenExtensionProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
