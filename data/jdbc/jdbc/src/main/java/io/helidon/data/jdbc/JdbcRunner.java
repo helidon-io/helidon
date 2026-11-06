@@ -78,10 +78,10 @@ final class JdbcRunner {
     }
 
     /**
-     * Executes captured bindings through the existing lease and cleanup boundary.
+     * Executes captured bindings with the existing connection ownership and cleanup rules.
      *
      * @param operation The operation supplies literal SQL and preparation rules.
-     * @param items The items contain complete immutable binding snapshots.
+     * @param items Each item contains a complete binding snapshot.
      * @return The result contains detached execution evidence.
      */
     JdbcClient.BatchResult executeBatch(JdbcOperation operation, List<JdbcOperation.Bind[]> items) {
@@ -477,9 +477,9 @@ final class JdbcRunner {
     }
 
     /**
-     * Operation-specific work performed inside the resource boundary.
+     * Performs terminal work while the runner owns the JDBC resources.
      *
-     * @param <T> terminal result type
+     * @param <T> The type represents the terminal result.
      */
     @FunctionalInterface
     private interface HandlerAction<T> {
@@ -487,9 +487,9 @@ final class JdbcRunner {
         /**
          * Executes against a prepared and bound statement.
          *
-         * @param scope runner-owned execution scope
-         * @return terminal result
-         * @throws SQLException when JDBC work fails
+         * @param scope The runner owns the execution scope.
+         * @return The terminal result is returned.
+         * @throws SQLException JDBC work fails.
          */
         T execute(ExecutionScope scope) throws SQLException;
     }

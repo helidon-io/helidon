@@ -59,6 +59,10 @@ public abstract class AbstractJdbcBatchContract {
         return client;
     }
 
+    protected final TxSupport transactions() {
+        return transactions;
+    }
+
     protected JdbcClient.BatchResult insert(List<String> rows, String email) {
         return client.create("INSERT INTO CONTACT (NAME, EMAIL) VALUES (?, ?)").executeBatch(
                 IntStream.range(0, rows.size()).boxed().toList(), (b, index) -> {

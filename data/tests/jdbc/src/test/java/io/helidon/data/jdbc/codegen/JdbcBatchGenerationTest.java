@@ -163,6 +163,126 @@ class JdbcBatchGenerationTest {
     }
 
     @Test
+    void rejectsAliasesOnRecordSourcesBeforeFlattening() {
+        for (String sql : List.of("insert into T values (:name)", "insert into T values (?)")) {
+            TestCompiler.Result result = compile("BatchRepository.java", """
+                    package example;
+                    import java.util.*;
+                    import io.helidon.data.Data;
+                    import io.helidon.data.jdbc.*;
+                    record Item(String name) { }
+                    @Data.Repository @Data.Provider("jdbc")
+                    interface BatchRepository {
+                        @Jdbc.Statement("%s")
+                        @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
+                        void insert(@Data.Param("records") Iterable<Item> rows);
+                    }
+                    """.formatted(sql));
+            assertThat(sql + " " + result.diagnostics(), result.success(), is(false));
+            assertThat(String.join("\n", result.diagnostics()),
+                       containsString("A batch record source cannot declare @Data.Param. Use its record component names."));
+        }
+    }
+
+    @Test
+    void compilesScalarAliasesBesideRecordComponentsAndBinarySources() {
+        TestCompiler.Result result = compile("BatchRepository.java", """
+                package example;
+                import java.util.*;
+                import io.helidon.data.Data;
+                import io.helidon.data.jdbc.*;
+                record Item(String name, long id) { }
+                @Data.Repository @Data.Provider("jdbc")
+                interface BatchRepository {
+                    @Jdbc.Statement("insert into T values (:name, :tenant, :id, :tenant)")
+                    @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
+                    void records(@Data.Param("tenant") String jdbcClient, Iterable<Item> rows);
+                    @Jdbc.Statement("insert into T values (:bytes, :constant, :bytes)")
+                    @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
+                    void binary(@Data.Param("bytes") Iterable<byte[]> bindings,
+                                @Data.Param("constant") byte[] SQL_BINARY);
+                    @Jdbc.Statement("insert into T values (:bytes)")
+                    @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
+                    void bytes(@Data.Param("bytes") byte... row);
+                }
+                """);
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
+    }
+
+    @Test
+    void rejectsInvalidBatchAliasesAndUnusedOrAmbiguousInputs() {
+        for (String alias : List.of("", " ", ":value", "value ", "two words", "a.b", "1value", "value/*comment*/")) {
+            TestCompiler.Result result = compile("BatchRepository.java", """
+                    package example;
+                    import java.util.*;
+                    import io.helidon.data.Data;
+                    import io.helidon.data.jdbc.*;
+                    @Data.Repository @Data.Provider("jdbc")
+                    interface BatchRepository {
+                        @Jdbc.Statement("insert into T values (:value)")
+                        @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
+                        void insert(@Data.Param("%s") Iterator<String> rows);
+                    }
+                    """.formatted(alias));
+            assertThat(alias + " " + result.diagnostics(), result.success(), is(false));
+            assertThat(String.join("\n", result.diagnostics()), containsString("The @Data.Param value"));
+        }
+        for (String declaration : List.of(
+                "void insert(@Data.Param(\"other\") Iterable<String> value)",
+                "void insert(@Data.Param(\"value\") Iterable<String> rows, @Data.Param(\"unused\") String constant)",
+                "void insert(@Data.Param(\"value\") String constant, Iterable<Item> rows)")) {
+            TestCompiler.Result result = compile("BatchRepository.java", """
+                    package example;
+                    import java.util.*;
+                    import io.helidon.data.Data;
+                    import io.helidon.data.jdbc.*;
+                    record Item(String value) { }
+                    @Data.Repository @Data.Provider("jdbc")
+                    interface BatchRepository {
+                        @Jdbc.Statement("insert into T values (:value)")
+                        @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
+                        %s;
+                    }
+                    """.formatted(declaration));
+            assertThat(declaration + " " + result.diagnostics(), result.success(), is(false));
+        }
+    }
+
+    @Test
+    void requiresExplicitResolutionOfConflictingInheritedBatchAliases() {
+        String source = """
+                package example;
+                import java.util.*;
+                import io.helidon.data.Data;
+                import io.helidon.data.jdbc.*;
+                interface Left {
+                    @Jdbc.Statement("insert into T values (:value)")
+                    @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
+                    void insert(@Data.Param("value") Iterable<String> rows);
+                }
+                interface Right {
+                    @Jdbc.Statement("insert into T values (:value)")
+                    @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
+                    void insert(@Data.Param("other") Iterable<String> rows);
+                }
+                @Data.Repository @Data.Provider("jdbc")
+                interface BatchRepository extends Left, Right {
+                    %s
+                }
+                """;
+        TestCompiler.Result conflict = compile("BatchRepository.java", source.formatted(""));
+        assertThat(conflict.success(), is(false));
+        assertThat(String.join("\n", conflict.diagnostics()), containsString("Declare an explicit @Data.Param"));
+        TestCompiler.Result resolved = compile("BatchRepository.java", source.formatted("""
+                @Override
+                @Jdbc.Statement("insert into T values (:chosen)")
+                @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
+                void insert(@Data.Param("chosen") Iterable<String> statement);
+                """));
+        assertThat(String.join("\n", resolved.diagnostics()), resolved.success(), is(true));
+    }
+
+    @Test
     void rejectsUnsupportedShapesAndIncompleteCoverage() {
         for (String declaration : List.of("void run(String constant)", "int run(List<String> rows)",
                 "void run(List<List<String>> rows)", "void run(String[][] rows)", "void run(List rows)",
