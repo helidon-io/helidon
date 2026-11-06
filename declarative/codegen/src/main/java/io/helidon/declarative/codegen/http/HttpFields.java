@@ -16,6 +16,7 @@
 
 package io.helidon.declarative.codegen.http;
 
+import io.helidon.common.Api;
 import io.helidon.declarative.codegen.model.http.HeaderValue;
 import io.helidon.declarative.codegen.model.http.HttpStatus;
 import io.helidon.service.codegen.FieldHandler;
@@ -32,6 +33,7 @@ import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_STATUS;
 /**
  * Helper methods for common HTTP constants and fields.
  */
+@Api.Internal
 public final class HttpFields {
     private HttpFields() {
     }

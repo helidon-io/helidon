@@ -30,6 +30,7 @@ import io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider;
  * Provider for declarative messaging consumer code generation.
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 1)
+@Api.Internal
 public class MessagingExtensionProvider implements RegistryCodegenExtensionProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

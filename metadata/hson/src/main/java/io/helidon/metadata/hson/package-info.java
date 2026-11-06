@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,13 +40,9 @@
  *     <li>Maximal HSON size is unlimited - NEVER USE WITH OVER-THE-NETWORK PROVIDED HSON</li>
  * </ul>
  *
- * Should you use this library?
- * No, unless:
- * <ul>
- *     <li>You are developing writing or parsing of metadata in Helidon codegen or runtime for Helidon features,
- *     the metadata must be produced by Helidon as well (NEVER USE ON OVER-THE-NETWORK PROVIDED HSON)</li>
- *     <li>You are a brave user who wants to do something similar in their library</li>
- * </ul>
+ * This library is Internal to Helidon codegen and runtime metadata processing and is not a supported public API.
+ * The metadata must be produced by Helidon as well (NEVER USE ON OVER-THE-NETWORK PROVIDED HSON).
+ * <p>
  * <b>NOTE: HSON is compatible with JSON, with the limitations mentioned in the list
  * above. This module is not Helidon JSON solution - please use one of the supported JSON libraries,
  * such as JSON-P, JSON-B, or Jackson.</b>

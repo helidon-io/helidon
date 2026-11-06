@@ -28,7 +28,7 @@ import io.helidon.service.codegen.FieldHandler;
 /**
  * Information related to parameter processing.
  */
-@Api.Preview
+@Api.Internal
 public interface ParameterCodegenContext {
     /**
      * Constant handler for the type being created.

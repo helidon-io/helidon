@@ -36,6 +36,7 @@ import static io.helidon.declarative.codegen.validation.ValidationTypes.VALIDATI
  * services to handle declarative validation.
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 30)
+@Api.Internal
 public class ValidationExtensionProvider implements RegistryCodegenExtensionProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

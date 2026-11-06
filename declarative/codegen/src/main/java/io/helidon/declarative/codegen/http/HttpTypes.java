@@ -16,11 +16,13 @@
 
 package io.helidon.declarative.codegen.http;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
 
 /**
  * HTTP related types for code generation.
  */
+@Api.Internal
 public final class HttpTypes {
     /**
      * HTTP Prologue.

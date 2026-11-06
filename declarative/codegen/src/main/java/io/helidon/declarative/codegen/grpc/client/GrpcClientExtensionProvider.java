@@ -18,6 +18,7 @@ package io.helidon.declarative.codegen.grpc.client;
 
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.spi.RegistryCodegenExtension;
@@ -26,6 +27,7 @@ import io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider;
 /**
  * Registry codegen extension provider for generating typed gRPC clients.
  */
+@Api.Internal
 public class GrpcClientExtensionProvider implements RegistryCodegenExtensionProvider {
     /**
      * Default constructor required by {@link java.util.ServiceLoader}.

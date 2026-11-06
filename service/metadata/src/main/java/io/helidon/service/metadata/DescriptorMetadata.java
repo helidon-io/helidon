@@ -81,5 +81,6 @@ public interface DescriptorMetadata {
      *
      * @return HSON object (similar to JSON)
      */
+    @Api.Internal
     Hson.Struct toHson();
 }

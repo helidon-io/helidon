@@ -30,6 +30,7 @@ import io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider;
  * Java {@link java.util.ServiceLoader} provider implementation for declarative GraphQL server code generation.
  */
 @Weight(Weighted.DEFAULT_WEIGHT + 20)
+@Api.Internal
 public class GraphQlServerExtensionProvider implements RegistryCodegenExtensionProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

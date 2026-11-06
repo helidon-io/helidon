@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 
 package io.helidon.spi;
 
+import io.helidon.common.Api;
+
 /**
  * {@link java.util.ServiceLoader} provider interface to discover the correct startup type.
  * Only the first provider (with the highest {@link io.helidon.common.Weight}) will be used.
  */
+@Api.Internal
 public interface HelidonStartupProvider {
     /**
      * Start the runtime.

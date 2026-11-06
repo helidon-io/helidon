@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,10 @@
 
 /**
  * Metadata module, used to discover metadata of Helidon components.
+ * <p>
+ * All types in this module are Internal to Helidon and are not supported public API.
+ * Classification and enforcement are manual: this bootstrap module remains dependency-free to avoid a cycle
+ * with Helidon Common, which depends on it and defines the API stability annotations.
  *
  * @see io.helidon.metadata.MetadataDiscovery
  */

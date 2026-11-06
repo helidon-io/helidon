@@ -30,6 +30,7 @@ import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import io.helidon.common.Api;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.SerializationConfig;
 import io.helidon.common.Weights;
@@ -44,6 +45,7 @@ import io.helidon.spi.HelidonStartupProvider;
  * <p>
  * The default option is to start Helidon injection based application.
  */
+@Api.Stable
 public class Main {
     private static final Set<HelidonShutdownHandler> SHUTDOWN_HANDLERS = Collections.newSetFromMap(new IdentityHashMap<>());
     private static final ReentrantLock SHUTDOWN_HANDLER_LOCK = new ReentrantLock();

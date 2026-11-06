@@ -25,7 +25,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Information about a GraphQL resolver method parameter.
  */
-@Api.Preview
+@Api.Internal
 public interface GraphQlParameterContext {
     /**
      * Parameter annotations.

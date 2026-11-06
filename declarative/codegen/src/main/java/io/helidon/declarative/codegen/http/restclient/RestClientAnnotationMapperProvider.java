@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenOptions;
 import io.helidon.codegen.spi.AnnotationMapper;
 import io.helidon.codegen.spi.AnnotationMapperProvider;
+import io.helidon.common.Api;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
@@ -33,6 +34,7 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_
 /**
  * Annotation mapper that makes each client API a contract.
  */
+@Api.Internal
 public class RestClientAnnotationMapperProvider implements AnnotationMapperProvider {
     /**
      * Public constructor required by {@link java.util.ServiceLoader}.

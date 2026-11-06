@@ -29,6 +29,7 @@ import io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider;
  * {@link io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider} that generates required
  * services to handle declarative Fault tolerance.
  */
+@Api.Internal
 public class FtExtensionProvider implements RegistryCodegenExtensionProvider {
 
     /**

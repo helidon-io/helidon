@@ -32,6 +32,7 @@ import io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider;
  * services to handle declarative websocket client endpoints.
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 30)
+@Api.Internal
 public class WebSocketClientExtensionProvider implements RegistryCodegenExtensionProvider {
 
     /**
