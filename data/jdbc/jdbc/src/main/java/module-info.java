@@ -39,6 +39,8 @@ module io.helidon.data.jdbc {
     requires transitive io.helidon.data.sql.common;
     requires transitive io.helidon.service.registry;
     requires io.helidon.transaction;
+    requires transitive io.helidon.health;
+    requires io.helidon.data.sql.datasource;
 
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;

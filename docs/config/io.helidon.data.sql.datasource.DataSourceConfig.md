@@ -19,17 +19,16 @@
 <tbody>
 <tr>
 <td>
-<a id="provider"></a>
-<a href="io.helidon.data.sql.datasource.ProviderConfig.md">
-<code>provider</code>
+<a id="health-check"></a>
+<a href="io.helidon.data.sql.datasource.DataSourceHealthCheckFactory.md">
+<code>health-<wbr>check</code>
 </a>
 </td>
 <td>
-<code>Map&lt;<wbr>String,<wbr> Provider<wbr>Config&gt;<wbr> or List&lt;<wbr>Provider<wbr>Config&gt;</code>
 </td>
 <td>
 </td>
-<td>Configuration of the used provider, such as UCP</td>
+<td>Configuration for health-check</td>
 </tr>
 <tr>
 <td>
@@ -42,6 +41,20 @@
 <code>@default</code>
 </td>
 <td><code>javax.<wbr>sql.<wbr>Data<wbr>Source</code> name</td>
+</tr>
+<tr>
+<td>
+<a id="provider"></a>
+<a href="io.helidon.data.sql.datasource.ProviderConfig.md">
+<code>provider</code>
+</a>
+</td>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Provider<wbr>Config&gt;<wbr> or List&lt;<wbr>Provider<wbr>Config&gt;</code>
+</td>
+<td>
+</td>
+<td>Configuration of the used provider, such as UCP</td>
 </tr>
 <tr>
 <td>

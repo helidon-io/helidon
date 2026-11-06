@@ -19,12 +19,14 @@
  */
 module io.helidon.data.sql.datasource {
 
+    requires transitive io.helidon.health;
+    requires io.helidon.data.jdbc.lexical;
     requires io.helidon.config;
-    requires io.helidon.builder.api;
+    requires transitive io.helidon.builder.api;
     requires io.helidon.service.registry;
     requires static io.helidon.config.metadata;
 
-    requires java.sql;
+    requires transitive java.sql;
 
     exports io.helidon.data.sql.datasource;
     exports io.helidon.data.sql.datasource.spi;
