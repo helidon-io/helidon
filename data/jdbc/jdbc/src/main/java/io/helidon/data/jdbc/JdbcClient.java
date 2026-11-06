@@ -15,9 +15,11 @@
  */
 package io.helidon.data.jdbc;
 
+import java.sql.JDBCType;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
@@ -98,7 +100,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
      * one {@link java.sql.PreparedStatement}. Helidon does not parse database
      * grammar, split scripts, or validate statement boundaries specific to a
      * database. The supported contract therefore requires exactly one SQL
-     * statement. SQL scripts, batches, compound or multiple statement strings
+     * statement. SQL scripts, compound or multiple statement strings
      * specific to a JDBC driver, stored procedure calls, SQL that controls
      * transactions, and commands that change connection or session state,
      * including auto-commit mode, are not supported.
@@ -147,6 +149,129 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
     Statement create(String sql);
 
     /**
+     * Supplies bindings for each batch item synchronously on the calling thread.
+     *
+     * @param <T> The type represents an application item.
+     */
+    @Api.Incubating
+    @FunctionalInterface
+    interface BatchBinder<T> {
+        /**
+         * Assigns every physical binding position exactly once for one nonnull item.
+         *
+         * @param bindings The nonnull view is valid only during this callback on this thread.
+         * @param item The nonnull item supplies application values.
+         * @throws NullPointerException The binding view or item is null.
+         */
+        void bind(BatchBindings bindings, T item);
+    }
+
+    /**
+     * Captures scalar values without exposing JDBC resources.
+     * The view is valid only during its binder callback on the calling thread.
+     */
+    @Api.Incubating
+    interface BatchBindings {
+        /**
+         * Captures a supported scalar value at one physical JDBC position.
+         * Byte arrays and SQL date, time, and timestamp values are copied when bound.
+         * Timestamp copies preserve nanoseconds.
+         *
+         * @param index The position starts at one.
+         * @param value The scalar value must not be null.
+         * @return This binding view is returned.
+         * @throws NullPointerException The value is null.
+         * @throws IllegalArgumentException The position is out of range, already assigned, or the scalar type is unsupported.
+         * @throws IllegalStateException The callback has ended or the call is on another thread.
+         */
+        BatchBindings bind(int index, Object value);
+
+        /**
+         * Captures an explicitly typed SQL NULL.
+         * The provider rejects {@code NULL}, {@code REF_CURSOR}, {@code ARRAY}, {@code DISTINCT},
+         * {@code JAVA_OBJECT}, {@code REF}, and {@code STRUCT}.
+         *
+         * @param index The position starts at one.
+         * @param type The standard JDBC type must support a null without a database type name.
+         * @return This binding view is returned.
+         * @throws NullPointerException The type is null.
+         * @throws IllegalArgumentException The position is out of range, already assigned, or the JDBC type is unsupported.
+         * @throws IllegalStateException The callback has ended or the call is on another thread.
+         */
+        BatchBindings bindNull(int index, JDBCType type);
+    }
+
+    /**
+     * Provides immutable execution results without retaining input items or JDBC resources.
+     * A successful batch returns only {@link Status#EXACT_COUNT} or {@link Status#SUCCESS_NO_INFO} entries.
+     * Results do not establish whether the transaction committed or rolled back.
+     */
+    @Api.Incubating
+    interface BatchResult {
+        /**
+         * Returns individual outcomes in input encounter order.
+         *
+         * @return The immutable list contains one entry per captured item.
+         */
+        List<Entry> entries();
+
+        /**
+         * Returns the total affected row count when every item has an exact count and the sum fits in a {@code long}.
+         *
+         * @return The empty batch has total zero. Unknown or overflowing totals are absent.
+         */
+        OptionalLong totalUpdateCount();
+
+        /**
+         * Describes the evidence reported for an item.
+         */
+        enum Status {
+            /**
+             * The driver reported an exact nonnegative count.
+             */
+            EXACT_COUNT,
+            /**
+             * Execution succeeded without an exact count.
+             */
+            SUCCESS_NO_INFO,
+            /**
+             * The driver explicitly reported failure.
+             */
+            EXECUTE_FAILED,
+            /**
+             * Reliable evidence is unavailable. This does not establish whether execution occurred.
+             */
+            NOT_REPORTED
+        }
+
+        /**
+         * Describes one logical item without exposing raw JDBC sentinels.
+         */
+        interface Entry {
+            /**
+             * Returns the input item position, starting at zero.
+             *
+             * @return The zero based index equals the position in the entries list.
+             */
+            int itemIndex();
+
+            /**
+             * Returns the execution status reported for this item.
+             *
+             * @return The status describes execution without establishing commit or rollback.
+             */
+            Status status();
+
+            /**
+             * Returns an exact count when available.
+             *
+             * @return The count is present only for {@link Status#EXACT_COUNT} and may be zero.
+             */
+            OptionalLong updateCount();
+        }
+    }
+
+    /**
      * Describes one prepared JDBC operation.
      * <p>
      * Bind positions use JDBC indexes, which start at one. The stage accepts
@@ -154,6 +279,36 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
      */
     @Api.Incubating
     interface Statement {
+
+        /**
+         * Captures complete bindings before executing one prepared DML batch.
+         * Traverses the source once and invokes the binder once per item before acquiring JDBC resources.
+         * The source remains owned by the application and is not closed. It must be finite and bounded because
+         * all bindings and copied mutable values remain in memory until execution.
+         * <p>
+         * Empty input consumes this terminal and returns an exact total of zero without invoking the binder
+         * or acquiring JDBC resources. Source and callback failures propagate unchanged before JDBC acquisition
+         * and consume this terminal. A statement with ordinary bindings is rejected before traversal and remains
+         * available for ordinary execution.
+         * <p>
+         * The batch participates in the existing transaction without creating a transaction, retrying, or
+         * partitioning the input. Outcomes describe execution and do not establish commit or rollback.
+         *
+         * @param items The source supplies nonnull items in encounter order.
+         * @param binder The callback binds every physical position exactly once for each item.
+         * @param <T> The type represents an application item.
+         * @return The result contains immutable evidence for every item.
+         * @throws NullPointerException A source, binder, or item is null.
+         * @throws IllegalStateException The stage is consumed or an item does not bind every physical position.
+         * @throws IllegalArgumentException The statement already has bindings or a captured binding is invalid.
+         * @throws JdbcBatchException JDBC setup, execution, or cleanup fails, or the driver returns invalid counts.
+         * @throws UnsupportedOperationException This provider does not support batching.
+         */
+        default <T> BatchResult executeBatch(Iterable<T> items, BatchBinder<? super T> binder) {
+            Objects.requireNonNull(items, "The batch source must not be null.");
+            Objects.requireNonNull(binder, "The batch binder must not be null.");
+            throw new UnsupportedOperationException("This JDBC provider does not support batch execution.");
+        }
 
         /**
          * Binds a supported scalar value that is not {@code null}.

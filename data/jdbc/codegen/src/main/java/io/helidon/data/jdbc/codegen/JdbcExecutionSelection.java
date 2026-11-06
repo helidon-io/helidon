@@ -25,7 +25,8 @@ import io.helidon.common.types.TypedElementInfo;
 enum JdbcExecutionSelection {
     AUTO,
     QUERY,
-    UPDATE;
+    UPDATE,
+    BATCH;
 
     /**
      * Reads the requested execution choice, treating an omitted annotation or
