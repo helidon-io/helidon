@@ -362,6 +362,37 @@ class ClientUriTest {
         assertThat(helper.query().rawValue(), is("q=a%23b"));
     }
 
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "/%7e | /~",
+            "/a%2fb | /a/b",
+            "/a%3fb%23c | /a?b#c",
+            "/a%25b | /a%b",
+            "/a;b=1/c;d=2 | /a/c",
+            "'' | /",
+            "/ | /"
+    })
+    void testRequestTargetPathUsesConfiguredEncoding(String rawPath, String skippedPath) {
+        ClientUri helper = ClientUri.create(URI.create("http://localhost" + rawPath + "?q=1"));
+        String originalPath = helper.path().rawPath();
+        String encodedPath = rawPath.isEmpty() ? "/" : rawPath;
+
+        assertThat(helper.requestTargetPath().rawPath(), is(encodedPath));
+        assertThat(helper.pathWithQueryAndFragment(), is(encodedPath + "?q=1"));
+
+        helper.skipUriEncoding(true);
+
+        assertThat(helper.requestTargetPath().rawPath(), is(skippedPath));
+        assertThat(helper.pathWithQueryAndFragment(), is(skippedPath + "?q=1"));
+        assertThat(helper.path().rawPath(), is(originalPath));
+        assertThat(ClientUri.create(helper).requestTargetPath().rawPath(), is(skippedPath));
+
+        helper.skipUriEncoding(false);
+
+        assertThat(helper.requestTargetPath().rawPath(), is(encodedPath));
+        assertThat(helper.pathWithQueryAndFragment(), is(encodedPath + "?q=1"));
+    }
+
     @Test
     void testEmptyQueryDelimiter() {
         ClientUri helper = ClientUri.create(URI.create("http://localhost:8080/loom/quick?"));

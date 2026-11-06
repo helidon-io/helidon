@@ -308,6 +308,17 @@ public class ClientUri implements UriInfo {
     }
 
     /**
+     * Path as serialized into the HTTP request target, using {@code /} when the path is empty.
+     *
+     * @return request target path
+     */
+    @Api.Internal
+    public UriPath requestTargetPath() {
+        UriPath path = skipUriEncoding ? UriPath.create(path().path()) : path();
+        return path.rawPath().isEmpty() ? UriPath.root() : path;
+    }
+
+    /**
      * Configure the fragment for this URI.
      *
      * @param fragment fragment to use
