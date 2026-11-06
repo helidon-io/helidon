@@ -16,11 +16,14 @@
 
 package io.helidon.declarative.codegen.model.http;
 
+import io.helidon.common.Api;
+
 /**
  * HTTP Method definition.
  *
  * @param name    method name (such as {@code GET, POST, LIST})
  * @param builtIn whether this is a recognized method with a predefined Helidon HTTP method constant, or a custom method
  */
+@Api.Internal
 public record HttpMethod(String name, boolean builtIn) {
 }

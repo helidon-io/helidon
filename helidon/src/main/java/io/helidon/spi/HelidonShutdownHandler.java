@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package io.helidon.spi;
 
+import io.helidon.common.Api;
+
 /**
  * Handles shutdown of the VM.
  * <p>
@@ -24,6 +26,7 @@ package io.helidon.spi;
  * Shutdown handlers are compared via instances, not via equals methods.
  */
 @FunctionalInterface
+@Api.Stable
 public interface HelidonShutdownHandler {
     /**
      * Handle the shutdown work of this component.

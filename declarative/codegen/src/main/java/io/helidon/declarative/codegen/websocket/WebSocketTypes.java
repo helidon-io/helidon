@@ -16,11 +16,13 @@
 
 package io.helidon.declarative.codegen.websocket;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
 
 /**
  * {@link io.helidon.common.types.TypeName type names} used by WebSocket.
  */
+@Api.Internal
 public final class WebSocketTypes {
     /**
      * Type name for {@code io.helidon.websocket.WebSocket.OnOpen}.

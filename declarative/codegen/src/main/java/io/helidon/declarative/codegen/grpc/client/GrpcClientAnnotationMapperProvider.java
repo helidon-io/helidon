@@ -24,6 +24,7 @@ import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenOptions;
 import io.helidon.codegen.spi.AnnotationMapper;
 import io.helidon.codegen.spi.AnnotationMapperProvider;
+import io.helidon.common.Api;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
@@ -33,6 +34,7 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_
 /**
  * Annotation mapper that makes each typed gRPC client API a contract.
  */
+@Api.Internal
 public class GrpcClientAnnotationMapperProvider implements AnnotationMapperProvider {
     /**
      * Public constructor required by {@link java.util.ServiceLoader}.

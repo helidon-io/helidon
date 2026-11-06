@@ -17,12 +17,14 @@
 package io.helidon.declarative.codegen;
 
 import io.helidon.codegen.classmodel.ContentBuilder;
+import io.helidon.common.Api;
 
 import static io.helidon.declarative.codegen.DeclarativeTypes.CONFIG_BUILDER_SUPPORT;
 
 /**
  * Support to generate consistent configuration for declarative types.
  */
+@Api.Internal
 public final class DeclarativeConfigSupport {
     private DeclarativeConfigSupport() {
     }

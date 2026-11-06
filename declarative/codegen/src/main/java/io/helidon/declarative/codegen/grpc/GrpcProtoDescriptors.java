@@ -28,6 +28,7 @@ import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.codegen.TypeHierarchy;
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
@@ -41,6 +42,7 @@ import io.helidon.service.codegen.RegistryCodegenContext;
 /**
  * Utilities for declarative gRPC proto descriptors.
  */
+@Api.Internal
 public final class GrpcProtoDescriptors {
     private static final TypeName PROTO_MESSAGE = TypeName.create("com.google.protobuf.Message");
 

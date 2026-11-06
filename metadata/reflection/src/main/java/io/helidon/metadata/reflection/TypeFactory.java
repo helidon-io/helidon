@@ -22,11 +22,13 @@ import java.lang.reflect.WildcardType;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
 
 /**
  * Reflection based support to get classes and types.
  */
+@Api.Internal
 public final class TypeFactory {
     private TypeFactory() {
     }

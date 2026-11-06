@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@
 
 package io.helidon.declarative.codegen.model.http;
 
+import io.helidon.common.Api;
+
 /**
  * Definition of a computed header, defined by an annotation.
  */
+@Api.Internal
 public interface ComputedHeader {
     /**
      * Create a new computed header instance.

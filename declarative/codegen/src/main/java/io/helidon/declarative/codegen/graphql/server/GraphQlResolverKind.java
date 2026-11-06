@@ -21,7 +21,7 @@ import io.helidon.common.Api;
 /**
  * GraphQL resolver method kind.
  */
-@Api.Preview
+@Api.Internal
 public enum GraphQlResolverKind {
     /**
      * Top-level GraphQL query resolver.

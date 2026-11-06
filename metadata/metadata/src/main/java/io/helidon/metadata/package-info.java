@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,10 @@
 
 /**
  * Helidon metadata discovery tooling.
+ * <p>
+ * All types in this package are Internal to Helidon and are not supported public API.
+ * Classification and enforcement are manual to keep metadata bootstrap dependency-free and avoid a cycle
+ * with Helidon Common, which defines the API stability annotations.
  *
  * @see io.helidon.metadata.MetadataDiscovery
  */

@@ -32,6 +32,7 @@ import io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider;
  * services to handle declarative CORS.
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 40)
+@Api.Internal
 public class CorsExtensionProvider implements RegistryCodegenExtensionProvider {
 
     /**
