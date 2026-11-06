@@ -64,7 +64,8 @@ public final class Jdbc {
         UPDATE,
 
         /**
-         * Executes complete parameter sets through one prepared JDBC batch.
+         * Executes complete parameter sets through one prepared DML batch.
+         * Repository methods must select this mode explicitly and return {@code void} or {@link JdbcClient.BatchResult}.
          */
         BATCH
     }

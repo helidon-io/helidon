@@ -82,6 +82,10 @@ record JdbcBatchPlan(List<Source> sources, List<Value> values, JdbcSqlParameterP
             if (record == null || record.kind() != ElementKind.RECORD) {
                 throw JdbcMethodPlan.failure(method, "A batch source element must be a supported scalar or flat record.");
             }
+            if (parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM)) {
+                throw JdbcMethodPlan.failure(method,
+                        "A batch record source cannot declare @Data.Param. Use its record component names.");
+            }
             int before = values.size();
             for (TypedElementInfo component : record.elementInfo()) {
                 if (component.kind() == ElementKind.RECORD_COMPONENT) {
