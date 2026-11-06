@@ -20,9 +20,11 @@ import java.util.AbstractList;
 import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.RandomAccess;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -227,9 +229,59 @@ final class ClientUriQuery implements UriQueryWriteable {
             return;
         }
         String raw = source.rawValue();
+        rawQuery = null;
         delegate.clear();
-        delegate.from(source instanceof ClientUriQuery query ? query.delegate : source);
-        rawQuery = raw;
+        if (source instanceof ClientUriQuery query) {
+            delegate.from(query.delegate);
+            rawQuery = raw;
+        } else {
+            delegate.from(source);
+            if (matchesRawQuery(raw)) {
+                rawQuery = raw;
+            }
+        }
+    }
+
+    private boolean matchesRawQuery(String raw) {
+        if (raw.isEmpty()) {
+            return delegate.rawValue().isEmpty();
+        }
+        Map<String, Integer> offsets = new HashMap<>();
+        int start = 0;
+        while (true) {
+            int and = raw.indexOf('&', start);
+            int end = and == -1 ? raw.length() : and;
+            int eq = raw.indexOf('=', start, end);
+            boolean hasValue = eq != -1;
+            String name = raw.substring(start, hasValue ? eq : end);
+            if (!delegate.contains(name)) {
+                return false;
+            }
+            int offset = offsets.getOrDefault(name, 0);
+            if (hasValue) {
+                List<String> values = delegate.getAllRaw(name);
+                if (offset >= values.size()) {
+                    return false;
+                }
+                String value = values.get(offset);
+                if (value.length() != end - eq - 1 || !raw.regionMatches(eq + 1, value, 0, value.length())) {
+                    return false;
+                }
+                offset++;
+            }
+            // Bare flags have no values in UriQuery's parsed raw lists.
+            offsets.put(name, offset);
+            if (and == -1) {
+                break;
+            }
+            start = and + 1;
+        }
+        for (Map.Entry<String, Integer> entry : offsets.entrySet()) {
+            if (delegate.getAllRaw(entry.getKey()).size() != entry.getValue()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private void invalidate(String name, List<String> values, boolean raw) {

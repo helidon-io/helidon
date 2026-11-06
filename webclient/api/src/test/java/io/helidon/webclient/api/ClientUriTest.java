@@ -17,6 +17,7 @@
 package io.helidon.webclient.api;
 
 import java.net.URI;
+import java.util.List;
 
 import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriPath;
@@ -116,6 +117,76 @@ class ClientUriTest {
                 .build();
 
         assertThat(ClientUri.create(baseUri).pathWithQueryAndFragment(), is("/a%2fb;v=1?b=2&a=1&b=3&flag&&"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"a&a=1&a", "a&a=&a", "&&x=&flag&", "%61&%61=1&a=2&%61", "a=b=c&flag"})
+    void preservesUriInfoQueryWithMixedFlagsAndValues(String query) {
+        UriInfo baseUri = UriInfo.builder()
+                .host("example.com")
+                .path(UriPath.create("/a%2fb"))
+                .query(UriQuery.create(query))
+                .build();
+
+        assertThat(ClientUri.create(baseUri).pathWithQueryAndFragment(), is("/a%2fb?" + query));
+    }
+
+    @Test
+    void importsRawQueryValuesAddedBeforeUriInfoCopy() {
+        UriQuery source = UriQuery.create("a=old");
+        source.getAllRaw("a").add("new");
+        UriInfo baseUri = UriInfo.builder().host("example.com").query(source).build();
+
+        ClientUri copy = ClientUri.create(baseUri);
+
+        assertThat(copy.pathWithQueryAndFragment(), is("/?a=old&a=new"));
+        assertThat(copy.query().all("a"), is(List.of("old")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"a", "%61"})
+    void importsRawQueryValuesEditedBeforeUriInfoCopy(String rawName) {
+        UriQuery source = UriQuery.create(rawName + "=old");
+        source.getAllRaw(rawName).set(0, "raw-new");
+        source.all("a").set(0, "decoded-new");
+        UriInfo baseUri = UriInfo.builder()
+                .host("example.com")
+                .path(UriPath.create("/a%2fb"))
+                .query(source)
+                .build();
+
+        ClientUri copy = ClientUri.create(baseUri);
+
+        assertThat(copy.pathWithQueryAndFragment(), is("/a%2fb?" + rawName + "=raw-new"));
+        assertThat(copy.query().getAllRaw(rawName), is(List.of("raw-new")));
+        assertThat(copy.query().all("a"), is(List.of("decoded-new")));
+
+        source.getAllRaw(rawName).set(0, "source-only");
+        source.all("a").set(0, "decoded-source-only");
+        assertThat(copy.pathWithQueryAndFragment(), is("/a%2fb?" + rawName + "=raw-new"));
+        assertThat(copy.query().all("a"), is(List.of("decoded-new")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"a", "%61"})
+    void doesNotRestoreRawQueryValuesClearedBeforeUriInfoCopy(String rawName) {
+        UriQuery source = UriQuery.create(rawName + "=old");
+        source.getAllRaw(rawName).clear();
+        UriInfo baseUri = UriInfo.builder()
+                .host("example.com")
+                .path(UriPath.create("/a%2fb"))
+                .query(source)
+                .build();
+
+        ClientUri copy = ClientUri.create(baseUri);
+
+        assertThat(copy.pathWithQueryAndFragment(), is("/a%2fb?"));
+        assertThat(copy.query().getAllRaw(rawName), is(List.of()));
+        assertThat(copy.query().all("a"), is(List.of("old")));
+
+        source.getAllRaw(rawName).add("source-only");
+        assertThat(copy.pathWithQueryAndFragment(), is("/a%2fb?"));
+        assertThat(copy.query().getAllRaw(rawName), is(List.of()));
     }
 
     @Test

@@ -26,6 +26,64 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 class UriQueryCopyTest {
     @Test
+    void testCopyUsesRawValuesEditedBeforeCopy() {
+        UriQuery source = UriQuery.create("a=old");
+        source.getAllRaw("a").set(0, "new");
+
+        UriQueryWriteable copy = UriQueryWriteable.create().from(source);
+
+        assertThat(copy.getAllRaw("a"), is(List.of("new")));
+        assertThat(copy.all("a"), is(List.of("old")));
+        assertThat(copy.rawValue(), is("a=new"));
+
+        source.getAllRaw("a").set(0, "source-only");
+        source.all("a").set(0, "decoded-source-only");
+        assertThat(copy.getAllRaw("a"), is(List.of("new")));
+        assertThat(copy.all("a"), is(List.of("old")));
+    }
+
+    @Test
+    void testCopyDoesNotRestoreRawValuesClearedBeforeCopy() {
+        UriQuery source = UriQuery.create("a=old&b=keep");
+        source.getAllRaw("a").clear();
+
+        UriQueryWriteable copy = UriQueryWriteable.create().from(source);
+
+        assertThat(copy.getAllRaw("a"), is(List.of()));
+        assertThat(copy.all("a"), is(List.of("old")));
+        assertThat(copy.rawValue(), is("b=keep"));
+
+        source.getAllRaw("a").add("source-only");
+        assertThat(copy.getAllRaw("a"), is(List.of()));
+        copy.getAllRaw("a").add("copy-only");
+        assertThat(source.getAllRaw("a"), is(List.of("source-only")));
+    }
+
+    @Test
+    void testCopyKeepsEditedRawAliasesSeparateFromDecodedValues() {
+        UriQuery source = UriQuery.create("%61=first&a=second&%61=third");
+        source.getAllRaw("%61").set(0, "raw-first");
+        source.getAllRaw("a").clear();
+        source.all("a").set(0, "decoded-first");
+
+        UriQueryWriteable copy = UriQueryWriteable.create().from(source);
+
+        assertThat(copy.getAllRaw("%61"), is(List.of("raw-first", "third")));
+        assertThat(copy.getAllRaw("a"), is(List.of()));
+        assertThat(copy.all("a"), is(List.of("decoded-first", "second", "third")));
+        assertThat(copy.rawValue(), is("%61=raw-first&%61=third"));
+
+        source.getAllRaw("%61").clear();
+        source.all("a").clear();
+        assertThat(copy.getAllRaw("%61"), is(List.of("raw-first", "third")));
+        assertThat(copy.all("a"), is(List.of("decoded-first", "second", "third")));
+        copy.getAllRaw("%61").add("copy-only");
+        copy.all("a").add("decoded-copy-only");
+        assertThat(source.getAllRaw("%61"), is(List.of()));
+        assertThat(source.all("a"), is(List.of()));
+    }
+
+    @Test
     void testEncodedNamesRetainRawAliasesAndDecodedOrder() {
         UriQuery source = UriQuery.create("%61=first&a=second&%61=third&k%26%3D=v%26%3D");
 
@@ -80,19 +138,16 @@ class UriQueryCopyTest {
     void testFlagsAndEmptyTokensKeepIndependentDecodedVectors() {
         String raw = "&flag&&empty=&flag&";
         UriQuery source = UriQuery.create(raw);
-        var expectedRaw = UriQueryWriteable.create();
-        expectedRaw.fromQueryString(raw);
-
         UriQueryWriteable copy = UriQueryWriteable.create().from(source);
 
         assertThat(copy.names(), is(Set.of("", "flag", "empty")));
-        assertThat(copy.getAllRaw(""), is(List.of("", "", "")));
-        assertThat(copy.getAllRaw("flag"), is(List.of("", "")));
+        assertThat(copy.getAllRaw(""), is(List.of()));
+        assertThat(copy.getAllRaw("flag"), is(List.of()));
         assertThat(copy.getAllRaw("empty"), is(List.of("")));
         assertThat(copy.all(""), is(List.of()));
         assertThat(copy.all("flag"), is(List.of()));
         assertThat(copy.all("empty"), is(List.of("")));
-        assertThat(copy.rawValue(), is(expectedRaw.rawValue()));
+        assertThat(copy.rawValue(), is("empty="));
     }
 
     @Test

@@ -77,21 +77,28 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
                         .addAll(value);
             });
         } else {
-            String query = uriQuery.rawValue();
-            if (!query.isEmpty()) {
-                int start = 0;
-                while (true) {
-                    int and = query.indexOf('&', start);
-                    String segment = and == -1 ? query.substring(start) : query.substring(start, and);
-                    int eq = segment.indexOf('=');
-                    String name = eq == -1 ? segment : segment.substring(0, eq);
-                    String value = eq == -1 ? "" : segment.substring(eq + 1);
-                    rawQueryParams.computeIfAbsent(name, it -> new ArrayList<>())
-                            .add(value);
-                    if (and == -1) {
-                        break;
+            if (uriQuery instanceof UriQueryImpl impl) {
+                // The original query string can differ from values edited through its raw parameter lists.
+                impl.rawParameters().forEach((name, values) -> rawQueryParams
+                        .computeIfAbsent(name, _ -> new ArrayList<>())
+                        .addAll(values));
+            } else {
+                String query = uriQuery.rawValue();
+                if (!query.isEmpty()) {
+                    int start = 0;
+                    while (true) {
+                        int and = query.indexOf('&', start);
+                        String segment = and == -1 ? query.substring(start) : query.substring(start, and);
+                        int eq = segment.indexOf('=');
+                        String name = eq == -1 ? segment : segment.substring(0, eq);
+                        String value = eq == -1 ? "" : segment.substring(eq + 1);
+                        rawQueryParams.computeIfAbsent(name, _ -> new ArrayList<>())
+                                .add(value);
+                        if (and == -1) {
+                            break;
+                        }
+                        start = and + 1;
                     }
-                    start = and + 1;
                 }
             }
             for (String name : uriQuery.names()) {
