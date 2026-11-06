@@ -22,9 +22,12 @@ import java.io.UncheckedIOException;
 import java.util.Objects;
 import java.util.OptionalLong;
 
+import io.helidon.common.Api;
+
 /**
  * {@link InstanceWriter} for bytes already materialized in memory.
  */
+@Api.Stable
 public final class ByteArrayInstanceWriter implements InstanceWriter {
     private final byte[] instanceBytes;
 

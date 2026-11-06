@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 
 import static java.lang.System.Logger.Level.DEBUG;
@@ -29,6 +30,7 @@ import static java.lang.System.Logger.Level.DEBUG;
 /**
  * HTTP settings frame.
  */
+@Api.Internal
 public final class Http2Settings implements Http2Frame<Http2Flag.SettingsFlags> {
     private static final System.Logger LOGGER = System.getLogger(Http2Settings.class.getName());
     private final Map<Integer, SettingValue> values;

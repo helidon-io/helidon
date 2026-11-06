@@ -19,6 +19,7 @@ package io.helidon.http.media;
 import java.nio.charset.Charset;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
@@ -30,6 +31,7 @@ import io.helidon.http.WritableHeaders;
  *
  * @param <T> type of the supported object
  */
+@Api.Stable
 public abstract class EntityWriterBase<T> extends EntityIoBase implements EntityWriter<T> {
     private final MediaSupportConfig config;
     private final Optional<Charset> defaultCharset;

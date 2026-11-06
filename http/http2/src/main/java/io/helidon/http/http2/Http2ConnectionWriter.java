@@ -35,6 +35,7 @@ import io.helidon.common.socket.SocketContext;
 /**
  * HTTP/2 connection writer.
  */
+@Api.Internal
 public class Http2ConnectionWriter implements Http2StreamWriter {
     // Do not let a peer-raised maximum frame size enlarge either payload in a response batch.
     private static final int MAX_BATCHED_FRAME_PAYLOAD_LENGTH = Http2Setting.MAX_FRAME_SIZE.defaultValue().intValue();

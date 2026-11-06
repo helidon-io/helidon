@@ -17,9 +17,12 @@ package io.helidon.http.http2;
 
 import java.util.function.BiConsumer;
 
+import io.helidon.common.Api;
+
 /**
  * Window size container, used with {@link FlowControl}.
  */
+@Api.Internal
 public interface WindowSize {
 
     /**

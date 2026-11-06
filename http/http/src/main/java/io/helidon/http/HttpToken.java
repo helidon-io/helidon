@@ -18,10 +18,13 @@ package io.helidon.http;
 
 import java.util.Objects;
 
+import io.helidon.common.Api;
+
 /**
  * HTTP Token utility.
  * A token is defined by the HTTP specification as one or more ASCII {@code tchar} characters.
  */
+@Api.Stable
 public final class HttpToken {
     private HttpToken() {
     }

@@ -26,6 +26,7 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.common.Api;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriPath;
@@ -34,6 +35,7 @@ import io.helidon.common.uri.UriPathSegment;
 /**
  * Utility methods to create path matchers.
  */
+@Api.Stable
 public final class PathMatchers {
     private static final char[] REGEXP_META_CHARACTERS = "<([{\\^-=$!|]})?*+.>".toCharArray();
     private static final UriPath ROOT = UriPath.create("/");

@@ -16,9 +16,12 @@
 
 package io.helidon.http.http2;
 
+import io.helidon.common.Api;
+
 /**
  * HTTP/2 exception.
  */
+@Api.Stable
 public class Http2Exception extends RuntimeException {
     /**
      * Type of the HTTP/2 error.

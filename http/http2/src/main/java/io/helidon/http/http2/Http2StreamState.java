@@ -16,6 +16,8 @@
 
 package io.helidon.http.http2;
 
+import io.helidon.common.Api;
+
 /**
  * Stream state.
  *
@@ -23,6 +25,7 @@ package io.helidon.http.http2;
  * <a
  * href="https://datatracker.ietf.org/doc/html/rfc7540#section-5.1">https://datatracker.ietf.org/doc/html/rfc7540#section-5.1</a>
  */
+@Api.Internal
 public enum Http2StreamState {
     /**
      * The initial state of a stream.

@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.service.registry.Service;
 
@@ -41,6 +42,7 @@ import io.helidon.service.registry.Service;
  * if uppercase letters are used to obtain HTTP/2 headers).
  */
 @Service.Describe(Service.PerRequest.class)
+@Api.Stable
 public interface Headers extends Iterable<Header> {
     /**
      * Get all values of a header.

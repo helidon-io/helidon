@@ -19,12 +19,14 @@ package io.helidon.http.http2;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.HuffmanCodec;
 
 /**
  * Implementation of HPACK Huffman decoding.
  */
+@Api.Internal
 public class Http2HuffmanDecoder {
     private static final String EMPTY_STRING = "";
 

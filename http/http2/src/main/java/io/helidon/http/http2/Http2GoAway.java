@@ -18,6 +18,7 @@ package io.helidon.http.http2;
 
 import java.nio.charset.StandardCharsets;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 
 import static io.helidon.common.buffers.BufferData.EMPTY_BYTES;
@@ -29,6 +30,7 @@ import static io.helidon.common.buffers.BufferData.EMPTY_BYTES;
  * @param errorCode    error code
  * @param details      details message
  */
+@Api.Internal
 public record Http2GoAway(int lastStreamId, Http2ErrorCode errorCode, String details)
         implements Http2Frame<Http2Flag.NoFlags> {
 

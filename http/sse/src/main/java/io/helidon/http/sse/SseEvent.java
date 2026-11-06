@@ -25,6 +25,7 @@ import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
@@ -36,6 +37,7 @@ import io.helidon.http.media.MediaContext;
 /**
  * An SSE event.
  */
+@Api.Stable
 public class SseEvent {
 
     /**

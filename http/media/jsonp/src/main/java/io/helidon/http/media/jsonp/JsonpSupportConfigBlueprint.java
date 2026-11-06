@@ -20,6 +20,7 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.media.MediaSupportConfig;
@@ -34,6 +35,7 @@ import jakarta.json.JsonWriterFactory;
 @Prototype.Blueprint(decorator = JsonpConfigSupport.Decorator.class)
 @Prototype.Provides(MediaSupportProvider.class)
 @Prototype.Configured(value = JsonpSupport.ID, root = false)
+@Api.Stable
 interface JsonpSupportConfigBlueprint extends MediaSupportConfig, Prototype.Factory<JsonpSupport> {
 
     @Option.Default(JsonpSupport.ID)

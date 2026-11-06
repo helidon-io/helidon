@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.http.http2;
 
+import io.helidon.common.Api;
 import io.helidon.http.http2.Http2Flag.ContinuationFlags;
 import io.helidon.http.http2.Http2Flag.DataFlags;
 import io.helidon.http.http2.Http2Flag.HeaderFlags;
@@ -30,6 +31,7 @@ import io.helidon.http.http2.Http2FrameTypeUtil.FrameTypeImpl;
  *
  * @param <T> type of flags
  */
+@Api.Internal
 public interface Http2FrameTypes<T extends Http2Flag> {
     /**
      * Data frame types.

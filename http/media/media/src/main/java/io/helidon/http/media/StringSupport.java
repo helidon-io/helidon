@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalLong;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
@@ -42,6 +43,7 @@ import io.helidon.http.WritableHeaders;
  * and should be honored when parsing them.
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
+@Api.Stable
 public class StringSupport implements MediaSupport {
     private static final Header HEADER_PLAIN_TEXT = HeaderValues.createCached(HeaderNames.CONTENT_TYPE,
                                                                               HttpMediaTypes.PLAINTEXT_UTF_8.text());

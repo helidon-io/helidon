@@ -19,6 +19,7 @@ package io.helidon.http.media;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.config.Config;
 import io.helidon.http.Headers;
@@ -27,6 +28,7 @@ import io.helidon.http.WritableHeaders;
 /**
  * Media context to obtain readers and writers of various supported content types.
  */
+@Api.Stable
 public interface MediaContext extends RuntimeType.Api<MediaContextConfig> {
     /**
      * Create a new media context from {@link java.util.ServiceLoader}.

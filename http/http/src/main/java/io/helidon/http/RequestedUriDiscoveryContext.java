@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.common.configurable.AllowList;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriQuery;
@@ -31,6 +32,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 /**
  * Requested URI discovery settings for a socket.
  */
+@Api.Stable
 public interface RequestedUriDiscoveryContext {
 
     /**

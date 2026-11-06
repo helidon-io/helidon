@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.http;
 import java.util.Collection;
 import java.util.function.Consumer;
 
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 
 /**
@@ -26,6 +27,7 @@ import io.helidon.common.media.type.MediaType;
  *
  * @param <B> type of the headers (for inheritance)
  */
+@Api.Stable
 public interface WritableHeaders<B extends WritableHeaders<B>> extends Headers {
     /**
      * Create a new instance of writable headers.

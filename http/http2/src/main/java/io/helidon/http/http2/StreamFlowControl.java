@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package io.helidon.http.http2;
 
 import java.util.function.BiConsumer;
 
+import io.helidon.common.Api;
+
 /**
  * Stream specific HTTP/2 flow control.
  * <br/>
@@ -30,6 +32,7 @@ import java.util.function.BiConsumer;
  * Each, inbound and inbound keeps 2 separate credit windows, connection one which is common to all streams
  * and stream window.
  */
+@Api.Internal
 public class StreamFlowControl {
     private final FlowControl.Outbound outboundFlowControl;
     private final FlowControl.Inbound inboundFlowControl;

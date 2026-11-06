@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.uri.UriValidator;
 
 import static io.helidon.http.HeaderNames.FORWARDED;
@@ -28,6 +29,7 @@ import static io.helidon.http.HeaderNames.FORWARDED;
 /**
  * A representation of the {@link HeaderNames#FORWARDED} HTTP header.
  */
+@Api.Stable
 public class Forwarded {
     private static final System.Logger LOGGER = System.getLogger(Forwarded.class.getName());
     private final Optional<String> by;

@@ -16,12 +16,14 @@
 
 package io.helidon.http.http2;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.HuffmanCodec;
 
 /**
  * Implementation of HPACK Huffman encoding.
  */
+@Api.Internal
 public class Http2HuffmanEncoder {
     private static final int HUFFMAN_ENCODED = 1 << 7;
 

@@ -18,9 +18,12 @@ package io.helidon.http;
 
 import java.nio.charset.StandardCharsets;
 
+import io.helidon.common.Api;
+
 /**
  * HTTP header name.
  */
+@Api.Stable
 public sealed interface HeaderName permits HeaderNameImpl, HeaderNameEnum {
     /**
      * Lowercase value of this header, used by HTTP/2, may be used for lookup by HTTP/1.

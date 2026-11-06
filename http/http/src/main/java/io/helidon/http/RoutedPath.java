@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,14 @@
 
 package io.helidon.http;
 
+import io.helidon.common.Api;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriPath;
 
 /**
  * Abstraction of HTTP path supporting routing parameters.
  */
+@Api.Stable
 public interface RoutedPath extends UriPath {
     /**
      * Resolved parameters from path template.

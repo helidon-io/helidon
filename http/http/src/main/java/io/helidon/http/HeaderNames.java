@@ -16,12 +16,14 @@
 
 package io.helidon.http;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.Ascii;
 import io.helidon.http.HeaderNameEnum.Strings;
 
 /**
  * Utility class with a list of names of standard HTTP headers and related tooling methods.
  */
+@Api.Stable
 public final class HeaderNames {
     /**
      * The {@value} header name.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,11 +32,14 @@
 
 package io.helidon.http;
 
+import io.helidon.common.Api;
+
 /**
  * HTML encoding of special characters to prevent cross site scripting (XSS) attacks.
  * Any data that is "echoed" back from a request can be used to execute a script in a
  * browser unless properly encoded.
  */
+@Api.Stable
 public final class HtmlEncoder {
 
     private HtmlEncoder() {

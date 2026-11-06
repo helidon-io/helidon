@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,14 @@ package io.helidon.http.media;
 import java.io.OutputStream;
 import java.util.OptionalLong;
 
+import io.helidon.common.Api;
+
 /**
  * A writer dedicated to a specific instance. Method {@link #write(java.io.OutputStream)} will write the instance
  * to the output stream, method {@link #instanceBytes()} will provide all the bytes of entity.
  * The caller decided which method to call depending on results of {@link #alwaysInMemory()} and {@link #contentLength()}.
  */
+@Api.Stable
 public interface InstanceWriter {
     /**
      * If we can determine the number of bytes to be written to the stream, provide the information here.

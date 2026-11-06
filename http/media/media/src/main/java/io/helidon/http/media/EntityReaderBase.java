@@ -20,6 +20,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpMediaType;
 
@@ -28,6 +29,7 @@ import io.helidon.http.HttpMediaType;
  *
  * @param <T> type of the supported objects
  */
+@Api.Stable
 public abstract class EntityReaderBase<T> implements EntityReader<T> {
     /**
      * Constructor with no side effects.
