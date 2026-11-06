@@ -17,6 +17,16 @@ package io.helidon.data.jdbc.tests;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Types;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
+
+import javax.sql.DataSource;
 
 import io.helidon.data.jdbc.JdbcClient;
 
@@ -31,9 +41,69 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class GeneratedRepositoryTest {
+
+    /**
+     * The generated method checks its callback before staging SQL and binds colliding inputs as values.
+     */
+    @Test
+    void streamsThroughThePublicClientPathAndValidatesBeforeStaging() {
+        JdbcClient client = mock(JdbcClient.class);
+        StreamingQueryRepository repository = new StreamingQueryRepository__Jdbc(client);
+        assertThrows(NullPointerException.class, () -> repository.values("input", null));
+        verify(client, never()).create(anyString());
+        JdbcClient.Statement statement = mock(JdbcClient.Statement.class);
+        @SuppressWarnings("unchecked")
+        JdbcClient.Rows<String> rows = mock(JdbcClient.Rows.class);
+        when(client.create(anyString())).thenReturn(statement);
+        when(statement.bind(anyInt(), any())).thenReturn(statement);
+        when(statement.map(String.class)).thenReturn(rows);
+        var action = new AtomicReference<Stream<String>>();
+        repository.values("input", action::set);
+        verify(statement).bind(1, "input");
+        verify(statement).bind(2, "input");
+        verify(statement).bind(3, "input");
+        verify(rows).useStream(any());
+    }
+
+    /**
+     * Generated streaming aliases bind typed SQL NULL at every occurrence and release operation resources.
+     */
+    @Test
+    void streamsWithRepeatedAliasedTypedNullBindings() throws SQLException {
+        DataSource source = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        PreparedStatement statement = mock(PreparedStatement.class);
+        ResultSet result = mock(ResultSet.class);
+        ResultSetMetaData metadata = mock(ResultSetMetaData.class);
+        when(source.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true);
+        when(connection.prepareStatement("SELECT ? WHERE ? = ?")).thenReturn(statement);
+        when(statement.execute()).thenReturn(true);
+        when(statement.getResultSet()).thenReturn(result);
+        when(statement.getLargeUpdateCount()).thenReturn(-1L);
+        when(result.getMetaData()).thenReturn(metadata);
+        when(metadata.getColumnCount()).thenReturn(1);
+        when(result.next()).thenReturn(true, false);
+        when(result.getString(1)).thenReturn("value");
+        StreamingQueryRepository repository = new StreamingQueryRepository__Jdbc(JdbcClient.builder().dataSource(source).build());
+
+        verify(source, never()).getConnection();
+        repository.values(null, stream -> assertThat(stream.count(), is(1L)));
+
+        verify(statement).setNull(1, Types.VARCHAR);
+        verify(statement).setNull(2, Types.VARCHAR);
+        verify(statement).setNull(3, Types.VARCHAR);
+        verify(statement).execute();
+        verify(statement).close();
+        verify(connection).close();
+        verify(connection, never()).commit();
+        verify(connection, never()).rollback();
+    }
 
     /**
      * Proves generated {@code int} update methods preserve overflow instead of

@@ -62,6 +62,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
 
     @Override
     public JdbcConnectionLease acquire(DataSource dataSource) {
+        Objects.requireNonNull(dataSource, "The data source must not be null.");
         State state = local.get();
         if (state == null) {
             return JdbcConnectionLease.Owned.acquire(dataSource);
@@ -87,6 +88,9 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             throw new IllegalStateException("The active JDBC transaction has no lifecycle association.");
         }
         association.require(AssociationState.ACTIVE, "acquire a connection");
+        if (association.reserved) {
+            throw new IllegalStateException("A streaming terminal reserves the participating connection until cleanup finishes.");
+        }
         Object identity = transactionIdentity(dataSource);
         if (association.dataSourceIdentitySet && !sameIdentity(association.dataSourceIdentity, identity)) {
             throw new DataException("A local JDBC transaction cannot use more than one data source.");
@@ -184,6 +188,7 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         State state = requireState("suspend a transaction");
         if (txIdentity.equals(state.activeJdbc)) {
             Association association = requireAssociation(state, txIdentity);
+            requireUnreserved(txIdentity);
             try {
                 association.transition(AssociationState.ACTIVE,
                                        AssociationState.SUSPENDED,
@@ -258,6 +263,31 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
      */
     CompletionReceipt rollbackLocal(String txIdentity) {
         return completeLocal(txIdentity, false);
+    }
+
+    /**
+     * Rejects suspension or completion while a streaming terminal owns the connection.
+     *
+     * @param txIdentity The identity selects the participating transaction.
+     */
+    void requireUnreserved(String txIdentity) {
+        State state = local.get();
+        Association association = state == null ? null : state.jdbcTransactions.get(txIdentity);
+        if (association != null && association.reserved) {
+            throw new IllegalStateException("The transaction cannot be suspended or completed during a streaming terminal.");
+        }
+    }
+
+    /**
+     * Reports a retained processing failure without compromising lifecycle state.
+     *
+     * @param txIdentity The identity selects the participating transaction.
+     * @return Whether transaction completion must roll back.
+     */
+    boolean rollbackOnly(String txIdentity) {
+        State state = local.get();
+        Association association = state == null ? null : state.jdbcTransactions.get(txIdentity);
+        return association != null && association.rollbackOnly;
     }
 
     /**
@@ -598,19 +628,22 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
                                               Association association,
                                               boolean commit) {
 
+        requireUnreserved(txIdentity);
         boolean failedContext = association.state == AssociationState.FAILED;
         if (!failedContext && !txIdentity.equals(state.activeJdbc)) {
             failJdbcAssociation(state, txIdentity, association);
             failedContext = true;
         }
         // A failed context can only roll back, even when the lifecycle requests commit.
-        boolean effectiveCommit = commit && !failedContext;
+        boolean effectiveCommit = commit && !failedContext && !association.rollbackOnly;
         Throwable failure = null;
         try {
             association.beginCompletion();
             completeConnection(association, effectiveCommit);
-            if (failedContext && commit) {
-                failure = new TxException("The failed local JDBC transaction was rolled back instead of committed.");
+            if ((failedContext || association.rollbackOnly) && commit) {
+                failure = new TxException(failedContext
+                        ? "The failed local JDBC transaction was rolled back instead of committed."
+                        : "The local JDBC transaction was marked for rollback.");
             }
         } catch (RuntimeException | Error completionFailure) {
             failure = completionFailure;
@@ -792,6 +825,8 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
     private static final class Association {
 
         private AssociationState state = AssociationState.ACTIVE;
+        private boolean reserved;
+        private boolean rollbackOnly;
 
         // The first operation fixes the only data source identity allowed in the transaction.
         private Object dataSourceIdentity;
@@ -924,6 +959,21 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
                 throw new IllegalStateException("The connection lease is closed.");
             }
             return connection;
+        }
+
+        @Override
+        public void reserve() {
+            association.reserved = true;
+        }
+
+        @Override
+        public void processingFailed() {
+            association.rollbackOnly = true;
+        }
+
+        @Override
+        public void releaseReservation() {
+            association.reserved = false;
         }
 
         @Override

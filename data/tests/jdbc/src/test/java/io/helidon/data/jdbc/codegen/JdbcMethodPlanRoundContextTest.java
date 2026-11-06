@@ -19,6 +19,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.RoundContext;
@@ -58,6 +60,13 @@ class JdbcMethodPlanRoundContextTest {
         assertThat(plan.mappingKind(), is(JdbcMethodPlan.MappingKind.RECORD));
         assertThat(plan.recordComponents().size(), is(1));
         assertThat(plan.recordComponents().getFirst().elementName(), is("VaLuE"));
+
+        JdbcMethodPlan streaming = JdbcMethodPlan.create(streamingMethod("records", recordType, null),
+                                                         new TypesRoundContext(Map.of(recordType, recordInfo)));
+        assertThat(streaming.returnShape(), is(JdbcMethodPlan.ReturnShape.STREAM));
+        assertThat(streaming.mappingKind(), is(JdbcMethodPlan.MappingKind.RECORD));
+        assertThat(streaming.mappedType(), is(recordType));
+        assertThat(streaming.recordComponents(), is(plan.recordComponents()));
     }
 
     @Test
@@ -139,6 +148,13 @@ class JdbcMethodPlanRoundContextTest {
 
         assertThat(plan.mappingKind(), is(JdbcMethodPlan.MappingKind.EXPLICIT));
         assertThat(plan.explicitMapper(), is(mapperType));
+
+        JdbcMethodPlan streaming = JdbcMethodPlan.create(streamingMethod("mapped", TypeNames.STRING, mapperType),
+                                                         new TypesRoundContext(Map.of(mapperType, mapperInfo)));
+        assertThat(streaming.returnShape(), is(JdbcMethodPlan.ReturnShape.STREAM));
+        assertThat(streaming.mappingKind(), is(JdbcMethodPlan.MappingKind.EXPLICIT));
+        assertThat(streaming.mappedType(), is(TypeNames.STRING));
+        assertThat(streaming.explicitMapper(), is(mapperType));
     }
 
     @Test
@@ -256,6 +272,20 @@ class JdbcMethodPlanRoundContextTest {
                 () -> JdbcMethodPlan.create(repositoryMethod("blankStatement", TypeNames.STRING, null, "  "),
                                             new TypesRoundContext(Map.of())));
         assertThat(blank.getMessage(), is("The SQL statement declared by @Jdbc.Statement must not be blank."));
+    }
+
+    private static TypedElementInfo streamingMethod(String name, TypeName mappedType, TypeName mapperType) {
+        TypeName stream = TypeName.builder(TypeName.create(Stream.class)).addTypeArgument(mappedType).build();
+        return TypedElementInfo.builder(repositoryMethod(name, mappedType, mapperType))
+                .typeName(TypeNames.PRIMITIVE_VOID)
+                .addParameterArgument(TypedElementInfo.builder()
+                                              .kind(ElementKind.PARAMETER)
+                                              .elementName("action")
+                                              .typeName(TypeName.builder(TypeName.create(Consumer.class))
+                                                                .addTypeArgument(stream)
+                                                                .build())
+                                              .build())
+                .build();
     }
 
     private static TypedElementInfo repositoryMethod(String name, TypeName returnType, TypeName mapperType) {
