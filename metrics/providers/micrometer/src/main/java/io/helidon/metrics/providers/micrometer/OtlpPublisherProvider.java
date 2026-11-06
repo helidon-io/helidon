@@ -24,6 +24,7 @@ import io.helidon.metrics.spi.MetricsPublisherProvider;
 /**
  * Provider for an OTLP publisher.
  */
+@Api.Internal
 public class OtlpPublisherProvider implements MetricsPublisherProvider {
 
     static final String CONFIG_KEY = "otlp";

@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 import io.opentelemetry.api.common.AttributesBuilder;
 
@@ -28,6 +29,7 @@ import io.opentelemetry.api.common.AttributesBuilder;
  * OpenTelemetry resource settings shared by all configured signals.
  * Optional values left unspecified do not add or override resource attributes.
  */
+@Api.Preview
 @Prototype.Blueprint
 @Prototype.Configured
 @Prototype.CustomMethods(OpenTelemetryResourceConfigSupport.CustomMethods.class)

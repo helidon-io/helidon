@@ -18,6 +18,7 @@ package io.helidon.health.checks;
 import java.lang.management.ManagementFactory;
 import java.util.List;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.spi.HealthCheckProvider;
@@ -25,6 +26,7 @@ import io.helidon.health.spi.HealthCheckProvider;
 /**
  * {@link java.util.ServiceLoader} provider implementation for {@link io.helidon.health.spi.HealthCheckProvider}.
  */
+@Api.Internal
 public class BuiltInHealthCheckProvider implements HealthCheckProvider {
     /**
      * Default constructor is required by {@link java.util.ServiceLoader}.

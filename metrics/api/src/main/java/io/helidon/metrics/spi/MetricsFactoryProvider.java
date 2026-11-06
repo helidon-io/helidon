@@ -18,6 +18,7 @@ package io.helidon.metrics.spi;
 import java.util.Collection;
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
@@ -26,6 +27,7 @@ import io.helidon.service.registry.ServiceRegistry;
 /**
  * Creates new instances of {@link io.helidon.metrics.api.MetricsFactory}.
  */
+@Api.Stable
 public interface MetricsFactoryProvider {
 
     /**

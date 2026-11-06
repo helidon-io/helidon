@@ -19,10 +19,12 @@ package io.helidon.metrics.api;
 import java.util.Optional;
 
 import io.helidon.builder.api.Option;
+import io.helidon.common.Api;
 
 /**
  * Settings common to all metrics publishers.
  */
+@Api.Stable
 public interface MetricsPublisherConfig {
 
     /**

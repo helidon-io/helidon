@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,13 @@ import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
 import java.util.logging.StreamHandler;
 
+import io.helidon.common.Api;
+
 /**
  * A {@link StreamHandler} that writes to {@link System#out standard out} and uses a {@link HelidonFormatter} for formatting.
  * Sets the level to {@link Level#ALL} so that level filtering is performed solely by the loggers.
  */
+@Api.Stable
 public class HelidonConsoleHandler extends StreamHandler {
 
     /**

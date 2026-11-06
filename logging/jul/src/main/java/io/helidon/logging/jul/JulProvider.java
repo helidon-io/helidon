@@ -24,6 +24,7 @@ import java.nio.file.Paths;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.logging.common.spi.LoggingProvider;
 
@@ -38,6 +39,7 @@ import io.helidon.logging.common.spi.LoggingProvider;
  * system properties, or set system property {@value #SYS_PROP_DISABLE_CONFIG} to {@code true}.
  */
 @Weight(1)
+@Api.Internal
 public class JulProvider implements LoggingProvider {
     private static final String TEST_LOGGING_FILE = "logging-test.properties";
     private static final String LOGGING_FILE = "logging.properties";

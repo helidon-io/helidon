@@ -15,12 +15,14 @@
  */
 package io.helidon.logging.jul;
 
+import io.helidon.common.Api;
 import io.helidon.logging.common.spi.MdcProvider;
 
 /**
  * Provider for setting MDC values to the Java Util Logging MDC support.
  * This class is loaded and used via SPI.
  */
+@Api.Internal
 public class JulMdcProvider implements MdcProvider {
 
     /**

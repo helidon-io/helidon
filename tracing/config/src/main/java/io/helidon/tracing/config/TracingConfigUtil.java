@@ -15,6 +15,7 @@
  */
 package io.helidon.tracing.config;
 
+import io.helidon.common.Api;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 
@@ -24,6 +25,7 @@ import io.helidon.common.context.Contexts;
  * This can be achieved either through configuration of the global context and registering it with a server component,
  * or by using a server specific approach, such as {@code Routing.Builder#register(WebTracingConfig)}.
  */
+@Api.Stable
 public final class TracingConfigUtil {
     /**
      * Qualifier for outbound {@code io.helidon.tracing.SpanContext} as registered with

@@ -20,6 +20,7 @@ import java.util.List;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.tracing.ExtendedTracerConfig;
 import io.helidon.tracing.SpanListener;
 
@@ -34,6 +35,7 @@ import io.opentelemetry.sdk.trace.SpanProcessor;
 @Prototype.Configured(OpenTelemetryTracerConfigBlueprint.TRACING_CONFIG_KEY)
 @Prototype.Blueprint(decorator = OpenTelemetryTracerBlueprintSupport.Decorator.class)
 @Prototype.CustomMethods(OpenTelemetryTracerBlueprintSupport.CustomMethods.class)
+@Api.Stable
 interface OpenTelemetryTracerConfigBlueprint extends ExtendedTracerConfig, Prototype.Factory<OpenTelemetryTracer> {
 
     /**

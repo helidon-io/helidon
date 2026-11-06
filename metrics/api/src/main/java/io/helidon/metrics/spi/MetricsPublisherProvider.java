@@ -16,6 +16,7 @@
 
 package io.helidon.metrics.spi;
 
+import io.helidon.common.Api;
 import io.helidon.config.ConfiguredProvider;
 import io.helidon.metrics.api.MetricsPublisher;
 import io.helidon.service.registry.Service;
@@ -23,6 +24,7 @@ import io.helidon.service.registry.Service;
 /**
  * Marks each configured provider of a {@link io.helidon.metrics.api.MetricsPublisher}.
  */
+@Api.Stable
 @Service.Contract
 public interface MetricsPublisherProvider extends ConfiguredProvider<MetricsPublisher> {
 }

@@ -17,12 +17,14 @@ package io.helidon.metrics.api;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Services;
 
 /**
  * Configuration which controls the behavior of distribution statistics from meters that support them
  * (for example, timers and distribution summaries).
  */
+@Api.Stable
 public interface DistributionStatisticsConfig extends Wrapper {
 
     /**

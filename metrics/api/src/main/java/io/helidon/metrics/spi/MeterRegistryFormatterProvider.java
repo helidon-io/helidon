@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.metrics.api.FormatterContext;
 import io.helidon.metrics.api.MeterRegistry;
@@ -35,6 +36,7 @@ import io.helidon.metrics.api.MetricsConfig;
  *     without the calling code having to share that heavy dependency.
  * </p>
  */
+@Api.Stable
 public interface MeterRegistryFormatterProvider {
 
     /**

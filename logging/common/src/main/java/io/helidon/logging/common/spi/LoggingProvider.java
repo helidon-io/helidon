@@ -15,11 +15,14 @@
  */
 package io.helidon.logging.common.spi;
 
+import io.helidon.common.Api;
+
 /**
  * Used by Helidon to initialize logging during class initialization.
  *
  * @see io.helidon.logging.common.LogConfig
  */
+@Api.Stable
 public interface LoggingProvider {
     /**
      * Configures logging during static initialization of {@link io.helidon.logging.common.LogConfig}.

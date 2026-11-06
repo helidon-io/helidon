@@ -20,10 +20,12 @@ import java.util.List;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Settings for explicit bucket histogram default aggregation.
  */
+@Api.Preview
 @Prototype.Blueprint
 @Prototype.Configured
 @Prototype.CustomMethods(ExplicitBucketHistogramAggregationSupport.CustomMethods.class)

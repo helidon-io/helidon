@@ -41,6 +41,7 @@ import io.helidon.metrics.spi.MetersProvider;
 /**
  * Provider for the built-in system meters.
  */
+@Api.Internal
 public class SystemMetersProvider implements MetersProvider, AutoCloseable {
 
     private static final String BYTES = "bytes";

@@ -20,10 +20,12 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Settings for a metric reader.
  */
+@Api.Preview
 @Prototype.Configured
 @Prototype.Blueprint
 interface MetricReaderConfigBlueprint {

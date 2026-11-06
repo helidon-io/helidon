@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.function.Consumer;
 
+import io.helidon.common.Api;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
@@ -41,6 +42,7 @@ import static io.opentelemetry.context.Context.current;
 /**
  * Open Telemetry factory methods to create wrappers for Open Telemetry types.
  */
+@Api.Stable
 public final class HelidonOpenTelemetry {
     static final String DEFAULT_SERVICE_NAME = "helidon-service";
 
@@ -276,6 +278,7 @@ public final class HelidonOpenTelemetry {
      * @param logger      logger for reporting exceptions during listener invocations
      * @param operation   operation to invoke on each listener
      */
+    @Api.Internal
     public static void invokeListeners(io.helidon.tracing.Span helidonSpan,
                                        System.Logger logger,
                                        Consumer<SpanListener> operation) {

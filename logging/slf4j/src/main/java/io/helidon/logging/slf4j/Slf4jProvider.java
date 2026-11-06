@@ -16,6 +16,7 @@
 
 package io.helidon.logging.slf4j;
 
+import io.helidon.common.Api;
 import io.helidon.logging.common.spi.LoggingProvider;
 
 import org.slf4j.LoggerFactory;
@@ -23,6 +24,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Slf4j logging provider.
  */
+@Api.Internal
 public class Slf4jProvider implements LoggingProvider {
 
     /**

@@ -18,10 +18,12 @@ package io.helidon.telemetry.otelconfig;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Settings for aggregating metrics data prior to transmission.
  */
+@Api.Preview
 @Prototype.Configured
 @Prototype.Blueprint
 interface AggregationConfigBlueprint {

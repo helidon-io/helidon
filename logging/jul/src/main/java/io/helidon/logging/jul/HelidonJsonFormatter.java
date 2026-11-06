@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.helidon.common.Api;
 import io.helidon.logging.common.HelidonMdc;
 import io.helidon.metadata.hson.Hson;
 
@@ -53,6 +54,7 @@ import static io.helidon.logging.jul.HelidonFormatter.THREAD_TOKEN;
  * Example (and also the default format):<br>
  * {@value #DEFAULT_FORMAT}
  */
+@Api.Stable
 public class HelidonJsonFormatter extends Formatter {
     static final String DEFAULT_FORMAT = "ts:%1$tQ,date:%1$tY.%1$tm.%1$td,time:%1$tH:%1$tM:%1$tS.%1$tL,level:%4$s,message:%5$s,"
             + "exception:%6$s,thread:!thread!,logger:%3$s";

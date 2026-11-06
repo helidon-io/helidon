@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.spi;
 
+import io.helidon.common.Api;
 import io.helidon.metrics.api.Meter;
 
 /**
@@ -23,6 +24,7 @@ import io.helidon.metrics.api.Meter;
  *
  * @since 27.0.0
  */
+@Api.Stable
 @FunctionalInterface
 public interface MeterBuilderCustomizer {
 

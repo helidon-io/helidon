@@ -17,11 +17,13 @@ package io.helidon.metrics.api;
 
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Services;
 
 /**
  * A read-only counter which wraps some other object that provides the counter value via a function.
  */
+@Api.Stable
 public interface FunctionalCounter extends Meter {
 
     /**

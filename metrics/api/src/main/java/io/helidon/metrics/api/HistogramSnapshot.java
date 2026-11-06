@@ -18,11 +18,13 @@ package io.helidon.metrics.api;
 import java.io.PrintStream;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Services;
 
 /**
  * Snapshot in time of a histogram.
  */
+@Api.Stable
 public interface HistogramSnapshot extends Wrapper {
 
     /**

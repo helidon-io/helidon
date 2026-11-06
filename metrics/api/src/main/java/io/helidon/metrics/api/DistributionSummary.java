@@ -17,6 +17,7 @@ package io.helidon.metrics.api;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Services;
 
 /**
@@ -24,6 +25,7 @@ import io.helidon.service.registry.Services;
  * reports statistics over all samples (count, total, mean, max) as well as grouping samples using percentiles or bucket
  * boundaries.
  */
+@Api.Stable
 public interface DistributionSummary extends Meter {
 
     /**

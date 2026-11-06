@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,13 @@ package io.helidon.logging.common;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.context.spi.DataPropagationProvider;
 
 /**
  * Data propagator for key/supplier MDC data.
  */
+@Api.Internal
 public class MdcSupplierPropagator implements DataPropagationProvider<Map<String, Supplier<String>>> {
 
     /**

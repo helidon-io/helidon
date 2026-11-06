@@ -24,6 +24,7 @@ import io.helidon.metrics.spi.MetricsPublisherProvider;
 /**
  * Provider for a Prometheus publisher.
  */
+@Api.Internal
 public class PrometheusPublisherProvider implements MetricsPublisherProvider {
 
     static final String CONFIG_KEY = "prometheus";

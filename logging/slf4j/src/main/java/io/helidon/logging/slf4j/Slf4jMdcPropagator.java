@@ -18,6 +18,7 @@ package io.helidon.logging.slf4j;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.context.spi.DataPropagationProvider;
 
 import org.slf4j.MDC;
@@ -26,6 +27,7 @@ import org.slf4j.MDC;
  * This is propagator of Slf4j MDC values between different threads.
  * This class is loaded and used via SPI.
  */
+@Api.Internal
 public class Slf4jMdcPropagator implements DataPropagationProvider<Map<String, String>> {
 
     /**

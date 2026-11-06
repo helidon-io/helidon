@@ -28,6 +28,7 @@ import io.helidon.tracing.Tracer;
  * A data propagation provider for OpenTelemetry which makes sure active spans are properly propagated
  * across threads managed by {@link io.helidon.common.context.ContextAwareExecutorService}.
  */
+@Api.Internal
 public class OpenTelemetryDataPropagationProvider
         implements DataPropagationProvider<OpenTelemetryDataPropagationProvider.OpenTelemetryContext> {
 

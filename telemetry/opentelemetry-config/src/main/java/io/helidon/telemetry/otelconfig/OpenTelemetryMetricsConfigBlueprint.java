@@ -22,6 +22,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 import io.opentelemetry.api.common.AttributesBuilder;
 import io.opentelemetry.sdk.metrics.export.MetricExporter;
@@ -30,6 +31,7 @@ import io.opentelemetry.sdk.metrics.export.MetricReader;
 /**
  * OpenTelemetry metrics settings.
  */
+@Api.Preview
 @Prototype.Configured
 @Prototype.Blueprint(decorator = OpenTelemetryMetricsConfigSupport.BuilderDecorator.class)
 @Prototype.CustomMethods(OpenTelemetryMetricsConfigSupport.CustomMethods.class)

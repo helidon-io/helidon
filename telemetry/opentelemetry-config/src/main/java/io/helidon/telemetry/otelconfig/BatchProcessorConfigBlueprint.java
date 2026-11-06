@@ -21,10 +21,12 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Configuration for a batch processor.
  */
+@Api.Preview
 @Prototype.Configured
 @Prototype.Blueprint
 interface BatchProcessorConfigBlueprint extends ProcessorConfigBlueprint {

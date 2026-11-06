@@ -21,6 +21,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.service.registry.Services;
 
@@ -34,6 +35,7 @@ import io.helidon.service.registry.Services;
  * registries, applications inject {@code MetricsFactory} or use
  * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)}.
  */
+@Api.Stable
 public interface MetricsFactory {
 
     /**

@@ -18,12 +18,14 @@ package io.helidon.health.spi;
 
 import java.util.List;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.health.HealthCheck;
 
 /**
  * {@link java.util.ServiceLoader} provider interface for health check services.
  */
+@Api.Stable
 public interface HealthCheckProvider {
     /**
      * Health checks provided by this provider.

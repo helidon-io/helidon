@@ -18,6 +18,7 @@ package io.helidon.metrics.spi;
 import java.util.Collection;
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
@@ -27,6 +28,7 @@ import io.helidon.metrics.api.MetricsFactory;
  * {@link io.helidon.metrics.api.MetricsFactory} when it is created and, in turn, are passed to each
  * {@link io.helidon.metrics.api.MeterRegistry} that factory creates.
  */
+@Api.Stable
 public interface MetersProvider {
 
     /**

@@ -17,10 +17,13 @@ package io.helidon.tracing;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
+
 /**
  * Tracer abstraction.
  * Tracer is the central point that collects tracing spans, and (probably) pushes them to backend.
  */
+@Api.Stable
 public interface Tracer {
     /**
      * Create a no-op tracer. All spans created from this tracer are not doing anything.
