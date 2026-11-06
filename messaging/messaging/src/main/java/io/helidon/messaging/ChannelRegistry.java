@@ -19,6 +19,7 @@ package io.helidon.messaging;
 import java.util.Optional;
 
 import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
 
 /**
  * Service-registry bootstrap for the shared messaging graph.
@@ -29,8 +30,8 @@ class ChannelRegistry implements MessagingRuntime {
     private final DefaultMessagingGraph graph;
 
     @Service.Inject
-    ChannelRegistry(MessagingConfig config, MessagingLifecycleGuard lifecycleGuard) {
-        this.graph = (DefaultMessagingGraph) config.build();
+    ChannelRegistry(MessagingConfig config, MessagingLifecycleGuard lifecycleGuard, ServiceRegistry registry) {
+        this.graph = new MessagingGraphAssembler(config, registry).graph();
         try {
             graph.prepare();
         } catch (RuntimeException | Error e) {

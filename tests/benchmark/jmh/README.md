@@ -102,6 +102,41 @@ still allowing both runner methods to complete:
     '-Dmessaging.jmh.saturationInclude=.*MessagingSaturationJmhBenchmark\.messagingEmit'
 ```
 
+The observability benchmarks compare enabled native Helidon metrics, disabled messaging metrics, and an absent
+`MeterRegistry` service. The absent mode disables service discovery; it does not measure a discovered no-op metrics registry.
+`dispatch` delivers a prebuilt batch of 1 or 32 messages to a short payload handler; its time and allocation are
+per batch. Construction benchmarks use 1 or 64 channels and 0 or 4,096 unrelated meters, with metrics enabled or disabled:
+
+- `constructAndCloseWithRegisteredMeters` repeatedly constructs and closes graphs with the same channel names in one
+  registry. Setup registers the channel meters before measurement, so every measured graph reuses existing series.
+- `constructAndCloseWithNewMeters` constructs and closes one graph per single-shot iteration, with batch size one.
+  Each iteration sets up a fresh registry containing only the unrelated meters. Registry and unrelated-meter setup are
+  outside the timed operation, but the GC profiler includes their allocation; its bytes per operation are not graph-only
+  allocation and must not be compared directly with the repeated-construction benchmark.
+
+Health is disabled to isolate metrics overhead. Teardown verifies that closing graphs preserves their channel series
+until the benchmark closes the registry.
+
+```shell
+mvn -ntp test -Ptests,jmh \
+    -pl :helidon-messaging,:helidon-tests-benchmark-jmh -am \
+    '-Dtest=MessagingJmhRunnerTest#observability' -Dsurefire.failIfNoSpecifiedTests=false
+```
+
+Results include the GC profiler and are written to `target/messaging-observability-jmh-result.json`. Use
+`messaging.jmh.observabilityInclude` to select a fully qualified benchmark method and
+`messaging.jmh.observabilityResult` to change the output path; the common `messaging.jmh` timing, fork, heap, and smoke
+settings also apply. Graphs, service registries, and metrics factories are closed after each trial.
+
+`MessagingJmhRunnerTest#recorder` isolates the steady-state recorder's start/finish operations from admission and
+virtual-thread scheduling, using the same three metrics modes and a short handler. It writes
+`target/messaging-recorder-jmh-result.json`; `messaging.jmh.recorderInclude` and `messaging.jmh.recorderResult` select
+methods and output path. Use this together with the public dispatch benchmark: recorder timings alone do not represent
+end-to-end delivery latency.
+
+Dispatch and recorder setup verify meter registration before measurement so a missing provider cannot masquerade as
+lower metrics overhead.
+
 The gRPC streaming benchmark covers the resource-owning server-streaming, client-streaming, and bidirectional APIs,
 same-run legacy iterator baselines, mixed new-client/legacy-server and legacy-client/new-server pairs, and a deliberately
 CPU-bound slow-consumer bidirectional path. Payloads exercise both sides of the client's readiness threshold. The JSON
