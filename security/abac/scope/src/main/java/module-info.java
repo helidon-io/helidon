@@ -26,6 +26,8 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Path({"Security", "Provider", "ABAC", "Scope"})
 module io.helidon.security.abac.scope {
 
+    requires io.helidon.common;
+
     requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.config;

@@ -30,6 +30,7 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
 import io.helidon.common.Errors;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.TypeName;
@@ -55,6 +56,7 @@ import io.helidon.security.spi.SecurityProvider;
  * @see #builder()
  * @see #create(Config)
  */
+@Api.Stable
 public final class AbacProvider implements AuthorizationProvider {
     /**
      * Type name for {@code jakarta.annotation.security.RolesAllowed}.

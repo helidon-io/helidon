@@ -19,12 +19,14 @@ package io.helidon.security.providers.common;
 import java.time.Instant;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.security.ClassToInstanceStore;
 
 /**
  * A public credential representing an access token.
  * Example is a Google access token you get when authenticating against Google's Open ID Connect.
  */
+@Api.Stable
 public class TokenCredential {
     private final Optional<String> issuer;
     private final Optional<Instant> issueTime;

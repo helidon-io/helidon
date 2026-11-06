@@ -47,6 +47,7 @@ import javax.crypto.spec.OAEPParameterSpec;
 import javax.crypto.spec.PSource;
 import javax.crypto.spec.SecretKeySpec;
 
+import io.helidon.common.Api;
 import io.helidon.common.Errors;
 import io.helidon.common.LazyValue;
 import io.helidon.security.jwt.jwk.Jwk;
@@ -62,6 +63,7 @@ import io.helidon.security.jwt.jwk.JwkRSA;
  *
  * A new key and initialization vector is being generated automatically for each encrypted JWT.
  */
+@Api.Stable
 public final class EncryptedJwt {
 
     private static final byte[] EMPTY_BYTES = new byte[0];

@@ -16,6 +16,7 @@
 
 package io.helidon.security.spi;
 
+import io.helidon.common.Api;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.Role;
@@ -31,6 +32,7 @@ import io.helidon.security.Subject;
  * @see #supportedConfigKeys()
  */
 @FunctionalInterface
+@Api.Stable
 public interface AuthorizationProvider extends SecurityProvider {
     /**
      * Authorize a request based on configuration.

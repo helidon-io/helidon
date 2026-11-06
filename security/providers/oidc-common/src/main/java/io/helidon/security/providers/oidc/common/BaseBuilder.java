@@ -25,6 +25,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.Builder;
 import io.helidon.common.Errors;
 import io.helidon.common.LazyValue;
@@ -53,6 +54,7 @@ import io.helidon.security.providers.oidc.common.spi.TenantConfigFinder;
  * @param <T> type of the object built by this builder
  */
 @Configured // as this class is configured, we reference it in the config metadata documentation, so it must be public
+@Api.Stable
 public abstract class BaseBuilder<B extends BaseBuilder<B, T>, T> implements Builder<B, T> {
 
     static final String DEFAULT_SERVER_TYPE = "@default";

@@ -26,6 +26,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 
+import io.helidon.common.Api;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.common.uri.UriQueryWriteable;
@@ -51,6 +52,7 @@ import io.helidon.security.util.AbacSupport;
  * <li>headers: transport headers of the request (map)</li>
  * </ul>
  */
+@Api.Stable
 public class SecurityEnvironment implements AbacSupport {
     private final AbacSupport properties;
     private final SecurityTime timeProvider;

@@ -31,6 +31,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.Errors;
 import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
@@ -45,6 +46,7 @@ import io.helidon.security.providers.abac.spi.AbacValidator;
 /**
  * ABAC validator for OAuth2 scopes.
  */
+@Api.Stable
 public final class ScopeValidator implements AbacValidator<ScopeValidator.ScopesConfig> {
     /**
      * Use this type when constructing a {@link Grant}, so this validator can accept it as a scope.

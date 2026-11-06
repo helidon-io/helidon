@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
+import io.helidon.common.Api;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.Config;
@@ -51,6 +52,7 @@ import io.helidon.webclient.api.WebClient;
  * {@link io.helidon.security.spi.SubjectMappingProvider} to obtain roles from IDCS server for a user.
  * Supports multi tenancy in IDCS.
  */
+@Api.Stable
 public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
     /**
      * Name of the header containing the IDCS tenant. This is the default used, can be overridden
@@ -276,6 +278,7 @@ public class IdcsMtRoleMapperProvider extends IdcsRoleMapperProviderBase {
      * @param tracing Role mapping tracing instance to correctly trace outbound calls
      * @return the token to be used to authenticate this service
      */
+    @Api.Internal
     protected Optional<String> getAppToken(String idcsTenantId, RoleMapTracing tracing) {
         // if cached and valid, use the cached token
         RetryableLazyValue<AppToken> appToken = tokenCache.computeIfAbsent(

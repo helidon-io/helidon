@@ -16,6 +16,7 @@
 
 package io.helidon.security.providers.oidc;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SecurityProviderService;
@@ -23,6 +24,7 @@ import io.helidon.security.spi.SecurityProviderService;
 /**
  * Java service to create OIDC provider instance.
  */
+@Api.Internal
 public class OidcProviderService implements SecurityProviderService {
     /**
      * The default configuration key expected under security.providers that would contain

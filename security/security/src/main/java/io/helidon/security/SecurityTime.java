@@ -23,6 +23,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -31,6 +32,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  * Time used in security, configurable.
  * Configuration may either shift time (to past or future) or explicitly set a value on one of the time fields (e.g. year, month)
  */
+@Api.Stable
 public class SecurityTime {
     private final long shiftSeconds;
     private final ZoneId timeZone;

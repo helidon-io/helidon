@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.util.AbacSupport;
@@ -46,6 +47,7 @@ import io.helidon.security.util.AbacSupport;
  * @see SecurityProvider#supportedConfigKeys
  * @see SecurityProvider#supportedAttributes
  */
+@Api.Stable
 public class EndpointConfig implements AbacSupport {
     /**
      * Configure this for outbound requests to override id to use (client id, user - depending on use case).

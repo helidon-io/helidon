@@ -35,6 +35,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
 import io.helidon.common.Errors;
 import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
@@ -59,6 +60,7 @@ import jakarta.annotation.security.RolesAllowed;
  * <p>
  * This validator supports both {@link RolesAllowed} and {@link Roles} annotations.
  */
+@Api.Stable
 public final class RoleValidator implements AbacValidator<RoleValidator.RoleConfig> {
     private static final TypeName ROLES_ALLOWED = TypeName.create(RolesAllowed.class);
     private static final TypeName ROLES_CONTAINER = TypeName.create(RolesContainer.class);

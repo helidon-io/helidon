@@ -20,6 +20,7 @@ import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
+import io.helidon.common.Api;
 import io.helidon.common.Errors;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
@@ -38,6 +39,7 @@ class JwtClaims {
      * @param tokenPart decoded token part
      * @return decoded value, or {@code null} when decoding fails
      */
+    @Api.Internal
     protected static String decode(String base64, Errors.Collector collector, JwtTokenPart tokenPart) {
         try {
             return new String(URL_DECODER.decode(base64), StandardCharsets.UTF_8);
@@ -55,6 +57,7 @@ class JwtClaims {
      * @param tokenPart decoded token part
      * @return parsed JSON object, or {@code null} when parsing fails
      */
+    @Api.Internal
     protected static JsonObject parseJson(String jsonString, Errors.Collector collector, JwtTokenPart tokenPart) {
         try {
             return JsonParser.create(new StringReader(jsonString)).readJsonObject();

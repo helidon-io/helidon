@@ -20,6 +20,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.configurable.ResourceConfig;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
@@ -33,6 +34,7 @@ import io.helidon.security.jwt.jwk.JwkKeys;
 /**
  * Tenant configuration.
  */
+@Api.Stable
 public interface TenantConfig {
 
     /**

@@ -20,6 +20,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.json.JsonObject;
 import io.helidon.security.jwt.JwtException;
 
@@ -32,6 +33,7 @@ import static io.helidon.security.jwt.JwtUtil.getStrings;
  * and /or decrypt data (e.g a public and/or private key; password for symmetric ciphers).
  */
 @SuppressWarnings("WeakerAccess") // constants are public
+@Api.Stable
 public abstract class Jwk {
     /**
      * Algorithm defining there is no security (e.g. signature) at all.
@@ -284,6 +286,7 @@ public abstract class Jwk {
         }
     }
 
+    @Api.Internal
     abstract boolean doVerify(byte[] signedBytes, byte[] signature);
 
     /**
@@ -300,6 +303,7 @@ public abstract class Jwk {
         }
     }
 
+    @Api.Internal
     abstract byte[] doSign(byte[] bytesToSign);
 
     boolean supports(String use, String operation) {
@@ -460,11 +464,13 @@ public abstract class Jwk {
         }
 
         @Override
+        @Api.Internal
         public boolean doVerify(byte[] signedBytes, byte[] signature) {
             return signature.length == 0;
         }
 
         @Override
+        @Api.Internal
         public byte[] doSign(byte[] bytesToSign) {
             return EMPTY_BYTES;
         }

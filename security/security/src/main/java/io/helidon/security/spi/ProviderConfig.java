@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,14 @@
 
 package io.helidon.security.spi;
 
+import io.helidon.common.Api;
+
 /**
  * A marker interface for configurations of providers.
  * Each provider configuration class MUST implement this interface.
  * The Security module will evaluate all provider configurations present and make sure there is a provider configured for them.
  * If a configuration is present with no provider supporting it, the request security will fail.
  */
+@Api.Stable
 public interface ProviderConfig {
 }

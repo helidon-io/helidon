@@ -16,6 +16,7 @@
 
 package io.helidon.security.abac.policy;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.security.providers.abac.AbacValidatorConfig;
 import io.helidon.security.providers.abac.spi.AbacValidator;
@@ -24,6 +25,7 @@ import io.helidon.security.providers.abac.spi.AbacValidatorService;
 /**
  * A validator of policy statements java service to plug into Abac security provider.
  */
+@Api.Internal
 public class PolicyValidatorService implements AbacValidatorService {
     /**
      * Create a policy validator service.

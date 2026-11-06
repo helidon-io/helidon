@@ -34,6 +34,7 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import io.helidon.common.Api;
 import io.helidon.common.Errors;
 import io.helidon.common.configurable.Resource;
 import io.helidon.common.configurable.ResourceConfig;
@@ -88,6 +89,7 @@ import io.helidon.security.util.TokenHandler;
  * Verification and signatures of tokens is done through JWK standard - two separate
  * JWK files are expected (one for verification, one for signatures).
  */
+@Api.Stable
 public final class JwtProvider implements AuthenticationProvider, OutboundSecurityProvider {
     private static final System.Logger LOGGER = System.getLogger(JwtProvider.class.getName());
     private static final String DEFAULT_JWT_GROUPS_PATH = "groups";

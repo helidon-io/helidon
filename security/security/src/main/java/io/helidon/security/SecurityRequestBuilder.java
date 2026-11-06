@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.tracing.SpanContext;
 
@@ -30,6 +31,7 @@ import io.helidon.tracing.SpanContext;
  *
  * @param <T> Type of the builder, used to enable extensibility of this builder
  */
+@Api.Stable
 public class SecurityRequestBuilder<T extends SecurityRequestBuilder<T>> {
     private final T myInstance;
     private final SecurityContext context;

@@ -23,6 +23,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
 import io.helidon.security.spi.AuthenticationProvider;
 
@@ -54,6 +55,7 @@ import io.helidon.security.spi.AuthenticationProvider;
 @Target({ElementType.METHOD, ElementType.TYPE, ElementType.FIELD})
 @Documented
 @Inherited
+@Api.Stable
 public @interface Authorized {
     /**
      * Type name of this annotation.

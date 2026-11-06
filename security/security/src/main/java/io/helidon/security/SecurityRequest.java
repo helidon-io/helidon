@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,11 +20,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.tracing.SpanContext;
 
 /**
  * Common methods for all security requests (authentication, authorization, and identity propagation).
  */
+@Api.Stable
 public interface SecurityRequest {
     /**
      * If true and security provider does not find required information in request/response/message, or headers, it should

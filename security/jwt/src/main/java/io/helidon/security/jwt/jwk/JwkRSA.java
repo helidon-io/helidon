@@ -29,6 +29,7 @@ import java.security.spec.RSAPublicKeySpec;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.helidon.common.Api;
 import io.helidon.json.JsonObject;
 import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.JwtUtil;
@@ -40,6 +41,7 @@ import static io.helidon.security.jwt.JwtUtil.getKeyFactory;
  * RSA JSON web key.
  */
 @SuppressWarnings("WeakerAccess") // constants should be public
+@Api.Stable
 public class JwkRSA extends JwkPki {
     /**
      * The main Java security algorithm used.

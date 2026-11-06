@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -30,6 +31,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 /**
  * User store loaded from configuration.
  */
+@Api.Stable
 public class ConfigUserStore implements SecureUserStore {
     private final Map<String, ConfigUser> users = new HashMap<>();
 
@@ -39,6 +41,7 @@ public class ConfigUserStore implements SecureUserStore {
      * @deprecated Use {@link #create(Config)} instead.
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
+    @Api.Internal
     public ConfigUserStore() {
     }
 
@@ -84,6 +87,7 @@ public class ConfigUserStore implements SecureUserStore {
      * A user that is loaded from configuration.
      */
     @Configured
+    @Api.Internal
     public static class ConfigUser implements User {
 
         private final Set<String> roles;

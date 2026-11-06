@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.Errors;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.TypeName;
@@ -52,6 +53,7 @@ import io.helidon.security.providers.abac.spi.AbacValidator;
  * Example of a policy statement:<br>
  * <code>&#64;PolicyStatement("${env.time.year &gt;= 2017 &amp;&amp; object.owner == subject.principal.id}")</code>
  */
+@Api.Stable
 public final class PolicyValidator implements AbacValidator<PolicyValidator.PolicyConfig> {
     private static final System.Logger LOGGER = System.getLogger(PolicyValidator.class.getName());
     private static final TypeName POLICY_STATEMENT = TypeName.create(PolicyStatement.class);

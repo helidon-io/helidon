@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,14 @@
 
 package io.helidon.security;
 
+import io.helidon.common.Api;
+
 /**
  * Common methods for security clients.
  *
  * @param <T> type of the response of the security client, such as {@link AuthenticationResponse}
  */
+@Api.Stable
 public interface SecurityClient<T extends SecurityResponse> {
     /**
      * Submit the configured fields in the security request and process the security operation (Authentication, Authorization

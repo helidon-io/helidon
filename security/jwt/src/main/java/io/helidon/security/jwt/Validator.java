@@ -16,6 +16,7 @@
 
 package io.helidon.security.jwt;
 
+import io.helidon.common.Api;
 import io.helidon.common.Errors;
 
 /**
@@ -40,6 +41,7 @@ import io.helidon.common.Errors;
  * @param <T> type of the object to be validated
  */
 @FunctionalInterface
+@Api.Stable
 public interface Validator<T> {
     /**
      * Validate the object against this class's configuration.

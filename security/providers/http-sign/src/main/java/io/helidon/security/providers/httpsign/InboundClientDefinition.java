@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.pki.Keys;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
@@ -31,6 +32,7 @@ import io.helidon.security.SubjectType;
  * Configuration of inbound client.
  * This information is used to validate incoming signatures and to create a principal.
  */
+@Api.Stable
 public class InboundClientDefinition {
 
     private final String keyId;

@@ -26,6 +26,8 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Path({"Security", "Provider", "ABAC", "Time"})
 module io.helidon.security.abac.time {
 
+    requires io.helidon.common;
+
     requires io.helidon.security.providers.abac;
 
     requires static io.helidon.common.features.api;
