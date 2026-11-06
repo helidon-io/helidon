@@ -685,7 +685,7 @@ public abstract class AbstractJdbcHealthContract {
             HealthCheckResponse failure = DbClientHealthCheck.builder(legacy)
                     .statement("SELECT * FROM JDBC_HEALTH_TABLE_MISSING").build().call();
             assertThat(failure.status(), is(HealthCheckResponse.Status.DOWN));
-            assertThat(failure.details().containsKey("ErrorClass"), is(true));
+            assertThat(failure.details(), is(Map.of()));
             assertThat(probe(source, "SELECT * FROM JDBC_HEALTH_TABLE_MISSING", Duration.ofSeconds(2))
                                .getAsBoolean(), is(false));
             assertThat(legacyCheck.call().status(), is(HealthCheckResponse.Status.UP));
