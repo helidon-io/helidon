@@ -234,12 +234,12 @@ final class JdbcStatement implements JdbcClient.Statement {
     private JdbcClient.Statement bind(String name, JdbcOperation.Bind value) {
         ensureMutable();
         if (configured == null) {
-            throw new IllegalStateException("Named bindings require a configured statement.");
+            throw new IllegalStateException("Named bindings require a reusable statement definition.");
         }
         List<Integer> slots = configured.positions(name);
         for (int slot : slots) {
             if (binds[slot - 1] != null) {
-                throw new IllegalArgumentException("A configured bind position has already been assigned.");
+                throw new IllegalArgumentException("A bind position has already been assigned.");
             }
         }
         for (int slot : slots) {

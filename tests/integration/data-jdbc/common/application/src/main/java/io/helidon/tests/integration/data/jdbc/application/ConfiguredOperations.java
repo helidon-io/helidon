@@ -18,12 +18,18 @@ package io.helidon.tests.integration.data.jdbc.application;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.tests.integration.data.jdbc.parameters.ConfiguredAliasStatements;
+
 /**
  * These operations are shared by the configured statement integration contracts.
  */
-public interface ConfiguredOperations {
+public interface ConfiguredOperations extends ConfiguredAliasStatements<String> {
 
     List<ContactView> find(String name, String email);
+
+    Optional<ContactView> byId(long id);
+
+    List<ContactView> all();
 
     long rename(String name, long id);
 

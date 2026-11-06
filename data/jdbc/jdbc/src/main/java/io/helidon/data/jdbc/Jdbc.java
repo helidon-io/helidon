@@ -88,11 +88,13 @@ public final class Jdbc {
      * Declares one SQL statement executed by a repository method.
      * <p>
      * Every abstract JDBC repository method must declare this annotation.
-     * Exactly one of {@link #value()} and {@link #name()} must contain a nonblank value.
-     * Literal SQL may use named markers matching Java parameter names or
-     * positional JDBC markers. A literal statement must use one style consistently.
-     * Configured SQL selected by name may use named markers or no markers.
-     * Configured SQL must not use positional JDBC markers.
+     * The required value supplies literal SQL or one complete configuration reference,
+     * such as {@code "${application.orders.find}"}, with an optional SQL default.
+     * Literal and configured SQL support named, positional, or no markers and must
+     * not mix marker styles. Named markers match effective
+     * {@link io.helidon.data.Data.Param} aliases or reliable Java parameter names.
+     * A method with any explicit or inherited alias requires named SQL. Positional
+     * markers bind arguments in declaration order with an exact marker count.
      * <p>
      * A repository invocation supplies the SQL, after rewriting any named bind
      * markers, to the driver as one {@link java.sql.PreparedStatement}. Helidon
@@ -127,20 +129,18 @@ public final class Jdbc {
     public @interface Statement {
 
         /**
-         * Returns the literal SQL statement. The default empty string leaves
-         * literal SQL unset so that {@link #name()} can select a configured statement.
+         * Returns literal SQL or one complete configuration reference with an optional default.
+         * A reference uses the owning registry's root configuration at repository activation.
+         * Resolved SQL remains fixed until a new repository is created. Named or positional
+         * markers are supported, but they must not be mixed. Positional markers bind method
+         * arguments in declaration order. Methods with effective {@link io.helidon.data.Data.Param}
+         * aliases require named markers. SQL and inline defaults are trusted application input.
+         * Inline defaults remain visible in source, classfiles, and generated literals.
          *
-         * @return The literal SQL statement, or an empty string when a configured name is used.
+         * @return The value supplies literal SQL or one whole configuration reference.
          */
-        String value() default "";
+        String value();
 
-        /**
-         * Selects a statement from the configured client catalog. The default empty
-         * string leaves configured selection unset so that {@link #value()} can supply literal SQL.
-         *
-         * @return The configured statement name, or an empty string when literal SQL is used.
-         */
-        String name() default "";
     }
 
     /**

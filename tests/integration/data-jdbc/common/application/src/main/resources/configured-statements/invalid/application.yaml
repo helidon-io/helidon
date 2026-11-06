@@ -14,19 +14,26 @@
 # limitations under the License.
 #
 
-positional:
-  data:
-    clients:
-      jdbc:
-        - data-source: unavailable-positional-yaml-source
-          statements:
-            find: >-
-              SELECT ID, NAME, EMAIL FROM CONTACT WHERE NAME = ?
 mixed:
-  data:
-    clients:
-      jdbc:
-        - data-source: unavailable-mixed-yaml-source
-          statements:
-            find: >-
-              SELECT ID, NAME, EMAIL FROM CONTACT WHERE NAME = :name OR EMAIL = ?
+  find: SELECT ID FROM CONTACT WHERE NAME = :name OR EMAIL = ?
+missing:
+  find: SELECT ID FROM CONTACT WHERE NAME = :name
+additional:
+  find: SELECT ID FROM CONTACT WHERE NAME = :name OR EMAIL = :email OR NAME = :extra
+few:
+  find: SELECT ID FROM CONTACT WHERE NAME = ?
+many:
+  find: SELECT ID FROM CONTACT WHERE NAME = ? OR EMAIL = ? OR NAME = ?
+columns:
+  find: SELECT ID, NAME AS OTHER_NAME, EMAIL FROM CONTACT WHERE NAME = :name OR EMAIL = :email
+channel:
+  find: UPDATE CONTACT SET NAME = :name WHERE EMAIL = :email
+
+alias-positional:
+  find: SELECT NAME FROM CONTACT WHERE EMAIL = ? ORDER BY ID
+alias-missing:
+  find: SELECT NAME FROM CONTACT WHERE EMAIL = :missing ORDER BY ID
+alias-additional:
+  find: SELECT NAME FROM CONTACT WHERE EMAIL = :email OR NAME = :additional ORDER BY ID
+alias-mixed:
+  find: SELECT NAME FROM CONTACT WHERE EMAIL = :email OR NAME = ? ORDER BY ID

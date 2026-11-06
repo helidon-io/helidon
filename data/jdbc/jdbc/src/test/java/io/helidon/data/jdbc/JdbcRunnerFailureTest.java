@@ -24,7 +24,6 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -1163,10 +1162,11 @@ class JdbcRunnerFailureTest {
         when(connection.getAutoCommit()).thenReturn(true);
         when(connection.prepareStatement("update T set A = ? /* SQL_CANARY */")).thenReturn(prepared);
         when(prepared.execute()).thenThrow(new SQLException("DRIVER_CANARY SQL_CANARY VALUE_CANARY", "42000", 17));
-        JdbcClient client = JdbcClient.builder().dataSource(source).statements(Map.of("name",
-                "update T set A = :value /* SQL_CANARY */")).build();
+        JdbcClient client = JdbcClient.builder().dataSource(source).build();
+        var factory = GeneratedJdbcData.prepareNamed(client,
+                "update T set A = :value /* SQL_CANARY */", List.of("value"));
         DataException failure = assertThrows(DataException.class,
-                () -> client.createNamed("name").bind("value", "VALUE_CANARY").execute());
+                () -> factory.get().bind("value", "VALUE_CANARY").execute());
         for (Throwable current = failure; current != null; current = current.getCause()) {
             assertThat(current.toString(), not(containsString("CANARY")));
             for (Throwable suppressed : current.getSuppressed()) {

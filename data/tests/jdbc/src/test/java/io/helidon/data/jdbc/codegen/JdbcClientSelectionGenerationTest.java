@@ -27,7 +27,9 @@ import io.helidon.builder.api.RuntimeType;
 import io.helidon.codegen.apt.AptProcessor;
 import io.helidon.codegen.testing.TestCompiler;
 import io.helidon.common.Generated;
+import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.types.TypeName;
+import io.helidon.config.Config;
 import io.helidon.data.Data;
 import io.helidon.data.codegen.DataGeneratorProvider;
 import io.helidon.data.codegen.common.RepositoryCodegenProvider;
@@ -270,11 +272,11 @@ class JdbcClientSelectionGenerationTest {
                 import io.helidon.data.jdbc.Jdbc;
                 @Data.Repository @Data.Provider("jdbc")
                 interface Valid {
-                    @Jdbc.Statement(name = "deployment-only")
+                    @Jdbc.Statement("${application.sql.deployment-only}")
                     String find(String unknownUntilDeployment);
                     @Jdbc.Statement("select 1")
                     String literal();
-                    @Jdbc.Statement(value = "", name = "keys") @Jdbc.GeneratedKeys("ID")
+                    @Jdbc.Statement("${application.sql.keys}") @Jdbc.GeneratedKeys("ID")
                     java.util.Optional<Long> insert(String value, String data__value, String statement,
                             String jdbcClient, String SQL_INSERT, String result, String rows);
                 }
@@ -293,10 +295,51 @@ class JdbcClientSelectionGenerationTest {
                     import io.helidon.data.jdbc.Jdbc;
                     @Data.Repository @Data.Provider("jdbc")
                     interface Invalid {
-                        @Jdbc.Statement(name = "configured")
+                        @Jdbc.Statement("${application.sql.configured}")
                         %s
                     }
                     """.formatted(declaration));
+            assertThat(String.join("\n", result.diagnostics()), result.success(), is(false));
+        }
+    }
+
+    /**
+     * Preserves punctuation and line breaks in defaults while validating their input contracts.
+     */
+    @Test
+    void compilesWholeReferencesAndValidatesKnownDefaults() {
+        for (String value : List.of("${application.sql.find}",
+                "  ${application.sql.find:select :name}  ",
+                "${application.sql.find:select ?}",
+                "${application.sql.find:select :name, '\\escaped'}",
+                "${application.sql.find:select :name, '}', ':', '$', 'cast::text'}",
+                "${application.sql.find:select :name\n/* preserved */}",
+                "${application.sql.find:select :name\r\n/* preserved */}")) {
+            String literal = value.replace("\\", "\\\\").replace("\"", "\\\"")
+                    .replace("\r", "\\r").replace("\n", "\\n");
+            TestCompiler.Result result = compile("Reference.java", """
+                    package example;
+                    import io.helidon.data.Data;
+                    import io.helidon.data.jdbc.Jdbc;
+                    @Data.Repository @Data.Provider("jdbc")
+                    interface Reference {
+                        @Jdbc.Statement("%s") String find(String name);
+                    }
+                    """.formatted(literal));
+            assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
+        }
+        for (String value : List.of("${}", "${application.sql.find", "${key:}", "${key:  }",
+                "${key}${other}", "${key:select '${nested}'}", "${key:select :other}",
+                "${key:select ?, ?}", "${key:select :name, ?}", "${key:select 1}")) {
+            TestCompiler.Result result = compile("InvalidReference.java", """
+                    package example;
+                    import io.helidon.data.Data;
+                    import io.helidon.data.jdbc.Jdbc;
+                    @Data.Repository @Data.Provider("jdbc")
+                    interface InvalidReference {
+                        @Jdbc.Statement("%s") String find(String name);
+                    }
+                    """.formatted(value));
             assertThat(String.join("\n", result.diagnostics()), result.success(), is(false));
         }
     }
@@ -306,7 +349,7 @@ class JdbcClientSelectionGenerationTest {
                 .currentRelease()
                 .printDiagnostics(false)
                 .addProcessor(AptProcessor::new)
-                .addClasspath(List.of(RuntimeType.class,
+                .addClasspath(List.of(Config.class, OptionalValue.class, RuntimeType.class,
                                       Data.class,
                                       JdbcClient.class,
                                       Service.class,

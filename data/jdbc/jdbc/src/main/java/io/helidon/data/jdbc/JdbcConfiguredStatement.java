@@ -17,9 +17,11 @@ package io.helidon.data.jdbc;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 import io.helidon.data.jdbc.lexical.JdbcSqlScanHandler;
 import io.helidon.data.jdbc.lexical.JdbcSqlScanner;
@@ -31,29 +33,52 @@ final class JdbcConfiguredStatement {
 
     private final String sql;
     private final int parameterCount;
+    private final boolean namedMarkers;
     private final Map<String, List<Integer>> positions;
 
-    private JdbcConfiguredStatement(String sql, int parameterCount, Map<String, List<Integer>> positions) {
+    private JdbcConfiguredStatement(String sql, int parameterCount, Map<String, List<Integer>> positions, boolean namedMarkers) {
         this.sql = sql;
         this.parameterCount = parameterCount;
+        this.namedMarkers = namedMarkers;
         this.positions = Map.copyOf(positions);
     }
 
-    static Map<String, JdbcConfiguredStatement> catalog(Map<String, String> definitions) {
-        Map<String, JdbcConfiguredStatement> catalog = new HashMap<>();
-        definitions.forEach((name, source) -> {
-            Objects.requireNonNull(name, "The configured statement name must not be null.");
-            Objects.requireNonNull(source, "The configured SQL statement must not be null.");
-            if (name.isBlank() || source.isBlank()) {
-                throw new IllegalArgumentException("Configured statement names and SQL must not be blank.");
+    static JdbcConfiguredStatement create(String source) {
+        if (source.isBlank()) {
+            throw new IllegalArgumentException("The SQL statement must not be blank.");
+        }
+        PlanBuilder builder = new PlanBuilder(source);
+        JdbcSqlScanner.scan(source, builder);
+        Map<String, List<Integer>> positions = new HashMap<>();
+        builder.positions.forEach((marker, slots) -> positions.put(marker, List.copyOf(slots)));
+        return new JdbcConfiguredStatement(builder.sql.toString(), builder.parameterCount, positions, !positions.isEmpty());
+    }
+
+    static JdbcConfiguredStatement create(String source, List<String> inputNames) {
+        Set<String> names = new HashSet<>();
+        for (String name : inputNames) {
+            if (name.isEmpty() || !Character.isJavaIdentifierStart(name.codePointAt(0))
+                    || name.codePoints().anyMatch(character -> !Character.isJavaIdentifierPart(character))
+                    || !names.add(name)) {
+                throw new IllegalArgumentException(
+                        "The input names must follow Java identifier character rules and must be unique.");
             }
-            PlanBuilder builder = new PlanBuilder(source);
-            JdbcSqlScanner.scan(source, builder);
-            Map<String, List<Integer>> positions = new HashMap<>();
-            builder.positions.forEach((marker, slots) -> positions.put(marker, List.copyOf(slots)));
-            catalog.put(name, new JdbcConfiguredStatement(builder.sql.toString(), builder.parameterCount, positions));
-        });
-        return Map.copyOf(catalog);
+        }
+        JdbcConfiguredStatement definition = create(source);
+        if (definition.namedMarkers) {
+            if (!names.equals(definition.positions.keySet())) {
+                throw new IllegalArgumentException("The SQL marker names must match the required input names exactly.");
+            }
+            return definition;
+        }
+        if (definition.parameterCount != inputNames.size()) {
+            throw new IllegalArgumentException("The positional marker count must match the required input count.");
+        }
+        Map<String, List<Integer>> positions = new HashMap<>();
+        for (int index = 0; index < inputNames.size(); index++) {
+            positions.put(inputNames.get(index), List.of(index + 1));
+        }
+        return new JdbcConfiguredStatement(definition.sql, definition.parameterCount, positions, false);
     }
 
     String sql() {
@@ -64,10 +89,14 @@ final class JdbcConfiguredStatement {
         return parameterCount;
     }
 
+    boolean namedMarkers() {
+        return namedMarkers;
+    }
+
     List<Integer> positions(String name) {
         List<Integer> slots = positions.get(name);
         if (slots == null) {
-            throw new IllegalArgumentException("The bind name does not identify a configured marker.");
+            throw new IllegalArgumentException("The bind name does not match a required input.");
         }
         return slots;
     }
@@ -78,6 +107,7 @@ final class JdbcConfiguredStatement {
         private final StringBuilder sql;
         private final Map<String, List<Integer>> positions = new HashMap<>();
         private int parameterCount;
+        private boolean positional;
 
         private PlanBuilder(String source) {
             this.source = source;
@@ -97,8 +127,11 @@ final class JdbcConfiguredStatement {
 
         @Override
         public void namedMarker(int start, int end) {
+            if (positional) {
+                throw new IllegalArgumentException("The SQL statement must not mix named and positional markers.");
+            }
             if (end < source.length() && source.charAt(end) == '.') {
-                throw new IllegalArgumentException("Configured SQL does not support dotted marker names.");
+                throw new IllegalArgumentException("The SQL statement does not support dotted marker names.");
             }
             positions.computeIfAbsent(source.substring(start + 1, end), _ -> new ArrayList<>()).add(++parameterCount);
             sql.append('?');
@@ -106,7 +139,12 @@ final class JdbcConfiguredStatement {
 
         @Override
         public void positionalMarker(int offset) {
-            throw new IllegalArgumentException("Configured SQL does not support positional markers.");
+            if (!positions.isEmpty()) {
+                throw new IllegalArgumentException("The SQL statement must not mix named and positional markers.");
+            }
+            positional = true;
+            parameterCount++;
+            sql.append('?');
         }
     }
 }

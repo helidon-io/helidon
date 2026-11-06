@@ -30,7 +30,10 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.util.List;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import javax.sql.DataSource;
 
@@ -222,9 +225,10 @@ class JdbcBindingMatrixTest {
         when(connection.getAutoCommit()).thenReturn(true);
         when(connection.prepareStatement("update T set A = ?, B = ?, C = ?")).thenReturn(prepared);
         when(prepared.getLargeUpdateCount()).thenReturn(1L, -1L);
-        JdbcClient client = JdbcClient.builder().dataSource(source).statements(Map.of("update",
-                "update T set A = :value, B = :other, C = :value")).build();
-        JdbcClient.Statement stage = client.createNamed("update");
+        JdbcClient client = JdbcClient.builder().dataSource(source).build();
+        var factory = GeneratedJdbcData.prepareNamed(client,
+                "update T set A = :value, B = :other, C = :value", List.of("value", "other"));
+        JdbcClient.Statement stage = factory.get();
         GeneratedJdbcData.bindNull(stage, 3, JDBCType.VARCHAR);
         assertThrows(IllegalArgumentException.class, () -> GeneratedJdbcData.bindNull(stage, "value", JDBCType.VARCHAR));
         // Slot one must remain unassigned after the later duplicate slot rejects the named assignment.
@@ -256,9 +260,9 @@ class JdbcBindingMatrixTest {
         when(connection.getAutoCommit()).thenReturn(true);
         when(connection.prepareStatement("update T set A = ?, B = ?")).thenReturn(prepared);
         when(prepared.getLargeUpdateCount()).thenReturn(1L, -1L);
-        JdbcClient client = JdbcClient.builder().dataSource(source).statements(Map.of("repeat",
-                "update T set A = :value, B = :value")).build();
-        JdbcClient.Statement stage = client.createNamed("repeat");
+        JdbcClient client = JdbcClient.builder().dataSource(source).build();
+        var factory = client.prepare("update T set A = :value, B = :value");
+        JdbcClient.Statement stage = factory.get();
         GeneratedJdbcData.bindNull(stage, "value", JDBCType.VARCHAR);
         assertThrows(IllegalArgumentException.class, () -> stage.bind("value", "VALUE_CANARY"));
         verifyZeroInteractions(source);
@@ -266,6 +270,34 @@ class JdbcBindingMatrixTest {
         verify(prepared).setNull(1, JDBCType.VARCHAR.getVendorTypeNumber());
         verify(prepared).setNull(2, JDBCType.VARCHAR.getVendorTypeNumber());
         assertThrows(IllegalStateException.class, () -> client.create("select ?").bind("value", 1));
+    }
+
+    /**
+     * Concurrent supplier calls allocate independent bindings without acquiring resources.
+     */
+    @Test
+    void sharesFactoriesWithoutSharingInvocationBindings() throws Exception {
+        DataSource source = mock(DataSource.class);
+        var factory = GeneratedJdbcData.prepareNamed(JdbcClient.builder().dataSource(source).build(),
+                "select :value, :value", List.of("value"));
+        var executor = Executors.newFixedThreadPool(4);
+        try {
+            List<Future<?>> tasks = new ArrayList<>();
+            for (int index = 0; index < 32; index++) {
+                int value = index;
+                tasks.add(executor.submit(() -> {
+                    JdbcClient.Statement stage = factory.get().bind("value", value);
+                    assertThrows(IllegalArgumentException.class, () -> stage.bind("value", value));
+                }));
+            }
+            for (Future<?> task : tasks) {
+                task.get(5, TimeUnit.SECONDS);
+            }
+        } finally {
+            executor.shutdownNow();
+            assertThat(executor.awaitTermination(5, TimeUnit.SECONDS), is(true));
+        }
+        verifyZeroInteractions(source);
     }
 
     private void assertBinding(Object value) throws Exception {

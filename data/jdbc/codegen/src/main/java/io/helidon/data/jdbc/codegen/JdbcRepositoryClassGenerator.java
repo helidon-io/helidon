@@ -15,6 +15,10 @@
  */
 package io.helidon.data.jdbc.codegen;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenUtil;
@@ -88,10 +92,12 @@ final class JdbcRepositoryClassGenerator {
      * @param classModel generated repository class
      * @param repositoryInfo repository metadata
      * @param mapperDependencies statically typed mapper-service dependencies
+     * @param plans The plans describe the validated repository methods.
      */
     static void generateConstructor(ClassModel.Builder classModel,
                                     RepositoryInfo repositoryInfo,
-                                    Iterable<JdbcMethodGenerator.MapperDependency> mapperDependencies) {
+                                    Iterable<JdbcMethodGenerator.MapperDependency> mapperDependencies,
+                                    List<JdbcMethodPlan> plans) {
         Constructor.Builder constructor = Constructor.builder()
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE);
         Annotation provider = Annotation.builder()
@@ -141,6 +147,70 @@ final class JdbcRepositoryClassGenerator {
                     .addContent(" = ")
                     .addContent(dependency.parameterName())
                     .addContentLine(";");
+        }
+        if (plans.stream().anyMatch(plan -> plan.reference() != null)) {
+            TypeName configType = TypeName.create("io.helidon.config.Config");
+            TypeName configException = TypeName.create("io.helidon.config.ConfigException");
+            TypeName dataException = TypeName.create("io.helidon.data.DataException");
+            constructor.addParameter(Parameter.builder().name("config").type(configType).build());
+            Set<String> reserved = new HashSet<>();
+            reserved.add("config");
+            reserved.add(JdbcCodegenConstants.JDBC_CLIENT_NAME);
+            mapperDependencies.forEach(dependency -> reserved.add(dependency.parameterName()));
+            String sqlName = "data__sql";
+            while (reserved.contains(sqlName)) {
+                sqlName += "_";
+            }
+            reserved.add(sqlName);
+            String nodeName = "data__sqlNode";
+            while (reserved.contains(nodeName)) {
+                nodeName += "_";
+            }
+            for (JdbcMethodPlan plan : plans) {
+                JdbcSqlReference reference = plan.reference();
+                if (reference == null) {
+                    continue;
+                }
+                constructor.addContentLine("{")
+                        .addContent("String ").addContent(sqlName).addContentLine(";")
+                        .addContentLine("try {")
+                        .addContent(configType).addContent(" ").addContent(nodeName)
+                        .addContent(" = config.get(").addContentLiteral(reference.key()).addContentLine(");")
+                        .addContent("if (").addContent(nodeName).addContent(".exists() && ")
+                        .addContent(nodeName).addContent(".type() != ").addContent(configType).addContentLine(".Type.VALUE) {")
+                        .addContent("throw new ").addContent(dataException)
+                        .addContentLine("(\"The configured SQL must be a scalar value.\");")
+                        .addContentLine("}")
+                        .addContent(sqlName).addContent(" = ").addContent(nodeName).addContent(".asString()");
+                if (reference.defaultSql() == null) {
+                    constructor.addContentLine(".get();");
+                } else {
+                    constructor.addContent(".orElse(").addContentLiteral(reference.defaultSql()).addContentLine(");");
+                }
+                constructor.addContentLine("}")
+                        .addContent("catch (").addContent(configException).addContentLine(" _) {")
+                        .addContent("throw new ").addContent(dataException)
+                        .addContentLine("(\"The configured SQL could not be resolved.\");")
+                        .addContentLine("}")
+                        .addContent("this.").addContent(plan.sqlFieldName()).addContent(" = ");
+                if (plan.method().parameterArguments().stream()
+                        .anyMatch(parameter -> parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM))) {
+                    constructor.addContent(JdbcCodegenTypes.GENERATED_JDBC_DATA).addContent(".prepareNamed(")
+                            .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME).addContent(", ");
+                } else {
+                    constructor.addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME).addContent(".prepare(");
+                }
+                constructor.addContent(sqlName).addContent(", ").addContent(List.class).addContent(".of(");
+                boolean first = true;
+                for (JdbcSqlParameterPlan.Bind bind : plan.parameterPlan().binds()) {
+                    if (!first) {
+                        constructor.addContent(", ");
+                    }
+                    constructor.addContentLiteral(JdbcSqlParameterPlan.effectiveName(bind.parameter()));
+                    first = false;
+                }
+                constructor.addContentLine("));").addContentLine("}");
+            }
         }
         classModel.addConstructor(constructor);
     }

@@ -134,16 +134,13 @@ final class JdbcTypeHierarchy {
         if (declarations.size() < 2) {
             return;
         }
-        Optional<String> configuredName = declarations.getFirst()
-                .findAnnotation(JdbcCodegenTypes.JDBC_STATEMENT)
-                .flatMap(annotation -> annotation.stringValue("name"))
-                .filter(name -> !name.isEmpty());
-        if (configuredName.isPresent()) {
-            List<String> names = declarations.getFirst().parameterArguments().stream()
-                    .map(TypedElementInfo::elementName).toList();
+        Optional<String> value = declarations.getFirst()
+                .findAnnotation(JdbcCodegenTypes.JDBC_STATEMENT).flatMap(Annotation::stringValue);
+        if (value.isPresent() && JdbcSqlReference.parse(value.get(), declarations.getFirst()) != null) {
+            List<ConfiguredParameterBinding> bindings = configuredParameterBindings(declarations.getFirst());
             for (TypedElementInfo declaration : declarations) {
-                if (!names.equals(declaration.parameterArguments().stream().map(TypedElementInfo::elementName).toList())) {
-                    throw new CodegenException("Inherited configured statements have incompatible parameter names.",
+                if (!bindings.equals(configuredParameterBindings(declaration))) {
+                    throw new CodegenException("Inherited configured statements have incompatible parameter names or types.",
                                                declaration.originatingElementValue());
                 }
             }
@@ -169,6 +166,13 @@ final class JdbcTypeHierarchy {
                                            declaration.originatingElementValue());
             }
         }
+    }
+
+    private static List<ConfiguredParameterBinding> configuredParameterBindings(TypedElementInfo method) {
+        return method.parameterArguments().stream()
+                .map(parameter -> new ConfiguredParameterBinding(JdbcSqlParameterPlan.effectiveName(parameter),
+                                                                  parameter.typeName()))
+                .toList();
     }
 
     private static ParameterBindingContract parameterBindingContract(TypedElementInfo method, String sql) {
@@ -214,5 +218,8 @@ final class JdbcTypeHierarchy {
     }
 
     private record ParameterBinding(int parameterIndex, boolean nullable, String nullJdbcTypeConstant) {
+    }
+
+    private record ConfiguredParameterBinding(String name, TypeName type) {
     }
 }

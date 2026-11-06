@@ -14,14 +14,26 @@
 # limitations under the License.
 #
 
-data:
-  clients:
-    jdbc:
-      - statements:
-          find: >-
-            SELECT ID, NAME, EMAIL FROM CONTACT
-            WHERE EMAIL = :email OR NAME = :name OR EMAIL = :email ORDER BY ID
-          rename: >-
-            UPDATE CONTACT SET NAME = :name WHERE ID = :id
-          insert: >-
-            INSERT INTO CONTACT (NAME) VALUES (:value)
+application:
+  sql:
+    find: |-
+      SELECT ID, NAME, EMAIL FROM CONTACT
+      WHERE NAME = :name OR EMAIL = :email ORDER BY ID
+    rename: |-
+      UPDATE CONTACT SET NAME = :name WHERE ID = :id
+    insert: |-
+      INSERT INTO CONTACT (NAME) VALUES (:value)
+    by-id: |-
+      SELECT ID, NAME, EMAIL FROM CONTACT WHERE ID = :id
+  aliases:
+    find: |-
+      SELECT NAME FROM CONTACT
+      WHERE ((:email IS NULL AND EMAIL IS NULL) OR EMAIL = :email) ORDER BY ID
+    insert: |-
+      INSERT INTO CONTACT (NAME, EMAIL) VALUES (:rows, :email)
+    update: |-
+      UPDATE CONTACT SET NAME = :name WHERE ID = :id
+reporting:
+  catalog:
+    contacts:
+      all: SELECT ID, NAME, EMAIL FROM CONTACT ORDER BY ID

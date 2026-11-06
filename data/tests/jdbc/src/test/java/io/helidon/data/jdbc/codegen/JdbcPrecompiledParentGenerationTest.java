@@ -24,7 +24,9 @@ import io.helidon.builder.api.RuntimeType;
 import io.helidon.codegen.apt.AptProcessor;
 import io.helidon.codegen.testing.TestCompiler;
 import io.helidon.common.Generated;
+import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.types.TypeName;
+import io.helidon.config.Config;
 import io.helidon.data.Data;
 import io.helidon.data.codegen.DataGeneratorProvider;
 import io.helidon.data.codegen.common.RepositoryCodegenProvider;
@@ -52,7 +54,7 @@ class JdbcPrecompiledParentGenerationTest {
         TestCompiler.Result parent = TestCompiler.builder()
                 .currentRelease()
                 .printDiagnostics(false)
-                .addClasspath(List.of(RuntimeType.class,
+                .addClasspath(List.of(Config.class, OptionalValue.class, RuntimeType.class,
                                       JdbcClient.class))
                 .addSource("PrecompiledRepositoryContract.java", """
                         package example;
@@ -108,7 +110,7 @@ class JdbcPrecompiledParentGenerationTest {
                 .currentRelease()
                 .printDiagnostics(false)
                 .addProcessor(AptProcessor::new)
-                .addClasspath(List.of(RuntimeType.class,
+                .addClasspath(List.of(Config.class, OptionalValue.class, RuntimeType.class,
                                       Data.class,
                                       JdbcClient.class,
                                       Service.class,
@@ -176,7 +178,7 @@ class JdbcPrecompiledParentGenerationTest {
                 .currentRelease()
                 .printDiagnostics(false)
                 .addProcessor(AptProcessor::new)
-                .addClasspath(List.of(RuntimeType.class,
+                .addClasspath(List.of(Config.class, OptionalValue.class, RuntimeType.class,
                                       Data.class,
                                       JdbcClient.class,
                                       Service.class,
@@ -215,21 +217,21 @@ class JdbcPrecompiledParentGenerationTest {
     void resolvesConfiguredContractsFromSeparatelyCompiledParents() {
         TestCompiler.Result parent = TestCompiler.builder().currentRelease().printDiagnostics(false)
                 .addOption("-parameters")
-                .addClasspath(List.of(RuntimeType.class, JdbcClient.class))
+                .addClasspath(List.of(Config.class, OptionalValue.class, RuntimeType.class, JdbcClient.class))
                 .addSource("Parent.java", """
                         package example;
                         import io.helidon.data.jdbc.Jdbc;
                         public interface Parent<T> {
-                            @Jdbc.Statement(name = "count") @Jdbc.Execution(Jdbc.ExecutionType.QUERY)
+                            @Jdbc.Statement("${application.sql.count}") @Jdbc.Execution(Jdbc.ExecutionType.QUERY)
                             int count();
-                            @Jdbc.Statement(name = "projection")
+                            @Jdbc.Statement("${application.sql.projection}")
                             T projection(String name);
                         }
                         """).build().compile();
         assertThat(String.join("\n", parent.diagnostics()), parent.success(), is(true));
         TestCompiler.Result child = TestCompiler.builder().currentRelease().printDiagnostics(false)
                 .addProcessor(AptProcessor::new)
-                .addClasspath(List.of(RuntimeType.class, Data.class, JdbcClient.class, Service.class, Tx.class,
+                .addClasspath(List.of(Config.class, OptionalValue.class, RuntimeType.class, Data.class, JdbcClient.class, Service.class, Tx.class,
                         Generated.class, TypeName.class, DataGeneratorProvider.class, RepositoryCodegenProvider.class,
                         JdbcRepositoryGeneratorProvider.class))
                 .addClasspathEntry(parent.classOutput())
@@ -250,10 +252,10 @@ class JdbcPrecompiledParentGenerationTest {
                 import io.helidon.data.Data;
                 import io.helidon.data.jdbc.Jdbc;
                 interface Left {
-                    @Jdbc.Statement(name = "find") String find(String left);
+                    @Jdbc.Statement("${application.sql.find}") String find(String left);
                 }
                 interface Right {
-                    @Jdbc.Statement(name = "find") String find(String right);
+                    @Jdbc.Statement("${application.sql.find}") String find(String right);
                 }
                 @Data.Repository @Data.Provider("jdbc")
                 interface Child extends Left, Right {
@@ -270,7 +272,7 @@ class JdbcPrecompiledParentGenerationTest {
     void rejectsConfiguredInputsFromParentsWithoutParameterNames() {
         TestCompiler.Result result = compileInherited("""
                 public interface Parent<T> {
-                    @Jdbc.Statement(name = "projection")
+                    @Jdbc.Statement("${application.sql.projection}")
                     T projection(String name);
                 }
                 """, false, "extends Parent<String> {}");
@@ -289,15 +291,15 @@ class JdbcPrecompiledParentGenerationTest {
     void resolvesRetainedNamesAcrossGenericAndOverloadedDeclarations() {
         TestCompiler.Result result = compileInherited("""
                 public interface Parent<T> {
-                    @Jdbc.Statement(name = "generic")
+                    @Jdbc.Statement("${application.sql.generic}")
                     T find(T name);
-                    @Jdbc.Statement(name = "binary")
+                    @Jdbc.Statement("${application.sql.binary}")
                     String find(byte[] bytes);
-                    @Jdbc.Statement(name = "primitive")
+                    @Jdbc.Statement("${application.sql.primitive}")
                     String find(boolean enabled, byte tiny, short small, int count, long id, float ratio, double value);
-                    @Jdbc.Statement(name = "rename")
+                    @Jdbc.Statement("${application.sql.rename}")
                     void rename(String name);
-                    @Jdbc.Statement(name = "count") @Jdbc.Execution(Jdbc.ExecutionType.QUERY)
+                    @Jdbc.Statement("${application.sql.count}") @Jdbc.Execution(Jdbc.ExecutionType.QUERY)
                     int count(long id);
                 }
                 """, true, "extends Parent<String> {}");
@@ -311,7 +313,7 @@ class JdbcPrecompiledParentGenerationTest {
     void acceptsDeclaredArg0NamesInSourceAndCompiledParents() {
         TestCompiler.Result inherited = compileInherited("""
                 public interface Parent<T> {
-                    @Jdbc.Statement(name = "find")
+                    @Jdbc.Statement("${application.sql.find}")
                     String find(String arg0);
                 }
                 """, true, "extends Parent<String> {}");
@@ -322,7 +324,7 @@ class JdbcPrecompiledParentGenerationTest {
                 import io.helidon.data.jdbc.Jdbc;
                 @Data.Repository @Data.Provider("jdbc")
                 interface SourceNames {
-                    @Jdbc.Statement(name = "find")
+                    @Jdbc.Statement("${application.sql.find}")
                     String find(String arg0);
                 }
                 """);
@@ -336,12 +338,12 @@ class JdbcPrecompiledParentGenerationTest {
     void acceptsSourceRedeclarationWhenParentNamesAreUnavailable() {
         TestCompiler.Result result = compileInherited("""
                 public interface Parent<T> {
-                    @Jdbc.Statement(name = "find")
+                    @Jdbc.Statement("${application.sql.find}")
                     T find(String name);
                 }
                 """, false, """
                 extends Parent<String> {
-                    @Override @Jdbc.Statement(name = "find")
+                    @Override @Jdbc.Statement("${application.sql.find}")
                     String find(String name);
                 }
                 """);
@@ -355,7 +357,7 @@ class JdbcPrecompiledParentGenerationTest {
     void acceptsParameterlessConfiguredAndPositionalLiteralParentsWithoutNames() {
         TestCompiler.Result result = compileInherited("""
                 public interface Parent<T> {
-                    @Jdbc.Statement(name = "count")
+                    @Jdbc.Statement("${application.sql.count}")
                     String count();
                     @Jdbc.Statement("SELECT ?")
                     T find(String name);
@@ -372,7 +374,7 @@ class JdbcPrecompiledParentGenerationTest {
         TestCompiler.Result result = compileInherited("""
                 public interface Parent<T> {
                     interface Nested {
-                        @Jdbc.Statement(name = "find")
+                        @Jdbc.Statement("${application.sql.find}")
                         String find(String name);
                     }
                 }
@@ -380,11 +382,55 @@ class JdbcPrecompiledParentGenerationTest {
         assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
     }
 
+    /**
+     * Retained aliases supply configured input identities without Java parameter metadata.
+     */
+    @Test
+    void acceptsConfiguredAliasesFromCompiledGenericParentsWithoutNames() throws IOException {
+        TestCompiler.Result result = compileInherited("""
+                public interface Parent<T> {
+                    @Jdbc.Statement("${application.sql.find}")
+                    T find(@Data.Param("lookup") T original);
+                    @Jdbc.Statement("${application.sql.rename}")
+                    @Jdbc.Execution(Jdbc.ExecutionType.UPDATE)
+                    int rename(@Data.Param("id") long original, @Data.Param("replacement") T text);
+                }
+                """, false, """
+                extends Parent<String> {
+                    @Override @Jdbc.Statement("${application.sql.find}")
+                    String find(String jdbcClient);
+                }
+                """);
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
+        String source = Files.readString(result.sourceOutput().resolve("example/Child__Jdbc.java"));
+        assertThat(source, containsString("List.of(\"lookup\")"));
+        assertThat(source, containsString("GeneratedJdbcData.prepareNamed("));
+        assertThat(source, containsString("\"lookup\", JDBCType.VARCHAR"));
+        assertThat(Files.exists(result.classOutput().resolve("example/Child__Jdbc.class")), is(true));
+    }
+
+    /**
+     * A partial alias does not supply the identity of an unrelated unaliased parameter.
+     */
+    @Test
+    void rejectsUnavailableUnaliasedInputsBesideConfiguredAliases() {
+        TestCompiler.Result result = compileInherited("""
+                public interface Parent<T> {
+                    @Jdbc.Statement("${application.sql.find}")
+                    T find(@Data.Param("lookup") T original, String missing);
+                }
+                """, false, "extends Parent<String> {}");
+        assertThat(result.success(), is(false));
+        assertThat(String.join("\n", result.diagnostics()), containsString("parameter 2"));
+        assertThat(String.join("\n", result.diagnostics()), containsString("Declare @Data.Param"));
+    }
+
     private static TestCompiler.Result compileInherited(String parentBody, boolean preserveNames, String childDeclaration) {
         TestCompiler.Builder parentCompiler = TestCompiler.builder().currentRelease().printDiagnostics(false)
-                .addClasspath(List.of(RuntimeType.class, JdbcClient.class))
+                .addClasspath(List.of(Config.class, OptionalValue.class, RuntimeType.class, Data.class, JdbcClient.class))
                 .addSource("Parent.java", """
                         package example;
+                        import io.helidon.data.Data;
                         import io.helidon.data.jdbc.Jdbc;
                         %s
                         """.formatted(parentBody));
@@ -395,7 +441,7 @@ class JdbcPrecompiledParentGenerationTest {
         assertThat(String.join("\n", parent.diagnostics()), parent.success(), is(true));
         return TestCompiler.builder().currentRelease().printDiagnostics(false)
                 .addProcessor(AptProcessor::new)
-                .addClasspath(List.of(RuntimeType.class, Data.class, JdbcClient.class, Service.class, Tx.class,
+                .addClasspath(List.of(Config.class, OptionalValue.class, RuntimeType.class, Data.class, JdbcClient.class, Service.class, Tx.class,
                         Generated.class, TypeName.class, DataGeneratorProvider.class, RepositoryCodegenProvider.class,
                         JdbcRepositoryGeneratorProvider.class))
                 .addClasspathEntry(parent.classOutput())
@@ -414,7 +460,7 @@ class JdbcPrecompiledParentGenerationTest {
                 .currentRelease()
                 .printDiagnostics(false)
                 .addProcessor(AptProcessor::new)
-                .addClasspath(List.of(RuntimeType.class,
+                .addClasspath(List.of(Config.class, OptionalValue.class, RuntimeType.class,
                                       Data.class,
                                       JdbcClient.class,
                                       Service.class,
