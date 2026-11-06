@@ -20,13 +20,17 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Consumer;
 
+import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.spi.ConfigNode.ListNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
@@ -45,6 +49,13 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
  * if not {@link io.helidon.config.Config.Builder#disableParserServices() disabled}.
  * And of course it can be {@link io.helidon.config.Config.Builder#addParser(ConfigParser) registered programmatically}.
  * <p>
+ * By default, YAML mapping keys use Helidon path syntax: dots separate path segments, and {@code ~1} and {@code ~0}
+ * represent literal dots and tildes. Quoting a YAML key does not change this behavior.
+ * To preserve mapping keys as literal names, use {@code builder().literalKeys(true).build()}.
+ * The builder also accepts a configuration node containing {@code literal-keys} through its {@code config(Config)} method.
+ * Register the configured parser on a source or with {@link io.helidon.config.Config.Builder#addParser(ConfigParser)}.
+ * Parser options must be supplied before parsing; they are not read from the document being parsed.
+ * <p>
  * Weight of the {@code YamlConfigParser} to be used by {@link io.helidon.config.Config.Builder},
  * if loaded automatically as a {@link java.util.ServiceLoader service}, is {@value WEIGHT}.
  *
@@ -53,7 +64,7 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
  */
 @Api.Stable
 @Weight(YamlConfigParser.WEIGHT)
-public class YamlConfigParser implements ConfigParser {
+public class YamlConfigParser implements ConfigParser, RuntimeType.Api<YamlConfigParserConfig> {
 
     /**
      * Priority of the parser used if registered by {@link io.helidon.config.Config.Builder} automatically.
@@ -64,11 +75,18 @@ public class YamlConfigParser implements ConfigParser {
                                                                        MediaTypes.APPLICATION_X_YAML);
     private static final List<String> SUPPORTED_SUFFIXES = List.of("yml", "yaml");
 
+    private final YamlConfigParserConfig config;
+
+    private YamlConfigParser(YamlConfigParserConfig config) {
+        this.config = config;
+    }
+
     /**
      * Default constructor needed by Java Service loader.
      */
     @Api.Internal
     public YamlConfigParser() {
+        this(YamlConfigParserConfig.create());
     }
 
     /**
@@ -77,7 +95,46 @@ public class YamlConfigParser implements ConfigParser {
      * @return a new instance of parser for YAML
      */
     public static YamlConfigParser create() {
-        return new YamlConfigParser();
+        return builder().build();
+    }
+
+    /**
+     * Create a YAML parser from a component configuration node containing {@code literal-keys}.
+     *
+     * @param config parser configuration
+     * @return configured YAML parser
+     */
+    public static YamlConfigParser create(Config config) {
+        return builder().config(Objects.requireNonNull(config)).build();
+    }
+
+    /**
+     * Create a YAML parser from its immutable configuration.
+     *
+     * @param config parser configuration
+     * @return configured YAML parser
+     */
+    public static YamlConfigParser create(YamlConfigParserConfig config) {
+        return new YamlConfigParser(Objects.requireNonNull(config));
+    }
+
+    /**
+     * Create a YAML parser by customizing its builder.
+     *
+     * @param consumer builder customization
+     * @return configured YAML parser
+     */
+    public static YamlConfigParser create(Consumer<YamlConfigParserConfig.Builder> consumer) {
+        return builder().update(Objects.requireNonNull(consumer)).build();
+    }
+
+    /**
+     * Create a builder for a YAML parser. Literal keys are disabled by default.
+     *
+     * @return parser builder
+     */
+    public static YamlConfigParserConfig.Builder builder() {
+        return YamlConfigParserConfig.builder();
     }
 
     @Override
@@ -88,6 +145,11 @@ public class YamlConfigParser implements ConfigParser {
     @Override
     public List<String> supportedSuffixes() {
         return SUPPORTED_SUFFIXES;
+    }
+
+    @Override
+    public YamlConfigParserConfig prototype() {
+        return config;
     }
 
     @Override
@@ -118,11 +180,14 @@ public class YamlConfigParser implements ConfigParser {
         return (Map) yaml.loadAs(reader, Object.class);
     }
 
-    private static ObjectNode fromMap(Map<?, ?> map) {
+    private ObjectNode fromMap(Map<?, ?> map) {
         ObjectNode.Builder builder = ObjectNode.builder();
         if (map != null) {
             map.forEach((k, v) -> {
                 String strKey = k.toString();
+                if (config.literalKeys()) {
+                    strKey = Config.Key.escapeName(strKey);
+                }
                 if (v instanceof List listValue) {
                     builder.addList(strKey, fromList(listValue));
                 } else if (v instanceof Map mapValue) {
@@ -136,7 +201,7 @@ public class YamlConfigParser implements ConfigParser {
         return builder.build();
     }
 
-    private static ListNode fromList(List<?> list) {
+    private ListNode fromList(List<?> list) {
         ListNode.Builder builder = ListNode.builder();
         list.forEach(value -> {
             if (value instanceof List listValue) {
