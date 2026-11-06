@@ -38,6 +38,10 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-mapper</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
         </dependency>
         <dependency>
@@ -141,6 +145,8 @@
                     <!-- Main sources need these JPMS modules through helidon-data-jdbc. -->
                     <ignoredNonTestScopedDependencies>
                         <dependency>io.helidon.builder:helidon-builder-api</dependency>
+                        <!-- Config requires this module transitively even when only compiler tests name its types. -->
+                        <dependency>io.helidon.common:helidon-common-mapper</dependency>
                         <dependency>io.helidon.config:helidon-config</dependency>
                         <dependency>io.helidon.data.sql:helidon-data-sql-common</dependency>
                     </ignoredNonTestScopedDependencies>

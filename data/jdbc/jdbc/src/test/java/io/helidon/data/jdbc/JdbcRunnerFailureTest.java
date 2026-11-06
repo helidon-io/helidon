@@ -1153,6 +1153,30 @@ class JdbcRunnerFailureTest {
         order.verify(connection).close();
     }
 
+    @Test
+    void sanitizesConfiguredInfrastructureFailuresAndReleasesResources() throws Exception {
+        DataSource source = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        PreparedStatement prepared = mock(PreparedStatement.class);
+        when(source.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true);
+        when(connection.prepareStatement("update T set A = ? /* SQL_CANARY */")).thenReturn(prepared);
+        when(prepared.execute()).thenThrow(new SQLException("DRIVER_CANARY SQL_CANARY VALUE_CANARY", "42000", 17));
+        JdbcClient client = JdbcClient.builder().dataSource(source).build();
+        var factory = GeneratedJdbcData.prepareNamed(client,
+                "update T set A = :value /* SQL_CANARY */", List.of("value"));
+        DataException failure = assertThrows(DataException.class,
+                () -> factory.get().bind("value", "VALUE_CANARY").execute());
+        for (Throwable current = failure; current != null; current = current.getCause()) {
+            assertThat(current.toString(), not(containsString("CANARY")));
+            for (Throwable suppressed : current.getSuppressed()) {
+                assertThat(suppressed.toString(), not(containsString("CANARY")));
+            }
+        }
+        verify(prepared).close();
+        verify(connection).close();
+    }
+
     private static void assertCleanupFailure(ThrowingInvocation invocation, SQLException expected) {
         DataException failure = assertThrows(DataException.class, invocation::run);
 

@@ -23,7 +23,9 @@ import io.helidon.builder.api.RuntimeType;
 import io.helidon.codegen.apt.AptProcessor;
 import io.helidon.codegen.testing.TestCompiler;
 import io.helidon.common.Generated;
+import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.types.TypeName;
+import io.helidon.config.Config;
 import io.helidon.data.Data;
 import io.helidon.data.codegen.DataGeneratorProvider;
 import io.helidon.data.codegen.common.RepositoryCodegenProvider;
@@ -318,6 +320,124 @@ class JdbcParameterAliasGenerationTest {
         }
     }
 
+    /**
+     * Configured declarations compare effective aliases across diamonds and partial overrides.
+     */
+    @Test
+    void resolvesConfiguredAliasesAcrossDiamondsAndPartialOverrides() {
+        String parents = """
+                interface Root<T> {
+                    @Jdbc.Statement("${application.sql.find}")
+                    List<T> find(@Data.Param("lookup") T original);
+                }
+                interface Left extends Root<String> {
+                    @Override @Jdbc.Statement("${application.sql.find}")
+                    List<String> find(String renamed);
+                }
+                interface Right {
+                    @Jdbc.Statement("${application.sql.find}")
+                    List<String> find(@Data.Param("lookup") String another);
+                }
+                """;
+        TestCompiler.Result identical = compile(parents, "extends Left, Right", "");
+        assertThat(identical.diagnostics().toString(), identical.success(), is(true));
+        String conflicting = parents.replace("@Data.Param(\"lookup\") String another", "@Data.Param(\"other\") String another");
+        TestCompiler.Result invalid = compile(conflicting, "extends Left, Right", "");
+        assertThat(invalid.success(), is(false));
+        assertThat(invalid.diagnostics().toString(), containsString("Declare an explicit @Data.Param"));
+        TestCompiler.Result resolved = compile(conflicting, "extends Left, Right", """
+                @Override @Jdbc.Statement("${application.sql.find}")
+                List<String> find(@Data.Param("chosen") String jdbcClient);
+                """);
+        assertThat(resolved.diagnostics().toString(), resolved.success(), is(true));
+        TestCompiler.Result partial = compile("""
+                interface Parent {
+                    @Jdbc.Statement("${application.sql.update}")
+                    @Jdbc.Execution(Jdbc.ExecutionType.UPDATE)
+                    int update(@Data.Param("old") String before, @Data.Param("id") long original);
+                }
+                """, "extends Parent", """
+                @Override @Jdbc.Statement("${application.sql.update}")
+                @Jdbc.Execution(Jdbc.ExecutionType.UPDATE)
+                int update(@Data.Param("replacement") String statement, long SQL_UPDATE);
+                """);
+        assertThat(partial.diagnostics().toString(), partial.success(), is(true));
+    }
+
+    /**
+     * Known defaults are validated at compilation while deployment SQL remains unknown.
+     */
+    @Test
+    void validatesConfiguredAliasesAndKnownDefaults() {
+        for (String alias : List.of("", " ", ":key", "key ", "two words", "a.b", "1key", "key/*comment*/")) {
+            TestCompiler.Result invalid = compile("", "", """
+                    @Jdbc.Statement("${application.sql.find}")
+                    String find(@Data.Param("%s") String value);
+                    """.formatted(alias));
+            assertThat(alias + invalid.diagnostics(), invalid.success(), is(false));
+        }
+        for (String declaration : List.of(
+                "@Jdbc.Statement(\"${sql.find}\") String find(@Data.Param(\"key\") String value, String key);",
+                "@Jdbc.Statement(\"${sql.find:SELECT :Key}\") String find(@Data.Param(\"key\") String value);",
+                "@Jdbc.Statement(\"${sql.find:SELECT :other}\") String find(@Data.Param(\"key\") String value);",
+                "@Jdbc.Statement(\"${sql.find:SELECT :key}\") String find(@Data.Param(\"key\") String value, String unused);",
+                "@Jdbc.Statement(\"${sql.find:SELECT ?}\") String find(@Data.Param(\"key\") String value);")) {
+            TestCompiler.Result invalid = compile("", "", declaration);
+            assertThat(invalid.diagnostics().toString(), invalid.success(), is(false));
+        }
+        TestCompiler.Result valid = compile("", "", """
+                @Jdbc.Statement("${missing.deployment.key}")
+                String find(@Data.Param("SQL_FIND") String jdbcClient, String reliable);
+                @Jdbc.Statement("${sql.defaulted:SELECT :lookup, :lookup}")
+                String defaulted(@Data.Param("lookup") String value);
+                @Jdbc.Statement("${sql.positional:SELECT ?}")
+                String positional(String value);
+                """);
+        assertThat(valid.diagnostics().toString(), valid.success(), is(true));
+    }
+
+    /**
+     * Binary parents retain configured alias conflicts and explicit child resolutions.
+     */
+    @Test
+    void resolvesConfiguredAliasConflictsAcrossSeparateCompilation() {
+        TestCompiler.Result parents = compiler().processors(List.of())
+                .addSource("Parents.java", """
+                        package example;
+                        import io.helidon.data.Data;
+                        import io.helidon.data.jdbc.Jdbc;
+                        interface Left<T> {
+                            @Jdbc.Statement("${application.sql.find}")
+                            T find(@Data.Param("lookup") T original);
+                        }
+                        interface Right {
+                            @Jdbc.Statement("${application.sql.find}")
+                            String find(@Data.Param("other") String another);
+                        }
+                        """).build().compile();
+        assertThat(parents.diagnostics().toString(), parents.success(), is(true));
+        for (boolean resolve : List.of(false, true)) {
+            String override = resolve ? """
+                    @Override @Jdbc.Statement("${application.sql.find}")
+                    String find(@Data.Param("chosen") String jdbcClient);
+                    """ : "";
+            TestCompiler.Result child = compiler().addClasspathEntry(parents.classOutput())
+                    .addSource("Child.java", """
+                            package example;
+                            import io.helidon.data.Data;
+                            import io.helidon.data.jdbc.Jdbc;
+                            @Data.Repository @Data.Provider("jdbc")
+                            public interface Child extends Left<String>, Right {
+                                %s
+                            }
+                            """.formatted(override)).build().compile();
+            assertThat(child.diagnostics().toString(), child.success(), is(resolve));
+            if (!resolve) {
+                assertThat(child.diagnostics().toString(), containsString("Inherited @Data.Param aliases conflict"));
+            }
+        }
+    }
+
     private static TestCompiler.Result compile(String parents, String inheritance, String methods) {
         return compiler().addSource("Child.java", """
                 package example;
@@ -337,7 +457,8 @@ class JdbcParameterAliasGenerationTest {
     private static TestCompiler.Builder compiler() {
         return TestCompiler.builder().currentRelease().printDiagnostics(false)
                 .addProcessor(AptProcessor::new)
-                .addClasspath(List.of(RuntimeType.class, Data.class, JdbcClient.class, Service.class, Tx.class,
+                .addClasspath(List.of(Config.class, OptionalValue.class, RuntimeType.class,
+                                      Data.class, JdbcClient.class, Service.class, Tx.class,
                                       Generated.class, TypeName.class, DataGeneratorProvider.class,
                                       RepositoryCodegenProvider.class, JdbcRepositoryGeneratorProvider.class));
     }

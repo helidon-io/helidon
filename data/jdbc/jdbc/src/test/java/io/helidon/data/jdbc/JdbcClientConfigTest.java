@@ -20,6 +20,10 @@ import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.DriverPropertyInfo;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
@@ -440,6 +444,69 @@ class JdbcClientConfigTest {
         JdbcClientConfig config = builder.buildPrototype();
         assertThat(config.dataSourceName().orElseThrow(), is("inventory-source"));
         assertThat(config.dataSource(), is(Optional.empty()));
+    }
+
+    /**
+     * Replacing application configuration leaves existing definitions and binding state unchanged.
+     */
+    @Test
+    void retainsIndependentDefinitionsAndCopiesOrderedInputs() {
+        DataSource source = mock(DataSource.class);
+        JdbcClient client = JdbcClient.builder().dataSource(source).build();
+        var names = new ArrayList<>(List.of("secret"));
+        var factory = client.prepare("select :secret, :secret", names);
+        names.set(0, "replacement");
+        var replacement = client.prepare("select :replacement");
+        assertThat(factory.get(), not(sameInstance(factory.get())));
+        factory.get().bind("secret", "VALUE_CANARY");
+        replacement.get().bind("replacement", 1);
+        assertThrows(IllegalArgumentException.class, () -> replacement.get().bind("secret", 1));
+        assertThat(factory.toString(), not(containsString("secret")));
+        assertThat(factory.get().toString(), not(containsString("secret")));
+        verifyZeroInteractions(source);
+    }
+
+    @Test
+    void ordinaryConfigurationLookupAndDirectSqlHaveEquivalentBindings() {
+        DataSource source = mock(DataSource.class);
+        Config config = Config.just(ConfigSources.create(Map.of("application.sql.find", "select :value")));
+        JdbcClient client = JdbcClient.builder().dataSource(source).build();
+        client.prepare(config.get("application.sql.find").asString().get()).get().bind("value", "configured");
+        client.prepare("select :value").get().bind("value", "direct");
+        client.prepare("select ?", List.of("value")).get().bind("value", "positional");
+        client.prepare("select ?").get().bind(1, "indexed");
+        client.prepare("select 1", List.of()).get();
+        verifyZeroInteractions(source);
+    }
+
+    @Test
+    void validatesDefinitionsAndProtectedMarkersWithoutAcquisition() {
+        DataSource source = mock(DataSource.class);
+        JdbcClient client = JdbcClient.builder().dataSource(source).build();
+        for (String sql : new String[] {" ", "select :value, ?", "select ?, :value", "select 'unterminated",
+                "select /* nested /* comment */ */ 1", "select :value.field", "select 1--ambiguous"}) {
+            IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, () -> client.prepare(sql));
+            if (!sql.isBlank()) {
+                assertThat(failure.toString(), not(containsString(sql)));
+            }
+        }
+        assertThrows(NullPointerException.class, () -> client.prepare(null));
+        assertThrows(NullPointerException.class, () -> client.prepare(" ", null));
+        assertThrows(NullPointerException.class, () -> client.prepare(" ", Arrays.asList("", null)));
+        for (var names : List.of(List.of(""), List.of(" "),
+                List.of("x.x"), List.of("x", "x"))) {
+            assertThrows(IllegalArgumentException.class, () -> client.prepare("select ?", names));
+        }
+        for (String sql : List.of("select :other", "select :value, :extra", "select 1", "select ?, ?")) {
+            assertThrows(IllegalArgumentException.class, () -> client.prepare(sql, List.of("value")));
+        }
+        var factory = client.prepare("select ':fake ?', nq'[ :fake ? ]', $$:fake ?$$, `:fake ?`, \":fake ?\", :𐐀value "
+                + "/* :fake ? */ -- :fake ?\n, :𐐀value");
+        factory.get().bind("𐐀value", 1);
+        assertThrows(IllegalArgumentException.class, () -> factory.get().bind("fake", 1));
+        client.prepare("select ? /* large SQL */" + " ".repeat(70000)).get().bind(1, 1);
+        assertThrows(IllegalArgumentException.class, () -> client.create("select :value"));
+        verifyZeroInteractions(source);
     }
 
     private static void assertSourceConflict(Runnable construction) {

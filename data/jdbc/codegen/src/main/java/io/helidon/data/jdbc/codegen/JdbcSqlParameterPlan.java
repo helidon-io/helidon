@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import io.helidon.codegen.CodegenException;
+import io.helidon.codegen.TypeHierarchyResolver;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypedElementInfo;
 
@@ -72,13 +73,29 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
     }
 
     /**
-     * Returns the number of physical JDBC marker positions in the rewritten
-     * SQL. Repeated named parameters occupy one position for each occurrence.
+     * Resolves logical inputs without reading deployment SQL. Positions remain
+     * unknown until the resolved SQL supplies its immutable definition.
      *
-     * @return physical JDBC marker count
+     * @param name The reference selects SQL from application configuration.
+     * @param parameters The repository inputs.
+     * @param method The enclosing method.
+     * @param resolver The compiler environment used to validate parameter names.
+     * @return The logical binding plan.
      */
-    int parameterCount() {
-        return binds.size();
+    static JdbcSqlParameterPlan configured(String name,
+                                            List<TypedElementInfo> parameters,
+                                            TypedElementInfo method,
+                                            TypeHierarchyResolver resolver) {
+        validateParameters(parameters, method);
+        for (int index = 0; index < parameters.size(); index++) {
+            TypedElementInfo parameter = parameters.get(index);
+            if (!parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM) && !resolver.parameterNameAvailable(parameter)) {
+                throw failure(method, "The name of parameter " + (index + 1) + " of method " + method.elementName()
+                        + " is unavailable. Declare @Data.Param, recompile the parent with -parameters, "
+                        + "or redeclare the method in this repository with an explicit parameter name.");
+            }
+        }
+        return new JdbcSqlParameterPlan(name, parameters.stream().map(parameter -> binding(0, parameter)).toList());
     }
 
     /**
@@ -87,10 +104,20 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
      * @param parameter The repository parameter supplies the name.
      * @return The effective binding name.
      */
-    private static String effectiveName(TypedElementInfo parameter) {
+    static String effectiveName(TypedElementInfo parameter) {
         return parameter.findAnnotation(JdbcCodegenTypes.DATA_PARAM)
                 .flatMap(Annotation::stringValue)
                 .orElse(parameter.elementName());
+    }
+
+    /**
+     * Returns the number of binding entries. For literal SQL, each entry represents
+     * a physical marker position. For configured SQL, each entry represents a logical input.
+     *
+     * @return The count includes every binding entry.
+     */
+    int parameterCount() {
+        return binds.size();
     }
 
     /**

@@ -16,7 +16,9 @@
 package io.helidon.data.jdbc;
 
 import java.sql.JDBCType;
+import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import io.helidon.common.Api;
 import io.helidon.data.jdbc.JdbcClient.Statement;
@@ -70,6 +72,36 @@ public final class GeneratedJdbcData {
     }
 
     /**
+     * Prepares named SQL for a generated repository with effective parameter aliases.
+     * The native provider validates the complete input contract and scans SQL once
+     * without acquiring JDBC resources. The returned supplier creates fresh stages
+     * without rescanning SQL or capturing a transaction context.
+     * The SQL must contain a named marker and use exactly the unique input names
+     * supplied in the list. Markers may repeat, and the list is defensively copied.
+     * The supplier is safe to share. Individual stages are not safe for concurrent mutation.
+     *
+     * @param client The native Helidon JDBC client owns execution.
+     * @param sql The SQL contains named markers for every logical input.
+     * @param inputNames The effective names identify inputs in declaration order.
+     * @return The supplier retains an immutable definition and creates fresh stages.
+     * @throws NullPointerException The client, SQL, list, or a list entry is null.
+     * @throws IllegalArgumentException The SQL or input contract is invalid, or SQL does not use named markers.
+     * @throws UnsupportedOperationException The client is not the native Helidon JDBC client.
+     */
+    @Api.Since("28.0.0")
+    public static Supplier<Statement> prepareNamed(JdbcClient client, String sql, List<String> inputNames) {
+        Objects.requireNonNull(client, "The JDBC client must not be null.");
+        Objects.requireNonNull(sql, "The SQL statement must not be null.");
+        Objects.requireNonNull(inputNames, "The input names must not be null.");
+        inputNames.forEach(name -> Objects.requireNonNull(name, "The input name must not be null."));
+        if (client instanceof JdbcClientImpl clientImpl) {
+            return clientImpl.prepareNamed(sql, inputNames);
+        }
+        throw new UnsupportedOperationException(
+                "Named preparation for generated aliases requires the native Helidon JDBC client.");
+    }
+
+    /**
      * Binds SQL {@code NULL} for a generated declarative repository.
      * <p>
      * This method accepts only a statement created by Helidon's JDBC provider.
@@ -95,4 +127,28 @@ public final class GeneratedJdbcData {
         throw new UnsupportedOperationException(
                 "Typed SQL null binding requires a statement created by Helidon's JDBC provider.");
     }
+    /**
+     * Binds typed SQL NULL to every occurrence of a configured marker without JDBC work.
+     * Every destination is validated before any binding changes.
+     *
+     * @param statement The statement created by the Helidon JDBC provider.
+     * @param name The marker name without a colon.
+     * @param type The SQL type supplied by generated code.
+     * @return The same statement.
+     * @throws NullPointerException The statement, name, or type is null.
+     * @throws IllegalArgumentException The name or type is unsupported, or a slot is assigned.
+     * @throws IllegalStateException The stage is consumed or is not configured.
+     * @throws UnsupportedOperationException The statement belongs to another provider.
+     */
+    public static Statement bindNull(Statement statement, String name, JDBCType type) {
+        Objects.requireNonNull(statement, "The JDBC statement must not be null.");
+        Objects.requireNonNull(name, "The bind name must not be null.");
+        Objects.requireNonNull(type, "The JDBC null type must not be null.");
+        if (statement instanceof JdbcStatement jdbcStatement) {
+            return jdbcStatement.bindNull(name, type);
+        }
+        throw new UnsupportedOperationException(
+                "Typed SQL null binding requires a statement created by the Helidon JDBC provider.");
+    }
+
 }

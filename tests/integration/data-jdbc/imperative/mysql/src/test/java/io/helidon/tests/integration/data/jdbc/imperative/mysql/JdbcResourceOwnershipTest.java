@@ -111,6 +111,29 @@ class JdbcResourceOwnershipTest {
     }
 
     /**
+     * Proves configured queries, updates, keys, and mapper failures release the sole pool lease.
+     */
+    @Test
+    void returnsConfiguredLeasesAfterSuccessAndFailure() {
+        try (HikariDataSource source = dataSource()) {
+            JdbcClient initial = initializedClient(source);
+            JdbcClient client = JdbcClient.builder().from(initial.prototype()).build();
+            var insert = client.prepare("INSERT INTO TEST_VALUE(DATA_VALUE) VALUES (:value)");
+            var find = client.prepare("SELECT DATA_VALUE FROM TEST_VALUE WHERE ID = :id OR ID = :id");
+            var delete = client.prepare("DELETE FROM TEST_VALUE WHERE ID = :id");
+            long key = insert.get().bind("value", "configured").generatedKeys().addColumn("ID")
+                    .map(row -> row.get(1, Long.class)).one();
+            assertThat(find.get().bind("id", key).map(String.class).one(), is("configured"));
+            assertThrows(IllegalStateException.class, () -> find.get().bind("id", key).map(_ -> {
+                throw new IllegalStateException("The application mapper rejected this row.");
+            }).list());
+            assertThat(source.getHikariPoolMXBean().getActiveConnections(), is(0));
+            assertThat(delete.get().bind("id", key).execute(), is(1L));
+            assertThat(source.getHikariPoolMXBean().getActiveConnections(), is(0));
+        }
+    }
+
+    /**
      * Proves that a single SQL statement which disables auto-commit is rejected. The connection state is restored and
      * the single-connection pool remains usable. A delegated connection reads the actual server
      * auto-commit state because Connector/J's cached flag does not reflect SQL state transitions.

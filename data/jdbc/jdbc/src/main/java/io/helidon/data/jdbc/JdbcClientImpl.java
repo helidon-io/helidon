@@ -15,8 +15,10 @@
  */
 package io.helidon.data.jdbc;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import javax.sql.DataSource;
 
@@ -117,6 +119,29 @@ final class JdbcClientImpl implements JdbcClient {
         }
         int parameterCount = parameterCount(sql);
         return new JdbcStatement(runner, sql, parameterCount);
+    }
+
+    @Override
+    public Supplier<Statement> prepare(String sql) {
+        Objects.requireNonNull(sql, "The SQL statement must not be null.");
+        return new JdbcStatementFactory(runner, JdbcConfiguredStatement.create(sql));
+    }
+
+    @Override
+    public Supplier<Statement> prepare(String sql, List<String> inputNames) {
+        Objects.requireNonNull(sql, "The SQL statement must not be null.");
+        Objects.requireNonNull(inputNames, "The input names must not be null.");
+        inputNames.forEach(name -> Objects.requireNonNull(name, "The input name must not be null."));
+        List<String> names = List.copyOf(inputNames);
+        return new JdbcStatementFactory(runner, JdbcConfiguredStatement.create(sql, names));
+    }
+
+    Supplier<Statement> prepareNamed(String sql, List<String> inputNames) {
+        JdbcConfiguredStatement definition = JdbcConfiguredStatement.create(sql, List.copyOf(inputNames));
+        if (!definition.namedMarkers()) {
+            throw new IllegalArgumentException("A repository with parameter aliases requires named SQL markers.");
+        }
+        return new JdbcStatementFactory(runner, definition);
     }
 
     /**
