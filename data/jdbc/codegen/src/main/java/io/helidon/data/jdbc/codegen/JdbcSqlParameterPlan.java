@@ -121,10 +121,10 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
     }
 
     /**
-     * Validates the fixed declarative scalar input boundary.
+     * Validates scalar inputs after any batch sources have been expanded.
      *
-     * @param parameters repository parameters
-     * @param method enclosing method
+     * @param parameters The inputs supply scalar bindings.
+     * @param method The method declares the repository operation.
      * @param uniqueNames Whether names must identify distinct logical inputs.
      */
     private static void validateParameters(List<TypedElementInfo> parameters, TypedElementInfo method, boolean uniqueNames) {
