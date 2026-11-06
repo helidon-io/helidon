@@ -15,13 +15,17 @@
  */
 package io.helidon.data.jdbc;
 
+import java.time.Duration;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 
 import javax.sql.DataSource;
 
 import io.helidon.common.LruCache;
 import io.helidon.data.DataException;
+import io.helidon.data.sql.datasource.DataSourceHealthCheck;
+import io.helidon.health.HealthCheckResponse;
 import io.helidon.service.registry.ServiceRegistryException;
 import io.helidon.service.registry.Services;
 
@@ -37,6 +41,8 @@ final class JdbcClientImpl implements JdbcClient {
 
     private final JdbcClientConfig prototype;
     private final JdbcRunner runner;
+    private final DataSource dataSource;
+    private final JdbcConnectionLease.Provider leaseProvider;
     private final CachePolicy cachePolicy;
     private final LruCache<String, Integer> parameterCounts;
 
@@ -53,6 +59,8 @@ final class JdbcClientImpl implements JdbcClient {
                    JdbcConnectionLease.Provider leaseProvider,
                    CachePolicy cachePolicy) {
         this.prototype = prototype;
+        this.dataSource = dataSource;
+        this.leaseProvider = leaseProvider;
         this.runner = new JdbcRunner(dataSource, leaseProvider);
         this.cachePolicy = cachePolicy;
         this.parameterCounts = cachePolicy.capacity() == 0 ? null : LruCache.create(cachePolicy.capacity());
@@ -129,6 +137,31 @@ final class JdbcClientImpl implements JdbcClient {
      */
     Statement createGenerated(String sql, int parameterCount) {
         return new JdbcStatement(runner, sql, parameterCount);
+    }
+
+    /**
+     * Binds a probe to the resolved source while preserving the ordinary lease provider.
+     *
+     * @param sql The trusted SELECT is validated during check construction.
+     * @param timeout The query timeout is validated before acquisition.
+     * @return Each invocation owns a fresh independent acquisition.
+     */
+    BooleanSupplier createProbe(String sql, Duration timeout) {
+        DataSourceHealthCheck check = DataSourceHealthCheck.builder()
+                .dataSource(dataSource)
+                .query(sql)
+                .queryTimeout(timeout)
+                .build();
+        return () -> {
+            if (leaseProvider instanceof JdbcTransactionConnectionManager manager) {
+                try {
+                    manager.checkProbeContext();
+                } catch (RuntimeException _) {
+                    return false;
+                }
+            }
+            return check.call().status() == HealthCheckResponse.Status.UP;
+        };
     }
 
     /**

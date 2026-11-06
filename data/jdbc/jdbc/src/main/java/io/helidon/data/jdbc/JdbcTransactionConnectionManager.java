@@ -124,6 +124,26 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
         return new TransactionLease(state, state.activeJdbc, association);
     }
 
+    /**
+     * Checks context eligibility without acquiring, enlisting, or mutating a caller transaction.
+     */
+    void checkProbeContext() {
+        State state = local.get();
+        if (state == null) {
+            return;
+        }
+        if (state.failedJdbc != null || state.failedForeign != null || state.activeForeign != null) {
+            throw new DataException("The current transaction context cannot run an independent JDBC probe.");
+        }
+        if (state.activeJdbc != null) {
+            Association association = state.jdbcTransactions.get(state.activeJdbc);
+            if (association == null) {
+                throw new IllegalStateException("The active JDBC transaction has no lifecycle association.");
+            }
+            association.require(AssociationState.ACTIVE, "run an independent probe");
+        }
+    }
+
     @Override
     public void start(String type) {
         Objects.requireNonNull(type, "The transaction type must not be null.");
