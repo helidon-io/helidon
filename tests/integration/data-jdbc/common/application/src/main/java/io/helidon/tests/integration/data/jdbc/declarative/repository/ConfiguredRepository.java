@@ -24,23 +24,36 @@ import io.helidon.tests.integration.data.jdbc.application.ConfiguredOperations;
 import io.helidon.tests.integration.data.jdbc.application.ContactView;
 
 /**
- * The same compiled repository executes configured statements against multiple deployment catalogs.
+ * The same compiled repository executes configured statements against multiple application configurations.
  */
 @Data.Repository
 @Data.Provider("jdbc")
 public interface ConfiguredRepository extends ConfiguredOperations {
 
     @Override
-    @Jdbc.Statement(name = "find")
+    @Jdbc.Statement("${application.sql.find}")
     List<ContactView> find(String name, String email);
 
     @Override
-    @Jdbc.Statement(name = "rename")
+    @Jdbc.Statement("${application.sql.by-id}")
+    Optional<ContactView> byId(long id);
+
+    @Override
+    @Jdbc.Statement("${reporting.catalog.contacts.all}")
+    List<ContactView> all();
+
+    @Override
+    @Jdbc.Statement("${application.sql.rename}")
     @Jdbc.Execution(Jdbc.ExecutionType.UPDATE)
     long rename(String name, long id);
 
     @Override
-    @Jdbc.Statement(name = "insert")
+    @Jdbc.Statement("${application.sql.insert}")
     @Jdbc.GeneratedKeys("id")
     Optional<Long> insert(String value);
+
+    @Override
+    @Jdbc.Statement("${application.aliases.update}")
+    @Jdbc.Execution(Jdbc.ExecutionType.UPDATE)
+    int configuredAliasUpdate(long SQL_CONFIGURED_ALIAS_UPDATE, String jdbcStatement);
 }

@@ -22,8 +22,11 @@ import java.util.Optional;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.data.Data;
 import io.helidon.data.DataException;
 import io.helidon.data.jdbc.JdbcClient;
+import io.helidon.service.registry.Qualifier;
+import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.tests.integration.data.jdbc.application.ConfiguredOperations;
 import io.helidon.tests.integration.data.jdbc.application.ContactView;
@@ -51,25 +54,38 @@ public abstract class AbstractConfiguredStatementContract {
         return false;
     }
 
+    /**
+     * Invalid YAML definitions fail on an already resolved client without execution.
+     */
     @Test
-    protected void rejectsPositionalMarkersFromApplicationYamlBeforeSourceResolution() {
-        Config application = Config.just(ConfigSources.classpath("configured-statements/invalid/application.yaml"));
-        for (String scenario : List.of("positional", "mixed")) {
-            Config client = application.get(scenario).get("data.clients.jdbc.0");
-            // The source is deliberately unavailable so successful source resolution cannot hide late validation.
-            IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
-                    () -> JdbcClient.builder().config(client).build());
-            assertThat(failure.getMessage(), is("Configured SQL does not support positional markers."));
+    protected void rejectsMixedAndMismatchedInputsFromApplicationYaml() {
+        Config invalid = Config.just(ConfigSources.classpath("configured-statements/invalid/application.yaml"));
+        for (String scenario : List.of("mixed", "missing", "additional", "few", "many")) {
+            String sql = invalid.get(scenario + ".find").asString().get();
+            Map<String, String> values = new HashMap<>(configuration("configured-statements/application.yaml").asMap().get());
+            values.put("application.sql.find", sql);
+            TestConfigFactory.config(Config.just(ConfigSources.create(values)));
+            try {
+                ServiceRegistryManager manager = ServiceRegistryManager.start();
+                try {
+                    JdbcClient client = manager.registry().get(JdbcClient.class,
+                            Qualifier.createNamed(Service.Named.DEFAULT_NAME),
+                            Qualifier.builder().typeName(Data.ProviderType.TYPE).value("jdbc").build());
+                    assertThrows(IllegalArgumentException.class, () -> client.prepare(sql, List.of("name", "email")));
+                    assertThrows(IllegalArgumentException.class,
+                            () -> manager.registry().get(operationsType()));
+                } finally {
+                    manager.shutdown();
+                }
+            } finally {
+                TestConfigFactory.reset();
+            }
         }
     }
 
     @Test
     protected void loadsApplicationYamlStatementsThroughTheApplicationRegistry() {
-        Config application = Config.just(ConfigSources.classpath("configured-statements/application.yaml"));
-        Map<String, String> configuration = new HashMap<>(databaseConfig().asMap().get());
-        // Only connection settings come from the dynamic database fixture. The YAML file supplies every statement.
-        configuration.putAll(application.asMap().get());
-        TestConfigFactory.config(Config.just(ConfigSources.create(configuration)));
+        TestConfigFactory.config(configuration("configured-statements/application.yaml"));
         try {
             ServiceRegistryManager manager = ServiceRegistryManager.start();
             try {
@@ -107,25 +123,28 @@ public abstract class AbstractConfiguredStatementContract {
 
     @Test
     protected void replacesReordersAndRepeatsInputsWithTheSameCompiledRepository() {
-        for (String predicate : List.of("NAME = :name OR EMAIL = :email",
-                "EMAIL = :email OR NAME = :name OR EMAIL = :email")) {
-            Map<String, String> config = new HashMap<>(databaseConfig().asMap().get());
-            config.put("data.clients.jdbc.0.statements.find",
-                    "SELECT ID, NAME, EMAIL FROM CONTACT WHERE " + predicate + " ORDER BY ID");
-            config.put("data.clients.jdbc.0.statements.rename", "UPDATE CONTACT SET NAME = :name WHERE ID = :id");
-            config.put("data.clients.jdbc.0.statements.insert", "INSERT INTO CONTACT (NAME) VALUES (:value)");
-            TestConfigFactory.config(Config.just(ConfigSources.create(config)));
+        for (String variant : List.of("", "reordered/", "positional/")) {
+            Config config = configuration("configured-statements/" + variant + "application.yaml");
+            TestConfigFactory.config(config);
             ServiceRegistryManager manager = ServiceRegistryManager.start();
             try {
                 DatabaseFixture database = manager.registry().get(DatabaseFixture.class);
                 database.reset();
                 ConfiguredOperations operations = manager.registry().get(operationsType());
                 assertThat(operations.find("beta", "alpha@example.test").size(), is(2));
-                JdbcClient configured = JdbcClient.builder()
-                        .config(Config.just(ConfigSources.create(config)).get("data.clients.jdbc.0")).build();
-                JdbcClient copied = JdbcClient.builder().from(configured.prototype()).build();
-                assertThat(copied.createNamed("find").bind("email", "alpha@example.test").bind("name", "beta")
+                JdbcClient client = manager.registry().get(JdbcClient.class,
+                        Qualifier.createNamed(Service.Named.DEFAULT_NAME),
+                        Qualifier.builder().typeName(Data.ProviderType.TYPE).value("jdbc").build());
+                assertThat(operations.byId(1).orElseThrow().name(), is("alpha"));
+                assertThat(operations.all().size(), is(2));
+                String sql = config.get("application.sql.find").asString().get();
+                assertThat(client.prepare(sql, List.of("name", "email")).get()
+                        .bind("email", "alpha@example.test").bind("name", "beta")
                         .map(Long.class).list(), is(List.of(1L, 2L)));
+                if (variant.equals("positional/")) {
+                    assertThat(client.create(sql).bind(1, "beta").bind(2, "alpha@example.test")
+                            .map(Long.class).list(), is(List.of(1L, 2L)));
+                }
                 if (nullableInputs()) {
                     assertThat(operations.find("beta", null),
                             is(List.of(new ContactView(2L, "beta", Optional.empty()))));
@@ -153,10 +172,10 @@ public abstract class AbstractConfiguredStatementContract {
 
     @Test
     protected void validatesReplacementResultChannelsAndColumns() {
-        for (String replacement : List.of("SELECT ID, NAME AS OTHER_NAME, EMAIL FROM CONTACT "
-                + "WHERE NAME = :name OR EMAIL = :email", "UPDATE CONTACT SET NAME = :name WHERE EMAIL = :email")) {
-            Map<String, String> config = new HashMap<>(databaseConfig().asMap().get());
-            config.put("data.clients.jdbc.0.statements.find", replacement);
+        Config invalid = Config.just(ConfigSources.classpath("configured-statements/invalid/application.yaml"));
+        for (String scenario : List.of("columns", "channel")) {
+            Map<String, String> config = new HashMap<>(configuration("configured-statements/application.yaml").asMap().get());
+            config.put("application.sql.find", invalid.get(scenario + ".find").asString().get());
             TestConfigFactory.config(Config.just(ConfigSources.create(config)));
             ServiceRegistryManager manager = ServiceRegistryManager.start();
             try {
@@ -171,4 +190,115 @@ public abstract class AbstractConfiguredStatementContract {
             }
         }
     }
+    /**
+     * A standalone prepared definition commits independently of an enclosing managed transaction.
+     */
+    @Test
+    protected void keepsStandaloneOwnershipInsideAManagedTransaction() {
+        Config config = configuration("configured-statements/application.yaml");
+        TestConfigFactory.config(config);
+        try {
+            ServiceRegistryManager manager = ServiceRegistryManager.start();
+            try {
+                DatabaseFixture database = manager.registry().get(DatabaseFixture.class);
+                database.reset();
+                ConfiguredOperations operations = manager.registry().get(operationsType());
+                JdbcClient standalone = JdbcClient.builder().config(config.get("data.clients.jdbc.0")).build();
+                var rename = standalone.prepare(config.get("application.sql.rename").asString().get(), List.of("name", "id"));
+                assertThrows(TxException.class, () -> Tx.transaction(Tx.Type.REQUIRED, () -> {
+                    // Different rows let the independent connection complete without waiting for the managed write.
+                    operations.rename("managed-pending", 1L);
+                    assertThat(rename.get().bind("name", "standalone-committed").bind("id", 2L).execute(), is(1L));
+                    throw new IllegalStateException("The managed transaction must roll back.");
+                }));
+                assertThat(database.committedByName("alpha").isPresent(), is(true));
+                assertThat(database.committedByName("managed-pending"), is(Optional.empty()));
+                assertThat(database.committedByName("standalone-committed").isPresent(), is(true));
+            } finally {
+                manager.shutdown();
+            }
+        } finally {
+            TestConfigFactory.reset();
+        }
+    }
+
+    /**
+     * Retained generic aliases use replacement YAML while unrelated positional SQL remains valid.
+     */
+    @Test
+    protected void executesConfiguredAliasesAgainstReplacementYaml() {
+        for (String variant : List.of("", "reordered/", "positional/")) {
+            TestConfigFactory.config(configuration("configured-statements/" + variant + "application.yaml"));
+            try {
+                ServiceRegistryManager manager = ServiceRegistryManager.start();
+                try {
+                    DatabaseFixture database = manager.registry().get(DatabaseFixture.class);
+                    database.reset();
+                    ConfiguredOperations operations = manager.registry().get(operationsType());
+                    assertThat(operations.configuredAliases("alpha@example.test"), is(List.of("alpha")));
+                    if (nullableInputs()) {
+                        assertThat(operations.configuredAliases(null), is(List.of("beta")));
+                    }
+                    long key = operations.configuredAliasInsert("configured-alias-key",
+                            nullableInputs() ? null : "alias@example.test").orElseThrow();
+                    assertThat(database.committedByName("configured-alias-key").orElseThrow().id(), is(key));
+                    Tx.transaction(Tx.Type.REQUIRED, () -> {
+                        assertThat(operations.configuredAliasUpdate(key, "alias-commit"), is(1));
+                        return null;
+                    });
+                    assertThat(database.committedByName("alias-commit").isPresent(), is(true));
+                    assertThrows(TxException.class, () -> Tx.transaction(Tx.Type.REQUIRED, () -> {
+                        operations.configuredAliasUpdate(key, "alias-rollback");
+                        throw new IllegalStateException("The configured alias transaction must roll back.");
+                    }));
+                    assertThat(database.committedByName("alias-rollback"), is(Optional.empty()));
+                    if (nullableInputs()) {
+                        assertThrows(DataException.class, () -> operations.configuredAliasInsert(null, null));
+                    }
+                    assertThat(operations.configuredAliases("alpha@example.test"), is(List.of("alpha")));
+                    assertThat(database.committedByName("alias-commit").isPresent(), is(true));
+                } finally {
+                    manager.shutdown();
+                }
+            } finally {
+                TestConfigFactory.reset();
+            }
+        }
+    }
+
+    /**
+     * Aliased repositories reject positional deployment SQL while imperative preparation retains it.
+     */
+    @Test
+    protected void validatesConfiguredAliasStylesAndEffectiveInputSetsAtActivation() {
+        Config invalid = Config.just(ConfigSources.classpath("configured-statements/invalid/application.yaml"));
+        for (String scenario : List.of("alias-positional", "alias-missing", "alias-additional", "alias-mixed")) {
+            Map<String, String> values = new HashMap<>(configuration("configured-statements/application.yaml").asMap().get());
+            values.put("application.aliases.find", invalid.get(scenario + ".find").asString().get());
+            TestConfigFactory.config(Config.just(ConfigSources.create(values)));
+            try {
+                ServiceRegistryManager manager = ServiceRegistryManager.start();
+                try {
+                    if (scenario.equals("alias-positional") && !nullableInputs()) {
+                        manager.registry().get(DatabaseFixture.class).reset();
+                        ConfiguredOperations operations = manager.registry().get(operationsType());
+                        assertThat(operations.configuredAliases("alpha@example.test"), is(List.of("alpha")));
+                    } else {
+                        assertThrows(IllegalArgumentException.class, () -> manager.registry().get(operationsType()));
+                    }
+                } finally {
+                    manager.shutdown();
+                }
+            } finally {
+                TestConfigFactory.reset();
+            }
+        }
+    }
+
+    private Config configuration(String resource) {
+        Map<String, String> values = new HashMap<>(databaseConfig().asMap().get());
+        values.putAll(Config.just(ConfigSources.classpath(resource)).asMap().get());
+        return Config.just(ConfigSources.create(values));
+    }
+
 }

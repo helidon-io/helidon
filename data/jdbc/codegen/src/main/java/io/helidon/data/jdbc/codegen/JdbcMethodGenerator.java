@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenUtil;
@@ -106,14 +107,21 @@ final class JdbcMethodGenerator {
         }
 
         List<MapperDependency> mapperDependencies = mapperDependencies(plans, classModel);
-        JdbcRepositoryClassGenerator.generateConstructor(classModel, repositoryInfo, mapperDependencies);
+        JdbcRepositoryClassGenerator.generateConstructor(classModel, repositoryInfo, mapperDependencies, plans);
         Map<ResolvedType, JdbcMethodPlan> recordMappers = new LinkedHashMap<>();
         for (JdbcMethodPlan plan : plans) {
-            classModel.addField(field -> field.name(plan.sqlFieldName())
-                    .type(TypeNames.STRING)
-                    .isStatic(true)
-                    .isFinal(true)
-                    .addContentLiteral(plan.jdbcSql()));
+            if (plan.reference() == null) {
+                classModel.addField(field -> field.name(plan.sqlFieldName())
+                        .type(TypeNames.STRING)
+                        .isStatic(true)
+                        .isFinal(true)
+                        .addContentLiteral(plan.jdbcSql()));
+            } else {
+                classModel.addField(field -> field.name(plan.sqlFieldName())
+                        .type(TypeName.builder(TypeName.create(Supplier.class))
+                                      .addTypeArgument(JdbcCodegenTypes.JDBC_CLIENT_STATEMENT).build())
+                        .isFinal(true));
+            }
             if (plan.mappingKind() == JdbcMethodPlan.MappingKind.RECORD) {
                 // Avoid duplicate record mappers by reusing the first mapper planned for each exact mapped type.
                 // The shared field keeps the variable name derived from that first repository method. ResolvedType
@@ -161,6 +169,7 @@ final class JdbcMethodGenerator {
         // Mapper fields and their constructor parameters intentionally share one name. Reserve the client
         // parameter name so a mapper can never replace client selection infrastructure.
         dependencyNames.add(JdbcCodegenConstants.JDBC_CLIENT_NAME);
+        dependencyNames.add("config");
         List<MapperDependency> dependencies = new ArrayList<>(groupedPlans.size());
         for (Map.Entry<MapperDependencyKey, List<JdbcMethodPlan>> entry : groupedPlans.entrySet()) {
             MapperDependencyKey key = entry.getKey();
@@ -251,11 +260,8 @@ final class JdbcMethodGenerator {
                 .addContent(" ")
                 .addContent(statementName)
                 .addContent(" = ");
-        if (plan.configured()) {
-            method.addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME)
-                    .addContent(".createNamed(")
-                    .addContent(plan.sqlFieldName())
-                    .addContentLine(");");
+        if (plan.reference() != null) {
+            method.addContent("this.").addContent(plan.sqlFieldName()).addContentLine(".get();");
         } else {
             method.addContent(JdbcCodegenTypes.GENERATED_JDBC_DATA)
                     .addContent(".createGenerated(")
@@ -288,7 +294,7 @@ final class JdbcMethodGenerator {
                                 String bindParameterMethodName) {
         String parameterName = parameterNames.get(bind.parameter().elementName());
         String destination = bind.position() == 0
-                ? "\"" + bind.parameter().elementName() + "\""
+                ? "\"" + JdbcSqlParameterPlan.effectiveName(bind.parameter()) + "\""
                 : String.valueOf(bind.position());
         if (!bind.nullable()) {
             method.addContent(statementName)

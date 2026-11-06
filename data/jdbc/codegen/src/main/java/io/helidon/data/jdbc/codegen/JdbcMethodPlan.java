@@ -52,6 +52,7 @@ final class JdbcMethodPlan {
     private final MappingKind mappingKind;
     private final TypeName mappedType;
     private final JdbcSqlParameterPlan parameterPlan;
+    private final JdbcSqlReference reference;
     private final List<String> generatedColumns;
     private final TypeName explicitMapper;
     private final List<TypedElementInfo> recordComponents;
@@ -67,6 +68,7 @@ final class JdbcMethodPlan {
      * @param mappingKind mapping strategy
      * @param mappedType mapped type
      * @param parameterPlan SQL parameter plan
+     * @param reference The reference selects configured SQL, or is null for literal SQL.
      * @param generatedColumns generated columns
      * @param explicitMapper explicit mapper type
      * @param recordComponents validated canonical record components
@@ -77,6 +79,7 @@ final class JdbcMethodPlan {
                            MappingKind mappingKind,
                            TypeName mappedType,
                            JdbcSqlParameterPlan parameterPlan,
+                           JdbcSqlReference reference,
                            List<String> generatedColumns,
                            TypeName explicitMapper,
                            List<TypedElementInfo> recordComponents) {
@@ -86,6 +89,7 @@ final class JdbcMethodPlan {
         this.mappingKind = mappingKind;
         this.mappedType = mappedType;
         this.parameterPlan = parameterPlan;
+        this.reference = reference;
         this.generatedColumns = generatedColumns;
         this.explicitMapper = explicitMapper;
         this.recordComponents = List.copyOf(recordComponents);
@@ -104,11 +108,10 @@ final class JdbcMethodPlan {
                 .orElseThrow(() -> failure(method,
                                            "An abstract JDBC repository method must declare @Jdbc.Statement."));
         String sql = statement.stringValue().orElse("");
-        String name = statement.stringValue("name").orElse("");
-        if ((!sql.isEmpty() && sql.isBlank()) || (!name.isEmpty() && name.isBlank())
-                || sql.isBlank() == name.isBlank()) {
-            throw failure(method, "The @Jdbc.Statement annotation must declare exactly one nonblank SQL value or name.");
+        if (sql.isBlank()) {
+            throw failure(method, "The @Jdbc.Statement value must not be blank.");
         }
+        JdbcSqlReference reference = JdbcSqlReference.parse(sql, method);
 
         Return result = returnPlan(method);
         boolean generatedKeys = method.hasAnnotation(JdbcCodegenTypes.JDBC_GENERATED_KEYS);
@@ -137,18 +140,22 @@ final class JdbcMethodPlan {
                                   result.mappedType(),
                                   rowMapperRequested,
                                   explicitMapper);
-        JdbcSqlParameterPlan parameters = name.isEmpty()
+        JdbcSqlParameterPlan parameters = reference == null
                 ? JdbcSqlParameterPlan.create(sql, method.parameterArguments(), method)
-                : JdbcSqlParameterPlan.configured(name,
+                : JdbcSqlParameterPlan.configured(sql,
                                                   method.parameterArguments(),
                                                   method,
                                                   roundContext.typeHierarchyResolver());
+        if (reference != null && reference.defaultSql() != null) {
+            JdbcSqlParameterPlan.create(reference.defaultSql(), method.parameterArguments(), method);
+        }
         return new JdbcMethodPlan(method,
                                   operation,
                                   result.shape(),
                                   mapping.kind(),
                                   result.mappedType(),
                                   parameters,
+                                  reference,
                                   generatedColumns,
                                   explicitMapper,
                                   mapping.recordComponents());
@@ -189,8 +196,12 @@ final class JdbcMethodPlan {
         return parameterPlan;
     }
 
+    JdbcSqlReference reference() {
+        return reference;
+    }
+
     boolean configured() {
-        return method.annotation(JdbcCodegenTypes.JDBC_STATEMENT).stringValue("name").filter(it -> !it.isEmpty()).isPresent();
+        return reference != null;
     }
 
     String jdbcSql() {

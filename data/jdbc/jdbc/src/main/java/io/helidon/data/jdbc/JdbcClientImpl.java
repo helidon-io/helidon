@@ -15,9 +15,10 @@
  */
 package io.helidon.data.jdbc;
 
-import java.util.Map;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import javax.sql.DataSource;
 
@@ -36,7 +37,6 @@ import io.helidon.service.registry.Services;
  */
 final class JdbcClientImpl implements JdbcClient {
 
-    private final Map<String, JdbcConfiguredStatement> statements;
     private final JdbcClientConfig prototype;
     private final JdbcRunner runner;
     private final CachePolicy cachePolicy;
@@ -54,7 +54,6 @@ final class JdbcClientImpl implements JdbcClient {
                    DataSource dataSource,
                    JdbcConnectionLease.Provider leaseProvider,
                    CachePolicy cachePolicy) {
-        this.statements = JdbcConfiguredStatement.catalog(prototype.statements());
         this.prototype = prototype;
         this.runner = new JdbcRunner(dataSource, leaseProvider);
         this.cachePolicy = cachePolicy;
@@ -123,16 +122,26 @@ final class JdbcClientImpl implements JdbcClient {
     }
 
     @Override
-    public Statement createNamed(String name) {
-        Objects.requireNonNull(name, "The configured statement name must not be null.");
-        if (name.isBlank()) {
-            throw new IllegalArgumentException("The configured statement name must not be blank.");
+    public Supplier<Statement> prepare(String sql) {
+        Objects.requireNonNull(sql, "The SQL statement must not be null.");
+        return new JdbcStatementFactory(runner, JdbcConfiguredStatement.create(sql));
+    }
+
+    @Override
+    public Supplier<Statement> prepare(String sql, List<String> inputNames) {
+        Objects.requireNonNull(sql, "The SQL statement must not be null.");
+        Objects.requireNonNull(inputNames, "The input names must not be null.");
+        inputNames.forEach(name -> Objects.requireNonNull(name, "The input name must not be null."));
+        List<String> names = List.copyOf(inputNames);
+        return new JdbcStatementFactory(runner, JdbcConfiguredStatement.create(sql, names));
+    }
+
+    Supplier<Statement> prepareNamed(String sql, List<String> inputNames) {
+        JdbcConfiguredStatement definition = JdbcConfiguredStatement.create(sql, List.copyOf(inputNames));
+        if (!definition.namedMarkers()) {
+            throw new IllegalArgumentException("A repository with parameter aliases requires named SQL markers.");
         }
-        JdbcConfiguredStatement definition = statements.get(name);
-        if (definition == null) {
-            throw new DataException("The statement name is not configured for this JDBC client.");
-        }
-        return new JdbcStatement(runner, definition);
+        return new JdbcStatementFactory(runner, definition);
     }
 
     /**

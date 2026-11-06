@@ -16,7 +16,9 @@
 package io.helidon.data.jdbc;
 
 import java.sql.JDBCType;
+import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 import io.helidon.common.Api;
 import io.helidon.data.jdbc.JdbcClient.Statement;
@@ -67,6 +69,36 @@ public final class GeneratedJdbcData {
             return clientImpl.createGenerated(sql, parameterCount);
         }
         return client.create(sql);
+    }
+
+    /**
+     * Prepares named SQL for a generated repository with effective parameter aliases.
+     * The native provider validates the complete input contract and scans SQL once
+     * without acquiring JDBC resources. The returned supplier creates fresh stages
+     * without rescanning SQL or capturing a transaction context.
+     * The SQL must contain a named marker and use exactly the unique input names
+     * supplied in the list. Markers may repeat, and the list is defensively copied.
+     * The supplier is safe to share. Individual stages are not safe for concurrent mutation.
+     *
+     * @param client The native Helidon JDBC client owns execution.
+     * @param sql The SQL contains named markers for every logical input.
+     * @param inputNames The effective names identify inputs in declaration order.
+     * @return The supplier retains an immutable definition and creates fresh stages.
+     * @throws NullPointerException The client, SQL, list, or a list entry is null.
+     * @throws IllegalArgumentException The SQL or input contract is invalid, or SQL does not use named markers.
+     * @throws UnsupportedOperationException The client is not the native Helidon JDBC client.
+     */
+    @Api.Since("28.0.0")
+    public static Supplier<Statement> prepareNamed(JdbcClient client, String sql, List<String> inputNames) {
+        Objects.requireNonNull(client, "The JDBC client must not be null.");
+        Objects.requireNonNull(sql, "The SQL statement must not be null.");
+        Objects.requireNonNull(inputNames, "The input names must not be null.");
+        inputNames.forEach(name -> Objects.requireNonNull(name, "The input name must not be null."));
+        if (client instanceof JdbcClientImpl clientImpl) {
+            return clientImpl.prepareNamed(sql, inputNames);
+        }
+        throw new UnsupportedOperationException(
+                "Named preparation for generated aliases requires the native Helidon JDBC client.");
     }
 
     /**
