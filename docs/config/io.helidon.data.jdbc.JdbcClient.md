@@ -44,6 +44,19 @@ Configuration for a JDBC client
 </tr>
 <tr>
 <td>
+<a id="health-check"></a>
+<a href="io.helidon.data.jdbc.JdbcHealthCheckFactory.md">
+<code>health-<wbr>check</code>
+</a>
+</td>
+<td>
+</td>
+<td>
+</td>
+<td>Configuration for health-check</td>
+</tr>
+<tr>
+<td>
 <code>name</code>
 </td>
 <td>

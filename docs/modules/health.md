@@ -433,6 +433,14 @@ You can control the thresholds for built-in health checks in either of two ways:
   above.
 - Using configuration as explained in [Configuration](#configuration).
 
+### Data JDBC Health Checks
+
+Data JDBC provides checks for SQL data sources and JDBC clients, with readiness
+membership by default and optional liveness selection. Enable each configured check
+explicitly or register an instance with a Health observer. See [Data Source and JDBC
+Client Health Checks](data-jdbc/health-checks.md) for dependencies, configuration,
+application invocation, endpoint behavior, and pool recovery limitations.
+
 ### Kubernetes Probes
 
 - [Liveness Probe](#liveness-probe)

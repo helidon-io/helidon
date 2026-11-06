@@ -503,11 +503,6 @@
             </dependency>
             <dependency>
                 <groupId>io.helidon.data.jdbc</groupId>
-                <artifactId>helidon-data-jdbc-health</artifactId>
-                <version>${helidon.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.helidon.data.jdbc</groupId>
                 <artifactId>helidon-data-jdbc-codegen</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
