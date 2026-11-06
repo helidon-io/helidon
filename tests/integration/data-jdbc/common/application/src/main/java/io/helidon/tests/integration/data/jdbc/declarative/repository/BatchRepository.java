@@ -21,13 +21,14 @@ import java.util.List;
 import io.helidon.data.Data;
 import io.helidon.data.jdbc.Jdbc;
 import io.helidon.data.jdbc.JdbcClient;
+import io.helidon.tests.integration.data.jdbc.parameters.BatchAliasStatements;
 
 /**
- * Declares portable batches using existing Java parameter names and positional bindings.
+ * Declares batches using Java names, positional bindings, and inherited parameter aliases.
  */
 @Data.Repository
 @Data.Provider("jdbc")
-public interface BatchRepository {
+public interface BatchRepository extends BatchAliasStatements<String> {
     @Jdbc.Statement("INSERT INTO CONTACT (NAME, EMAIL) VALUES (:rows, :statement)")
     @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
     JdbcClient.BatchResult insert(List<String> rows, String statement);
@@ -39,6 +40,18 @@ public interface BatchRepository {
     @Jdbc.Statement("UPDATE CONTACT SET NAME = ?, EMAIL = ? WHERE ID = ?")
     @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
     JdbcClient.BatchResult aligned(Iterator<String> rows, String statement, long... iterator);
+
+    @Override
+    @Jdbc.Statement("INSERT INTO CONTACT (NAME, EMAIL) VALUES (:rows, :email)")
+    @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
+    JdbcClient.BatchResult insertAliased(List<String> SQL_INSERT_ALIASED, String jdbcClient);
+
+    @Jdbc.Statement("UPDATE CONTACT SET NAME = :name, EMAIL = :email WHERE ID = :id OR ID = :id")
+    @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
+    JdbcClient.BatchResult aliasedRecords(@Data.Param("email") String rows, Iterable<Rename> bindings);
+
+    record Rename(String name, long id) {
+    }
 
     record Change(String name, String email, long id) {
     }

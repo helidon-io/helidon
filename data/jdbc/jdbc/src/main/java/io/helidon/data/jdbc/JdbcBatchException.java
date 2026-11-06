@@ -19,11 +19,14 @@ import io.helidon.common.Api;
 import io.helidon.data.DataException;
 
 /**
- * Reports a sanitized batch failure with detached evidence for every captured item.
- * Counts do not establish transaction completion. Only the provider constructs this exception.
+ * Reports a batch failure with sanitized diagnostics and an outcome for every captured item.
+ * Outcomes describe execution without establishing commit or rollback. Only the provider constructs this exception.
  */
 @Api.Incubating
 public final class JdbcBatchException extends DataException {
+    /**
+     * The outcomes remain available after JDBC resources are released.
+     */
     private final JdbcClient.BatchResult result;
 
     JdbcBatchException(JdbcClient.BatchResult result, Throwable cause) {
@@ -32,7 +35,7 @@ public final class JdbcBatchException extends DataException {
     }
 
     /**
-     * Returns the evidence available before failure, including successful execution followed by cleanup failure.
+     * Returns the available execution outcomes, including successful counts when cleanup fails after execution.
      *
      * @return The immutable result contains one entry per captured item.
      */

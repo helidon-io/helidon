@@ -30,7 +30,7 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
 /**
- * Emits lazy source alignment and capture through the public batch terminal.
+ * Emits source adapters that align inputs during capture through the public batch terminal.
  */
 final class JdbcBatchGenerator {
     private JdbcBatchGenerator() {
@@ -47,7 +47,8 @@ final class JdbcBatchGenerator {
         List<String> iterators = new ArrayList<>();
         List<String> elements = new ArrayList<>();
         List<String> available = new ArrayList<>();
-        // Validate all source references before staging and obtain iterators only after the terminal claims its stage.
+        // Validate references before creating a stage so invalid input cannot consume it.
+        // Obtain iterators only after the batch terminal has claimed the stage.
         for (JdbcBatchPlan.Source source : batch.sources()) {
             method.addContent(Objects.class).addContent(".requireNonNull(")
                     .addContent(parameterNames.get(source.parameter().elementName()))
