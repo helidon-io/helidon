@@ -37,7 +37,7 @@ import io.helidon.common.uri.UriQuery;
 import io.helidon.common.uri.UriQueryWriteable;
 
 // Preserve an imported query until its parameters are explicitly changed.
-final class ClientUriQuery implements UriQueryWriteable {
+final class ClientUriQuery implements UriQueryWriteable, UriQuery.Copyable {
     private final UriQueryWriteable delegate = UriQueryWriteable.create();
 
     private String rawQuery;
@@ -62,6 +62,11 @@ final class ClientUriQuery implements UriQueryWriteable {
     @Override
     public String toString() {
         return delegate.toString();
+    }
+
+    @Override
+    public UriQuery copy() {
+        return UriQueryWriteable.create().from(delegate);
     }
 
     @Override

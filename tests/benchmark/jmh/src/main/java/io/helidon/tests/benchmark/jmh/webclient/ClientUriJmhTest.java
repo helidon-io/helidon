@@ -21,6 +21,7 @@ import java.net.URI;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.webclient.api.ClientUri;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -86,6 +87,11 @@ public class ClientUriJmhTest {
     @Benchmark
     public String copyAndSerialize(RequestTargetState state) {
         return ClientUri.create(state.clientUri).pathWithQueryAndFragment();
+    }
+
+    @Benchmark
+    public String copyExternalQueryAndSerialize(RequestTargetState state) {
+        return UriQueryWriteable.create().from(state.clientUri.query()).rawValue();
     }
 
     @Benchmark

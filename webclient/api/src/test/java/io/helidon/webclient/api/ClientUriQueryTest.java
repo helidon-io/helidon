@@ -168,7 +168,8 @@ class ClientUriQueryTest {
 
         assertThat(copy.getAllRaw("%61"), is(List.of("first")));
         assertThat(copy.getAllRaw("a"), is(List.of("second")));
-        assertThat(copy.getAllRaw("a+b"), is(List.of("x+y")));
+        assertThat(copy.getAllRaw("a%20b"), is(source.query().getAllRaw("a%20b")));
+        assertThat(copy.getAllRaw("a%20b"), is(List.of("x%20y")));
         assertThat(copy.all("a"), is(List.of("first", "second")));
         assertThat(copy.all("a b"), is(List.of("x y")));
         assertThat(copy.all("flag"), is(List.of("")));
@@ -177,6 +178,121 @@ class ClientUriQueryTest {
         copy.set("a", "copy-only");
         assertThat(source.query().all("a"), is(List.of("first", "second")));
         assertThat(source.query().rawValue(), is("%61=first&a=second&a+b=x+y&flag&&"));
+    }
+
+    @Test
+    void testExternalCopyKeepsClearedRawParameterMembership() {
+        var source = ClientUri.create(URI.create("https://example.test/?a=old"));
+        source.query().getAllRaw("a").clear();
+
+        UriQueryWriteable copy = UriQueryWriteable.create().from(source.query());
+
+        assertThat(copy.contains("a"), is(true));
+        assertThat(copy.getAllRaw("a"), is(List.of()));
+        assertThat(copy.all("a"), is(List.of("old")));
+        assertThat(copy.rawValue(), is(""));
+        copy.setIfAbsent("a", "replacement");
+        assertThat(copy.getAllRaw("a"), is(List.of()));
+        assertThat(copy.all("a"), is(List.of("old")));
+
+        copy.getAllRaw("a").add("copy-only");
+        copy.all("a").set(0, "decoded-copy-only");
+        assertThat(source.query().getAllRaw("a"), is(List.of()));
+        assertThat(source.query().all("a"), is(List.of("old")));
+        source.query().getAllRaw("a").add("source-only");
+        source.query().all("a").set(0, "decoded-source-only");
+        assertThat(copy.getAllRaw("a"), is(List.of("copy-only")));
+        assertThat(copy.all("a"), is(List.of("decoded-copy-only")));
+    }
+
+    @Test
+    void testExternalCopyKeepsClearedEncodedAliasesAndEmptyRawNames() {
+        var source = ClientUri.create(URI.create("https://example.test/?%61=first&a=second&=empty-one&=empty-two"));
+        source.query().getAllRaw("%61").clear();
+        source.query().getAllRaw("").clear();
+        source.query().all("a").set(0, "decoded-first");
+        source.query().all("").set(0, "decoded-empty");
+
+        UriQueryWriteable copy = UriQueryWriteable.create().from(source.query());
+
+        assertThat(copy.contains("%61"), is(true));
+        assertThat(copy.contains(""), is(true));
+        assertThat(copy.getAllRaw("%61"), is(List.of()));
+        assertThat(copy.getAllRaw(""), is(List.of()));
+        assertThat(copy.getAllRaw("a"), is(List.of("second")));
+        assertThat(copy.all("a"), is(List.of("decoded-first", "second")));
+        assertThat(copy.all(""), is(List.of("decoded-empty", "empty-two")));
+        assertThat(copy.names().contains("a"), is(true));
+        assertThat(copy.names().contains("%61"), is(false));
+        assertThat(copy.names().contains(""), is(true));
+        assertThat(copy.rawValue(), is("a=second"));
+        copy.setIfAbsent("%61", "replacement");
+        copy.setIfAbsent("", "replacement");
+        assertThat(copy.getAllRaw("%61"), is(List.of()));
+        assertThat(copy.getAllRaw(""), is(List.of()));
+
+        source.query().getAllRaw("%61").add("source-only");
+        source.query().all("").clear();
+        assertThat(copy.getAllRaw("%61"), is(List.of()));
+        assertThat(copy.all(""), is(List.of("decoded-empty", "empty-two")));
+        copy.getAllRaw("").add("copy-only");
+        copy.all("a").clear();
+        assertThat(source.query().getAllRaw(""), is(List.of()));
+        assertThat(source.query().all("a"), is(List.of("decoded-first", "second")));
+    }
+
+    @Test
+    void testExternalCopyKeepsIndependentlyEditedRawAndDecodedLists() {
+        var source = ClientUri.create(URI.create("https://example.test/?q=one&%71=two&=empty"));
+        source.query().getAllRaw("q").set(0, "raw-one");
+        source.query().getAllRaw("%71").set(0, "raw-two");
+        source.query().all("q").set(0, "decoded-one");
+        source.query().all("").clear();
+
+        UriQueryWriteable copy = UriQueryWriteable.create().from(source.query());
+
+        assertThat(copy.getAllRaw("q"), is(List.of("raw-one")));
+        assertThat(copy.getAllRaw("%71"), is(List.of("raw-two")));
+        assertThat(copy.getAllRaw(""), is(List.of("empty")));
+        assertThat(copy.all("q"), is(List.of("decoded-one", "two")));
+        assertThat(copy.all(""), is(List.of()));
+
+        source.query().getAllRaw("%71").set(0, "source-only");
+        source.query().all("q").set(0, "decoded-source-only");
+        assertThat(copy.getAllRaw("%71"), is(List.of("raw-two")));
+        assertThat(copy.all("q"), is(List.of("decoded-one", "two")));
+        copy.getAllRaw("q").clear();
+        copy.all("q").clear();
+        assertThat(source.query().getAllRaw("q"), is(List.of("raw-one")));
+        assertThat(source.query().all("q"), is(List.of("decoded-source-only", "two")));
+    }
+
+    @Test
+    void testCopyCapabilityReturnsIndependentParameterState() {
+        String raw = "b=2&a=1&b=3&flag&&";
+        var source = ClientUri.create(URI.create("https://example.test/?" + raw));
+
+        UriQuery copy = ((UriQuery.Copyable) source.query()).copy();
+        copy.getAllRaw("b").set(0, "raw-copy-only");
+        copy.all("b").set(0, "decoded-copy-only");
+        copy.getAllRaw("").clear();
+        copy.names().remove("a");
+
+        assertThat(source.query().getAllRaw("b"), is(List.of("2", "3")));
+        assertThat(source.query().all("b"), is(List.of("2", "3")));
+        assertThat(source.query().getAllRaw(""), is(List.of("", "")));
+        assertThat(source.query().names().contains("a"), is(true));
+        assertThat(source.query().rawValue(), is(raw));
+
+        source.query().getAllRaw("b").set(0, "raw-source-only");
+        source.query().all("b").set(0, "decoded-source-only");
+        source.query().getAllRaw("").add("source-only");
+        source.query().names().remove("flag");
+
+        assertThat(copy.getAllRaw("b"), is(List.of("raw-copy-only", "3")));
+        assertThat(copy.all("b"), is(List.of("decoded-copy-only", "3")));
+        assertThat(copy.getAllRaw(""), is(List.of()));
+        assertThat(copy.names().contains("flag"), is(true));
     }
 
     @Test

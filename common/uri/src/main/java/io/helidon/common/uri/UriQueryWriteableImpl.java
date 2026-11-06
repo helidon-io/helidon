@@ -67,6 +67,9 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
 
     @Override
     public UriQueryWriteable from(UriQuery uriQuery) {
+        if (uriQuery instanceof UriQuery.Copyable copyable) {
+            uriQuery = Objects.requireNonNull(copyable.copy(), "Query copy must not be null");
+        }
         if (uriQuery instanceof UriQueryWriteableImpl impl) {
             impl.rawQueryParams.forEach((key, value) -> {
                 rawQueryParams.computeIfAbsent(key, it -> new ArrayList<>())
