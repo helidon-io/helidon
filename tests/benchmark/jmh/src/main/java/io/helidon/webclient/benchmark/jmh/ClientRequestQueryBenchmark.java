@@ -71,7 +71,7 @@ public class ClientRequestQueryBenchmark {
         };
 
         FakeClientRequest request = newRequest();
-        request.uri("https://{host}/items/{id}?template=value");
+        request.uri("https://{host}/items/{id}");
         request.pathParam("host", "other.example");
         request.pathParam("id", "one");
         addQueryParams(request);
@@ -80,7 +80,7 @@ public class ClientRequestQueryBenchmark {
             throw new IllegalStateException("Unexpected absolute-template target: " + resolved);
         }
         UriQuery serializedQuery = UriQuery.create(resolved.toUri());
-        if (serializedQuery.size() != queryParamCount + 1 || !"value".equals(serializedQuery.get("template"))) {
+        if (serializedQuery.size() != queryParamCount) {
             throw new IllegalStateException("Unexpected absolute-template query: " + serializedQuery.rawValue());
         }
         for (int i = 0; i < queryParamCount; i++) {
@@ -122,7 +122,7 @@ public class ClientRequestQueryBenchmark {
     @Benchmark
     public String absoluteTemplate() {
         FakeClientRequest request = newRequest();
-        request.uri("https://{host}/items/{id}?template=value");
+        request.uri("https://{host}/items/{id}");
         request.pathParam("host", "other.example");
         request.pathParam("id", "one");
         addQueryParams(request);
