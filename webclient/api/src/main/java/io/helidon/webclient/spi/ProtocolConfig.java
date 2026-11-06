@@ -16,10 +16,12 @@
 
 package io.helidon.webclient.spi;
 
+import io.helidon.common.Api;
 import io.helidon.config.NamedService;
 
 /**
  * Client protocol configuration.
  */
+@Api.Stable
 public interface ProtocolConfig extends NamedService {
 }

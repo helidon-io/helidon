@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.webclient.grpc;
 import java.util.Arrays;
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.grpc.core.InterceptorWeights;
 import io.helidon.grpc.core.MarshallerSupplier;
 import io.helidon.grpc.core.MethodHandler;
@@ -39,6 +40,7 @@ import io.grpc.MethodDescriptor;
  * {@link #bidirectional(String, String)}, {@link #clientStreaming(String, String)},
  * {@link #serverStreaming(String, String)} or {@link #unary(String, String)}.
  */
+@Api.Stable
 public final class GrpcClientMethodDescriptor {
 
     /**

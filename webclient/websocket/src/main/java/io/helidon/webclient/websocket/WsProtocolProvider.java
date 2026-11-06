@@ -25,6 +25,7 @@ import io.helidon.webclient.spi.ClientProtocolProvider;
  * {@link java.util.ServiceLoader} provider implementation for WebSocket protocol.
  * This supports method {@link io.helidon.webclient.api.WebClient#client(io.helidon.webclient.spi.Protocol)}.
  */
+@Api.Internal
 public class WsProtocolProvider implements ClientProtocolProvider<WsClient, WsClientProtocolConfig> {
     static final String CONFIG_KEY = "websocket";
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,13 @@ package io.helidon.webclient.grpc;
 
 import java.util.Iterator;
 
+import io.helidon.common.Api;
 import io.helidon.webclient.api.ClientUri;
 
 /**
  * Interface implemented by all client URI suppliers.
  */
+@Api.Stable
 public interface ClientUriSupplier extends Iterator<ClientUri>, Iterable<ClientUri> {
 
     @Override

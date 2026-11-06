@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import io.helidon.common.Api;
 import io.helidon.common.LruCache;
 import io.helidon.webclient.api.DnsAddressLookup;
 import io.helidon.webclient.api.RuntimeUnknownHostException;
@@ -30,6 +31,7 @@ import io.helidon.webclient.spi.DnsResolver;
 /**
  * Round-robin DNS resolver implementation.
  */
+@Api.Stable
 public final class RoundRobinDnsResolver implements DnsResolver {
     private static final int CACHE_CAPACITY = 10_000;
     // Identity sentinel used to distinguish a cache miss from a stored value.

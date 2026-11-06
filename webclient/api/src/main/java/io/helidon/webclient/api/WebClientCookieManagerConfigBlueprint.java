@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,11 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 @Prototype.Blueprint
 @Prototype.Configured
+@Api.Stable
 interface WebClientCookieManagerConfigBlueprint extends Prototype.Factory<WebClientCookieManager> {
     /**
      * Whether automatic cookie store is enabled or not.

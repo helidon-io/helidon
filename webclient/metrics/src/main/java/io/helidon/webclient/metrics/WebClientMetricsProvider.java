@@ -27,6 +27,7 @@ import io.helidon.webclient.spi.WebClientServiceProvider;
 /**
  * Client metrics SPI provider implementation.
  */
+@Api.Internal
 public class WebClientMetricsProvider implements WebClientServiceProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.http.Method;
 import io.helidon.metrics.api.MeterRegistry;
@@ -135,6 +136,7 @@ abstract class WebClientMetric implements WebClientService {
     /**
      * Client metric builder.
      */
+    @Api.Stable
     public static final class Builder implements io.helidon.common.Builder<Builder, WebClientMetric> {
 
         private final WebClientMetricType type;

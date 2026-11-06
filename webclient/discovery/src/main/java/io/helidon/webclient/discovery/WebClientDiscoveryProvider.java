@@ -15,6 +15,7 @@
  */
 package io.helidon.webclient.discovery;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.webclient.spi.WebClientServiceProvider;
 
@@ -28,6 +29,7 @@ import io.helidon.webclient.spi.WebClientServiceProvider;
  * @see WebClientDiscovery
  * @see WebClientDiscoveryConfig#builder()
  */
+@Api.Internal
 public final class WebClientDiscoveryProvider implements WebClientServiceProvider {
 
     /**

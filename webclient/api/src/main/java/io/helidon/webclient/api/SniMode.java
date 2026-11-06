@@ -16,9 +16,12 @@
 
 package io.helidon.webclient.api;
 
+import io.helidon.common.Api;
+
 /**
  * Source of the client-side TLS SNI host.
  */
+@Api.Stable
 public enum SniMode {
     /**
      * Use the resolved request URI host.

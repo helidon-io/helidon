@@ -35,6 +35,7 @@ import io.helidon.webclient.telemetry.tracing.WebClientTelemetryTracing;
 /**
  * Provider for a grouping service which gathers telemetry-related webclient services.
  */
+@Api.Internal
 public class WebClientTelemetryProvider implements WebClientServiceProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

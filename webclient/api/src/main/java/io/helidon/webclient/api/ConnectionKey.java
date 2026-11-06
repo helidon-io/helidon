@@ -34,6 +34,7 @@ import io.helidon.webclient.spi.DnsResolver;
 /**
  * Connection key instance contains all needed connection related information.
  */
+@Api.Internal
 public final class ConnectionKey {
     private final String scheme;
     private final String host;

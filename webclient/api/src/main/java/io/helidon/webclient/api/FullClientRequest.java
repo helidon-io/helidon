@@ -31,6 +31,7 @@ import io.helidon.http.Method;
  *
  * @param <T> type of the implementation, to support fluent API
  */
+@Api.Internal
 public interface FullClientRequest<T extends ClientRequest<T>> extends ClientRequest<T> {
     /**
      * Replace a placeholder in URI with an actual value.

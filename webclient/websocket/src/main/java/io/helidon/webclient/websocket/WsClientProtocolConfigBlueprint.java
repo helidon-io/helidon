@@ -20,6 +20,7 @@ import java.util.List;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.webclient.spi.ProtocolConfig;
 import io.helidon.websocket.WsProtocolConfig;
 
@@ -28,6 +29,7 @@ import io.helidon.websocket.WsProtocolConfig;
  */
 @Prototype.Blueprint
 @Prototype.Configured
+@Api.Stable
 interface WsClientProtocolConfigBlueprint extends ProtocolConfig, WsProtocolConfig {
     @Override
     default String type() {

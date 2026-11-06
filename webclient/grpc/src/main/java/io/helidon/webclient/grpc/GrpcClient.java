@@ -20,6 +20,7 @@ import java.util.Collection;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.webclient.api.ReleasableResource;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.spi.Protocol;
@@ -30,6 +31,7 @@ import io.grpc.ClientInterceptor;
 /**
  * gRPC client.
  */
+@Api.Stable
 public interface GrpcClient extends RuntimeType.Api<GrpcClientConfig>, ReleasableResource {
     /**
      * Protocol ID constant for gRPC.

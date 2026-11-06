@@ -30,6 +30,7 @@ import io.helidon.common.uri.UriValidator;
 /**
  * URI abstraction for WebClient.
  */
+@Api.Stable
 public class ClientUri implements UriInfo {
     private final UriInfo base;
     private final UriQueryWriteable query;

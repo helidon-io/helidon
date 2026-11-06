@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,12 @@ package io.helidon.webclient.http2;
 
 import java.time.Duration;
 
+import io.helidon.common.Api;
+
 /**
  * Configuration for an HTTP2 stream.
  */
+@Api.Internal
 public interface Http2StreamConfig {
 
     /**

@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -48,6 +49,7 @@ import io.helidon.webclient.spi.WebClientService;
 /**
  * Client service for security propagation.
  */
+@Api.Stable
 public class WebClientSecurity implements WebClientService {
     private static final System.Logger LOGGER = System.getLogger(WebClientSecurity.class.getName());
 

@@ -26,6 +26,7 @@ import io.helidon.webclient.spi.DnsResolverProvider;
  * Provider of the {@link FirstDnsResolver} instance.
  */
 @Weight(Weighted.DEFAULT_WEIGHT)
+@Api.Internal
 public class FirstDnsResolverProvider implements DnsResolverProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

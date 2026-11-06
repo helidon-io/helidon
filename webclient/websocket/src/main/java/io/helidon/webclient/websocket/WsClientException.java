@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@
 
 package io.helidon.webclient.websocket;
 
+import io.helidon.common.Api;
+
 /**
  * A WebSocket client exception.
  */
+@Api.Stable
 public class WsClientException extends RuntimeException {
     /**
      * Exception without an underlying cause.

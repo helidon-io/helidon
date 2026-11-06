@@ -18,9 +18,12 @@ package io.helidon.webclient.http2;
 
 import java.time.Duration;
 
+import io.helidon.common.Api;
+
 /**
  * Thrown when no data are received over the stream within configured request timeout.
  */
+@Api.Internal
 public class StreamTimeoutException extends RuntimeException {
     /**
      * Stream that timed out.

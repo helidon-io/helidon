@@ -26,6 +26,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Path({"WebClient", "HTTP/1.1"})
 module io.helidon.webclient.http1 {
 
+    requires io.helidon.common;
     requires io.helidon.builder.api; // @Builder - interfaces are a runtime dependency
 
     requires static io.helidon.common.features.api;

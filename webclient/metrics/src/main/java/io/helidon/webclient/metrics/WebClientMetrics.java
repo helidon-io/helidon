@@ -22,6 +22,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.webclient.api.WebClientServiceRequest;
@@ -31,6 +32,7 @@ import io.helidon.webclient.spi.WebClientService;
 /**
  * Container object for all metrics created by the config.
  */
+@Api.Stable
 public class WebClientMetrics implements WebClientService {
 
     private final List<WebClientMetric> metrics;

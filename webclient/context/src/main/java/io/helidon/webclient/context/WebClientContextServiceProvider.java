@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.context;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.webclient.spi.WebClientService;
 import io.helidon.webclient.spi.WebClientServiceProvider;
@@ -23,6 +24,7 @@ import io.helidon.webclient.spi.WebClientServiceProvider;
 /**
  * Client Context Propagation service provider implementation.
  */
+@Api.Internal
 public class WebClientContextServiceProvider implements WebClientServiceProvider {
     /**
      * Default constructor required by {@link java.util.ServiceLoader}.

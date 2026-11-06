@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.spi;
 
+import io.helidon.common.Api;
 import io.helidon.webclient.api.WebClient;
 
 /**
@@ -26,6 +27,7 @@ import io.helidon.webclient.api.WebClient;
  * @param <T> type of protocol
  * @param <C> type of the protocol config
  */
+@Api.Internal
 public interface ClientProtocolProvider<T, C> {
     /**
      * Protocol id for ALPN (protocol negotiation when using TLS).

@@ -19,11 +19,14 @@ package io.helidon.webclient.api;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 
+import io.helidon.common.Api;
+
 /**
  * A resource that can be released or closed.
  * This is used to handle HTTP/1.1 connection, for example. In other cases (such as HTTP/2 streams),
  * the release call also closes the resource.
  */
+@Api.Stable
 public interface ReleasableResource {
     /**
      * Releases the resource, and if this resource is re-usable, enabled reuse.

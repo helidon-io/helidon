@@ -18,6 +18,7 @@ package io.helidon.webclient.discovery;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.spi.WebClientService;
@@ -52,6 +53,7 @@ import io.helidon.webclient.spi.WebClientService;
  * @see WebClientDiscoveryProvider
  * @see WebClientDiscoveryProvider#create(io.helidon.config.Config, String)
  */
+@Api.Stable
 public interface WebClientDiscovery extends RuntimeType.Api<WebClientDiscoveryConfig>, WebClientService {
 
     /**

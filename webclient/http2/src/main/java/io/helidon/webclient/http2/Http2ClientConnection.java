@@ -88,6 +88,7 @@ import static java.lang.System.Logger.Level.WARNING;
 /**
  * Represents an HTTP2 connection on the client.
  */
+@Api.Internal
 public class Http2ClientConnection {
     private static final System.Logger LOGGER = System.getLogger(Http2ClientConnection.class.getName());
     private static final int FRAME_HEADER_LENGTH = 9;

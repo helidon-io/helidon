@@ -28,6 +28,7 @@ import io.helidon.webclient.grpc.spi.GrpcClientServiceProvider;
 /**
  * gRPC client tracing SPI provider implementation.
  */
+@Api.Internal
 public class GrpcClientTracingProvider implements GrpcClientServiceProvider {
 
     /**

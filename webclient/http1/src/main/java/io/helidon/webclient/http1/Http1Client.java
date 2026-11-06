@@ -19,6 +19,7 @@ package io.helidon.webclient.http1;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.webclient.api.HttpClient;
 import io.helidon.webclient.api.WebClient;
@@ -27,6 +28,7 @@ import io.helidon.webclient.spi.Protocol;
 /**
  * HTTP/1.1 client.
  */
+@Api.Stable
 public interface Http1Client extends HttpClient<Http1ClientRequest>, RuntimeType.Api<Http1ClientConfig> {
     /**
      * ID of HTTP/1.1 protocol, as used for example in ALPN.

@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.ClientResponseTrailers;
 import io.helidon.http.Status;
@@ -29,6 +30,7 @@ import io.helidon.http.Status;
  * Response which is created upon receiving of server response.
  */
 @Prototype.Blueprint(decorator = WebClientServiceResponseDecorator.class)
+@Api.Stable
 interface WebClientServiceResponseBlueprint {
 
     /**

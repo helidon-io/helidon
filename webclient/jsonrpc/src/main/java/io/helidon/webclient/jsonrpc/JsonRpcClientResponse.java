@@ -17,6 +17,7 @@ package io.helidon.webclient.jsonrpc;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonValue;
 import io.helidon.jsonrpc.core.JsonRpcError;
@@ -26,6 +27,7 @@ import io.helidon.webclient.api.HttpClientResponse;
 /**
  * A representation of a JSON-RPC client response.
  */
+@Api.Preview
 public interface JsonRpcClientResponse extends HttpClientResponse {
 
     /**

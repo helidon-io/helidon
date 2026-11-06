@@ -20,6 +20,7 @@ import java.net.URI;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.webclient.api.ReleasableResource;
 import io.helidon.webclient.api.WebClient;
@@ -40,6 +41,7 @@ import io.helidon.websocket.WsListener;
  * {@link io.helidon.webclient.api.WebClient#client(io.helidon.webclient.spi.Protocol)} does not close the originating
  * WebClient or its other protocol clients.
  */
+@Api.Stable
 public interface WsClient extends RuntimeType.Api<WsClientConfig>, ReleasableResource {
     /**
      * Protocol to use to obtain an instance of WebSocket specific client from
