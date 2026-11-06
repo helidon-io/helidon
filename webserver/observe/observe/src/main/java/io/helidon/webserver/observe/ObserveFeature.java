@@ -24,6 +24,7 @@ import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.http.HttpException;
@@ -36,6 +37,7 @@ import io.helidon.webserver.spi.ServerFeature;
 /**
  * Support for all observe providers that are available (or configured).
  */
+@Api.Stable
 public class ObserveFeature implements ServerFeature, Weighted, RuntimeType.Api<ObserveFeatureConfig> {
     static final String OBSERVE_ID = "observe";
     static final double WEIGHT = 80;

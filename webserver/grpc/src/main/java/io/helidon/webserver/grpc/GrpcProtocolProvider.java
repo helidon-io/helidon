@@ -24,6 +24,7 @@ import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 /**
  * {@link java.util.ServiceLoader} provider implementation of grpc sub-protocol of HTTP/2.
  */
+@Api.Internal
 public class GrpcProtocolProvider implements Http2SubProtocolProvider<GrpcConfig> {
     static final String CONFIG_NAME = "grpc";
 

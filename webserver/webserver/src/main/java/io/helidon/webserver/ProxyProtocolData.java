@@ -15,6 +15,8 @@
  */
 package io.helidon.webserver;
 
+import io.helidon.common.Api;
+
 /**
  * Proxy protocol data parsed by {@link ProxyProtocolHandler}. This interface exposes the fields which
  * are common across the text (V1) and binary (V2) variants of the Proxy protocol. If the binary protocol
@@ -33,6 +35,7 @@ package io.helidon.webserver;
  * }]
  * </pre>
  */
+@Api.Stable
 public interface ProxyProtocolData {
 
     /**

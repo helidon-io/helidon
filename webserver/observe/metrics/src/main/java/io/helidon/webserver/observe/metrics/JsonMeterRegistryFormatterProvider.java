@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.metrics.api.FormatterContext;
@@ -31,6 +32,7 @@ import io.helidon.metrics.spi.MeterRegistryFormatterProvider;
 /**
  * JSON formatter provider.
  */
+@Api.Internal
 public class JsonMeterRegistryFormatterProvider implements MeterRegistryFormatterProvider {
 
     /**

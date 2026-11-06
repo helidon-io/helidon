@@ -25,6 +25,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Flavor(HelidonFlavor.SE)
 @Features.Path({"Observe", "Config"})
 module io.helidon.webserver.observe.config {
+    requires io.helidon.common;
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 

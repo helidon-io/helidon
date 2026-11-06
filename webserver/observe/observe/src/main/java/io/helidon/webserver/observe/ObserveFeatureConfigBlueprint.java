@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.webserver.observe.spi.ObserveProvider;
 import io.helidon.webserver.observe.spi.Observer;
@@ -32,6 +33,7 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
 @Prototype.Blueprint
 @Prototype.Configured(value = ObserveFeature.OBSERVE_ID, root = false)
 @Prototype.Provides(ServerFeatureProvider.class)
+@Api.Stable
 interface ObserveFeatureConfigBlueprint extends Prototype.Factory<ObserveFeature> {
 
     /**

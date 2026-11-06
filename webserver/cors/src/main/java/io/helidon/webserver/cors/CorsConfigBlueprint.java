@@ -21,12 +21,14 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.Weighted;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
 /**
  * Configuration of CORS feature.
  */
+@Api.Stable
 @Prototype.Blueprint(decorator = CorsConfigSupport.BuilderDecorator.class)
 @Prototype.Configured(CorsFeature.CORS_ID)
 @Prototype.Provides(ServerFeatureProvider.class)

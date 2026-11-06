@@ -18,6 +18,7 @@ package io.helidon.webserver.observe.metrics.spi;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Service;
 import io.helidon.webserver.http.Filter;
 import io.helidon.webserver.observe.metrics.MetricsObserverConfig;
@@ -28,6 +29,7 @@ import io.helidon.webserver.observe.metrics.MetricsObserverConfig;
  * HTTP requests (for example, implementing metrics semantic conventions).
  */
 @Service.Contract
+@Api.Stable
 public interface AutoHttpMetricsProvider {
 
     /**

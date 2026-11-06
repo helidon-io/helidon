@@ -19,6 +19,7 @@ package io.helidon.webserver.http;
 import java.util.EnumMap;
 import java.util.Map;
 
+import io.helidon.common.Api;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.DirectHandler.EventType;
 import io.helidon.http.HeaderNames;
@@ -34,6 +35,7 @@ import static java.lang.System.Logger.Level.WARNING;
 /**
  * Configured handlers for expected (and internal) exceptions.
  */
+@Api.Stable
 public class DirectHandlers {
     private static final System.Logger LOGGER = System.getLogger(DirectHandlers.class.getName());
 

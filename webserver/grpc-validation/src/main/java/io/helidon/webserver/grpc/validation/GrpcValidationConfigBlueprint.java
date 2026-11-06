@@ -18,6 +18,7 @@ package io.helidon.webserver.grpc.validation;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.webserver.grpc.spi.GrpcServerServiceProvider;
 
 /**
@@ -26,6 +27,7 @@ import io.helidon.webserver.grpc.spi.GrpcServerServiceProvider;
 @Prototype.Blueprint
 @Prototype.Configured(value = GrpcValidation.TYPE, root = false)
 @Prototype.Provides(GrpcServerServiceProvider.class)
+@Api.Preview
 interface GrpcValidationConfigBlueprint {
     /**
      * Whether gRPC validation is enabled.

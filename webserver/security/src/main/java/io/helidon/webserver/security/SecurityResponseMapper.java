@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.security;
 
+import io.helidon.common.Api;
 import io.helidon.security.SecurityResponse;
 import io.helidon.service.registry.Service;
 import io.helidon.webserver.http.ServerResponse;
@@ -29,6 +30,7 @@ import io.helidon.webserver.http.ServerResponse;
  */
 @FunctionalInterface
 @Service.Contract
+@Api.Stable
 public interface SecurityResponseMapper {
     /**
      * Called when a security response is aborted due to a security problem (e.g. authentication

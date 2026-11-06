@@ -28,6 +28,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Flavor(HelidonFlavor.SE)
 @Features.InvalidFlavor(HelidonFlavor.MP)
 module io.helidon.webserver.validation {
+    requires io.helidon.common;
     requires static io.helidon.common.features.api;
 
     requires io.helidon.http;

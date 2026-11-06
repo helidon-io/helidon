@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
 
+import io.helidon.common.Api;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.webserver.ProtocolConfigs;
 import io.helidon.webserver.http1.spi.Http1UpgradeProvider;
@@ -31,6 +32,7 @@ import io.helidon.webserver.spi.ProtocolConfig;
 /**
  * {@link java.util.ServiceLoader} upgrade protocol provider to upgrade from HTTP/1.1 to HTTP/2.
  */
+@Api.Internal
 public class Http2UpgradeProvider implements Http1UpgradeProvider<Http2Config> {
     private final Http2Config http2Config;
     private final List<Http2SubProtocolProvider> subProtocolProviders;

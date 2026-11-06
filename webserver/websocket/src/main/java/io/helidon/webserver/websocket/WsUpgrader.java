@@ -59,6 +59,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 /**
  * {@link io.helidon.webserver.http1.spi.Http1Upgrader} implementation to upgrade from HTTP/1.1 to WebSocket.
  */
+@Api.Stable
 public class WsUpgrader implements Http1Upgrader {
 
     /**

@@ -32,6 +32,7 @@ import io.helidon.webserver.http.DecodedLimiter;
 /**
  * Server request entity.
  */
+@Api.Internal
 public final class Http2ServerRequestEntity extends ReadableEntityBase implements ReadableEntity {
     private final ServerRequestHeaders requestHeaders;
     private final MediaContext mediaContext;

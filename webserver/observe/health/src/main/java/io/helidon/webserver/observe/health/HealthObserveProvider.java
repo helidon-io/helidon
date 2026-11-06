@@ -32,6 +32,7 @@ import io.helidon.webserver.observe.spi.Observer;
  * {@link io.helidon.service.registry.ServiceRegistry} and {@link java.util.ServiceLoader}.
  */
 @Service.Singleton
+@Api.Internal
 public class HealthObserveProvider implements ObserveProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

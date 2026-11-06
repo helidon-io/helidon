@@ -24,6 +24,7 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MeterRegistry;
@@ -61,6 +62,7 @@ import io.helidon.webserver.spi.ServerFeature;
  *  req.context().get(MetricRegistry.class).ifPresent(reg -> reg.counter("myCounter").inc());
  * }</pre>
  */
+@Api.Stable
 public class MetricsObserver implements Observer, RuntimeType.Api<MetricsObserverConfig> {
     private final MetricsObserverConfig config;
     private final LazyValue<MetricsFeature> metricsFeature;

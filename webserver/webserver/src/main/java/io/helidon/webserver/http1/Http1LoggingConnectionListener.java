@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http1;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpLogConfig;
@@ -28,6 +29,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * Connection listener that logs all exchanged information.
  */
+@Api.Stable
 public class Http1LoggingConnectionListener implements Http1ConnectionListener {
     private static final String LOGGER_NAME = Http1LoggingConnectionListener.class.getName();
 

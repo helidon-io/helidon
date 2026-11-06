@@ -25,6 +25,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Flavor(HelidonFlavor.SE)
 @Features.Path({"WebServer", "Static Content"})
 module io.helidon.webserver.staticcontent {
+    requires io.helidon.common;
 
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;

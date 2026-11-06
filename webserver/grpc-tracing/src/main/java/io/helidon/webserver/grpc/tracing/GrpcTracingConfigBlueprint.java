@@ -20,6 +20,7 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.grpc.core.GrpcTracingName;
 import io.helidon.webserver.grpc.ServerRequestAttribute;
 
@@ -31,6 +32,7 @@ import io.helidon.webserver.grpc.ServerRequestAttribute;
  */
 @Prototype.Blueprint
 @Prototype.Configured
+@Api.Preview
 interface GrpcTracingConfigBlueprint {
 
     /**

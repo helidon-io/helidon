@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.observe.tracing.spi;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Service;
 import io.helidon.tracing.config.SpanTracingConfig;
 import io.helidon.webserver.http.RoutingRequest;
@@ -26,6 +27,7 @@ import io.helidon.webserver.observe.tracing.TracingSemanticConventions;
  * Behavior of a provider of tracing semantic conventions.
  */
 @Service.Contract
+@Api.Stable
 public interface TracingSemanticConventionsProvider {
 
     /**

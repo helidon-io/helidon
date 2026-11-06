@@ -62,6 +62,7 @@ import io.helidon.webserver.http.spi.SinkProviderContext;
  * @param <T> type of the response extending this class to allow fluent API
  */
 @SuppressWarnings("unchecked")
+@Api.Internal
 public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implements RoutingResponse {
 
     /**

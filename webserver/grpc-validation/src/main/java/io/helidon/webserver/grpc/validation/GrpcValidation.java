@@ -19,6 +19,7 @@ package io.helidon.webserver.grpc.validation;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.grpc.core.InterceptorWeights;
 import io.helidon.grpc.core.WeightedBag;
@@ -38,6 +39,7 @@ import io.grpc.Status;
  * <p>
  * Maps {@link ValidationException} thrown while handling a gRPC call to {@link Status#INVALID_ARGUMENT}.
  */
+@Api.Preview
 public final class GrpcValidation implements ServerInterceptor, GrpcServerService {
     static final String TYPE = "validation";
     static final int WEIGHT = InterceptorWeights.USER + 1;

@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.observe.spi;
 
+import io.helidon.common.Api;
 import io.helidon.config.ConfiguredProvider;
 
 /**
@@ -23,6 +24,7 @@ import io.helidon.config.ConfiguredProvider;
  * {@link io.helidon.service.registry.ServiceRegistry}; direct construction and backward compatibility use
  * {@link java.util.ServiceLoader}.
  */
+@Api.Stable
 public interface ObserveProvider extends ConfiguredProvider<Observer> {
     /**
      * Configuration key of this provider.

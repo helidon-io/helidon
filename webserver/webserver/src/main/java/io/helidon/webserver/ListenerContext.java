@@ -19,6 +19,7 @@ package io.helidon.webserver;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 
+import io.helidon.common.Api;
 import io.helidon.common.context.Context;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
@@ -28,6 +29,7 @@ import io.helidon.webserver.http.DirectHandlers;
  * Listener context.
  * Provides elements that are configured on listener (socket) level.
  */
+@Api.Stable
 public interface ListenerContext {
     /**
      * Log an unexpected internal server failure using the server's error log limits.

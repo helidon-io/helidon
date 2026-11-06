@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.grpc.validation;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.webserver.grpc.spi.GrpcServerService;
 import io.helidon.webserver.grpc.spi.GrpcServerServiceProvider;
@@ -23,6 +24,7 @@ import io.helidon.webserver.grpc.spi.GrpcServerServiceProvider;
 /**
  * Provider for gRPC validation support.
  */
+@Api.Internal
 public class GrpcValidationProvider implements GrpcServerServiceProvider {
     /**
      * Create a new provider for gRPC validation support.

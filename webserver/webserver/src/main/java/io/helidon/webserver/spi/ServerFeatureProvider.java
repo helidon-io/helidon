@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.spi;
 
+import io.helidon.common.Api;
 import io.helidon.config.ConfiguredProvider;
 
 /**
@@ -51,5 +52,6 @@ import io.helidon.config.ConfiguredProvider;
  *
  * @param <T> type of the server feature the provider provides
  */
+@Api.Stable
 public interface ServerFeatureProvider<T extends ServerFeature> extends ConfiguredProvider<T> {
 }

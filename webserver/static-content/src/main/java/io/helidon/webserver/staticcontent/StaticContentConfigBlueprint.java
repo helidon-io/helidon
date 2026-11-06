@@ -23,6 +23,7 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
@@ -44,6 +45,7 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
  *           location: "/web"
  * </pre>
  */
+@Api.Stable
 @Prototype.Blueprint
 @Prototype.Configured(value = StaticContentFeature.STATIC_CONTENT_ID, root = false)
 @Prototype.Provides(ServerFeatureProvider.class)

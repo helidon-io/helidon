@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.webserver.ServerLifecycle;
 
 /**
@@ -43,6 +44,7 @@ import io.helidon.webserver.ServerLifecycle;
  * intentionally exposes more stable identities than the default.
  */
 @FunctionalInterface
+@Api.Stable
 public interface HttpServiceLocator extends ServerLifecycle {
     /**
      * Default maximum number of service instances cached by one locator.

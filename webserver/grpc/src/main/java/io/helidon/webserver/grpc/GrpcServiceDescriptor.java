@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.grpc.core.InterceptorWeights;
 import io.helidon.grpc.core.MarshallerSupplier;
 import io.helidon.grpc.core.WeightedBag;
@@ -45,6 +46,7 @@ import static io.helidon.grpc.core.GrpcHelper.extractMethodName;
 /**
  * Encapsulates all metadata necessary to create and deploy a gRPC service.
  */
+@Api.Preview
 public class GrpcServiceDescriptor {
     /**
      * The {@link io.grpc.Context.Key} to use to obtain the {@link io.grpc.ServiceDescriptor}.

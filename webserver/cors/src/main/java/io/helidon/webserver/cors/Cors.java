@@ -20,6 +20,8 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+import io.helidon.common.Api;
+
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
@@ -36,6 +38,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *
  * These annotations cannot be anywhere else and the compilation will fail if defined anywhere else.
  */
+@Api.Preview
 public final class Cors {
     /*
     Retention is runtime, as this is also used from Microprofile

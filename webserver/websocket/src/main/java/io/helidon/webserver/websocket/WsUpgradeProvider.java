@@ -24,6 +24,7 @@ import io.helidon.webserver.http1.spi.Http1Upgrader;
 /**
  * {@link java.util.ServiceLoader} provider implementation for upgrade from HTTP/1.1 to WebSocket.
  */
+@Api.Internal
 public class WsUpgradeProvider implements Http1UpgradeProvider<WsConfig> {
     /**
      * WebSocket server connection provider configuration node name.

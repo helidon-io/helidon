@@ -21,11 +21,13 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
 /**
  * Configuration of the HSTS feature.
  */
+@Api.Stable
 @Prototype.Blueprint
 @Prototype.Configured(value = HstsFeature.HSTS_ID, root = false)
 @Prototype.Provides(ServerFeatureProvider.class)

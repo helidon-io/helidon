@@ -28,6 +28,7 @@ import io.helidon.common.socket.SocketContext;
 /**
  * Server connection context.
  */
+@Api.Stable
 public interface ConnectionContext extends SocketContext {
     /**
      * Context of the listener. Configuration specific to a single listener.

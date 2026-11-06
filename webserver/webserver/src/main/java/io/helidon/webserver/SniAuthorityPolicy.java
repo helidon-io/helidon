@@ -16,12 +16,15 @@
 
 package io.helidon.webserver;
 
+import io.helidon.common.Api;
+
 /**
  * HTTP request authority policy used after SNI TLS selection.
  * <p>
  * The policy decides whether HTTP authority values that disagree with the TLS SNI selection are allowed or rejected as
  * misdirected requests.
  */
+@Api.Stable
 public enum SniAuthorityPolicy {
     /**
      * Allow the request authority.

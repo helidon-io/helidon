@@ -18,6 +18,7 @@ package io.helidon.webserver.http2.spi;
 
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.http2.Http2FrameHeader;
@@ -34,6 +35,7 @@ import io.helidon.webserver.Router;
 /**
  * A selector of HTTP/2 sub-protocols.
  */
+@Api.Internal
 public interface Http2SubProtocolSelector {
     /**
      * Not supported sub-protocol result.

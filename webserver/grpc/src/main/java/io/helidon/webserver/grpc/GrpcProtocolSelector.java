@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.Api;
 import io.helidon.common.context.Contexts;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
@@ -40,6 +41,7 @@ import io.helidon.webserver.http2.spi.SubProtocolResult;
 /**
  * Sub-protocol selector for HTTP/2.
  */
+@Api.Internal
 public class GrpcProtocolSelector implements Http2SubProtocolSelector {
 
     private final GrpcConfig grpcConfig;

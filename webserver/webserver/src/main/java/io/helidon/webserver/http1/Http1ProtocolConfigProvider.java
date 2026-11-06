@@ -23,6 +23,7 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
 /**
  * Implementation of a service provider interface to create HTTP/1.1 protocol configuration.
  */
+@Api.Internal
 public class Http1ProtocolConfigProvider implements ProtocolConfigProvider<Http1Config> {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

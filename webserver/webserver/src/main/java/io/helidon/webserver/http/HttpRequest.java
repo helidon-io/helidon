@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http;
 
+import io.helidon.common.Api;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriPath;
@@ -28,6 +29,7 @@ import io.helidon.http.ServerRequestHeaders;
  * HTTP Request.
  * Used for all HTTP versions.
  */
+@Api.Stable
 public interface HttpRequest {
     /**
      * Prologue of the request.

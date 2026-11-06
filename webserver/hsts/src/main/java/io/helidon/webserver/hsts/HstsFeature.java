@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.webserver.WebServer;
@@ -29,6 +30,7 @@ import io.helidon.webserver.spi.ServerFeature;
 /**
  * Adds HTTP Strict Transport Security support to Helidon WebServer.
  */
+@Api.Stable
 public class HstsFeature implements Weighted, ServerFeature, RuntimeType.Api<HstsFeatureConfig> {
     /**
      * Default weight of the feature.

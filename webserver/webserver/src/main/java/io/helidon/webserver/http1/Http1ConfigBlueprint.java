@@ -35,6 +35,7 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
 @Prototype.Configured(root = false, value = Http1ConnectionProvider.CONFIG_NAME)
 @Prototype.Provides(ProtocolConfigProvider.class)
 @Prototype.IncludeDefaultMethods({"maxBufferedEntitySize", "log", "altSvc"})
+@Api.Stable
 interface Http1ConfigBlueprint extends HttpConfig, ProtocolConfig {
     /**
      * Name of this configuration, in most cases the same as {@link #type()}.

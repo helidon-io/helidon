@@ -87,6 +87,7 @@ import graphql.schema.GraphQLSchema;
 /**
  * Support for GraphQL for Helidon WebServer.
  */
+@Api.Preview
 public class GraphQlService implements HttpService {
     private static final TypeName AUTHORIZED_TYPE = TypeName.create("io.helidon.security.annotations.Authorized");
     static final String RESOLVER_INVOCATION_KEY = GraphQlService.class.getName() + ".resolver-invocation";

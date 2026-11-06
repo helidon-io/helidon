@@ -18,6 +18,7 @@ package io.helidon.webserver;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Listener-scoped server TLS SNI policy configuration.
@@ -27,6 +28,7 @@ import io.helidon.builder.api.Prototype;
  */
 @Prototype.Configured
 @Prototype.Blueprint
+@Api.Stable
 interface SniConfigBlueprint {
     /**
      * Policy for TLS connections without an SNI host; {@link SniSelectionPolicy#REJECT} requires at least one listener

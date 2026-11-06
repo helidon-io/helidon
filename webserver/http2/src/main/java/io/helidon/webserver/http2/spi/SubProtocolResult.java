@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,14 @@
 
 package io.helidon.webserver.http2.spi;
 
+import io.helidon.common.Api;
+
 /**
  * Sub-protocol result.
  *
  * @param supported   whether this provider supports the current request
  * @param subProtocol handler to use for this request, may be null for unsupported requests
  */
+@Api.Internal
 public record SubProtocolResult(boolean supported, Http2SubProtocolSelector.SubProtocolHandler subProtocol) {
 }

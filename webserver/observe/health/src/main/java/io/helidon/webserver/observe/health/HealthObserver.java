@@ -28,6 +28,7 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.health.HealthCheck;
@@ -42,6 +43,7 @@ import io.helidon.webserver.spi.ServerFeature;
 /**
  * Observer that registers health endpoint, and collects all health checks.
  */
+@Api.Stable
 public class HealthObserver implements Observer, RuntimeType.Api<HealthObserverConfig> {
     private final HealthObserverConfig config;
     private final List<HealthCheck> all;

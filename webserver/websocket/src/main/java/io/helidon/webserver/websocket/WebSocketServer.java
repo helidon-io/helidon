@@ -23,11 +23,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Service;
 
 /**
  * Container class for declarative WebSocket server endpoint types.
  */
+@Api.Preview
 public final class WebSocketServer {
     private WebSocketServer() {
     }

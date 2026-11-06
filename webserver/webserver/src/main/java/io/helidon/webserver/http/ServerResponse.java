@@ -42,6 +42,7 @@ import io.helidon.webserver.http.spi.Sink;
  * Http server response.
  */
 @Service.Describe(Service.PerRequest.class)
+@Api.Stable
 public interface ServerResponse {
     /**
      * Status of the response.

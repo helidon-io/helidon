@@ -20,12 +20,14 @@ import java.util.List;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.http.Method;
 import io.helidon.webserver.WebServer;
 
 /**
  * Configuration of a single path security setup.
  */
+@Api.Stable
 @Prototype.Blueprint
 @Prototype.Configured
 @Prototype.CustomMethods(SecurityConfigSupport.PathConfigCustomMethods.class)

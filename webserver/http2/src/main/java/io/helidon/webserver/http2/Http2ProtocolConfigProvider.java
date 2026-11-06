@@ -24,6 +24,7 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
  * Implementation of a service provider interface to create HTTP/2 protocol configuration.
  * This configuration is used both when upgrading from HTTP/1 and when using selector.
  */
+@Api.Internal
 public class Http2ProtocolConfigProvider implements ProtocolConfigProvider<Http2Config> {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

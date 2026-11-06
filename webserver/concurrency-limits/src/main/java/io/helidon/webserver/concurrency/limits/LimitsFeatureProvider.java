@@ -37,6 +37,7 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
  * </pre>
  */
 @Weight(LimitsFeature.WEIGHT)
+@Api.Internal
 public class LimitsFeatureProvider implements ServerFeatureProvider<LimitsFeature> {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
