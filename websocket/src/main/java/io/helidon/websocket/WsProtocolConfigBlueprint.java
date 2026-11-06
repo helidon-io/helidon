@@ -18,11 +18,13 @@ package io.helidon.websocket;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.Size;
 
 /**
  * WebSocket protocol configuration available from a {@link WsSession}.
  */
+@Api.Stable
 @Prototype.Blueprint(decorator = WsProtocolConfigSupport.BuilderDecorator.class)
 @Prototype.Configured
 @Prototype.IncludeDefaultMethods

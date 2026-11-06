@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,12 +21,14 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 
 /**
  * Application wide service registry backed by {@link io.helidon.common.context.Context}.
  */
+@Api.Stable
 public final class GlobalServiceRegistry {
     private static final String GLOBAL_CONTEXT_CLASSIFIER = "helidon-registry-static-context";
     private static final String GLOBAL_REGISTRY_CLASSIFIER = "helidon-registry";

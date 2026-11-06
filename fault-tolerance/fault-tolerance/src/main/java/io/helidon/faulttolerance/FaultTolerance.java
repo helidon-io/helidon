@@ -22,6 +22,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.ThreadPoolSupplier;
 
@@ -44,6 +45,7 @@ import static java.lang.System.Logger.Level.ERROR;
  * @see #executor()
  * @see #builder()
  */
+@Api.Stable
 public final class FaultTolerance {
 
     /**

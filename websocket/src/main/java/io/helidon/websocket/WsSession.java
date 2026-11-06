@@ -18,6 +18,7 @@ package io.helidon.websocket;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.http.HttpPrologue;
@@ -25,6 +26,7 @@ import io.helidon.http.HttpPrologue;
 /**
  * WebSocket session.
  */
+@Api.Stable
 public interface WsSession {
     /**
      * WebSocket protocol configuration for this session.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package io.helidon.grpc.core;
 import java.io.UncheckedIOException;
 import java.lang.System.Logger.Level;
 
+import io.helidon.common.Api;
+
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 
@@ -27,6 +29,7 @@ import io.grpc.stub.StreamObserver;
  *
  * @param <T> the type of response expected
  */
+@Api.Internal
 public class SafeStreamObserver<T> implements StreamObserver<T> {
 
     /**

@@ -37,6 +37,7 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_
  * A {@link java.util.ServiceLoader} provider implementation to map class named annotations to named annotations.
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 10) // lower weight than JavaxAnnotationMapper
+@Api.Internal
 public class MapNamedByTypeMapperProvider implements AnnotationMapperProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

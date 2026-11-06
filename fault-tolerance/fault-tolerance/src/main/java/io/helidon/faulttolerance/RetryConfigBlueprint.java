@@ -22,10 +22,12 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * {@link Retry} configuration bean.
  */
+@Api.Stable
 @Prototype.Blueprint(decorator = FtBuilderSupport.RetryBuilderDecorator.class)
 @Prototype.Configured("fault-tolerance.retries")
 @Prototype.IncludeDefaultMethods({"jitterFactor", "maxDelay"})

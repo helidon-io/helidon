@@ -47,6 +47,7 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.SET_OF_QUALIFIERS;
 /**
  * {@link java.util.ServiceLoader} provider implementation that generates services for event emitters.
  */
+@Api.Internal
 public class EventEmitterObserverProvider implements InjectCodegenObserverProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

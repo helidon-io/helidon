@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 
 package io.helidon.service.registry;
 
+import io.helidon.common.Api;
+
 /**
  * Metadata of a single service descriptor.
  * This information is stored within the Helidon specific {code META-INF} services file.
  */
+@Api.Stable
 public interface DescriptorHandler extends io.helidon.service.metadata.DescriptorMetadata {
     /**
      * Descriptor instance.

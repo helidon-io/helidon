@@ -18,9 +18,12 @@ package io.helidon.scheduling;
 
 import java.time.Duration;
 
+import io.helidon.common.Api;
+
 /**
  * Specific method invocation metadata for scheduled task.
  */
+@Api.Stable
 public interface FixedRateInvocation extends Invocation {
     /**
      * Delay the first invocation by the specified time.

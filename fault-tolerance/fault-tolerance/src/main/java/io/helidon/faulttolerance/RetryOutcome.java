@@ -19,9 +19,12 @@ package io.helidon.faulttolerance;
 import java.time.Duration;
 import java.util.Optional;
 
+import io.helidon.common.Api;
+
 /**
  * Outcome of an unsuccessful contextual {@link Retry} invocation.
  */
+@Api.Stable
 public interface RetryOutcome {
     /**
      * Reason the retry invocation terminated.

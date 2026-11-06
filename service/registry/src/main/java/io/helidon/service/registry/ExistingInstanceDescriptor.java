@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 
@@ -32,6 +33,7 @@ import io.helidon.common.types.TypeName;
  *
  * @param <T> type of the instance
  */
+@Api.Stable
 public final class ExistingInstanceDescriptor<T> implements ServiceDescriptor<T> {
     private static final TypeName DESCRIPTOR_TYPE = TypeName.create(ExistingInstanceDescriptor.class);
     private final T instance;

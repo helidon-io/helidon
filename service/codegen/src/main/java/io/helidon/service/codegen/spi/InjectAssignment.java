@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 import io.helidon.codegen.classmodel.ContentBuilder;
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -34,6 +35,7 @@ import io.helidon.common.types.TypeName;
  * to provide source code mapping from {@link java.util.function.Supplier} to the type (always three: plain type,
  * {@link java.util.Optional} type, and a {@link java.util.List} of types).
  */
+@Api.Internal
 public interface InjectAssignment {
     /**
      * Map the type to the correct one.

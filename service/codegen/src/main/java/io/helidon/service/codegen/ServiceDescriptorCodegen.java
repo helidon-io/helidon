@@ -42,6 +42,7 @@ import io.helidon.codegen.classmodel.Field;
 import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.codegen.classmodel.TypeArgument;
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.types.AccessModifier;
@@ -101,6 +102,7 @@ import static java.util.function.Predicate.not;
 /**
  * Code generator of service descriptor for Helidon Services.
  */
+@Api.Internal
 public class ServiceDescriptorCodegen {
     private static final TypeName GENERATOR = TypeName.create(ServiceExtension.class);
     private static final TypeName DESCRIPTOR_TYPE = TypeName.builder(ServiceCodegenTypes.SERVICE_DESCRIPTOR)

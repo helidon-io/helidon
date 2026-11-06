@@ -48,6 +48,7 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_G_EVENT_OBS
 /**
  * {@link java.util.ServiceLoader} provider implementation that adds support for generating event observer registrations.
  */
+@Api.Internal
 public class EventObserverExtensionProvider implements RegistryCodegenExtensionProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

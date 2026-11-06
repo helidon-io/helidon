@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,14 @@ package io.helidon.service.registry;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.Api;
+
 /**
  * Activator is responsible for lifecycle management of a service instance within a scope.
  *
  * @param <T> type of the instance
  */
+@Api.Stable
 public interface Activator<T> {
     /**
      * Service descriptor of this activator.

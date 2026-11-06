@@ -19,6 +19,7 @@ package io.helidon.service.metadata;
 import java.util.Objects;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeName;
 import io.helidon.metadata.hson.Hson;
@@ -26,6 +27,7 @@ import io.helidon.metadata.hson.Hson;
 /**
  * Metadata of a service descriptor, as stored in Helidon specific file {@value Descriptors#SERVICE_REGISTRY_LOCATION}.
  */
+@Api.Stable
 public interface DescriptorMetadata {
     /**
      * Create a new instance from descriptor information, i.e. when code generating the descriptor metadata.

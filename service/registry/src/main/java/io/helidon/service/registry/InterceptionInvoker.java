@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package io.helidon.service.registry;
 
+import io.helidon.common.Api;
+
 /**
  * Invocation of an element that has parameters, and may throw checked exceptions.
  * This type is used to handle intercepted methods, constructors, and field injections.
@@ -23,6 +25,7 @@ package io.helidon.service.registry;
  * @param <T> type of the result of the invocation
  */
 @FunctionalInterface
+@Api.Stable
 public interface InterceptionInvoker<T> {
     /**
      * Invoke the element.

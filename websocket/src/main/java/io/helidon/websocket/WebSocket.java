@@ -23,6 +23,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Service;
 
 /**
@@ -30,6 +31,7 @@ import io.helidon.service.registry.Service;
  * <p>
  * Each annotated method can have an unqualified parameter {@link io.helidon.websocket.WsSession}.
  */
+@Api.Preview
 public class WebSocket {
     private WebSocket() {
     }

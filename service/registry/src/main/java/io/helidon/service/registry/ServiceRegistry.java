@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
 
 /**
@@ -31,6 +32,7 @@ import io.helidon.common.types.TypeName;
  */
 @Service.Contract
 @Service.Describe
+@Api.Stable
 public interface ServiceRegistry {
     /**
      * Type name of this interface.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,15 +23,19 @@ import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.spi.InitialContextFactory;
 
+import io.helidon.common.Api;
+
 /**
  * Implementation of the initial context factory for JNDI.
  */
+@Api.Preview
 public class NamingFactory implements InitialContextFactory {
     private static final AtomicBoolean REGISTERED = new AtomicBoolean(false);
 
     /**
      * Public constructor is required by contract of {@link javax.naming.spi.InitialContextFactory}.
      */
+    @Api.Internal
     public NamingFactory() {
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,9 +16,12 @@
 
 package io.helidon.faulttolerance;
 
+import io.helidon.common.Api;
+
 /**
  * Retry timeout exception.
  */
+@Api.Stable
 public class RetryTimeoutException extends TimeoutException {
     private static final long serialVersionUID = 1900926677490550714L;
 

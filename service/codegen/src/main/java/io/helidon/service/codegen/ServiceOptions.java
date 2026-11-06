@@ -20,12 +20,14 @@ import java.io.Serializable;
 import java.util.Set;
 
 import io.helidon.codegen.Option;
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.types.TypeName;
 
 /**
  * Supported options specific to Helidon Service Registry.
  */
+@Api.Internal
 public final class ServiceOptions {
     /**
      * Treat all super types as a contract for a given service type being added.

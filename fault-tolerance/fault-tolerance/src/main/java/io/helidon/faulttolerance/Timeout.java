@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.service.registry.Services;
@@ -27,6 +28,7 @@ import io.helidon.service.registry.Services;
 /**
  * Timeout attempts to terminate execution after defined duration of time.
  */
+@Api.Stable
 public interface Timeout extends FtHandler, RuntimeType.Api<TimeoutConfig> {
 
     /**

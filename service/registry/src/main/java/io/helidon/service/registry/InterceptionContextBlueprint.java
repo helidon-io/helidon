@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypedElementInfo;
 
@@ -28,6 +29,7 @@ import io.helidon.common.types.TypedElementInfo;
  * Used by {@link Interception.Interceptor}.
  */
 @Prototype.Blueprint
+@Api.Stable
 interface InterceptionContextBlueprint {
     /**
      * The service instance being intercepted.

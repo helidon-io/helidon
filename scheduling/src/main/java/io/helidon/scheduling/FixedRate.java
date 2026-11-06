@@ -19,6 +19,7 @@ package io.helidon.scheduling;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 
 /**
  * Scheduling periodically executed task with specified fixed rate.
@@ -30,6 +31,7 @@ import io.helidon.builder.api.RuntimeType;
  *      .build();
  * }</pre>
  */
+@Api.Stable
 public interface FixedRate extends RuntimeType.Api<FixedRateConfig>, Task {
 
     /**

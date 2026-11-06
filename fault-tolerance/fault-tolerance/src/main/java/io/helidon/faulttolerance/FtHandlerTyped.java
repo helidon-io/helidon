@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,15 @@ package io.helidon.faulttolerance;
 
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
+
 /**
  * A typed fault tolerance handler, to allow combination
  * of multiple handlers without losing type information.
  *
  * @param <T> type of result
  */
+@Api.Stable
 public interface FtHandlerTyped<T> {
     /**
      * Invoke this fault tolerance handler on a supplier of a result.

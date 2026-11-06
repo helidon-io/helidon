@@ -18,6 +18,8 @@ package io.helidon.grpc.core;
 
 import java.lang.reflect.Method;
 
+import io.helidon.common.Api;
+
 import io.grpc.Context;
 import io.grpc.Metadata;
 
@@ -25,6 +27,7 @@ import io.grpc.Metadata;
  * A collection of common gRPC {@link Context.Key} and {@link Metadata.Key} instances. Server-specific keys may be
  * found in the {@code io.helidon.webserver.grpc.ServerContextKeys} class in the {@code helidon-webserver-grpc} module.
  */
+@Api.Stable
 public final class ContextKeys {
     /**
      * The {@link Metadata.Key} to use to obtain the authorization data.

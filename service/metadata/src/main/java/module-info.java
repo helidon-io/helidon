@@ -20,6 +20,7 @@
  * @see io.helidon.service.metadata
  */
 module io.helidon.service.metadata {
+    requires io.helidon.common;
     requires io.helidon.metadata.hson;
     requires io.helidon.common.types;
     requires io.helidon.metadata;

@@ -39,6 +39,7 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_
  * A {@link java.util.ServiceLoader} provider implementation that adds code generation for Helidon Service Registry.
  * This extension creates service descriptors.
  */
+@Api.Internal
 public class ServiceExtensionProvider implements RegistryCodegenExtensionProvider {
     private static final List<InjectCodegenObserverProvider> OBSERVER_PROVIDERS =
             HelidonServiceLoader.create(ServiceLoader.load(InjectCodegenObserverProvider.class,

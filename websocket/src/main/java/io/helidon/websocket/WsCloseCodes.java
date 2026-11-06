@@ -16,10 +16,13 @@
 
 package io.helidon.websocket;
 
+import io.helidon.common.Api;
+
 /**
  * Codes to use with {@link WsSession#close(int, String)} and to receive
  * in {@link WsListener#onClose(WsSession, int, String)}.
  */
+@Api.Stable
 public final class WsCloseCodes {
     /**
      * Code to use with {@link WsSession#close(int, String)} to indicate normal close operation.

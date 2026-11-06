@@ -23,10 +23,12 @@ import java.util.concurrent.ExecutorService;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Configuration of a circuit breaker.
  */
+@Api.Stable
 @Prototype.Blueprint(decorator = FtBuilderSupport.CircuitBreakerBuilderDecorator.class)
 @Prototype.Configured("fault-tolerance.circuit-breakers")
 interface CircuitBreakerConfigBlueprint extends Prototype.Factory<CircuitBreaker> {

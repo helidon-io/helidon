@@ -22,10 +22,12 @@ import java.util.concurrent.ExecutorService;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * {@link Async} configuration bean.
  */
+@Api.Stable
 @Prototype.Blueprint(decorator = FtBuilderSupport.AsyncBuilderDecorator.class)
 @Prototype.Configured
 interface AsyncConfigBlueprint extends Prototype.Factory<Async> {

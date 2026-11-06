@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.LazyValue;
 import io.helidon.common.types.ElementKind;
@@ -33,6 +34,7 @@ import io.helidon.common.types.TypeName;
 /**
  * All types in this class are used from generated code for services.
  */
+@Api.Stable
 public final class GeneratedService {
     private GeneratedService() {
     }

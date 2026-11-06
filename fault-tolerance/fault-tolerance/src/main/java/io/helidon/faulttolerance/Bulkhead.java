@@ -20,6 +20,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.service.registry.Services;
@@ -33,6 +34,7 @@ import io.helidon.service.registry.Services;
  * additional attempts to invoke will end with a failed response with
  * {@link BulkheadException}.
  */
+@Api.Stable
 public interface Bulkhead extends FtHandler, RuntimeType.Api<BulkheadConfig> {
 
     /**

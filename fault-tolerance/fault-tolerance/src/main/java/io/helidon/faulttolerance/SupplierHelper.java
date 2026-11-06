@@ -21,9 +21,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
+
 /**
  * Helper to handle async suppliers that return {@code CompletionStage}.
  */
+@Api.Stable
 public class SupplierHelper {
 
     private SupplierHelper() {

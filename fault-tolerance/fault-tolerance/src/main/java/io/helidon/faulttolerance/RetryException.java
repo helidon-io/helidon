@@ -18,9 +18,12 @@ package io.helidon.faulttolerance;
 
 import java.util.Objects;
 
+import io.helidon.common.Api;
+
 /**
  * Exception thrown by contextual {@link Retry} invocations.
  */
+@Api.Stable
 public final class RetryException extends FaultToleranceException {
     private static final long serialVersionUID = -4170677285736327133L;
 

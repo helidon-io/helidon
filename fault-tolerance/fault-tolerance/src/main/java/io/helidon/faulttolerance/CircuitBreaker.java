@@ -19,6 +19,7 @@ package io.helidon.faulttolerance;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.service.registry.Services;
@@ -32,6 +33,7 @@ import io.helidon.service.registry.Services;
  * After this period, attempts are made to check if the service is up again - if so, the circuit closes
  * and requests can process as usual again.
  */
+@Api.Stable
 public interface CircuitBreaker extends FtHandler, RuntimeType.Api<CircuitBreakerConfig> {
 
     /**

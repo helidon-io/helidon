@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,14 @@ import java.util.Set;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.ResolvedType;
 
 /**
  * Event manager is used by generated code to manage events and listeners.
  */
 @Service.Contract
+@Api.Stable
 public interface EventManager {
     /**
      * Register an event consumer.

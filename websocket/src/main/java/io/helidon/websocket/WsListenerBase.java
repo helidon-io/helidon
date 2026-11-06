@@ -30,6 +30,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.Api;
 import io.helidon.common.Functions;
 import io.helidon.common.buffers.BufferData;
 
@@ -39,6 +40,7 @@ import io.helidon.common.buffers.BufferData;
  * <strong>IMPORTANT:</strong> use this class only for listeners that are registered as suppliers (i.e. you get a new
  * instance for each web socket session), otherwise the thread guarantees will be broken and this will not work.
  */
+@Api.Stable
 public abstract class WsListenerBase implements WsListener {
     /*
     This class is used from generated code for Helidon Declarative

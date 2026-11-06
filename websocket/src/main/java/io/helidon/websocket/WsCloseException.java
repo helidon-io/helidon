@@ -16,9 +16,12 @@
 
 package io.helidon.websocket;
 
+import io.helidon.common.Api;
+
 /**
  * Exception requesting a close of the WebSocket communication.
  */
+@Api.Stable
 public class WsCloseException extends RuntimeException {
     /**
      * WebSocket close code.
