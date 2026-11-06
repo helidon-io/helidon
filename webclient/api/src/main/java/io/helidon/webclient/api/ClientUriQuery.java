@@ -125,6 +125,11 @@ final class ClientUriQuery implements UriQueryWriteable {
     public Set<String> names() {
         return new AbstractSet<>() {
             @Override
+            public boolean contains(Object name) {
+                return delegate.names().contains(name);
+            }
+
+            @Override
             public Iterator<String> iterator() {
                 Iterator<String> iterator = delegate.names().iterator();
                 return new Iterator<>() {

@@ -61,6 +61,28 @@ class ClientUriQueryTest {
     }
 
     @Test
+    void testNamesMembershipUsesDecodedNamesWithoutChangingImportedQuery() {
+        String raw = "z=last&n%25ame=percent&n%2Bame=plus&n+ame=space&flag&&%61=first&a=second&";
+        var query = new ClientUriQuery();
+        query.appendRawQuery(raw);
+        var names = query.names();
+
+        assertThat(names.contains("n%ame"), is(true));
+        assertThat(names.contains("n+ame"), is(true));
+        assertThat(names.contains("n ame"), is(true));
+        assertThat(names.contains("a"), is(true));
+        assertThat(names.contains("flag"), is(true));
+        assertThat(names.contains(""), is(true));
+        assertThat(names.contains("n%25ame"), is(false));
+        assertThat(names.contains("n%2Bame"), is(false));
+        assertThat(names.contains("%61"), is(false));
+        assertThat(names.contains("missing"), is(false));
+        assertThat(names.contains(null), is(false));
+        assertThat(names.contains(1), is(false));
+        assertThat(query.rawValue(), is(raw));
+    }
+
+    @Test
     void testAppendImportsAndEmptyImport() {
         var query = new ClientUriQuery();
         query.appendRawQuery("");
