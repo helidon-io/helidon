@@ -26,7 +26,7 @@ import io.helidon.service.registry.Service;
  * These types must honor backward compatibility very strictly, as generated code could come from older Helidon versions.
  * Even though we do not guarantee backward compatibility across major versions, we should try to do it.
  */
-@Api.Preview
+@Api.Internal
 @Api.Since("27.0.0")
 public final class GeneratedGraphQl {
     private GeneratedGraphQl() {

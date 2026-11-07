@@ -18,6 +18,8 @@ package io.helidon.discovery;
 import java.net.URI;
 import java.util.SequencedSet;
 
+import io.helidon.common.Api;
+
 /**
  * An interface whose implementations <dfn>discover</dfn> possibly transient {@link DiscoveredUri} instances suitable,
  * at the moment of discovery, for a given <dfn>discovery name</dfn>.
@@ -126,6 +128,7 @@ import java.util.SequencedSet;
  *
  * @see DiscoveredUri
  */
+@Api.Stable
 public interface Discovery extends AutoCloseable {
 
     /**

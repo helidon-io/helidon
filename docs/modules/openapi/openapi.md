@@ -74,8 +74,9 @@ application so OpenAPI can use it.
 **Generate OpenAPI data from declarative endpoints**
 
 > [!NOTE]
-> Declarative OpenAPI generation and its model, annotation, version SPI, and
+> Declarative OpenAPI generation and its model, annotation, version API, and
 > generated-document configuration APIs are preview and may change.
+> The `OpenApiVersionProvider` factory SPI is internal.
 
 For classes annotated with
 [`@RestServer.Endpoint`][restserver-endpoint], Helidon generates OpenAPI data

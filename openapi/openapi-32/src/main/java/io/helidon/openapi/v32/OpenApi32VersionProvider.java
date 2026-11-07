@@ -28,6 +28,7 @@ import io.helidon.service.registry.Service;
 /**
  * OpenAPI 3.2 version provider.
  */
+@Api.Internal
 @Service.Singleton
 @Weight(3200)
 public class OpenApi32VersionProvider implements OpenApiVersionProvider {

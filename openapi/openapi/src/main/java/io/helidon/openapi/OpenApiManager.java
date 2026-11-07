@@ -15,6 +15,7 @@
  */
 package io.helidon.openapi;
 
+import io.helidon.common.Api;
 import io.helidon.config.NamedService;
 
 /**
@@ -22,6 +23,7 @@ import io.helidon.config.NamedService;
  *
  * @param <T> model type
  */
+@Api.Stable
 public interface OpenApiManager<T> extends NamedService {
 
     /**

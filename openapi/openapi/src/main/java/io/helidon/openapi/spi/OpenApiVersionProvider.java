@@ -22,6 +22,6 @@ import io.helidon.config.ConfiguredProvider;
 /**
  * {@link OpenApiVersion} provider.
  */
-@Api.Preview
+@Api.Internal
 public interface OpenApiVersionProvider extends ConfiguredProvider<OpenApiVersion> {
 }

@@ -17,6 +17,7 @@ package io.helidon.jsonrpc.core;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.json.JsonArray;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonValue;
@@ -24,6 +25,7 @@ import io.helidon.json.JsonValue;
 /**
  * A representation of a JSON-RPC response result.
  */
+@Api.Stable
 public interface JsonRpcResult {
 
     /**

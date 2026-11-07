@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.validation.spi;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.service.registry.Service;
@@ -28,6 +29,7 @@ import io.helidon.service.registry.Service;
  * Service registry is then used to discover an instance to handle the validation.
  * All built-in validators have lower than default {@link io.helidon.common.Weight}.
  */
+@Api.Preview
 @Service.Contract
 public interface ConstraintValidatorProvider {
     /**

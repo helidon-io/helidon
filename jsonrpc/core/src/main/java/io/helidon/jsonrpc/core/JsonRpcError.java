@@ -19,12 +19,14 @@ package io.helidon.jsonrpc.core;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonValue;
 
 /**
  * A representation of a JSON-RPC error.
  */
+@Api.Stable
 public interface JsonRpcError {
 
     /**

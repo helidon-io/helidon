@@ -15,11 +15,13 @@
  */
 package io.helidon.openapi.spi;
 
+import io.helidon.common.Api;
 import io.helidon.config.ConfiguredProvider;
 import io.helidon.openapi.OpenApiService;
 
 /**
  * {@link OpenApiService} provider.
  */
+@Api.Internal
 public interface OpenApiServiceProvider extends ConfiguredProvider<OpenApiService> {
 }
