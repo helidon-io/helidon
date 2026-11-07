@@ -765,31 +765,35 @@ class ClientRequestBaseTest {
     }
 
     @Test
-    void defaultRequestTargetReplacesResolvedTargetAndRetainsEncodingMode() {
+    void defaultRequestTargetIsUnsupportedWithoutChangingRequest() {
         FakeClientRequest request = new FakeClientRequest(ClientUri.create(
                 URI.create("https://backend.example:9443/base?base=secret#current-fragment")))
-                .uri("old/{path}")
-                .pathParam("path", "old")
                 .queryParam("tracked", "old")
                 .skipUriEncoding(true);
+        String originalTarget = request.resolvedUri().pathWithQueryAndFragment();
 
-        request.requestTargetUsingDefault(prologue("/new%2fpath?q=a%2Fb"));
+        assertThrows(UnsupportedOperationException.class,
+                     () -> request.requestTargetUsingDefault(prologue("/new%2fpath?q=a%2Fb")));
 
-        assertThat(request.resolvedUri().pathWithQueryAndFragment(), is("/new/path?q=a/b"));
+        assertThat(request.resolvedUri().pathWithQueryAndFragment(), is(originalTarget));
         assertThat(request.resolvedUri().scheme(), is("https"));
         assertThat(request.resolvedUri().authority(), is("backend.example:9443"));
-        assertThat(request.resolvedUri().fragment().hasValue(), is(false));
         assertThat(request.skipUriEncoding(), is(true));
         assertThat(request.method(), is(Method.GET));
+    }
 
-        request.skipUriEncoding(false);
-        assertThat(request.resolvedUri().pathWithQueryAndFragment(), is("/new%2fpath?q=a%2Fb"));
-        request.requestTargetUsingDefault(prologue("/empty?"));
-        assertThat(request.resolvedUri().pathWithQueryAndFragment(), is("/empty?"));
-        assertThat(request.resolvedUri().hasQuery(), is(true));
-        request.requestTargetUsingDefault(prologue("/clean"));
-        assertThat(request.resolvedUri().pathWithQueryAndFragment(), is("/clean"));
-        assertThat(request.resolvedUri().hasQuery(), is(false));
+    @Test
+    void defaultRequestTargetDoesNotResolveOrDiscardPendingTemplate() {
+        FakeClientRequest request = new FakeClientRequest(ClientUri.create(
+                URI.create("https://backend.example:9443/base?base=secret")))
+                .uri("/old/{missing}");
+        String originalTarget = request.uri().pathWithQueryAndFragment();
+
+        assertThrows(UnsupportedOperationException.class,
+                     () -> request.requestTargetUsingDefault(prologue("/incoming?x=1")));
+
+        assertThat(request.uri().pathWithQueryAndFragment(), is(originalTarget));
+        assertThrows(IllegalArgumentException.class, request::resolvedUri);
     }
 
     @Test

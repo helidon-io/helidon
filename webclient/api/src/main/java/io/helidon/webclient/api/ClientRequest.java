@@ -139,19 +139,18 @@ public interface ClientRequest<T extends ClientRequest<T>> {
      * <p>
      * Origin-form targets must start with {@code /}. For absolute-form HTTP or HTTPS targets, only the raw path and query
      * are copied; an empty path is sent as {@code /}. Asterisk-form and authority-form targets are not supported.
+     * <p>
+     * The default implementation throws {@link UnsupportedOperationException}. Implementations that support forwarding
+     * must override this method.
      *
      * @param prologue prologue containing the request target to forward
      * @return updated request
      * @throws IllegalArgumentException if the target form is unsupported or the raw path or query is invalid
+     * @throws UnsupportedOperationException if this request implementation does not support request-target forwarding
      */
     default T requestTarget(HttpPrologue prologue) {
         Objects.requireNonNull(prologue, "prologue");
-        UriInfo resolved = resolvedUri();
-        ClientUri target = resolved instanceof ClientUri clientUri
-                ? ClientUri.create(clientUri)
-                : ClientUri.create(resolved);
-        target.requestTarget(prologue);
-        return uri(target);
+        throw new UnsupportedOperationException("Request target forwarding is not supported by this request implementation");
     }
 
     /**
