@@ -195,6 +195,7 @@ interface Http2ConfigBlueprint extends ProtocolConfig, HttpConfig {
         return Http2ConnectionProvider.CONFIG_NAME;
     }
 
+    @Api.Internal
     class Http2ConfigDecorator implements Prototype.BuilderDecorator<Http2Config.BuilderBase<?, ?>> {
         @Override
         public void decorate(Http2Config.BuilderBase<?, ?> target) {
