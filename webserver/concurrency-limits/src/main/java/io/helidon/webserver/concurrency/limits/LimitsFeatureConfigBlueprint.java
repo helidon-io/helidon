@@ -63,6 +63,7 @@ interface LimitsFeatureConfigBlueprint extends Prototype.Factory<LimitsFeature> 
      *
      * @return concurrency limit
      */
+    @Api.Preview
     @Option.Provider(value = LimitProvider.class, discoverServices = false)
     @Option.Configured
     Optional<Limit> concurrencyLimit();
