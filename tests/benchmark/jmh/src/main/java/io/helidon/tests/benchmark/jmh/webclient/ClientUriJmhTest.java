@@ -22,13 +22,17 @@ import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.common.uri.UriQueryWriteable;
+import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
 import io.helidon.webclient.api.ClientUri;
+import io.helidon.webclient.api.WebClient;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.TearDown;
 
 @State(Scope.Thread)
 public class ClientUriJmhTest {
@@ -101,6 +105,28 @@ public class ClientUriJmhTest {
         return uri.pathWithQueryAndFragment();
     }
 
+    @Benchmark
+    public String forwardPrologueAndSerialize(ForwardingState state) {
+        return state.client.get()
+                .requestTarget(state.prologue)
+                .resolvedUri()
+                .pathWithQueryAndFragment();
+    }
+
+    @Benchmark
+    public String forwardThroughJdkUriAndSerialize(ForwardingState state) {
+        String path = state.prologue.uriPath().rawPath();
+        if (!path.startsWith("/")) {
+            path = URI.create(path).getRawPath();
+        }
+        if (path.isEmpty()) {
+            path = "/";
+        }
+        String query = state.prologue.hasQuery() ? "?" + state.prologue.query().rawValue() : "";
+        URI uri = URI.create(ForwardingState.UPSTREAM_ORIGIN + path + query);
+        return state.client.get().uri(uri).resolvedUri().pathWithQueryAndFragment();
+    }
+
     @State(Scope.Thread)
     public static class RequestTargetState {
         @Param({"path", "shortQuery", "signedQuery"})
@@ -131,6 +157,39 @@ public class ClientUriJmhTest {
                     .query(UriQuery.create(uri))
                     .build();
             clientUri = ClientUri.create(uri);
+        }
+    }
+
+    @State(Scope.Thread)
+    public static class ForwardingState {
+        private static final String UPSTREAM_ORIGIN = "https://service.example:8443";
+
+        @Param({"encodedOrigin", "emptyQuery", "encodedAbsolute"})
+        public String target;
+
+        private WebClient client;
+        private HttpPrologue prologue;
+
+        @Setup
+        public void setup() {
+            String requestTarget = switch (target) {
+                case "encodedOrigin" -> "/bucket/a%2fb/%7euser;x=1?b=2&a=1&b=3&flag&&space=a+b";
+                case "emptyQuery" -> "/bucket/a%2fb?";
+                case "encodedAbsolute" -> "http://incoming.example:8123/bucket/a%2fb/%7euser;x=1"
+                        + "?b=2&a=1&b=3&flag&&space=a+b";
+                default -> throw new IllegalArgumentException("Unknown forwarding target: " + target);
+            };
+            prologue = HttpPrologue.create("HTTP/1.1", "HTTP", "1.1", Method.GET, requestTarget, false);
+            prologue.query().rawValue();
+            client = WebClient.builder()
+                    .baseUri(UPSTREAM_ORIGIN + "/base/path?discard=me")
+                    .shareConnectionCache(false)
+                    .build();
+        }
+
+        @TearDown
+        public void tearDown() {
+            client.closeResource();
         }
     }
 }

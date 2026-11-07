@@ -23,6 +23,8 @@ import java.time.Duration;
 import java.util.List;
 import java.util.stream.Stream;
 
+import io.helidon.common.configurable.Resource;
+import io.helidon.common.tls.Tls;
 import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http1.Http1Client;
@@ -55,8 +57,8 @@ class RequestTargetForwardingTest {
                 .host("127.0.0.1")
                 .port(0)
                 .protocolsDiscoverServices(false)
-                .addConnectionSelector(Http1ConnectionSelector.builder().config(Http1Config.create()).build())
                 .addConnectionSelector(Http2ConnectionSelector.builder().http2Config(Http2Config.create()).build())
+                .addConnectionSelector(Http1ConnectionSelector.builder().config(Http1Config.create()).build())
                 .routing(routing -> routing.any((request, response) -> {
                     var prologue = request.prologue();
                     response.send(prologue.uriPath().rawPath() + "\n"
@@ -76,19 +78,43 @@ class RequestTargetForwardingTest {
                     .addProtocolConfig(Http2ClientProtocolConfig.builder().priorKnowledge(true).build())
                     .build();
             try {
-                WebServer proxy = WebServer.builder()
+                boolean secureInbound = inboundTarget.startsWith("https://");
+                var proxyBuilder = WebServer.builder()
                         .host("127.0.0.1")
                         .port(0)
                         .routing(routing -> routing.any((request, response) -> {
-                            try (var forwarded = client.get().requestTarget(request.prologue()).request()) {
+                            try (var forwarded = client.get()
+                                    .protocolId(protocol)
+                                    .requestTarget(request.prologue())
+                                    .request()) {
                                 String body = forwarded.protocolId() + "\n" + forwarded.as(String.class);
                                 response.contentLength(body.getBytes(StandardCharsets.US_ASCII).length);
                                 response.send(body);
                             }
-                        }))
-                        .build()
-                        .start();
-                try (var socket = new Socket()) {
+                        }));
+                if (secureInbound) {
+                    // HTTPS absolute-form targets require a secure inbound connection.
+                    proxyBuilder.tls(tls -> tls
+                            .privateKey(key -> key.keystore(store -> store
+                                    .passphrase("password")
+                                    .keystore(Resource.create("server.p12"))))
+                            .privateKeyCertChain(key -> key.keystore(store -> store
+                                    .trustStore(true)
+                                    .passphrase("password")
+                                    .keystore(Resource.create("server.p12")))));
+                }
+                WebServer proxy = proxyBuilder.build().start();
+                try (var socket = secureInbound
+                        ? Tls.builder()
+                                .trust(trust -> trust.keystore(store -> store
+                                        .trustStore(true)
+                                        .passphrase("password")
+                                        .keystore(Resource.create("client.p12"))))
+                                .build()
+                                .sslContext()
+                                .getSocketFactory()
+                                .createSocket()
+                        : new Socket()) {
                     socket.connect(new InetSocketAddress("127.0.0.1", proxy.port()), (int) TIMEOUT.toMillis());
                     socket.setSoTimeout((int) TIMEOUT.toMillis());
                     // Send bytes directly so absolute-form and a bare '?' reach the inbound parser unchanged.
