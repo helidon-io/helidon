@@ -18,6 +18,7 @@ package io.helidon.webclient.api;
 
 import java.net.URI;
 import java.util.Locale;
+import java.util.Objects;
 
 import io.helidon.common.Api;
 import io.helidon.common.uri.UriFragment;
@@ -26,6 +27,7 @@ import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.common.uri.UriValidator;
+import io.helidon.http.HttpPrologue;
 
 /**
  * URI abstraction for WebClient.
@@ -181,8 +183,6 @@ public class ClientUri implements UriInfo {
 
     /**
      * Resolve the provided URI against this URI.
-     * With URI encoding enabled, imported raw path and query representations are preserved. Query parameter
-     * mutations discard the imported query representation; reading parameters does not change it.
      *
      * @param uri URI to use
      * @return updated instance
@@ -374,6 +374,36 @@ public class ClientUri implements UriInfo {
         }
 
         return path;
+    }
+
+    void requestTarget(HttpPrologue prologue) {
+        Objects.requireNonNull(prologue, "prologue");
+        String rawPath = prologue.uriPath().rawPath();
+        if (!rawPath.startsWith("/")) {
+            int authorityStart;
+            if (rawPath.regionMatches(true, 0, "http://", 0, 7)) {
+                authorityStart = 7;
+            } else if (rawPath.regionMatches(true, 0, "https://", 0, 8)) {
+                authorityStart = 8;
+            } else {
+                throw new IllegalArgumentException("Request target must use origin-form or absolute HTTP or HTTPS form");
+            }
+            int pathStart = rawPath.indexOf('/', authorityStart);
+            if (rawPath.length() == authorityStart || pathStart == authorityStart) {
+                throw new IllegalArgumentException("Absolute request target must contain an authority");
+            }
+            rawPath = pathStart == -1 ? "/" : rawPath.substring(pathStart);
+        }
+
+        UriPath path = UriPath.create(rawPath);
+        path.validate();
+        String rawQuery = prologue.query().rawValue();
+        UriValidator.validateQuery(rawQuery);
+
+        query.clear();
+        query.appendRawQuery(rawQuery);
+        hasQuery = prologue.hasQuery();
+        uriBuilder.path(path).fragment(UriFragment.empty());
     }
 
     private void resolveAuthority(String rawAuthority) {

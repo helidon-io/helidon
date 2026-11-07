@@ -211,28 +211,45 @@ For more information about these methods, check out
 ### Forwarding an Existing Request Target
 
 When forwarding a request whose HTTP signature covers its request-target,
-pass the existing URI to `uri(java.net.URI)` and keep URI encoding enabled
-(the default):
+pass the server request's prologue to `requestTarget(HttpPrologue)` and keep
+URI encoding enabled (the default). Configure the upstream destination on
+the client:
 
 ```java
-URI target = URI.create("https://example.com/objects/a%2fb?b=2&a=1&b=3&flag");
-try (var response = client.get().uri(target).request()) {
-    // The transmitted path and query are /objects/a%2fb?b=2&a=1&b=3&flag.
+WebClient upstream = WebClient.builder()
+        .baseUri("https://upstream.example")
+        .build();
+
+void forwardGet(ServerRequest request, ServerResponse response) {
+    try (var upstreamResponse = upstream.get()
+            .requestTarget(request.prologue())
+            .request()) {
+        response.status(upstreamResponse.status())
+                .send(upstreamResponse.as(String.class));
+    }
 }
 ```
 
-WebClient preserves the raw path and query, including percent-escape spelling,
-parameter order, repeated names, flags, and empty query tokens. Reading query
-parameters or copying a client URI does not change that representation.
-Changing query parameters rebuilds the query; changing the path leaves an
-unmodified query intact. Non-ASCII characters use their percent-encoded form,
-an empty path is sent as `/`, and URI fragments are never sent.
+For an incoming target `/objects/a%2fb?b=2&a=1&b=3&flag`, the upstream receives
+that same path and query. The upstream scheme, host, and port remain those
+configured on the client. `requestTarget` replaces the entire path and query,
+including any base path, base query, or URI template; it does not append to
+them. The request method, headers, body, and fragment are not copied. The
+example shows target forwarding; forwarding headers and content requires the
+application's own proxy policy.
 
-Use an absolute URI when the entire target must remain unchanged. Relative
-URIs are combined with the client base URI. The request `uri(String)` overload
-encodes its input and supports templates; use the `URI` overload for an
-already encoded target. `skipUriEncoding(true)` selects decoded serialization
-and does not provide raw request-target preservation.
+WebClient preserves percent-escape spelling, matrix parameters, query order,
+repeated names, flags, empty query tokens, and the distinction between `/path`
+and `/path?`. Reading query parameters or copying a client URI does not change
+that representation. Changing query parameters rebuilds the query; changing
+the path leaves an unmodified query intact. Use the prologue rather than
+`request.path()` or `request.requestedUri()`, which expose routing or
+reconstructed URI information.
+
+For an absolute-form HTTP or HTTPS request target, `requestTarget` copies only
+the raw path and query and uses `/` if the path is empty. Asterisk-form and
+authority-form targets are not supported. `skipUriEncoding(true)` selects
+decoded serialization and does not provide raw request-target preservation.
 
 ### Sending the Request
 

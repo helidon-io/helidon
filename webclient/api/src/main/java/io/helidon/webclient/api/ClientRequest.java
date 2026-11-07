@@ -40,6 +40,7 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpException;
 import io.helidon.http.HttpMediaType;
+import io.helidon.http.HttpPrologue;
 import io.helidon.http.Status;
 
 /**
@@ -51,8 +52,8 @@ import io.helidon.http.Status;
 public interface ClientRequest<T extends ClientRequest<T>> {
     /**
      * Configure URI.
-     * The string is encoded before it is resolved. To preserve an already encoded request-target,
-     * use {@link #uri(java.net.URI)}.
+     * The string is encoded before it is resolved. To forward a server request target,
+     * use {@link #requestTarget(io.helidon.http.HttpPrologue)}.
      *
      * @param uri uri to resolve against base URI, or to use if absolute
      * @return updated request
@@ -119,17 +120,39 @@ public interface ClientRequest<T extends ClientRequest<T>> {
 
     /**
      * Configure an existing URI.
-     * With URI encoding enabled (the default), the raw path and query of an absolute URI are preserved
-     * in the HTTP request-target. Non-ASCII characters are percent-encoded, an empty path is sent as {@code /},
-     * and fragments are not sent. Relative URIs are combined with the base URI.
-     * Reading query parameters does not change the target. Explicit query parameter mutations rebuild the query;
-     * changing the path leaves an unmodified query intact.
-     * This preservation does not apply when {@link #skipUriEncoding(boolean) skipUriEncoding} is enabled.
      *
      * @param uri uri to resolve against base URI, or to use if absolute
      * @return updated request
      */
     T uri(URI uri);
+
+    /**
+     * Replace the request path and query with the target from an HTTP prologue.
+     * This can be used to forward a server request using its {@code prologue()} while retaining this client's
+     * destination scheme, host, and port. The configured base path, query, fragment, and URI template are replaced;
+     * the method, headers, and URI encoding setting are unchanged.
+     * <p>
+     * With URI encoding enabled (the default), the raw path and query are preserved, including percent-escape spelling,
+     * matrix parameters, query ordering, repeated parameters, and an empty query delimiter. Reading query parameters
+     * does not change the target. Explicit query parameter mutations rebuild the query; changing the path leaves an
+     * unmodified query intact. The prologue's fragment is not copied.
+     * <p>
+     * Origin-form targets must start with {@code /}. For absolute-form HTTP or HTTPS targets, only the raw path and query
+     * are copied; an empty path is sent as {@code /}. Asterisk-form and authority-form targets are not supported.
+     *
+     * @param prologue prologue containing the request target to forward
+     * @return updated request
+     * @throws IllegalArgumentException if the target form is unsupported or the raw path or query is invalid
+     */
+    default T requestTarget(HttpPrologue prologue) {
+        Objects.requireNonNull(prologue, "prologue");
+        UriInfo resolved = resolvedUri();
+        ClientUri target = resolved instanceof ClientUri clientUri
+                ? ClientUri.create(clientUri)
+                : ClientUri.create(resolved);
+        target.requestTarget(prologue);
+        return uri(target);
+    }
 
     /**
      * Socket address to use. This can be used to connect to a UNIX domain socket.
