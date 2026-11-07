@@ -20,6 +20,8 @@ Helidon provides two complementary ways to work with JSON Schema.
 
 Helidon currently supports only schema generation.
 
+> JSON Schema is incubating. Its APIs may change or be removed in any release.
+
 ## Maven Coordinates
 
 To enable JSON Schema, add the following dependency to your project’s `pom.xml`
@@ -34,6 +36,12 @@ To enable JSON Schema, add the following dependency to your project’s `pom.xml
 
 ## Usage
 
+When the API-stability annotation processor is enabled, including through
+`helidon-bundles-apt`, it rejects Incubating API usage by default. Acknowledge
+this usage with `@SuppressWarnings(Api.SUPPRESS_INCUBATING)` on the class or
+method that uses these APIs. The examples below use `Api` from
+`io.helidon.common.Api`.
+
 ### Imperative Schema Creation
 
 The entry point for each runtime JSON schema creation is a [`Schema`][schema]
@@ -44,10 +52,13 @@ is useful when schemas need to be generated dynamically or when fine-grained
 customization is required.
 
 ```java
-Schema.builder()
-        .rootObject(builder -> builder.description("Example JSON Schema")
-                .addIntegerProperty("exampleProperty", intBuilder -> intBuilder.minimum(0)))
-        .build();
+@SuppressWarnings(Api.SUPPRESS_INCUBATING)
+Schema createSchema() {
+    return Schema.builder()
+            .rootObject(builder -> builder.description("Example JSON Schema")
+                    .addIntegerProperty("exampleProperty", intBuilder -> intBuilder.minimum(0)))
+            .build();
+}
 ```
 
 Once the [`Schema`][schema] object is created, you can generate the JSON Schema
@@ -78,6 +89,7 @@ automatically without manual coding.
 
 <!--@mdc ::code-callout -->
 ```java
+@SuppressWarnings(Api.SUPPRESS_INCUBATING)
 @JsonSchema.Schema // <1>
 @JsonSchema.Description("Example JSON Schema")
 public record ExampleSchema(@JsonSchema.Integer.Minimum(0) int exampleProperty) {
@@ -116,6 +128,7 @@ possible to inject the [`Schema`][schema] with the
 `ExampleSchema.class`) as a value.
 
 ```java
+@SuppressWarnings(Api.SUPPRESS_INCUBATING)
 public void myMethod(@Service.Named(ExampleSchema.class) Schema schema) {
     //...
 }
@@ -126,7 +139,10 @@ methods searches the ServiceRegistry for a Schema bound to the provided class
 over the parameter.
 
 ```java
-Schema.find(MyClass.class);
+@SuppressWarnings(Api.SUPPRESS_INCUBATING)
+Optional<Schema> findSchema() {
+    return Schema.find(MyClass.class);
+}
 ```
 
 [jsonschema]: https://helidon.io/docs/core/v28/apidocs/io.helidon.json.schema/io/helidon/json/schema/JsonSchema.html
