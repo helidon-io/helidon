@@ -27,6 +27,7 @@ import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.TypeArgument;
 import io.helidon.codegen.spi.CodegenExtension;
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
@@ -79,6 +80,7 @@ class SchemaCodegen implements CodegenExtension {
                                                                ""))
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addInterface(SchemaTypes.JSON_SCHEMA_PROVIDER)
+                .addAnnotation(Annotation.create(SuppressWarnings.class, Api.SUPPRESS_INTERNAL))
                 .addAnnotation(Annotation.create(SchemaTypes.SERVICE_SINGLETON))
                 .addAnnotation(Annotation.builder()
                                        .typeName(SchemaTypes.SERVICE_NAMED_BY_TYPE)
