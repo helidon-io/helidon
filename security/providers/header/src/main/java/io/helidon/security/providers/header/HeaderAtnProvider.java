@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -43,6 +44,7 @@ import io.helidon.security.util.TokenHandler;
  * Security provider that extracts a username (or service name) from a header.
  * This provider also supports propagation of identity through a header.
  */
+@Api.Stable
 public class HeaderAtnProvider implements AuthenticationProvider, OutboundSecurityProvider {
     private final boolean optional;
     private final boolean authenticate;

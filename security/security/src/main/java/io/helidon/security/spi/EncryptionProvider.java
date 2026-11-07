@@ -18,6 +18,7 @@ package io.helidon.security.spi;
 
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 
 /**
@@ -27,6 +28,7 @@ import io.helidon.config.Config;
  * @see io.helidon.security.Security#encrypt(String, byte[])
  * @see io.helidon.security.Security#decrypt(String, String)
  */
+@Api.Stable
 public interface EncryptionProvider<T extends ProviderConfig> extends SecurityProvider {
     /**
      * Create encryption support from configuration.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package io.helidon.security.jwt;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
+
+import io.helidon.common.Api;
 
 abstract class InstantValidator extends OptionalValidator {
     private final Instant now;
@@ -65,6 +67,7 @@ abstract class InstantValidator extends OptionalValidator {
          * @param now specific current time
          * @return updated builder instance
          */
+        @Api.Stable
         public B now(Instant now) {
             this.now = Objects.requireNonNull(now);
             return me();
@@ -77,6 +80,7 @@ abstract class InstantValidator extends OptionalValidator {
          * @param allowedTimeSkew allowed time skew
          * @return updated builder instance
          */
+        @Api.Stable
         public B allowedTimeSkew(Duration allowedTimeSkew) {
             this.allowedTimeSkew = Objects.requireNonNull(allowedTimeSkew);
             return me();

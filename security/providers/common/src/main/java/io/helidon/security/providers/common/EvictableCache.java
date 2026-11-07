@@ -23,6 +23,7 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -44,6 +45,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  * @param <K> type of keys in this cache
  * @param <V> type of values in this cache
  */
+@Api.Stable
 public interface EvictableCache<K, V> {
     /**
      * Default timeout of records in minutes (inactivity timeout).

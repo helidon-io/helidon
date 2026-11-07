@@ -21,11 +21,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.common.Errors;
 
 /**
  * Validator of a string field obtained from the JWT.
  */
+@Api.Stable
 public final class FieldValidator extends OptionalValidator {
     private final Function<Jwt, Optional<String>> fieldAccessor;
     private final String name;

@@ -37,12 +37,14 @@ import java.util.zip.Deflater;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import io.helidon.common.Api;
 import io.helidon.common.crypto.CryptoException;
 import io.helidon.http.SetCookie;
 
 /**
  * Handler of cookies used in OIDC.
  */
+@Api.Stable
 public class OidcCookieHandler {
     private static final System.Logger LOGGER = System.getLogger(OidcCookieHandler.class.getName());
     private static final byte COMPRESSED_BASE64_VALUE = 0;

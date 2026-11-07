@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.security;
 
+import io.helidon.common.Api;
 import io.helidon.common.Builder;
 
 /**
@@ -23,6 +24,7 @@ import io.helidon.common.Builder;
  *
  * @param <T> Type of response the built client returns
  */
+@Api.Stable
 public class SecurityClientBuilder<T extends SecurityResponse>
         extends SecurityRequestBuilder<SecurityClientBuilder<T>>
         implements Builder<SecurityClientBuilder<T>, SecurityClient<T>> {

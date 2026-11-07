@@ -16,6 +16,7 @@
 
 package io.helidon.security.spi;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 
 /**
@@ -26,6 +27,7 @@ import io.helidon.config.Config;
  * @see io.helidon.security.Security#digest(String, byte[])
  * @see io.helidon.security.Security#verifyDigest(String, byte[], String)
  */
+@Api.Stable
 public interface DigestProvider<T extends ProviderConfig> extends SecurityProvider {
     /**
      * Create digest support from configuration.

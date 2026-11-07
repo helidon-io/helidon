@@ -19,9 +19,12 @@ package io.helidon.security;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.common.Api;
+
 /**
  * Response of outbound security provider.
  */
+@Api.Stable
 public final class OutboundSecurityResponse extends SecurityResponse {
     private static final OutboundSecurityResponse ABSTAIN = OutboundSecurityResponse.builder().status(SecurityStatus.ABSTAIN)
             .build();

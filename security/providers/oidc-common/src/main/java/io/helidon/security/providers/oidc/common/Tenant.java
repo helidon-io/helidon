@@ -22,6 +22,7 @@ import java.time.Duration;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 
+import io.helidon.common.Api;
 import io.helidon.common.Errors;
 import io.helidon.common.LazyValue;
 import io.helidon.common.configurable.Resource;
@@ -45,6 +46,7 @@ import io.helidon.webclient.security.WebClientSecurity;
 /**
  * Holder of the tenant configuration resolved at runtime. Used for OIDC lazy loading.
  */
+@Api.Stable
 public class Tenant {
 
     private final TenantConfig tenantConfig;

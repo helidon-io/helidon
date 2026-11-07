@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.security;
 
+import io.helidon.common.Api;
 import io.helidon.security.spi.SecurityProvider;
 
 /**
@@ -23,6 +24,7 @@ import io.helidon.security.spi.SecurityProvider;
  *
  * @param <T> Type of provider
  */
+@Api.Stable
 public final class NamedProvider<T extends SecurityProvider> {
     private final String name;
     private final T provider;

@@ -16,6 +16,8 @@
 
 package io.helidon.security;
 
+import io.helidon.common.Api;
+
 /**
  * Response from an authorization decision.
  * <p>
@@ -26,6 +28,7 @@ package io.helidon.security;
  * <li>Abstain - the provider could not decide about this request - see {@link #abstain()}</li>
  * </ul>
  */
+@Api.Stable
 public final class AuthorizationResponse extends SecurityResponse {
 
     private static final AuthorizationResponse PERMIT_RESPONSE = builder().status(SecurityStatus.SUCCESS).build();

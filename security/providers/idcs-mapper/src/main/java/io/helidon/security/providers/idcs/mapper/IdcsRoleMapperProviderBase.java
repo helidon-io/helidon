@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
@@ -60,6 +61,7 @@ import io.helidon.webclient.api.WebClient;
 /**
  * Common functionality for IDCS role mapping using {@link io.helidon.webclient.http1.Http1Client}.
  */
+@Api.Stable
 public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvider {
     /**
      * User subject type used when requesting roles from IDCS.
@@ -440,6 +442,7 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
          * @param tracing role mapper tracing
          * @return token content
          */
+        @Api.Internal
         protected Optional<String> getToken(RoleMapTracing tracing) {
             LazyValue<AppTokenData> currentTokenData = token.get();
             if (currentTokenData == null) {

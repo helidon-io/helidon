@@ -24,12 +24,15 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import io.helidon.common.Api;
+
 /**
  * Map of classes to their instances.
  * This class is mutable and not thread safe.
  *
  * @param <T> Type all classes in this instance must extend
  */
+@Api.Stable
 public final class ClassToInstanceStore<T> {
     private final Map<Class<? extends T>, T> backingMap = new IdentityHashMap<>();
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();

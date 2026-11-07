@@ -16,6 +16,7 @@
 
 package io.helidon.security.providers.httpauth;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.util.TokenHandler;
@@ -25,6 +26,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * Security provider configuration for outbound.
  */
+@Api.Stable
 public class HttpBasicOutboundConfig {
     /**
      * An empty char array used for empty passwords.

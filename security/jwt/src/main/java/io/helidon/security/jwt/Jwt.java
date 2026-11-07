@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import io.helidon.common.Api;
 import io.helidon.json.JsonArray;
 import io.helidon.json.JsonNull;
 import io.helidon.json.JsonObject;
@@ -41,6 +42,7 @@ import io.helidon.security.jwt.jwk.Jwk;
  * Representation of a JSON web token (a generic one).
  */
 @SuppressWarnings("WeakerAccess") // getters should be public
+@Api.Stable
 public class Jwt {
 
     static final String CRITICAL = "crit";

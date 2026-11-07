@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -52,6 +53,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  * ]
  * </pre>
  */
+@Api.Stable
 public final class SignedHeadersConfig {
     /**
      * Special header {@value} is used for method and request target, including query when present.

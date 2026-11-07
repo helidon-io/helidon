@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,12 @@ package io.helidon.security.providers.idcs.mapper;
 
 import java.util.Objects;
 
+import io.helidon.common.Api;
+
 /**
  * IDCS multitenancy context used by the mappers.
  */
+@Api.Stable
 public final class IdcsMtContext {
     private final String tenantId;
     private final String appId;

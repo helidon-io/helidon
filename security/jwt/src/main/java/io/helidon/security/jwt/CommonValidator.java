@@ -20,6 +20,8 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
+import io.helidon.common.Api;
+
 abstract class CommonValidator implements ClaimValidator {
 
     private final JwtScope scope;
@@ -31,11 +33,13 @@ abstract class CommonValidator implements ClaimValidator {
     }
 
     @Override
+    @Api.Stable
     public JwtScope jwtScope() {
         return scope;
     }
 
     @Override
+    @Api.Stable
     public Set<String> claims() {
         return claims;
     }
@@ -110,6 +114,7 @@ abstract class CommonValidator implements ClaimValidator {
          * @return this builder instance
          */
         @SuppressWarnings("unchecked")
+        @Api.Internal
         protected B me() {
             return (B) this;
         }

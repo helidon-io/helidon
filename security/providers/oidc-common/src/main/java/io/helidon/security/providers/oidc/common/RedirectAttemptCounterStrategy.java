@@ -16,12 +16,14 @@
 
 package io.helidon.security.providers.oidc.common;
 
+import io.helidon.common.Api;
 import io.helidon.common.Errors;
 import io.helidon.http.HttpToken;
 
 /**
  * Strategy used to count redirects to an identity server.
  */
+@Api.Stable
 public enum RedirectAttemptCounterStrategy {
     /**
      * Do not count redirect attempts.

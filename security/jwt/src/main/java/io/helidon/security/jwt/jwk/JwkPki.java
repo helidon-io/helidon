@@ -31,6 +31,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.json.JsonObject;
 import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.JwtUtil;
@@ -39,6 +40,7 @@ import io.helidon.security.jwt.JwtUtil;
  * PKI specific features of a JWK (Public/private key types of keys).
  */
 @SuppressWarnings("WeakerAccess") // constants should be public
+@Api.Stable
 abstract class JwkPki extends Jwk {
     /**
      * JWK parameter for X.509 certificate chain URL.
@@ -128,6 +130,7 @@ abstract class JwkPki extends Jwk {
     abstract String signatureAlgorithm();
 
     @Override
+    @Api.Internal
     public boolean doVerify(byte[] signedBytes, byte[] signatureToVerify) {
         String alg = signatureAlgorithm();
 
@@ -147,6 +150,7 @@ abstract class JwkPki extends Jwk {
     }
 
     @Override
+    @Api.Internal
     public byte[] doSign(byte[] bytesToSign) {
         String alg = signatureAlgorithm();
         if (ALG_NONE.equals(alg)) {

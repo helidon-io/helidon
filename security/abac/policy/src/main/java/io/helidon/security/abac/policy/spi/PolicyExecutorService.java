@@ -16,12 +16,14 @@
 
 package io.helidon.security.abac.policy.spi;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.security.abac.policy.PolicyValidator;
 
 /**
  * Java service for {@link PolicyValidator} ABAC validator.
  */
+@Api.Internal
 public interface PolicyExecutorService {
     /**
      * Configuration key that is expected by this policy validator service.

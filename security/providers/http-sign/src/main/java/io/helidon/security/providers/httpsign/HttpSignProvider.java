@@ -28,6 +28,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -49,6 +50,7 @@ import io.helidon.security.spi.OutboundSecurityProvider;
  * A provider that can authenticate incoming requests based on HTTP signature of header fields, and
  * can create signatures for outbound requests.
  */
+@Api.Stable
 public final class HttpSignProvider implements AuthenticationProvider, OutboundSecurityProvider {
     static final String ALGORITHM_HMAC = "hmac-sha256";
     static final String ALGORITHM_RSA = "rsa-sha256";

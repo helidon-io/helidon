@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.configurable.Resource;
 import io.helidon.json.JsonArray;
 import io.helidon.json.JsonObject;
@@ -46,6 +47,7 @@ import io.helidon.security.jwt.JwtException;
  * .forKeyId("cc34c0a0-bd5a-4a3c-a50d-a2a7db7643df");
  * </pre>
  */
+@Api.Stable
 public final class JwkKeys {
     private static final System.Logger LOGGER = System.getLogger(JwkKeys.class.getName());
 

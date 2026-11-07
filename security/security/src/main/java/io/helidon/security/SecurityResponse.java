@@ -22,11 +22,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 
+import io.helidon.common.Api;
 import io.helidon.common.Builder;
 
 /**
  * Response from security provider (and security Module).
  */
+@Api.Stable
 public abstract class SecurityResponse {
     private final Map<String, List<String>> requestHeaders;
     private final Map<String, List<String>> responseHeaders;

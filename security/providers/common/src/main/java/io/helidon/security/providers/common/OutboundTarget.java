@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -37,6 +38,7 @@ import io.helidon.security.ClassToInstanceStore;
  * Outbound target is a set of protocols and hosts that share a configuration of outbound provider.
  * Name is considered to be a unique identification of a target, so it is used for hashCode and equals methods.
  */
+@Api.Stable
 public final class OutboundTarget {
     /**
      * Configuration key for name of target. If named "default", it will override possible default values from provider

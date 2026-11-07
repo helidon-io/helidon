@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.security.spi;
 
+import io.helidon.common.Api;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityResponse;
 import io.helidon.security.ProviderRequest;
@@ -34,6 +35,7 @@ import io.helidon.security.SecurityEnvironment;
  * @see #supportedConfigKeys()
  */
 @FunctionalInterface
+@Api.Stable
 public interface OutboundSecurityProvider extends SecurityProvider {
     /**
      * Check if the path to be executed is supported by this security provider.

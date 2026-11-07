@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,12 +22,14 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.common.crypto.HashDigest;
 
 /**
  * Proof Key Code Exchange (PKCE) challenge generation type.
  * Based on <a href="https://datatracker.ietf.org/doc/html/rfc7636#section-4.2">RFC7636 - Section 4.2</a>
  */
+@Api.Stable
 public enum PkceChallengeMethod {
 
     /**

@@ -25,6 +25,7 @@ import java.util.Map;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import io.helidon.common.Api;
 import io.helidon.json.JsonObject;
 import io.helidon.security.jwt.JwtException;
 import io.helidon.security.jwt.JwtUtil;
@@ -33,6 +34,7 @@ import io.helidon.security.jwt.JwtUtil;
  * Symmetric cipher JSON web key.
  */
 @SuppressWarnings("WeakerAccess") // constants should be public
+@Api.Stable
 public class JwkOctet extends Jwk {
     /**
      * HMAC using SHA-256.
@@ -110,6 +112,7 @@ public class JwkOctet extends Jwk {
     }
 
     @Override
+    @Api.Internal
     public boolean doVerify(byte[] signedBytes, byte[] signature) {
         String alg = getSignatureAlgorithm();
 
@@ -122,6 +125,7 @@ public class JwkOctet extends Jwk {
     }
 
     @Override
+    @Api.Internal
     public byte[] doSign(byte[] bytesToSign) {
         String alg = getSignatureAlgorithm();
 

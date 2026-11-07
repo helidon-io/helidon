@@ -16,6 +16,7 @@
 
 package io.helidon.security.providers.jwt;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SecurityProviderService;
@@ -24,6 +25,7 @@ import io.helidon.security.spi.SecurityProviderService;
  * Service for {@link JwtProvider} to auto-configure it
  * with {@link io.helidon.security.Security}.
  */
+@Api.Internal
 public class JwtProviderService implements SecurityProviderService {
 
     static final String PROVIDER_CONFIG_KEY = "jwt";

@@ -26,6 +26,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -40,6 +41,7 @@ import static java.util.Collections.singletonList;
  * use configuration option token-format that will be processed using {@link String#format(String, Object...)} with the token
  * as a single string argument.
  */
+@Api.Stable
 public final class TokenHandler {
     private final String tokenHeader;
     private final Function<String, String> headerExtractor;

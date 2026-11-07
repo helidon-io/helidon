@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.security.integration.common;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.security.Subject;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.SpanContext;
@@ -25,6 +26,7 @@ import io.helidon.tracing.config.SpanTracingConfig;
 /**
  * Authentication tracing support.
  */
+@Api.Internal
 public class AtnTracing extends CommonTracing {
     private static final String LOG_ATN_USER = "security.user";
     private static final String LOG_ATN_SERVICE = "security.service";
