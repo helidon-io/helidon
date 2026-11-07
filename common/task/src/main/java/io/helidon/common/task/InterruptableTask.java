@@ -21,8 +21,11 @@ import java.util.concurrent.Callable;
 import io.helidon.common.Api;
 
 /**
- * An interruptable task that can implements both {@link Runnable} and
+ * An interruptable task that implements both {@link Runnable} and
  * {@link Callable}.
+ * Implementations must override at least one of {@link #run()} or {@link #call()}.
+ * The defaults adapt either execution method to the other. An implementation
+ * that overrides neither method fails when executed.
  *
  * @param <T> type of value returned by task
  */
@@ -36,6 +39,11 @@ public interface InterruptableTask<T> extends Runnable, Callable<T> {
      */
     boolean canInterrupt();
 
+    /**
+     * Executes this task, discarding any result.
+     * The default implementation delegates to {@link #call()} and wraps any
+     * {@link Exception} in a {@link RuntimeException}.
+     */
     @Override
     default void run() {
         try {
@@ -45,9 +53,18 @@ public interface InterruptableTask<T> extends Runnable, Callable<T> {
         }
     }
 
+    /**
+     * Executes this task and returns its result.
+     * The default implementation invokes the overridden {@link #run()} method
+     * and returns {@code null}. Override detection is cached per implementation class.
+     *
+     * @return the task result, or {@code null} when adapting {@link #run()}
+     * @throws UnsupportedOperationException if neither execution method is overridden
+     * @throws Exception if task execution fails
+     */
     @Override
     default T call() throws Exception {
-        run();
+        InterruptableTaskSupport.run(this);
         return null;
     }
 }
