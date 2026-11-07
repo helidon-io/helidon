@@ -16,6 +16,16 @@ the same hashCode - type erasure like behavior).
 
 If there is a requirement to compare based on generic declaration, use `ResolvedType`.
 
+### Enclosing type metadata
+
+APT preserves the immediate enclosing declared type in `enclosingType()`, including annotations and type arguments on
+each enclosing level. For example, the metadata for `@A Outer<String>.@B Inner<Integer>` has `@B` on the inner type and
+`@A` on its enclosing type. Further enclosing levels are available by following the optional chain.
+
+This metadata is available when supplied by the type's producer; factories that only parse a name do not reconstruct it.
+Static nested types retain their lexical `enclosingNames()` but have no enclosing declared type from APT.
+The metadata does not change `enclosingNames()`, name rendering, equality, ordering, or hashing.
+
 ## Handling of generics
 
 Depending on how a type name is created, the generic information may be available:

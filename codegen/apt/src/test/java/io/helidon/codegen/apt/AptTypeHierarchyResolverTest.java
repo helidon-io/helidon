@@ -228,6 +228,127 @@ class AptTypeHierarchyResolverTest {
         assertThat(processor.rounds, is(1));
     }
 
+    @Test
+    void preservesInnerAnnotationsWhenEnclosingArgumentsAreResolved() {
+        TypeName annotation = TypeName.create("example.A");
+        TypeName enclosingAnnotation = TypeName.create("example.B");
+        TypeName argumentAnnotation = TypeName.create("example.C");
+        var processor = new HierarchyProcessor((round, _) -> {
+            TypeInfo child = round.typeInfo(TypeName.create("example.Child")).orElseThrow();
+            List<TypeHierarchyResolver.ResolvedMethod> methods = round.typeHierarchyResolver().effectiveInterfaceMethods(child);
+            TypeName returnType = method(methods, "value").method().typeName();
+            TypeName parameterType = method(methods, "accept").method().parameterArguments().getFirst().typeName();
+
+            assertAll(() -> assertThat("inherited return annotations",
+                                       returnType.annotations().stream().map(it -> it.typeName()).toList(),
+                                       is(List.of(annotation))),
+                      () -> assertThat("inherited parameter annotations",
+                                       parameterType.annotations().stream().map(it -> it.typeName()).toList(),
+                                       is(List.of(annotation))),
+                      () -> assertThat("resolved return owner argument",
+                                       returnType.enclosingType().orElseThrow().typeArguments(),
+                                       is(List.of(TypeNames.STRING))),
+                      () -> assertThat("resolved parameter owner argument",
+                                       parameterType.enclosingType().orElseThrow().typeArguments(),
+                                       is(List.of(TypeNames.STRING))),
+                      () -> assertThat("inherited owner annotations",
+                                       returnType.enclosingType().orElseThrow().annotations().stream()
+                                               .map(it -> it.typeName()).toList(),
+                                       is(List.of(enclosingAnnotation))),
+                      () -> assertThat("inherited owner argument annotations",
+                                       returnType.enclosingType().orElseThrow().typeArguments().getFirst().annotations().stream()
+                                               .map(it -> it.typeName()).toList(),
+                                       is(List.of(argumentAnnotation))));
+        });
+
+        var result = TestCompiler.builder()
+                .addProcessor(processor)
+                .currentRelease()
+                .addSource("example/Child.java", """
+                        package example;
+
+                        import java.lang.annotation.ElementType;
+                        import java.lang.annotation.Retention;
+                        import java.lang.annotation.RetentionPolicy;
+                        import java.lang.annotation.Target;
+
+                        @Target(ElementType.TYPE_USE)
+                        @Retention(RetentionPolicy.CLASS)
+                        @interface A {}
+
+                        @Target(ElementType.TYPE_USE)
+                        @Retention(RetentionPolicy.CLASS)
+                        @interface B {}
+
+                        @Target(ElementType.TYPE_USE)
+                        @Retention(RetentionPolicy.CLASS)
+                        @interface C {}
+
+                        class Outer<T> {
+                            class Inner {}
+                        }
+
+                        interface Parent<T> {
+                            @B Outer<@C T>.@A Inner value();
+                            void accept(Outer<T>.@A Inner value);
+                        }
+
+                        interface Child extends Parent<String> {}
+                        """)
+                .build()
+                .compile();
+
+        assertThat(result.diagnostics().toString(), result.success(), is(true));
+        assertThat(processor.rounds, is(1));
+    }
+
+    @Test
+    void substitutesAnnotatedEnclosingMemberArguments() {
+        TypeName annotation = TypeName.create("example.A");
+        var processor = new HierarchyProcessor((round, _) -> {
+            TypeInfo box = round.typeInfo(TypeName.create("example.Box")).orElseThrow();
+            TypeName useSite = TypeName.builder(box.typeName().genericTypeName())
+                    .addTypeArgument(TypeNames.STRING)
+                    .build();
+            TypeName resolved = round.typeHierarchyResolver().resolveMemberType(box, useSite, element(box, "value").typeName());
+            TypeName argument = resolved.enclosingType().orElseThrow().typeArguments().getFirst();
+
+            assertAll(() -> assertThat("resolved enclosing argument", argument.fqName(), is("java.lang.String")),
+                      () -> assertThat("enclosing argument annotations",
+                                       argument.annotations().stream().map(it -> it.typeName()).toList(),
+                                       is(List.of(annotation))));
+        });
+
+        var result = TestCompiler.builder()
+                .addProcessor(processor)
+                .currentRelease()
+                .addSource("example/Box.java", """
+                        package example;
+
+                        import java.lang.annotation.ElementType;
+                        import java.lang.annotation.Retention;
+                        import java.lang.annotation.RetentionPolicy;
+                        import java.lang.annotation.Target;
+
+                        @Target(ElementType.TYPE_USE)
+                        @Retention(RetentionPolicy.CLASS)
+                        @interface A {}
+
+                        class Outer<T> {
+                            class Inner {}
+                        }
+
+                        class Box<T> {
+                            Outer<@A T>.Inner value;
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(result.diagnostics().toString(), result.success(), is(true));
+        assertThat(processor.rounds, is(1));
+    }
+
     private static TypedElementInfo element(TypeInfo type, String name) {
         return type.elementInfo().stream().filter(element -> element.elementName().equals(name)).findFirst().orElseThrow();
     }

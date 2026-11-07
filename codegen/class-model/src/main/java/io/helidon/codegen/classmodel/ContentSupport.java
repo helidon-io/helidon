@@ -158,7 +158,7 @@ final class ContentSupport {
     }
 
     static void addCreateTypeName(ContentBuilder<?> builder, TypeName typeName) {
-        if (hasNestedAnnotations(typeName)) {
+        if (requiresTypeNameBuilder(typeName)) {
             builder.addContent(TypeNames.TYPE_NAME)
                     .addContentLine(".builder()")
                     .increaseContentPadding()
@@ -219,6 +219,10 @@ final class ContentSupport {
                     .ifPresent(componentType -> builder.addContent(".componentType(")
                             .addContentCreate(componentType)
                             .addContentLine(")"));
+            typeName.enclosingType()
+                    .ifPresent(enclosingType -> builder.addContent(".enclosingType(")
+                            .addContentCreate(enclosingType)
+                            .addContentLine(")"));
 
             builder.addContentLine(".build()")
                     .decreaseContentPadding()
@@ -244,21 +248,23 @@ final class ContentSupport {
                 .addContentLine(")");
     }
 
-    private static boolean hasNestedAnnotations(TypeName typeName) {
-        if (!typeName.annotations().isEmpty() || !typeName.inheritedAnnotations().isEmpty()) {
+    private static boolean requiresTypeNameBuilder(TypeName typeName) {
+        if (!typeName.annotations().isEmpty()
+                || !typeName.inheritedAnnotations().isEmpty()
+                || typeName.enclosingType().isPresent()) {
             return true;
         }
-        if (typeName.typeArguments().stream().anyMatch(ContentSupport::hasNestedAnnotations)) {
+        if (typeName.typeArguments().stream().anyMatch(ContentSupport::requiresTypeNameBuilder)) {
             return true;
         }
-        if (typeName.lowerBounds().stream().anyMatch(ContentSupport::hasNestedAnnotations)) {
+        if (typeName.lowerBounds().stream().anyMatch(ContentSupport::requiresTypeNameBuilder)) {
             return true;
         }
-        if (typeName.upperBounds().stream().anyMatch(ContentSupport::hasNestedAnnotations)) {
+        if (typeName.upperBounds().stream().anyMatch(ContentSupport::requiresTypeNameBuilder)) {
             return true;
         }
         return typeName.componentType()
-                .map(ContentSupport::hasNestedAnnotations)
+                .map(ContentSupport::requiresTypeNameBuilder)
                 .orElse(false);
     }
 

@@ -489,7 +489,7 @@ public final class TypeHierarchy {
     /**
      * Annotation instances nested inside a type name.
      * This includes annotations declared directly on the provided type name and annotations declared on nested
-     * type arguments, wildcard bounds, and array component types.
+     * type arguments, wildcard bounds, array component types, and enclosing types.
      *
      * @param typeName type name to scan
      * @return nested annotation instances
@@ -511,6 +511,9 @@ public final class TypeHierarchy {
         typeName.componentType()
                 .map(TypeHierarchy::typeNameAnnotations)
                 .ifPresent(result::addAll);
+        typeName.enclosingType()
+                .map(TypeHierarchy::typeNameAnnotations)
+                .ifPresent(result::addAll);
         return result;
     }
 
@@ -519,8 +522,10 @@ public final class TypeHierarchy {
      * If the type names do not have the same structure, the target type name is returned unchanged.
      * <p>
      * Matching type names merge direct and inherited annotations on the root type, type arguments, wildcard bounds,
-     * and array component types. When both type names contain the same annotation type at a matching position, the
-     * target annotation is preserved. Formal type parameter names do not block merging.
+     * array component types, and enclosing types present in both names. When both type names contain the same annotation
+     * type at a matching position, the target annotation is preserved. Formal type parameter names and absent enclosing-type
+     * metadata do not block merging. Enclosing types are checked independently so their type arguments do not prevent
+     * merging annotations on a matching inner type.
      *
      * @param typeName       target type name
      * @param sourceTypeName source type name
@@ -547,6 +552,10 @@ public final class TypeHierarchy {
         if (typeName.componentType().isPresent() && sourceTypeName.componentType().isPresent()) {
             builder.componentType(mergeTypeNameAnnotations(typeName.componentType().get(),
                                                           sourceTypeName.componentType().get()));
+        }
+        if (typeName.enclosingType().isPresent() && sourceTypeName.enclosingType().isPresent()) {
+            builder.enclosingType(mergeTypeNameAnnotations(typeName.enclosingType().get(),
+                                                          sourceTypeName.enclosingType().get()));
         }
 
         return builder.build();
@@ -868,6 +877,9 @@ public final class TypeHierarchy {
         typeName.componentType()
                 .map(it -> normalizeMethodType(it, methodTypeParameters))
                 .ifPresent(builder::componentType);
+        typeName.enclosingType()
+                .map(it -> normalizeMethodType(it, methodTypeParameters))
+                .ifPresent(builder::enclosingType);
 
         return builder.build();
     }
@@ -937,6 +949,9 @@ public final class TypeHierarchy {
         typeName.componentType()
                 .map(it -> substituteTypeParameters(it, substitutions))
                 .ifPresent(builder::componentType);
+        typeName.enclosingType()
+                .map(it -> substituteTypeParameters(it, substitutions))
+                .ifPresent(builder::enclosingType);
 
         return builder.build();
     }

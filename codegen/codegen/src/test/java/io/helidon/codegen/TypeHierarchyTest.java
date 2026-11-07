@@ -136,6 +136,33 @@ class TypeHierarchyTest {
     }
 
     @Test
+    void methodSignaturesNormalizeEnclosingTypeArguments() {
+        TypeName variable = TypeName.createFromGenericDeclaration("T");
+        TypeName enclosingType = TypeName.builder(TypeName.create("io.helidon.codegen.test.Outer"))
+                .addTypeArgument(variable)
+                .build();
+        TypeName nestedType = TypeName.builder(TypeName.create("io.helidon.codegen.test.Outer.Inner"))
+                .enclosingType(enclosingType)
+                .build();
+        TypedElementInfo method = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .elementName("accept")
+                .typeName(TypeNames.PRIMITIVE_VOID)
+                .addTypeParameter(variable)
+                .addParameterArgument(TypedElementInfo.builder()
+                                              .kind(ElementKind.PARAMETER)
+                                              .elementName("value")
+                                              .typeName(nestedType)
+                                              .build())
+                .build();
+
+        TypeName normalized = TypeHierarchy.methodSignature(method).parameterTypes().getFirst();
+
+        assertThat(normalized.enclosingType().orElseThrow().typeArguments(), is(List.of(TypeNames.OBJECT)));
+        assertThat(normalized.resolvedName(), is(nestedType.resolvedName()));
+    }
+
+    @Test
     void hierarchyAnnotationCandidatesRejectNullArguments() {
         TypeName annotationType = TypeName.create("io.helidon.codegen.test.Candidate");
         TypedElementInfo method = TypedElementInfo.builder()
@@ -319,6 +346,38 @@ class TypeHierarchyTest {
         assertThat(TypeHierarchy.typeNameAnnotations(upperBoundType), hasItem(notBlank));
         assertThat(TypeHierarchy.typeNameAnnotations(lowerBoundType), hasItem(notBlank));
         assertThat(TypeHierarchy.typeNameAnnotations(arrayType), hasItem(notBlank));
+    }
+
+    @Test
+    void nestedAnnotationsIncludeEnclosingTypesAndTheirArguments() {
+        Annotation notBlank = Annotation.create(NOT_BLANK);
+        Annotation ownerAnnotation = Annotation.create(TypeName.create("io.helidon.codegen.OwnerAnnotation"));
+        TypeName outerType = TypeName.builder(TypeName.create("io.helidon.codegen.test.Outer"))
+                .addInheritedAnnotation(ownerAnnotation)
+                .addTypeArgument(TypeName.builder(TypeNames.STRING)
+                                         .addAnnotation(notBlank)
+                                         .build())
+                .build();
+        TypeName middleType = TypeName.builder(TypeName.create("io.helidon.codegen.test.Outer.Middle"))
+                .enclosingType(outerType)
+                .build();
+        TypeName nestedType = TypeName.builder(TypeName.create("io.helidon.codegen.test.Outer.Middle.Inner"))
+                .enclosingType(middleType)
+                .build();
+        TypeInfo typeInfo = TypeInfo.builder()
+                .typeName(TypeName.create("io.helidon.codegen.test.NestedContract"))
+                .kind(ElementKind.INTERFACE)
+                .addElementInfo(TypedElementInfo.builder()
+                                       .kind(ElementKind.METHOD)
+                                       .elementName("value")
+                                       .typeName(nestedType)
+                                       .build())
+                .build();
+
+        assertThat(TypeHierarchy.typeNameAnnotations(nestedType), hasItem(ownerAnnotation));
+        assertThat(TypeHierarchy.typeNameAnnotations(nestedType), hasItem(notBlank));
+        assertThat(TypeHierarchy.nestedAnnotations(CTX, typeInfo), hasItem(ownerAnnotation.typeName()));
+        assertThat(TypeHierarchy.nestedAnnotations(CTX, typeInfo), hasItem(NOT_BLANK));
     }
 
     @Test
@@ -622,6 +681,84 @@ class TypeHierarchyTest {
     }
 
     @Test
+    void mergeTypeNameAnnotationsKeepsEnclosingAnnotationsOnTheirSegments() {
+        TypeName ownerAnnotationType = TypeName.create("io.helidon.codegen.OwnerAnnotation");
+        Annotation targetOwnerAnnotation = Annotation.create(ownerAnnotationType, "target");
+        Annotation sourceOwnerAnnotation = Annotation.create(ownerAnnotationType, "source");
+        Annotation notBlank = Annotation.create(NOT_BLANK);
+        Annotation innerAnnotation = Annotation.create(TypeName.create("io.helidon.codegen.InnerAnnotation"));
+        TypeName outerType = TypeName.create("io.helidon.codegen.test.Outer");
+        TypeName innerType = TypeName.create("io.helidon.codegen.test.Outer.Inner");
+        TypeName target = TypeName.builder(innerType)
+                .enclosingType(TypeName.builder(outerType)
+                                       .addAnnotation(targetOwnerAnnotation)
+                                       .addTypeArgument(TypeNames.STRING)
+                                       .build())
+                .build();
+        TypeName source = TypeName.builder(innerType)
+                .addAnnotation(innerAnnotation)
+                .enclosingType(TypeName.builder(outerType)
+                                       .addAnnotation(sourceOwnerAnnotation)
+                                       .addTypeArgument(TypeName.builder(TypeNames.STRING)
+                                                                .addAnnotation(notBlank)
+                                                                .build())
+                                       .build())
+                .build();
+
+        TypeName merged = TypeHierarchy.mergeTypeNameAnnotations(target, source);
+        TypeName mergedOwner = merged.enclosingType().orElseThrow();
+
+        assertThat(merged.annotations(), is(List.of(innerAnnotation)));
+        assertThat(mergedOwner.annotations(), is(List.of(targetOwnerAnnotation)));
+        assertThat(mergedOwner.typeArguments().getFirst().annotations(), is(List.of(notBlank)));
+    }
+
+    @Test
+    void mergeTypeNameAnnotationsAllowsAbsentEnclosingMetadata() {
+        Annotation notBlank = Annotation.create(NOT_BLANK);
+        TypeName outerType = TypeName.create("io.helidon.codegen.test.Outer");
+        TypeName innerType = TypeName.create("io.helidon.codegen.test.Outer.Inner");
+        TypeName target = TypeName.builder(innerType)
+                .enclosingType(outerType)
+                .build();
+        TypeName source = TypeName.builder(innerType)
+                .addAnnotation(notBlank)
+                .build();
+
+        TypeName mergedWithOwner = TypeHierarchy.mergeTypeNameAnnotations(target, source);
+        TypeName mergedWithoutOwner = TypeHierarchy.mergeTypeNameAnnotations(innerType,
+                TypeName.builder(source).enclosingType(outerType).build());
+
+        assertThat(mergedWithOwner.annotations(), is(List.of(notBlank)));
+        assertThat(mergedWithOwner.enclosingType(), is(Optional.of(outerType)));
+        assertThat(mergedWithoutOwner.annotations(), is(List.of(notBlank)));
+        assertThat(mergedWithoutOwner.enclosingType(), is(Optional.empty()));
+    }
+
+    @Test
+    void mergeTypeNameAnnotationsChecksEnclosingArgumentsIndependently() {
+        Annotation notBlank = Annotation.create(NOT_BLANK);
+        TypeName owner = TypeName.create("io.helidon.codegen.test.Outer");
+        TypeName inner = TypeName.create("io.helidon.codegen.test.Outer.Inner");
+        TypeName target = TypeName.builder(inner)
+                .enclosingType(TypeName.builder(owner).addTypeArgument(TypeNames.STRING).build())
+                .build();
+        TypeName source = TypeName.builder(inner)
+                .addAnnotation(notBlank)
+                .enclosingType(TypeName.builder(owner)
+                                       .addTypeArgument(TypeName.create(Integer.class))
+                                       .addAnnotation(notBlank)
+                                       .build())
+                .build();
+
+        TypeName merged = TypeHierarchy.mergeTypeNameAnnotations(target, source);
+
+        assertThat(merged.annotations(), is(List.of(notBlank)));
+        assertThat(merged.enclosingType().orElseThrow().annotations(), is(List.of()));
+        assertThat(merged.enclosingType().orElseThrow().typeArguments(), is(List.of(TypeNames.STRING)));
+    }
+
+    @Test
     void mergeTypeNameAnnotationsIgnoresFormalTypeParameterNames() {
         Annotation notBlank = Annotation.create(NOT_BLANK);
         TypeName targetType = TypeName.builder(TypeNames.LIST)
@@ -655,7 +792,16 @@ class TypeHierarchyTest {
         TypeName wildcardStringList = TypeName.builder(TypeNames.LIST)
                 .addTypeArgument(stringArrayWildcard)
                 .build();
+        TypeName outerType = TypeName.create("io.helidon.codegen.test.Outer");
+        TypeName innerType = TypeName.create("io.helidon.codegen.test.Outer.Inner");
+        TypeName genericOwnerType = TypeName.builder(innerType)
+                .enclosingType(TypeName.builder(outerType).addTypeArgument(variable).build())
+                .build();
+        TypeName stringOwnerType = TypeName.builder(innerType)
+                .enclosingType(TypeName.builder(outerType).addTypeArgument(TypeNames.STRING).build())
+                .build();
         return Stream.of(
+                Arguments.of(variable, genericOwnerType, stringOwnerType),
                 Arguments.of(variable, list, stringList),
                 Arguments.of(bounded, bounded, TypeNames.STRING),
                 Arguments.of(bounded, TypeName.builder(TypeNames.LIST).addTypeArgument(bounded).build(), stringList),

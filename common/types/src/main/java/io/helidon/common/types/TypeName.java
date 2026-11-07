@@ -283,6 +283,18 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
     List<String> enclosingNames();
 
     /**
+     * Immediate enclosing declared type, including its annotations and type arguments, when this metadata is available.
+     * The enclosing type may itself have an enclosing type. This metadata is independent of {@link #enclosingNames()},
+     * which remains the source of enclosing class names for type identity and name rendering.
+     *
+     * @return immediate enclosing type, or empty when no enclosing type metadata is available
+     */
+    @Override
+    default Optional<TypeName> enclosingType() {
+        return TypeNameBlueprint.super.enclosingType();
+    }
+
+    /**
      * Functions similar to {@link Class#isPrimitive()}.
      *
      * @return true if this type represents a primitive type
@@ -406,6 +418,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         private String className;
         private String packageName = "";
         private TypeName componentType;
+        private TypeName enclosingType;
 
         /**
          * Protected to support extensibility.
@@ -426,6 +439,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
                 this.enclosingNames.clear();
             }
             addEnclosingNames(prototype.enclosingNames());
+            enclosingType(prototype.enclosingType());
             primitive(prototype.primitive());
             array(prototype.array());
             vararg(prototype.vararg());
@@ -475,6 +489,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             } else {
                 enclosingNames(builder.enclosingNames());
             }
+            builder.enclosingType().ifPresent(this::enclosingType);
             primitive(builder.primitive());
             array(builder.array());
             vararg(builder.vararg());
@@ -621,6 +636,64 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             Objects.requireNonNull(enclosingName);
             this.enclosingNames.add(enclosingName);
             this.isEnclosingNamesMutated = true;
+            return self();
+        }
+
+        /**
+         * Clear existing value of enclosingType.
+         *
+         * @return updated builder instance
+         * @see #enclosingType()
+         */
+        public BUILDER clearEnclosingType() {
+            this.enclosingType = null;
+            return self();
+        }
+
+        /**
+         * Immediate enclosing declared type, including its annotations and type arguments, when this metadata is available.
+         * The enclosing type may itself have an enclosing type. This metadata is independent of {@link #enclosingNames()},
+         * which remains the source of enclosing class names for type identity and name rendering.
+         *
+         * @param enclosingType immediate enclosing type, or empty when no enclosing type metadata is available
+         * @return updated builder instance
+         * @see #enclosingType()
+         */
+        public BUILDER enclosingType(TypeName enclosingType) {
+            Objects.requireNonNull(enclosingType);
+            this.enclosingType = enclosingType;
+            return self();
+        }
+
+        /**
+         * Immediate enclosing declared type, including its annotations and type arguments, when this metadata is available.
+         * The enclosing type may itself have an enclosing type. This metadata is independent of {@link #enclosingNames()},
+         * which remains the source of enclosing class names for type identity and name rendering.
+         *
+         * @param consumer consumer of builder of immediate enclosing type, or empty when no enclosing type metadata is available
+         * @return updated builder instance
+         * @see #enclosingType()
+         */
+        public BUILDER enclosingType(Consumer<TypeName.Builder> consumer) {
+            Objects.requireNonNull(consumer);
+            var builder = TypeName.builder();
+            consumer.accept(builder);
+            this.enclosingType(builder.build());
+            return self();
+        }
+
+        /**
+         * Immediate enclosing declared type, including its annotations and type arguments, when this metadata is available.
+         * The enclosing type may itself have an enclosing type. This metadata is independent of {@link #enclosingNames()},
+         * which remains the source of enclosing class names for type identity and name rendering.
+         *
+         * @param supplier supplier of immediate enclosing type, or empty when no enclosing type metadata is available
+         * @return updated builder instance
+         * @see #enclosingType()
+         */
+        public BUILDER enclosingType(Supplier<? extends TypeName> supplier) {
+            Objects.requireNonNull(supplier);
+            this.enclosingType(supplier.get());
             return self();
         }
 
@@ -1250,6 +1323,17 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
+         * Immediate enclosing declared type, including its annotations and type arguments, when this metadata is available.
+         * The enclosing type may itself have an enclosing type. This metadata is independent of {@link #enclosingNames()},
+         * which remains the source of enclosing class names for type identity and name rendering.
+         *
+         * @return immediate enclosing type, or empty when no enclosing type metadata is available
+         */
+        public Optional<TypeName> enclosingType() {
+            return Optional.ofNullable(enclosingType);
+        }
+
+        /**
          * Functions similar to {@link Class#isPrimitive()}.
          *
          * @return true if this type represents a primitive type
@@ -1409,6 +1493,22 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
         }
 
         /**
+         * Immediate enclosing declared type, including its annotations and type arguments, when this metadata is available.
+         * The enclosing type may itself have an enclosing type. This metadata is independent of {@link #enclosingNames()},
+         * which remains the source of enclosing class names for type identity and name rendering.
+         *
+         * @param enclosingType immediate enclosing type, or empty when no enclosing type metadata is available
+         * @return updated builder instance
+         * @see #enclosingType()
+         */
+        @SuppressWarnings("unchecked")
+        BUILDER enclosingType(Optional<? extends TypeName> enclosingType) {
+            Objects.requireNonNull(enclosingType);
+            this.enclosingType = enclosingType.map(TypeName.class::cast).orElse(this.enclosingType);
+            return self();
+        }
+
+        /**
          * Component type of array.
          *
          * @param componentType component type of array
@@ -1440,6 +1540,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             private final List<String> enclosingNames;
             private final List<String> typeParameters;
             private final Optional<TypeName> componentType;
+            private final Optional<TypeName> enclosingType;
             private final String className;
             private final String packageName;
 
@@ -1452,6 +1553,7 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
                 this.packageName = builder.packageName();
                 this.className = builder.className().get();
                 this.enclosingNames = List.copyOf(builder.enclosingNames());
+                this.enclosingType = builder.enclosingType().map(Function.identity());
                 this.primitive = builder.primitive();
                 this.array = builder.array();
                 this.vararg = builder.vararg();
@@ -1484,6 +1586,11 @@ public interface TypeName extends TypeNameBlueprint, Prototype.Api, Comparable<T
             @Override
             public List<String> enclosingNames() {
                 return enclosingNames;
+            }
+
+            @Override
+            public Optional<TypeName> enclosingType() {
+                return enclosingType;
             }
 
             @Override

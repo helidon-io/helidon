@@ -275,6 +275,9 @@ public class TypeHierarchyResolver {
         type.componentType()
                 .map(component -> substitute(component, substitutions))
                 .ifPresent(builder::componentType);
+        type.enclosingType()
+                .map(enclosing -> substitute(enclosing, substitutions))
+                .ifPresent(builder::enclosingType);
         return builder.build();
     }
 
@@ -652,8 +655,8 @@ public class TypeHierarchyResolver {
             if (element.kind() == ElementKind.METHOD
                     && isOverrideCandidate(element)) {
                 // Default methods participate because they can satisfy or override an abstract declaration.
-                TypedElementInfo method = resolveEnvironmentMember(rootInterface, element)
-                        .orElseGet(() -> resolveMethod(element, substitutions, repositoryType));
+                TypedElementInfo substituted = resolveMethod(element, substitutions, repositoryType);
+                TypedElementInfo method = resolveEnvironmentMember(rootInterface, substituted).orElse(substituted);
                 methods.computeIfAbsent(TypeHierarchy.methodSignature(method), _ -> new ArrayList<>())
                         .add(new MethodCandidate(method, typeInfo));
             }

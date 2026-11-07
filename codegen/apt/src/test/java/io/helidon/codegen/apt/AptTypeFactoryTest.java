@@ -76,6 +76,83 @@ class AptTypeFactoryTest {
     }
 
     @Test
+    void testEnclosingTypeAnnotationsAndArguments() {
+        TypeName type = returnType(compile("@A Outer<@B String>.@C Inner<@A Integer> value();"), "value");
+        TypeName owner = type.enclosingType().orElseThrow();
+
+        assertAll(() -> assertAnnotations("inner", type, "C"),
+                  () -> assertAnnotations("outer", owner, "A"),
+                  () -> assertAnnotations("outer argument", owner.typeArguments().getFirst(), "B"),
+                  () -> assertAnnotations("inner argument", type.typeArguments().getFirst(), "A"),
+                  () -> assertThat("outer type", owner.fqName(), is("com.example.Outer")),
+                  () -> assertThat("outer owner", owner.enclosingType().isEmpty(), is(true)),
+                  () -> assertThat("inner type", type.fqName(), is("com.example.Outer.Inner")),
+                  () -> assertThat("inner nesting", type.enclosingNames(), is(List.of("Outer"))),
+                  () -> assertThat("inner resolved name", type.resolvedName(),
+                                   is("com.example.Outer.Inner<java.lang.Integer>")),
+                  () -> assertThat("type identity", type,
+                                   is(TypeName.create("com.example.Outer.Inner<java.lang.Integer>"))));
+    }
+
+    @Test
+    void testThreeEnclosingTypeAnnotationLevels() {
+        TypeName type = returnType(compile("""
+                @A Outer<@C String>.@B Inner<@A Integer>.@C Deep<@B Long> value();
+                """), "value");
+        TypeName middle = type.enclosingType().orElseThrow();
+        TypeName outer = middle.enclosingType().orElseThrow();
+
+        assertAll(() -> assertAnnotations("deep", type, "C"),
+                  () -> assertAnnotations("middle", middle, "B"),
+                  () -> assertAnnotations("outer", outer, "A"),
+                  () -> assertAnnotations("deep argument", type.typeArguments().getFirst(), "B"),
+                  () -> assertAnnotations("middle argument", middle.typeArguments().getFirst(), "A"),
+                  () -> assertAnnotations("outer argument", outer.typeArguments().getFirst(), "C"),
+                  () -> assertThat("middle type", middle.fqName(), is("com.example.Outer.Inner")),
+                  () -> assertThat("deep type", type.fqName(), is("com.example.Outer.Inner.Deep")),
+                  () -> assertThat("deep nesting", type.enclosingNames(), is(List.of("Outer", "Inner"))),
+                  () -> assertThat("outer owner", outer.enclosingType().isEmpty(), is(true)));
+    }
+
+    @Test
+    void testOwnerOnlyAnnotationsInNestedArrayArgument() {
+        TypeName list = returnType(compile("List<@A Outer<@B String>.Inner<Integer> @C []> value();"), "value");
+        TypeName array = list.typeArguments().getFirst();
+        TypeName inner = array.componentType().orElseThrow();
+        TypeName outer = inner.enclosingType().orElseThrow();
+
+        assertAll(() -> assertAnnotations("array", array, "C"),
+                  () -> assertAnnotations("unannotated inner", inner),
+                  () -> assertAnnotations("outer", outer, "A"),
+                  () -> assertAnnotations("outer argument", outer.typeArguments().getFirst(), "B"),
+                  () -> assertAnnotations("unannotated inner argument", inner.typeArguments().getFirst()),
+                  () -> assertThat("array component", inner.fqName(), is("com.example.Outer.Inner")),
+                  () -> assertThat("array dimension", array.array(), is(true)),
+                  () -> assertThat("component dimension", inner.array(), is(false)));
+    }
+
+    @Test
+    void testRawAndStaticNestedTypeAnnotations() {
+        TypeInfo info = compile("""
+                @A Outer.@B Inner raw();
+                Outer.@C Static<@B String> staticNested();
+                """);
+        TypeName raw = returnType(info, "raw");
+        TypeName rawOwner = raw.enclosingType().orElseThrow();
+        TypeName staticNested = returnType(info, "staticNested");
+
+        assertAll(() -> assertAnnotations("raw inner", raw, "B"),
+                  () -> assertAnnotations("raw outer", rawOwner, "A"),
+                  () -> assertThat("raw inner arguments", raw.typeArguments(), empty()),
+                  () -> assertThat("raw outer arguments", rawOwner.typeArguments(), empty()),
+                  () -> assertAnnotations("static nested", staticNested, "C"),
+                  () -> assertAnnotations("static argument", staticNested.typeArguments().getFirst(), "B"),
+                  () -> assertThat("static owner", staticNested.enclosingType().isEmpty(), is(true)),
+                  () -> assertThat("static nesting", staticNested.enclosingNames(), is(List.of("Outer"))),
+                  () -> assertThat("static type", staticNested.fqName(), is("com.example.Outer.Static")));
+    }
+
+    @Test
     void testPrimitiveArrayComponentAnnotation() {
         TypeName type = returnType(compile("@A int[] value();"), "value");
 
@@ -337,6 +414,16 @@ class AptTypeFactoryTest {
                         @Target(ElementType.TYPE_USE)
                         @Retention(RetentionPolicy.CLASS)
                         @interface C {
+                        }
+
+                        class Outer<T> {
+                            class Inner<U> {
+                                class Deep<V> {
+                                }
+                            }
+
+                            static class Static<V> {
+                            }
                         }
 
                         interface Example<T extends Number> {
