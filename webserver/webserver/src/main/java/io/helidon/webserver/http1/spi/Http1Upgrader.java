@@ -25,7 +25,7 @@ import io.helidon.webserver.spi.ServerConnection;
 /**
  * HTTP/1.1 connection upgrader.
  */
-@Api.Stable
+@Api.Internal
 public interface Http1Upgrader {
     /**
      * Expected value of the protocol upgrade, such as {@code h2c}, or {@code websocket}.
