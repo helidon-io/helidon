@@ -17,6 +17,7 @@ package io.helidon.dbclient.jsonp;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.dbclient.DbMapper;
@@ -28,6 +29,7 @@ import jakarta.json.JsonObject;
  * JSON-P mapper provider.
  */
 @Weight(Weighted.DEFAULT_WEIGHT)
+@Api.Internal
 public class JsonProcessingMapperProvider implements DbMapperProvider {
 
     /**

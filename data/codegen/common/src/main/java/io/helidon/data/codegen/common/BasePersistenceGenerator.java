@@ -20,6 +20,7 @@ import java.util.Objects;
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.common.Api;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -29,6 +30,7 @@ import io.helidon.data.codegen.common.spi.RepositoryGenerator;
 /**
  * Specific persistence provider (e.g. Jakarta Persistence, EclipseLink native, ...) generator base class.
  */
+@Api.Internal
 public abstract class BasePersistenceGenerator
         extends BaseGenerator
         implements PersistenceGenerator {

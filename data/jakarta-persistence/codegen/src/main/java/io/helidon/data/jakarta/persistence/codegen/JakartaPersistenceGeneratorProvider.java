@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,14 @@
  */
 package io.helidon.data.jakarta.persistence.codegen;
 
+import io.helidon.common.Api;
 import io.helidon.data.codegen.common.spi.PersistenceGenerator;
 import io.helidon.data.codegen.common.spi.PersistenceGeneratorProvider;
 
 /**
  * Jakarta Persistence generator provider.
  */
+@Api.Internal
 public class JakartaPersistenceGeneratorProvider implements PersistenceGeneratorProvider {
 
     /**

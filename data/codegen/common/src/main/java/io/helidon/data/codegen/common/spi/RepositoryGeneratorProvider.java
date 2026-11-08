@@ -15,9 +15,12 @@
  */
 package io.helidon.data.codegen.common.spi;
 
+import io.helidon.common.Api;
+
 /**
  * Specific data repository (e.g. Jakarta Data) generator provider.
  */
+@Api.Internal
 public interface RepositoryGeneratorProvider {
 
     /**

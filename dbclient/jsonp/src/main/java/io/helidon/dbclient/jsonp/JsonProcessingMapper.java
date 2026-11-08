@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.helidon.common.Api;
 import io.helidon.dbclient.DbMapper;
 import io.helidon.dbclient.DbRow;
 
@@ -37,6 +38,7 @@ import jakarta.json.JsonValue;
 /**
  * Json processing mapper.
  */
+@Api.Preview
 public final class JsonProcessingMapper implements DbMapper<JsonObject> {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Collections.emptyMap());
     private static final Map<Class<?>, DbJsonWriter> JSON_WRITERS = new IdentityHashMap<>();

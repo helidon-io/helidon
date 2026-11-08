@@ -19,6 +19,7 @@ import java.lang.System.Logger.Level;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
@@ -36,6 +37,7 @@ import com.codahale.metrics.Timer;
  * <br/>
  * Listeners for events from the metrics registry and (un)registers metrics instances in Helidon.
  */
+@Api.Internal
 public class DropwizardMetricsListener implements MetricRegistryListener {
 
     private static final System.Logger LOGGER = System.getLogger(DropwizardMetricsListener.class.getName());

@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.ServiceLoader;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.mapper.Mappers;
 import io.helidon.config.Config;
@@ -31,6 +32,7 @@ import io.helidon.dbclient.spi.DbMapperProvider;
 /**
  * Helidon database client.
  */
+@Api.Preview
 public interface DbClient extends AutoCloseable {
 
     /**

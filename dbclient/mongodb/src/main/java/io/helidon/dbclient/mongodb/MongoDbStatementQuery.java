@@ -21,6 +21,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import io.helidon.common.Api;
 import io.helidon.dbclient.DbClientException;
 import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbRow;
@@ -38,6 +39,7 @@ import static java.util.Spliterators.spliteratorUnknownSize;
 /**
  * MongoDB {@link DbStatementQuery} implementation.
  */
+@Api.Internal
 public class MongoDbStatementQuery extends MongoDbStatement<DbStatementQuery> implements DbStatementQuery {
 
     private static final System.Logger LOGGER = System.getLogger(MongoDbStatementQuery.class.getName());

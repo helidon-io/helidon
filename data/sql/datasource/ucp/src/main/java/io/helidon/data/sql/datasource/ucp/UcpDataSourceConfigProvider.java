@@ -15,6 +15,7 @@
  */
 package io.helidon.data.sql.datasource.ucp;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.data.sql.datasource.ProviderConfig;
 import io.helidon.data.sql.datasource.spi.DataSourceConfigProvider;
@@ -26,6 +27,7 @@ import io.helidon.data.sql.datasource.spi.DataSourceConfigProvider;
  *
  * @see io.helidon.data.sql.datasource.DataSourceConfig.Builder#provider(io.helidon.data.sql.datasource.ProviderConfig)
  */
+@Api.Internal
 public class UcpDataSourceConfigProvider implements DataSourceConfigProvider {
 
     /**

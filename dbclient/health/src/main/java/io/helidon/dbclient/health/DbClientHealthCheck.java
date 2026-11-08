@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.health.HealthCheck;
@@ -28,6 +29,7 @@ import io.helidon.health.HealthCheckResponse;
 /**
  * Database health check.
  */
+@Api.Preview
 public abstract class DbClientHealthCheck implements HealthCheck {
 
     /* Local logger instance. */

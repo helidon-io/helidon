@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package io.helidon.dbclient.jdbc;
 
+import io.helidon.common.Api;
+
 /**
  * CloseableJdbcConnectionPool is an interface that represents a JDBC connection pool that can be closed.
  * It extends the JdbcConnectionPool interface and the AutoCloseable interface.
@@ -23,5 +25,6 @@ package io.helidon.dbclient.jdbc;
  * @see JdbcConnectionPool
  * @see AutoCloseable
  */
+@Api.Preview
 public interface CloseableJdbcConnectionPool extends JdbcConnectionPool, AutoCloseable {
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.dbclient.mongodb;
 import java.util.List;
 import java.util.stream.Stream;
 
+import io.helidon.common.Api;
 import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbResultDml;
 import io.helidon.dbclient.DbStatementDml;
@@ -38,6 +39,7 @@ import org.bson.codecs.DocumentCodec;
 /**
  * MongoDB {@link DbStatementDml} implementation.
  */
+@Api.Internal
 public class MongoDbStatementDml extends MongoDbStatement<DbStatementDml> implements DbStatementDml {
 
     private static final System.Logger LOGGER = System.getLogger(MongoDbStatementDml.class.getName());

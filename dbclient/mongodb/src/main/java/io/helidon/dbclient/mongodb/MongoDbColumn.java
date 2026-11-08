@@ -15,12 +15,14 @@
  */
 package io.helidon.dbclient.mongodb;
 
+import io.helidon.common.Api;
 import io.helidon.common.mapper.Mappers;
 import io.helidon.dbclient.DbColumnBase;
 
 /**
  * Mongo implementation of {@link io.helidon.dbclient.DbColumn}.
  */
+@Api.Internal
 public final class MongoDbColumn extends DbColumnBase {
 
     private final String name;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.transaction.jta;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Service;
 
 import jakarta.transaction.TransactionManager;
@@ -25,6 +26,7 @@ import jakarta.transaction.TransactionManager;
 /**
  * Jakarta Transactions {@link TransactionManager} supplier.
  */
+@Api.Internal
 @Service.Singleton
 @Service.Named("helidon:jndi/TransactionManager")
 public class TransactionManagerSupplier implements Supplier<Optional<TransactionManager>> {

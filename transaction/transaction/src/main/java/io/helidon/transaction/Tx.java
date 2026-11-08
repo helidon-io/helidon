@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.util.concurrent.Callable;
 
+import io.helidon.common.Api;
 import io.helidon.common.Functions;
 import io.helidon.service.registry.Interception;
 import io.helidon.service.registry.Services;
@@ -29,6 +30,7 @@ import io.helidon.transaction.spi.TxSupport;
 /**
  * Annotations and types related to transactional method execution.
  */
+@Api.Incubating
 public final class Tx {
 
     private Tx() {

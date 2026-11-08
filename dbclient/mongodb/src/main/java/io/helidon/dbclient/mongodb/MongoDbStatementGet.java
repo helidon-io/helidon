@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.dbclient.DbExecuteContext;
 import io.helidon.dbclient.DbRow;
 import io.helidon.dbclient.DbStatementGet;
@@ -29,6 +30,7 @@ import com.mongodb.client.MongoDatabase;
 /**
  * MongoDB {@link DbStatementGet} implementation.
  */
+@Api.Internal
 public class MongoDbStatementGet extends MongoDbStatement<DbStatementGet> implements DbStatementGet {
 
     private final MongoDbStatementQuery theQuery;

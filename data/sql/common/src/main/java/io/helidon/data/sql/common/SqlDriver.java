@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,12 @@ package io.helidon.data.sql.common;
 
 import java.sql.Driver;
 
+import io.helidon.common.Api;
+
 /**
  * JDBC driver info.
  */
+@Api.Internal
 public interface SqlDriver {
     /**
      * Create a new driver instance from the Helidon data configuration.

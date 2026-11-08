@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+import io.helidon.common.Api;
 import io.helidon.common.Builder;
 import io.helidon.config.Config;
 
@@ -29,6 +30,7 @@ import io.helidon.config.Config;
  * A base implementation of a client service that supports configuration
  * of execution based on a statement name pattern and statement types.
  */
+@Api.Preview
 public abstract class DbClientServiceBase implements DbClientService {
 
     private final Predicate<DbClientServiceContext> predicate;

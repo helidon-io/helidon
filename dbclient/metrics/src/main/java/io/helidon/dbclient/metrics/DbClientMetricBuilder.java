@@ -15,6 +15,7 @@
  */
 package io.helidon.dbclient.metrics;
 
+import io.helidon.common.Api;
 import io.helidon.dbclient.DbClientServiceBase;
 
 /**
@@ -23,6 +24,7 @@ import io.helidon.dbclient.DbClientServiceBase;
  * @param <B> type of the builder extending this class
  * @param <T> Type of the built {@link DbClientServiceBase} instance
  */
+@Api.Preview
 public abstract class DbClientMetricBuilder<B extends DbClientMetricBuilder<B, T>, T extends DbClientServiceBase>
         extends MetricBuilderBase<B, T> {
 

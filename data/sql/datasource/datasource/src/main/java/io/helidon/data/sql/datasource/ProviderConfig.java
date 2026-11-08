@@ -15,11 +15,13 @@
  */
 package io.helidon.data.sql.datasource;
 
+import io.helidon.common.Api;
 import io.helidon.config.NamedService;
 
 /**
  * Provider specific configuration.
  * Each provider, such as {@code hikari}, {@code ucp} would have its own configuration.
  */
+@Api.Preview
 public interface ProviderConfig extends NamedService {
 }

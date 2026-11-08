@@ -22,6 +22,7 @@ import javax.sql.DataSource;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * SQL specific connection configuration.
@@ -30,6 +31,7 @@ import io.helidon.builder.api.Prototype;
  * properties, the name of a registered {@link DataSource}, or an existing
  * {@link DataSource} supplied programmatically.
  */
+@Api.Preview
 @Prototype.Blueprint(createFromConfigPublic = false, createEmptyPublic = false, decorator = SqlConfigSupport.Decorator.class)
 @Prototype.Configured
 @Prototype.CustomMethods(SqlConfigSupport.CustomMethods.class)

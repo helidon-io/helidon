@@ -23,6 +23,7 @@ import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.codegen.classmodel.TypeArgument;
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.data.codegen.common.spi.PersistenceGenerator;
@@ -30,6 +31,7 @@ import io.helidon.data.codegen.common.spi.PersistenceGenerator;
 /**
  * Data repository interface code generator base class.
  */
+@Api.Internal
 public abstract class BaseRepositoryInterfaceGenerator
         extends BaseGenerator
         implements RepositoryInterfaceGenerator {

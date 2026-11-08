@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.transaction.spi;
 
 import java.util.concurrent.Callable;
 
+import io.helidon.common.Api;
 import io.helidon.transaction.Tx;
 
 /**
@@ -28,6 +29,7 @@ import io.helidon.transaction.Tx;
  * Helidon Data Jakarta Persistence module provides its own {@code RESOURCE-LOCAL} implementation
  * with {@code "resource-local"} {@link #type()} as a fallback option when JTA is not present.
  */
+@Api.Incubating
 public interface TxSupport {
 
     /**

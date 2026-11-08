@@ -614,6 +614,12 @@ transaction:
 
 ### Usage
 
+The transaction API is Incubating and may change or be removed in any release.
+The API stability checker rejects its use by default. Acknowledge its use with
+`@SuppressWarnings(Api.SUPPRESS_INCUBATING)` on the class that uses it, where
+`Api` is imported from `io.helidon.common.Api`. Class-level suppression also
+covers imports of Incubating types.
+
 The `Tx.Type` enum is used to control the transactional behavior of methods. By
 specifying the desired transactional behavior using one of the enum values,
 developers can ensure that their methods are executed with the correct
@@ -628,6 +634,7 @@ never executed within a transaction:
 
 ```java
 @Service.Singleton
+@SuppressWarnings(Api.SUPPRESS_INCUBATING)
 public class PetService {
     @Tx.Required
     public void doSomething() {
@@ -651,6 +658,7 @@ is always executed within a transaction. Lambda expression in the
 transaction:
 
 ```java
+@SuppressWarnings(Api.SUPPRESS_INCUBATING)
 public class KeeperService {
     public void doSomething() {
         Tx.transaction(Tx.Type.REQUIRED, () -> {

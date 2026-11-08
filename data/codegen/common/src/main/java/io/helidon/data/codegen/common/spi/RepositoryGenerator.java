@@ -20,6 +20,7 @@ import java.util.Set;
 
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.data.codegen.common.RepositoryInfo;
@@ -29,6 +30,7 @@ import io.helidon.data.codegen.common.RepositoryInterfaceInfo;
  * Specific data repository (e.g. Jakarta Data) generator.
  * Defines generated data repository interfaces implementations.
  */
+@Api.Internal
 public interface RepositoryGenerator {
 
     /**

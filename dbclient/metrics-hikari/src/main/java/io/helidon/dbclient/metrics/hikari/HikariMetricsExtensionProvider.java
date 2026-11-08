@@ -15,6 +15,7 @@
  */
 package io.helidon.dbclient.metrics.hikari;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.dbclient.hikari.HikariMetricsRegistry;
 import io.helidon.dbclient.hikari.spi.HikariMetricsProvider;
@@ -22,6 +23,7 @@ import io.helidon.dbclient.hikari.spi.HikariMetricsProvider;
 /**
  * {@link HikariMetricsProvider} implementation for {@link HikariMetricsExtension}.
  */
+@Api.Internal
 public final class HikariMetricsExtensionProvider implements HikariMetricsProvider {
 
     /**

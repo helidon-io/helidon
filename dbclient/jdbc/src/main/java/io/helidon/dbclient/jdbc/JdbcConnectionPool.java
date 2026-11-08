@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.ServiceLoader;
 
+import io.helidon.common.Api;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.config.NamedService;
@@ -31,6 +32,7 @@ import io.helidon.dbclient.jdbc.spi.JdbcConnectionPoolProvider;
  * JDBC connection pool.
  */
 @FunctionalInterface
+@Api.Preview
 public interface JdbcConnectionPool extends NamedService {
 
     /** Default JDBC connection pool {@link #dbType()} value. */

@@ -15,6 +15,7 @@
  */
 package io.helidon.dbclient.jdbc.spi;
 
+import io.helidon.common.Api;
 import io.helidon.config.ConfiguredProvider;
 import io.helidon.dbclient.jdbc.JdbcConnectionPool;
 
@@ -22,5 +23,6 @@ import io.helidon.dbclient.jdbc.JdbcConnectionPool;
  * {@link java.util.ServiceLoader} provider interface for JDBC connection pool.
  * This interface serves as
  */
+@Api.Internal
 public interface JdbcConnectionPoolProvider extends ConfiguredProvider<JdbcConnectionPool> {
 }

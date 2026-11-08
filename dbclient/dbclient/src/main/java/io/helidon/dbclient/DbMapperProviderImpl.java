@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,12 +29,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
 
+import io.helidon.common.Api;
 import io.helidon.common.mapper.Mapper;
 import io.helidon.common.mapper.spi.MapperProvider;
 
 /**
  * Java {@link ServiceLoader} service to get database types mappers.
  */
+@Api.Internal
 public class DbMapperProviderImpl implements MapperProvider  {
 
     /**

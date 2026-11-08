@@ -39,6 +39,7 @@ import static io.helidon.data.jakarta.persistence.codegen.JakartaPersistenceType
  * Each entity (a class annotated with {@code @Entity}) will have a provider generated, that
  * can be discovered from the service registry.
  */
+@Api.Internal
 public class EntityCodegenProvider implements CodegenExtensionProvider {
 
     /**

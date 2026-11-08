@@ -15,6 +15,7 @@
  */
 package io.helidon.dbclient.hikari;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.dbclient.jdbc.JdbcConnectionPool;
 import io.helidon.dbclient.jdbc.spi.JdbcConnectionPoolProvider;
@@ -22,6 +23,7 @@ import io.helidon.dbclient.jdbc.spi.JdbcConnectionPoolProvider;
 /**
  * Hikari connection pool {@link java.util.ServiceLoader} provider.
  */
+@Api.Internal
 public class HikariConnectionPoolProvider implements JdbcConnectionPoolProvider {
 
     private static final String  CONFIG_NAME = "hikari";

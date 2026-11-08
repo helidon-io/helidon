@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.helidon.common.Api;
 import io.helidon.dbclient.DbMapper;
 import io.helidon.dbclient.DbRow;
 import io.helidon.json.JsonNull;
@@ -33,6 +34,7 @@ import io.helidon.json.JsonValue;
 /**
  * Helidon JSON mapper.
  */
+@Api.Preview
 public final class JsonMapper implements DbMapper<JsonObject> {
     private static final Map<Class<?>, DbJsonWriter> JSON_WRITERS = new IdentityHashMap<>();
     private static final DbJsonWriter NUMBER_WRITER = (builder, name, value) ->

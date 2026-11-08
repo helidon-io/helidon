@@ -17,6 +17,7 @@ package io.helidon.dbclient.tracing;
 
 import java.util.Map;
 
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
@@ -35,6 +36,7 @@ import io.helidon.tracing.config.TracingConfigUtil;
  * Tracing interceptor.
  * This interceptor is added through Java Service loader.
  */
+@Api.Preview
 public class DbClientTracing extends DbClientServiceBase {
 
     private static final Tag<? super String> DBCLIENT_TAG = Tag.COMPONENT.create("dbclient");

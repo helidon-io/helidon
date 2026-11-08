@@ -17,11 +17,13 @@ package io.helidon.dbclient;
 
 import java.util.List;
 
+import io.helidon.common.Api;
 import io.helidon.common.mapper.Mappers;
 
 /**
  * Execution context.
  */
+@Api.Internal
 public class DbExecuteContext implements DbContext {
 
     private final String statementName;

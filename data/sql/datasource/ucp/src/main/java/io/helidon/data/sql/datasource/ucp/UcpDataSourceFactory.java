@@ -22,6 +22,7 @@ import java.util.Properties;
 
 import javax.sql.DataSource;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.data.DataException;
 
@@ -32,6 +33,7 @@ import oracle.ucp.jdbc.PoolDataSourceFactory;
  * UCP {@link DataSource} factory.
  * Builds UCP {@link DataSource} instance from config.
  */
+@Api.Internal
 public class UcpDataSourceFactory {
 
     private final UcpDataSourceConfig dataSourceConfig;

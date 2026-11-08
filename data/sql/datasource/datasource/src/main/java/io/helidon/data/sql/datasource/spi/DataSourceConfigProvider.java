@@ -15,11 +15,13 @@
  */
 package io.helidon.data.sql.datasource.spi;
 
+import io.helidon.common.Api;
 import io.helidon.config.ConfiguredProvider;
 import io.helidon.data.sql.datasource.ProviderConfig;
 
 /**
  * Provider (as in {@link java.util.ServiceLoader}) of provider (as in ucp) configuration.
  */
+@Api.Internal
 public interface DataSourceConfigProvider extends ConfiguredProvider<ProviderConfig> {
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 package io.helidon.data.codegen.parser;
 
+import io.helidon.common.Api;
+
 /**
  * Method name parsing error.
  *
@@ -22,5 +24,6 @@ package io.helidon.data.codegen.parser;
  * @param line     source code line number
  * @param position source code line position
  */
+@Api.Internal
 public record MethodParserError(Object symbol, int line, int position) {
 }

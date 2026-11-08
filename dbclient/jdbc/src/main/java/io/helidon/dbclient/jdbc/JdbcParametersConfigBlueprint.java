@@ -17,10 +17,12 @@ package io.helidon.dbclient.jdbc;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * JDBC parameters setter configuration.
  */
+@Api.Preview
 @Prototype.Blueprint
 @Prototype.Configured(value = "parameters", root = false)
 interface JdbcParametersConfigBlueprint {
