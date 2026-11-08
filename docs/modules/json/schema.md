@@ -38,9 +38,9 @@ To enable JSON Schema, add the following dependency to your project’s `pom.xml
 
 When the API-stability annotation processor is enabled, including through
 `helidon-bundles-apt`, it rejects Incubating API usage by default. Acknowledge
-this usage with `@SuppressWarnings(Api.SUPPRESS_INCUBATING)` on the class or
-method that uses these APIs. The examples below use `Api` from
-`io.helidon.common.Api`.
+this usage with `@SuppressWarnings(Api.SUPPRESS_INCUBATING)` on the class that
+uses these APIs. Class-level suppression also covers imports of Incubating
+types. The examples below use `Api` from `io.helidon.common.Api`.
 
 ### Imperative Schema Creation
 
@@ -53,11 +53,13 @@ customization is required.
 
 ```java
 @SuppressWarnings(Api.SUPPRESS_INCUBATING)
-Schema createSchema() {
-    return Schema.builder()
-            .rootObject(builder -> builder.description("Example JSON Schema")
-                    .addIntegerProperty("exampleProperty", intBuilder -> intBuilder.minimum(0)))
-            .build();
+class SchemaExample {
+    Schema createSchema() {
+        return Schema.builder()
+                .rootObject(builder -> builder.description("Example JSON Schema")
+                        .addIntegerProperty("exampleProperty", intBuilder -> intBuilder.minimum(0)))
+                .build();
+    }
 }
 ```
 
@@ -129,8 +131,10 @@ possible to inject the [`Schema`][schema] with the
 
 ```java
 @SuppressWarnings(Api.SUPPRESS_INCUBATING)
-public void myMethod(@Service.Named(ExampleSchema.class) Schema schema) {
-    //...
+class SchemaConsumer {
+    public void myMethod(@Service.Named(ExampleSchema.class) Schema schema) {
+        //...
+    }
 }
 ```
 
@@ -140,8 +144,10 @@ over the parameter.
 
 ```java
 @SuppressWarnings(Api.SUPPRESS_INCUBATING)
-Optional<Schema> findSchema() {
-    return Schema.find(MyClass.class);
+class SchemaLookup {
+    Optional<Schema> findSchema() {
+        return Schema.find(MyClass.class);
+    }
 }
 ```
 
