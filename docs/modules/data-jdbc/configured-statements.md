@@ -1,22 +1,27 @@
 <!--@frontmatter
 description: "Load SQL from application configuration for repositories and JDBC clients"
 -->
-# SQL from Configuration
+# SQL In Configuration
 
-Define SQL at any level of the configuration tree. Declarative repositories reference
-the key in `@Jdbc.Statement`. Imperative applications read the SQL with `Config` and
-prepare a reusable statement supplier.
+Helidon Data JDBC can load SQL from application configuration, allowing an application
+to replace statements without recompiling its repository interfaces. The replacement
+SQL must remain compatible with the declared inputs and expected results. Declarative
+repositories identify the configuration key through `@Jdbc.Statement`, while imperative
+applications read the SQL through `Config` and pass it to `JdbcClient.prepare(...)`.
 
-Configured SQL supports materialized queries, updates, and generated keys. The existing
-[execution contracts](queries.md), [result mapping](mapping.md), and
-[transaction rules](transactions.md) apply. Configured statements do not support
-streaming, stored procedure calls, or batch processing.
+Loading SQL from configuration changes how a statement is selected. The existing
+[execution contracts](data-jdbc.md#sql-guidelines),
+[result mapping](declarative.md#result-mapping), and
+[transaction rules](data-jdbc.md#local-transactions) still govern its execution. This
+support covers materialized queries, updates, and generated keys. Streaming, stored
+procedure calls, and batch processing are outside its scope.
 
 ## Application Configuration
 
-SQL can appear at the root or any nested path, including inside a client entry under
-`data.clients.jdbc`. The `application` prefix in these examples is a naming choice,
-not a required namespace:
+The application controls where SQL appears in the configuration tree. A statement can
+be stored at the root, under an application section, or inside a client entry under
+`data.clients.jdbc`. The following example groups three statements under
+`application.contacts`, but neither that prefix nor that nesting depth is required:
 
 ```yaml [application.yaml]
 application:
@@ -31,23 +36,28 @@ application:
       INSERT INTO CONTACT (NAME) VALUES (:name)
 ```
 
-The YAML `|-` form preserves internal line breaks and strips trailing line breaks.
-Each SQL value must be a nonblank string.
+Each value contains a nonblank SQL string. The YAML `|-` notation preserves internal
+line breaks and removes trailing line breaks, allowing longer statements to remain
+readable across several lines.
 
-For example, SQL stored under `sql.find-by-id` in the first `data.clients.jdbc` entry
-has the full key `data.clients.jdbc.0.sql.find-by-id`. Reference it with
-`@Jdbc.Statement("${data.clients.jdbc.0.sql.find-by-id}")` or read it imperatively with
-`config.get("data.clients.jdbc.0.sql.find-by-id").asString().get()` from the root Config.
-The `0` is the entry's list index, not its client name. Here, `sql` is an application
-key. Its location does not select a client; repositories still use `@Jdbc.Client`, and
-imperative code uses its chosen `JdbcClient`.
+The same lookup rules apply when SQL is stored beside client settings. For example,
+`sql.find-by-id` inside the first `data.clients.jdbc` entry has the full key
+`data.clients.jdbc.0.sql.find-by-id`. A repository can reference that value through
+`@Jdbc.Statement("${data.clients.jdbc.0.sql.find-by-id}")`, and imperative code can read
+it from the root Config through
+`config.get("data.clients.jdbc.0.sql.find-by-id").asString().get()`. The `0` identifies
+the first entry in the client list, and `sql` is a key defined by the application.
 
-Connection settings under `data.clients.jdbc` follow the structure described in
-[Clients and Data Sources](configuration.md).
+The location of a SQL value does not determine which client executes it. Repositories
+continue to select a client through `@Jdbc.Client`, and imperative applications use the
+chosen `JdbcClient` instance. Connection settings follow the structure described in
+[Configuration](data-jdbc.md#configuration), regardless of where the SQL is stored.
 
 ## Declarative Repositories
 
-Use one complete configuration reference as the `@Jdbc.Statement` value:
+A repository method selects SQL through a complete configuration reference in
+`@Jdbc.Statement`. The following repository uses the YAML keys for a query, an update,
+and an insert that returns a generated key:
 
 ```java
 @SuppressWarnings(Api.SUPPRESS_INCUBATING)
@@ -72,15 +82,18 @@ record Contact(long id, String name) {
 }
 ```
 
-The repository uses the `contacts` client and reads SQL from the root `Config` in the
-same Service Registry. Helidon resolves and validates SQL once, when the repository is
-activated. This may happen after application startup. Each method keeps an immutable
-SQL definition and creates a new statement with independent bindings for each call.
+When this repository is activated, Helidon reads the keys from the root `Config` in
+the same Service Registry and prepares the statements for the `contacts` client.
+Activation can happen after application startup. The resolved SQL is then retained in
+an immutable definition for each method, and every method call creates a new statement
+with independent bindings.
 
-Named markers match a parameter's `@Data.Param` alias, or its Java name when no alias is
-present. Repeated markers receive the same argument at every occurrence. Methods
-without aliases can instead use positional SQL, with one marker per parameter in
-declaration order. For example, replace the `rename` value without recompiling:
+The configured statements follow the same binding rules as literal SQL. Named markers
+match the `@Data.Param` alias assigned to a parameter, or its Java name when no alias is
+present. Repeating a marker supplies the same argument to each occurrence. For methods
+without aliases, positional SQL provides an alternative with one marker per parameter
+in declaration order. The `rename` statement can therefore be replaced with the
+following value without recompiling the repository:
 
 ```yaml [application.yaml]
 application:
@@ -89,16 +102,36 @@ application:
       UPDATE CONTACT SET NAME = ? WHERE ID = ?
 ```
 
-The first marker receives `name` and the second receives `id`. An explicit or inherited
-`@Data.Param` alias requires named SQL for the whole method.
+With this replacement, `name` binds to the first marker and `id` to the second, matching
+the method declaration. Reference arguments still support Java `null`, which generated
+code binds as typed SQL `NULL` using the declared scalar type. The SQL predicate
+determines its meaning, as explained in [Statement Parameters](declarative.md#statement-parameters).
 
-For reference parameters, Java `null` binds typed SQL `NULL` using the declared scalar
-type. See [Declarative Binding](parameters.md#declarative-binding) for aliases, inherited
-contracts, and null predicates.
+An alias allows the Java parameter name to change independently of SQL. The same query
+can therefore retain `:id` while using `contactId` in Java:
+
+```java
+@Jdbc.Statement("${application.contacts.find-by-id}")
+Optional<Contact> findById(@Data.Param("id") long contactId);
+```
+
+Here, `id` becomes the effective input name, which must be unique among all parameters,
+including those without aliases. Any explicit or inherited `@Data.Param` alias requires
+named SQL in both defaults and deployment replacements. The positional replacement
+shown earlier therefore applies only to methods without aliases.
+
+For an inherited configured method, each parameter without an alias needs a reliable
+Java name from the parent declaration. A parent compiled with `-parameters` preserves
+that name. An application can instead supply `@Data.Param` or redeclare the method with
+explicit parameter names. This requirement still applies when the current configured
+SQL is positional, because a later replacement can use named markers. Inherited aliases
+are retained without `-parameters`, while literal positional methods need no parameter
+name metadata.
 
 ### Optional Defaults
 
-Supply a default after the colon to use when the key is missing:
+A reference can provide default SQL when its key is absent. The default follows the
+first colon and can span several lines to keep the fallback readable:
 
 ```java
 @Jdbc.Statement("""
@@ -111,24 +144,27 @@ Supply a default after the colon to use when the key is missing:
 Optional<Contact> findById(long id);
 ```
 
-The first colon separates the key from its default. The final closing brace ends the
-reference. Defaults can span lines and contain colons and interior braces. Configured
-values pass through normal Config filters. JDBC performs no further expression
-resolution or unescaping.
+The first colon separates the key from its default, and the final closing brace ends
+the reference. Interior colons and braces remain part of the SQL. Configured values
+pass through normal Config filters, with no further expression resolution or unescaping
+by JDBC.
 
-A default must be nonblank and match the method's input contract. A missing key without
-a default fails activation. A present blank, object, or list value fails activation even
-when a default is supplied.
+The default must be nonblank and match the declared method inputs. A present blank
+value, object, or list causes activation to fail even when a default exists, because
+fallback applies only to absent keys. A missing key without a default also fails
+activation.
 
-Keys must be nonblank and contain no braces. The annotation accepts one complete
-reference, with no nested or multiple `${...}` references. If SQL needs a literal `${`
-sequence, store it in configuration instead of the annotation default. Do not combine
-literal SQL and configuration references in one annotation value.
+The annotation accepts one complete reference with a nonblank key that contains no
+braces. Nested or multiple `${...}` references are rejected, and literal SQL cannot be
+combined with configuration references in the annotation value. SQL that needs a
+literal `${` sequence can be stored in configuration instead of an annotation default,
+subject to the normal Config filters.
 
 ## Imperative Applications
 
-Read SQL with the ordinary Config API, then pass it to `prepare`. This example uses an
-application root `Config config` and a `JdbcClient jdbcClient`:
+An imperative application resolves SQL through the ordinary Config API and passes it
+to `prepare(sql)`, which returns a reusable statement supplier. In this example,
+`config` is the application root Config and `jdbcClient` is the selected client:
 
 ```java
 String sql = config.get("application.contacts.find-by-id").asString().get();
@@ -141,13 +177,16 @@ Optional<Contact> contact = findById.get()
         .optional();
 ```
 
-Import `Supplier` from `java.util.function`, and `List` and `Optional` from `java.util`.
-`prepare(sql)` accepts named, positional, or marker-free SQL. Bind named markers with
-`bind(name, value)` and positional markers with `bind(index, value)`. JDBC indexes start
-at one. JDBC receives resolved SQL. It does not interpret `${...}` references or retain
-the `Config` object.
+The examples use `Supplier` from `java.util.function` and `List` and `Optional` from
+`java.util`. The Config lookup uses `get()` to require a value, so JDBC receives resolved
+SQL without interpreting `${...}` or retaining Config. The supplier creates statements
+that support named SQL through `bind(name, value)` and positional SQL through
+`bind(index, value)`, using indexes that start at one. Statements without markers are
+also supported.
 
-To declare the expected inputs, pass their names in order to `prepare(sql, inputNames)`:
+The overload `prepare(sql, inputNames)` makes the expected inputs explicit and allows
+positional SQL to be bound by logical name. Here, `orElse(...)` supplies a positional
+fallback when the key is absent, and the input list declares the expected value order:
 
 ```java
 String sql = config.get("application.contacts.rename").asString()
@@ -160,79 +199,101 @@ long updated = rename.get()
         .execute();
 ```
 
-This overload checks the exact set of named inputs or the positional marker count.
-The input list works with both the named SQL in YAML and the positional fallback. For
-positional SQL, `name` identifies position one and `id` identifies position two.
+Both SQL forms satisfy this input contract. Named SQL must contain exactly the supplied
+names, although their markers can appear in any order or repeat. For positional SQL,
+the marker count must equal the list size, with `name` identifying position one and
+`id` position two. Names must be unique and follow Java identifier character rules.
+Helidon copies the list to protect the definition from later changes. Indexed bindings
+still address physical JDBC positions, including individual occurrences of repeated
+named markers.
 
-Input names must be unique and follow Java identifier character rules. Helidon copies
-the list. Indexed bindings always address physical JDBC positions, including individual
-occurrences of repeated named markers.
+Retaining the supplier allows the application to reuse the parsed SQL. Each call to
+`prepare(...)` scans the statement, but each subsequent supplier call creates independent
+binding state without another scan, configuration lookup, or JDBC work. The supplier
+holds the definition, and the client retains no history of these definitions. Their
+plans are separate from the [parameter count cache](data-jdbc.md#parameter-count-cache)
+used by `JdbcClient.create(sql)`.
 
-Prepare once and retain the supplier. Each `prepare(...)` call scans SQL. Each supplier
-call creates a new statement without another scan, configuration lookup, or JDBC work.
-The supplier holds the definition, and the client retains no history of definitions.
-These plans do not use the [parameter count cache](configuration.md#parameter-count-cache).
-
-Imperative bindings require nonnull scalar values. The imperative API has no typed SQL
-NULL binding, so express null handling in SQL, as described in
-[Imperative Binding](parameters.md#imperative-binding). `JdbcClient.create(sql)` remains
-available for positional statements without a reusable definition.
+Unlike generated repository bindings, imperative value bindings require nonnull scalars
+and provide no typed SQL NULL operation. Null handling remains explicit in the SQL, as
+described in [Parameter Binding](imperative.md#parameter-binding). Applications can also
+continue to use `JdbcClient.create(sql)` for positional statements when they do not need
+a reusable definition.
 
 ## Binding and Validation
 
-A statement must not mix named and positional markers. Marker recognition follows the
-[SQL safety rules](parameters.md#sql-safety-and-markers).
-Markers inside supported strings, quoted identifiers, and comments do not create inputs.
+Moving SQL into configuration preserves the existing
+[SQL safety rules](data-jdbc.md#sql-guidelines). A statement may contain named markers,
+positional markers, or no markers, but it cannot mix named and positional styles.
+Text inside supported strings, quoted identifiers, and comments does not introduce
+inputs. When SQL has no markers, the repository method must have no parameters, or the
+ordered input list must be empty.
 
-| SQL style | Repository or ordered input contract |
-| --- | --- |
-| Named | Marker names must match the input names exactly. Markers can repeat. |
-| Positional | One marker per input, in method declaration or input list order. Repository methods with aliases require named SQL. |
-| No markers | No method parameters, or an empty input list. |
+Validation is divided between compilation and initialization because deployment SQL
+is not available to the annotation processor. During compilation, Helidon checks the
+reference syntax, parameter types and reliable names, aliases, return types, execution
+contracts, and markers in known inline defaults. It reads neither deployment
+configuration nor database metadata at this stage.
 
-Without an input list, `prepare(sql)` derives its inputs from SQL. Assign each physical
-JDBC position once, directly or through named binding. Unknown names, invalid positions,
-and duplicate assignments fail during binding. A named binding validates every matching
-position before assigning any. Missing bindings fail before the operation acquires a
-connection.
+The actual SQL is validated when the repository is activated or the imperative
+application calls `prepare(...)`. At that point, Helidon checks that the string is
+nonblank, its markers use valid syntax and a single style, and any declared input names
+or counts match. Preparing the definition acquires no JDBC resources, although
+repository activation may first resolve or activate a client or data source. A failure
+in that setup can therefore occur before SQL validation.
 
-| Phase | Checks |
-| --- | --- |
-| Repository compilation | Checks reference syntax, parameter types and reliable names, aliases, return and execution contracts, and markers in inline defaults. Reads no deployment configuration or database metadata. |
-| Repository activation or imperative preparation | Checks for nonblank SQL, valid marker syntax and style, and matching input names or counts. Planning acquires no JDBC resources. |
-| Binding and execution | Checks complete bindings before acquisition. The database validates SQL grammar and schema. Existing mapping, cardinality, and generated key checks apply. |
-
-Repository activation may activate a client or data source before validating SQL. A
-failure in that setup can therefore occur first.
+During binding, each physical JDBC position must receive exactly one assignment,
+either directly or through a logical name. Unknown names, invalid positions, and
+duplicate assignments fail immediately. A named binding validates all matching positions
+before assigning any of them, and missing bindings are rejected before the operation
+acquires a connection. Once execution begins, the database validates SQL grammar and
+schema references, while the existing mapping, cardinality, and generated key checks
+apply to its results.
 
 ## Lifetime and Configuration Changes
 
-A prepared definition belongs to one client and keeps its resolved SQL. Each repository
-instance keeps its own method definitions. Definitions do not share mutable binding
-state across clients or Service Registries.
+A prepared definition remains associated with its client and resolved SQL. Repository
+instances retain their own method definitions, with independent binding state across
+calls, clients, and Service Registries. Suppliers can therefore be shared, although
+each statement they create permits one execution and must not be mutated concurrently.
 
-Suppliers are safe to share. Use each statement for one execution and do not mutate it
-concurrently. Suppliers hold no JDBC resources or transaction context. The terminal
-method uses the transaction active at execution and follows existing
-[resource ownership rules](transactions.md#resource-ownership).
+These definitions hold no JDBC resources and capture no transaction context. The
+terminal operation uses the transaction active when it executes and follows the usual
+[resource ownership rules](imperative.md#resource-management). If generated key
+processing or cleanup fails, the application should let the exception escape the owning
+method or `Tx.transaction` callback so Helidon can roll back.
 
-Existing definitions keep their original SQL. To adopt configuration changes, load the
-new configuration and prepare a new supplier, or create a new repository and Service
-Registry. Restarting the application also adopts the changes. The client can be reused
-if its connection source and settings are unchanged.
+A failure that escapes a joined transactional invocation marks the transaction for
+rollback even if its caller catches it afterward. Catching a failure inside the owning
+method or callback before it crosses a transaction boundary does not itself mark the
+transaction for rollback and can allow the update to commit. Outside a local transaction,
+the update may already be committed when key processing fails. A failure alone therefore
+does not establish that retrying is safe.
 
-Keep replacement SQL compatible with the method's inputs, scalar types, execution kind,
-mapped columns, result cardinality, generated keys, and transaction rules. Named markers
-can move or repeat. Positional replacements must preserve argument order and count.
-Matching counts cannot detect a change in what a position means.
+Because configuration is resolved when a definition is created, existing definitions
+continue to use their original SQL after configuration changes. An imperative
+application adopts newly loaded configuration by preparing a new supplier. A declarative
+application adopts it through a new repository and Service Registry, or by restarting.
+A new client is unnecessary if its connection source and settings remain unchanged.
+
+Replacing SQL without recompiling still requires the replacement to preserve the
+input types, execution kind, mapped columns, result cardinality, generated key
+expectations, and transaction rules. Named bindings identify inputs by name, which
+allows replacement SQL to reorder or repeat their markers while preserving the required
+input names. Positional bindings depend on method declaration or input list order, so
+a replacement must preserve both the marker count and the meaning of each position.
+Helidon can check the count, but it cannot detect a semantic change caused by swapping
+two positions when that count remains the same.
 
 ## Confidentiality
 
-JDBC suppliers, statements, and infrastructure diagnostics omit SQL text, defaults, and
-bound values. Existing rules for [errors and JDBC
-warnings](data-jdbc.md#errors-and-jdbc-warnings) still apply.
+Helidon omits SQL text, defaults, and bound values when rendering JDBC suppliers,
+statements, and infrastructure diagnostics. This follows the existing rules for
+[errors and JDBC warnings](data-jdbc.md#errors-and-jdbc-warnings) and does not change
+how application exceptions are handled.
 
-SQL configuration values are not automatically marked confidential. Application logging
-can still expose them. Inline defaults remain visible in source, classfiles, and
-generated literals. Confidential diagnostics do not encrypt SQL or provide secret
-storage.
+This diagnostic protection does not make configuration a secret store. SQL values are
+ordinary Config values and are not automatically marked confidential, so application
+logging can still expose them. Inline defaults also remain visible in source,
+classfiles, and generated literals. Confidential diagnostics therefore provide neither
+encryption nor secret storage.

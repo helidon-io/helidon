@@ -35,7 +35,14 @@ public interface ConfiguredRepository extends ConfiguredOperations {
     List<ContactView> find(String name, String email);
 
     @Override
-    @Jdbc.Statement("${application.sql.by-id}")
+    @Jdbc.Statement("""
+            ${application.sql.by-id:
+            SELECT ID, NAME, EMAIL
+            FROM CONTACT
+            -- The next clause restricts the query to one contact.
+            WHERE ID = :id
+            }
+            """)
     Optional<ContactView> byId(long id);
 
     @Override

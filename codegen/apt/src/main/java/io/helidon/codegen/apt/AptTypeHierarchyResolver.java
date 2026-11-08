@@ -255,6 +255,8 @@ final class AptTypeHierarchyResolver extends TypeHierarchyResolver {
         return Optional.empty();
     }
 
+    // Encode a declaration type using JVM descriptor syntax so overload lookup matches the class file.
+    // Erasure handles generic bounds, and binary names preserve the separators used by nested classes.
     private String descriptor(TypeMirror type) {
         TypeMirror erased = types.erasure(type);
         return switch (erased.getKind()) {

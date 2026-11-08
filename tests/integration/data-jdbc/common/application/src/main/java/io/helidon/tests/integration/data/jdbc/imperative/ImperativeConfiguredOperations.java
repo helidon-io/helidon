@@ -49,7 +49,12 @@ public final class ImperativeConfiguredOperations implements ConfiguredOperation
         this.find = client.prepare(config.get("application.sql.find").asString().get(), List.of("name", "email"));
         this.rename = client.prepare(config.get("application.sql.rename").asString().get(), List.of("name", "id"));
         this.insert = client.prepare(config.get("application.sql.insert").asString().get(), List.of("value"));
-        this.byId = client.prepare(config.get("application.sql.by-id").asString().get(), List.of("id"));
+        this.byId = client.prepare(config.get("application.sql.by-id").asString().orElse("""
+                SELECT ID, NAME, EMAIL
+                FROM CONTACT
+                -- The next clause restricts the query to one contact.
+                WHERE ID = :id
+                """), List.of("id"));
         this.all = client.prepare(config.get("reporting.catalog.contacts.all").asString().get());
         this.aliases = client.prepare(config.get("application.aliases.find").asString().get(), List.of("email"));
         this.aliasInsert = client.prepare(config.get("application.aliases.insert").asString().get(), List.of("rows", "email"));

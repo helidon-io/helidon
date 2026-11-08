@@ -121,6 +121,35 @@ public abstract class AbstractConfiguredStatementContract {
         }
     }
 
+    /**
+     * Executes multiline default SQL when the application configuration omits its key.
+     * The line comment makes the identifier filter depend on preserving the following line break.
+     */
+    @Test
+    protected void usesMultilineDefaultSqlWhenConfigurationKeyIsAbsent() {
+        Map<String, String> values = new HashMap<>(configuration("configured-statements/application.yaml").asMap().get());
+        values.remove("application.sql.by-id");
+        TestConfigFactory.config(Config.just(ConfigSources.create(values)));
+        try {
+            ServiceRegistryManager manager = ServiceRegistryManager.start();
+            try {
+                assertThat(manager.registry().get(Config.class).get("application.sql.by-id").exists(), is(false));
+                DatabaseFixture database = manager.registry().get(DatabaseFixture.class);
+                database.reset();
+                ConfiguredOperations operations = manager.registry().get(operationsType());
+                assertThat(operations.byId(1L),
+                        is(Optional.of(new ContactView(1L, "alpha", Optional.of("alpha@example.test")))));
+                assertThat(operations.byId(2L),
+                        is(Optional.of(new ContactView(2L, "beta", Optional.empty()))));
+                assertThat(operations.byId(3L), is(Optional.empty()));
+            } finally {
+                manager.shutdown();
+            }
+        } finally {
+            TestConfigFactory.reset();
+        }
+    }
+
     @Test
     protected void replacesReordersAndRepeatsInputsWithTheSameCompiledRepository() {
         for (String variant : List.of("", "reordered/", "positional/")) {
