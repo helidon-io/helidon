@@ -19,6 +19,8 @@ package io.helidon.json.schema.codegen;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
@@ -80,7 +82,8 @@ class SchemaCodegen implements CodegenExtension {
                                                                ""))
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addInterface(SchemaTypes.JSON_SCHEMA_PROVIDER)
-                .addAnnotation(Annotation.create(SuppressWarnings.class, Api.SUPPRESS_INTERNAL))
+                .addAnnotation(Annotation.create(SuppressWarnings.class,
+                                                 Map.of("value", List.of(Api.SUPPRESS_INTERNAL, Api.SUPPRESS_INCUBATING))))
                 .addAnnotation(Annotation.create(SchemaTypes.SERVICE_SINGLETON))
                 .addAnnotation(Annotation.builder()
                                        .typeName(SchemaTypes.SERVICE_NAMED_BY_TYPE)
