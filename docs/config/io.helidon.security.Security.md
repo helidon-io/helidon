@@ -53,29 +53,43 @@ Configuration of security providers, integration and other security options
 </tr>
 <tr>
 <td>
-<a id="environment"></a>
-<a href="io.helidon.security.EnvironmentConfig.md">
-<code>environment</code>
+<a id="environment-server-time"></a>
+<a href="io.helidon.security.SecurityTime.md">
+<code>environment.<wbr>server-<wbr>time</code>
 </a>
 </td>
 <td>
+<code>Security<wbr>Time</code>
 </td>
 <td>
 </td>
-<td>Configuration for environment</td>
+<td>Server time to use when evaluating security policies that depend on time</td>
 </tr>
 <tr>
 <td>
-<a id="provider-policy"></a>
-<a href="io.helidon.security.ProviderPolicyConfig.md">
-<code>provider-<wbr>policy</code>
+<code>provider-<wbr>policy.<wbr>class-<wbr>name</code>
+</td>
+<td>
+<code>Class</code>
+</td>
+<td>
+</td>
+<td>Provider selection policy class name, only used when type is set to CLASS</td>
+</tr>
+<tr>
+<td>
+<a id="provider-policy-type"></a>
+<a href="io.helidon.security.ProviderSelectionPolicyType.md">
+<code>provider-<wbr>policy.<wbr>type</code>
 </a>
 </td>
 <td>
+<code>Provider<wbr>Selection<wbr>Policy<wbr>Type</code>
 </td>
 <td>
+<code>FIRST</code>
 </td>
-<td>Configuration for provider-policy</td>
+<td>Type of the policy</td>
 </tr>
 <tr>
 <td>
@@ -93,10 +107,7 @@ Configuration of security providers, integration and other security options
 </tr>
 <tr>
 <td>
-<a id="secrets"></a>
-<a href="io.helidon.security.SecretsConfig.md">
 <code>secrets</code>
-</a>
 </td>
 <td>
 <code>List&lt;<wbr>Config&gt;</code>
@@ -107,16 +118,51 @@ Configuration of security providers, integration and other security options
 </tr>
 <tr>
 <td>
-<a id="tracing"></a>
-<a href="io.helidon.security.TracingConfig.md">
-<code>tracing</code>
+<a id="secrets-config"></a>
+<a href="io.helidon.security.SecretsProviderConfig.md">
+<code>secrets.<wbr>*.config</code>
 </a>
 </td>
 <td>
+<code>Secrets<wbr>Provider<wbr>Config</code>
 </td>
 <td>
 </td>
-<td>Configuration for tracing</td>
+<td>Configuration specific to the secret provider</td>
+</tr>
+<tr>
+<td>
+<code>secrets.<wbr>*.name</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+</td>
+<td>Name of the secret, used for lookup</td>
+</tr>
+<tr>
+<td>
+<code>secrets.<wbr>*.provider</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+</td>
+<td>Name of the secret provider</td>
+</tr>
+<tr>
+<td>
+<code>tracing.<wbr>enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether or not tracing should be enabled</td>
 </tr>
 </tbody>
 </table>

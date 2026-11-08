@@ -80,7 +80,7 @@ Configuration for server.proxy-protocol.trusted-proxies.allow
 
 ## Usages
 
-- <a href="io.helidon.common.configurable.AllowList.md#allow"><code>server.<wbr>proxy-<wbr>protocol.<wbr>trusted-<wbr>proxies.<wbr>allow</code></a>
+- <a href="io.helidon.webserver.ProxyProtocolConfig.md#trusted-proxies"><code>server.<wbr>proxy-<wbr>protocol.<wbr>trusted-<wbr>proxies.<wbr>allow</code></a>
 
 ---
 

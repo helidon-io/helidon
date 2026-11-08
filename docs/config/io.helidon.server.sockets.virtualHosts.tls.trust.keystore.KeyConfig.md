@@ -41,7 +41,7 @@ Configuration for server.sockets.virtual-hosts.tls.trust.keystore.key
 
 ## Usages
 
-- <a href="io.helidon.common.pki.KeystoreKeys.md#key"><code>server.<wbr>sockets.<wbr>virtual-<wbr>hosts.<wbr>tls.<wbr>trust.<wbr>keystore.<wbr>key</code></a>
+- <a href="io.helidon.common.pki.Keys.md#keystore"><code>server.<wbr>sockets.<wbr>virtual-<wbr>hosts.<wbr>tls.<wbr>trust.<wbr>keystore.<wbr>key</code></a>
 
 ---
 

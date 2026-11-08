@@ -35,7 +35,7 @@ Configuration for server.sockets.tls.private-key.pem.certificates
 
 ## Usages
 
-- <a href="io.helidon.common.pki.PemKeys.md#certificates"><code>server.<wbr>sockets.<wbr>tls.<wbr>private-<wbr>key.<wbr>pem.<wbr>certificates</code></a>
+- <a href="io.helidon.common.pki.Keys.md#pem"><code>server.<wbr>sockets.<wbr>tls.<wbr>private-<wbr>key.<wbr>pem.<wbr>certificates</code></a>
 
 ---
 

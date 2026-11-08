@@ -35,7 +35,7 @@ Configuration for server.features.security.security.providers.jwt.sign-token.jwk
 
 ## Usages
 
-- <a href="io.helidon.security.providers.common.OutboundConfig.md#jwk"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>jwt.<wbr>sign-<wbr>token.<wbr>jwk</code></a>
+- <a href="io.helidon.security.providers.jwt.JwtProvider.md#sign-token"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>jwt.<wbr>sign-<wbr>token.<wbr>jwk</code></a>
 
 ---
 

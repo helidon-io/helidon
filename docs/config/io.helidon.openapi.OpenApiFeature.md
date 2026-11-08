@@ -57,16 +57,52 @@ OpenAPI feature configuration
 </tr>
 <tr>
 <td>
-<a id="generated"></a>
-<a href="io.helidon.openapi.GeneratedConfig.md">
-<code>generated</code>
+<code>generated.<wbr>document-<wbr>sources</code>
+</td>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
+</td>
+<td>
+</td>
+<td>Named generated document metadata sources to use, in the order configured</td>
+</tr>
+<tr>
+<td>
+<a id="generated-mode"></a>
+<a href="io.helidon.openapi.OpenApiGeneratedMode.md">
+<code>generated.<wbr>mode</code>
 </a>
 </td>
 <td>
+<code>Open<wbr>ApiGenerated<wbr>Mode</code>
+</td>
+<td>
+<code>STATIC_<wbr>FIRST</code>
+</td>
+<td>Generated document source handling mode</td>
+</tr>
+<tr>
+<td>
+<code>generated.<wbr>operation-<wbr>ids</code>
+</td>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
 <td>
 </td>
-<td>Configuration for generated</td>
+<td>Operation ids to use for generated Java methods</td>
+</tr>
+<tr>
+<td>
+<code>generated.<wbr>resolve-<wbr>config-<wbr>expressions</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>false</code>
+</td>
+<td>Whether generated document sources resolve annotation string values as Helidon config expressions at runtime</td>
 </tr>
 <tr>
 <td>

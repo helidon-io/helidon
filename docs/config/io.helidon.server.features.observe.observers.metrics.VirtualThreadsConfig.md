@@ -49,7 +49,7 @@ Configuration for server.features.observe.observers.metrics.virtual-threads
 
 ## Usages
 
-- <a href="io.helidon.webserver.observe.metrics.MetricsObserver.md#virtual-threads"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>virtual-<wbr>threads</code></a>
+- <a href="io.helidon.webserver.observe.spi.Observer.md#metrics"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>virtual-<wbr>threads</code></a>
 
 ---
 

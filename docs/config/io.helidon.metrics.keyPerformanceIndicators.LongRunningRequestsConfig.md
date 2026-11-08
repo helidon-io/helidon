@@ -36,7 +36,7 @@ Configuration for metrics.key-performance-indicators.long-running-requests
 
 ## Usages
 
-- <a href="io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig.md#long-running-requests"><code>metrics.<wbr>key-<wbr>performance-<wbr>indicators.<wbr>long-<wbr>running-<wbr>requests</code></a>
+- <a href="io.helidon.MetricsConfig.md#key-performance-indicators"><code>metrics.<wbr>key-<wbr>performance-<wbr>indicators.<wbr>long-<wbr>running-<wbr>requests</code></a>
 
 ---
 

@@ -59,7 +59,7 @@ Configuration for server.features.security.security.providers.oidc.tenants.jwk-l
 
 ## Usages
 
-- <a href="io.helidon.security.providers.oidc.common.TenantConfig.md#jwk-loader"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>tenants.<wbr>jwk-<wbr>loader</code></a>
+- <a href="io.helidon.security.providers.oidc.OidcProvider.md#tenants"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>tenants.<wbr>jwk-<wbr>loader</code></a>
 
 ---
 

@@ -59,7 +59,7 @@ Configuration for telemetry.signals
 
 ## Usages
 
-- <a href="io.helidon.telemetry.otelconfig.HelidonOpenTelemetry.md#signals"><code>telemetry.<wbr>signals</code></a>
+- <a href="config_reference.md#telemetry"><code>telemetry.<wbr>signals</code></a>
 
 ---
 

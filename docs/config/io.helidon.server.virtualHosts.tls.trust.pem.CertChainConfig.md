@@ -35,7 +35,7 @@ Configuration for server.virtual-hosts.tls.trust.pem.cert-chain
 
 ## Usages
 
-- <a href="io.helidon.common.pki.PemKeys.md#cert-chain"><code>server.<wbr>virtual-<wbr>hosts.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>cert-<wbr>chain</code></a>
+- <a href="io.helidon.common.pki.Keys.md#pem"><code>server.<wbr>virtual-<wbr>hosts.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>cert-<wbr>chain</code></a>
 
 ---
 

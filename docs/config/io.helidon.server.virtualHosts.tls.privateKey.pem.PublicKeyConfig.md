@@ -35,7 +35,7 @@ Configuration for server.virtual-hosts.tls.private-key.pem.public-key
 
 ## Usages
 
-- <a href="io.helidon.common.pki.PemKeys.md#public-key"><code>server.<wbr>virtual-<wbr>hosts.<wbr>tls.<wbr>private-<wbr>key.<wbr>pem.<wbr>public-<wbr>key</code></a>
+- <a href="io.helidon.common.pki.Keys.md#pem"><code>server.<wbr>virtual-<wbr>hosts.<wbr>tls.<wbr>private-<wbr>key.<wbr>pem.<wbr>public-<wbr>key</code></a>
 
 ---
 

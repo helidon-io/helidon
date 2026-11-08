@@ -59,7 +59,7 @@ Configuration for server.sockets.proxy-protocol.trusted-proxies.deny
 
 ## Usages
 
-- <a href="io.helidon.common.configurable.AllowList.md#deny"><code>server.<wbr>sockets.<wbr>proxy-<wbr>protocol.<wbr>trusted-<wbr>proxies.<wbr>deny</code></a>
+- <a href="io.helidon.webserver.ProxyProtocolConfig.md#trusted-proxies"><code>server.<wbr>sockets.<wbr>proxy-<wbr>protocol.<wbr>trusted-<wbr>proxies.<wbr>deny</code></a>
 
 ---
 

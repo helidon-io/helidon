@@ -36,7 +36,7 @@ Configuration for security.tracing
 
 ## Usages
 
-- <a href="io.helidon.security.Security.md#tracing"><code>security.<wbr>tracing</code></a>
+- <a href="config_reference.md#security"><code>security.<wbr>tracing</code></a>
 
 ---
 

@@ -91,16 +91,45 @@ OpenTelemetry settings
 </tr>
 <tr>
 <td>
-<a id="signals"></a>
-<a href="io.helidon.telemetry.SignalsConfig.md">
-<code>signals</code>
+<a id="signals-logging"></a>
+<a href="io.helidon.telemetry.otelconfig.OpenTelemetryLoggingConfig.md">
+<code>signals.<wbr>logging</code>
 </a>
 </td>
 <td>
+<code>Open<wbr>Telemetry<wbr>Logging<wbr>Config</code>
 </td>
 <td>
 </td>
-<td>Configuration for signals</td>
+<td>OpenTelemetry logging settings</td>
+</tr>
+<tr>
+<td>
+<a id="signals-metrics"></a>
+<a href="io.helidon.telemetry.otelconfig.OpenTelemetryMetricsConfig.md">
+<code>signals.<wbr>metrics</code>
+</a>
+</td>
+<td>
+<code>Open<wbr>Telemetry<wbr>Metrics<wbr>Config</code>
+</td>
+<td>
+</td>
+<td>OpenTelemetry metrics settings</td>
+</tr>
+<tr>
+<td>
+<a id="signals-tracing"></a>
+<a href="io.helidon.telemetry.otelconfig.OpenTelemetryTracingConfig.md">
+<code>signals.<wbr>tracing</code>
+</a>
+</td>
+<td>
+<code>Open<wbr>Telemetry<wbr>Tracing<wbr>Config</code>
+</td>
+<td>
+</td>
+<td>OpenTelemetry tracing settings</td>
 </tr>
 </tbody>
 </table>

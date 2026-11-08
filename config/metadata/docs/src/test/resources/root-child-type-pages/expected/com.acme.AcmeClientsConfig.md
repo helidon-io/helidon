@@ -7,24 +7,7 @@ Clients configuration.
 ## Configuration options
 
 
-<table>
-<thead>
-<tr>
-<th>Key</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>http</code>
-</td>
-<td>Configuration for http</td>
-</tr>
-</tbody>
-</table>
-
-
+This config type has no options.
 
 ## Usages
 

@@ -53,7 +53,7 @@ Configuration for server.features.security.security.secrets
 
 ## Usages
 
-- <a href="io.helidon.security.Security.md#secrets"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>secrets</code></a>
+- <a href="io.helidon.webserver.security.SecurityFeature.md#security"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>secrets</code></a>
 
 ---
 

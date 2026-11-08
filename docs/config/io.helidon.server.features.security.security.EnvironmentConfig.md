@@ -35,7 +35,7 @@ Configuration for server.features.security.security.environment
 
 ## Usages
 
-- <a href="io.helidon.security.Security.md#environment"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>environment</code></a>
+- <a href="io.helidon.webserver.security.SecurityFeature.md#security"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>environment</code></a>
 
 ---
 

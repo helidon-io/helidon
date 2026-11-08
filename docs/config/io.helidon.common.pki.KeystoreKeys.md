@@ -19,42 +19,47 @@ Resources from a java keystore (PKCS12, JKS etc.)
 <tbody>
 <tr>
 <td>
-<a id="cert"></a>
-<a href="io.helidon.clients.tls.privateKey.keystore.CertConfig.md">
-<code>cert</code>
-</a>
+<code>cert-<wbr>chain.<wbr>alias</code>
+</td>
+<td>
+<code>String</code>
 </td>
 <td>
 </td>
-<td>
-</td>
-<td>Configuration for cert</td>
+<td>Alias of an X.509 chain</td>
 </tr>
 <tr>
 <td>
-<a id="cert-chain"></a>
-<a href="io.helidon.clients.tls.privateKey.keystore.CertChainConfig.md">
-<code>cert-<wbr>chain</code>
-</a>
+<code>cert.<wbr>alias</code>
+</td>
+<td>
+<code>String</code>
 </td>
 <td>
 </td>
-<td>
-</td>
-<td>Configuration for cert-chain</td>
+<td>Alias of X.509 certificate of public key</td>
 </tr>
 <tr>
 <td>
-<a id="key"></a>
-<a href="io.helidon.clients.tls.privateKey.keystore.KeyConfig.md">
-<code>key</code>
-</a>
+<code>key.<wbr>alias</code>
+</td>
+<td>
+<code>String</code>
 </td>
 <td>
 </td>
+<td>Alias of the private key in the keystore</td>
+</tr>
+<tr>
+<td>
+<code>key.<wbr>passphrase</code>
+</td>
+<td>
+<code>String</code>
+</td>
 <td>
 </td>
-<td>Configuration for key</td>
+<td>Pass-phrase of the key in the keystore (used for private keys)</td>
 </tr>
 <tr>
 <td>

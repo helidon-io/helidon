@@ -35,7 +35,7 @@ Configuration for server.features.security.security.providers.idcs-role-mapper.o
 
 ## Usages
 
-- <a href="io.helidon.security.providers.oidc.common.OidcConfig.md#sign-jwk"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>sign-<wbr>jwk</code></a>
+- <a href="io.helidon.server.features.security.security.providers.IdcsRoleMapperConfig.md#oidc-config"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>sign-<wbr>jwk</code></a>
 
 ---
 

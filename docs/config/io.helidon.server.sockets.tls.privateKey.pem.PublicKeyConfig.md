@@ -35,7 +35,7 @@ Configuration for server.sockets.tls.private-key.pem.public-key
 
 ## Usages
 
-- <a href="io.helidon.common.pki.PemKeys.md#public-key"><code>server.<wbr>sockets.<wbr>tls.<wbr>private-<wbr>key.<wbr>pem.<wbr>public-<wbr>key</code></a>
+- <a href="io.helidon.common.pki.Keys.md#pem"><code>server.<wbr>sockets.<wbr>tls.<wbr>private-<wbr>key.<wbr>pem.<wbr>public-<wbr>key</code></a>
 
 ---
 

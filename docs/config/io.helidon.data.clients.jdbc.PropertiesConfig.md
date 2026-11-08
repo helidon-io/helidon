@@ -31,7 +31,7 @@ Configuration for data.clients.jdbc.properties
 
 ## Usages
 
-- <a href="io.helidon.data.jdbc.JdbcClient.md#properties"><code>data.<wbr>clients.<wbr>jdbc.<wbr>properties</code></a>
+- <a href="io.helidon.data.ClientsConfig.md#jdbc"><code>data.<wbr>clients.<wbr>jdbc.<wbr>properties</code></a>
 
 ---
 

@@ -73,7 +73,7 @@ Configuration for openapi.generated
 
 ## Usages
 
-- <a href="io.helidon.openapi.OpenApiFeature.md#generated"><code>openapi.<wbr>generated</code></a>
+- <a href="config_reference.md#openapi"><code>openapi.<wbr>generated</code></a>
 
 ---
 

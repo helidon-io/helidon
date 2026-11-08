@@ -73,7 +73,7 @@ Configuration for server.features.openapi.generated
 
 ## Usages
 
-- <a href="io.helidon.openapi.OpenApiFeature.md#generated"><code>server.<wbr>features.<wbr>openapi.<wbr>generated</code></a>
+- <a href="io.helidon.webserver.spi.ServerFeature.md#openapi"><code>server.<wbr>features.<wbr>openapi.<wbr>generated</code></a>
 
 ---
 

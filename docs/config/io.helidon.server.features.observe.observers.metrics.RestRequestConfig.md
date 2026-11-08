@@ -36,7 +36,7 @@ Configuration for server.features.observe.observers.metrics.rest-request
 
 ## Usages
 
-- <a href="io.helidon.webserver.observe.metrics.MetricsObserver.md#rest-request"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>rest-<wbr>request</code></a>
+- <a href="io.helidon.webserver.observe.spi.Observer.md#metrics"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>rest-<wbr>request</code></a>
 
 ---
 

@@ -1,0 +1,134 @@
+[
+  {
+    "module": "common-configurable",
+    "types": [
+      {
+        "type": "com.acme.AllowList",
+        "description": "Reusable allow and deny rules.",
+        "inherits": ["com.acme.AllowOptions"],
+        "options": [
+          {
+            "type": "com.acme.DenyOptions",
+            "merge": true
+          },
+          {
+            "key": "allow.values.exact",
+            "type": "java.lang.String",
+            "kind": "LIST",
+            "description": "Exact values accepted by this list."
+          },
+          {
+            "key": "allow.values.patterns",
+            "type": "java.lang.String",
+            "kind": "LIST",
+            "description": "Patterns accepted by this list.",
+            "experimental": true
+          }
+        ]
+      },
+      {
+        "type": "com.acme.AllowOptions",
+        "description": "Inherited allow rules.",
+        "options": [
+          {
+            "key": "allow.enabled",
+            "type": "java.lang.Boolean",
+            "defaultValue": "true",
+            "description": "Enable allow rules."
+          }
+        ]
+      },
+      {
+        "type": "com.acme.DenyOptions",
+        "description": "Merged deny rules.",
+        "options": [
+          {
+            "key": "deny.exact",
+            "type": "java.lang.String",
+            "kind": "LIST",
+            "description": "Exact values rejected by this list.",
+            "deprecated": true
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "module": "zulu-consumer",
+    "types": [
+      {
+        "type": "com.acme.ZuluConsumer",
+        "standalone": true,
+        "prefix": "zulu",
+        "description": "Zulu consumer configuration.",
+        "options": [
+          {
+            "key": "listener.enabled",
+            "type": "java.lang.Boolean",
+            "description": "Enable the Zulu listener."
+          },
+          {
+            "key": "trusted-proxies",
+            "type": "com.acme.AllowList",
+            "description": "Zulu trusted proxies."
+          },
+          {
+            "key": "trusted-proxies.allow.values.exact",
+            "type": "java.lang.String",
+            "kind": "LIST",
+            "description": "Zulu-only exact values."
+          },
+          {
+            "key": "trusted-proxies.allow.extra",
+            "type": "java.lang.String",
+            "description": "Zulu-only option."
+          },
+          {
+            "key": "trusted-proxies.extra.enabled",
+            "type": "java.lang.Boolean",
+            "description": "Enable the Zulu-only group."
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "module": "alpha-consumer",
+    "types": [
+      {
+        "type": "com.acme.AlphaConsumer",
+        "standalone": true,
+        "prefix": "alpha",
+        "description": "Alpha consumer configuration.",
+        "options": [
+          {
+            "key": "tags.name",
+            "type": "java.lang.String",
+            "description": "Alpha tag name."
+          },
+          {
+            "key": "approved-hosts",
+            "type": "com.acme.AllowList",
+            "description": "Alpha approved hosts."
+          },
+          {
+            "key": "approved-hosts.allow.values.exact",
+            "type": "java.lang.String",
+            "kind": "LIST",
+            "description": "Alpha-only exact values."
+          },
+          {
+            "key": "approved-hosts.deny.extra",
+            "type": "java.lang.String",
+            "description": "Alpha-only option."
+          },
+          {
+            "key": "approved-hosts.extra.enabled",
+            "type": "java.lang.Boolean",
+            "description": "Enable the Alpha-only group."
+          }
+        ]
+      }
+    ]
+  }
+]

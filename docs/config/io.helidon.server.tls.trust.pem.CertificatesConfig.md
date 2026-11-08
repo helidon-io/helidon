@@ -35,7 +35,7 @@ Configuration for server.tls.trust.pem.certificates
 
 ## Usages
 
-- <a href="io.helidon.common.pki.PemKeys.md#certificates"><code>server.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>certificates</code></a>
+- <a href="io.helidon.common.pki.Keys.md#pem"><code>server.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>certificates</code></a>
 
 ---
 

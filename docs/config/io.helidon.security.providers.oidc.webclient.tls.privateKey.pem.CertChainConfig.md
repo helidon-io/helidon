@@ -35,7 +35,7 @@ Configuration for security.providers.oidc.webclient.tls.private-key.pem.cert-cha
 
 ## Usages
 
-- <a href="io.helidon.common.pki.PemKeys.md#cert-chain"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>private-<wbr>key.<wbr>pem.<wbr>cert-<wbr>chain</code></a>
+- <a href="io.helidon.common.pki.Keys.md#pem"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>private-<wbr>key.<wbr>pem.<wbr>cert-<wbr>chain</code></a>
 
 ---
 

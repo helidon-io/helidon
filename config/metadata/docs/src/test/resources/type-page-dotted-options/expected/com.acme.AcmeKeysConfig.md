@@ -18,14 +18,33 @@ Keys configuration.
 <tbody>
 <tr>
 <td>
-<a id="group"></a>
-<a href="io.helidon.keys.GroupConfig.md">
-<code>group</code>
+<code>group.<wbr>enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>Group enabled.</td>
+</tr>
+<tr>
+<td>
+<code>group.<wbr>name</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>Group name.</td>
+</tr>
+<tr>
+<td>
+<a id="group-resource"></a>
+<a href="com.acme.AcmeResourceConfig.md">
+<code>group.<wbr>resource</code>
 </a>
 </td>
 <td>
+<code>Acme<wbr>Resource<wbr>Config</code>
 </td>
-<td>Configuration for group</td>
+<td>Grouped resource.</td>
 </tr>
 <tr>
 <td>

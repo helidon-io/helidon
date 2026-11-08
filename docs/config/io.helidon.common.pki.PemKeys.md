@@ -11,45 +11,67 @@ PEM files based keys - accepts private key and certificate chain
 <thead>
 <tr>
 <th>Key</th>
+<th>Type</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>
-<a id="cert-chain"></a>
-<a href="io.helidon.clients.tls.privateKey.pem.CertChainConfig.md">
-<code>cert-<wbr>chain</code>
+<a id="cert-chain-resource"></a>
+<a href="io.helidon.common.configurable.Resource.md">
+<code>cert-<wbr>chain.<wbr>resource</code>
 </a>
 </td>
-<td>Configuration for cert-chain</td>
+<td>
+<code>Resource</code>
+</td>
+<td>Load certificate chain from PEM resource</td>
 </tr>
 <tr>
 <td>
-<a id="certificates"></a>
-<a href="io.helidon.clients.tls.privateKey.pem.CertificatesConfig.md">
-<code>certificates</code>
+<a id="certificates-resource"></a>
+<a href="io.helidon.common.configurable.Resource.md">
+<code>certificates.<wbr>resource</code>
 </a>
 </td>
-<td>Configuration for certificates</td>
+<td>
+<code>Resource</code>
+</td>
+<td>Read one or more certificates in PEM format from a resource definition</td>
 </tr>
 <tr>
 <td>
-<a id="key"></a>
-<a href="io.helidon.clients.tls.privateKey.pem.KeyConfig.md">
-<code>key</code>
-</a>
+<code>key.<wbr>passphrase</code>
 </td>
-<td>Configuration for key</td>
+<td>
+<code>String</code>
+</td>
+<td>Passphrase for private key</td>
 </tr>
 <tr>
 <td>
-<a id="public-key"></a>
-<a href="io.helidon.clients.tls.privateKey.pem.PublicKeyConfig.md">
-<code>public-<wbr>key</code>
+<a id="key-resource"></a>
+<a href="io.helidon.common.configurable.Resource.md">
+<code>key.<wbr>resource</code>
 </a>
 </td>
-<td>Configuration for public-key</td>
+<td>
+<code>Resource</code>
+</td>
+<td>Read a private key from PEM format from a resource definition</td>
+</tr>
+<tr>
+<td>
+<a id="public-key-resource"></a>
+<a href="io.helidon.common.configurable.Resource.md">
+<code>public-<wbr>key.<wbr>resource</code>
+</a>
+</td>
+<td>
+<code>Resource</code>
+</td>
+<td>Read a public key from PEM format from a resource definition</td>
 </tr>
 </tbody>
 </table>

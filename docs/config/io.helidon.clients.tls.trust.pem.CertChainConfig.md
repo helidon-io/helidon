@@ -35,7 +35,7 @@ Configuration for clients.tls.trust.pem.cert-chain
 
 ## Usages
 
-- <a href="io.helidon.common.pki.PemKeys.md#cert-chain"><code>clients.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>cert-<wbr>chain</code></a>
+- <a href="io.helidon.common.pki.Keys.md#pem"><code>clients.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>cert-<wbr>chain</code></a>
 
 ---
 

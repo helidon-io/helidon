@@ -35,7 +35,7 @@ Configuration for server.features.security.security.providers.idcs-role-mapper.o
 
 ## Usages
 
-- <a href="io.helidon.security.providers.oidc.common.TenantConfig.md#oidc-metadata"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>tenants.<wbr>oidc-<wbr>metadata</code></a>
+- <a href="io.helidon.security.providers.oidc.common.OidcConfig.md#tenants"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>tenants.<wbr>oidc-<wbr>metadata</code></a>
 
 ---
 
