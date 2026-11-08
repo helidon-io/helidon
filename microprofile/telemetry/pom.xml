@@ -40,6 +40,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.tracing</groupId>
             <artifactId>helidon-tracing</artifactId>
         </dependency>
@@ -194,6 +198,7 @@
                                 <otel.sdk.disabled>false</otel.sdk.disabled>
                             </systemPropertyVariables>
                             <excludes>
+                                <exclude>**/DeprecatedSpanSettingsTest.java</exclude>
                                 <exclude>**/AgentDetectorTest.java</exclude>
                                 <exclude>**/AutoSpanIncludesWriteAgentTest.java</exclude>
                                 <exclude>**/TestSpanListenersWithInjection.java</exclude>
@@ -201,6 +206,18 @@
                                 <exclude>**/PlainJerseyClientTest.java</exclude>
                                 <exclude>**/AutoSpanIncludesWriteAsyncTest.java</exclude>
                             </excludes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <!-- Static warning guards must start fresh for the once-only logging test. -->
+                        <id>deprecated-span-settings-test</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <includes>
+                                <include>**/DeprecatedSpanSettingsTest.java</include>
+                            </includes>
                         </configuration>
                     </execution>
                     <execution>

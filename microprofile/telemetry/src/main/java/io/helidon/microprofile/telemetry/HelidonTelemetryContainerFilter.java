@@ -19,8 +19,11 @@ import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.helidon.common.Errors;
 import io.helidon.common.context.Contexts;
 import io.helidon.config.mp.MpConfig;
 import io.helidon.microprofile.telemetry.spi.HelidonTelemetryContainerFilterHelper;
@@ -71,9 +74,11 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
     private static final System.Logger LOGGER = System.getLogger(HelidonTelemetryContainerFilter.class.getName());
     private static final String HTTP_TARGET = "http.target";
     private static final String HTTP_ROUTE = "http.route";
+    @Deprecated(forRemoval = true, since = "4.5.7")
     private static final String SPAN_NAME_FULL_URL = "telemetry.span.full.url";
     private static final String HELPER_START_SPAN_PROPERTY = HelidonTelemetryContainerFilterHelper.class + ".startSpan";
     private static final AtomicBoolean SPAN_NAME_WARNING_LOGGED = new AtomicBoolean();
+    private static final Set<String> DEPRECATED_SETTINGS_WARNED = ConcurrentHashMap.newKeySet();
 
     private static boolean spanNameFullUrl = false;
 
@@ -101,15 +106,15 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
                                     Instance<HelidonTelemetryContainerFilterHelper> helpersInstance) {
         this.helidonTracer = helidonTracer;
         isAgentPresent = HelidonOpenTelemetry.AgentDetector.isAgentPresent(MpConfig.toHelidonConfig(mpConfig));
-        autoSpanIncludesResponseWrite = mpConfig.getOptionalValue(AUTO_SPAN_INCLUDES_RESPONSE_WRITE, Boolean.class)
+        Errors.Collector errors = Errors.collector();
+        autoSpanIncludesResponseWrite = deprecatedSetting(mpConfig, AUTO_SPAN_INCLUDES_RESPONSE_WRITE, errors)
                 .orElse(false);
 
         // @Deprecated(forRemoval = true) In 5.x remove the following.
-        mpConfig.getOptionalValue(SPAN_NAME_FULL_URL, Boolean.class).ifPresent(e -> spanNameFullUrl = e);
-        Optional<Boolean> includeMethodConfig = mpConfig.getOptionalValue(SPAN_NAME_INCLUDES_METHOD, Boolean.class);
-        restSpanNameIncludesMethod = includeMethodConfig.orElse(false);
-        if (!restSpanNameIncludesMethod && !SPAN_NAME_WARNING_LOGGED.get()) {
-            SPAN_NAME_WARNING_LOGGED.set(true);
+        deprecatedSetting(mpConfig, SPAN_NAME_FULL_URL, errors).ifPresent(e -> spanNameFullUrl = e);
+        restSpanNameIncludesMethod = deprecatedSetting(mpConfig, SPAN_NAME_INCLUDES_METHOD, errors).orElse(false);
+        errors.collect().log(LOGGER);
+        if (!restSpanNameIncludesMethod && SPAN_NAME_WARNING_LOGGED.compareAndSet(false, true)) {
             LOGGER.log(System.Logger.Level.WARNING,
                        String.format("""
                                Current OpenTelemetry semantic conventions include the HTTP method as part of REST span
@@ -228,6 +233,15 @@ class HelidonTelemetryContainerFilter implements ContainerRequestFilter, Contain
                 request.removeProperty(SPAN_SCOPE);
             }
         }
+    }
+
+    private static Optional<Boolean> deprecatedSetting(Config config, String property, Errors.Collector errors) {
+        Optional<Boolean> value = config.getOptionalValue(property, Boolean.class);
+        if (value.isPresent() && DEPRECATED_SETTINGS_WARNED.add(property)) {
+            errors.warn("Configuration property '" + property
+                                + "' is deprecated and will be removed in a future major release of Helidon.");
+        }
+        return value;
     }
 
     private static Class<?> getRealClass(Class<?> object) {
