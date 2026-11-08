@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import io.helidon.common.parameters.Parameters;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
+import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.testing.junit5.ServerTest;
@@ -33,6 +34,7 @@ import io.helidon.webserver.testing.junit5.SetUpRoute;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
@@ -46,6 +48,10 @@ class FormParamsSupportTest {
 
     @SetUpRoute
     static void routing(HttpRules rules) {
+        rules.route(Method.QUERY, "/ui/search", (req, resp) -> {
+            Parameters parameters = req.content().as(Parameters.class);
+            resp.send("OK: " + parameters.get("q"));
+        });
         rules.put("/params", (req, resp) -> {
 
             Parameters parameters = req.content().as(Parameters.class);
@@ -57,6 +63,17 @@ class FormParamsSupportTest {
 
             resp.send(map.toString());
         });
+    }
+
+    @Test
+    void emptyUrlEncodedValueTest() {
+        try (var response = client.method(Method.QUERY)
+                .path("/ui/search")
+                .header(HeaderNames.CONTENT_TYPE, "application/x-www-form-urlencoded;charset=UTF-8")
+                .submit("q=")) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), is("OK: "));
+        }
     }
 
     @Test
