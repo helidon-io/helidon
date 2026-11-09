@@ -79,6 +79,26 @@ public class TypeHierarchyResolver {
     }
 
     /**
+     * Returns whether a parameter name is available from a declaration rather than synthesized by a compiler.
+     * The portable model treats explicitly supplied names as declared names. Compiler implementations verify
+     * names against source declarations or retained parameter metadata.
+     *
+     * @param parameter The parameter to inspect.
+     * @return Whether the declared name is available.
+     * @throws NullPointerException The parameter is null.
+     * @throws IllegalArgumentException The element is not a method or constructor parameter.
+     */
+    public final boolean parameterNameAvailable(TypedElementInfo parameter) {
+        Objects.requireNonNull(parameter, "The parameter must not be null.");
+        if (parameter.kind() != ElementKind.PARAMETER) {
+            throw new IllegalArgumentException("Name availability requires a method or constructor parameter. "
+                                                       + "The supplied element named " + parameter.elementName()
+                                                       + " has kind " + parameter.kind() + ".");
+        }
+        return !parameter.elementName().isBlank() && environmentParameterNameAvailable(parameter);
+    }
+
+    /**
      * Returns effective interface methods with interface type variables resolved.
      * <p>
      * Each result retains every maximally specific declaration that contributed to
@@ -174,6 +194,19 @@ public class TypeHierarchyResolver {
                 .build();
         boolean rawType = rawType(resolvedEnclosingType, useSiteType);
         return substitute(memberType, substitutions(resolvedEnclosingType, Map.of(), rawType));
+    }
+
+    /**
+     * Checks parameter name availability in the active compiler environment.
+     * The portable implementation trusts names supplied explicitly in the model.
+     *
+     * @param parameter The parameter to inspect.
+     * @return Whether the declared name is available.
+     * @throws NullPointerException The parameter is null.
+     */
+    protected boolean environmentParameterNameAvailable(TypedElementInfo parameter) {
+        Objects.requireNonNull(parameter, "The parameter must not be null.");
+        return true;
     }
 
     /**

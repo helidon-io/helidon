@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Api;
@@ -147,6 +148,51 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
     Statement create(String sql);
 
     /**
+     * Prepares an immutable SQL definition without acquiring JDBC resources.
+     * The returned supplier is safe to share and creates a fresh single-use statement
+     * on each invocation without rescanning SQL. Statements are not safe for concurrent mutation.
+     * Named, positional, and marker-free SQL are supported. Mixed marker styles are rejected.
+     * Statement boundaries, trusted input, resource ownership, and transaction
+     * restrictions described by {@link #create(String)} apply.
+     * Preparation captures no transaction context. Registry managed clients determine transaction
+     * participation at execution time. Standalone clients remain independent of an enclosing managed transaction.
+     * Retain the supplier to reuse its definition. The client retains no history of definitions.
+     *
+     * @param sql The SQL text defines one trusted statement.
+     * @return The supplier creates fresh stages and owns no JDBC resources.
+     * @throws NullPointerException The SQL is null.
+     * @throws IllegalArgumentException The SQL is blank, malformed, or mixes marker styles.
+     * @throws UnsupportedOperationException The provider does not support reusable definitions.
+     */
+    default Supplier<Statement> prepare(String sql) {
+        Objects.requireNonNull(sql, "The SQL statement must not be null.");
+        throw new UnsupportedOperationException("This JDBC client does not support reusable statement definitions.");
+    }
+
+    /**
+     * Prepares a reusable SQL definition with input names supplied in order.
+     * Names must be unique and follow Java identifier character rules, without a colon prefix.
+     * Named SQL must use exactly these names and may repeat markers. Positional SQL
+     * must have one marker per input and associates names with positions in list order.
+     * SQL without markers requires an empty list. Indexed bindings always address JDBC
+     * positions. The list is defensively copied. Each supplier invocation creates a new
+     * statement with independent bindings. Other preparation rules match {@link #prepare(String)}.
+     *
+     * @param sql The SQL text defines one trusted statement.
+     * @param inputNames The names identify inputs in list order.
+     * @return The supplier creates new statements with independent bindings.
+     * @throws NullPointerException The SQL, list, or a list entry is null.
+     * @throws IllegalArgumentException The SQL or input contract is invalid.
+     * @throws UnsupportedOperationException The provider does not support reusable definitions.
+     */
+    default Supplier<Statement> prepare(String sql, List<String> inputNames) {
+        Objects.requireNonNull(sql, "The SQL statement must not be null.");
+        Objects.requireNonNull(inputNames, "The input names must not be null.");
+        inputNames.forEach(name -> Objects.requireNonNull(name, "The input name must not be null."));
+        throw new UnsupportedOperationException("This JDBC client does not support reusable statement definitions.");
+    }
+
+    /**
      * Describes one prepared JDBC operation.
      * <p>
      * Bind positions use JDBC indexes, which start at one. The stage accepts
@@ -166,6 +212,24 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          * @throws IllegalStateException if a terminal operation has started
          */
         Statement bind(int index, Object value);
+
+        /**
+         * Binds a supported nonnull scalar to every physical position of a logical input.
+         * All destination slots are validated before any assignment.
+         *
+         * @param name The name identifies a logical input without a colon.
+         * @param value The supported scalar value.
+         * @return This statement.
+         * @throws NullPointerException The name or value is null.
+         * @throws IllegalArgumentException The name, value, or assignment is invalid.
+         * @throws IllegalStateException The stage is consumed or does not support named bindings.
+         * @throws UnsupportedOperationException The provider does not support named bindings.
+         */
+        default Statement bind(String name, Object value) {
+            Objects.requireNonNull(name, "The bind name must not be null.");
+            Objects.requireNonNull(value, "The bind value must not be null.");
+            throw new UnsupportedOperationException("This JDBC statement does not support named bindings.");
+        }
 
         /**
          * Executes an update and returns its update count as a {@code long} value.

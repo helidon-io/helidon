@@ -159,6 +159,7 @@ The following annotations describe a JDBC repository and its methods:
 | `@Jdbc.Execution` | Selects `AUTO`, `QUERY`, or `UPDATE` execution. |
 | `@Jdbc.GeneratedKeys` | Requests generated keys from an update. |
 | `@Jdbc.RowMapper` | Selects a row mapper service supplied by the application. |
+| `@Data.Param` | Associates a repository parameter with a named SQL marker. It belongs to the Helidon Data API, but currently applies only to repository methods using `@Jdbc.Statement`. `Data.Query` and Jakarta Persistence repository generation ignore it. |
 
 Each method executes one SQL statement. The shared
 [SQL guidelines](data-jdbc.md#sql-guidelines) explain safe binding and portable
@@ -167,7 +168,8 @@ marker parsing.
 ### Statement Parameters
 
 Repository statements accept named or positional parameters. A named marker
-matches a Java parameter name and can appear more than once:
+matches the `@Data.Param` alias assigned to a parameter, or the Java parameter
+name when no alias is present. Named markers can appear more than once:
 
 ```java
 @Jdbc.Statement("""
@@ -177,6 +179,19 @@ matches a Java parameter name and can appear more than once:
         """)
 List<Contact> findOwnedOrDelegated(long ownerId);
 ```
+
+`@Data.Param` supplies a SQL name independently of the Java parameter name:
+
+```java
+@Jdbc.Statement("SELECT NAME FROM CONTACT WHERE ID = :id")
+Optional<String> findName(@Data.Param("id") long contactId);
+```
+
+Here, `:id` binds to `contactId`. Alias names are case sensitive and must follow
+Java identifier character rules, without whitespace or a colon prefix. Effective
+names must be unique across all parameters, including parameters without aliases.
+
+A method with any explicit or inherited alias requires named SQL markers.
 
 Positional `?` markers bind parameters in Java declaration order:
 
@@ -246,9 +261,11 @@ In this example, `pattern` uses `!` to escape `!`, `%`, and `_`. The database
 determines case sensitivity and collation.
 
 > [!NOTE]
-> Named markers in an inherited method require the original Java parameter
-> names. A separately published parent interface must therefore be compiled
-> with `-parameters` unless that interface uses positional markers.
+> `@Data.Param` aliases are retained across separate compilation. Aliased
+> parameters in inherited methods do not require `-parameters`. For named
+> markers whose parameters have no aliases, compile the parent interface with
+> `-parameters` or redeclare the method with explicit parameter names. Literal
+> positional statements need no parameter-name metadata.
 
 ### Execution Types
 

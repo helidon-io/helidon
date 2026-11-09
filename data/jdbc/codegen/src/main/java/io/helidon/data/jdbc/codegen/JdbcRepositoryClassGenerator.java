@@ -15,6 +15,8 @@
  */
 package io.helidon.data.jdbc.codegen;
 
+import java.util.List;
+
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenUtil;
@@ -27,6 +29,7 @@ import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 import io.helidon.data.codegen.common.RepositoryInfo;
 
 /**
@@ -82,16 +85,19 @@ final class JdbcRepositoryClassGenerator {
     }
 
     /**
-     * Generates the repository constructor with the selected JDBC client and
-     * row mapper services.
+     * Generates the repository constructor with the selected JDBC client and row mapper services.
+     * Repositories with configuration references also receive root configuration and initialize
+     * a reusable statement supplier for each reference.
      *
-     * @param classModel generated repository class
-     * @param repositoryInfo repository metadata
-     * @param mapperDependencies statically typed mapper-service dependencies
+     * @param classModel The model describes the generated repository class.
+     * @param repositoryInfo The metadata describes the repository contract.
+     * @param mapperDependencies The dependencies identify the statically typed mapper services.
+     * @param plans The plans describe the validated repository methods.
      */
     static void generateConstructor(ClassModel.Builder classModel,
                                     RepositoryInfo repositoryInfo,
-                                    Iterable<JdbcMethodGenerator.MapperDependency> mapperDependencies) {
+                                    Iterable<JdbcMethodGenerator.MapperDependency> mapperDependencies,
+                                    List<JdbcMethodPlan> plans) {
         Constructor.Builder constructor = Constructor.builder()
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE);
         Annotation provider = Annotation.builder()
@@ -141,6 +147,62 @@ final class JdbcRepositoryClassGenerator {
                     .addContent(" = ")
                     .addContent(dependency.parameterName())
                     .addContentLine(";");
+        }
+        if (plans.stream().anyMatch(plan -> plan.reference() != null)) {
+            constructor.addParameter(Parameter.builder().name("config").type(JdbcCodegenTypes.CONFIG).build());
+            // Mapper parameter names include a mapper suffix, so these lookup locals cannot collide with them.
+            String sqlName = JdbcCodegenConstants.GENERATED_VARIABLE_PREFIX + "sql";
+            String nodeName = JdbcCodegenConstants.GENERATED_VARIABLE_PREFIX + "sqlNode";
+            // Resolve each reference once and retain its statement supplier for later invocations.
+            // Separate blocks let all methods use the same lookup variable names.
+            for (JdbcMethodPlan plan : plans) {
+                JdbcSqlReference reference = plan.reference();
+                if (reference == null) {
+                    continue;
+                }
+                constructor.addContentLine("{")
+                        .addContent(TypeNames.STRING).addContent(" ").addContent(sqlName).addContentLine(";")
+                        .addContentLine("try {")
+                        .addContent(JdbcCodegenTypes.CONFIG).addContent(" ").addContent(nodeName)
+                        .addContent(" = config.get(").addContentLiteral(reference.key()).addContentLine(");")
+                        .addContent("if (").addContent(nodeName).addContent(".exists() && ")
+                        .addContent(nodeName).addContent(".type() != ").addContent(JdbcCodegenTypes.CONFIG)
+                        .addContentLine(".Type.VALUE) {")
+                        .addContent("throw new ").addContent(JdbcCodegenTypes.DATA_EXCEPTION)
+                        .addContentLine("(\"The configured SQL must be a scalar value.\");")
+                        .addContentLine("}")
+                        .addContent(sqlName).addContent(" = ").addContent(nodeName).addContent(".asString()");
+                if (reference.defaultSql() == null) {
+                    constructor.addContentLine(".get();");
+                } else {
+                    constructor.addContent(".orElse(").addContentLiteral(reference.defaultSql()).addContentLine(");");
+                }
+                // Discard configuration exception graphs because they may contain SQL or configuration values.
+                constructor.addContentLine("}")
+                        .addContent("catch (").addContent(JdbcCodegenTypes.CONFIG_EXCEPTION).addContentLine(" _) {")
+                        .addContent("throw new ").addContent(JdbcCodegenTypes.DATA_EXCEPTION)
+                        .addContentLine("(\"The configured SQL could not be resolved.\");")
+                        .addContentLine("}")
+                        .addContent("this.").addContent(plan.sqlFieldName()).addContent(" = ");
+                // Any parameter alias requires named SQL for the whole method input contract.
+                if (plan.method().parameterArguments().stream()
+                        .anyMatch(parameter -> parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM))) {
+                    constructor.addContent(JdbcCodegenTypes.GENERATED_JDBC_DATA).addContent(".prepareNamed(")
+                            .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME).addContent(", ");
+                } else {
+                    constructor.addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME).addContent(".prepare(");
+                }
+                constructor.addContent(sqlName).addContent(", ").addContent(List.class).addContent(".of(");
+                boolean first = true;
+                for (JdbcSqlParameterPlan.Bind bind : plan.parameterPlan().binds()) {
+                    if (!first) {
+                        constructor.addContent(", ");
+                    }
+                    constructor.addContentLiteral(JdbcSqlParameterPlan.effectiveName(bind.parameter()));
+                    first = false;
+                }
+                constructor.addContentLine("));").addContentLine("}");
+            }
         }
         classModel.addConstructor(constructor);
     }
