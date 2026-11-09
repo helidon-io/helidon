@@ -456,6 +456,12 @@ settings for automatic incoming REST request spans:
 | `telemetry.span.name-includes-method` | `Boolean` | `false` | **Deprecated.** Whether the span name includes the HTTP request method. |
 | `telemetry.span.includes-response-write` | `Boolean` | `false` | **Deprecated.** Whether the span includes preparing and writing the response entity. |
 
+Helidon logs a deprecation warning once per setting when it is explicitly
+configured, whether its value is `true` or `false`. Additional filter instances
+do not repeat warnings for settings already reported by the same class loader.
+These warnings are separate from the warning about using the legacy span naming
+convention described below.
+
 By default, Helidon uses the matched, low-cardinality JAX-RS route in the span
 name, such as `/greet/{name}`. Setting `telemetry.span.full.url` to `true`
 uses the resolved absolute request path instead, such as

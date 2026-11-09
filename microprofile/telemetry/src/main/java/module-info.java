@@ -29,6 +29,7 @@ import io.helidon.common.features.api.Preview;
 @SuppressWarnings({ "requires-automatic", "requires-transitive-automatic" })
 module io.helidon.microprofile.telemetry {
 
+    requires io.helidon.common;
     requires io.helidon.common.context;
     requires io.helidon.config.mp;
     requires io.helidon.config;
