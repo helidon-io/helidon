@@ -339,6 +339,8 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          * <p>
          * The batch participates in the existing transaction without creating a transaction, retrying, or
          * partitioning the input. Outcomes describe execution and do not establish commit or rollback.
+         * Reusable definitions created through {@link JdbcClient#prepare(String)} or
+         * {@link JdbcClient#prepare(String, List)} do not support batch execution.
          *
          * @param items The source supplies nonnull items in encounter order.
          * @param binder The callback binds every physical position exactly once for each item.
@@ -348,7 +350,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          * @throws IllegalStateException The stage is consumed or an item does not bind every physical position.
          * @throws IllegalArgumentException The statement already has bindings or a captured binding is invalid.
          * @throws JdbcBatchException JDBC setup, execution, or cleanup fails, or the driver returns invalid counts.
-         * @throws UnsupportedOperationException This provider does not support batching.
+         * @throws UnsupportedOperationException The provider or reusable statement definition does not support batching.
          */
         default <T> BatchResult executeBatch(Iterable<T> items, BatchBinder<? super T> binder) {
             Objects.requireNonNull(items, "The batch source must not be null.");

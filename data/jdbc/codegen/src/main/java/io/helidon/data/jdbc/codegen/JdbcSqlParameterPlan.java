@@ -86,7 +86,7 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
                                             List<TypedElementInfo> parameters,
                                             TypedElementInfo method,
                                             TypeHierarchyResolver resolver) {
-        validateParameters(parameters, method);
+        validateParameters(parameters, method, true);
         for (int index = 0; index < parameters.size(); index++) {
             TypedElementInfo parameter = parameters.get(index);
             if (!parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM) && !resolver.parameterNameAvailable(parameter)) {
