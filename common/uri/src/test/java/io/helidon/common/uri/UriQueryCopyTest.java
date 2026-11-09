@@ -19,12 +19,69 @@ package io.helidon.common.uri;
 import java.util.List;
 import java.util.Set;
 
+import io.helidon.common.mapper.OptionalValue;
+import io.helidon.common.mapper.Value;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class UriQueryCopyTest {
+    @Test
+    void testDecoratorCopyDoesNotRestoreClearedRawValues() {
+        UriQuery source = new QueryDecorator(UriQuery.create("token=old&keep=yes"));
+        source.getAllRaw("token").clear();
+
+        UriQueryWriteable copy = UriQueryWriteable.create().from(source);
+
+        assertThat(copy.contains("token"), is(true));
+        assertThat(copy.getAllRaw("token"), is(List.of()));
+        assertThat(copy.all("token"), is(List.of("old")));
+        assertThat(copy.rawValue(), is("keep=yes"));
+
+        source.getAllRaw("token").add("source-only");
+        copy.getAllRaw("token").add("copy-only");
+        assertThat(source.getAllRaw("token"), is(List.of("source-only")));
+        assertThat(copy.getAllRaw("token"), is(List.of("copy-only")));
+    }
+
+    @Test
+    void testDecoratorCopyUsesReplacementRawValues() {
+        UriQuery source = new QueryDecorator(UriQuery.create("token=old&keep=yes"));
+        source.getAllRaw("token").set(0, "replacement");
+        var copy = UriQueryWriteable.create().set("keep", "existing").from(source);
+
+        assertThat(copy.getAllRaw("token"), is(List.of("replacement")));
+        assertThat(copy.all("token"), is(List.of("old")));
+        assertThat(copy.getAllRaw("keep"), is(List.of("existing", "yes")));
+
+        source.getAllRaw("token").set(0, "source-only");
+        source.all("token").set(0, "decoded-source-only");
+        assertThat(copy.getAllRaw("token"), is(List.of("replacement")));
+        assertThat(copy.all("token"), is(List.of("old")));
+    }
+
+    @Test
+    void testDecoratorCopyKeepsEditedAliasesAndEmptyRawEntries() {
+        UriQuery source = new QueryDecorator(UriQuery.create("%61=first&a=second&%61=third&=empty&flag"));
+        source.getAllRaw("%61").set(0, "replacement");
+        source.getAllRaw("a").clear();
+        source.getAllRaw("").clear();
+        source.all("a").set(0, "decoded-first");
+
+        UriQueryWriteable copy = UriQueryWriteable.create().from(source);
+
+        assertThat(copy.getAllRaw("%61"), is(List.of("replacement", "third")));
+        assertThat(copy.getAllRaw("a"), is(List.of()));
+        assertThat(copy.getAllRaw(""), is(List.of()));
+        assertThat(copy.getAllRaw("flag"), is(List.of()));
+        assertThat(copy.contains("a"), is(true));
+        assertThat(copy.contains(""), is(true));
+        assertThat(copy.all("a"), is(List.of("decoded-first", "second", "third")));
+        assertThat(copy.rawValue(), is("%61=replacement&%61=third"));
+    }
+
     @Test
     void testCopyUsesRawValuesEditedBeforeCopy() {
         UriQuery source = UriQuery.create("a=old");
@@ -177,5 +234,72 @@ class UriQueryCopyTest {
         assertThat(copy.all("b"), is(List.of("replacement")));
         assertThat(copy.getAllRaw("b"), is(List.of("replacement")));
         assertThat(copy.rawValue(), is("a=existing&b=replacement"));
+    }
+
+    private record QueryDecorator(UriQuery delegate) implements UriQuery {
+        @Override
+        public String rawValue() {
+            return delegate.rawValue();
+        }
+
+        @Override
+        public String value() {
+            return delegate.value();
+        }
+
+        @Override
+        public String getRaw(String name) {
+            return delegate.getRaw(name);
+        }
+
+        @Override
+        public List<String> getAllRaw(String name) {
+            return delegate.getAllRaw(name);
+        }
+
+        @Override
+        public List<String> all(String name) {
+            return delegate.all(name);
+        }
+
+        @Override
+        public List<Value<String>> allValues(String name) {
+            return delegate.allValues(name);
+        }
+
+        @Override
+        public String get(String name) {
+            return delegate.get(name);
+        }
+
+        @Override
+        public OptionalValue<String> first(String name) {
+            return delegate.first(name);
+        }
+
+        @Override
+        public boolean contains(String name) {
+            return delegate.contains(name);
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return delegate.isEmpty();
+        }
+
+        @Override
+        public int size() {
+            return delegate.size();
+        }
+
+        @Override
+        public Set<String> names() {
+            return delegate.names();
+        }
+
+        @Override
+        public String component() {
+            return delegate.component();
+        }
     }
 }

@@ -88,15 +88,18 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
             } else {
                 String query = uriQuery.rawValue();
                 if (!query.isEmpty()) {
+                    Set<String> copiedNames = new HashSet<>();
                     int start = 0;
                     while (true) {
                         int and = query.indexOf('&', start);
                         String segment = and == -1 ? query.substring(start) : query.substring(start, and);
                         int eq = segment.indexOf('=');
                         String name = eq == -1 ? segment : segment.substring(0, eq);
-                        String value = eq == -1 ? "" : segment.substring(eq + 1);
-                        rawQueryParams.computeIfAbsent(name, _ -> new ArrayList<>())
-                                .add(value);
+                        // Use the text only to discover encoded names; parameter lists may have changed.
+                        if (copiedNames.add(name)) {
+                            rawQueryParams.computeIfAbsent(name, _ -> new ArrayList<>())
+                                    .addAll(uriQuery.getAllRaw(name));
+                        }
                         if (and == -1) {
                             break;
                         }

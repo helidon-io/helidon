@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.common.uri.UriQueryWriteable;
 
@@ -30,9 +31,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.AdditionalAnswers.delegatesTo;
+import static org.mockito.Mockito.mock;
 
 class ClientUriQueryTest {
     private static final String RAW_QUERY = "z=1&flag&&a=first&a=second&a=third&%61=fourth&q=a+b&escaped=%2f%2F&";
@@ -158,6 +163,73 @@ class ClientUriQueryTest {
         assertThat(copy.getAllRaw("%61"), is(List.of("fourth")));
         copy.clear();
         assertThat(source.get("a"), is("decoded-source"));
+    }
+
+    @Test
+    void testImportDecoratedQueryKeepsClearedRawValues() {
+        UriQuery source = UriQuery.create("token=old&keep=yes");
+        UriQuery decorated = mock(UriQuery.class, delegatesTo(source));
+        decorated.getAllRaw("token").clear();
+
+        var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
+
+        assertThat(client.query().getAllRaw("token"), is(List.of()));
+        assertThat(client.query().all("token"), is(List.of("old")));
+        assertThat(client.pathWithQueryAndFragment(), is("/?keep=yes"));
+
+        source.getAllRaw("token").add("source-only");
+        source.all("token").set(0, "decoded-source-only");
+        assertThat(client.query().getAllRaw("token"), is(List.of()));
+        assertThat(client.query().all("token"), is(List.of("old")));
+        assertThat(client.pathWithQueryAndFragment(), is("/?keep=yes"));
+        client.query().getAllRaw("token").add("client-only");
+        assertThat(source.getAllRaw("token"), is(List.of("source-only")));
+    }
+
+    @Test
+    void testImportDecoratedQueryKeepsReplacedRawValues() {
+        UriQuery source = UriQuery.create("token=old&keep=yes");
+        UriQuery decorated = mock(UriQuery.class, delegatesTo(source));
+        decorated.getAllRaw("token").set(0, "replacement");
+
+        var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
+
+        assertThat(client.query().getAllRaw("token"), is(List.of("replacement")));
+        assertThat(client.query().all("token"), is(List.of("old")));
+        assertThat(client.pathWithQueryAndFragment(), containsString("token=replacement"));
+        assertThat(client.pathWithQueryAndFragment(), containsString("keep=yes"));
+        assertThat(client.pathWithQueryAndFragment(), not(containsString("token=old")));
+
+        source.getAllRaw("token").set(0, "source-only");
+        source.all("token").set(0, "decoded-source-only");
+        assertThat(client.query().getAllRaw("token"), is(List.of("replacement")));
+        assertThat(client.query().all("token"), is(List.of("old")));
+        client.query().getAllRaw("token").set(0, "client-only");
+        client.query().all("token").set(0, "decoded-client-only");
+        assertThat(source.getAllRaw("token"), is(List.of("source-only")));
+        assertThat(source.all("token"), is(List.of("decoded-source-only")));
+    }
+
+    @Test
+    void testImportDecoratedQueryKeepsEditedEncodedAliasesAndRepeatedValues() {
+        UriQuery source = UriQuery.create("%61=first&a=second&%61=third&keep=yes");
+        UriQuery decorated = mock(UriQuery.class, delegatesTo(source));
+        decorated.getAllRaw("%61").set(0, "raw-first");
+        decorated.getAllRaw("a").clear();
+        decorated.all("a").set(0, "decoded-first");
+
+        var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
+
+        assertThat(client.query().getAllRaw("%61"), is(List.of("raw-first", "third")));
+        assertThat(client.query().getAllRaw("a"), is(List.of()));
+        assertThat(client.query().all("a"), is(List.of("decoded-first", "second", "third")));
+        assertThat(client.pathWithQueryAndFragment(), containsString("%61=raw-first&%61=third"));
+        assertThat(client.pathWithQueryAndFragment(), not(containsString("a=second")));
+
+        source.getAllRaw("%61").clear();
+        source.all("a").clear();
+        assertThat(client.query().getAllRaw("%61"), is(List.of("raw-first", "third")));
+        assertThat(client.query().all("a"), is(List.of("decoded-first", "second", "third")));
     }
 
     @Test
