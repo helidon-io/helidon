@@ -322,13 +322,8 @@ public class FormParamsSupport implements MediaSupport {
                 Matcher matcher = pattern.matcher(encodedString);
                 while (matcher.find()) {
                     String key = decoder.apply(charset, matcher.group(1));
-                    String encodedValue = matcher.group(2);
-                    if (encodedValue == null || encodedValue.isEmpty()) {
-                        builder.add(key);
-                    } else {
-                        String value = decoder.apply(charset, encodedValue);
-                        builder.add(key, value);
-                    }
+                    String value = decoder.apply(charset, matcher.group(2));
+                    builder.add(key, value);
                 }
                 return builder.build();
             } catch (IOException e) {
