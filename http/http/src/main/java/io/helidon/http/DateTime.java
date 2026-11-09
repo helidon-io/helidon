@@ -90,6 +90,7 @@ public final class DateTime {
      *
      * @return timestamp
      */
+    @Api.Internal
     public static ZonedDateTime timestamp() {
         return DateTimeHelper.timestamp();
     }
@@ -109,6 +110,7 @@ public final class DateTime {
      *
      * @return date bytes for HTTP/1
      */
+    @Api.Internal
     public static byte[] http1Bytes() {
         return DateTimeHelper.http1Bytes();
     }
