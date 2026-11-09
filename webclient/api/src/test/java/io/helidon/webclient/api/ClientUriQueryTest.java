@@ -19,6 +19,7 @@ package io.helidon.webclient.api;
 import java.net.URI;
 import java.util.ConcurrentModificationException;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -232,6 +233,118 @@ class ClientUriQueryTest {
         assertThat(client.query().all("a"), is(List.of("decoded-first", "second", "third")));
     }
 
+    @ParameterizedTest
+    @MethodSource("decoratedClientQueriesWithPlusNames")
+    void testCopyDecoratedClientQueryKeepsSerializedPlusAliases(String raw,
+                                                               Map<String, List<String>> rawValues,
+                                                               List<String> decodedValues) {
+        var source = ClientUri.create(URI.create("https://source.example/?" + raw));
+        UriQuery decorated = mock(UriQuery.class, delegatesTo(source.query()));
+
+        UriQueryWriteable copy = UriQueryWriteable.create().from(decorated);
+
+        for (var entry : rawValues.entrySet()) {
+            assertThat(entry.getKey(), copy.getAllRaw(entry.getKey()), is(entry.getValue()));
+        }
+        assertThat(copy.all("a b"), is(decodedValues));
+        UriQuery serialized = UriQuery.create(copy.rawValue());
+        for (var entry : rawValues.entrySet()) {
+            assertThat(entry.getKey(), serialized.getAllRaw(entry.getKey()), is(entry.getValue()));
+        }
+        assertThat(source.query().rawValue(), is(raw));
+
+        source.query().getAllRaw("a%20b").set(0, "source-only");
+        source.query().all("a b").set(0, "decoded-source-only");
+        for (var entry : rawValues.entrySet()) {
+            assertThat(entry.getKey(), copy.getAllRaw(entry.getKey()), is(entry.getValue()));
+        }
+        assertThat(copy.all("a b"), is(decodedValues));
+        copy.getAllRaw("a+b").set(0, "copy-only");
+        copy.all("a b").set(0, "decoded-copy-only");
+        assertThat(source.query().getAllRaw("a%20b").getFirst(), is("source-only"));
+        assertThat(source.query().all("a b").getFirst(), is("decoded-source-only"));
+    }
+
+    @ParameterizedTest
+    @MethodSource("decoratedClientQueriesWithPlusNames")
+    void testImportDecoratedClientQueryKeepsSerializedPlusAliases(String raw,
+                                                                 Map<String, List<String>> rawValues,
+                                                                 List<String> decodedValues) {
+        var source = ClientUri.create(URI.create("https://source.example/?" + raw));
+        UriQuery decorated = mock(UriQuery.class, delegatesTo(source.query()));
+
+        var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
+
+        assertThat(client.pathWithQueryAndFragment(), is("/?" + raw));
+        for (var entry : rawValues.entrySet()) {
+            assertThat(entry.getKey(), client.query().getAllRaw(entry.getKey()), is(entry.getValue()));
+        }
+        assertThat(client.query().all("a b"), is(decodedValues));
+
+        source.query().getAllRaw("a%20b").set(0, "source-only");
+        source.query().all("a b").set(0, "decoded-source-only");
+        assertThat(client.pathWithQueryAndFragment(), is("/?" + raw));
+        for (var entry : rawValues.entrySet()) {
+            assertThat(entry.getKey(), client.query().getAllRaw(entry.getKey()), is(entry.getValue()));
+        }
+        assertThat(client.query().all("a b"), is(decodedValues));
+        client.query().getAllRaw("a+b").set(0, "client-only");
+        client.query().all("a b").set(0, "decoded-client-only");
+        assertThat(client.pathWithQueryAndFragment(), containsString("a+b=client-only"));
+        assertThat(source.query().getAllRaw("a%20b").getFirst(), is("source-only"));
+        assertThat(source.query().all("a b").getFirst(), is("decoded-source-only"));
+    }
+
+    @Test
+    void testDecoratedClientQueryCopiesClearedPlusValuesAfterSnapshotInvalidation() {
+        var source = ClientUri.create(URI.create("https://source.example/?a+b=old&keep=yes"));
+        source.query().getAllRaw("a%20b").clear();
+        UriQuery decorated = mock(UriQuery.class, delegatesTo(source.query()));
+
+        UriQueryWriteable copy = UriQueryWriteable.create().from(decorated);
+        var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
+
+        assertThat(source.query().rawValue(), is("keep=yes"));
+        assertThat(copy.rawValue(), is("keep=yes"));
+        assertThat(copy.contains("a%20b"), is(false));
+        assertThat(copy.all("a b"), is(List.of("old")));
+        assertThat(client.pathWithQueryAndFragment(), is("/?keep=yes"));
+        assertThat(client.query().contains("a%20b"), is(false));
+        assertThat(client.query().all("a b"), is(List.of("old")));
+
+        copy.set("a b", "copy-only");
+        client.writeableQuery().set("a b", "client-only");
+        assertThat(source.query().getAllRaw("a%20b"), is(List.of()));
+        assertThat(source.query().all("a b"), is(List.of("old")));
+    }
+
+    @Test
+    void testDecoratedClientQueryCopiesReplacedPlusValuesAfterSnapshotInvalidation() {
+        var source = ClientUri.create(URI.create("https://source.example/?a+b=old&keep=yes"));
+        source.query().getAllRaw("a%20b").set(0, "replacement");
+        UriQuery decorated = mock(UriQuery.class, delegatesTo(source.query()));
+
+        UriQueryWriteable copy = UriQueryWriteable.create().from(decorated);
+        var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
+
+        assertThat(source.query().rawValue(), containsString("a%20b=replacement"));
+        assertThat(copy.getAllRaw("a%20b"), is(List.of("replacement")));
+        assertThat(copy.all("a b"), is(List.of("old")));
+        assertThat(client.query().getAllRaw("a%20b"), is(List.of("replacement")));
+        assertThat(client.query().all("a b"), is(List.of("old")));
+        assertThat(client.pathWithQueryAndFragment(), containsString("a%20b=replacement"));
+
+        source.query().getAllRaw("a%20b").set(0, "source-only");
+        source.query().all("a b").set(0, "decoded-source-only");
+        assertThat(copy.getAllRaw("a%20b"), is(List.of("replacement")));
+        assertThat(copy.all("a b"), is(List.of("old")));
+        assertThat(client.query().getAllRaw("a%20b"), is(List.of("replacement")));
+        assertThat(client.query().all("a b"), is(List.of("old")));
+        copy.getAllRaw("a%20b").clear();
+        client.query().getAllRaw("a%20b").clear();
+        assertThat(source.query().getAllRaw("a%20b"), is(List.of("source-only")));
+    }
+
     @Test
     void testCopyClientQueryThroughPublicMutableQueryApi() {
         var source = ClientUri.create(URI.create("https://example.test/?%61=first&a=second&a+b=x+y&flag&&"));
@@ -430,6 +543,15 @@ class ClientUriQueryTest {
         query.fromQueryString("a=new&flag&&");
         query.names().remove("a");
         return query.rawValue();
+    }
+
+    private static Stream<Arguments> decoratedClientQueriesWithPlusNames() {
+        return Stream.of(
+                Arguments.of("a+b=x", Map.of("a+b", List.of("x")), List.of("x")),
+                Arguments.of("a+b=one&a+b=two", Map.of("a+b", List.of("one", "two")), List.of("one", "two")),
+                Arguments.of("a+b=one&a%20b=two&a+b=three",
+                             Map.of("a+b", List.of("one", "three"), "a%20b", List.of("two")),
+                             List.of("one", "two", "three")));
     }
 
     private static Stream<Arguments> mutations() {

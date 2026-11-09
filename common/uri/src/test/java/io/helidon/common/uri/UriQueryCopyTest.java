@@ -29,6 +29,27 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 class UriQueryCopyTest {
     @Test
+    void testDecoratorCopyUsesWholeSerializedQueryWhenRawNamesDiffer() {
+        UriQuery delegate = UriQuery.create("a%20b=first&a%20b=second&z=keep");
+        UriQuery source = new QueryDecorator(delegate, "z=keep&a+b=first&a%20b=second&flag");
+        var copy = UriQueryWriteable.create().set("z", "existing").from(source);
+
+        assertThat(copy.getAllRaw("a+b"), is(List.of("first")));
+        assertThat(copy.getAllRaw("a%20b"), is(List.of("second")));
+        assertThat(copy.getAllRaw("z"), is(List.of("existing", "keep")));
+        assertThat(copy.getAllRaw("flag"), is(List.of("")));
+        assertThat(copy.all("a b"), is(List.of("first", "second")));
+
+        delegate.getAllRaw("a%20b").clear();
+        delegate.all("a b").clear();
+        assertThat(copy.getAllRaw("a+b"), is(List.of("first")));
+        assertThat(copy.getAllRaw("a%20b"), is(List.of("second")));
+        assertThat(copy.all("a b"), is(List.of("first", "second")));
+        copy.getAllRaw("z").clear();
+        assertThat(delegate.getAllRaw("z"), is(List.of("keep")));
+    }
+
+    @Test
     void testDecoratorCopyDoesNotRestoreClearedRawValues() {
         UriQuery source = new QueryDecorator(UriQuery.create("token=old&keep=yes"));
         source.getAllRaw("token").clear();
@@ -236,10 +257,14 @@ class UriQueryCopyTest {
         assertThat(copy.rawValue(), is("a=existing&b=replacement"));
     }
 
-    private record QueryDecorator(UriQuery delegate) implements UriQuery {
+    private record QueryDecorator(UriQuery delegate, String rawQuery) implements UriQuery {
+        private QueryDecorator(UriQuery delegate) {
+            this(delegate, delegate.rawValue());
+        }
+
         @Override
         public String rawValue() {
-            return delegate.rawValue();
+            return rawQuery;
         }
 
         @Override

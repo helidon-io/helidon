@@ -86,26 +86,9 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
                         .computeIfAbsent(name, _ -> new ArrayList<>())
                         .addAll(values));
             } else {
-                String query = uriQuery.rawValue();
-                if (!query.isEmpty()) {
-                    Set<String> copiedNames = new HashSet<>();
-                    int start = 0;
-                    while (true) {
-                        int and = query.indexOf('&', start);
-                        String segment = and == -1 ? query.substring(start) : query.substring(start, and);
-                        int eq = segment.indexOf('=');
-                        String name = eq == -1 ? segment : segment.substring(0, eq);
-                        // Use the text only to discover encoded names; parameter lists may have changed.
-                        if (copiedNames.add(name)) {
-                            rawQueryParams.computeIfAbsent(name, _ -> new ArrayList<>())
-                                    .addAll(uriQuery.getAllRaw(name));
-                        }
-                        if (and == -1) {
-                            break;
-                        }
-                        start = and + 1;
-                    }
-                }
+                rawParametersForCopy(uriQuery).forEach((name, values) -> rawQueryParams
+                        .computeIfAbsent(name, _ -> new ArrayList<>())
+                        .addAll(values));
             }
             for (String name : uriQuery.names()) {
                 List<String> decoded = uriQuery.all(name);
@@ -331,6 +314,40 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
     @Override
     public String toString() {
         return component() + ": decoded: " + decodedQueryParams + ", raw: " + rawQueryParams;
+    }
+
+    private static Map<String, List<String>> rawParametersForCopy(UriQuery source) {
+        String query = source.rawValue();
+        if (query.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<String, List<String>> serialized = new HashMap<>();
+        int start = 0;
+        while (true) {
+            int and = query.indexOf('&', start);
+            String segment = and == -1 ? query.substring(start) : query.substring(start, and);
+            int eq = segment.indexOf('=');
+            String name = eq == -1 ? segment : segment.substring(0, eq);
+            String value = eq == -1 ? "" : segment.substring(eq + 1);
+            serialized.computeIfAbsent(name, _ -> new ArrayList<>()).add(value);
+            if (and == -1) {
+                break;
+            }
+            start = and + 1;
+        }
+
+        Map<String, List<String>> current = new HashMap<>();
+        try {
+            for (String name : serialized.keySet()) {
+                current.put(name, source.getAllRaw(name));
+            }
+        } catch (NoSuchElementException _) {
+            // Decorators can expose original spelling with normalized lookup keys.
+            // Keep the serialized copy intact rather than mixing both representations.
+            return serialized;
+        }
+        return current;
     }
 
     private void addRaw(String next) {
