@@ -21,7 +21,7 @@ from serving requests while the application process continues to run.
 ## Dependencies
 
 `JdbcClientHealthCheck` is in `io.helidon.data.jdbc` and is included in the existing
-`helidon-data-jdbc` dependency. See [Getting Started](getting-started.md#dependencies)
+`helidon-data-jdbc` dependency. See [Maven Coordinates](data-jdbc.md#maven-coordinates)
 for the runtime and JDBC driver dependencies.
 
 For data source checks without a JDBC client, use the existing data source support
@@ -45,7 +45,7 @@ Add the existing Health observer dependency to expose either check over HTTP:
 
 The Helidon application parent or BOM supplies these versions. YAML examples also
 require `helidon-config-yaml`. A pooled data source needs its provider dependency, such
-as the one shown in [Registered Data Sources](configuration.md#registered-data-sources).
+as the one shown in [Registered Data Sources](data-jdbc.md#registered-data-sources).
 Neither check requires a separate JDBC health artifact. Calling a check directly does
 not require a webserver.
 
@@ -177,10 +177,11 @@ WebServer server = WebServer.builder()
 ```
 
 Here, `jdbcClient` can be a managed client or a standalone client built as shown in
-[Client Configuration](configuration.md). This example supplies its server features
-and health checks explicitly. `useSystemServices(false)` excludes discovered checks;
-leave discovery enabled when the observer should also include them. Avoid registering
-the same logical check both manually and through configuration.
+[JDBC Client Configuration](imperative.md#jdbc-client-configuration). This example
+supplies its server features and health checks explicitly. `useSystemServices(false)`
+excludes discovered checks. Leave discovery enabled when the observer should also
+include them. Avoid registering the same logical check both manually and through
+configuration.
 
 For an application-owned `contactsDataSource`, construct a source check instead and
 pass it to `addCheck`:
@@ -340,7 +341,7 @@ establish independence if the source returns a caller's associated connection.
 Each invocation needs pool capacity in addition to any caller-held connection. Pool
 exhaustion returns DOWN without borrowing that connection or changing caller work.
 Concurrent probes use separate acquisitions, although a pool can reuse a physical
-connection across completed invocations. See [Transactions and Resources](transactions.md).
+connection across completed invocations. See [Local Transactions](data-jdbc.md#local-transactions).
 
 ### Pool Recovery Limitation
 
