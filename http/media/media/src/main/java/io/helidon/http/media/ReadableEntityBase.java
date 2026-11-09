@@ -262,7 +262,7 @@ public abstract class ReadableEntityBase implements ReadableEntity {
                     offset += buffer.length;
                 }
             } else {
-                bytes = new byte[length];
+                bytes = length == 0 ? BufferData.EMPTY_BYTES : new byte[length];
             }
             read += stream.readNBytes(bytes, read, bytes.length - read);
             if (read != bytes.length) {

@@ -104,7 +104,7 @@ class ReadableEntityBaseTest {
         var completed = new AtomicInteger();
         var entity = new ExactLengthReadableEntity(_ -> BufferData.empty(), completed::incrementAndGet, 0);
 
-        assertThat(entity.as(byte[].class), is(new byte[0]));
+        assertThat(entity.as(byte[].class), sameInstance(BufferData.EMPTY_BYTES));
         assertThat(entity.consumed(), is(true));
         assertThat(completed.get(), is(1));
     }
