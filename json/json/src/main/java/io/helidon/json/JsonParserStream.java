@@ -2537,12 +2537,14 @@ final class JsonParserStream extends JsonParserBase {
                 finished = false;
             }
         } else {
-            // Buffer is full of the value, need to expand
-            int newCap = buffer.length + configuredBufferSize;
-            byte[] tmp = new byte[newCap];
-            System.arraycopy(buffer, 0, tmp, 0, bufferLength); // Copy existing data
-            int lastRead = inputStream.read(tmp, bufferLength, configuredBufferSize);
-            buffer = tmp; // Replace buffer
+            // Short reads can leave room in the buffer; expand only when it is full.
+            if (bufferLength == buffer.length) {
+                int newCap = buffer.length + configuredBufferSize;
+                byte[] tmp = new byte[newCap];
+                System.arraycopy(buffer, 0, tmp, 0, bufferLength);
+                buffer = tmp;
+            }
+            int lastRead = inputStream.read(buffer, bufferLength, buffer.length - bufferLength);
             if (lastRead == -1) {
                 finished = true;
             } else {
