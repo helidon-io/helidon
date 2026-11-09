@@ -491,6 +491,10 @@
                     <configuration>
                         <skip>${dependency-check.skip}</skip>
                         <skipTestScope>true</skipTestScope>
+                        <excludes>
+                            <!-- gradle-api is a provided dependency, so exclude it from dependency checks. -->
+                            <exclude>dev.gradleplugins:gradle-api</exclude>
+                        </excludes>
                         <failBuildOnCVSS>0</failBuildOnCVSS>
                         <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
                         <!-- Bump up from 24 to 72 to reduce token use -->
