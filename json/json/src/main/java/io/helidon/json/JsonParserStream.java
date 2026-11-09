@@ -230,7 +230,7 @@ final class JsonParserStream extends JsonParserBase {
     @Override
     public byte readByte() {
         if (currentByte() == '-') {
-            currentIndex = currentIndex + 1;
+            readNextByte();
             return (byte) -parseByte(true);
         } else {
             return parseByte(false);
@@ -240,7 +240,7 @@ final class JsonParserStream extends JsonParserBase {
     @Override
     public short readShort() {
         if (currentByte() == '-') {
-            currentIndex = currentIndex + 1;
+            readNextByte();
             return (short) -parseShort(true);
         } else {
             return parseShort(false);
@@ -250,7 +250,7 @@ final class JsonParserStream extends JsonParserBase {
     @Override
     public int readInt() {
         if (currentByte() == '-') {
-            currentIndex++;
+            readNextByte();
             return -parseInt(true);
         } else {
             return parseInt(false);
@@ -260,7 +260,7 @@ final class JsonParserStream extends JsonParserBase {
     @Override
     public long readLong() {
         if (currentByte() == '-') {
-            currentIndex++;
+            readNextByte();
             return -parseLong(true);
         } else {
             return parseLong(false);
