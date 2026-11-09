@@ -39,6 +39,7 @@ public final class ServerRequestEntity extends ReadableEntityBase implements Rea
     private final ServerRequestHeaders requestHeaders;
     private final MediaContext mediaContext;
     private final long maxPayloadSize;
+    private final long exactLength;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     private ServerRequestEntity(Consumer<Boolean> entityRequestedCallback,
@@ -49,13 +50,16 @@ public final class ServerRequestEntity extends ReadableEntityBase implements Rea
                                 ServerRequestHeaders requestHeaders,
                                 MediaContext mediaContext,
                                 long maxPayloadSize,
-                                long maxBufferedEntitySize) {
+                                long maxBufferedEntitySize,
+                                long exactLength) {
         super(entityRequestedCallback, readEntityFunction, entityProcessedRunnable, maxBufferedEntitySize);
         this.streamFilter = streamFilter;
         this.decoder = decoder;
         this.requestHeaders = requestHeaders;
         this.mediaContext = mediaContext;
         this.maxPayloadSize = maxPayloadSize;
+        this.exactLength = decoder == ContentDecoder.NO_OP
+                && (maxPayloadSize == -1 || exactLength <= maxPayloadSize) ? exactLength : -1;
     }
 
     /**
@@ -121,6 +125,47 @@ public final class ServerRequestEntity extends ReadableEntityBase implements Rea
                                              MediaContext mediaContext,
                                              long maxPayloadSize,
                                              long maxBufferedEntitySize) {
+        return create(entityRequestedCallback,
+                      streamFilter,
+                      decoder,
+                      readEntityFunction,
+                      entityProcessedRunnable,
+                      requestHeaders,
+                      mediaContext,
+                      maxPayloadSize,
+                      maxBufferedEntitySize,
+                      -1);
+    }
+
+    /**
+     * Create a new entity with an exact transport length when no stream filter is registered.
+     * The length is ignored when a content decoder is active or it exceeds the payload limit.
+     *
+     * @param entityRequestedCallback callback invoked when entity data are requested for the first time
+     * @param streamFilter            stream filter to apply, provided by user
+     * @param decoder                 content decoder
+     * @param readEntityFunction      function to read buffer from entity (int is an estimated number of bytes needed, buffer
+     *                                will contain at least 1 byte)
+     * @param entityProcessedRunnable runnable to run once the entity is fully read
+     * @param requestHeaders          request headers
+     * @param mediaContext            media context to map to correct types
+     * @param maxPayloadSize          maximum size of a decoded entity
+     * @param maxBufferedEntitySize   maximum size of a buffered entity
+     * @param exactLength             exact entity length, or a negative value when unknown or a stream filter is registered
+     * @return a new entity
+     */
+    @Api.Internal
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    public static ServerRequestEntity create(Consumer<Boolean> entityRequestedCallback,
+                                             UnaryOperator<InputStream> streamFilter,
+                                             ContentDecoder decoder,
+                                             Function<Integer, BufferData> readEntityFunction,
+                                             Runnable entityProcessedRunnable,
+                                             ServerRequestHeaders requestHeaders,
+                                             MediaContext mediaContext,
+                                             long maxPayloadSize,
+                                             long maxBufferedEntitySize,
+                                             long exactLength) {
         return new ServerRequestEntity(entityRequestedCallback,
                                        streamFilter,
                                        decoder,
@@ -129,7 +174,8 @@ public final class ServerRequestEntity extends ReadableEntityBase implements Rea
                                        requestHeaders,
                                        mediaContext,
                                        maxPayloadSize,
-                                       maxBufferedEntitySize);
+                                       maxBufferedEntitySize,
+                                       exactLength);
     }
 
     @Override
@@ -142,13 +188,19 @@ public final class ServerRequestEntity extends ReadableEntityBase implements Rea
                                        requestHeaders,
                                        mediaContext,
                                        maxPayloadSize,
-                                       maxBufferedEntitySize());
+                                       maxBufferedEntitySize(),
+                                       exactLength);
     }
 
     @Override
     public InputStream inputStream() {
         var decoded = decoder.apply(super.inputStream());
         return streamFilter.apply(DecodedLimiter.limit(decoded, maxPayloadSize));
+    }
+
+    @Override
+    protected byte[] readAllBytes() {
+        return super.readAllBytes(exactLength);
     }
 
     @Override

@@ -18,6 +18,7 @@ package io.helidon.http.media;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -35,6 +36,7 @@ import io.helidon.common.buffers.BufferData;
  */
 public abstract class ReadableEntityBase implements ReadableEntity {
     private static final int BUFFER_SIZE = 8 * 1024;
+    private static final int MAX_PREALLOCATED_ENTITY_SIZE = 1024 * 1024;
     private static final ReadableEntity EMPTY = new EmptyReadableEntity();
 
     private final AtomicBoolean consumed = new AtomicBoolean();
@@ -214,12 +216,37 @@ public abstract class ReadableEntityBase implements ReadableEntity {
      * @return all bytes of the entity
      */
     protected byte[] readAllBytes() {
+        return readAllBytes(-1);
+    }
+
+    /**
+     * Read all bytes using an exact entity length when available. Preallocation is limited to 1 MiB;
+     * larger entities and unknown lengths use incremental allocation.
+     * The length must describe the stream returned by {@link #inputStream()}, after any transformations.
+     *
+     * @param exactLength exact entity length, or a negative value when unknown
+     * @return all bytes of the entity
+     */
+    protected byte[] readAllBytes(long exactLength) {
         try (InputStream stream = inputStream()) {
             if (inputStream != null) {
                 // Decoder cleanup must not request more transport data after a failed conversion.
                 inputStream.skipReadOnClose = true;
             }
-            return stream.readAllBytes();
+            if (exactLength < 0 || exactLength > MAX_PREALLOCATED_ENTITY_SIZE) {
+                return stream.readAllBytes();
+            }
+
+            byte[] bytes = new byte[(int) exactLength];
+            int read = stream.readNBytes(bytes, 0, bytes.length);
+            if (read != bytes.length) {
+                throw new EOFException("Expected " + exactLength + " entity bytes, received " + read);
+            }
+            // Observe completion even when the final bytes precede transport trailers or END_STREAM.
+            if (stream.read() != -1) {
+                throw new IOException("Entity exceeds expected length of " + exactLength + " bytes");
+            }
+            return bytes;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

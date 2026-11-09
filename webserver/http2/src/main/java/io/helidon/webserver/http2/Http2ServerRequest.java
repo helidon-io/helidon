@@ -76,6 +76,7 @@ class Http2ServerRequest implements RoutingRequest {
     private Context context;
     // preparation for continue support in HTTP/2
     private boolean continueSent;
+    private boolean streamFilterRegistered;
     private UnaryOperator<InputStream> streamFilter = UnaryOperator.identity();
     private String matchingPattern;
     private Supplier<Optional<String>> matchingPatternSupplier;
@@ -102,6 +103,7 @@ class Http2ServerRequest implements RoutingRequest {
         this.limitOutcome = limitOutcome;
 
         if (hasEntity) {
+            long exactLength = this.headers.contentLength().orElse(-1);
             this.entity = LazyValue.create(() -> Http2ServerRequestEntity.create(streamFilter,
                                                                                  decoder,
                                                                                  it -> entitySupplier.get(),
@@ -109,7 +111,8 @@ class Http2ServerRequest implements RoutingRequest {
                                                                                  this.headers,
                                                                                  ctx.listenerContext().mediaContext(),
                                                                                  maxPayloadSize,
-                                                                                 maxBufferedEntitySize));
+                                                                                 maxBufferedEntitySize,
+                                                                                 streamFilterRegistered ? -1 : exactLength));
         } else {
             this.entity = LazyValue.create(ReadableEntityBase.empty());
         }
@@ -296,6 +299,7 @@ class Http2ServerRequest implements RoutingRequest {
     @Override
     public void streamFilter(UnaryOperator<InputStream> filterFunction) {
         Objects.requireNonNull(filterFunction);
+        streamFilterRegistered = true;
         UnaryOperator<InputStream> current = this.streamFilter;
         this.streamFilter = it -> filterFunction.apply(current.apply(it));
     }
