@@ -13,20 +13,53 @@ item. If the work fits one set-based SQL statement, that statement may be simple
 Individual operations remain useful when items need different SQL or execution policies.
 One JDBC batch invocation does not guarantee one network exchange.
 
+Batch operations follow the existing [SQL safety rules](data-jdbc.md#sql-guidelines),
+[scalar type mappings](declarative.md#supported-scalar-types), and
+[resource ownership rules](imperative.md#resource-management). The source containers,
+binding callbacks, and per-item outcomes described here extend those ordinary operations.
+
 ## Import Contacts
 
-The following examples use the CONTACT schema, dependencies, annotation processors, and
-named `contacts` client from [Getting Started](getting-started.md). The application
-supplies identifiers 201 and 202; the batch does not request generated keys. Reserve
-these identifiers for the example and run one programming model against a dataset
-where they are absent. Running the import again without resetting those rows causes a
-primary-key failure.
+Use a Java 27 application with the Data JDBC runtime, YAML support, and MySQL driver
+shown in [Maven Coordinates](data-jdbc.md#maven-coordinates). Configure the processors
+shown in [Annotation Processing](declarative.md#annotation-processing), using the same
+Helidon version for the runtime and processors. The examples acknowledge the Data
+preview API and JDBC incubating APIs with focused warning suppressions.
 
-The combined example includes repository generation for either run command. An
-imperative-only application does not require the Data JDBC repository generator.
+The combined example uses repository generation and transaction interception for both
+run commands. An imperative application without repositories does not require the
+Data JDBC repository generator.
 
-The examples acknowledge the Data preview API and JDBC incubating APIs with focused
-warning suppressions, as described in [Annotation Processing](declarative.md#annotation-processing).
+Prepare this table once in a MySQL database named `contacts`, outside the batch and its
+transaction. The example uses InnoDB so the inserts can be rolled back:
+
+```sql [schema.sql]
+CREATE TABLE CONTACT (
+    ID BIGINT PRIMARY KEY,
+    NAME VARCHAR(100) NOT NULL,
+    EMAIL VARCHAR(255),
+    STATUS VARCHAR(20) NOT NULL
+) ENGINE=InnoDB;
+```
+
+Save this configuration as `src/main/resources/application.yaml`, adjusting the URL
+and credentials for that database:
+
+```yaml [application.yaml]
+data:
+  clients:
+    jdbc:
+      - name: "contacts"
+        connection:
+          url: "jdbc:mysql://localhost:3306/contacts"
+          username: "user"
+          password: "password"
+```
+
+The named client follows the ordinary [client configuration](data-jdbc.md#configuration).
+The application supplies identifiers 201 and 202; the batch does not request generated
+keys. Run one programming model against a dataset where these identifiers are absent.
+Running the import again without resetting those rows causes a primary-key failure.
 
 Save this application input record as `src/main/java/example/ContactChange.java`:
 
@@ -39,7 +72,7 @@ public record ContactChange(long id, String name, String email) {
 
 An input record describes values to bind. Its supported reference components can be
 null, unlike the `Optional` components used to represent nullable columns in
-[mapped result records](mapping.md#scalars-and-records). The example supplies a name
+[mapped result records](declarative.md#scalars-and-records). The example supplies a name
 because the table requires it, and permits a null email.
 
 ### Declarative Usage
@@ -47,6 +80,9 @@ because the table requires it, and permits a null email.
 Declare `BATCH` explicitly on every batch method. The return type is either
 `JdbcClient.BatchResult` or `void`. A void method discards a successful result, while
 failures still carry available outcomes.
+
+Helidon does not infer batching from a collection parameter or a `BatchResult` return
+type. A `void` method without explicit `BATCH` selection remains an ordinary update.
 
 Save the repository as `src/main/java/example/ContactBatchRepository.java`:
 
@@ -160,7 +196,7 @@ public class ContactImport {
 
 The imperative binder can read any nonnull application item and surrounding constants.
 Its source, binder, and items must be nonnull. `bind` requires a nonnull
-[supported scalar](mapping.md#supported-scalar-types); `bindNull` supplies SQL NULL
+[supported scalar](declarative.md#supported-scalar-types); `bindNull` supplies SQL NULL
 with an explicit nonnull `JDBCType`.
 
 ### Run Either Import
@@ -225,15 +261,15 @@ public final class BatchMain {
 }
 ```
 
-Run one of these commands from the example project containing the Getting Started POM
-and `application.yaml`:
+Run one of these commands from the Maven application project containing the four Java
+files and `application.yaml`. The commands select the Maven exec plugin explicitly:
 
 ```shell [Terminal]
-mvn compile exec:exec -Dexec.executable=java -Dexec.args="-classpath %classpath example.BatchMain declarative"
+mvn compile org.codehaus.mojo:exec-maven-plugin:3.6.3:exec -Dexec.executable=java -Dexec.args="-classpath %classpath example.BatchMain declarative"
 ```
 
 ```shell [Terminal]
-mvn compile exec:exec -Dexec.executable=java -Dexec.args="-classpath %classpath example.BatchMain imperative"
+mvn compile org.codehaus.mojo:exec-maven-plugin:3.6.3:exec -Dexec.executable=java -Dexec.args="-classpath %classpath example.BatchMain imperative"
 ```
 
 After the selected import and transaction complete successfully, these rows are present:
@@ -243,7 +279,7 @@ After the selected import and transaction complete successfully, these rows are 
 | 201 | Ada | SQL NULL | ACTIVE |
 | 202 | Lin | lin@example.test | ACTIVE |
 
-The existing contact is unchanged. Verify the imported values with:
+Other contacts are unchanged. Verify the imported values with:
 
 ```sql [Verify the import]
 SELECT ID, NAME, EMAIL, STATUS FROM CONTACT WHERE ID IN (201, 202) ORDER BY ID;
@@ -286,10 +322,22 @@ ambiguous and fails compilation. Positional SQL can use duplicate component name
 parameter declaration order followed by record-component order determines the slots.
 
 Every bindable input must be used. Repeated named markers reuse its captured value at
-separate physical positions. Aliases require named SQL and do not change JDBC types.
-See [Declarative Binding](parameters.md#declarative-binding) for the
-shared naming, inheritance, and marker rules, and [Supported Scalar
-Types](mapping.md#supported-scalar-types) for canonical null types.
+separate physical positions. Named and positional markers cannot be mixed in one
+statement. For positional SQL, the number of markers must equal the number of
+expanded scalar values.
+
+An alias is case-sensitive, omits the colon, and follows Java identifier character
+rules without whitespace. Aliases require named SQL and do not change JDBC types.
+Inherited aliases remain available without `-parameters`. An override without an
+alias preserves the inherited alias; an explicit alias replaces it. Conflicting aliases
+from unrelated parents require an explicit child resolution. Without an alias, named
+scalar inputs need reliable Java parameter names, so a published parent must preserve
+those names with `-parameters` or use positional SQL.
+
+See [Statement Parameters](declarative.md#statement-parameters) for SQL NULL predicate
+semantics and marker rules, and [Supported Scalar Types](declarative.md#supported-scalar-types)
+for canonical null types. Source containers contribute values to each batch item;
+they do not expand an SQL `IN` list within a single execution.
 
 ## Capture and Binding Lifetime
 
@@ -381,10 +429,18 @@ a transaction, successful counts can describe work that is subsequently rolled b
 Use transactional DML and let failures reach the transaction owner when the batch must
 be atomic. Keep DDL and transaction-control SQL out of the batch.
 
-See [Failure Handling](transactions.md#failure-handling) for escaping versus caught
-failures, database-dependent transaction effects, and uncertain completion. A later
-transaction-completion failure follows the transaction exception contract; it does not
-retroactively change an existing batch result.
+A failure escaping a joined transactional invocation marks the transaction for rollback,
+even if its caller catches the failure afterward. Catching a client failure inside the
+owning method or transaction callback before it crosses a transaction boundary does
+not itself request rollback. The driver can nevertheless abort the transaction or
+leave its connection unusable. A capture failure caught inside an otherwise healthy
+transaction does not independently prevent other operations from committing.
+
+A later failure during transaction completion follows the transaction exception contract.
+It does not retroactively change an existing batch result. Verify database state before
+retrying when completion is uncertain. See [Local Transactions](data-jdbc.md#local-transactions)
+for propagation and provider restrictions, and [Errors and JDBC Warnings](data-jdbc.md#errors-and-jdbc-warnings)
+for shared diagnostic rules.
 
 ## Batch Size and Limits
 
@@ -400,8 +456,11 @@ surrounding transaction can group their effects. There is no automatic batch-siz
 setting, hidden chunking, or retry policy.
 
 Batching executes DML and does not map query rows, return generated keys, derive SQL,
-or perform entity persistence. Use the ordinary [query and generated-key
-operations](queries.md) for those result shapes. Alternate JDBC client providers may
-reject the batch terminal with `UnsupportedOperationException` after reference
-validation without consuming input. Driver-specific SQL and transaction behavior
+or perform entity persistence. Batch SQL must be literal repository SQL or supplied
+through `JdbcClient.create(sql)`. Configured repository statements and reusable
+definitions created through `JdbcClient.prepare(...)` do not support batching.
+Use the ordinary [statement execution](imperative.md#statement-execution)
+and [generated-key operations](imperative.md#return-generated-keys) for those result shapes.
+Alternate JDBC client providers may reject the batch terminal with `UnsupportedOperationException`
+after reference validation without consuming input. Driver-specific SQL and transaction behavior
 still need to match the databases supported by the application.
