@@ -34,7 +34,7 @@ import io.helidon.common.buffers.BufferData;
 /**
  * Base for readable entities.
  */
-@Api.Stable
+@Api.Internal
 public abstract class ReadableEntityBase implements ReadableEntity {
     private static final int BUFFER_SIZE = 8 * 1024;
     private static final ReadableEntity EMPTY = new EmptyReadableEntity();
