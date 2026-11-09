@@ -33,6 +33,7 @@ import io.helidon.common.types.TypedElementInfo;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -120,8 +121,11 @@ class TypeHierarchyResolverTest {
                 .build();
         assertThat(resolver.parameterNameAvailable(parameter), is(true));
         assertThat(resolver.parameterNameAvailable(TypedElementInfo.builder(parameter).elementName("").build()), is(false));
-        assertThrows(IllegalArgumentException.class,
-                     () -> resolver.parameterNameAvailable(method("find", TypeNames.STRING, Modifier.ABSTRACT)));
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                () -> resolver.parameterNameAvailable(method("find", TypeNames.STRING, Modifier.ABSTRACT)));
+        assertThat(failure.getMessage(), containsString("method or constructor parameter"));
+        assertThat(failure.getMessage(), containsString("named find"));
+        assertThat(failure.getMessage(), containsString("kind METHOD"));
     }
 
     /**

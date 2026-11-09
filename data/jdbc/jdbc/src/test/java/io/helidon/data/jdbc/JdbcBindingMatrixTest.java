@@ -218,14 +218,8 @@ class JdbcBindingMatrixTest {
 
     @Test
     void validatesEverySlotBeforeMutationAndPreservesPositionalNullBridge() throws Exception {
-        DataSource source = mock(DataSource.class);
-        Connection connection = mock(Connection.class);
-        PreparedStatement prepared = mock(PreparedStatement.class);
-        when(source.getConnection()).thenReturn(connection);
-        when(connection.getAutoCommit()).thenReturn(true);
-        when(connection.prepareStatement("update T set A = ?, B = ?, C = ?")).thenReturn(prepared);
-        when(prepared.getLargeUpdateCount()).thenReturn(1L, -1L);
-        JdbcClient client = JdbcClient.builder().dataSource(source).build();
+        prepareOperation("update T set A = ?, B = ?, C = ?");
+        JdbcClient client = JdbcClient.builder().dataSource(dataSource).build();
         var factory = GeneratedJdbcData.prepareNamed(client,
                 "update T set A = :value, B = :other, C = :value", List.of("value", "other"));
         JdbcClient.Statement stage = factory.get();
@@ -238,12 +232,12 @@ class JdbcBindingMatrixTest {
         assertThrows(IllegalStateException.class, stage::execute);
         assertThrows(NullPointerException.class, () -> stage.bind("other", null));
         assertThat(GeneratedJdbcData.bindNull(stage, "other", JDBCType.INTEGER), sameInstance(stage));
-        verifyZeroInteractions(source);
+        verifyZeroInteractions(dataSource);
         assertThat(stage.execute(), is(1L));
-        verify(prepared).setString(1, "first");
-        verify(prepared).setNull(2, JDBCType.INTEGER.getVendorTypeNumber());
-        verify(prepared).setNull(3, JDBCType.VARCHAR.getVendorTypeNumber());
-        verify(prepared).close();
+        verify(statement).setString(1, "first");
+        verify(statement).setNull(2, JDBCType.INTEGER.getVendorTypeNumber());
+        verify(statement).setNull(3, JDBCType.VARCHAR.getVendorTypeNumber());
+        verify(statement).close();
         verify(connection).close();
         assertThrows(IllegalStateException.class, () -> stage.bind("other", 1));
         assertThrows(NullPointerException.class, () -> GeneratedJdbcData.bindNull(stage, (String) null, JDBCType.INTEGER));
@@ -253,22 +247,16 @@ class JdbcBindingMatrixTest {
 
     @Test
     void repeatsValuesAndTypedNullsWithoutPrematureAcquisition() throws Exception {
-        DataSource source = mock(DataSource.class);
-        Connection connection = mock(Connection.class);
-        PreparedStatement prepared = mock(PreparedStatement.class);
-        when(source.getConnection()).thenReturn(connection);
-        when(connection.getAutoCommit()).thenReturn(true);
-        when(connection.prepareStatement("update T set A = ?, B = ?")).thenReturn(prepared);
-        when(prepared.getLargeUpdateCount()).thenReturn(1L, -1L);
-        JdbcClient client = JdbcClient.builder().dataSource(source).build();
+        prepareOperation("update T set A = ?, B = ?");
+        JdbcClient client = JdbcClient.builder().dataSource(dataSource).build();
         var factory = client.prepare("update T set A = :value, B = :value");
         JdbcClient.Statement stage = factory.get();
         GeneratedJdbcData.bindNull(stage, "value", JDBCType.VARCHAR);
         assertThrows(IllegalArgumentException.class, () -> stage.bind("value", "VALUE_CANARY"));
-        verifyZeroInteractions(source);
+        verifyZeroInteractions(dataSource);
         stage.execute();
-        verify(prepared).setNull(1, JDBCType.VARCHAR.getVendorTypeNumber());
-        verify(prepared).setNull(2, JDBCType.VARCHAR.getVendorTypeNumber());
+        verify(statement).setNull(1, JDBCType.VARCHAR.getVendorTypeNumber());
+        verify(statement).setNull(2, JDBCType.VARCHAR.getVendorTypeNumber());
         assertThrows(IllegalStateException.class, () -> client.create("select ?").bind("value", 1));
     }
 
@@ -354,10 +342,14 @@ class JdbcBindingMatrixTest {
     }
 
     private void prepareOperation() throws Exception {
+        prepareOperation(SQL);
+    }
+
+    private void prepareOperation(String sql) throws Exception {
         reset(dataSource, connection, statement);
         when(dataSource.getConnection()).thenReturn(connection);
         when(connection.getAutoCommit()).thenReturn(true);
-        when(connection.prepareStatement(SQL)).thenReturn(statement);
+        when(connection.prepareStatement(sql)).thenReturn(statement);
         when(statement.execute()).thenReturn(false);
         when(statement.getLargeUpdateCount()).thenReturn(1L, -1L);
         when(statement.getMoreResults()).thenReturn(false);

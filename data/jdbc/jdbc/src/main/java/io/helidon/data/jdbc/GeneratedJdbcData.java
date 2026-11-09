@@ -128,16 +128,16 @@ public final class GeneratedJdbcData {
                 "Typed SQL null binding requires a statement created by Helidon's JDBC provider.");
     }
     /**
-     * Binds typed SQL NULL to every occurrence of a configured marker without JDBC work.
-     * Every destination is validated before any binding changes.
+     * Binds a typed SQL {@code NULL} to every JDBC position associated with a logical input.
+     * Every destination is validated before any binding changes, and binding performs no JDBC work.
      *
      * @param statement The statement created by the Helidon JDBC provider.
-     * @param name The marker name without a colon.
+     * @param name The name identifies the logical input without a colon prefix.
      * @param type The SQL type supplied by generated code.
      * @return The same statement.
      * @throws NullPointerException The statement, name, or type is null.
      * @throws IllegalArgumentException The name or type is unsupported, or a slot is assigned.
-     * @throws IllegalStateException The stage is consumed or is not configured.
+     * @throws IllegalStateException A terminal operation has started, or the statement has no reusable definition.
      * @throws UnsupportedOperationException The statement belongs to another provider.
      */
     public static Statement bindNull(Statement statement, String name, JDBCType type) {

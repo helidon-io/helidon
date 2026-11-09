@@ -86,12 +86,14 @@ public class TypeHierarchyResolver {
      * @param parameter The parameter to inspect.
      * @return Whether the declared name is available.
      * @throws NullPointerException The parameter is null.
-     * @throws IllegalArgumentException The element is not a parameter.
+     * @throws IllegalArgumentException The element is not a method or constructor parameter.
      */
     public final boolean parameterNameAvailable(TypedElementInfo parameter) {
         Objects.requireNonNull(parameter, "The parameter must not be null.");
         if (parameter.kind() != ElementKind.PARAMETER) {
-            throw new IllegalArgumentException("The element must be a parameter.");
+            throw new IllegalArgumentException("Name availability requires a method or constructor parameter. "
+                                                       + "The supplied element named " + parameter.elementName()
+                                                       + " has kind " + parameter.kind() + ".");
         }
         return !parameter.elementName().isBlank() && environmentParameterNameAvailable(parameter);
     }

@@ -215,34 +215,15 @@ class JdbcPrecompiledParentGenerationTest {
 
     @Test
     void resolvesConfiguredContractsFromSeparatelyCompiledParents() {
-        TestCompiler.Result parent = TestCompiler.builder().currentRelease().printDiagnostics(false)
-                .addOption("-parameters")
-                .addClasspath(List.of(Config.class, OptionalValue.class, RuntimeType.class, JdbcClient.class))
-                .addSource("Parent.java", """
-                        package example;
-                        import io.helidon.data.jdbc.Jdbc;
-                        public interface Parent<T> {
-                            @Jdbc.Statement("${application.sql.count}") @Jdbc.Execution(Jdbc.ExecutionType.QUERY)
-                            int count();
-                            @Jdbc.Statement("${application.sql.projection}")
-                            T projection(String name);
-                        }
-                        """).build().compile();
-        assertThat(String.join("\n", parent.diagnostics()), parent.success(), is(true));
-        TestCompiler.Result child = TestCompiler.builder().currentRelease().printDiagnostics(false)
-                .addProcessor(AptProcessor::new)
-                .addClasspath(List.of(Config.class, OptionalValue.class, RuntimeType.class, Data.class, JdbcClient.class, Service.class, Tx.class,
-                        Generated.class, TypeName.class, DataGeneratorProvider.class, RepositoryCodegenProvider.class,
-                        JdbcRepositoryGeneratorProvider.class))
-                .addClasspathEntry(parent.classOutput())
-                .addSource("Child.java", """
-                        package example;
-                        import io.helidon.data.Data;
-                        @Data.Repository @Data.Provider("jdbc")
-                        public interface Child extends Parent<String> {
-                        }
-                        """).build().compile();
-        assertThat(String.join("\n", child.diagnostics()), child.success(), is(true));
+        TestCompiler.Result result = compileInherited("""
+                public interface Parent<T> {
+                    @Jdbc.Statement("${application.sql.count}") @Jdbc.Execution(Jdbc.ExecutionType.QUERY)
+                    int count();
+                    @Jdbc.Statement("${application.sql.projection}")
+                    T projection(String name);
+                }
+                """, true, "extends Parent<String> {}");
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
     }
 
     @Test

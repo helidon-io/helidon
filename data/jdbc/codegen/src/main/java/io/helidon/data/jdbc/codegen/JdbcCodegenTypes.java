@@ -24,6 +24,9 @@ import io.helidon.common.types.TypeName;
  */
 final class JdbcCodegenTypes {
 
+    static final TypeName CONFIG = TypeName.create("io.helidon.config.Config");
+    static final TypeName CONFIG_EXCEPTION = TypeName.create("io.helidon.config.ConfigException");
+    static final TypeName DATA_EXCEPTION = TypeName.create("io.helidon.data.DataException");
     static final TypeName JDBC_CLIENT = TypeName.create("io.helidon.data.jdbc.JdbcClient");
     static final TypeName JDBC_CLIENT_STATEMENT = TypeName.create("io.helidon.data.jdbc.JdbcClient.Statement");
     static final TypeName GENERATED_JDBC_DATA = TypeName.create("io.helidon.data.jdbc.GeneratedJdbcData");

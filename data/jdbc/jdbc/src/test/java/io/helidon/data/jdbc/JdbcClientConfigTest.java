@@ -447,7 +447,7 @@ class JdbcClientConfigTest {
     }
 
     /**
-     * Replacing application configuration leaves existing definitions and binding state unchanged.
+     * Prepared definitions copy ordered input names and create statements with independent bindings.
      */
     @Test
     void retainsIndependentDefinitionsAndCopiesOrderedInputs() {

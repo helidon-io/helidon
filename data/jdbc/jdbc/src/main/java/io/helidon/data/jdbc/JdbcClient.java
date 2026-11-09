@@ -154,7 +154,8 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
      * Named, positional, and marker-free SQL are supported. Mixed marker styles are rejected.
      * Statement boundaries, trusted input, resource ownership, and transaction
      * restrictions described by {@link #create(String)} apply.
-     * A terminal selects the transaction context active at execution, not preparation.
+     * Preparation captures no transaction context. Registry managed clients determine transaction
+     * participation at execution time. Standalone clients remain independent of an enclosing managed transaction.
      * Retain the supplier to reuse its definition. The client retains no history of definitions.
      *
      * @param sql The SQL text defines one trusted statement.

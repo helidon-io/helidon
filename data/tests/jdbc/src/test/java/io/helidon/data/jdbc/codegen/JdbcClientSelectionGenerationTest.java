@@ -308,6 +308,15 @@ class JdbcClientSelectionGenerationTest {
      */
     @Test
     void compilesWholeReferencesAndValidatesKnownDefaults() {
+        String source = """
+                package example;
+                import io.helidon.data.Data;
+                import io.helidon.data.jdbc.Jdbc;
+                @Data.Repository @Data.Provider("jdbc")
+                interface Reference {
+                    @Jdbc.Statement("%s") String find(String name);
+                }
+                """;
         for (String value : List.of("${application.sql.find}",
                 "  ${application.sql.find:select :name}  ",
                 "${application.sql.find:select ?}",
@@ -317,31 +326,88 @@ class JdbcClientSelectionGenerationTest {
                 "${application.sql.find:select :name\r\n/* preserved */}")) {
             String literal = value.replace("\\", "\\\\").replace("\"", "\\\"")
                     .replace("\r", "\\r").replace("\n", "\\n");
-            TestCompiler.Result result = compile("Reference.java", """
-                    package example;
-                    import io.helidon.data.Data;
-                    import io.helidon.data.jdbc.Jdbc;
-                    @Data.Repository @Data.Provider("jdbc")
-                    interface Reference {
-                        @Jdbc.Statement("%s") String find(String name);
-                    }
-                    """.formatted(literal));
+            TestCompiler.Result result = compile("Reference.java", source.formatted(literal));
             assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
         }
         for (String value : List.of("${}", "${application.sql.find", "${key:}", "${key:  }",
                 "${key}${other}", "${key:select '${nested}'}", "${key:select :other}",
                 "${key:select ?, ?}", "${key:select :name, ?}", "${key:select 1}")) {
-            TestCompiler.Result result = compile("InvalidReference.java", """
-                    package example;
-                    import io.helidon.data.Data;
-                    import io.helidon.data.jdbc.Jdbc;
-                    @Data.Repository @Data.Provider("jdbc")
-                    interface InvalidReference {
-                        @Jdbc.Statement("%s") String find(String name);
-                    }
-                    """.formatted(value));
+            TestCompiler.Result result = compile("Reference.java", source.formatted(value));
             assertThat(String.join("\n", result.diagnostics()), result.success(), is(false));
         }
+    }
+
+    /**
+     * Configured methods can return an application record named String without shadowing the generated SQL local type.
+     */
+    @Test
+    void compilesConfiguredMethodsReturningRecordNamedString() {
+        TestCompiler.Result result = compile("ConfiguredStringRecord.java", """
+                package example;
+
+                import io.helidon.data.Data;
+                import io.helidon.data.jdbc.Jdbc;
+
+                record String(long id) {
+                }
+
+                @Data.Repository
+                @Data.Provider("jdbc")
+                interface ConfiguredStringRecord {
+                    @Jdbc.Statement("${sql.required}")
+                    String required();
+
+                    @Jdbc.Statement("${sql.default:select 1 as id}")
+                    String defaulted();
+
+                    @Jdbc.Statement("select 1 as id")
+                    String literal();
+                }
+                """);
+
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
+    }
+
+    /**
+     * Configured lookup locals remain distinct from mapper parameters and repository method parameters.
+     */
+    @Test
+    void compilesConfiguredLookupScopesWithMapperDependencies() {
+        TestCompiler.Result result = compile("ConfiguredMappers.java", """
+                package example;
+
+                import io.helidon.data.Data;
+                import io.helidon.data.jdbc.Jdbc;
+                import io.helidon.data.jdbc.JdbcClient;
+
+                class Data__sql implements JdbcClient.RowMapper<String> {
+                    @Override
+                    public String map(JdbcClient.Row row) {
+                        return row.get(1, String.class);
+                    }
+                }
+
+                class Data__sqlNode extends Data__sql {
+                }
+
+                @Data.Repository
+                @Data.Provider("jdbc")
+                interface ConfiguredMappers {
+                    @Jdbc.Statement("${sql.first:select :data__sql}")
+                    @Jdbc.RowMapper(Data__sql.class)
+                    String first(String data__sql);
+
+                    @Jdbc.Statement("${sql.second:select :data__sqlNode}")
+                    @Jdbc.RowMapper(Data__sqlNode.class)
+                    String second(@Data.Param("data__sqlNode") String config);
+
+                    @Jdbc.Statement("select :config")
+                    @Jdbc.RowMapper(Data__sql.class)
+                    String literal(String config);
+                }
+                """);
+
+        assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
     }
 
     private static TestCompiler.Result compile(String fileName, String source) {

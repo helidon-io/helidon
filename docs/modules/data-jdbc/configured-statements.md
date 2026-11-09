@@ -258,10 +258,12 @@ calls, clients, and Service Registries. Suppliers can therefore be shared, altho
 each statement they create permits one execution and must not be mutated concurrently.
 
 These definitions hold no JDBC resources and capture no transaction context. The
-terminal operation uses the transaction active when it executes and follows the usual
-[resource ownership rules](imperative.md#resource-management). If generated key
-processing or cleanup fails, the application should let the exception escape the owning
-method or `Tx.transaction` callback so Helidon can roll back.
+terminal operation follows the usual [resource ownership rules](imperative.md#resource-management)
+for the selected client. Registry managed clients determine transaction participation
+at execution time. Standalone clients remain independent of an enclosing managed transaction.
+When an operation participates in a local transaction, the application should let
+generated key processing or cleanup failures escape the owning method or
+`Tx.transaction` callback so Helidon can roll back.
 
 A failure that escapes a joined transactional invocation marks the transaction for
 rollback even if its caller catches it afterward. Catching a failure inside the owning

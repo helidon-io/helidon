@@ -272,7 +272,9 @@ final class AptTypeHierarchyResolver extends TypeHierarchyResolver {
             case ARRAY -> "[" + descriptor(((ArrayType) erased).getComponentType());
             case DECLARED -> "L" + elements.getBinaryName((TypeElement) ((DeclaredType) erased).asElement())
                     .toString().replace('.', '/') + ";";
-            default -> throw new IllegalArgumentException("The compiler type has no JVM descriptor.");
+            default -> throw new IllegalArgumentException(
+                    "A JVM type descriptor requires a primitive type, void, an array, or a declared type after erasure. "
+                            + "The supplied type " + type + " erases to " + erased + " with kind " + erased.getKind() + ".");
         };
     }
 
