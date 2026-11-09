@@ -175,6 +175,31 @@ class StreamBufferTest {
     }
 
     @Test
+    public void testEscapedQuoteAfterCompactingBufferRefill() {
+        String json = "\"abcd\\\"after\"";
+        byte[] jsonBytes = json.getBytes(StandardCharsets.UTF_8);
+
+        JsonParser valueParser = JsonParser.create(new ByteArrayInputStream(jsonBytes), 6);
+        assertThat(valueParser.readJsonString().value(), is("abcd\"after"));
+
+        JsonParser skippingParser = JsonParser.create(new ByteArrayInputStream(jsonBytes), 6);
+        skippingParser.skip();
+        assertThat(skippingParser.currentByte(), is((byte) '"'));
+        assertThat(skippingParser.hasNext(), is(false));
+
+        json = "\"abcd\\\\\"";
+        jsonBytes = json.getBytes(StandardCharsets.UTF_8);
+
+        valueParser = JsonParser.create(new ByteArrayInputStream(jsonBytes), 6);
+        assertThat(valueParser.readJsonString().value(), is("abcd\\"));
+
+        skippingParser = JsonParser.create(new ByteArrayInputStream(jsonBytes), 6);
+        skippingParser.skip();
+        assertThat(skippingParser.currentByte(), is((byte) '"'));
+        assertThat(skippingParser.hasNext(), is(false));
+    }
+
+    @Test
     public void testStreamParserWithShortInputStreamReads() {
         assertThat(readJsonValueOneByteAtATime("true").asBoolean().value(), is(true));
         assertThat(readJsonValueOneByteAtATime("false").asBoolean().value(), is(false));

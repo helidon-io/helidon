@@ -230,7 +230,7 @@ final class JsonParserStream extends JsonParserBase {
     @Override
     public byte readByte() {
         if (currentByte() == '-') {
-            currentIndex = currentIndex + 1;
+            readNextByte();
             return (byte) -parseByte(true);
         } else {
             return parseByte(false);
@@ -240,7 +240,7 @@ final class JsonParserStream extends JsonParserBase {
     @Override
     public short readShort() {
         if (currentByte() == '-') {
-            currentIndex = currentIndex + 1;
+            readNextByte();
             return (short) -parseShort(true);
         } else {
             return parseShort(false);
@@ -250,7 +250,7 @@ final class JsonParserStream extends JsonParserBase {
     @Override
     public int readInt() {
         if (currentByte() == '-') {
-            currentIndex++;
+            readNextByte();
             return -parseInt(true);
         } else {
             return parseInt(false);
@@ -260,7 +260,7 @@ final class JsonParserStream extends JsonParserBase {
     @Override
     public long readLong() {
         if (currentByte() == '-') {
-            currentIndex++;
+            readNextByte();
             return -parseLong(true);
         } else {
             return parseLong(false);
@@ -931,7 +931,11 @@ final class JsonParserStream extends JsonParserBase {
             if (finished) {
                 throw createException("Unexpected end of string. Incomplete JSON or incorrect use of the skip method");
             }
+            int previousIndex = currentIndex;
             readMoreData();
+            if (currentIndex < previousIndex) {
+                currentIndex++;
+            }
         }
     }
 
@@ -2533,12 +2537,14 @@ final class JsonParserStream extends JsonParserBase {
                 finished = false;
             }
         } else {
-            // Buffer is full of the value, need to expand
-            int newCap = buffer.length + configuredBufferSize;
-            byte[] tmp = new byte[newCap];
-            System.arraycopy(buffer, 0, tmp, 0, bufferLength); // Copy existing data
-            int lastRead = inputStream.read(tmp, bufferLength, configuredBufferSize);
-            buffer = tmp; // Replace buffer
+            // Short reads can leave room in the buffer; expand only when it is full.
+            if (bufferLength == buffer.length) {
+                int newCap = buffer.length + configuredBufferSize;
+                byte[] tmp = new byte[newCap];
+                System.arraycopy(buffer, 0, tmp, 0, bufferLength);
+                buffer = tmp;
+            }
+            int lastRead = inputStream.read(buffer, bufferLength, buffer.length - bufferLength);
             if (lastRead == -1) {
                 finished = true;
             } else {
