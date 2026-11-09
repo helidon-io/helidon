@@ -22,6 +22,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -220,8 +221,9 @@ public abstract class ReadableEntityBase implements ReadableEntity {
     }
 
     /**
-     * Read all bytes using an exact entity length when available. Preallocation is limited to 1 MiB;
-     * larger entities and unknown lengths use incremental allocation.
+     * Read all bytes using an exact entity length when available. Exact sizing is limited to 1 MiB;
+     * larger entities and unknown lengths use incremental allocation. For entities larger than 8 KiB,
+     * at least half the bytes are read incrementally before allocating the exact destination.
      * The length must describe the stream returned by {@link #inputStream()}, after any transformations.
      *
      * @param exactLength exact entity length, or a negative value when unknown
@@ -237,8 +239,32 @@ public abstract class ReadableEntityBase implements ReadableEntity {
                 return stream.readAllBytes();
             }
 
-            byte[] bytes = new byte[(int) exactLength];
-            int read = stream.readNBytes(bytes, 0, bytes.length);
+            int length = (int) exactLength;
+            byte[] bytes;
+            int read = 0;
+            if (length > BUFFER_SIZE) {
+                // Tie larger allocations to received data, rather than trusting a declared length alone.
+                int prefixLength = (length + 1) / 2;
+                var buffers = new ArrayList<byte[]>();
+                while (read < prefixLength) {
+                    byte[] buffer = new byte[Math.min(BUFFER_SIZE, prefixLength - read)];
+                    int received = stream.readNBytes(buffer, 0, buffer.length);
+                    read += received;
+                    if (received != buffer.length) {
+                        throw new EOFException("Expected " + exactLength + " entity bytes, received " + read);
+                    }
+                    buffers.add(buffer);
+                }
+                bytes = new byte[length];
+                int offset = 0;
+                for (byte[] buffer : buffers) {
+                    System.arraycopy(buffer, 0, bytes, offset, buffer.length);
+                    offset += buffer.length;
+                }
+            } else {
+                bytes = new byte[length];
+            }
+            read += stream.readNBytes(bytes, read, bytes.length - read);
             if (read != bytes.length) {
                 throw new EOFException("Expected " + exactLength + " entity bytes, received " + read);
             }

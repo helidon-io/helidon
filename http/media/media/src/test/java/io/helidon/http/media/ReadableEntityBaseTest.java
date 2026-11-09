@@ -36,6 +36,7 @@ import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -206,6 +207,67 @@ class ReadableEntityBaseTest {
         var exception = assertThrows(UncheckedIOException.class, () -> entity.as(byte[].class));
 
         assertThat(exception.getCause(), instanceOf(EOFException.class));
+    }
+
+    @Test
+    void testExactLengthAllocationFollowsReceivedBytes() {
+        for (int length : new int[] {8191, 8192, 8193, 16385, 1024 * 1024}) {
+            byte[] payload = new byte[length];
+            for (int i = 0; i < payload.length; i++) {
+                payload[i] = (byte) i;
+            }
+            var stream = new AllocationCheckingInputStream(payload, null);
+            var entity = new ExactLengthStreamReadableEntity(stream, length);
+
+            assertThat("Declared length " + length, entity.as(byte[].class), is(payload));
+            assertThat("Declared length " + length, stream.position, is(length));
+            assertThat("Declared length " + length, stream.terminalReads, is(1));
+            assertThat("Declared length " + length, stream.closeCount, is(1));
+        }
+    }
+
+    @Test
+    void testStalledExactLengthDoesNotUseLargeDestination() {
+        for (int received : new int[] {0, 1, 8192, 65537, 512 * 1024 - 1}) {
+            var readFailure = new IOException("body stalled after " + received + " bytes");
+            var stream = new AllocationCheckingInputStream(new byte[received], readFailure);
+            var entity = new ExactLengthStreamReadableEntity(stream, 1024 * 1024);
+
+            var exception = assertThrows(UncheckedIOException.class, () -> entity.as(byte[].class));
+
+            assertThat(exception.getCause(), sameInstance(readFailure));
+            assertThat(stream.position, is(received));
+            assertThat(stream.maximumDestinationLength, lessThanOrEqualTo(8192));
+            assertThat(stream.closeCount, is(1));
+        }
+    }
+
+    @Test
+    void testLargeExactLengthRejectsShortBodyBeforeAndAfterDestinationGrowth() {
+        for (int received : new int[] {1, 8192, 16384, 16385, 32768}) {
+            var stream = new AllocationCheckingInputStream(new byte[received], null);
+            var entity = new ExactLengthStreamReadableEntity(stream, 32769);
+
+            var exception = assertThrows(UncheckedIOException.class, () -> entity.as(byte[].class));
+
+            assertThat(exception.getCause(), instanceOf(EOFException.class));
+            assertThat(exception.getCause().getMessage(), containsString("received " + received));
+            assertThat(stream.position, is(received));
+            assertThat(stream.closeCount, is(1));
+        }
+    }
+
+    @Test
+    void testLargeExactLengthRejectsAdditionalBytesAfterDestinationGrowth() {
+        var stream = new AllocationCheckingInputStream(new byte[16386], null);
+        var entity = new ExactLengthStreamReadableEntity(stream, 16385);
+
+        var exception = assertThrows(UncheckedIOException.class, () -> entity.as(byte[].class));
+
+        assertThat(exception.getCause().getMessage(), containsString("exceeds expected length of 16385 bytes"));
+        assertThat(stream.position, is(16386));
+        assertThat(stream.terminalReads, is(1));
+        assertThat(stream.closeCount, is(1));
     }
 
     @Test
@@ -441,6 +503,55 @@ class ReadableEntityBaseTest {
         @Override
         public InputStream inputStream() {
             return stream;
+        }
+    }
+
+    private static class AllocationCheckingInputStream extends InputStream {
+        private final byte[] payload;
+        private final IOException readFailure;
+
+        private int position;
+        private int maximumDestinationLength;
+        private int terminalReads;
+        private int closeCount;
+
+        private AllocationCheckingInputStream(byte[] payload, IOException readFailure) {
+            this.payload = payload;
+            this.readFailure = readFailure;
+        }
+
+        @Override
+        public int read() throws IOException {
+            terminalReads++;
+            if (position == payload.length) {
+                if (readFailure != null) {
+                    throw readFailure;
+                }
+                return -1;
+            }
+            return payload[position++] & 0xff;
+        }
+
+        @Override
+        public int read(byte[] bytes, int offset, int length) throws IOException {
+            assertThat("Destination capacity after receiving " + position + " bytes",
+                       bytes.length, lessThanOrEqualTo(Math.max(8192, 2 * position)));
+            maximumDestinationLength = Math.max(maximumDestinationLength, bytes.length);
+            if (position == payload.length) {
+                if (readFailure != null) {
+                    throw readFailure;
+                }
+                return -1;
+            }
+            int count = Math.min(Math.min(length, 97), payload.length - position);
+            System.arraycopy(payload, position, bytes, offset, count);
+            position += count;
+            return count;
+        }
+
+        @Override
+        public void close() {
+            closeCount++;
         }
     }
 
