@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package io.helidon.discovery;
 
 import java.net.URI;
 import java.util.Map;
+
+import io.helidon.common.Api;
 
 /**
  * A representation of a <dfn>discovered URI</dfn>, often supplied by invocations of an implementation of
@@ -42,6 +44,7 @@ import java.util.Map;
  *
  * @see Discovery#uris(String, URI)
  */
+@Api.Stable
 public interface DiscoveredUri {
 
     /**

@@ -27,6 +27,7 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
 /**
  * {@link java.util.ServiceLoader} provider implementation for OpenAPI feature for {@link io.helidon.webserver.WebServer}.
  */
+@Api.Internal
 @Weight(OpenApiFeature.WEIGHT)
 public class OpenApiFeatureProvider implements ServerFeatureProvider<OpenApiFeature> {
     /**

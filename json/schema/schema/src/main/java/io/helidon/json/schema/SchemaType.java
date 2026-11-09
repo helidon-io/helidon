@@ -20,9 +20,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.common.Api;
+
 /**
  * Json schema type.
  */
+@Api.Incubating
 public enum SchemaType {
 
     /**

@@ -21,6 +21,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Interception;
 
 import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
@@ -44,6 +45,7 @@ import static java.lang.annotation.RetentionPolicy.CLASS;
  *      <li>The rest: built-in constraint annotations</li>
  * </ul>
  */
+@Api.Preview
 public final class Validation {
     private Validation() {
     }

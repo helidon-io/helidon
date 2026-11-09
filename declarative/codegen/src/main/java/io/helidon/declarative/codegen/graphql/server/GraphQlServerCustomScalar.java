@@ -24,6 +24,7 @@ import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.TypeHierarchy;
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
@@ -68,6 +69,7 @@ class GraphQlServerCustomScalar {
                                                                "0",
                                                                ""))
                 .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_CONTRACT))
+                .addAnnotation(Annotation.create(SuppressWarnings.class, Api.SUPPRESS_INTERNAL))
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .classType(ElementKind.INTERFACE)
                 .type(generatedType)

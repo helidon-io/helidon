@@ -17,6 +17,7 @@ package io.helidon.jsonrpc.core;
 
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
@@ -26,6 +27,7 @@ import io.helidon.json.binding.JsonBinding;
 /**
  * Provides JSON binding helpers used by JSON-RPC types.
  */
+@Api.Stable
 public class JsonUtil {
 
     static final LazyValue<JsonBinding> JSON_BINDING = LazyValue.create(JsonBinding::create);

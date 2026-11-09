@@ -17,6 +17,7 @@ package io.helidon.openapi;
 
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.config.NamedService;
 import io.helidon.http.ServerRequestHeaders;
@@ -25,6 +26,7 @@ import io.helidon.webserver.http.HttpRules;
 /**
  * OpenAPI service.
  */
+@Api.Stable
 public interface OpenApiService extends NamedService {
 
     /**

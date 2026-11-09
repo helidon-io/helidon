@@ -20,11 +20,13 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.json.JsonObject;
 
 /**
  * Json schema related to the integer numbers.
  */
+@Api.Incubating
 @Prototype.Blueprint(decorator = SchemaSupport.SchemaIntegerDecorator.class)
 @Prototype.CustomMethods(SchemaSupport.SchemaIntegerCustomMethods.class)
 interface SchemaIntegerBlueprint extends SchemaItemBlueprint {
@@ -78,6 +80,7 @@ interface SchemaIntegerBlueprint extends SchemaItemBlueprint {
     SchemaType schemaType();
 
     @Override
+    @Api.Internal
     default void generate(JsonObject.Builder builder) {
         SchemaItemBlueprint.super.generate(builder);
         multipleOf().ifPresent(multipleOf -> builder.set("multipleOf", multipleOf));

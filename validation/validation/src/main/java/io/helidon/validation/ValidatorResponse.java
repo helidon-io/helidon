@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,14 @@
 
 package io.helidon.validation;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.Annotation;
 
 /**
  * A response returned by a
  * {@link io.helidon.validation.spi.ConstraintValidator#check(io.helidon.validation.ValidatorContext, Object)}.
  */
+@Api.Preview
 public interface ValidatorResponse {
     /**
      * Create a new valid response.

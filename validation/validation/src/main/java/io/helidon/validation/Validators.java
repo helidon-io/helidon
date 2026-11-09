@@ -16,6 +16,7 @@
 
 package io.helidon.validation;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Services;
 
 /**
@@ -24,6 +25,7 @@ import io.helidon.service.registry.Services;
  * The validate method will return a {@link io.helidon.validation.ValidationResponse}, while the check method will throw an
  * ValidationException if the validation fails.
  */
+@Api.Preview
 public class Validators {
     private Validators() {
     }

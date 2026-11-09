@@ -20,11 +20,13 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.json.JsonObject;
 
 /**
  * Common interface for all Json Schema items.
  */
+@Api.Incubating
 @Prototype.Blueprint
 interface SchemaItemBlueprint {
 
@@ -64,6 +66,7 @@ interface SchemaItemBlueprint {
      *
      * @param builder json object builder
      */
+    @Api.Internal
     default void generate(JsonObject.Builder builder) {
         title().ifPresent(title -> builder.set("title", title));
         description().ifPresent(description -> builder.set("description", description));

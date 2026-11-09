@@ -28,6 +28,7 @@ import io.helidon.common.types.TypeName;
  * {@link java.util.ServiceLoader} provider implementation for {@link io.helidon.codegen.spi.CodegenExtensionProvider},
  * that code generates JSON Schema.
  */
+@Api.Internal
 public class SchemaCodegenProvider implements CodegenExtensionProvider {
 
     /**

@@ -36,6 +36,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
@@ -60,6 +61,7 @@ import io.helidon.webserver.spi.ServerFeature;
 /**
  * Helidon Support for OpenAPI.
  */
+@Api.Stable
 @Weight(OpenApiFeature.WEIGHT)
 @Service.Singleton
 public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeType.Api<OpenApiFeatureConfig> {

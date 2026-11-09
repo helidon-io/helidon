@@ -31,6 +31,7 @@ import io.helidon.common.types.TypeName;
  * and deserialization for types annotated with {@code @Json.Entity}.
  * </p>
  */
+@Api.Internal
 public class JsonCodegenProvider implements CodegenExtensionProvider {
 
     /**

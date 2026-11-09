@@ -24,11 +24,13 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.json.JsonObject;
 
 /**
  * Json schema related to the objects.
  */
+@Api.Incubating
 @Prototype.Blueprint(decorator = SchemaSupport.SchemaObjectDecorator.class)
 @Prototype.CustomMethods(SchemaSupport.SchemaObjectCustomMethods.class)
 interface SchemaObjectBlueprint extends SchemaItemBlueprint {
@@ -126,6 +128,7 @@ interface SchemaObjectBlueprint extends SchemaItemBlueprint {
     SchemaType schemaType();
 
     @Override
+    @Api.Internal
     default void generate(JsonObject.Builder builder) {
         SchemaItemBlueprint.super.generate(builder);
         maxProperties().ifPresent(maxProperties -> builder.set("maxProperties", maxProperties));

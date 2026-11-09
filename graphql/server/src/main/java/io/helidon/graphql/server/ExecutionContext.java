@@ -18,11 +18,14 @@ package io.helidon.graphql.server;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
+
 /**
  * GraphQL execution context to support partial results and context values.
  * Context values are backed by Helidon common context and are also available from
  * {@link io.helidon.common.context.Contexts#context()} during GraphQL execution.
  */
+@Api.Stable
 public interface ExecutionContext {
     /**
      * GraphQL Java context key that stores the Helidon GraphQL execution context.

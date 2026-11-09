@@ -16,9 +16,12 @@
 
 package io.helidon.graphql.server;
 
+import io.helidon.common.Api;
+
 /**
  * Constants used across GraphQL implementation.
  */
+@Api.Stable
 public final class GraphQlConstants {
     /**
      * Key for errors.

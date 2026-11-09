@@ -43,6 +43,7 @@ import static io.helidon.graphql.server.GraphQlConstants.DEFAULT_MAX_QUERY_DEPTH
 /**
  * Invocation handler that allows execution of GraphQL requests without a WebServer.
  */
+@Api.Stable
 public interface InvocationHandler {
     /**
      * Create a handler for GraphQL schema.

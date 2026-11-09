@@ -20,11 +20,13 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.json.JsonObject;
 
 /**
  * Json schema related to the array.
  */
+@Api.Incubating
 @Prototype.Blueprint(decorator = SchemaSupport.SchemaArrayDecorator.class)
 interface SchemaArrayBlueprint extends SchemaItemBlueprint {
 
@@ -113,6 +115,7 @@ interface SchemaArrayBlueprint extends SchemaItemBlueprint {
     SchemaType schemaType();
 
     @Override
+    @Api.Internal
     default void generate(JsonObject.Builder builder) {
         SchemaItemBlueprint.super.generate(builder);
         maxItems().ifPresent(maxItems -> builder.set("maxItems", maxItems));
