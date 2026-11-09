@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import io.helidon.codegen.CodegenContext;
@@ -245,6 +246,12 @@ final class JdbcMethodGenerator {
         while (generatedParameterNames.contains(statementName)) {
             statementName = JdbcCodegenConstants.JDBC_STATEMENT_NAME + statementNameSuffix++;
         }
+        if (plan.returnShape() == JdbcMethodPlan.ReturnShape.STREAM) {
+            method.addContent(Objects.class)
+                    .addContent(".requireNonNull(")
+                    .addContent(parameterNames.get(plan.streamControl()))
+                    .addContentLine(", \"The stream consumer must not be null.\");");
+        }
         method.addContent(JdbcCodegenTypes.JDBC_CLIENT_STATEMENT)
                 .addContent(" ")
                 .addContent(statementName)
@@ -260,7 +267,7 @@ final class JdbcMethodGenerator {
         for (JdbcSqlParameterPlan.Bind bind : plan.parameterPlan().binds()) {
             addBind(method, statementName, parameterNames, bind, bindParameterMethodName);
         }
-        addTerminal(plan, method, statementName);
+        addTerminal(plan, method, statementName, parameterNames);
     }
 
     /**
@@ -367,11 +374,13 @@ final class JdbcMethodGenerator {
      * @param plan method plan
      * @param method generated method
      * @param statementName local statement variable
+     * @param parameterNames The map retains generated names for application controls.
      */
     private static void addTerminal(JdbcMethodPlan plan,
                                     Method.Builder method,
-                                    String statementName) {
-        // Use only terminals that finish JDBC work and materialize results before the repository method returns.
+                                    String statementName,
+                                    Map<String, String> parameterNames) {
+        // Use terminals that finish JDBC work before the repository method returns.
         if (plan.operation() == JdbcMethodPlan.Operation.UPDATE) {
             if (plan.method().typeName().equals(TypeNames.PRIMITIVE_VOID)) {
                 method.addContent(statementName).addContentLine(".execute();");
@@ -387,7 +396,8 @@ final class JdbcMethodGenerator {
             return;
         }
 
-        method.addContent("return ").addContent(statementName);
+        method.addContent(plan.returnShape() == JdbcMethodPlan.ReturnShape.STREAM ? "" : "return ")
+                .addContent(statementName);
         addMapping(plan, method);
         switch (plan.returnShape()) {
         case ITEM -> method.addContentLine(".one();");
@@ -406,6 +416,8 @@ final class JdbcMethodGenerator {
             method.addContentLine(";");
         }
         case LIST -> method.addContentLine(".list();");
+        case STREAM -> method.addContent(".useStream(")
+                .addContent(parameterNames.get(plan.streamControl())).addContentLine(");");
         default -> throw new AssertionError("The JDBC return shape '" + plan.returnShape() + "' is not recognized.");
         }
     }

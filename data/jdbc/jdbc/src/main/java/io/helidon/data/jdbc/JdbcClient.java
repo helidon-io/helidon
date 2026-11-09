@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Api;
@@ -28,8 +29,9 @@ import io.helidon.service.registry.Service;
  * Executes JDBC statements for applications and generated repositories.
  * <p>
  * Creating and binding a statement performs no database work. A terminal
- * operation acquires the JDBC resources, fully materializes any result, and
- * releases every resource before returning. The client is safe to share.
+ * operation acquires JDBC resources, consumes results within its scope, and
+ * releases its operation resources before returning. Materialized terminals
+ * return detached values. The client is safe to share.
  * Statement and result stages are single use and are not safe for concurrent
  * use.
  * <p>
@@ -191,7 +193,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          *
          * @param mapper row mapper
          * @param <T> mapped type
-         * @return terminal stage for materialized rows
+         * @return The returned stage provides terminals for mapped rows.
          * @throws NullPointerException if the mapper is {@code null}
          * @throws IllegalStateException if a terminal operation has started
          */
@@ -211,7 +213,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          *
          * @param scalarType scalar type
          * @param <T> mapped scalar type
-         * @return terminal stage for materialized rows
+         * @return The returned stage provides terminals for mapped rows.
          * @throws NullPointerException if the type is {@code null}
          * @throws IllegalArgumentException if the scalar type is not supported
          * @throws IllegalStateException if a terminal operation has started
@@ -273,7 +275,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
     }
 
     /**
-     * Materialized result terminals for a mapped query or generated key result.
+     * Provides result terminals for mapped queries and generated keys.
      * <p>
      * The stage accepts exactly one terminal invocation and is not safe for
      * concurrent use. An exception from an application mapper is propagated
@@ -322,6 +324,37 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          * @throws IllegalStateException if a terminal operation has started
          */
         List<T> list();
+
+        /**
+         * Consumes a sequential query stream synchronously within this terminal.
+         * The query executes before the callback begins. Rows are mapped lazily on
+         * the invocation thread. Each {@link Row} view expires when its mapper returns,
+         * before the mapped value is passed downstream. Cleanup closes the stream and
+         * releases resources owned by this operation before this method returns or
+         * propagates a failure, including when the callback performs no traversal.
+         * A participating transaction retains ownership of its connection.
+         * Retained streams and iterators cannot extend JDBC resource lifetime.
+         * Driver buffering and cleanup latency depend on driver configuration.
+         * <p>
+         * A participating local transaction reserves its connection through terminal
+         * cleanup, including after stream closure. Nested operations on that connection
+         * and suspension of the owning transaction fail before changing JDBC state.
+         * Processing failures observed by the provider are reported after cleanup,
+         * even if the callback catches them. They also require rollback of a participating
+         * local transaction. A transaction is not required, and streaming does not change
+         * automatic commit mode to enable fetching.
+         * Application and mapper exceptions retain their identity.
+         *
+         * @param action The consumer processes mapped values within the callback.
+         * @throws NullPointerException The action is null.
+         * @throws io.helidon.data.DataException JDBC execution or cleanup fails, or the mapper returns null.
+         * @throws IllegalStateException A terminal has started or access violates the callback scope.
+         * @throws UnsupportedOperationException Streaming is unsupported or this stage represents generated keys.
+         */
+        default void useStream(Consumer<Stream<T>> action) {
+            Objects.requireNonNull(action, "The stream consumer must not be null.");
+            throw new UnsupportedOperationException("Streaming is unsupported.");
+        }
     }
 
     /**
