@@ -454,7 +454,7 @@ final class FactoryPrototypeInfo {
                     List<Annotation> annotations = annotations(it);
 
                     return methodProcessor.process(errors,
-                                                   customMethodsType.typeName(),
+                                                   customMethodsType.typeName().genericTypeName(),
                                                    it,
                                                    annotations);
                 })
@@ -522,7 +522,7 @@ final class FactoryPrototypeInfo {
                                                  : "Code generated constant.")
                                     .build());
 
-                    return PrototypeConstants.create(customMethodsType.typeName(),
+                    return PrototypeConstants.create(customMethodsType.typeName().genericTypeName(),
                                                      fieldType,
                                                      name,
                                                      javadoc);
