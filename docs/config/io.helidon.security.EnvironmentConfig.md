@@ -35,7 +35,7 @@ Configuration for security.environment
 
 ## Usages
 
-- <a href="io.helidon.security.Security.md#environment"><code>security.<wbr>environment</code></a>
+- <a href="config_reference.md#security"><code>security.<wbr>environment</code></a>
 
 ---
 

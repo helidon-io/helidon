@@ -36,7 +36,7 @@ Configuration for server.features.observe.observers.metrics.key-performance-indi
 
 ## Usages
 
-- <a href="io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig.md#long-running-requests"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>key-<wbr>performance-<wbr>indicators.<wbr>long-<wbr>running-<wbr>requests</code></a>
+- <a href="io.helidon.webserver.observe.metrics.MetricsObserver.md#key-performance-indicators"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>key-<wbr>performance-<wbr>indicators.<wbr>long-<wbr>running-<wbr>requests</code></a>
 
 ---
 

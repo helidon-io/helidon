@@ -32,7 +32,7 @@ Configuration for clients.tls.private-key.keystore.cert-chain
 
 ## Usages
 
-- <a href="io.helidon.common.pki.KeystoreKeys.md#cert-chain"><code>clients.<wbr>tls.<wbr>private-<wbr>key.<wbr>keystore.<wbr>cert-<wbr>chain</code></a>
+- <a href="io.helidon.common.pki.Keys.md#keystore"><code>clients.<wbr>tls.<wbr>private-<wbr>key.<wbr>keystore.<wbr>cert-<wbr>chain</code></a>
 
 ---
 

@@ -35,7 +35,7 @@ Configuration for security.providers.oidc.tenants.oidc-metadata
 
 ## Usages
 
-- <a href="io.helidon.security.providers.oidc.common.TenantConfig.md#oidc-metadata"><code>security.<wbr>providers.<wbr>oidc.<wbr>tenants.<wbr>oidc-<wbr>metadata</code></a>
+- <a href="io.helidon.security.providers.oidc.OidcProvider.md#tenants"><code>security.<wbr>providers.<wbr>oidc.<wbr>tenants.<wbr>oidc-<wbr>metadata</code></a>
 
 ---
 

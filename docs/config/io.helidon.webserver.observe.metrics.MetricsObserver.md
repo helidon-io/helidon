@@ -160,16 +160,15 @@ Metrics Observer configuration
 </tr>
 <tr>
 <td>
-<a id="rest-request"></a>
-<a href="io.helidon.server.features.observe.observers.metrics.RestRequestConfig.md">
-<code>rest-<wbr>request</code>
-</a>
+<code>rest-<wbr>request.<wbr>enabled</code>
 </td>
 <td>
+<code>Boolean</code>
 </td>
 <td>
+<code>false</code>
 </td>
-<td>Configuration for rest-request</td>
+<td>Whether automatic REST request metrics should be measured</td>
 </tr>
 <tr>
 <td>
@@ -196,29 +195,41 @@ Metrics Observer configuration
 </tr>
 <tr>
 <td>
-<a id="timers"></a>
-<a href="io.helidon.server.features.observe.observers.metrics.TimersConfig.md">
-<code>timers</code>
+<a id="timers-json-units-default"></a>
+<a href="java.util.concurrent.TimeUnit.md">
+<code>timers.<wbr>json-<wbr>units-<wbr>default</code>
 </a>
 </td>
 <td>
+<code>Time<wbr>Unit</code>
 </td>
 <td>
 </td>
-<td>Configuration for timers</td>
+<td>Default units for timer output in JSON if not specified on a given timer</td>
 </tr>
 <tr>
 <td>
-<a id="virtual-threads"></a>
-<a href="io.helidon.server.features.observe.observers.metrics.VirtualThreadsConfig.md">
-<code>virtual-<wbr>threads</code>
-</a>
+<code>virtual-<wbr>threads.<wbr>enabled</code>
 </td>
 <td>
+<code>Boolean</code>
 </td>
 <td>
+<code>false</code>
 </td>
-<td>Configuration for virtual-threads</td>
+<td>Whether Helidon should expose meters related to virtual threads</td>
+</tr>
+<tr>
+<td>
+<code>virtual-<wbr>threads.<wbr>pinned.<wbr>threshold</code>
+</td>
+<td>
+<code>Duration</code>
+</td>
+<td>
+<code>PT0.<wbr>020S</code>
+</td>
+<td>Threshold for sampling pinned virtual threads to include in the pinned threads meter</td>
 </tr>
 <tr>
 <td>

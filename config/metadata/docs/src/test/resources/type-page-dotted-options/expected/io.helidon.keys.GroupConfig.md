@@ -53,7 +53,7 @@ Configuration for keys.group
 
 ## Usages
 
-- <a href="com.acme.AcmeKeysConfig.md#group"><code>keys.<wbr>group</code></a>
+- <a href="config_reference.md#keys"><code>keys.<wbr>group</code></a>
 
 ---
 

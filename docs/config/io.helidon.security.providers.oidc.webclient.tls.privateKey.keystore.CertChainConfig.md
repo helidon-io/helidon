@@ -32,7 +32,7 @@ Configuration for security.providers.oidc.webclient.tls.private-key.keystore.cer
 
 ## Usages
 
-- <a href="io.helidon.common.pki.KeystoreKeys.md#cert-chain"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>private-<wbr>key.<wbr>keystore.<wbr>cert-<wbr>chain</code></a>
+- <a href="io.helidon.common.pki.Keys.md#keystore"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>private-<wbr>key.<wbr>keystore.<wbr>cert-<wbr>chain</code></a>
 
 ---
 

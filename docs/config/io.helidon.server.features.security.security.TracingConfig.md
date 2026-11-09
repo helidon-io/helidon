@@ -36,7 +36,7 @@ Configuration for server.features.security.security.tracing
 
 ## Usages
 
-- <a href="io.helidon.security.Security.md#tracing"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>tracing</code></a>
+- <a href="io.helidon.webserver.security.SecurityFeature.md#security"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>tracing</code></a>
 
 ---
 

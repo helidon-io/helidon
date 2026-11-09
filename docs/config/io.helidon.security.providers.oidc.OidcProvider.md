@@ -369,16 +369,45 @@ Open ID Connect security provider
 </tr>
 <tr>
 <td>
-<a id="jwk-loader"></a>
-<a href="io.helidon.security.providers.oidc.JwkLoaderConfig.md">
-<code>jwk-<wbr>loader</code>
+<a id="jwk-loader-circuit-breaker"></a>
+<a href="io.helidon.faulttolerance.CircuitBreaker.md">
+<code>jwk-<wbr>loader.<wbr>circuit-<wbr>breaker</code>
 </a>
 </td>
 <td>
+<code>Circuit<wbr>Breaker</code>
 </td>
 <td>
 </td>
-<td>Configuration for jwk-loader</td>
+<td>Circuit breaker around each complete retry batch used to load OIDC metadata and signing JWKs; by default, the circuit opens after one exhausted batch and permits a recovery probe after 5 seconds</td>
+</tr>
+<tr>
+<td>
+<a id="jwk-loader-retry"></a>
+<a href="io.helidon.faulttolerance.Retry.md">
+<code>jwk-<wbr>loader.<wbr>retry</code>
+</a>
+</td>
+<td>
+<code>Retry</code>
+</td>
+<td>
+</td>
+<td>Retry used while loading OIDC metadata and signing JWKs; by default, it wraps two timeout-guarded attempts within an 11-second overall timeout</td>
+</tr>
+<tr>
+<td>
+<a id="jwk-loader-timeout"></a>
+<a href="io.helidon.faulttolerance.Timeout.md">
+<code>jwk-<wbr>loader.<wbr>timeout</code>
+</a>
+</td>
+<td>
+<code>Timeout</code>
+</td>
+<td>
+</td>
+<td>Timeout applied to each attempt to load OIDC metadata and signing JWKs; it defaults to 5 seconds, must be positive, must execute on the current thread, and must not exceed the retry overall timeout</td>
 </tr>
 <tr>
 <td>

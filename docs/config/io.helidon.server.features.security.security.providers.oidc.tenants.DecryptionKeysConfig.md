@@ -35,7 +35,7 @@ Configuration for server.features.security.security.providers.oidc.tenants.decry
 
 ## Usages
 
-- <a href="io.helidon.security.providers.oidc.common.TenantConfig.md#decryption-keys"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>tenants.<wbr>decryption-<wbr>keys</code></a>
+- <a href="io.helidon.security.providers.oidc.OidcProvider.md#tenants"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>tenants.<wbr>decryption-<wbr>keys</code></a>
 
 ---
 

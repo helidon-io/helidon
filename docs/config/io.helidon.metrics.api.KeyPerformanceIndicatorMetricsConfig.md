@@ -31,16 +31,15 @@ Config bean for KPI metrics configuration
 </tr>
 <tr>
 <td>
-<a id="long-running-requests"></a>
-<a href="io.helidon.metrics.keyPerformanceIndicators.LongRunningRequestsConfig.md">
-<code>long-<wbr>running-<wbr>requests</code>
-</a>
+<code>long-<wbr>running-<wbr>requests.<wbr>threshold</code>
 </td>
 <td>
+<code>Duration</code>
 </td>
 <td>
+<code>PT10S</code>
 </td>
-<td>Configuration for long-running-requests</td>
+<td>Threshold in ms that characterizes whether a request is long running</td>
 </tr>
 </tbody>
 </table>

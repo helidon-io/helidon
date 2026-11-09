@@ -53,7 +53,7 @@ Configuration for security.secrets
 
 ## Usages
 
-- <a href="io.helidon.security.Security.md#secrets"><code>security.<wbr>secrets</code></a>
+- <a href="config_reference.md#security"><code>security.<wbr>secrets</code></a>
 
 ---
 

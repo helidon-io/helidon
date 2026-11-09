@@ -19,6 +19,18 @@ HTTP header signature provider
 <tbody>
 <tr>
 <td>
+<code>backward-<wbr>compatible-<wbr>eol</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>false</code>
+</td>
+<td>Enable support for Helidon versions before 3.0.0 (exclusive)</td>
+</tr>
+<tr>
+<td>
 <a id="headers"></a>
 <a href="io.helidon.security.providers.httpsign.HttpSignHeader.md">
 <code>headers</code>
@@ -45,20 +57,6 @@ HTTP header signature provider
 </tr>
 <tr>
 <td>
-<a id="outbound"></a>
-<a href="io.helidon.security.providers.common.OutboundConfig.md">
-<code>outbound</code>
-</a>
-</td>
-<td>
-<code>Outbound<wbr>Config</code>
-</td>
-<td>
-</td>
-<td>Add outbound targets to this builder</td>
-</tr>
-<tr>
-<td>
 <a id="inbound-keys"></a>
 <a href="io.helidon.security.providers.httpsign.InboundClientDefinition.md">
 <code>inbound.<wbr>keys</code>
@@ -73,18 +71,6 @@ HTTP header signature provider
 </tr>
 <tr>
 <td>
-<code>backward-<wbr>compatible-<wbr>eol</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-<code>false</code>
-</td>
-<td>Enable support for Helidon versions before 3.0.0 (exclusive)</td>
-</tr>
-<tr>
-<td>
 <code>optional</code>
 </td>
 <td>
@@ -94,6 +80,20 @@ HTTP header signature provider
 <code>true</code>
 </td>
 <td>Set whether the signature is optional</td>
+</tr>
+<tr>
+<td>
+<a id="outbound"></a>
+<a href="io.helidon.security.providers.common.OutboundConfig.md">
+<code>outbound</code>
+</a>
+</td>
+<td>
+<code>Outbound<wbr>Config</code>
+</td>
+<td>
+</td>
+<td>Add outbound targets to this builder</td>
 </tr>
 <tr>
 <td>

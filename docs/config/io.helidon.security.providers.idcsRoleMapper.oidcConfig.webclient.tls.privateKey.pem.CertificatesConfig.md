@@ -35,7 +35,7 @@ Configuration for security.providers.idcs-role-mapper.oidc-config.webclient.tls.
 
 ## Usages
 
-- <a href="io.helidon.common.pki.PemKeys.md#certificates"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>tls.<wbr>private-<wbr>key.<wbr>pem.<wbr>certificates</code></a>
+- <a href="io.helidon.common.pki.Keys.md#pem"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>tls.<wbr>private-<wbr>key.<wbr>pem.<wbr>certificates</code></a>
 
 ---
 

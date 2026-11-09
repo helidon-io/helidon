@@ -44,7 +44,7 @@ Configuration for security.providers.oidc.webclient.tls.trust.pem.key
 
 ## Usages
 
-- <a href="io.helidon.common.pki.PemKeys.md#key"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>key</code></a>
+- <a href="io.helidon.common.pki.Keys.md#pem"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>key</code></a>
 
 ---
 

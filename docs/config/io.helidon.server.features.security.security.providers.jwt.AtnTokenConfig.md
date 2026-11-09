@@ -85,7 +85,7 @@ Configuration for server.features.security.security.providers.jwt.atn-token
 
 ## Usages
 
-- <a href="io.helidon.security.providers.jwt.JwtProvider.md#atn-token"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>jwt.<wbr>atn-<wbr>token</code></a>
+- <a href="io.helidon.security.spi.SecurityProvider.md#jwt"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>jwt.<wbr>atn-<wbr>token</code></a>
 
 ---
 

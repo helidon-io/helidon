@@ -59,7 +59,7 @@ Configuration for security.providers.idcs-role-mapper.oidc-config.tenants.jwk-lo
 
 ## Usages
 
-- <a href="io.helidon.security.providers.oidc.common.TenantConfig.md#jwk-loader"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>tenants.<wbr>jwk-<wbr>loader</code></a>
+- <a href="io.helidon.security.providers.oidc.common.OidcConfig.md#tenants"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>tenants.<wbr>jwk-<wbr>loader</code></a>
 
 ---
 

@@ -19,6 +19,62 @@ Settings common to HTTP-based OTLP exporters
 <tbody>
 <tr>
 <td>
+<a id="certificate"></a>
+<a href="io.helidon.common.configurable.Resource.md">
+<code>certificate</code>
+</a>
+</td>
+<td>
+<code>Resource</code>
+</td>
+<td>
+</td>
+<td>Trusted certificates</td>
+</tr>
+<tr>
+<td>
+<a id="client-certificate"></a>
+<a href="io.helidon.common.configurable.Resource.md">
+<code>client.<wbr>certificate</code>
+</a>
+</td>
+<td>
+<code>Resource</code>
+</td>
+<td>
+</td>
+<td>TLS certificate</td>
+</tr>
+<tr>
+<td>
+<a id="client-key"></a>
+<a href="io.helidon.common.configurable.Resource.md">
+<code>client.<wbr>key</code>
+</a>
+</td>
+<td>
+<code>Resource</code>
+</td>
+<td>
+</td>
+<td>TLS client key</td>
+</tr>
+<tr>
+<td>
+<a id="compression"></a>
+<a href="io.helidon.telemetry.otelconfig.CompressionType.md">
+<code>compression</code>
+</a>
+</td>
+<td>
+<code>Compression<wbr>Type</code>
+</td>
+<td>
+</td>
+<td>Compression the exporter uses</td>
+</tr>
+<tr>
+<td>
 <code>connect-<wbr>timeout</code>
 </td>
 <td>
@@ -27,6 +83,17 @@ Settings common to HTTP-based OTLP exporters
 <td>
 </td>
 <td>Connection timeout</td>
+</tr>
+<tr>
+<td>
+<code>endpoint</code>
+</td>
+<td>
+<code>URI</code>
+</td>
+<td>
+</td>
+<td>Endpoint of the collector to which the exporter should transmit</td>
 </tr>
 <tr>
 <td>
@@ -41,14 +108,17 @@ Settings common to HTTP-based OTLP exporters
 </tr>
 <tr>
 <td>
-<code>endpoint</code>
+<a id="internal-telemetry-version"></a>
+<a href="io.opentelemetry.sdk.common.InternalTelemetryVersion.md">
+<code>internal-<wbr>telemetry-<wbr>version</code>
+</a>
 </td>
 <td>
-<code>URI</code>
+<code>Internal<wbr>Telemetry<wbr>Version</code>
 </td>
 <td>
 </td>
-<td>Endpoint of the collector to which the exporter should transmit</td>
+<td>Self-monitoring telemetry OpenTelemetry should collect</td>
 </tr>
 <tr>
 <td>
@@ -75,76 +145,6 @@ Settings common to HTTP-based OTLP exporters
 <code>DEFAULT</code>
 </td>
 <td>Exporter protocol type</td>
-</tr>
-<tr>
-<td>
-<a id="internal-telemetry-version"></a>
-<a href="io.opentelemetry.sdk.common.InternalTelemetryVersion.md">
-<code>internal-<wbr>telemetry-<wbr>version</code>
-</a>
-</td>
-<td>
-<code>Internal<wbr>Telemetry<wbr>Version</code>
-</td>
-<td>
-</td>
-<td>Self-monitoring telemetry OpenTelemetry should collect</td>
-</tr>
-<tr>
-<td>
-<a id="certificate"></a>
-<a href="io.helidon.common.configurable.Resource.md">
-<code>certificate</code>
-</a>
-</td>
-<td>
-<code>Resource</code>
-</td>
-<td>
-</td>
-<td>Trusted certificates</td>
-</tr>
-<tr>
-<td>
-<a id="client-key"></a>
-<a href="io.helidon.common.configurable.Resource.md">
-<code>client.<wbr>key</code>
-</a>
-</td>
-<td>
-<code>Resource</code>
-</td>
-<td>
-</td>
-<td>TLS client key</td>
-</tr>
-<tr>
-<td>
-<a id="client-certificate"></a>
-<a href="io.helidon.common.configurable.Resource.md">
-<code>client.<wbr>certificate</code>
-</a>
-</td>
-<td>
-<code>Resource</code>
-</td>
-<td>
-</td>
-<td>TLS certificate</td>
-</tr>
-<tr>
-<td>
-<a id="compression"></a>
-<a href="io.helidon.telemetry.otelconfig.CompressionType.md">
-<code>compression</code>
-</a>
-</td>
-<td>
-<code>Compression<wbr>Type</code>
-</td>
-<td>
-</td>
-<td>Compression the exporter uses</td>
 </tr>
 <tr>
 <td>

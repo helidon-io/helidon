@@ -80,7 +80,7 @@ Configuration for server.protocols.http_1_1.requested-uri-discovery.trusted-prox
 
 ## Usages
 
-- <a href="io.helidon.common.configurable.AllowList.md#allow"><code>server.<wbr>protocols.<wbr>http_<wbr>1_1.<wbr>requested-<wbr>uri-<wbr>discovery.<wbr>trusted-<wbr>proxies.<wbr>allow</code></a>
+- <a href="io.helidon.http.RequestedUriDiscoveryContext.md#trusted-proxies"><code>server.<wbr>protocols.<wbr>http_<wbr>1_1.<wbr>requested-<wbr>uri-<wbr>discovery.<wbr>trusted-<wbr>proxies.<wbr>allow</code></a>
 
 ---
 

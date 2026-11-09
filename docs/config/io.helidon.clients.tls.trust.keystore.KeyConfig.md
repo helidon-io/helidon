@@ -41,7 +41,7 @@ Configuration for clients.tls.trust.keystore.key
 
 ## Usages
 
-- <a href="io.helidon.common.pki.KeystoreKeys.md#key"><code>clients.<wbr>tls.<wbr>trust.<wbr>keystore.<wbr>key</code></a>
+- <a href="io.helidon.common.pki.Keys.md#keystore"><code>clients.<wbr>tls.<wbr>trust.<wbr>keystore.<wbr>key</code></a>
 
 ---
 

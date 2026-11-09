@@ -19,28 +19,14 @@ Configuration of inbound client
 <tbody>
 <tr>
 <td>
-<code>key-<wbr>id</code>
+<code>algorithm</code>
 </td>
 <td>
 <code>String</code>
 </td>
 <td>
 </td>
-<td>The key id of this client to map to this signature validation configuration</td>
-</tr>
-<tr>
-<td>
-<a id="public-key"></a>
-<a href="io.helidon.common.pki.Keys.md">
-<code>public-<wbr>key</code>
-</a>
-</td>
-<td>
-<code>Keys</code>
-</td>
-<td>
-</td>
-<td>For algorithms based on public/private key (such as rsa-sha256), this provides access to the public key of the client</td>
+<td>Algorithm of signature used by this client</td>
 </tr>
 <tr>
 <td>
@@ -52,6 +38,17 @@ Configuration of inbound client
 <td>
 </td>
 <td>Helper method to configure a password-like secret (instead of byte based <code>#hmac<wbr>Secret(<wbr>byte[])</code></td>
+</tr>
+<tr>
+<td>
+<code>key-<wbr>id</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+</td>
+<td>The key id of this client to map to this signature validation configuration</td>
 </tr>
 <tr>
 <td>
@@ -81,14 +78,17 @@ Configuration of inbound client
 </tr>
 <tr>
 <td>
-<code>algorithm</code>
+<a id="public-key"></a>
+<a href="io.helidon.common.pki.Keys.md">
+<code>public-<wbr>key</code>
+</a>
 </td>
 <td>
-<code>String</code>
+<code>Keys</code>
 </td>
 <td>
 </td>
-<td>Algorithm of signature used by this client</td>
+<td>For algorithms based on public/private key (such as rsa-sha256), this provides access to the public key of the client</td>
 </tr>
 </tbody>
 </table>

@@ -19,63 +19,25 @@ Configuration settings for metrics
 <tbody>
 <tr>
 <td>
-<code>publishers-<wbr>discover-<wbr>services</code>
+<code>app-<wbr>name</code>
 </td>
 <td>
-<code>Boolean</code>
+<code>String</code>
 </td>
 <td>
-<code>false</code>
 </td>
-<td>Whether to enable automatic service discovery for <code>publishers</code></td>
+<td>Value for the application tag to be added to each meter ID</td>
 </tr>
 <tr>
 <td>
-<code>rest-<wbr>request.<wbr>enabled</code>
+<code>app-<wbr>tag-<wbr>name</code>
 </td>
 <td>
-<code>Boolean</code>
+<code>String</code>
 </td>
 <td>
-<code>false</code>
 </td>
-<td>Whether automatic REST request metrics should be measured</td>
-</tr>
-<tr>
-<td>
-<code>warn-<wbr>on-multiple-<wbr>registries</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-<code>true</code>
-</td>
-<td>Whether to log warnings when multiple registries are created</td>
-</tr>
-<tr>
-<td>
-<code>roles</code>
-</td>
-<td>
-<code>List&lt;<wbr>String&gt;</code>
-</td>
-<td>
-<code>observe</code>
-</td>
-<td>Role names allowed to access the metrics endpoint when this config is used by a metrics observer and <code>#permit<wbr>All(<wbr>)</code> is <code>false</code></td>
-</tr>
-<tr>
-<td>
-<code>virtual-<wbr>threads.<wbr>pinned.<wbr>threshold</code>
-</td>
-<td>
-<code>Duration</code>
-</td>
-<td>
-<code>PT0.<wbr>020S</code>
-</td>
-<td>Threshold for sampling pinned virtual threads to include in the pinned threads meter</td>
+<td>Name for the application tag to be added to each meter ID</td>
 </tr>
 <tr>
 <td>
@@ -106,14 +68,17 @@ Configuration settings for metrics
 </tr>
 <tr>
 <td>
-<code>app-<wbr>name</code>
+<a id="key-performance-indicators"></a>
+<a href="io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig.md">
+<code>key-<wbr>performance-<wbr>indicators</code>
+</a>
 </td>
 <td>
-<code>String</code>
+<code>Key<wbr>Performance<wbr>Indicator<wbr>Metrics<wbr>Config</code>
 </td>
 <td>
 </td>
-<td>Value for the application tag to be added to each meter ID</td>
+<td>Key performance indicator metrics settings</td>
 </tr>
 <tr>
 <td>
@@ -131,37 +96,15 @@ Configuration settings for metrics
 </tr>
 <tr>
 <td>
-<code>tags</code>
-</td>
-<td>
-<code>List&lt;<wbr>Metrics<wbr>Config<wbr>Support&gt;</code>
-</td>
-<td>
-</td>
-<td>Global tags</td>
-</tr>
-<tr>
-<td>
-<code>app-<wbr>tag-<wbr>name</code>
-</td>
-<td>
-<code>String</code>
-</td>
-<td>
-</td>
-<td>Name for the application tag to be added to each meter ID</td>
-</tr>
-<tr>
-<td>
-<code>virtual-<wbr>threads.<wbr>enabled</code>
+<code>permit-<wbr>all</code>
 </td>
 <td>
 <code>Boolean</code>
 </td>
 <td>
-<code>false</code>
+<code>true</code>
 </td>
-<td>Whether Helidon should expose meters related to virtual threads</td>
+<td>Whether to allow anybody to access the metrics endpoint when this config is used by a metrics observer</td>
 </tr>
 <tr>
 <td>
@@ -179,29 +122,50 @@ Configuration settings for metrics
 </tr>
 <tr>
 <td>
-<a id="key-performance-indicators"></a>
-<a href="io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig.md">
-<code>key-<wbr>performance-<wbr>indicators</code>
-</a>
-</td>
-<td>
-<code>Key<wbr>Performance<wbr>Indicator<wbr>Metrics<wbr>Config</code>
-</td>
-<td>
-</td>
-<td>Key performance indicator metrics settings</td>
-</tr>
-<tr>
-<td>
-<code>permit-<wbr>all</code>
+<code>publishers-<wbr>discover-<wbr>services</code>
 </td>
 <td>
 <code>Boolean</code>
 </td>
 <td>
-<code>true</code>
+<code>false</code>
 </td>
-<td>Whether to allow anybody to access the metrics endpoint when this config is used by a metrics observer</td>
+<td>Whether to enable automatic service discovery for <code>publishers</code></td>
+</tr>
+<tr>
+<td>
+<code>rest-<wbr>request.<wbr>enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>false</code>
+</td>
+<td>Whether automatic REST request metrics should be measured</td>
+</tr>
+<tr>
+<td>
+<code>roles</code>
+</td>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
+</td>
+<td>
+<code>observe</code>
+</td>
+<td>Role names allowed to access the metrics endpoint when this config is used by a metrics observer and <code>#permit<wbr>All(<wbr>)</code> is <code>false</code></td>
+</tr>
+<tr>
+<td>
+<code>tags</code>
+</td>
+<td>
+<code>List&lt;<wbr>Metrics<wbr>Config<wbr>Support&gt;</code>
+</td>
+<td>
+</td>
+<td>Global tags</td>
 </tr>
 <tr>
 <td>
@@ -216,6 +180,42 @@ Configuration settings for metrics
 <td>
 </td>
 <td>Default units for timer output in JSON if not specified on a given timer</td>
+</tr>
+<tr>
+<td>
+<code>virtual-<wbr>threads.<wbr>enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>false</code>
+</td>
+<td>Whether Helidon should expose meters related to virtual threads</td>
+</tr>
+<tr>
+<td>
+<code>virtual-<wbr>threads.<wbr>pinned.<wbr>threshold</code>
+</td>
+<td>
+<code>Duration</code>
+</td>
+<td>
+<code>PT0.<wbr>020S</code>
+</td>
+<td>Threshold for sampling pinned virtual threads to include in the pinned threads meter</td>
+</tr>
+<tr>
+<td>
+<code>warn-<wbr>on-multiple-<wbr>registries</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether to log warnings when multiple registries are created</td>
 </tr>
 </tbody>
 </table>

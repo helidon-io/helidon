@@ -50,7 +50,7 @@ Configuration for security.provider-policy
 
 ## Usages
 
-- <a href="io.helidon.security.Security.md#provider-policy"><code>security.<wbr>provider-<wbr>policy</code></a>
+- <a href="config_reference.md#security"><code>security.<wbr>provider-<wbr>policy</code></a>
 
 ---
 

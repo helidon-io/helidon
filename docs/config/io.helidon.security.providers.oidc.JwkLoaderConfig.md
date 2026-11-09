@@ -59,7 +59,7 @@ Configuration for security.providers.oidc.jwk-loader
 
 ## Usages
 
-- <a href="io.helidon.security.providers.oidc.OidcProvider.md#jwk-loader"><code>security.<wbr>providers.<wbr>oidc.<wbr>jwk-<wbr>loader</code></a>
+- <a href="io.helidon.security.spi.SecurityProvider.md#oidc"><code>security.<wbr>providers.<wbr>oidc.<wbr>jwk-<wbr>loader</code></a>
 
 ---
 

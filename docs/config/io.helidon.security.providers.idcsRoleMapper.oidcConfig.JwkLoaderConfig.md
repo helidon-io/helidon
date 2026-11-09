@@ -59,7 +59,7 @@ Configuration for security.providers.idcs-role-mapper.oidc-config.jwk-loader
 
 ## Usages
 
-- <a href="io.helidon.security.providers.oidc.common.OidcConfig.md#jwk-loader"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>jwk-<wbr>loader</code></a>
+- <a href="io.helidon.security.providers.IdcsRoleMapperConfig.md#oidc-config"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>jwk-<wbr>loader</code></a>
 
 ---
 

@@ -18,26 +18,6 @@ Outbound configuration for outbound security
 <tbody>
 <tr>
 <td>
-<a id="jwk"></a>
-<a href="io.helidon.security.providers.jwt.signToken.JwkConfig.md">
-<code>jwk</code>
-</a>
-</td>
-<td>
-</td>
-<td>Configuration for jwk</td>
-</tr>
-<tr>
-<td>
-<code>jwt-<wbr>issuer</code>
-</td>
-<td>
-<code>String</code>
-</td>
-<td>Issuer used to create new JWTs</td>
-</tr>
-<tr>
-<td>
 <a id="outbound"></a>
 <a href="io.helidon.security.providers.common.OutboundTarget.md">
 <code>outbound</code>

@@ -59,7 +59,7 @@ Configuration for server.features.security.security.providers.jwt.jwk-loader
 
 ## Usages
 
-- <a href="io.helidon.security.providers.jwt.JwtProvider.md#jwk-loader"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>jwt.<wbr>jwk-<wbr>loader</code></a>
+- <a href="io.helidon.security.spi.SecurityProvider.md#jwt"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>jwt.<wbr>jwk-<wbr>loader</code></a>
 
 ---
 

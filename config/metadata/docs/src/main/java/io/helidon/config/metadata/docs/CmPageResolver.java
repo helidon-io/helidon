@@ -199,12 +199,12 @@ final class CmPageResolver {
     private void addUsage(CmNode node, PageBuilder page) {
         var parent = node.parent().orElse(null);
         if (parent == null) {
-            page.rawUsages.putIfAbsent(node.path(), new RawUsage(node, node.path(), null));
+            page.rawUsages.putIfAbsent(node.path(), new RawUsage(node, node.path()));
             return;
         }
         var parentPageKey = pageKeys.get(parent);
         if (parentPageKey != null) {
-            page.rawUsages.putIfAbsent(node.path(), new RawUsage(node, node.path(), parentPageKey));
+            page.rawUsages.putIfAbsent(node.path(), new RawUsage(node, node.path()));
         }
     }
 
@@ -238,23 +238,14 @@ final class CmPageResolver {
         for (var page : pageBuilders.values()) {
             switch (page.kind) {
                 case CONFIG -> {
-                    if (page.isSynthetic()) {
-                        var node = page.nodes.getFirst();
-                        page.description = page.mergedTypeNames.isEmpty()
-                                ? pathDescription(page.path)
-                                : mergedDescription(page.path);
-                        for (var child : node.children()) {
-                            page.rows.add(row(page, child));
+                    if (page.configType != null) {
+                        page.description = description(page.configType);
+                        var options = page.configType.options();
+                        if (options.stream().anyMatch(option -> option.key().orElseThrow().contains("."))) {
+                            // Keep dotted options in the key order previously provided by the usage tree.
+                            options = options.stream().sorted().toList();
                         }
-                        break;
-                    }
-                    page.description = description(page.configType);
-                    page.rowNode = page.nodes.stream()
-                            .filter(this::hasSegmentedChildren)
-                            .min(Comparator.comparing(CmNode::path))
-                            .orElse(null);
-                    if (page.rowNode == null) {
-                        for (var option : page.configType.options()) {
+                        for (var option : options) {
                             page.rows.add(new RowBuilder(
                                     option.key().orElseThrow(),
                                     page.typeName,
@@ -267,7 +258,11 @@ final class CmPageResolver {
                         }
                         break;
                     }
-                    for (var child : page.rowNode.children()) {
+                    var node = page.nodes.getFirst();
+                    page.description = page.mergedTypeNames.isEmpty()
+                            ? pathDescription(page.path)
+                            : mergedDescription(page.path);
+                    for (var child : node.children()) {
                         page.rows.add(row(page, child));
                     }
                 }
@@ -360,16 +355,28 @@ final class CmPageResolver {
         }
         for (var page : pageBuilders.values()) {
             for (var usage : page.rawUsages.values()) {
-                if (usage.pageKey == null) {
-                    var anchor = names.anchor(rootPageName, usage.node.key(), usage.node.identity());
-                    page.usages.add(new Usage(usage.path, rootPageName, anchor));
-                } else {
-                    var targetPage = page(usage.pageKey);
-                    var anchor = targetPage.usageAnchor(usage.node, names);
-                    page.usages.add(new Usage(usage.path, targetPage.fileName, anchor));
-                }
+                page.usages.add(resolveUsage(usage));
             }
         }
+    }
+
+    private Usage resolveUsage(RawUsage usage) {
+        var node = usage.node;
+        while (node.parent().isPresent()) {
+            var parent = node.parent().orElseThrow();
+            var parentPageKey = pageKeys.get(parent);
+            if (parentPageKey != null) {
+                var targetPage = page(parentPageKey);
+                var anchor = targetPage.usageAnchor(node);
+                if (!anchor.isEmpty()) {
+                    return new Usage(usage.path, targetPage.fileName, anchor);
+                }
+            }
+            // Consumer-local descendants may have no row on the referenced type's page.
+            node = parent;
+        }
+        var anchor = names.anchor(rootPageName, node.key(), node.identity());
+        return new Usage(usage.path, rootPageName, anchor);
     }
 
     private void resolveManifests() {
@@ -447,17 +454,6 @@ final class CmPageResolver {
             return configPageKey(optionNode.option().typeName());
         }
         return configPageKey(node.path());
-    }
-
-    private boolean hasSegmentedChildren(CmNode node) {
-        for (var child : node.children()) {
-            if (child instanceof CmPathNode
-                || child instanceof CmOptionNode optionNode
-                   && !child.key().equals(optionNode.option().key().orElseThrow())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private boolean isPageProducing(CmNode node) {
@@ -592,7 +588,6 @@ final class CmPageResolver {
         private String typeName;
         private String fileName;
         private String description;
-        private CmNode rowNode;
 
         PageBuilder(Kind kind, CmType configType, CmEnum enumType, String path, String typeName) {
             this.kind = kind;
@@ -615,10 +610,7 @@ final class CmPageResolver {
             };
         }
 
-        String usageAnchor(CmNode node, CmDocNames names) {
-            if (kind != Kind.CONTRACT) {
-                return names.anchor(fileName, node.key(), rowIdentity(node));
-            }
+        String usageAnchor(CmNode node) {
             var firstKeyMatch = "";
             var identity = rowIdentity(node);
             for (var row : rows) {
@@ -631,9 +623,6 @@ final class CmPageResolver {
                 if (row.identity.equals(identity)) {
                     return row.anchor;
                 }
-            }
-            if (firstKeyMatch.isEmpty()) {
-                throw new IllegalStateException("Missing contract row anchor: " + fileName + "#" + node.key());
             }
             return firstKeyMatch;
         }
@@ -699,6 +688,6 @@ final class CmPageResolver {
         }
     }
 
-    private record RawUsage(CmNode node, String path, String pageKey) {
+    private record RawUsage(CmNode node, String path) {
     }
 }

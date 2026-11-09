@@ -59,7 +59,7 @@ Configuration for server.sockets.protocols.http_2.requested-uri-discovery.truste
 
 ## Usages
 
-- <a href="io.helidon.common.configurable.AllowList.md#deny"><code>server.<wbr>sockets.<wbr>protocols.<wbr>http_<wbr>2.requested-<wbr>uri-<wbr>discovery.<wbr>trusted-<wbr>proxies.<wbr>deny</code></a>
+- <a href="io.helidon.http.RequestedUriDiscoveryContext.md#trusted-proxies"><code>server.<wbr>sockets.<wbr>protocols.<wbr>http_<wbr>2.requested-<wbr>uri-<wbr>discovery.<wbr>trusted-<wbr>proxies.<wbr>deny</code></a>
 
 ---
 

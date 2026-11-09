@@ -41,7 +41,7 @@ Configuration for server.features.security.security.providers.idcs-role-mapper.o
 
 ## Usages
 
-- <a href="io.helidon.common.pki.KeystoreKeys.md#key"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>tls.<wbr>private-<wbr>key.<wbr>keystore.<wbr>key</code></a>
+- <a href="io.helidon.common.pki.Keys.md#keystore"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>tls.<wbr>private-<wbr>key.<wbr>keystore.<wbr>key</code></a>
 
 ---
 

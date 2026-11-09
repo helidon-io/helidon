@@ -32,7 +32,7 @@ Configuration for server.sockets.tls.trust.keystore.cert
 
 ## Usages
 
-- <a href="io.helidon.common.pki.KeystoreKeys.md#cert"><code>server.<wbr>sockets.<wbr>tls.<wbr>trust.<wbr>keystore.<wbr>cert</code></a>
+- <a href="io.helidon.common.pki.Keys.md#keystore"><code>server.<wbr>sockets.<wbr>tls.<wbr>trust.<wbr>keystore.<wbr>cert</code></a>
 
 ---
 

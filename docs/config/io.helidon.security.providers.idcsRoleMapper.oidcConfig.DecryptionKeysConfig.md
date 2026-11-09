@@ -35,7 +35,7 @@ Configuration for security.providers.idcs-role-mapper.oidc-config.decryption-key
 
 ## Usages
 
-- <a href="io.helidon.security.providers.oidc.common.OidcConfig.md#decryption-keys"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>decryption-<wbr>keys</code></a>
+- <a href="io.helidon.security.providers.IdcsRoleMapperConfig.md#oidc-config"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>decryption-<wbr>keys</code></a>
 
 ---
 
