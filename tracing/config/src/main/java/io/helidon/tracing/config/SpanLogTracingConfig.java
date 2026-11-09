@@ -17,6 +17,7 @@ package io.helidon.tracing.config;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -24,6 +25,7 @@ import io.helidon.config.metadata.ConfiguredOption;
 /**
  * Configuration of a single log event in a traced span.
  */
+@Api.Stable
 public abstract class SpanLogTracingConfig extends Traceable {
     /**
      * Disabled traced span log.

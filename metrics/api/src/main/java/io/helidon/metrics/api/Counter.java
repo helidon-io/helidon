@@ -15,11 +15,13 @@
  */
 package io.helidon.metrics.api;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Services;
 
 /**
  * Records a monotonically increasing value that is updated by invoking methods on the {@code Counter} instance.
  */
+@Api.Stable
 public interface Counter extends Meter {
 
     /**

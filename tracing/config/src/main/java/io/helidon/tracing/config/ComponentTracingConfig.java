@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -32,6 +33,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  *          authorization "security:atz", and a span for response processing ("security:response")</li>
  * </ul>
  */
+@Api.Stable
 public abstract class ComponentTracingConfig extends Traceable {
     /**
      * Disabled component - all subsequent calls return disabled spans and logs.

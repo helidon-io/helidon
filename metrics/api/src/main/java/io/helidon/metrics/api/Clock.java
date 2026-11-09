@@ -15,11 +15,13 @@
  */
 package io.helidon.metrics.api;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Services;
 
 /**
  * Reports absolute time (and, therefore, is also useful in computing elapsed times).
  */
+@Api.Stable
 public interface Clock extends Wrapper {
 
     /**

@@ -16,11 +16,13 @@
 
 package io.helidon.metrics.api;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Services;
 
 /**
  * Common behavior to all types of samples.
  */
+@Api.Stable
 public interface Sample {
 
     /**

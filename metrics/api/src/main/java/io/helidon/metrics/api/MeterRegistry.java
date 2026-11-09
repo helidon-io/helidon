@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import io.helidon.common.Api;
 import io.helidon.common.DeprecationSupport;
 import io.helidon.service.registry.Services;
 
@@ -34,6 +35,7 @@ import io.helidon.service.registry.Services;
  * close it. A custom registry created using {@link MetricsFactory} is owned by the caller, which must close it to release the
  * registry and any publisher resources it owns.
  */
+@Api.Stable
 public interface MeterRegistry extends Wrapper {
     /**
      * Creates a new meter registry.

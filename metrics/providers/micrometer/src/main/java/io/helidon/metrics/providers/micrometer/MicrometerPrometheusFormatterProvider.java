@@ -32,6 +32,7 @@ import io.helidon.metrics.spi.MeterRegistryFormatterProvider;
 /**
  * Micrometer (and Prometheus, particularly) specific formatter.
  */
+@Api.Internal
 public class MicrometerPrometheusFormatterProvider implements MeterRegistryFormatterProvider {
 
     /**

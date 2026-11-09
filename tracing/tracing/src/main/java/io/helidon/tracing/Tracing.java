@@ -21,11 +21,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Interception;
 
 /**
  * Container for Helidon Declarative Tracing types.
  */
+@Api.Stable
 public final class Tracing {
     private Tracing() {
     }

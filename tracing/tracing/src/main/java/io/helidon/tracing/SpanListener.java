@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 package io.helidon.tracing;
+
+import io.helidon.common.Api;
 
 /**
  * A listener notified of span lifecycle events.
@@ -75,6 +77,7 @@ package io.helidon.tracing;
  *     If a listener tries to start or end or activate a span,
  *     for example, Helidon throws an {@link io.helidon.tracing.SpanListener.ForbiddenOperationException}.
  */
+@Api.Stable
 public interface SpanListener {
 
     /**

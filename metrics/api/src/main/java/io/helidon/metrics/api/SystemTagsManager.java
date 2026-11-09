@@ -23,11 +23,13 @@ import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Services;
 
 /**
  * Deals with global and app-level tags to be included in the external representation for all metrics.
  */
+@Api.Stable
 public interface SystemTagsManager {
 
     /**

@@ -24,6 +24,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
 
 import io.micrometer.core.instrument.MeterRegistry;
@@ -35,6 +36,7 @@ import io.prometheus.metrics.model.registry.PrometheusRegistry;
 /**
  * Metrics publisher for Prometheus output.
  */
+@Api.Stable
 public class PrometheusPublisher implements MicrometerMetricsPublisher,
                                             RuntimeType.Api<PrometheusPublisherConfig> {
 

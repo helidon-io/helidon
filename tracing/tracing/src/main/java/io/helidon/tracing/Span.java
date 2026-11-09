@@ -19,6 +19,8 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.common.Api;
+
 /**
  * Tracing span. A span is started by {@link io.helidon.tracing.Span.Builder#start()} and ended by either
  * {@link #end()} or {@link #end(Throwable)}.
@@ -26,6 +28,7 @@ import java.util.Optional;
  * Span is the base reporting unit of tracing. Spans can have a parent ({@link Builder#parent(SpanContext)},
  * you can add {@link #tag(Tag)} to it, and you can log {@link #addEvent(String, java.util.Map)}.
  */
+@Api.Stable
 public interface Span {
     /**
      * Provide current span if one is available.

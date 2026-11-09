@@ -19,6 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.service.registry.Services;
 
@@ -30,6 +31,7 @@ import io.helidon.service.registry.Services;
  * customization.
  * </p>
  */
+@Api.Stable
 public interface MetricsProgrammaticConfig {
 
     /**

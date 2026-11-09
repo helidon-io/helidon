@@ -26,6 +26,7 @@ import io.prometheus.metrics.tracer.common.SpanContext;
 /**
  * Full-featured implementation of provider for trace information to support exemplars.
  */
+@Api.Internal
 public class MicrometerSpanContextSupplierProvider
         implements io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider {
 

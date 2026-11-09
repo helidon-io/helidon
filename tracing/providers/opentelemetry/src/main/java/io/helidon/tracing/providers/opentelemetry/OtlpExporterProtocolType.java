@@ -18,11 +18,13 @@ package io.helidon.tracing.providers.opentelemetry;
 
 import java.util.Arrays;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 
 /**
  * Legal values for OTLP exporters.
  */
+@Api.Stable
 public enum OtlpExporterProtocolType {
     /**
      * http/proto protocol type.

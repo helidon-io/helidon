@@ -16,6 +16,7 @@
 
 package io.helidon.metrics.api;
 
+import io.helidon.common.Api;
 import io.helidon.metrics.api.Sample.Derived;
 import io.helidon.metrics.api.Sample.Labeled;
 
@@ -26,6 +27,7 @@ import io.helidon.metrics.api.Sample.Labeled;
  * and observation count.
  * </p>
  */
+@Api.Stable
 public interface LabeledSnapshot {
     /**
      * Value of a specific quantile.

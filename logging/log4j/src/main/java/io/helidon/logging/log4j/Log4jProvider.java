@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.logging.log4j;
 
+import io.helidon.common.Api;
 import io.helidon.logging.common.spi.LoggingProvider;
 
 import org.apache.logging.log4j.LogManager;
@@ -23,6 +24,7 @@ import org.apache.logging.log4j.LogManager;
 /**
  * Log4j logging provider.
  */
+@Api.Internal
 public class Log4jProvider implements LoggingProvider {
     @Override
     public void initialization() {

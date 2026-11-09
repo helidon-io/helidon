@@ -24,6 +24,7 @@ import java.nio.file.Paths;
 import java.util.Formatter;
 import java.util.Locale;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckException;
@@ -52,6 +53,7 @@ import io.helidon.health.HealthCheckType;
  * This health check can be referred to in properties as {@code diskSpace}. So for example, to exclude this
  * health check from being exposed, use {@code helidon.health.exclude: diskSpace}.
  */
+@Api.Stable
 public class DiskSpaceHealthCheck implements HealthCheck {
     /**
      * Default path on the file system the health check will be executed for.

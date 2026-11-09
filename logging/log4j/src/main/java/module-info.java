@@ -28,6 +28,7 @@ module io.helidon.logging.log4j {
 
     requires org.apache.logging.log4j;
 
+    requires io.helidon.common;
     requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.common.context;

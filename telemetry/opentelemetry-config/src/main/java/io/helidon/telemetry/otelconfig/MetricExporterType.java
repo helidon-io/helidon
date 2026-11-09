@@ -16,11 +16,14 @@
 
 package io.helidon.telemetry.otelconfig;
 
+import io.helidon.common.Api;
+
 /**
  * Types of OpenTelemetry metric exporters supported via Helidon configuration.
  * <p>
  * See <a href="https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters">OTel metric exporters</a>.
  */
+@Api.Preview
 public enum MetricExporterType {
 
     /*

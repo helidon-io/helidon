@@ -23,6 +23,7 @@ module io.helidon.logging.slf4j {
 
     requires org.slf4j;
 
+    requires io.helidon.common;
     requires transitive io.helidon.common.context;
     requires transitive io.helidon.logging.common;
 

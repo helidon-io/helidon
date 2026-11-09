@@ -16,9 +16,12 @@
 
 package io.helidon.telemetry.otelconfig;
 
+import io.helidon.common.Api;
+
 /**
  * Processor type. Batch is default for production.
  */
+@Api.Preview
 public enum ProcessorType {
 
     /*

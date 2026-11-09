@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,12 +29,14 @@ import java.util.logging.SimpleFormatter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.common.Api;
 import io.helidon.logging.common.HelidonMdc;
 
 /**
  * A {@link SimpleFormatter} that replaces all occurrences of MDC tags like {@code %X{value}} with specific values.
  * It also supports replacement of {@code "!thread!"} with the current thread.
  */
+@Api.Stable
 public class HelidonFormatter extends SimpleFormatter {
     static final String THREAD = "thread";
     static final String THREAD_TOKEN = "!" + THREAD + "!";

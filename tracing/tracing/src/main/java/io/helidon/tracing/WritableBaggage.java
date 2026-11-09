@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,12 @@
  */
 package io.helidon.tracing;
 
+import io.helidon.common.Api;
+
 /**
  * Behavior of {@link io.helidon.tracing.Baggage} that can be updated.
  */
+@Api.Stable
 public interface WritableBaggage extends Baggage {
 
     /**

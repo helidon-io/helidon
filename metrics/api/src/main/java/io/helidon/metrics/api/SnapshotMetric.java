@@ -15,9 +15,12 @@
  */
 package io.helidon.metrics.api;
 
+import io.helidon.common.Api;
+
 /**
  * A metric that can provide a {@link LabeledSnapshot} of its current sampled values.
  */
+@Api.Stable
 public interface SnapshotMetric {
     /**
      * Returns a snapshot of the metric's current sampled values.

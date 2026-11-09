@@ -18,6 +18,7 @@ package io.helidon.tracing;
 import java.net.URI;
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.common.Builder;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
@@ -98,6 +99,7 @@ import io.helidon.config.metadata.ConfiguredOption;
  *            interface
  */
 @Configured(description = "Tracer configuration.")
+@Api.Stable
 public interface TracerBuilder<T extends TracerBuilder<T>> extends Builder<T, Tracer> {
     /**
      * Create a new builder for the service name.

@@ -19,12 +19,14 @@ package io.helidon.telemetry.otelconfig;
 import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 import io.opentelemetry.sdk.common.export.ProxyOptions;
 
 /**
  * Settings common to HTTP-based OTLP exporters.
  */
+@Api.Preview
 @Prototype.Configured
 @Prototype.Blueprint
 interface OtlpHttpExporterConfigBlueprint extends OtlpExporterConfigBlueprint {

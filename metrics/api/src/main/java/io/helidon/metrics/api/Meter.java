@@ -22,9 +22,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 
+import io.helidon.common.Api;
+
 /**
  * Common behavior of all meters.
  */
+@Api.Stable
 public interface Meter extends Wrapper {
 
     /**

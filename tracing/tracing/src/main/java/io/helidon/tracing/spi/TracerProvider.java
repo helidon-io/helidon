@@ -18,6 +18,7 @@ package io.helidon.tracing.spi;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 import io.helidon.tracing.TracerBuilder;
@@ -26,6 +27,7 @@ import io.helidon.tracing.TracerBuilder;
  * Java service to integrate various distributed tracers.
  * The first tracer configured will be used.
  */
+@Api.Stable
 public interface TracerProvider {
     /**
      * Create a new builder for this tracer.

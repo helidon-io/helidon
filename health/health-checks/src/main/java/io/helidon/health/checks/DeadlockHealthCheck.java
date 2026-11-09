@@ -21,6 +21,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.Arrays;
 
+import io.helidon.common.Api;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.health.HealthCheckResponse.Status;
@@ -32,6 +33,7 @@ import io.helidon.health.HealthCheckType;
  * This health check can be referred to in properties as {@code deadlock}. So for example, to exclude this
  * health check from being exposed, use {@code helidon.health.exclude: deadlock}.
  */
+@Api.Stable
 public class DeadlockHealthCheck implements HealthCheck {
     private static final System.Logger LOGGER = System.getLogger(DeadlockHealthCheck.class.getName());
     private static final String NAME = "deadlock";

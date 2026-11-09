@@ -19,6 +19,7 @@ package io.helidon.health.checks;
 import java.util.Formatter;
 import java.util.Locale;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
@@ -41,6 +42,7 @@ import io.helidon.health.HealthCheckType;
  * This health check can be referred to in properties as {@code heapMemory}. So for example, to exclude this
  * health check from being exposed, use {@code helidon.health.exclude: heapMemory}.
  */
+@Api.Stable
 public class HeapMemoryHealthCheck implements HealthCheck {
     /**
      * Default threshold percentage.

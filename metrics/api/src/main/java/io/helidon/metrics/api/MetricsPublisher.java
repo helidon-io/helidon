@@ -16,12 +16,14 @@
 
 package io.helidon.metrics.api;
 
+import io.helidon.common.Api;
 import io.helidon.config.NamedService;
 import io.helidon.service.registry.Service;
 
 /**
  * Behavior common to all metrics publishers.
  */
+@Api.Stable
 @Service.Contract
 public interface MetricsPublisher extends NamedService {
 

@@ -15,11 +15,14 @@
  */
 package io.helidon.metrics.api;
 
+import io.helidon.common.Api;
+
 /**
  * Behavior of a type that wraps a related type, typically through delegation.
  *
  * @deprecated use {@link io.helidon.common.Wrapper} instead
  */
+@Api.Stable
 @Deprecated(forRemoval = true, since = "27.0.0")
 public interface Wrapper extends io.helidon.common.Wrapper {
 }

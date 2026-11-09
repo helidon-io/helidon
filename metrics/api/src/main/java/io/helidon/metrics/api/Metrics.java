@@ -22,11 +22,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Interception;
 
 /**
  * Metrics annotations for declarative metric registration.
  */
+@Api.Stable
 public class Metrics {
     private Metrics() {
     }

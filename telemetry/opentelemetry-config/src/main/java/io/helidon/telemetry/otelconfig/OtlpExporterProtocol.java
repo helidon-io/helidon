@@ -17,12 +17,14 @@ package io.helidon.telemetry.otelconfig;
 
 import java.util.Arrays;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.config.EnumMapperProvider;
 
 /**
  * Valid values for OpenTelemetry exporter protocol.
  */
+@Api.Preview
 public enum OtlpExporterProtocol {
     /**
      * grpc OpenTelemetry protocol.

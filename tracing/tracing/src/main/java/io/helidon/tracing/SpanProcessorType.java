@@ -16,9 +16,12 @@
 
 package io.helidon.tracing;
 
+import io.helidon.common.Api;
+
 /**
  * Span Processor type. Batch is default for production.
  */
+@Api.Stable
 public enum SpanProcessorType {
 
     /**

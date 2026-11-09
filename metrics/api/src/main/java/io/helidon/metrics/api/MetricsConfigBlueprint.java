@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.metrics.spi.MetricsPublisherProvider;
 
@@ -30,6 +31,7 @@ import io.helidon.metrics.spi.MetricsPublisherProvider;
  * Configuration settings for metrics.
  * Defaults use empty configuration. Callers must supply configuration explicitly to apply application settings.
  */
+@Api.Stable
 @Prototype.Configured(MetricsConfigBlueprint.METRICS_CONFIG_KEY)
 @Prototype.Blueprint(decorator = MetricsConfigSupport.BuilderDecorator.class)
 @Prototype.CustomMethods(MetricsConfigSupport.class)

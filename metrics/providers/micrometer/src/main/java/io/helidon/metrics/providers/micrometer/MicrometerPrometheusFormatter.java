@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.metrics.api.MeterRegistry;
@@ -67,6 +68,7 @@ import io.prometheus.metrics.model.snapshots.UnknownSnapshot;
  * are normalized.
  * </p>
  */
+@Api.Stable
 public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
     /**
      * Mapping from supported media types to the corresponding Prometheus registry content types.

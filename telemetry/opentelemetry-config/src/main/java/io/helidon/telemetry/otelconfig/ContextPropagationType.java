@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
+
 import io.opentelemetry.api.baggage.propagation.W3CBaggagePropagator;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.propagation.TextMapPropagator;
@@ -34,6 +36,7 @@ import io.opentelemetry.extension.trace.propagation.OtTracePropagator;
  * OTel configuration of propagation uses lower-case names. For user-friendliness, we allow users
  * to use the Otel-friendly names (lowercase) or the enum names (UPPERCASE) in config sources.
  */
+@Api.Preview
 public enum ContextPropagationType {
 
     /*

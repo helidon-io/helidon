@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.logging.log4j;
 
+import io.helidon.common.Api;
 import io.helidon.logging.common.spi.MdcProvider;
 
 import org.apache.logging.log4j.ThreadContext;
@@ -23,6 +24,7 @@ import org.apache.logging.log4j.ThreadContext;
  * Provider for setting MDC values to the Log4j MDC support.
  * This class is loaded and used via SPI.
  */
+@Api.Internal
 public class Log4jMdcProvider implements MdcProvider {
     @Override
     public void put(String key, String value) {
