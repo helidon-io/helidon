@@ -35,6 +35,15 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.config.metadata</groupId>
+            <artifactId>helidon-config-metadata</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
         </dependency>
@@ -62,8 +71,18 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.helidon.config</groupId>
+            <artifactId>helidon-config-hocon</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -81,6 +100,16 @@
                 <configuration>
                     <annotationProcessorPaths>
                         <path>
+                            <groupId>io.helidon.builder</groupId>
+                            <artifactId>helidon-builder-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
+                            <groupId>io.helidon.config.metadata</groupId>
+                            <artifactId>helidon-config-metadata-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
                             <groupId>io.helidon.codegen</groupId>
                             <artifactId>helidon-codegen-apt</artifactId>
                             <version>${helidon.version}</version>
@@ -90,6 +119,11 @@
                             <artifactId>helidon-common-features-codegen</artifactId>
                             <version>${helidon.version}</version>
                         </path>
+                        <path>
+                            <groupId>io.helidon.codegen</groupId>
+                            <artifactId>helidon-codegen-helidon-copyright</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
                     </annotationProcessorPaths>
                 </configuration>
                 <executions>
@@ -97,6 +131,16 @@
                         <id>default-compile</id>
                         <configuration>
                             <annotationProcessorPaths>
+                                <path>
+                                    <groupId>io.helidon.builder</groupId>
+                                    <artifactId>helidon-builder-codegen</artifactId>
+                                    <version>${helidon.version}</version>
+                                </path>
+                                <path>
+                                    <groupId>io.helidon.config.metadata</groupId>
+                                    <artifactId>helidon-config-metadata-codegen</artifactId>
+                                    <version>${helidon.version}</version>
+                                </path>
                                 <path>
                                     <groupId>io.helidon.codegen</groupId>
                                     <artifactId>helidon-codegen-apt</artifactId>
@@ -112,11 +156,26 @@
                                     <artifactId>helidon-codegen-api-stability-enforcer</artifactId>
                                     <version>${helidon.version}</version>
                                 </path>
+                                <path>
+                                    <groupId>io.helidon.codegen</groupId>
+                                    <artifactId>helidon-codegen-helidon-copyright</artifactId>
+                                    <version>${helidon.version}</version>
+                                </path>
                             </annotationProcessorPaths>
                         </configuration>
                     </execution>
                 </executions>
                 <dependencies>
+                    <dependency>
+                        <groupId>io.helidon.builder</groupId>
+                        <artifactId>helidon-builder-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.config.metadata</groupId>
+                        <artifactId>helidon-config-metadata-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
                     <dependency>
                         <groupId>io.helidon.codegen</groupId>
                         <artifactId>helidon-codegen-apt</artifactId>
@@ -130,6 +189,11 @@
                     <dependency>
                         <groupId>io.helidon.codegen</groupId>
                         <artifactId>helidon-codegen-api-stability-enforcer</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-helidon-copyright</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>
