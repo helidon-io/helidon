@@ -35,7 +35,7 @@ import io.helidon.security.ClassToInstanceStore;
  * Note: This type is no longer a {@link java.lang.FunctionalInterface}, as we need to support both SE and MP types.
  * We are refactoring our approach so we do not use reflection.
  */
-@Api.Internal
+@Api.Stable
 public interface AnnotationAnalyzer {
     /**
      * Provides configuration on node "security.jersey.analyzers".

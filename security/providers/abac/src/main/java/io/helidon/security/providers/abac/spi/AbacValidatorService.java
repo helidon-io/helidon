@@ -24,7 +24,7 @@ import io.helidon.security.providers.abac.AbacValidatorConfig;
  * Service to use with ServiceLoader to map configuration to
  * {@link AbacValidator}.
  */
-@Api.Internal
+@Api.Stable
 public interface AbacValidatorService {
     /**
      * Key of the "root" of configuration of this validator.

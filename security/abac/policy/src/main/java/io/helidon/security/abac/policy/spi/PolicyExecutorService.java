@@ -23,7 +23,7 @@ import io.helidon.security.abac.policy.PolicyValidator;
 /**
  * Java service for {@link PolicyValidator} ABAC validator.
  */
-@Api.Internal
+@Api.Stable
 public interface PolicyExecutorService {
     /**
      * Configuration key that is expected by this policy validator service.
