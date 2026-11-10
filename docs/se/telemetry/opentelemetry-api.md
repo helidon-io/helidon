@@ -106,7 +106,7 @@ Including the OpenTelemetry BOM:
     <dependency>
       <groupId>io.opentelemetry</groupId>
       <artifactId>opentelemetry-bom</artifactId>
-      <version>1.58.0</version>
+      <version>1.67.0</version>
       <type>pom</type>
       <scope>import</scope>
     </dependency>

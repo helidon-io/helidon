@@ -164,7 +164,6 @@ See the [root type](config_reference.md).
 - [io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Span<wbr>Limits<wbr>Config](io.helidon.telemetry.otelconfig.SpanLimitsConfig.md)
 - [io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Typed<wbr>Attributes](io.helidon.telemetry.otelconfig.TypedAttributes.md)
 - [io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>View<wbr>Registration<wbr>Config](io.helidon.telemetry.otelconfig.ViewRegistrationConfig.md)
-- [io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Zipkin<wbr>Exporter<wbr>Config](io.helidon.telemetry.otelconfig.ZipkinExporterConfig.md)
 - [io.<wbr>helidon.<wbr>tracing.<wbr>Extended<wbr>Tracer<wbr>Config](io.helidon.tracing.ExtendedTracerConfig.md)
 - [io.<wbr>helidon.<wbr>tracing.<wbr>Tracer](io.helidon.tracing.Tracer.md)
 - [io.<wbr>helidon.<wbr>tracing.<wbr>providers.<wbr>jaeger.<wbr>Jaeger<wbr>Tracer<wbr>Builder](io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.md)
@@ -309,7 +308,6 @@ See the [root type](config_reference.md).
 - [io.<wbr>opentelemetry.<wbr>sdk.<wbr>common.<wbr>export.<wbr>Memory<wbr>Mode](io.opentelemetry.sdk.common.export.MemoryMode.md)
 - [io.<wbr>opentelemetry.<wbr>sdk.<wbr>metrics.<wbr>Instrument<wbr>Type](io.opentelemetry.sdk.metrics.InstrumentType.md)
 - [java.<wbr>util.<wbr>concurrent.<wbr>Time<wbr>Unit](java.util.concurrent.TimeUnit.md)
-- [zipkin2.<wbr>codec.<wbr>Span<wbr>Bytes<wbr>Encoder](zipkin2.codec.SpanBytesEncoder.md)
 
 ## Synthetic Types
 

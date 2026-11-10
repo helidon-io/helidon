@@ -277,6 +277,10 @@ signal adds.
 Helidon configuration supports several of the most popular exporters, discussed
 below.
 
+> [!NOTE]
+> Helidon no longer supports the OpenTelemetry Zipkin exporter because
+> OpenTelemetry removed it. Use an OTLP exporter instead.
+
 ### Configuration options
 
 <!--@include ../../config/io.helidon.telemetry.otelconfig.OtlpExporterConfig.md#configuration-options delim=--- offset=3 collapseTables=10 -->
@@ -338,35 +342,6 @@ See [Configuration options][io-helidon-telem-5].
 <!--/include-->
 
 
-> [!WARNING]
-> The OpenTelemetry Zipkin exporter is deprecated. OpenTelemetry stopped
-> publishing it in 1.65.0, and Helidon 27 removes support for it. Existing
-> Helidon 4 applications can continue using the exporter with the aligned OTel
-> version, but should migrate to the OTLP exporter.
-
-### Zipkin Exporter
-
-#### Configuration options
-
-<!--@include ../../config/io.helidon.telemetry.otelconfig.ZipkinExporterConfig.md#configuration-options delim=--- offset=3 collapseTables=10 -->
-See [Configuration options][io-helidon-telem-6].
-<!--/include-->
-
-
-Configuration for Zipkin exporters
-
-The [OpenTelemetry documentation][opentelemetry-do] describes the defaults; see
-the "Properties for Zipkin span exporters" section there.
-
-OpenTelemetry defaults for Zipkin exporters:
-
-| Setting       | OpenTelemetry default value          |
-|---------------|--------------------------------------|
-| `compression` | `none`                               |
-| `encoder`     | `JSON_V2`                            |
-| `endpoint`    | <http://localhost:9411/api/v2/spans> |
-| `timeout`     | 10 seconds                           |
-
 OpenTelemetry provides other exporters, often used for debugging:
 
 - `console`
@@ -415,11 +390,6 @@ In the table below, the Maven artifacts are all in the `io.opentelemetry` group.
 </tr>
 <tr>
 <td><code>OtlpHttp{signal}Exporter</code></td>
-</tr>
-<tr>
-<td><a href="../../config/io.helidon.telemetry.otelconfig.ZipkinExporterConfig.md"><code>zipkin</code></a> (deprecated)</td>
-<td><code>ZipkinSpanExporter</code> (deprecated)</td>
-<td><code>opentelemetry-exporter-zipkin</code> (last published before OTel 1.65.0)</td>
 </tr>
 <tr>
 <td><code>console</code></td>
@@ -840,7 +810,7 @@ telemetry:
 [opentelemetry-sd]: https://opentelemetry.io/docs/languages/java/sdk/#sdk-components
 [helidon-webclien]: ../../se/webclient.md#configuring-telemetry
 [this-section-bel]: #additional-dependencies
-[this-opentelemet]: https://github.com/open-telemetry/opentelemetry-java/tree/v1.58.0/exporters
+[this-opentelemet]: https://github.com/open-telemetry/opentelemetry-java/tree/v1.67.0/exporters
 [this-opentelemet-2]: https://opentelemetry.io/docs/languages/java/configuration/#properties-general
 [opentelemetry-do]: https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters
 [batch-with-defau]: https://opentelemetry.io/docs/languages/java/configuration/#properties-traces
@@ -854,7 +824,6 @@ telemetry:
 [io-helidon-telem-3]: ../../config/io.helidon.telemetry.otelconfig.BatchProcessorConfig.md#configuration-options
 [io-helidon-telem-4]: ../../config/io.helidon.telemetry.otelconfig.OtlpExporterConfig.md#configuration-options
 [io-helidon-telem-5]: ../../config/io.helidon.telemetry.otelconfig.RetryPolicyConfig.md#configuration-options
-[io-helidon-telem-6]: ../../config/io.helidon.telemetry.otelconfig.ZipkinExporterConfig.md#configuration-options
 [io-helidon-telem-7]: ../../config/io.helidon.telemetry.otelconfig.OpenTelemetryTracingConfig.md#configuration-options
 [io-helidon-telem-8]: ../../config/io.helidon.telemetry.otelconfig.SamplerConfig.md#configuration-options
 [io-helidon-telem-9]: ../../config/io.helidon.telemetry.otelconfig.SpanLimitsConfig.md#configuration-options

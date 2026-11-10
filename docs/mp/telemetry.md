@@ -441,9 +441,11 @@ an OpenTelemetry exporter as [described earlier](#otel-exporter-dependencies)
 and, as needed, configure its use. By default OpenTelemetry attempts to use the
 OTLP exporter so you do not need to add configuration to specify that choice. To
 use a different exporter set `otel.traces.exporter` in your configuration to the
-appropriate value. The `zipkin` value is deprecated because OpenTelemetry
-stopped publishing its Zipkin exporter in 1.65.0; use `otlp` for traces. See
-the [examples](#examples) section below.
+appropriate value. See the [examples](#examples) section below.
+
+> [!NOTE]
+> Helidon no longer supports the OpenTelemetry Zipkin exporter because
+> OpenTelemetry removed it. Use an OTLP exporter instead.
 
 ### Helidon Automatic Span Compatibility
 
@@ -588,28 +590,14 @@ MicroProfile Telemetry properties:
 <!--@mdc ::code-callout -->
 ```properties
 otel.sdk.disabled=false     <1>
-otel.traces.exporter=otlp <2>
-otel.service.name=greeting-service <3>
+otel.service.name=greeting-service <2>
 ```
 1. Enable MicroProfile Telemetry.
-2. Set exporter to OTLP.
-3. Name of our service.
+2. Name of our service.
 <!--@mdc :: -->
 
-Here we enable MicroProfile Telemetry, set tracer to "otlp" and give a name,
-which will be used to identify our service in the tracer.
-
-> [!WARNING]
-> The OpenTelemetry Zipkin exporter is deprecated. OpenTelemetry stopped
-> publishing it in 1.65.0, and Helidon 27 removes support for it. Existing
-> Helidon 4 applications can continue using `otel.traces.exporter=zipkin` with
-> the corresponding dependency shown below, but should migrate to the OTLP
-> exporter:
->
->     <dependency>
->         <groupId>io.opentelemetry</groupId>
->         <artifactId>opentelemetry-exporter-zipkin</artifactId>
->     </dependency>
+Here we enable MicroProfile Telemetry and give a name, which will be used to
+identify our service in the tracer. The exporter defaults to OTLP.
 
 ### Tracing at Method Level
 
