@@ -38,6 +38,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.AdditionalAnswers.delegatesTo;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
 class ClientUriQueryTest {
@@ -231,6 +232,81 @@ class ClientUriQueryTest {
         source.all("a").clear();
         assertThat(client.query().getAllRaw("%61"), is(List.of("raw-first", "third")));
         assertThat(client.query().all("a"), is(List.of("decoded-first", "second", "third")));
+    }
+
+    @ParameterizedTest
+    @MethodSource("editedDecoratorRawValues")
+    void testDecoratedQueryKeepsUnrelatedEditedRawValuesWhenNamesDiffer(List<String> rawValues) {
+        UriQuery source = UriQuery.create("aa=1&token=old");
+        UriQuery decorated = mock(UriQuery.class, delegatesTo(source));
+        doReturn("a%61=1&token=old").when(decorated).rawValue();
+        source.getAllRaw("token").clear();
+        source.getAllRaw("token").addAll(rawValues);
+
+        var copy = UriQueryWriteable.create().from(decorated);
+        var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
+
+        assertThat(copy.getAllRaw("a%61"), is(List.of("1")));
+        assertThat(copy.getAllRaw("token"), is(rawValues));
+        assertThat(copy.all("token"), is(List.of("old")));
+        assertThat(copy.rawValue(), not(containsString("token=old")));
+        assertThat(client.query().getAllRaw("a%61"), is(List.of("1")));
+        assertThat(client.query().getAllRaw("token"), is(rawValues));
+        assertThat(client.query().all("token"), is(List.of("old")));
+        assertThat(client.pathWithQueryAndFragment(), not(containsString("token=old")));
+        if (!rawValues.isEmpty()) {
+            assertThat(client.pathWithQueryAndFragment(), containsString("token=replacement"));
+        }
+
+        source.getAllRaw("token").add("source-only");
+        source.all("token").set(0, "decoded-source-only");
+        assertThat(copy.getAllRaw("token"), is(rawValues));
+        assertThat(copy.all("token"), is(List.of("old")));
+        assertThat(client.query().getAllRaw("token"), is(rawValues));
+        assertThat(client.query().all("token"), is(List.of("old")));
+        copy.getAllRaw("token").add("copy-only");
+        copy.all("token").clear();
+        client.query().getAllRaw("token").add("client-only");
+        client.query().all("token").clear();
+        assertThat(source.getAllRaw("token").getLast(), is("source-only"));
+        assertThat(source.all("token"), is(List.of("decoded-source-only")));
+    }
+
+    @Test
+    void testForwardingDecoratorKeepsClearedRawMembershipOnCopyAndImport() {
+        var source = UriQueryWriteable.create().set("token", "old");
+        UriQuery decorated = mock(UriQuery.class, delegatesTo(source));
+        source.getAllRaw("token").clear();
+
+        var copy = UriQueryWriteable.create().from(decorated);
+        var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
+
+        assertThat(decorated.rawValue(), is(""));
+        assertThat(copy.rawValue(), is(""));
+        assertThat(copy.contains("token"), is(true));
+        assertThat(client.pathWithQueryAndFragment(), is("/"));
+        assertThat(client.query().contains("token"), is(true));
+        assertThat(client.query().names().contains("token"), is(true));
+        copy.setIfAbsent("token", "replacement");
+        client.writeableQuery().setIfAbsent("token", "replacement");
+        assertThat(copy.getAllRaw("token"), is(List.of()));
+        assertThat(copy.all("token"), is(List.of("old")));
+        assertThat(client.query().getAllRaw("token"), is(List.of()));
+        assertThat(client.query().all("token"), is(List.of("old")));
+        assertThat(client.pathWithQueryAndFragment(), is("/"));
+
+        source.getAllRaw("token").add("source-only");
+        source.all("token").set(0, "decoded-source-only");
+        assertThat(copy.getAllRaw("token"), is(List.of()));
+        assertThat(copy.all("token"), is(List.of("old")));
+        assertThat(client.query().getAllRaw("token"), is(List.of()));
+        assertThat(client.query().all("token"), is(List.of("old")));
+        copy.getAllRaw("token").add("copy-only");
+        copy.all("token").clear();
+        client.query().getAllRaw("token").add("client-only");
+        client.query().all("token").clear();
+        assertThat(source.getAllRaw("token"), is(List.of("source-only")));
+        assertThat(source.all("token"), is(List.of("decoded-source-only")));
     }
 
     @ParameterizedTest
@@ -543,6 +619,10 @@ class ClientUriQueryTest {
         query.fromQueryString("a=new&flag&&");
         query.names().remove("a");
         return query.rawValue();
+    }
+
+    private static Stream<List<String>> editedDecoratorRawValues() {
+        return Stream.of(List.of(), List.of("replacement"));
     }
 
     private static Stream<Arguments> decoratedClientQueriesWithPlusNames() {

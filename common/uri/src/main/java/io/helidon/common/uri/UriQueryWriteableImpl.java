@@ -318,34 +318,52 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
 
     private static Map<String, List<String>> rawParametersForCopy(UriQuery source) {
         String query = source.rawValue();
-        if (query.isEmpty()) {
-            return Map.of();
-        }
-
         Map<String, List<String>> serialized = new HashMap<>();
-        int start = 0;
-        while (true) {
-            int and = query.indexOf('&', start);
-            String segment = and == -1 ? query.substring(start) : query.substring(start, and);
-            int eq = segment.indexOf('=');
-            String name = eq == -1 ? segment : segment.substring(0, eq);
-            String value = eq == -1 ? "" : segment.substring(eq + 1);
-            serialized.computeIfAbsent(name, _ -> new ArrayList<>()).add(value);
-            if (and == -1) {
-                break;
+        if (!query.isEmpty()) {
+            int start = 0;
+            while (true) {
+                int and = query.indexOf('&', start);
+                String segment = and == -1 ? query.substring(start) : query.substring(start, and);
+                int eq = segment.indexOf('=');
+                String name = eq == -1 ? segment : segment.substring(0, eq);
+                String value = eq == -1 ? "" : segment.substring(eq + 1);
+                serialized.computeIfAbsent(name, _ -> new ArrayList<>()).add(value);
+                if (and == -1) {
+                    break;
+                }
+                start = and + 1;
             }
-            start = and + 1;
         }
 
         Map<String, List<String>> current = new HashMap<>();
-        try {
-            for (String name : serialized.keySet()) {
+        Set<String> unavailableNames = new HashSet<>();
+        for (String name : serialized.keySet()) {
+            try {
                 current.put(name, source.getAllRaw(name));
+            } catch (NoSuchElementException _) {
+                unavailableNames.add(UriEncoding.decodeQuery(name));
             }
-        } catch (NoSuchElementException _) {
-            // Decorators can expose original spelling with normalized lookup keys.
-            // Keep the serialized copy intact rather than mixing both representations.
-            return serialized;
+        }
+        if (!unavailableNames.isEmpty()) {
+            // Keep ambiguous aliases together without discarding edits to unrelated parameters.
+            for (Map.Entry<String, List<String>> entry : serialized.entrySet()) {
+                if (unavailableNames.contains(UriEncoding.decodeQuery(entry.getKey()))) {
+                    current.put(entry.getKey(), entry.getValue());
+                }
+            }
+        }
+        // Empty raw lists have no serialized entry, but can still be exposed through parameter names.
+        for (String name : source.names()) {
+            if (!current.containsKey(name)) {
+                try {
+                    List<String> values = source.getAllRaw(name);
+                    if (values.isEmpty()) {
+                        current.put(name, values);
+                    }
+                } catch (NoSuchElementException _) {
+                    // A decoded parameter name need not be a raw lookup key.
+                }
+            }
         }
         return current;
     }

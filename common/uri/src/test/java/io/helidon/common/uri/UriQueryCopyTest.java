@@ -18,20 +18,27 @@ package io.helidon.common.uri;
 
 import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.mapper.Value;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class UriQueryCopyTest {
     @Test
-    void testDecoratorCopyUsesWholeSerializedQueryWhenRawNamesDiffer() {
-        UriQuery delegate = UriQuery.create("a%20b=first&a%20b=second&z=keep");
-        UriQuery source = new QueryDecorator(delegate, "z=keep&a+b=first&a%20b=second&flag");
+    void testDecoratorCopyKeepsMixedSerializedAliasesAndUnrelatedRawEdits() {
+        UriQuery delegate = UriQuery.create("a%20b=first&a%20b=second&z=keep&token=old");
+        UriQuery source = new QueryDecorator(delegate, "z=keep&a+b=first&a%20b=second&flag&token=old");
+        source.getAllRaw("token").set(0, "replacement");
         var copy = UriQueryWriteable.create().set("z", "existing").from(source);
 
         assertThat(copy.getAllRaw("a+b"), is(List.of("first")));
@@ -39,6 +46,8 @@ class UriQueryCopyTest {
         assertThat(copy.getAllRaw("z"), is(List.of("existing", "keep")));
         assertThat(copy.getAllRaw("flag"), is(List.of("")));
         assertThat(copy.all("a b"), is(List.of("first", "second")));
+        assertThat(copy.getAllRaw("token"), is(List.of("replacement")));
+        assertThat(copy.all("token"), is(List.of("old")));
 
         delegate.getAllRaw("a%20b").clear();
         delegate.all("a b").clear();
@@ -47,6 +56,82 @@ class UriQueryCopyTest {
         assertThat(copy.all("a b"), is(List.of("first", "second")));
         copy.getAllRaw("z").clear();
         assertThat(delegate.getAllRaw("z"), is(List.of("keep")));
+    }
+
+    @ParameterizedTest
+    @MethodSource("editedRawValues")
+    void testDecoratorCopyKeepsUnrelatedEditedRawValuesWhenNamesDiffer(List<String> rawValues) {
+        UriQuery delegate = UriQuery.create("aa=1&token=old");
+        UriQuery source = new QueryDecorator(delegate, "a%61=1&token=old");
+        source.getAllRaw("token").clear();
+        source.getAllRaw("token").addAll(rawValues);
+        var copy = UriQueryWriteable.create().set("aa", "existing").from(source);
+
+        assertThat(copy.getAllRaw("a%61"), is(List.of("1")));
+        assertThat(copy.getAllRaw("aa"), is(List.of("existing")));
+        assertThat(copy.all("aa"), is(List.of("existing", "1")));
+        assertThat(copy.contains("token"), is(true));
+        assertThat(copy.getAllRaw("token"), is(rawValues));
+        assertThat(copy.all("token"), is(List.of("old")));
+        assertThat(copy.rawValue(), not(containsString("token=old")));
+
+        source.getAllRaw("token").add("source-only");
+        source.all("token").set(0, "decoded-source-only");
+        assertThat(copy.getAllRaw("token"), is(rawValues));
+        assertThat(copy.all("token"), is(List.of("old")));
+        copy.getAllRaw("token").add("copy-only");
+        copy.all("token").set(0, "decoded-copy-only");
+        assertThat(source.getAllRaw("token").getLast(), is("source-only"));
+        assertThat(source.all("token"), is(List.of("decoded-source-only")));
+
+        var appended = UriQueryWriteable.create().set("token", "existing").from(source);
+        assertThat(appended.getAllRaw("token").getFirst(), is("existing"));
+        assertThat(appended.getAllRaw("token").subList(1, appended.getAllRaw("token").size()),
+                   is(source.getAllRaw("token")));
+        assertThat(appended.all("token"), is(List.of("existing", "decoded-source-only")));
+    }
+
+    @Test
+    void testForwardingDecoratorCopyKeepsClearedRawMembership() {
+        var delegate = UriQueryWriteable.create().set("token", "old");
+        UriQuery source = new QueryDecorator(delegate, delegate::rawValue);
+        source.getAllRaw("token").clear();
+
+        UriQueryWriteable copy = UriQueryWriteable.create().from(source);
+
+        assertThat(source.rawValue(), is(""));
+        assertThat(copy.rawValue(), is(""));
+        assertThat(copy.names(), is(Set.of("token")));
+        assertThat(copy.contains("token"), is(true));
+        copy.setIfAbsent("token", "replacement");
+        assertThat(copy.getAllRaw("token"), is(List.of()));
+        assertThat(copy.all("token"), is(List.of("old")));
+
+        source.getAllRaw("token").add("source-only");
+        source.all("token").set(0, "decoded-source-only");
+        assertThat(copy.getAllRaw("token"), is(List.of()));
+        assertThat(copy.all("token"), is(List.of("old")));
+        copy.getAllRaw("token").add("copy-only");
+        copy.all("token").clear();
+        assertThat(source.getAllRaw("token"), is(List.of("source-only")));
+        assertThat(source.all("token"), is(List.of("decoded-source-only")));
+    }
+
+    @Test
+    void testForwardingDecoratorCopyKeepsClearedAliasAlongsideSurvivingAlias() {
+        var delegate = UriQueryWriteable.create();
+        delegate.fromQueryString("%61=first&a=second");
+        UriQuery source = new QueryDecorator(delegate, delegate::rawValue);
+        source.getAllRaw("a").clear();
+
+        UriQueryWriteable copy = UriQueryWriteable.create().from(source);
+
+        assertThat(copy.rawValue(), is("%61=first"));
+        assertThat(copy.getAllRaw("%61"), is(List.of("first")));
+        assertThat(copy.contains("a"), is(true));
+        copy.setIfAbsent("a", "replacement");
+        assertThat(copy.getAllRaw("a"), is(List.of()));
+        assertThat(copy.all("a"), is(List.of("first", "second")));
     }
 
     @Test
@@ -257,14 +342,22 @@ class UriQueryCopyTest {
         assertThat(copy.rawValue(), is("a=existing&b=replacement"));
     }
 
-    private record QueryDecorator(UriQuery delegate, String rawQuery) implements UriQuery {
+    private static Stream<List<String>> editedRawValues() {
+        return Stream.of(List.of(), List.of("replacement"));
+    }
+
+    private record QueryDecorator(UriQuery delegate, Supplier<String> rawQuery) implements UriQuery {
         private QueryDecorator(UriQuery delegate) {
             this(delegate, delegate.rawValue());
         }
 
+        private QueryDecorator(UriQuery delegate, String rawQuery) {
+            this(delegate, () -> rawQuery);
+        }
+
         @Override
         public String rawValue() {
-            return rawQuery;
+            return rawQuery.get();
         }
 
         @Override
