@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -35,5 +35,12 @@
         <Class name="io.helidon.webserver.LoomServer"/>
         <Method name="startIt"/>
         <Bug pattern="DM_EXIT"/>
+    </Match>
+
+    <Match>
+        <!-- JFR instrumentation reads these event payload fields when committing a recording. -->
+        <Class name="io.helidon.webserver.http.HttpServerRequestEvent"/>
+        <Field name="~(outcome|requestId|requestName|serverSocketId|socketId)"/>
+        <Bug pattern="URF_UNREAD_FIELD"/>
     </Match>
 </FindBugsFilter>

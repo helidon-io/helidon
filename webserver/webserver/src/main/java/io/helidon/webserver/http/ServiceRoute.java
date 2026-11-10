@@ -100,7 +100,7 @@ class ServiceRoute extends HttpRouteBase implements HttpRoute {
         return Optional.of(pathMatcher);
     }
 
-    RouteCrawler crawler(ConnectionContext ctx, RoutingRequest request) {
-        return new RouteCrawler(ctx, request, routes);
+    RouteCrawler crawler(ConnectionContext ctx, RoutingRequest request, boolean collectTemplate) {
+        return new RouteCrawler(ctx, request, routes, collectTemplate);
     }
 }

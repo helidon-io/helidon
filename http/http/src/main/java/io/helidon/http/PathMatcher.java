@@ -54,4 +54,18 @@ public interface PathMatcher {
     default Optional<String> matchingElement() {
         return Optional.empty();
     }
+
+    /**
+     * Returns the configured route template for diagnostic output.
+     * The template must be independent of request data and must not contain values extracted from requests.
+     * Implementations that cannot provide such a template should return {@link Optional#empty()}.
+     * An empty string represents a matcher that contributes no path component, such as a match-any matcher.
+     * The default implementation returns {@link Optional#empty()}.
+     *
+     * @return optional configured route template
+     * @since 28.0.0
+     */
+    default Optional<String> routeTemplate() {
+        return Optional.empty();
+    }
 }

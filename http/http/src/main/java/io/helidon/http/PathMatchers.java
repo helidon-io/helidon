@@ -350,6 +350,11 @@ public final class PathMatchers {
         }
 
         @Override
+        public Optional<String> routeTemplate() {
+            return Optional.of(path);
+        }
+
+        @Override
         public String toString() {
             return "exact: " + path;
         }
@@ -425,6 +430,11 @@ public final class PathMatchers {
         }
 
         @Override
+        public Optional<String> routeTemplate() {
+            return Optional.of(exactMatch + "/*");
+        }
+
+        @Override
         public String toString() {
             return "prefix: " + prefix;
         }
@@ -481,6 +491,11 @@ public final class PathMatchers {
         }
 
         @Override
+        public Optional<String> routeTemplate() {
+            return Optional.of(sourcePattern);
+        }
+
+        @Override
         public String toString() {
             return "pattern: " + patternString;
         }
@@ -518,6 +533,11 @@ public final class PathMatchers {
             return new PrefixMatchResult(true,
                                          new NoParamRoutedPath(UriPath.create("")),
                                          uriPath);
+        }
+
+        @Override
+        public Optional<String> routeTemplate() {
+            return Optional.of("");
         }
 
         @Override
