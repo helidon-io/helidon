@@ -22,7 +22,7 @@ import io.helidon.config.Config;
 /**
  * Java {@link java.util.ServiceLoader} service interface for multitenancy support.
  */
-@Api.Internal
+@Api.Stable
 public interface TenantConfigProvider {
     /**
      * Create a tenant configuration API from Helidon config. This method is only called once.

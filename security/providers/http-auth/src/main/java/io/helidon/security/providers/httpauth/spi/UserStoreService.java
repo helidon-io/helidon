@@ -22,7 +22,7 @@ import io.helidon.security.providers.httpauth.SecureUserStore;
 /**
  * A service to supply custom implementation of {@link io.helidon.security.providers.httpauth.SecureUserStore}.
  */
-@Api.Internal
+@Api.Stable
 public interface UserStoreService {
     /**
      * Configuration key of this store, expected under the security provider configuration.

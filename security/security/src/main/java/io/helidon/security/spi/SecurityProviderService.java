@@ -22,7 +22,7 @@ import io.helidon.config.Config;
 /**
  * Service to use with ServiceLoader to map configuration to provider.
  */
-@Api.Internal
+@Api.Stable
 public interface SecurityProviderService {
     /**
      * Key of the "root" of configuration of this provider.
