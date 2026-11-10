@@ -69,6 +69,10 @@
             <artifactId>helidon-http-encoding</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.http.media</groupId>
+            <artifactId>helidon-http-media-multipart</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver</artifactId>
         </dependency>
