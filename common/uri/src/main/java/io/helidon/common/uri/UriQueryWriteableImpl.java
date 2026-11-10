@@ -246,7 +246,9 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
         List<String> existingDecodedValues = decodedQueryParams.get(name);
         List<String> existingRawValues = rawQueryParams.get(encodedName);
         if (existingDecodedValues != null
-                && (existingRawValues == null || existingRawValues.size() != existingDecodedValues.size())) {
+                && (existingRawValues == null
+                            || existingRawValues.isEmpty()
+                            || existingRawValues.size() != existingDecodedValues.size())) {
             removeRawAliases(name);
         }
         rawQueryParams.put(encodedName, encodedValues);

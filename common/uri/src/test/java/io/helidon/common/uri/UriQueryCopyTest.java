@@ -27,6 +27,7 @@ import io.helidon.common.mapper.Value;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -132,6 +133,30 @@ class UriQueryCopyTest {
         copy.setIfAbsent("a", "replacement");
         assertThat(copy.getAllRaw("a"), is(List.of()));
         assertThat(copy.all("a"), is(List.of("first", "second")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"safe", ""})
+    void testForwardingDecoratorCopyReplacementRemovesSurvivingRawAlias(String replacement) {
+        var delegate = UriQueryWriteable.create();
+        delegate.fromQueryString("%78=attacker&x=discard");
+        delegate.getAllRaw("x").clear();
+        delegate.all("x").clear();
+        UriQuery source = new QueryDecorator(delegate, delegate::rawValue);
+
+        var copy = UriQueryWriteable.create().from(source);
+        copy.set("x", replacement);
+
+        assertThat(copy.rawValue(), is("x=" + replacement));
+        assertThat(UriQuery.create(copy.rawValue()).all("x"), is(List.of(replacement)));
+        assertThat(source.rawValue(), is("%78=attacker"));
+        assertThat(source.getAllRaw("x"), is(List.of()));
+        assertThat(source.all("x"), is(List.of()));
+
+        source.getAllRaw("%78").set(0, "source-only");
+        source.all("x").add("decoded-source-only");
+        assertThat(copy.getAllRaw("x"), is(List.of(replacement)));
+        assertThat(copy.all("x"), is(List.of(replacement)));
     }
 
     @Test

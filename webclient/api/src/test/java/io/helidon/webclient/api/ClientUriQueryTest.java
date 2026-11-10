@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -307,6 +308,30 @@ class ClientUriQueryTest {
         client.query().all("token").clear();
         assertThat(source.getAllRaw("token"), is(List.of("source-only")));
         assertThat(source.all("token"), is(List.of("decoded-source-only")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"safe", ""})
+    void testForwardingDecoratorImportedReplacementRemovesSurvivingRawAlias(String replacement) {
+        var source = UriQueryWriteable.create();
+        source.fromQueryString("%78=attacker&x=discard");
+        source.getAllRaw("x").clear();
+        source.all("x").clear();
+        UriQuery decorated = mock(UriQuery.class, delegatesTo(source));
+
+        var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
+        client.writeableQuery().set("x", replacement);
+
+        assertThat(client.pathWithQueryAndFragment(), is("/?x=" + replacement));
+        assertThat(UriQuery.create(client.query().rawValue()).all("x"), is(List.of(replacement)));
+        assertThat(source.rawValue(), is("%78=attacker"));
+        assertThat(source.getAllRaw("x"), is(List.of()));
+        assertThat(source.all("x"), is(List.of()));
+
+        source.getAllRaw("%78").set(0, "source-only");
+        source.all("x").add("decoded-source-only");
+        assertThat(client.pathWithQueryAndFragment(), is("/?x=" + replacement));
+        assertThat(client.query().all("x"), is(List.of(replacement)));
     }
 
     @ParameterizedTest
