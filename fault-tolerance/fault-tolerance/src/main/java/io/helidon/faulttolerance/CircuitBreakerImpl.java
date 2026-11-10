@@ -31,6 +31,8 @@ import io.helidon.service.registry.ServiceRegistry;
 
 @Service.PerInstance(CircuitBreakerConfigBlueprint.class)
 class CircuitBreakerImpl implements CircuitBreaker {
+    private static final int MAX_NAME_LENGTH = 256;
+
     /*
      Configuration options
      */
@@ -53,6 +55,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
     private final ErrorChecker errorChecker;
     private final boolean applyOnConfigured;
     private final String name;
+    private final String eventName;
     private final CircuitBreakerConfig config;
     private final boolean metricsEnabled;
 
@@ -81,6 +84,9 @@ class CircuitBreakerImpl implements CircuitBreaker {
         this.errorChecker = ErrorChecker.create(config.skipOn(), config.applyOn());
         this.applyOnConfigured = !config.applyOn().isEmpty();
         this.name = config.name().orElseGet(() -> "circuit-breaker-" + System.identityHashCode(config));
+        String configuredName = config.name().orElse(null);
+        this.eventName = configuredName == null || configuredName.length() <= MAX_NAME_LENGTH
+                ? configuredName : configuredName.substring(0, MAX_NAME_LENGTH);
         this.config = config;
 
         this.metricsEnabled = config.enableMetrics() || metricsDefaultEnabled;
@@ -134,9 +140,9 @@ class CircuitBreakerImpl implements CircuitBreaker {
                 future.cancel(false);
             }
             resetCounters();
-            state.set(State.CLOSED);
+            changeState(State.CLOSED, "MANUAL");
         } else if (newState == State.OPEN) {
-            state.set(State.OPEN);
+            changeState(State.OPEN, "MANUAL");
             Future<Boolean> future = schedule.getAndSet(null);
             if (future != null) {
                 future.cancel(false);
@@ -176,7 +182,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
             }
             throw SupplierHelper.toRuntimeException(throwable);
         } finally {
-            if (results.shouldOpen() && state.compareAndSet(State.CLOSED, State.OPEN)) {
+            if (results.shouldOpen() && changeState(State.CLOSED, State.OPEN, "FAILURE_THRESHOLD")) {
                 results.reset();
                 // if we successfully switch to open, we need to schedule switch to half-open
                 scheduleHalf();
@@ -198,7 +204,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
                 if (successes >= successThreshold) {
                     // transition to closed
                     successCounter.set(0);
-                    state.compareAndSet(State.HALF_OPEN, State.CLOSED);
+                    changeState(State.HALF_OPEN, State.CLOSED, "SUCCESS_THRESHOLD");
                 }
                 return result;
             } catch (Throwable t) {
@@ -213,12 +219,12 @@ class CircuitBreakerImpl implements CircuitBreaker {
                     if (successes >= successThreshold) {
                         // transition to closed
                         successCounter.set(0);
-                        state.compareAndSet(State.HALF_OPEN, State.CLOSED);
+                        changeState(State.HALF_OPEN, State.CLOSED, "SUCCESS_THRESHOLD");
                     }
                 } else {
                     // failure
                     successCounter.set(0);
-                    state.set(State.OPEN);
+                    changeState(State.OPEN, "HALF_OPEN_FAILURE");
                     // if we successfully switch to open, we need to schedule switch to half-open
                     scheduleHalf();
                 }
@@ -234,10 +240,32 @@ class CircuitBreakerImpl implements CircuitBreaker {
     private void scheduleHalf() {
         schedule.set(executor.submit(
                 FaultTolerance.delayedCallable(() -> {
-                    state.compareAndSet(State.OPEN, State.HALF_OPEN);
+                    changeState(State.OPEN, State.HALF_OPEN, "DELAY_ELAPSED");
                     schedule.set(null);
                     return true;
                 }, delayMillis)));
+    }
+
+    private boolean changeState(State expected, State next, String reason) {
+        if (state.compareAndSet(expected, next)) {
+            stateChanged(expected, next, reason);
+            return true;
+        }
+        return false;
+    }
+
+    private void changeState(State next, String reason) {
+        State previous = state.getAndSet(next);
+        if (previous != next) {
+            stateChanged(previous, next, reason);
+        }
+    }
+
+    private void stateChanged(State previous, State next, String reason) {
+        var event = CircuitBreakerStateChangeEvent.create();
+        if (event != null) {
+            event.record(eventName, previous, next, reason);
+        }
     }
 
     private void resetCounters() {
