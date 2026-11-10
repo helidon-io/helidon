@@ -60,7 +60,7 @@ class TestAttributeValueConversions {
                             - type: otlp
                               protocol: http/proto
                               name: my-oltp
-                            - type: zipkin
+                            - type: console
                           processors:
                             - max-queue-size: 21
                               type: batch

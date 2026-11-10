@@ -21,25 +21,25 @@ import java.time.Duration;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigSources;
 
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.context.propagation.ContextPropagators;
+import io.opentelemetry.exporter.logging.LoggingSpanExporter;
 import io.opentelemetry.exporter.otlp.http.trace.OtlpHttpSpanExporter;
-import io.opentelemetry.exporter.zipkin.ZipkinSpanExporter;
-import io.opentelemetry.sdk.OpenTelemetrySdk;
-import io.opentelemetry.sdk.trace.SdkTracerProvider;
-import io.opentelemetry.sdk.trace.samplers.Sampler;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.iterableWithSize;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TestBasicConfig {
 
@@ -69,7 +69,7 @@ class TestBasicConfig {
                                 max-attempts: 4
                                 max-backoff: "PT1m"
                               name: my-otlp
-                            - type: zipkin
+                            - type: console
                           processors:
                             - max-queue-size: 21
                               type: batch
@@ -99,7 +99,7 @@ class TestBasicConfig {
         assertThat("Exporters",
                    openTelemetryTracingConfig.exporterConfigs().values(),
                    allOf(hasItems(instanceOf(OtlpHttpSpanExporter.class),
-                                  instanceOf(ZipkinSpanExporter.class)),
+                                  instanceOf(LoggingSpanExporter.class)),
                          iterableWithSize(2)));
 
         assertThat("Sampler",
@@ -124,14 +124,22 @@ class TestBasicConfig {
     }
 
     @Test
-    @SuppressWarnings("removal")
-    void testZipkinExporterDeprecationMetadata() throws NoSuchFieldException {
-        assertThat("Zipkin exporter type is deprecated",
-                   SpanExporterType.class.getField("ZIPKIN").isAnnotationPresent(Deprecated.class),
-                   is(true));
-        assertThat("Zipkin exporter configuration is deprecated",
-                   ZipkinExporterConfig.class.isAnnotationPresent(Deprecated.class),
-                   is(true));
+    void testUnsupportedZipkinExporter() {
+        var config = Config.just(ConfigSources.create(
+                """
+                        telemetry:
+                          signals:
+                            tracing:
+                              exporters:
+                                - type: zipkin
+                        """,
+                MediaTypes.APPLICATION_YAML));
+
+        var exception = assertThrows(ConfigException.class,
+                                     () -> OpenTelemetryConfig.create(config.get("telemetry")));
+        assertThat("Unsupported exporter configuration key",
+                   exception.getMessage(),
+                   containsString("telemetry.signals.tracing.exporters.0.type"));
     }
 
     @Test

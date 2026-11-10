@@ -150,7 +150,7 @@
         <!-- Force upgrade okhttp3 for dependency convergence -->
         <version.lib.okhttp3>4.12.0</version.lib.okhttp3>
         <version.lib.opentelemetry.semconv>1.37.0</version.lib.opentelemetry.semconv>
-        <version.lib.opentelemetry>1.62.0</version.lib.opentelemetry>
+        <version.lib.opentelemetry>1.68.0</version.lib.opentelemetry>
         <version.lib.opentelemetry.instrumentation.annotations>2.27.0</version.lib.opentelemetry.instrumentation.annotations>
         <version.lib.opentracing>0.33.0</version.lib.opentracing>
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>

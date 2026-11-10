@@ -19,10 +19,6 @@ This type is an enumeration.
 <td>OpenTelemetry Protocol <code>io.<wbr>opentelemetry.<wbr>exporter.<wbr>otlp.<wbr>http.<wbr>trace.<wbr>Otlp<wbr>Http<wbr>Span<wbr>Exporter</code> and <code>io.<wbr>opentelemetry.<wbr>exporter.<wbr>otlp.<wbr>trace.<wbr>Otlp<wbr>Grpc<wbr>Span<wbr>Exporter</code></td>
 </tr>
 <tr>
-<td><code>ZIPKIN</code></td>
-<td>The OpenTelemetry Zipkin exporter (<code>io.<wbr>opentelemetry.<wbr>exporter.<wbr>zipkin.<wbr>Zipkin<wbr>Span<wbr>Exporter</code>) is deprecated; OpenTelemetry stopped publishing it in 1.65.0, Helidon 27 removes support, and users should use OTLP instead</td>
-</tr>
-<tr>
 <td><code>CONSOLE</code></td>
 <td>Console (<code>io.<wbr>opentelemetry.<wbr>exporter.<wbr>logging.<wbr>Logging<wbr>Span<wbr>Exporter</code></td>
 </tr>
