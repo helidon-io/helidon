@@ -18,11 +18,13 @@ package io.helidon.http;
 
 import java.util.function.Predicate;
 
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaTypes;
 
 /**
  * Constants for {@link io.helidon.http.HttpMediaType}.
  */
+@Api.Stable
 public final class HttpMediaTypes {
     /**
      * application/json media type with UTF-8 charset.

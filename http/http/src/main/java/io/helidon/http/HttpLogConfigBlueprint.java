@@ -21,6 +21,7 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Configuration of logging of the HTTP layer.
@@ -31,6 +32,7 @@ import io.helidon.builder.api.Prototype;
 @Prototype.Configured
 @Prototype.CustomMethods(HttpConfigSupport.HttpConfigCustomMethods.class)
 @Prototype.IncludeDefaultMethods
+@Api.Stable
 interface HttpLogConfigBlueprint {
     /**
      * Logging of received packets. Uses trace and debug levels on configured logger

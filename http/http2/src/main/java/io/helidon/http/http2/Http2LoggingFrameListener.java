@@ -18,6 +18,7 @@ package io.helidon.http.http2;
 
 import java.nio.charset.StandardCharsets;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.SocketContext;
 import io.helidon.http.HttpLogConfig;
@@ -31,6 +32,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * HTTP/2 frame listener that logs all calls.
  */
+@Api.Internal
 public class Http2LoggingFrameListener implements Http2FrameListener {
     private final String prefix;
     private final System.Logger logger;

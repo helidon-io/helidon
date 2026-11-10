@@ -18,6 +18,7 @@ package io.helidon.http.media;
 
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.config.NamedService;
 import io.helidon.http.Headers;
@@ -26,6 +27,7 @@ import io.helidon.http.WritableHeaders;
 /**
  * Media support to be registered with {@link MediaContext}.
  */
+@Api.Stable
 public interface MediaSupport extends NamedService {
     /**
      * Once all providers are discovered/configured and context is established,

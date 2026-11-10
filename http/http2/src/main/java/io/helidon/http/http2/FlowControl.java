@@ -15,9 +15,12 @@
  */
 package io.helidon.http.http2;
 
+import io.helidon.common.Api;
+
 /**
  * Flow control used by HTTP/2 for backpressure.
  */
+@Api.Internal
 public interface FlowControl {
 
     /**

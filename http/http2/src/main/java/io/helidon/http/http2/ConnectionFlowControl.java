@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.Builder;
 
 import static java.lang.System.Logger.Level.DEBUG;
@@ -27,6 +28,7 @@ import static java.lang.System.Logger.Level.DEBUG;
 /**
  * HTTP/2 Flow control for connection.
  */
+@Api.Internal
 public class ConnectionFlowControl {
 
     private static final System.Logger LOGGER_OUTBOUND = System.getLogger(FlowControl.class.getName() + ".ofc");

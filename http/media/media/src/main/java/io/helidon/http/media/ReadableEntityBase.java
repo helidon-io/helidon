@@ -27,12 +27,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
 
 /**
  * Base for readable entities.
  */
+@Api.Internal
 public abstract class ReadableEntityBase implements ReadableEntity {
     private static final int BUFFER_SIZE = 8 * 1024;
     private static final ReadableEntity EMPTY = new EmptyReadableEntity();

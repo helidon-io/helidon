@@ -20,6 +20,7 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.HttpMediaType;
 
@@ -48,6 +49,7 @@ import io.helidon.http.HttpMediaType;
 @Prototype.Configured
 @Prototype.Blueprint
 @Prototype.CustomMethods(MediaConfigSupport.CustomMethods.class)
+@Api.Stable
 interface MediaSupportConfigBlueprint {
     /**
      * Name of the support. Each extension should provide its own default.

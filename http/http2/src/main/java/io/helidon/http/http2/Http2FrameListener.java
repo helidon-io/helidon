@@ -18,12 +18,14 @@ package io.helidon.http.http2;
 
 import java.util.List;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.socket.SocketContext;
 
 /**
  * Frame listener for HTTP/2 connection.
  */
+@Api.Internal
 public interface Http2FrameListener {
     /**
      * Create a new composite listener.

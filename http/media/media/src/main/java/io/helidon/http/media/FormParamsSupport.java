@@ -31,6 +31,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.parameters.Parameters;
@@ -46,6 +47,7 @@ import io.helidon.http.WritableHeaders;
  * Media support for {@link io.helidon.common.media.type.MediaTypes#APPLICATION_FORM_URLENCODED} and its plaintext counterpart.
  */
 @SuppressWarnings({"unchecked", "rawtypes"})
+@Api.Stable
 public class FormParamsSupport implements MediaSupport {
     private static final EntityReader URL_READER = new FormParamsUrlReader();
     private static final EntityWriter URL_WRITER = new FormParamsUrlWriter();

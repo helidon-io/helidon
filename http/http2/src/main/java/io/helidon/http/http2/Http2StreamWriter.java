@@ -16,9 +16,12 @@
 
 package io.helidon.http.http2;
 
+import io.helidon.common.Api;
+
 /**
  * Writer for a single stream.
  */
+@Api.Internal
 public interface Http2StreamWriter {
     /**
      * Write a frame.

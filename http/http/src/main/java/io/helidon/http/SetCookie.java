@@ -25,11 +25,14 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.Api;
+
 /**
  * Represents {@code 'Set-Cookie'} header value specified by <a href="https://tools.ietf.org/html/rfc6265">RFC6265</a>.
  *
  * <p>It is mutable and fluent builder.
  */
+@Api.Stable
 public class SetCookie {
 
     private static final String PARAM_SEPARATOR = "; ";

@@ -22,6 +22,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.Api;
+
 /**
  * A handler that is invoked when a response is sent outside of routing.
  * See {@link DirectHandler.EventType} to see which types
@@ -29,6 +31,7 @@ import java.util.Optional;
  * Direct handlers can be used both with blocking and reactive servers in Helidon.
  */
 @FunctionalInterface
+@Api.Stable
 public interface DirectHandler {
 
     /**

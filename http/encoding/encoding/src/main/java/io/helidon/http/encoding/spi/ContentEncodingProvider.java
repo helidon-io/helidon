@@ -16,11 +16,13 @@
 
 package io.helidon.http.encoding.spi;
 
+import io.helidon.common.Api;
 import io.helidon.config.ConfiguredProvider;
 import io.helidon.http.encoding.ContentEncoding;
 
 /**
  * Content encoding {@link java.util.ServiceLoader} service provider interface.
  */
+@Api.Stable
 public interface ContentEncodingProvider extends ConfiguredProvider<ContentEncoding> {
 }

@@ -20,6 +20,7 @@ import java.lang.System.Logger.Level;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
@@ -37,6 +38,7 @@ import io.helidon.http.media.MediaSupport;
  */
 @SuppressWarnings("unchecked")
 @Configured(prefix = "multipart", provides = MediaSupport.class)
+@Api.Stable
 public class MultiPartSupport implements MediaSupport {
     /**
      * The default boundary used for encoding multipart messages.

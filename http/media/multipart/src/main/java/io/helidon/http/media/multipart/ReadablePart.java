@@ -18,6 +18,7 @@ package io.helidon.http.media.multipart;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpMediaType;
 import io.helidon.http.media.ReadableEntity;
@@ -25,6 +26,7 @@ import io.helidon.http.media.ReadableEntity;
 /**
  * A single part of a multipart message.
  */
+@Api.Stable
 public interface ReadablePart extends ReadableEntity {
     /**
      * Name of this multipart part.

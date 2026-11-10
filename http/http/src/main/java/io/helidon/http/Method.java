@@ -31,6 +31,7 @@ import io.helidon.common.Api;
  * <p>
  * This class also contains string method names, such as {@link #GET_NAME} to allow usage in annotations.
  */
+@Api.Stable
 public final class Method {
     /**
      * {@value} method name.

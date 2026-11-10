@@ -21,11 +21,13 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.stream.StreamSupport;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.LazyString;
 
 /**
  * Values of commonly used headers.
  */
+@Api.Stable
 public final class HeaderValues {
     /**
      * Accept byte ranges for file download.

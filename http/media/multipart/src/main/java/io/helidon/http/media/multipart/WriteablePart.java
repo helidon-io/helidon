@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.io.OutputStream;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.media.type.MediaType;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpMediaType;
@@ -31,6 +32,7 @@ import io.helidon.http.media.MediaContext;
 /**
  * A single part of a {@link WriteableMultiPart} message.
  */
+@Api.Stable
 public interface WriteablePart {
     /**
      * Builder to create a new part.

@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.config.Config;
 import io.helidon.http.Headers;
@@ -37,6 +38,7 @@ import jakarta.json.bind.Jsonb;
  * {@link java.util.ServiceLoader} provider implementation for JSON Binding media support.
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
+@Api.Stable
 public class JsonbSupport extends MediaSupportBase<JsonbSupportConfig> implements RuntimeType.Api<JsonbSupportConfig> {
     static final String ID = "jsonb";
 
