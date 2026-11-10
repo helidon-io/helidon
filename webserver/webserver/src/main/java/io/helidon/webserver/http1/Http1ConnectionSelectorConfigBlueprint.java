@@ -32,6 +32,10 @@ import io.helidon.webserver.http1.spi.Http1Upgrader;
 interface Http1ConnectionSelectorConfigBlueprint extends Prototype.Factory<Http1ConnectionSelector> {
     /**
      * Upgraders to support upgrading from HTTP/1.1 to a different protocol (such as {@code websocket}).
+     * <p>
+     * Configuration and registration of built-in Helidon upgraders is Stable API.
+     * The {@link io.helidon.webserver.http1.spi.Http1Upgrader} SPI remains Internal API; implementing custom upgraders
+     * or directly invoking their connection upgrade callbacks is outside this Stable configuration contract.
      *
      * @return map of protocol name to upgrader
      */
@@ -52,6 +56,9 @@ interface Http1ConnectionSelectorConfigBlueprint extends Prototype.Factory<Http1
 
         /**
          * Add a new upgrader, replacing an existing one for the same protocol.
+         * <p>
+         * Registration of built-in Helidon upgraders is Stable API. Custom implementations of
+         * {@link io.helidon.webserver.http1.spi.Http1Upgrader} use an Internal SPI.
          *
          * @param builder builder to update
          * @param upgrader upgrader to add
