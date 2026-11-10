@@ -28,6 +28,10 @@
     <name>Helidon WebServer Observe Tracing</name>
     <description>WebServer Tracing observability support</description>
 
+    <properties>
+        <spotbugs.exclude>etc/spotbugs/exclude.xml</spotbugs.exclude>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>
@@ -79,6 +83,11 @@
         <dependency>
             <groupId>io.helidon.testing</groupId>
             <artifactId>helidon-testing-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.tracing.providers</groupId>
+            <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

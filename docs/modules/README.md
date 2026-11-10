@@ -21,6 +21,7 @@ index:
 - [gRPC](grpc/README.md)
 - [Health](health.md)
 - [Injection](injection/README.md)
+- [JDK Flight Recorder](jfr.md)
 - [JSON](json/README.md)
 - [JSON-RPC](jsonrpc/README.md)
 - [Metrics](metrics/README.md)

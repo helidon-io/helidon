@@ -11,6 +11,11 @@ In Helidon 4 all observability features were moved to one logical module:
 `observe`. The observability support groups all observe endpoints together under
 a single context root (the default behavior) `/observe`.
 
+[JDK Flight Recorder](jfr.md) records HTTP request and tracing context
+alongside JVM activity. These events are included in their owning
+modules and use JFR recording settings independently of the `/observe`
+endpoints.
+
 ## Maven Coordinates
 
 To enable Helidon Observability, add the following dependency to your project’s

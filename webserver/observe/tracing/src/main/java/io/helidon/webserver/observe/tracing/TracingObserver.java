@@ -217,7 +217,16 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
                     context.register(inboundSpanContext.get());
                     context.register(TracingConfig.class, inboundSpanContext.get());
                 }
-                Contexts.runInContext(context, chain::proceed);
+                RequestTraceContextEvent event = RequestTraceContextEvent.begin(inboundSpanContext.orElse(null),
+                                                                                "inboundContext");
+                try {
+                    Contexts.runInContext(context, chain::proceed);
+                } finally {
+                    if (event != null) {
+                        event.end();
+                        event.commit();
+                    }
+                }
                 return;
             }
 
@@ -263,7 +272,15 @@ public class TracingObserver implements Observer, RuntimeType.Api<TracingObserve
 
             try (Scope ignored = span.activate()) {
 
-                Contexts.runInContext(context, chain::proceed);
+                RequestTraceContextEvent event = RequestTraceContextEvent.begin(span.context(), "serverSpan");
+                try {
+                    Contexts.runInContext(context, chain::proceed);
+                } finally {
+                    if (event != null) {
+                        event.end();
+                        event.commit();
+                    }
+                }
 
                 semconv.beforeEnd(span);
                 span.end();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.http;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -38,6 +39,18 @@ import static org.junit.jupiter.api.Named.named;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 class PathMatchersTest {
+    static Stream<Arguments> routeTemplateData() {
+        return Stream.of(arguments(PathMatchers.exact("items"), "/items"),
+                         arguments(PathMatchers.exact("/hello%20world"), "/hello world"),
+                         arguments(PathMatchers.prefix("/items/"), "/items/*"),
+                         arguments(PathMatchers.pattern("/items/{id}"), "/items/{id}"),
+                         arguments(PathMatchers.pattern("/items[/{id}]"), "/items[/{id}]"),
+                         arguments(PathMatchers.create("/items"), "/items"),
+                         arguments(PathMatchers.create("/items/*"), "/items/*"),
+                         arguments(PathMatchers.create("/items/{id}"), "/items/{id}"),
+                         arguments(PathMatchers.any(), ""));
+    }
+
     static Stream<Arguments> subpathData() {
         return Stream.of(
                 // DOCS: `/foo/{+}` - Convenience shortcut for unnamed segment with regular expression `{:.+}`
@@ -97,6 +110,37 @@ class PathMatchersTest {
 
         match = matcher.match(UriPath.create(pathPrefix + "suffix"));
         assertThat("suffix without slash", match.accepted(), is(testData.pathStartingWithString));
+    }
+
+    @ParameterizedTest
+    @MethodSource("routeTemplateData")
+    void testRouteTemplateDoesNotDependOnRequests(PathMatcher matcher, String template) {
+        assertThat(matcher.routeTemplate(), is(Optional.of(template)));
+        matcher.match(UriPath.create("/items/secret-first"));
+        assertThat(matcher.routeTemplate(), is(Optional.of(template)));
+        matcher.prefixMatch(UriPath.create("/items/secret-second/nested"));
+        assertThat(matcher.routeTemplate(), is(Optional.of(template)));
+    }
+
+    @Test
+    void testCustomMatcherHasNoRouteTemplateByDefault() {
+        PathMatcher matcher = new PathMatcher() {
+            @Override
+            public PathMatchers.MatchResult match(UriPath path) {
+                return PathMatchers.any().match(path);
+            }
+
+            @Override
+            public PathMatchers.PrefixMatchResult prefixMatch(UriPath path) {
+                return PathMatchers.any().prefixMatch(path);
+            }
+
+            @Override
+            public Optional<String> matchingElement() {
+                return Optional.of("/request-derived-value");
+            }
+        };
+        assertThat(matcher.routeTemplate(), is(Optional.empty()));
     }
 
     @Test

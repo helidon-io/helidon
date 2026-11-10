@@ -26,6 +26,8 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.webserver.observe.tracing {
     requires io.helidon.common;
 
+    requires jdk.jfr;
+
     requires io.helidon.http;
     requires io.helidon.tracing.config;
     requires io.helidon.tracing;
