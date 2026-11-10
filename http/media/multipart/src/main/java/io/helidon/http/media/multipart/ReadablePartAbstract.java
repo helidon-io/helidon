@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,14 @@
 
 package io.helidon.http.media.multipart;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import io.helidon.common.GenericType;
 import io.helidon.http.ContentDisposition;
+import io.helidon.http.Header;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.HttpMediaType;
@@ -86,9 +90,26 @@ abstract class ReadablePartAbstract implements ReadablePart {
 
     protected abstract void finish();
 
+    private static String contentDispositionValue(Header header) {
+        String value = header.get();
+        for (int i = 0; i < value.length(); i++) {
+            if (value.charAt(i) > 0x7f) {
+                // HTTP headers preserve opaque octets. Multipart names commonly encode those octets as UTF-8.
+                try {
+                    return StandardCharsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(header.valueBytes())).toString();
+                } catch (CharacterCodingException ignored) {
+                    // Preserve the existing interpretation of legacy non-UTF-8 input.
+                    return value;
+                }
+            }
+        }
+        return value;
+    }
+
     private void contentDisposition() {
         if (headers.contains(HeaderNames.CONTENT_DISPOSITION)) {
-            this.contentDisposition = ContentDisposition.parse(headers.get(HeaderNames.CONTENT_DISPOSITION).get());
+            Header header = headers.get(HeaderNames.CONTENT_DISPOSITION);
+            this.contentDisposition = ContentDisposition.parse(contentDispositionValue(header));
         } else {
             this.contentDisposition = ContentDisposition.empty();
         }
