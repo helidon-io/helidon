@@ -810,7 +810,7 @@ telemetry:
 [opentelemetry-sd]: https://opentelemetry.io/docs/languages/java/sdk/#sdk-components
 [helidon-webclien]: ../../se/webclient.md#configuring-telemetry
 [this-section-bel]: #additional-dependencies
-[this-opentelemet]: https://github.com/open-telemetry/opentelemetry-java/tree/v1.68.0/exporters
+[this-opentelemet]: https://github.com/open-telemetry/opentelemetry-java/tree/v1.67.0/exporters
 [this-opentelemet-2]: https://opentelemetry.io/docs/languages/java/configuration/#properties-general
 [opentelemetry-do]: https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters
 [batch-with-defau]: https://opentelemetry.io/docs/languages/java/configuration/#properties-traces
