@@ -16,6 +16,15 @@
 
 package io.helidon.json.schema.codegen;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.Period;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -64,6 +73,20 @@ record SchemaInfo(TypeName generatedSchema, JsonObject schema) {
                                                         SchemaTypes.BIG_DECIMAL,
                                                         SchemaTypes.NUMBER);
 
+    // Other time representations can omit seconds or offsets, or include a zone ID.
+    // Keep them as strings without promising an incompatible standard format.
+    private static final Map<TypeName, String> TIME_FORMATS = Map.of(
+            TypeName.create(LocalDate.class), "date",
+            TypeName.create(Instant.class), "date-time",
+            TypeName.create(LocalDateTime.class), "",
+            TypeName.create(LocalTime.class), "",
+            TypeName.create(OffsetDateTime.class), "",
+            TypeName.create(OffsetTime.class), "",
+            TypeName.create(ZonedDateTime.class), "",
+            TypeName.create(Duration.class), "",
+            TypeName.create(Period.class), ""
+    );
+
     static SchemaInfo create(TypeInfo annotatedType, CodegenContext ctx) {
         TypeName annotatedTypeName = annotatedType.typeName();
         TypeName generatedTypeName = TypeName.builder()
@@ -76,7 +99,11 @@ record SchemaInfo(TypeName generatedSchema, JsonObject schema) {
         annotatedType.findAnnotation(SchemaTypes.JSON_SCHEMA_ID)
                 .flatMap(it -> it.stringValue())
                 .ifPresent(it -> schemaBuilder.set("$id", it));
-        processObject(schemaBuilder, annotatedType, ctx, new AtomicBoolean());
+        if (annotatedType.kind() == ElementKind.ENUM) {
+            processEnum(schemaBuilder, annotatedType, new AtomicBoolean());
+        } else {
+            processObject(schemaBuilder, annotatedType, ctx, new AtomicBoolean());
+        }
         return new SchemaInfo(generatedTypeName, schemaBuilder.build());
     }
 
@@ -127,6 +154,14 @@ record SchemaInfo(TypeName generatedSchema, JsonObject schema) {
         annotated.findAnnotation(SchemaTypes.JSON_SCHEMA_STRING_PATTERN)
                 .flatMap(it -> it.stringValue())
                 .ifPresent(it -> builder.set("pattern", it));
+    }
+
+    private static void processEnum(JsonObject.Builder builder, TypeInfo typeInfo, AtomicBoolean required) {
+        processStringAnnotations(builder, typeInfo, required);
+        builder.setStrings("enum", typeInfo.elementInfo().stream()
+                .filter(it -> it.kind() == ElementKind.ENUM_CONSTANT)
+                .map(TypedElementInfo::elementName)
+                .toList());
     }
 
     private static void processObject(JsonObject.Builder builder,
@@ -282,6 +317,12 @@ record SchemaInfo(TypeName generatedSchema, JsonObject schema) {
             }
         } else if (parameterTypeName.equals(TypeNames.STRING)) {
             properties.forEach(it -> processStringAnnotations(newStructBuilder, it.annotated(), required));
+        } else if (TIME_FORMATS.containsKey(parameterTypeName)) {
+            properties.forEach(it -> processStringAnnotations(newStructBuilder, it.annotated(), required));
+            String format = TIME_FORMATS.get(parameterTypeName);
+            if (!format.isEmpty()) {
+                newStructBuilder.set("format", format);
+            }
         } else if (parameterTypeName.array()
                 || parameterTypeName.isList()
                 || parameterTypeName.isSet()) {
@@ -289,14 +330,18 @@ record SchemaInfo(TypeName generatedSchema, JsonObject schema) {
         } else {
             boolean doNotInspect = properties.stream()
                     .anyMatch(it -> it.annotated().hasAnnotation(SchemaTypes.JSON_SCHEMA_DO_NOT_INSPECT));
-            if (parameterTypeName.packageName().startsWith("java.")
+            Optional<TypeInfo> maybeTypeInfo = doNotInspect ? Optional.empty() : ctx.typeInfo(parameterTypeName);
+            if (maybeTypeInfo.isPresent() && maybeTypeInfo.get().kind() == ElementKind.ENUM) {
+                processEnum(newStructBuilder, maybeTypeInfo.get(), required);
+                properties.forEach(it -> processStringAnnotations(newStructBuilder, it.annotated(), required));
+            } else if (parameterTypeName.packageName().startsWith("java.")
                     || parameterTypeName.packageName().startsWith("javax.")
                     || doNotInspect) {
                 //Do not inspect java and javax package classes
                 //Only the annotations on the element should be processed
                 properties.forEach(it -> processObjectAnnotations(newStructBuilder, it.annotated(), required));
             } else {
-                TypeInfo typeInfo = ctx.typeInfo(parameterTypeName)
+                TypeInfo typeInfo = maybeTypeInfo
                         .orElseThrow(() -> new CodegenException("Could not process required type: " + parameterTypeName,
                                                                 last.annotated()));
                 processObject(newStructBuilder, typeInfo, ctx, required);

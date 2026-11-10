@@ -16,6 +16,7 @@
 
 package io.helidon.json.schema;
 
+import java.util.List;
 import java.util.Optional;
 
 import io.helidon.builder.api.Option;
@@ -51,6 +52,24 @@ interface SchemaStringBlueprint extends SchemaItemBlueprint {
      */
     Optional<String> pattern();
 
+    /**
+     * String format, such as {@code date}, {@code time}, or {@code date-time}.
+     *
+     * @return string format
+     * @since 28.0.0
+     */
+    Optional<String> format();
+
+    /**
+     * Allowed string values, in declaration order.
+     * An empty list leaves the string values unrestricted by an enum keyword.
+     *
+     * @return allowed string values
+     * @since 28.0.0
+     */
+    @Option.Singular("enumValue")
+    List<String> enumValues();
+
     @Option.Access("")
     @Option.Default("STRING")
     @Override
@@ -63,6 +82,10 @@ interface SchemaStringBlueprint extends SchemaItemBlueprint {
         maxLength().ifPresent(maxLength -> builder.set("maxLength", maxLength));
         minLength().ifPresent(minLength -> builder.set("minLength", minLength));
         pattern().ifPresent(pattern -> builder.set("pattern", pattern));
+        format().ifPresent(format -> builder.set("format", format));
+        if (!enumValues().isEmpty()) {
+            builder.setStrings("enum", enumValues());
+        }
     }
 
 }

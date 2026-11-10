@@ -151,6 +151,31 @@ class SchemaLookup {
 }
 ```
 
+### Enum and Date/Time Properties
+
+For record and model properties, schema generation infers the following string
+schemas. An enum annotated with `@JsonSchema.Schema` can also define a root
+schema, using the enum constant names as its allowed values.
+
+| Java type | Generated JSON Schema |
+| --- | --- |
+| Enum | `type: "string"`, with `enum` containing the constant names in declaration order |
+| `LocalDate` | `type: "string"`, `format: "date"` |
+| `Instant` | `type: "string"`, `format: "date-time"` |
+| `LocalDateTime`, `LocalTime`, `OffsetDateTime`, `OffsetTime`, `ZonedDateTime`, `Duration`, `Period` | `type: "string"`, without an inferred `format` |
+
+The `date` and `date-time` formats describe the usual four-digit-year values.
+The other listed date/time types do not infer a standard format: depending on
+the type, Java's string representation can omit seconds or an offset, include
+a zone ID, or represent an amount of time instead of a date or time.
+
+Custom schema providers can use the `SchemaString` builder methods
+`format(String)`, `enumValues(List<String>)`, and `addEnumValue(String)` to
+describe their string representation. Schema parsing and generation preserve
+the string `format` and `enum` metadata.
+This metadata describes the JSON contract; it does not validate values or add
+serialization support for Java types.
+
 [jsonschema]: https://helidon.io/docs/core/v28/apidocs/io.helidon.json.schema/io/helidon/json/schema/JsonSchema.html
 [schema]: https://helidon.io/docs/core/v28/apidocs/io.helidon.json.schema/io/helidon/json/schema/Schema.html
 [service-named]: https://helidon.io/docs/core/v28/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Named.html

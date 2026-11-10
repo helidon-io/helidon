@@ -38,6 +38,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasItems;
@@ -114,6 +115,24 @@ class DeclarativeOpenApiTest {
 
         assertThat(schema.get("type"), is("integer"));
         assertThat(schema, not(hasKey("$ref")));
+    }
+
+    @Test
+    void generatedDocumentIncludesEnumAndDateRecordComponents() {
+        Map<String, Object> document = document();
+        Map<String, Object> operation = operation(document, "/items", "get");
+        String itemRef = ref(content(response(operation, "200"), MediaTypes.APPLICATION_JSON_VALUE));
+        assertThat(itemRef, startsWith(SCHEMA_REF_PREFIX));
+        Map<String, Object> item = object(schemas(document), itemRef.substring(SCHEMA_REF_PREFIX.length()));
+        Map<String, Object> properties = object(item, "properties");
+
+        Map<String, Object> state = object(properties, "state");
+        assertThat(state.get("type"), is("string"));
+        assertThat(list(state, "enum"), contains("ON", "OFF"));
+
+        Map<String, Object> since = object(properties, "since");
+        assertThat(since.get("type"), is("string"));
+        assertThat(since.get("format"), is("date"));
     }
 
     @Test

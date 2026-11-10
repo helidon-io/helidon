@@ -167,6 +167,8 @@ final class SchemaSupport {
             jsonObject.numberValue("maxLength").ifPresent(it -> stringBuilder.maxLength(it.longValue()));
             jsonObject.numberValue("minLength").ifPresent(it -> stringBuilder.minLength(it.longValue()));
             jsonObject.stringValue("pattern").ifPresent(stringBuilder::pattern);
+            jsonObject.stringValue("format").ifPresent(stringBuilder::format);
+            jsonObject.arrayValue("enum").map(SchemaCustomMethods::stringArray).ifPresent(stringBuilder::enumValues);
         }
 
         private static void parseInteger(SchemaInteger.Builder integerBuilder, JsonObject jsonObject) {
