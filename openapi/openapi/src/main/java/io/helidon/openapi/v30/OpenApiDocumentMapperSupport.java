@@ -418,7 +418,10 @@ public final class OpenApiDocumentMapperSupport {
                 .map(OpenApiDocumentMapperSupport::javaValue)
                 .toList();
         case STRING -> value.asString().value();
-        case NUMBER -> value.asNumber().bigDecimalValue();
+        case NUMBER -> {
+            BigDecimal number = value.asNumber().bigDecimalValue();
+            yield number.scale() == 0 ? number.unscaledValue() : number;
+        }
         case BOOLEAN -> value.asBoolean().value();
         case NULL -> null;
         case UNKNOWN -> value.toString();
