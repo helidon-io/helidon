@@ -318,6 +318,9 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
 
     private static Map<String, List<String>> rawParametersForCopy(UriQuery source) {
         String query = source.rawValue();
+        if (query.isEmpty() && source.names().isEmpty()) {
+            return Map.of();
+        }
         Map<String, List<String>> serialized = new HashMap<>();
         if (!query.isEmpty()) {
             int start = 0;
@@ -336,15 +339,18 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
         }
 
         Map<String, List<String>> current = new HashMap<>();
-        Set<String> unavailableNames = new HashSet<>();
+        Set<String> unavailableNames = null;
         for (String name : serialized.keySet()) {
             try {
                 current.put(name, source.getAllRaw(name));
             } catch (NoSuchElementException _) {
+                if (unavailableNames == null) {
+                    unavailableNames = new HashSet<>();
+                }
                 unavailableNames.add(UriEncoding.decodeQuery(name));
             }
         }
-        if (!unavailableNames.isEmpty()) {
+        if (unavailableNames != null) {
             // Keep ambiguous aliases together without discarding edits to unrelated parameters.
             for (Map.Entry<String, List<String>> entry : serialized.entrySet()) {
                 if (unavailableNames.contains(UriEncoding.decodeQuery(entry.getKey()))) {
