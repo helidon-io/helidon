@@ -124,6 +124,9 @@ public interface UriQuery extends Parameters {
      * A query that can provide an independent snapshot of its parameter state.
      * This allows query decorators to retain entries that cannot be reconstructed from {@link #rawValue()},
      * such as raw parameters whose value lists have been cleared.
+     * A decorator whose serialized parameter names differ from its raw lookup keys must supply this capability
+     * when used as a source for {@link UriQueryWriteable#from(UriQuery)}. A raw lookup using a decoded name
+     * cannot establish which serialized aliases the returned values represent.
      */
     @Api.Internal
     interface Copyable extends UriQuery {
@@ -133,6 +136,8 @@ public interface UriQuery extends Parameters {
          * The raw query serialization may be normalized.
          * Implementations should return a standard query created using {@link UriQueryWriteable#create()}
          * so that its complete parameter state can be copied without serialization.
+         * A non-standard snapshot must expose every serialized raw parameter name through {@link #getAllRaw(String)}
+         * using the same encoded spelling.
          *
          * @return independent parameter-state snapshot
          */

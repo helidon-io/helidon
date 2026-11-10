@@ -37,9 +37,16 @@ public interface UriQueryWriteable extends UriQuery {
 
     /**
      * Update this query by copying all names and their value(s) from the provided query.
+     * Raw and decoded parameter lists are copied independently.
+     * A generic query must expose every raw parameter name in its {@link #rawValue()} through
+     * {@link #getAllRaw(String)} using the same encoded spelling. A decorator that changes these names
+     * must implement {@link io.helidon.common.uri.UriQuery.Copyable} and supply a snapshot of its current
+     * parameter state. The serialized query alone cannot distinguish raw-list edits from renamed aliases.
      *
      * @param uriQuery uri query to read
      * @return updated instance
+     * @throws IllegalArgumentException if a serialized raw parameter name cannot be looked up in the source
+     *                                  or its supplied snapshot
      */
     UriQueryWriteable from(UriQuery uriQuery);
 

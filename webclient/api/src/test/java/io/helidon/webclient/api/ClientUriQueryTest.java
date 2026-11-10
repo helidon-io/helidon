@@ -20,6 +20,7 @@ import java.net.URI;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -39,11 +40,32 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.AdditionalAnswers.delegatesTo;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 
 class ClientUriQueryTest {
     private static final String RAW_QUERY = "z=1&flag&&a=first&a=second&a=third&%61=fourth&q=a+b&escaped=%2f%2F&";
+
+    @ParameterizedTest
+    @MethodSource("opaqueAliasQueries")
+    void testOpaqueAliasDecoratorIsRejectedWithoutChangingTarget(String backing,
+                                                               String serialized,
+                                                               String editedName,
+                                                               List<String> rawValues) {
+        UriQuery source = UriQuery.create(backing);
+        UriQuery decorated = mock(UriQuery.class, delegatesTo(source));
+        doReturn(serialized).when(decorated).rawValue();
+        source.getAllRaw(editedName).clear();
+        source.getAllRaw(editedName).addAll(rawValues);
+        var client = ClientUri.create(URI.create("https://upstream.example/%70ath?keep=%2f+"));
+
+        assertThrows(IllegalArgumentException.class, () -> client.writeableQuery().from(decorated));
+
+        assertThat(client.pathWithQueryAndFragment(), is("/%70ath?keep=%2f+"));
+        assertThat(client.query().names(), is(Set.of("keep")));
+        assertThat(client.query().all("keep"), is(List.of("/ ")));
+    }
 
     @Test
     void testImportedQuerySurvivesReads() {
@@ -237,9 +259,9 @@ class ClientUriQueryTest {
 
     @ParameterizedTest
     @MethodSource("editedDecoratorRawValues")
-    void testDecoratedQueryKeepsUnrelatedEditedRawValuesWhenNamesDiffer(List<String> rawValues) {
+    void testSnapshotDecoratedQueryKeepsUnrelatedEditedRawValuesWhenNamesDiffer(List<String> rawValues) {
         UriQuery source = UriQuery.create("aa=1&token=old");
-        UriQuery decorated = mock(UriQuery.class, delegatesTo(source));
+        UriQuery decorated = snapshotDecorator(source);
         doReturn("a%61=1&token=old").when(decorated).rawValue();
         source.getAllRaw("token").clear();
         source.getAllRaw("token").addAll(rawValues);
@@ -247,11 +269,11 @@ class ClientUriQueryTest {
         var copy = UriQueryWriteable.create().from(decorated);
         var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
 
-        assertThat(copy.getAllRaw("a%61"), is(List.of("1")));
+        assertThat(copy.getAllRaw("aa"), is(List.of("1")));
         assertThat(copy.getAllRaw("token"), is(rawValues));
         assertThat(copy.all("token"), is(List.of("old")));
         assertThat(copy.rawValue(), not(containsString("token=old")));
-        assertThat(client.query().getAllRaw("a%61"), is(List.of("1")));
+        assertThat(client.query().getAllRaw("aa"), is(List.of("1")));
         assertThat(client.query().getAllRaw("token"), is(rawValues));
         assertThat(client.query().all("token"), is(List.of("old")));
         assertThat(client.pathWithQueryAndFragment(), not(containsString("token=old")));
@@ -275,9 +297,9 @@ class ClientUriQueryTest {
 
     @ParameterizedTest
     @MethodSource("editedDecoratorRawValues")
-    void testDecoratedQueryKeepsEditedRawValuesWhenNamesDiffer(List<String> rawValues) {
+    void testSnapshotDecoratedQueryKeepsEditedRawValuesWhenNamesDiffer(List<String> rawValues) {
         UriQuery source = UriQuery.create("aa=old&keep=yes");
-        UriQuery decorated = mock(UriQuery.class, delegatesTo(source));
+        UriQuery decorated = snapshotDecorator(source);
         doReturn("a%61=old&keep=yes").when(decorated).rawValue();
         source.getAllRaw("aa").clear();
         source.getAllRaw("aa").addAll(rawValues);
@@ -344,6 +366,30 @@ class ClientUriQueryTest {
     }
 
     @ParameterizedTest
+    @MethodSource("snapshotAliasQueries")
+    void testSnapshotDecoratedQueryKeepsRepeatedAliasesAndLiteralPercentNames(String backing,
+                                                                           String serialized,
+                                                                           String firstName,
+                                                                           String secondName) {
+        UriQuery source = UriQuery.create(backing);
+        UriQuery decorated = snapshotDecorator(source);
+        doReturn(serialized).when(decorated).rawValue();
+
+        var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
+
+        assertThat(client.query().getAllRaw(firstName), is(List.of("first")));
+        assertThat(client.query().getAllRaw(secondName), is(List.of("second")));
+        assertThat(client.query().toMap(), is(source.toMap()));
+        UriQuery outbound = UriQuery.create(URI.create(client.pathWithQueryAndFragment()).getRawQuery());
+        assertThat(outbound.getAllRaw(firstName), is(List.of("first")));
+        assertThat(outbound.getAllRaw(secondName), is(List.of("second")));
+        source.getAllRaw(firstName).set(0, "source-only");
+        assertThat(client.query().getAllRaw(firstName), is(List.of("first")));
+        client.query().getAllRaw(secondName).set(0, "client-only");
+        assertThat(source.getAllRaw(secondName), is(List.of("second")));
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = {"safe", ""})
     void testForwardingDecoratorImportedReplacementRemovesSurvivingRawAlias(String replacement) {
         var source = UriQueryWriteable.create();
@@ -369,11 +415,11 @@ class ClientUriQueryTest {
 
     @ParameterizedTest
     @MethodSource("decoratedClientQueriesWithPlusNames")
-    void testCopyDecoratedClientQueryKeepsSerializedPlusAliases(String raw,
+    void testCopySnapshotDecoratedClientQueryKeepsCurrentPlusValues(String raw,
                                                                Map<String, List<String>> rawValues,
                                                                List<String> decodedValues) {
         var source = ClientUri.create(URI.create("https://source.example/?" + raw));
-        UriQuery decorated = mock(UriQuery.class, delegatesTo(source.query()));
+        UriQuery decorated = snapshotDecorator(source.query());
 
         UriQueryWriteable copy = UriQueryWriteable.create().from(decorated);
 
@@ -393,7 +439,7 @@ class ClientUriQueryTest {
             assertThat(entry.getKey(), copy.getAllRaw(entry.getKey()), is(entry.getValue()));
         }
         assertThat(copy.all("a b"), is(decodedValues));
-        copy.getAllRaw("a+b").set(0, "copy-only");
+        copy.getAllRaw("a%20b").set(0, "copy-only");
         copy.all("a b").set(0, "decoded-copy-only");
         assertThat(source.query().getAllRaw("a%20b").getFirst(), is("source-only"));
         assertThat(source.query().all("a b").getFirst(), is("decoded-source-only"));
@@ -401,15 +447,16 @@ class ClientUriQueryTest {
 
     @ParameterizedTest
     @MethodSource("decoratedClientQueriesWithPlusNames")
-    void testImportDecoratedClientQueryKeepsSerializedPlusAliases(String raw,
+    void testImportSnapshotDecoratedClientQueryKeepsCurrentPlusValues(String raw,
                                                                  Map<String, List<String>> rawValues,
                                                                  List<String> decodedValues) {
         var source = ClientUri.create(URI.create("https://source.example/?" + raw));
-        UriQuery decorated = mock(UriQuery.class, delegatesTo(source.query()));
+        UriQuery decorated = snapshotDecorator(source.query());
 
         var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
+        String normalizedRaw = "a%20b=" + String.join("&a%20b=", decodedValues);
 
-        assertThat(client.pathWithQueryAndFragment(), is("/?" + raw));
+        assertThat(client.pathWithQueryAndFragment(), is("/?" + normalizedRaw));
         for (var entry : rawValues.entrySet()) {
             assertThat(entry.getKey(), client.query().getAllRaw(entry.getKey()), is(entry.getValue()));
         }
@@ -417,33 +464,33 @@ class ClientUriQueryTest {
 
         source.query().getAllRaw("a%20b").set(0, "source-only");
         source.query().all("a b").set(0, "decoded-source-only");
-        assertThat(client.pathWithQueryAndFragment(), is("/?" + raw));
+        assertThat(client.pathWithQueryAndFragment(), is("/?" + normalizedRaw));
         for (var entry : rawValues.entrySet()) {
             assertThat(entry.getKey(), client.query().getAllRaw(entry.getKey()), is(entry.getValue()));
         }
         assertThat(client.query().all("a b"), is(decodedValues));
-        client.query().getAllRaw("a+b").set(0, "client-only");
+        client.query().getAllRaw("a%20b").set(0, "client-only");
         client.query().all("a b").set(0, "decoded-client-only");
-        assertThat(client.pathWithQueryAndFragment(), containsString("a+b=client-only"));
+        assertThat(client.pathWithQueryAndFragment(), containsString("a%20b=client-only"));
         assertThat(source.query().getAllRaw("a%20b").getFirst(), is("source-only"));
         assertThat(source.query().all("a b").getFirst(), is("decoded-source-only"));
     }
 
     @Test
-    void testDecoratedClientQueryCopiesClearedPlusValuesAfterSnapshotInvalidation() {
+    void testSnapshotDecoratedClientQueryCopiesClearedPlusValuesAfterSnapshotInvalidation() {
         var source = ClientUri.create(URI.create("https://source.example/?a+b=old&keep=yes"));
         source.query().getAllRaw("a%20b").clear();
-        UriQuery decorated = mock(UriQuery.class, delegatesTo(source.query()));
+        UriQuery decorated = snapshotDecorator(source.query());
 
         UriQueryWriteable copy = UriQueryWriteable.create().from(decorated);
         var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
 
         assertThat(source.query().rawValue(), is("keep=yes"));
         assertThat(copy.rawValue(), is("keep=yes"));
-        assertThat(copy.contains("a%20b"), is(false));
+        assertThat(copy.contains("a%20b"), is(true));
         assertThat(copy.all("a b"), is(List.of("old")));
         assertThat(client.pathWithQueryAndFragment(), is("/?keep=yes"));
-        assertThat(client.query().contains("a%20b"), is(false));
+        assertThat(client.query().contains("a%20b"), is(true));
         assertThat(client.query().all("a b"), is(List.of("old")));
 
         copy.set("a b", "copy-only");
@@ -453,10 +500,10 @@ class ClientUriQueryTest {
     }
 
     @Test
-    void testDecoratedClientQueryCopiesReplacedPlusValuesAfterSnapshotInvalidation() {
+    void testSnapshotDecoratedClientQueryCopiesReplacedPlusValuesAfterSnapshotInvalidation() {
         var source = ClientUri.create(URI.create("https://source.example/?a+b=old&keep=yes"));
         source.query().getAllRaw("a%20b").set(0, "replacement");
-        UriQuery decorated = mock(UriQuery.class, delegatesTo(source.query()));
+        UriQuery decorated = snapshotDecorator(source.query());
 
         UriQueryWriteable copy = UriQueryWriteable.create().from(decorated);
         var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
@@ -672,6 +719,14 @@ class ClientUriQueryTest {
         return query;
     }
 
+    private static UriQuery snapshotDecorator(UriQuery source) {
+        var decorated = mock(UriQuery.Copyable.class, delegatesTo(source));
+        doAnswer(_ -> source instanceof UriQuery.Copyable copyable
+                ? copyable.copy()
+                : UriQueryWriteable.create().from(source)).when(decorated).copy();
+        return decorated;
+    }
+
     private static String replacementRawAfterNamesRemoval() {
         var query = UriQueryWriteable.create();
         query.fromQueryString("a=new&flag&&");
@@ -683,12 +738,26 @@ class ClientUriQueryTest {
         return Stream.of(List.of(), List.of("replacement"));
     }
 
+    private static Stream<Arguments> opaqueAliasQueries() {
+        return Stream.of(
+                Arguments.of("aa=old", "a%61=old", "aa", List.of()),
+                Arguments.of("aa=old", "a%61=old", "aa", List.of("replacement")),
+                Arguments.of("aa=first&%61a=second", "a%61=first&a%61=second", "aa", List.of("first")),
+                Arguments.of("%2561=first&%61=second", "%25%36%31=first&%61=second", "%2561", List.of("first")));
+    }
+
+    private static Stream<Arguments> snapshotAliasQueries() {
+        return Stream.of(
+                Arguments.of("aa=first&%61a=second", "a%61=first&a%61=second", "aa", "%61a"),
+                Arguments.of("%2561=first&%61=second", "%25%36%31=first&%61=second", "%2561", "%61"));
+    }
+
     private static Stream<Arguments> decoratedClientQueriesWithPlusNames() {
         return Stream.of(
-                Arguments.of("a+b=x", Map.of("a+b", List.of("x")), List.of("x")),
-                Arguments.of("a+b=one&a+b=two", Map.of("a+b", List.of("one", "two")), List.of("one", "two")),
+                Arguments.of("a+b=x", Map.of("a%20b", List.of("x")), List.of("x")),
+                Arguments.of("a+b=one&a+b=two", Map.of("a%20b", List.of("one", "two")), List.of("one", "two")),
                 Arguments.of("a+b=one&a%20b=two&a+b=three",
-                             Map.of("a+b", List.of("one", "three"), "a%20b", List.of("two")),
+                             Map.of("a%20b", List.of("one", "two", "three")),
                              List.of("one", "two", "three")));
     }
 

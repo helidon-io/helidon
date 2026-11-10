@@ -323,7 +323,7 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
         if (query.isEmpty() && source.names().isEmpty()) {
             return Map.of();
         }
-        Map<String, List<String>> serialized = new HashMap<>();
+        Set<String> serializedNames = new HashSet<>();
         if (!query.isEmpty()) {
             int start = 0;
             while (true) {
@@ -331,8 +331,7 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
                 String segment = and == -1 ? query.substring(start) : query.substring(start, and);
                 int eq = segment.indexOf('=');
                 String name = eq == -1 ? segment : segment.substring(0, eq);
-                String value = eq == -1 ? "" : segment.substring(eq + 1);
-                serialized.computeIfAbsent(name, _ -> new ArrayList<>()).add(value);
+                serializedNames.add(name);
                 if (and == -1) {
                     break;
                 }
@@ -341,37 +340,12 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
         }
 
         Map<String, List<String>> current = new HashMap<>();
-        Set<String> unavailableNames = null;
-        for (String name : serialized.keySet()) {
+        for (String name : serializedNames) {
             try {
                 current.put(name, source.getAllRaw(name));
             } catch (NoSuchElementException _) {
-                if (unavailableNames == null) {
-                    unavailableNames = new HashSet<>();
-                }
-                unavailableNames.add(UriEncoding.decodeQuery(name));
-            }
-        }
-        if (unavailableNames != null) {
-            Map<String, List<String>> aliases = serialized.keySet().stream()
-                    .collect(Collectors.groupingBy(UriEncoding::decodeQuery));
-            for (Map.Entry<String, List<String>> entry : aliases.entrySet()) {
-                String name = entry.getKey();
-                if (unavailableNames.contains(name) && entry.getValue().size() == 1) {
-                    try {
-                        // A single serialized spelling can use the current raw list exposed by its decoded name.
-                        current.put(entry.getValue().getFirst(), source.getAllRaw(name));
-                        unavailableNames.remove(name);
-                    } catch (NoSuchElementException _) {
-                        // A decoded parameter name need not be a raw lookup key.
-                    }
-                }
-            }
-            // Keep ambiguous aliases together without discarding edits to unrelated parameters.
-            for (Map.Entry<String, List<String>> entry : serialized.entrySet()) {
-                if (unavailableNames.contains(UriEncoding.decodeQuery(entry.getKey()))) {
-                    current.put(entry.getKey(), entry.getValue());
-                }
+                throw new IllegalArgumentException("Query serialization contains raw parameter names that cannot be copied; "
+                                                           + "provide a UriQuery.Copyable snapshot");
             }
         }
         // Empty raw lists have no serialized entry, but can still be exposed through parameter names.

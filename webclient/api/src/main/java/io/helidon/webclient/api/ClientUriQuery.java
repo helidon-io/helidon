@@ -170,8 +170,8 @@ final class ClientUriQuery implements UriQueryWriteable, UriQuery.Copyable {
 
     @Override
     public UriQueryWriteable from(UriQuery source) {
-        rawQuery = null;
         delegate.from(source instanceof ClientUriQuery query ? query.delegate : source);
+        rawQuery = null;
         return this;
     }
 
