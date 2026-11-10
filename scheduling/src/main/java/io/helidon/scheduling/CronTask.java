@@ -50,6 +50,7 @@ class CronTask implements Cron {
     private final ReentrantLock scheduleNextLock = new ReentrantLock();
     private final CronConfig config;
     private final String taskId;
+    private final String eventTaskId;
 
     private ZonedDateTime lastNext = null;
 
@@ -62,6 +63,7 @@ class CronTask implements Cron {
         this.concurrentExecution = config.concurrentExecution();
         this.actualTask = config.task();
         this.taskId = config.id().orElseGet(() -> UUID.randomUUID().toString());
+        this.eventTaskId = ScheduledTaskEvents.taskId(config.id().orElse(null));
 
         CronDefinition cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(QUARTZ);
         CronParser parser = new CronParser(cronDefinition);
@@ -89,7 +91,7 @@ class CronTask implements Cron {
         }
         try {
             long it = iteration.incrementAndGet();
-            actualTask.run(new CronInvocation() {
+            ScheduledTaskEvents.run(actualTask, new CronInvocation() {
                 @Override
                 public String cron() {
                     return cron.asString();
@@ -109,7 +111,7 @@ class CronTask implements Cron {
                 public String description() {
                     return CronTask.this.description();
                 }
-            });
+            }, eventTaskId, "CRON");
         } catch (Throwable e) {
             LOGGER.log(Level.ERROR, () -> "Error when invoking scheduled method.", e);
         }
