@@ -172,7 +172,8 @@ a zone ID, or represent an amount of time instead of a date or time.
 Custom schema providers can use the `SchemaString` builder methods
 `format(String)`, `enumValues(List<String>)`, and `addEnumValue(String)` to
 describe their string representation. Schema parsing and generation preserve
-the string `format` and `enum` metadata.
+the string `format` and `enum` metadata. An absent `enum` imposes no enum
+restriction; an explicit empty `enum` array allows no values.
 This metadata describes the JSON contract; it does not validate values or add
 serialization support for Java types.
 

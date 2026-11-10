@@ -68,7 +68,7 @@ class SchemaStringTest {
         Schema schema = Schema.parse(expected.toString());
         SchemaString string = schema.rootString().orElseThrow();
         assertThat(string.format(), is(Optional.of("date")));
-        assertThat(string.enumValues(), is(List.of("2026-11-10", "2026-01-01")));
+        assertThat(string.enumValues().orElseThrow(), is(List.of("2026-11-10", "2026-01-01")));
         assertThat(string.minLength(), is(Optional.of(1L)));
         assertThat(string.maxLength(), is(Optional.of(10L)));
         assertThat(string.pattern(), is(Optional.of("[0-9-]+")));
@@ -96,7 +96,8 @@ class SchemaStringTest {
 
         Schema schema = Schema.parse(expected.toString());
         SchemaObject object = schema.rootObject().orElseThrow();
-        assertThat(object.stringProperties().get("state").enumValues(), is(List.of("PENDING", "ACTIVE", "CLOSED")));
+        assertThat(object.stringProperties().get("state").enumValues().orElseThrow(),
+                   is(List.of("PENDING", "ACTIVE", "CLOSED")));
         assertThat(object.stringProperties().get("updated").format(), is(Optional.of("date-time")));
         assertThat(schema.generateObjectNoKeywords(), is(expected));
         assertThat(Schema.parse(schema.generate()).generateObjectNoKeywords(), is(expected));
@@ -118,7 +119,7 @@ class SchemaStringTest {
         Schema schema = Schema.parse(expected.toString());
         SchemaString items = (SchemaString) schema.rootArray().orElseThrow().items().orElseThrow();
         assertThat(items.format(), is(Optional.of("time")));
-        assertThat(items.enumValues(), is(List.of("14:30:00Z", "09:00:00Z")));
+        assertThat(items.enumValues().orElseThrow(), is(List.of("14:30:00Z", "09:00:00Z")));
         assertThat(schema.generateObjectNoKeywords(), is(expected));
         assertThat(Schema.parse(schema.generate()).generateObjectNoKeywords(), is(expected));
     }
@@ -128,12 +129,47 @@ class SchemaStringTest {
         Schema schema = Schema.builder().rootString(SchemaString.create()).build();
         SchemaString string = schema.rootString().orElseThrow();
         assertThat(string.format(), is(Optional.empty()));
-        assertThat(string.enumValues(), is(List.of()));
+        assertThat(string.enumValues(), is(Optional.empty()));
         assertThat(schema.generateObjectNoKeywords().containsKey("format"), is(false));
         assertThat(schema.generateObjectNoKeywords().containsKey("enum"), is(false));
 
         SchemaString parsed = Schema.parse(schema.generate()).rootString().orElseThrow();
         assertThat(parsed.format(), is(Optional.empty()));
-        assertThat(parsed.enumValues(), is(List.of()));
+        assertThat(parsed.enumValues(), is(Optional.empty()));
+    }
+
+    @Test
+    void testExplicitEmptyEnum() {
+        Schema schema = Schema.builder().rootString(string -> string.enumValues(List.of())).build();
+
+        assertThat(schema.rootString().orElseThrow().enumValues().orElseThrow(), is(List.of()));
+        assertThat(schema.generateObjectNoKeywords().arrayValue("enum").orElseThrow().values(), is(List.of()));
+    }
+
+    @Test
+    void testEmptyEnumRoundTrip() {
+        JsonObject expected = JsonParser.create("""
+                {
+                    "type": "string",
+                    "enum": []
+                }
+                """).readJsonObject();
+
+        Schema schema = Schema.parse(expected.toString());
+        assertThat(schema.rootString().orElseThrow().enumValues().orElseThrow(), is(List.of()));
+        assertThat(schema.generateObjectNoKeywords(), is(expected));
+        assertThat(Schema.parse(schema.generate()).generateObjectNoKeywords(), is(expected));
+    }
+
+    @Test
+    void testRemoveEnumRestrictionFromCopy() {
+        SchemaString restricted = SchemaString.builder().enumValues(List.of()).build();
+        SchemaString.Builder copy = SchemaString.builder().from(restricted);
+        Schema copiedSchema = Schema.builder().rootString(copy.build()).build();
+        assertThat(copiedSchema.generateObjectNoKeywords().arrayValue("enum").orElseThrow().values(), is(List.of()));
+
+        Schema unrestricted = Schema.builder().rootString(copy.clearEnumValues().build()).build();
+        assertThat(unrestricted.generateObjectNoKeywords().containsKey("enum"), is(false));
+        assertThat(Schema.builder().rootString(restricted).build().generateObjectNoKeywords().containsKey("enum"), is(true));
     }
 }

@@ -62,13 +62,14 @@ interface SchemaStringBlueprint extends SchemaItemBlueprint {
 
     /**
      * Allowed string values, in declaration order.
-     * An empty list leaves the string values unrestricted by an enum keyword.
+     * When absent, no enum keyword restricts the string values.
+     * A present empty list generates an empty enum, which allows no values.
      *
      * @return allowed string values
      * @since 28.0.0
      */
     @Option.Singular("enumValue")
-    List<String> enumValues();
+    Optional<List<String>> enumValues();
 
     @Option.Access("")
     @Option.Default("STRING")
@@ -83,9 +84,7 @@ interface SchemaStringBlueprint extends SchemaItemBlueprint {
         minLength().ifPresent(minLength -> builder.set("minLength", minLength));
         pattern().ifPresent(pattern -> builder.set("pattern", pattern));
         format().ifPresent(format -> builder.set("format", format));
-        if (!enumValues().isEmpty()) {
-            builder.setStrings("enum", enumValues());
-        }
+        enumValues().ifPresent(values -> builder.setStrings("enum", values));
     }
 
 }

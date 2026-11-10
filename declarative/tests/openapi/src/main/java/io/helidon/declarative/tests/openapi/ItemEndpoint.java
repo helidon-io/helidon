@@ -31,6 +31,6 @@ class ItemEndpoint {
     @Http.GET
     @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
     Item get() {
-        return new Item("item", Item.State.ON, LocalDate.of(2026, 1, 1));
+        return new Item("item", Item.State.ON, LocalDate.of(2026, 1, 1), null);
     }
 }

@@ -23,9 +23,12 @@ import io.helidon.json.schema.JsonSchema;
 
 @Json.Entity
 @JsonSchema.Schema
-record Item(String name, State state, LocalDate since) {
+record Item(String name, State state, LocalDate since, EmptyState emptyState) {
     enum State {
         ON,
         OFF
+    }
+
+    enum EmptyState {
     }
 }

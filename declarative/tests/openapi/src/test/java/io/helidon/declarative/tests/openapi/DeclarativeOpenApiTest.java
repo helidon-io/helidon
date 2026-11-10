@@ -133,6 +133,11 @@ class DeclarativeOpenApiTest {
         Map<String, Object> since = object(properties, "since");
         assertThat(since.get("type"), is("string"));
         assertThat(since.get("format"), is("date"));
+
+        Map<String, Object> emptyState = object(properties, "emptyState");
+        assertThat(emptyState.get("type"), is("string"));
+        assertThat(emptyState, hasKey("enum"));
+        assertThat(list(emptyState, "enum"), is(List.of()));
     }
 
     @Test

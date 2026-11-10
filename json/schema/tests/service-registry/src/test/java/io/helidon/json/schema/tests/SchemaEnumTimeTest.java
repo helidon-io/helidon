@@ -50,7 +50,7 @@ class SchemaEnumTimeTest {
         var provider = new SchemaItemRecord__JsonSchema();
         var root = provider.schema().rootObject().orElseThrow();
         assertThat(root.stringProperties().size(), is(3));
-        assertThat(root.stringProperties().get("state").enumValues(), is(List.of("ON", "OFF")));
+        assertThat(root.stringProperties().get("state").enumValues().orElseThrow(), is(List.of("ON", "OFF")));
         assertThat(root.stringProperties().get("since").format().orElseThrow(), is("date"));
         assertThat(provider.schema().generateObject(), is(JsonParser.create(provider.jsonSchema()).readJsonObject()));
     }
@@ -63,12 +63,12 @@ class SchemaEnumTimeTest {
         assertThat(root.stringProperties().get("date").required(), is(true));
         assertThat(root.stringProperties().get("date").description().orElseThrow(), is("A date"));
         assertThat(root.stringProperties().get("instant").format().orElseThrow(), is("date-time"));
-        assertThat(root.stringProperties().get("month").enumValues(),
+        assertThat(root.stringProperties().get("month").enumValues().orElseThrow(),
                    is(List.of("JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST",
                               "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER")));
         assertThat(root.stringProperties().get("month").title().orElseThrow(), is("Month"));
         assertThat(root.stringProperties().get("month").required(), is(true));
-        assertThat(root.stringProperties().get("dayOfWeek").enumValues(),
+        assertThat(root.stringProperties().get("dayOfWeek").enumValues().orElseThrow(),
                    is(List.of("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY")));
         for (String name : List.of("localDateTime", "localTime", "offsetDateTime", "offsetTime",
                                    "zonedDateTime", "duration", "period")) {
@@ -81,8 +81,17 @@ class SchemaEnumTimeTest {
     void testRootEnumUsesNames() {
         var provider = new SchemaState__JsonSchema();
         var root = provider.schema().rootString().orElseThrow();
-        assertThat(root.enumValues(), is(List.of("ON", "OFF")));
+        assertThat(root.enumValues().orElseThrow(), is(List.of("ON", "OFF")));
         assertThat(root.description().orElseThrow(), is("An enabled or disabled state"));
         assertThat(provider.schema().generateObject(), is(JsonParser.create(provider.jsonSchema()).readJsonObject()));
+    }
+
+    @Test
+    void testEmptyEnumKeepsConstraint() {
+        var provider = new SchemaEmptyState__JsonSchema();
+        var generated = JsonParser.create(provider.jsonSchema()).readJsonObject();
+        assertThat(generated.arrayValue("enum").orElseThrow().values(), is(List.of()));
+        assertThat(provider.schema().rootString().orElseThrow().enumValues().orElseThrow(), is(List.of()));
+        assertThat(provider.schema().generateObject(), is(generated));
     }
 }
