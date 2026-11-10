@@ -18,6 +18,7 @@ package io.helidon.json.schema.tests;
 
 import java.util.List;
 
+import io.helidon.json.JsonArray;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
 
@@ -50,7 +51,8 @@ class SchemaEnumTimeTest {
         var provider = new SchemaItemRecord__JsonSchema();
         var root = provider.schema().rootObject().orElseThrow();
         assertThat(root.stringProperties().size(), is(3));
-        assertThat(root.stringProperties().get("state").enumValues().orElseThrow(), is(List.of("ON", "OFF")));
+        assertThat(root.stringProperties().get("state").enumValues().orElseThrow(),
+                   is(JsonArray.createStrings(List.of("ON", "OFF")).values()));
         assertThat(root.stringProperties().get("since").format().orElseThrow(), is("date"));
         assertThat(provider.schema().generateObject(), is(JsonParser.create(provider.jsonSchema()).readJsonObject()));
     }
@@ -64,12 +66,13 @@ class SchemaEnumTimeTest {
         assertThat(root.stringProperties().get("date").description().orElseThrow(), is("A date"));
         assertThat(root.stringProperties().get("instant").format().orElseThrow(), is("date-time"));
         assertThat(root.stringProperties().get("month").enumValues().orElseThrow(),
-                   is(List.of("JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST",
-                              "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER")));
+                   is(JsonArray.createStrings(List.of("JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY",
+                                                      "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER")).values()));
         assertThat(root.stringProperties().get("month").title().orElseThrow(), is("Month"));
         assertThat(root.stringProperties().get("month").required(), is(true));
         assertThat(root.stringProperties().get("dayOfWeek").enumValues().orElseThrow(),
-                   is(List.of("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY")));
+                   is(JsonArray.createStrings(List.of("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY",
+                                                      "SUNDAY")).values()));
         for (String name : List.of("localDateTime", "localTime", "offsetDateTime", "offsetTime",
                                    "zonedDateTime", "duration", "period")) {
             assertThat(name + " must not claim an incompatible standard format",
@@ -81,7 +84,7 @@ class SchemaEnumTimeTest {
     void testRootEnumUsesNames() {
         var provider = new SchemaState__JsonSchema();
         var root = provider.schema().rootString().orElseThrow();
-        assertThat(root.enumValues().orElseThrow(), is(List.of("ON", "OFF")));
+        assertThat(root.enumValues().orElseThrow(), is(JsonArray.createStrings(List.of("ON", "OFF")).values()));
         assertThat(root.description().orElseThrow(), is("An enabled or disabled state"));
         assertThat(provider.schema().generateObject(), is(JsonParser.create(provider.jsonSchema()).readJsonObject()));
     }

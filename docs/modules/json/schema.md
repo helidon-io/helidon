@@ -170,10 +170,14 @@ the type, Java's string representation can omit seconds or an offset, include
 a zone ID, or represent an amount of time instead of a date or time.
 
 Custom schema providers can use the `SchemaString` builder methods
-`format(String)`, `enumValues(List<String>)`, and `addEnumValue(String)` to
-describe their string representation. Schema parsing and generation preserve
-the string `format` and `enum` metadata. An absent `enum` imposes no enum
-restriction; an explicit empty `enum` array allows no values.
+`format(String)`, `enumValues(List<JsonValue>)`, and `addEnumValue(JsonValue)` to
+describe their schema. The `addEnumValue(String)` overload adds a JSON string.
+Schema parsing and generation preserve `format` and every `enum` entry, including
+JSON null, numbers, booleans, objects, and arrays. Entries retain their JSON types
+and declaration order; they are not converted to strings or discarded.
+The `type: "string"` constraint still applies independently when validating an
+instance. An absent `enum` imposes no enum restriction; an explicit empty `enum`
+array allows no values.
 This metadata describes the JSON contract; it does not validate values or add
 serialization support for Java types.
 

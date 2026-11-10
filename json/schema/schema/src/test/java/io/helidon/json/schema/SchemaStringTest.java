@@ -19,7 +19,11 @@ package io.helidon.json.schema;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonBoolean;
 import io.helidon.json.JsonException;
+import io.helidon.json.JsonNull;
+import io.helidon.json.JsonNumber;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
 
@@ -55,6 +59,27 @@ class SchemaStringTest {
     }
 
     @Test
+    void testProgrammaticJsonEnumMetadata() {
+        Schema schema = Schema.builder()
+                .rootString(string -> string
+                        .addEnumValue("ON")
+                        .addEnumValue(JsonNull.instance())
+                        .addEnumValue(JsonNumber.create(42))
+                        .addEnumValue(JsonBoolean.create(true))
+                        .addEnumValue(JsonObject.builder().set("code", 42).build())
+                        .addEnumValue(JsonArray.createStrings(List.of("ON"))))
+                .build();
+        JsonObject expected = JsonParser.create("""
+                {"type": "string", "enum": ["ON", null, 42, true, {"code": 42}, ["ON"]]}
+                """).readJsonObject();
+
+        assertThat(schema.rootString().orElseThrow().enumValues().orElseThrow(),
+                   is(expected.arrayValue("enum").orElseThrow().values()));
+        assertThat(schema.generateObjectNoKeywords(), is(expected));
+        assertThat(Schema.parse(schema.generate()).generateObjectNoKeywords(), is(expected));
+    }
+
+    @Test
     void testRootRoundTrip() {
         JsonObject expected = JsonParser.create("""
                 {
@@ -70,7 +95,7 @@ class SchemaStringTest {
         Schema schema = Schema.parse(expected.toString());
         SchemaString string = schema.rootString().orElseThrow();
         assertThat(string.format(), is(Optional.of("date")));
-        assertThat(string.enumValues().orElseThrow(), is(List.of("2026-11-10", "2026-01-01")));
+        assertThat(string.enumValues().orElseThrow(), is(expected.arrayValue("enum").orElseThrow().values()));
         assertThat(string.minLength(), is(Optional.of(1L)));
         assertThat(string.maxLength(), is(Optional.of(10L)));
         assertThat(string.pattern(), is(Optional.of("[0-9-]+")));
@@ -99,7 +124,7 @@ class SchemaStringTest {
         Schema schema = Schema.parse(expected.toString());
         SchemaObject object = schema.rootObject().orElseThrow();
         assertThat(object.stringProperties().get("state").enumValues().orElseThrow(),
-                   is(List.of("PENDING", "ACTIVE", "CLOSED")));
+                   is(JsonArray.createStrings(List.of("PENDING", "ACTIVE", "CLOSED")).values()));
         assertThat(object.stringProperties().get("updated").format(), is(Optional.of("date-time")));
         assertThat(schema.generateObjectNoKeywords(), is(expected));
         assertThat(Schema.parse(schema.generate()).generateObjectNoKeywords(), is(expected));
@@ -121,31 +146,32 @@ class SchemaStringTest {
         Schema schema = Schema.parse(expected.toString());
         SchemaString items = (SchemaString) schema.rootArray().orElseThrow().items().orElseThrow();
         assertThat(items.format(), is(Optional.of("time")));
-        assertThat(items.enumValues().orElseThrow(), is(List.of("14:30:00Z", "09:00:00Z")));
+        assertThat(items.enumValues().orElseThrow(),
+                   is(JsonArray.createStrings(List.of("14:30:00Z", "09:00:00Z")).values()));
         assertThat(schema.generateObjectNoKeywords(), is(expected));
         assertThat(Schema.parse(schema.generate()).generateObjectNoKeywords(), is(expected));
     }
 
     @Test
     void testMixedTypeRootEnumRoundTrip() {
-        Schema schema = Schema.parse("""
+        JsonObject expected = JsonParser.create("""
                 {
                     "type": "string",
-                    "enum": ["ON", null, 42, true, {}, [], "OFF"]
+                    "enum": ["ON", null, 42, "42", true, false, {"code": 42}, ["ON", null, 42],
+                             123456789012345678901234567890, 0.123456789012345678901234567890, "OFF"]
                 }
-                """);
-        JsonObject expected = JsonParser.create("""
-                {"type": "string", "enum": ["ON", "OFF"]}
                 """).readJsonObject();
+        Schema schema = Schema.parse(expected.toString());
 
-        assertThat(schema.rootString().orElseThrow().enumValues().orElseThrow(), is(List.of("ON", "OFF")));
+        assertThat(schema.rootString().orElseThrow().enumValues().orElseThrow(),
+                   is(expected.arrayValue("enum").orElseThrow().values()));
         assertThat(schema.generateObjectNoKeywords(), is(expected));
         assertThat(Schema.parse(schema.generate()).generateObjectNoKeywords(), is(expected));
     }
 
     @Test
     void testMixedTypePropertyEnumRoundTrip() {
-        Schema schema = Schema.parse("""
+        JsonObject expected = JsonParser.create("""
                 {
                     "type": "object",
                     "properties": {
@@ -153,19 +179,13 @@ class SchemaStringTest {
                     },
                     "required": ["state"]
                 }
-                """);
-        JsonObject expected = JsonParser.create("""
-                {
-                    "type": "object",
-                    "properties": {
-                        "state": {"type": "string", "enum": ["ON"]}
-                    },
-                    "required": ["state"]
-                }
                 """).readJsonObject();
+        Schema schema = Schema.parse(expected.toString());
 
         SchemaString state = schema.rootObject().orElseThrow().stringProperties().get("state");
-        assertThat(state.enumValues().orElseThrow(), is(List.of("ON")));
+        assertThat(state.enumValues().orElseThrow(),
+                   is(expected.objectValue("properties").orElseThrow()
+                              .objectValue("state").orElseThrow().arrayValue("enum").orElseThrow().values()));
         assertThat(state.required(), is(true));
         assertThat(schema.generateObjectNoKeywords(), is(expected));
         assertThat(Schema.parse(schema.generate()).generateObjectNoKeywords(), is(expected));
@@ -173,27 +193,23 @@ class SchemaStringTest {
 
     @Test
     void testMixedTypeArrayItemEnumRoundTrip() {
-        Schema schema = Schema.parse("""
+        JsonObject expected = JsonParser.create("""
                 {
                     "type": "array",
                     "items": {"type": "string", "enum": ["ON", 42]}
                 }
-                """);
-        JsonObject expected = JsonParser.create("""
-                {
-                    "type": "array",
-                    "items": {"type": "string", "enum": ["ON"]}
-                }
                 """).readJsonObject();
+        Schema schema = Schema.parse(expected.toString());
 
         SchemaString items = (SchemaString) schema.rootArray().orElseThrow().items().orElseThrow();
-        assertThat(items.enumValues().orElseThrow(), is(List.of("ON")));
+        assertThat(items.enumValues().orElseThrow(),
+                   is(expected.objectValue("items").orElseThrow().arrayValue("enum").orElseThrow().values()));
         assertThat(schema.generateObjectNoKeywords(), is(expected));
         assertThat(Schema.parse(schema.generate()).generateObjectNoKeywords(), is(expected));
     }
 
     @Test
-    void testEnumsWithoutStringValuesRemainRestricted() {
+    void testEnumsWithoutStringValuesRoundTrip() {
         List<String> templates = List.of(
                 """
                 {"type": "string", "enum": %s}
@@ -205,9 +221,9 @@ class SchemaStringTest {
                 {"type": "array", "items": {"type": "string", "enum": %s}}
                 """);
         for (String template : templates) {
-            JsonObject expected = JsonParser.create(template.formatted("[]")).readJsonObject();
             for (String values : List.of("[null]", "[42]", "[true]", "[{}]", "[[]]", "[null, 42, true, {}, []]")) {
                 String input = template.formatted(values);
+                JsonObject expected = JsonParser.create(input).readJsonObject();
                 Schema schema = Schema.parse(input);
                 assertThat(input, schema.generateObjectNoKeywords(), is(expected));
                 assertThat(input, Schema.parse(schema.generate()).generateObjectNoKeywords(), is(expected));
@@ -267,13 +283,18 @@ class SchemaStringTest {
 
     @Test
     void testRemoveEnumRestrictionFromCopy() {
-        SchemaString restricted = SchemaString.builder().enumValues(List.of()).build();
+        JsonArray values = JsonParser.create("""
+                ["ON", null, 42, true, {"code": 42}, ["ON"]]
+                """).readJsonArray();
+        SchemaString restricted = SchemaString.builder().enumValues(values.values()).build();
         SchemaString.Builder copy = SchemaString.builder().from(restricted);
         Schema copiedSchema = Schema.builder().rootString(copy.build()).build();
-        assertThat(copiedSchema.generateObjectNoKeywords().arrayValue("enum").orElseThrow().values(), is(List.of()));
+        assertThat(copy.enumValues().orElseThrow(), is(values.values()));
+        assertThat(copiedSchema.generateObjectNoKeywords().arrayValue("enum").orElseThrow(), is(values));
 
         Schema unrestricted = Schema.builder().rootString(copy.clearEnumValues().build()).build();
         assertThat(unrestricted.generateObjectNoKeywords().containsKey("enum"), is(false));
-        assertThat(Schema.builder().rootString(restricted).build().generateObjectNoKeywords().containsKey("enum"), is(true));
+        assertThat(Schema.builder().rootString(restricted).build().generateObjectNoKeywords()
+                           .arrayValue("enum").orElseThrow(), is(values));
     }
 }
