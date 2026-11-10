@@ -456,7 +456,8 @@ telemetry:
   tracing:
     sampler: "always_off"
     exporters:
-      - protocol: http/proto
+      - type: otlp
+        protocol: http/proto
         compression: gzip
     processors:
       - type: batch
@@ -599,21 +600,26 @@ telemetry:
     metrics:                                          # <1>
       exporters:
         - name: exp-1                                 # <2>
+          type: otlp
           endpoint: "http://host:1234"
-          default-histogram-aggregation:              # <3>
+          temporality-preference: cumulative          # <3>
+          default-histogram-aggregation:              # <4>
             type: base2-exponential-bucket-histogram
             max-buckets: 152
             max-scale: 19
-        - name: exp-2                                 # <4>
-          temporality-preference: delta               # <5>
-          default-histogram-aggregation:              # <6>
+        - name: exp-2                                 # <5>
+          type: otlp
+          protocol: grpc
+          temporality-preference: delta               # <6>
+          default-histogram-aggregation:              # <7>
             type: explicit-bucket-histogram
             bucket-boundaries: [3,5,7]
       readers:
-        - exporter: exp-1                             # <7>
+        - type: periodic                              # <8>
+          exporter: exp-1
           interval: PT6S
       views:
-        - name: sum-view                              # <8>
+        - name: sum-view                              # <9>
           aggregation:
             type: sum
           description: "Sum view"
@@ -623,18 +629,18 @@ telemetry:
             meter-name: my-counter
 ```
 1. Introduces the metrics configuration.
-2. Introduces the first metric exporter (with name `exp-1`), using the default
-   cumulative temporality.
-3. Prescribes to aggregate histograms for transmission using the OpenTelemetry
+2. Introduces the first metric exporter (with name `exp-1`).
+3. Indicates to accumulate measurement values since the previous transmission.
+4. Prescribes to aggregate histograms for transmission using the OpenTelemetry
    `BASE2_EXPONENTIAL_BUCKET_HISTOGRAM` technique with the specified maximum
    number of buckets and maximum scale.
-4. Introduces the second metric exporter (with name `exp-2`).
-5. Indicates to transmit deltas since the last transmission.
-6. Prescribes to aggregate histograms using a histogram with the given explicit
+5. Introduces the second metric exporter (with name `exp-2`).
+6. Indicates to transmit deltas since the last transmission.
+7. Prescribes to aggregate histograms using a histogram with the given explicit
    bucket boundary values.
-7. Declares a single metric reader of the OpenTelemetry `PERIODIC` types
+8. Declares a single metric reader of the OpenTelemetry `PERIODIC` types
    gathering data each 6 seconds.
-8. Declares a single view to influence the transmission of the `my-counter`
+9. Declares a single view to influence the transmission of the `my-counter`
    counter data.
 <!--@mdc :: -->
 
@@ -772,6 +778,7 @@ telemetry:
           schedule-delay: PT10S
           max-queue-size: 15
           max-export-batch-size: 5
+          timeout: PT30S
         - type: simple
       exporters:                          # <5>
         - name: exp-1
