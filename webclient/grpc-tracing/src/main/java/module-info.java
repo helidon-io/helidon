@@ -19,6 +19,7 @@
  */
 module io.helidon.webclient.grpc.tracing {
 
+    requires io.helidon.common;
     requires transitive io.grpc;
     requires transitive io.grpc.stub;
     requires transitive io.helidon.webclient;

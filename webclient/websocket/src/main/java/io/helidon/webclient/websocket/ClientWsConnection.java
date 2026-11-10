@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.socket.HelidonSocket;
@@ -42,6 +43,7 @@ import io.helidon.websocket.WsSession;
  * Client WebSocket connection. This connection handles a single WebSocket interaction, using
  * {@link io.helidon.websocket.WsListener} to handle connection events.
  */
+@Api.Internal
 public class ClientWsConnection implements WsSession, Runnable {
     private static final System.Logger LOGGER = System.getLogger(ClientWsConnection.class.getName());
 

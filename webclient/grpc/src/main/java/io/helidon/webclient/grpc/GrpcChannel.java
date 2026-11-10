@@ -19,6 +19,7 @@ package io.helidon.webclient.grpc;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import io.helidon.common.Api;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.service.registry.Services;
@@ -32,6 +33,7 @@ import io.grpc.MethodDescriptor;
 /**
  * Helidon's implementation of a gRPC {@link Channel}.
  */
+@Api.Internal
 public class GrpcChannel extends Channel {
 
     private final GrpcClientImpl grpcClient;

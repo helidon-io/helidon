@@ -58,6 +58,7 @@ import static java.lang.System.Logger.Level.TRACE;
  * A TCP connection that can be used by any protocol that is based on TCP.
  * The connection supports proxying and is not attempting to cache anything.
  */
+@Api.Internal
 public class TcpClientConnection implements ClientConnection, ConnectionObservationContext {
     private static final System.Logger LOGGER = System.getLogger(TcpClientConnection.class.getName());
 

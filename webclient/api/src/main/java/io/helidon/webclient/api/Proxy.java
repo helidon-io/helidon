@@ -60,6 +60,7 @@ import io.helidon.webclient.spi.DnsResolver;
 /**
  * A definition of a proxy server to use for outgoing requests.
  */
+@Api.Stable
 public class Proxy {
     private static final System.Logger LOGGER = System.getLogger(Proxy.class.getName());
     private static final Tls NO_TLS = Tls.builder().enabled(false).build();

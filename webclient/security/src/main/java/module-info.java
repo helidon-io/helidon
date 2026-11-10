@@ -26,6 +26,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Path({"WebClient", "Security"})
 module io.helidon.webclient.security {
 
+    requires io.helidon.common;
     requires io.helidon.security.providers.common;
     requires io.helidon.service.registry;
     requires io.helidon.webclient;

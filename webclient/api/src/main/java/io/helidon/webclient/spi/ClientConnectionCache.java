@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.spi;
 
+import io.helidon.common.Api;
 import io.helidon.common.resumable.Resumable;
 import io.helidon.webclient.api.ReleasableResource;
 
@@ -24,6 +25,7 @@ import static java.lang.System.Logger.Level;
 /**
  * Client connection cache with release shutdown hook to provide graceful shutdown.
  */
+@Api.Internal
 public abstract class ClientConnectionCache implements ReleasableResource, Resumable {
 
     private static final System.Logger LOGGER = System.getLogger(ClientConnectionCache.class.getName());

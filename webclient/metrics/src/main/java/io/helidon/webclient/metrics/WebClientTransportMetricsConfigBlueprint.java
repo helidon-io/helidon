@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.webclient.spi.WebClientServiceProvider;
 
@@ -29,6 +30,7 @@ import io.helidon.webclient.spi.WebClientServiceProvider;
 @Prototype.Blueprint
 @Prototype.Configured("http-metrics")
 @Prototype.Provides(WebClientServiceProvider.class)
+@Api.Stable
 interface WebClientTransportMetricsConfigBlueprint extends Prototype.Factory<WebClientTransportMetrics> {
     /**
      * Whether to observe client connections, handshakes, and HTTP exchanges.

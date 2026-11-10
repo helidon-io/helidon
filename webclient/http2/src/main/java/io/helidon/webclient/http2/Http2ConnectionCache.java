@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Predicate;
 
+import io.helidon.common.Api;
 import io.helidon.common.LruCache;
 import io.helidon.webclient.api.AltSvcHeader;
 import io.helidon.webclient.api.ClientConnectionTarget;
@@ -38,6 +39,7 @@ import io.helidon.webclient.spi.ClientConnectionCache;
 /**
  * A cache of HTTP2 connections.
  */
+@Api.Internal
 public final class Http2ConnectionCache extends ClientConnectionCache {
     private static final int MAX_TARGETS = 1_000;
     private static final Http2ConnectionCache SHARED = new Http2ConnectionCache(true);

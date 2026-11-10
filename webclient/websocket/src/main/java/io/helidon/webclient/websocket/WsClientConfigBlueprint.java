@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.webclient.websocket;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.webclient.api.HttpClientConfig;
 
 /**
@@ -29,6 +30,7 @@ import io.helidon.webclient.api.HttpClientConfig;
  */
 @Prototype.Blueprint
 @Prototype.Configured
+@Api.Stable
 interface WsClientConfigBlueprint extends HttpClientConfig, Prototype.Factory<WsClient> {
     /**
      * WebSocket specific configuration.

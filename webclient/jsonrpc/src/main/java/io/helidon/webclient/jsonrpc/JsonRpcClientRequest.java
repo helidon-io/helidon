@@ -15,6 +15,7 @@
  */
 package io.helidon.webclient.jsonrpc;
 
+import io.helidon.common.Api;
 import io.helidon.json.JsonNumber;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonString;
@@ -24,6 +25,7 @@ import io.helidon.webclient.api.ClientRequest;
 /**
  * A representation of JSON-RPC client request.
  */
+@Api.Preview
 public interface JsonRpcClientRequest extends ClientRequest<JsonRpcClientRequest> {
 
     /**

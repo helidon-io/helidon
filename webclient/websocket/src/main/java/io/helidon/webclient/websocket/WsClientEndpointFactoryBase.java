@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigBuilderSupport;
 import io.helidon.service.registry.Service;
@@ -36,6 +37,7 @@ import io.helidon.websocket.WsListener;
  * to usage in the endpoint, or as Strings if not used. The generated method name is also {@code connect}.
  */
 @Service.Contract
+@Api.Internal
 public abstract class WsClientEndpointFactoryBase {
     /*
     Used from generated code

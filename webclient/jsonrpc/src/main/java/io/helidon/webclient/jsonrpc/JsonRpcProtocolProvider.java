@@ -22,6 +22,7 @@ import io.helidon.webclient.spi.ClientProtocolProvider;
 /**
  * Provider for {@link JsonRpcClient}.
  */
+@Api.Internal
 public class JsonRpcProtocolProvider implements ClientProtocolProvider<JsonRpcClient, JsonRpcClientProtocolConfig> {
 
     static final String CONFIG_KEY = "jsonrpc";

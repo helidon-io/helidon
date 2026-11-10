@@ -15,11 +15,13 @@
  */
 package io.helidon.webclient.jsonrpc;
 
+import io.helidon.common.Api;
 import io.helidon.json.JsonArray;
 
 /**
  * An interface representing a JSON-RPC batch request.
  */
+@Api.Preview
 public interface JsonRpcClientBatchRequest {
 
     /**

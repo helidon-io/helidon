@@ -18,6 +18,7 @@ package io.helidon.webclient.http1;
 
 import java.nio.charset.StandardCharsets;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.http.LogFormatter;
@@ -26,6 +27,7 @@ import io.helidon.http.Status;
 /**
  * Parser of HTTP/1.0 or HTTP/1.1 response status.
  */
+@Api.Internal
 public final class Http1StatusParser {
     private Http1StatusParser() {
     }

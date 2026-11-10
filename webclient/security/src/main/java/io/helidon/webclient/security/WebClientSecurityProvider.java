@@ -27,6 +27,7 @@ import io.helidon.webclient.spi.WebClientServiceProvider;
 /**
  * Client security SPI provider.
  */
+@Api.Internal
 public class WebClientSecurityProvider implements WebClientServiceProvider {
 
     /**

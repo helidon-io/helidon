@@ -18,6 +18,7 @@ package io.helidon.webclient.http1;
 
 import java.io.IOException;
 
+import io.helidon.common.Api;
 import io.helidon.common.Functions;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.webclient.api.ClientRequest;
@@ -25,6 +26,7 @@ import io.helidon.webclient.api.ClientRequest;
 /**
  * Client request for HTTP/1.1.
  */
+@Api.Stable
 public interface Http1ClientRequest extends ClientRequest<Http1ClientRequest> {
     @Override
     Http1ClientResponse submit(Object entity);
@@ -92,5 +94,6 @@ public interface Http1ClientRequest extends ClientRequest<Http1ClientRequest> {
      * @param protocol protocol ID for upgrade
      * @return upgrade response
      */
+    @Api.Internal
     UpgradeResponse upgrade(String protocol);
 }

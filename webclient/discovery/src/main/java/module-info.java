@@ -22,6 +22,7 @@
  */
 module io.helidon.webclient.discovery {
 
+    requires io.helidon.common;
     requires transitive io.helidon.discovery;
     requires transitive io.helidon.webclient.api;
     requires static io.helidon.config.metadata;

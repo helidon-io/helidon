@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.context.Context;
 import io.helidon.config.Config;
 import io.helidon.http.ClientRequestHeaders;
@@ -43,6 +44,7 @@ import io.helidon.webclient.spi.WebClientService;
 /**
  * Implementation of OpenTelemetry semantic conventions for client tracing.
  */
+@Api.Preview
 public class WebClientTelemetryTracing implements WebClientService {
 
     static final String HTTP_REQUEST_METHOD = "http.request.method";

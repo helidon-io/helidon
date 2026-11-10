@@ -19,6 +19,7 @@ package io.helidon.webclient.http2;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.webclient.api.HttpClient;
 import io.helidon.webclient.api.WebClient;
@@ -27,6 +28,7 @@ import io.helidon.webclient.spi.Protocol;
 /**
  * HTTP2 client.
  */
+@Api.Stable
 public interface Http2Client extends HttpClient<Http2ClientRequest>, RuntimeType.Api<Http2ClientConfig> {
     /**
      * HTTP/2 protocol ID, as used by ALPN.

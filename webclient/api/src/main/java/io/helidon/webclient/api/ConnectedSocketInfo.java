@@ -17,9 +17,12 @@ package io.helidon.webclient.api;
 
 import java.net.Socket;
 
+import io.helidon.common.Api;
+
 /**
  * Context information about a newly connected {@link Socket}.
  */
+@Api.Stable
 public interface ConnectedSocketInfo {
     /**
      * The channel id.

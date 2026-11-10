@@ -22,9 +22,12 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
+
 /**
  * DNS address lookup strategy.
  */
+@Api.Stable
 public enum DnsAddressLookup {
 
     /**

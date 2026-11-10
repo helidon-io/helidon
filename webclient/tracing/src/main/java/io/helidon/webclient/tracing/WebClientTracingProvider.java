@@ -34,6 +34,7 @@ import io.helidon.webclient.spi.WebClientServiceProvider;
  * been added to the request context by WebClientTracing.
  */
 @Weight(Weighted.DEFAULT_WEIGHT + 100)
+@Api.Internal
 public class WebClientTracingProvider implements WebClientServiceProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

@@ -18,6 +18,7 @@
  */
 module io.helidon.webclient.telemetry {
 
+    requires io.helidon.common;
     requires io.helidon.config;
     requires io.helidon.service.registry;
     requires io.helidon.tracing;

@@ -28,6 +28,7 @@ import io.helidon.webclient.api.WebClientServiceResponse;
  * Extension that can modify web client behavior.
  */
 @FunctionalInterface
+@Api.Stable
 public interface WebClientService extends NamedService {
     @Override
     default String name() {

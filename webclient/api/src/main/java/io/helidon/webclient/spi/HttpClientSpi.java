@@ -28,6 +28,7 @@ import io.helidon.webclient.api.WebClientProtocolResponse;
 /**
  * Integration for HTTP versions to provide a single API.
  */
+@Api.Internal
 public interface HttpClientSpi extends ReleasableResource {
     /**
      * Return whether this HTTP version can handle the provided request.

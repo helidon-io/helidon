@@ -26,6 +26,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Path({"WebClient", "gRPC"})
 module io.helidon.webclient.grpc {
 
+    requires io.helidon.common;
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
 

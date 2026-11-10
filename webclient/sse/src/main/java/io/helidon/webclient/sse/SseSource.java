@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.sse;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.http.sse.SseEvent;
 import io.helidon.webclient.spi.Source;
@@ -28,6 +29,7 @@ import io.helidon.webclient.spi.Source;
  * instead produces an event whose data is the empty string.
  */
 @FunctionalInterface
+@Api.Stable
 public interface SseSource extends Source<SseEvent> {
 
     /**

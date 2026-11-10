@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.webclient.api.HttpClientConfig;
 import io.helidon.webclient.grpc.spi.GrpcClientService;
@@ -32,6 +33,7 @@ import io.helidon.webclient.grpc.spi.GrpcClientServiceProvider;
 @Prototype.Blueprint
 @Prototype.Configured
 @Prototype.IncludeDefaultMethods("meterRegistry")
+@Api.Stable
 interface GrpcClientConfigBlueprint extends HttpClientConfig, Prototype.Factory<GrpcClient> {
 
     /**

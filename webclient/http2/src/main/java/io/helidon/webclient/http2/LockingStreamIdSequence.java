@@ -19,9 +19,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import io.helidon.common.Api;
+
 /**
  * A stream ID sequence that uses locks for concurrency.
  */
+@Api.Internal
 public class LockingStreamIdSequence {
 
     private final AtomicInteger streamIdSeq = new AtomicInteger(0);
