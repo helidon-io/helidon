@@ -353,6 +353,20 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
             }
         }
         if (unavailableNames != null) {
+            Map<String, List<String>> aliases = serialized.keySet().stream()
+                    .collect(Collectors.groupingBy(UriEncoding::decodeQuery));
+            for (Map.Entry<String, List<String>> entry : aliases.entrySet()) {
+                String name = entry.getKey();
+                if (unavailableNames.contains(name) && entry.getValue().size() == 1) {
+                    try {
+                        // A single serialized spelling can use the current raw list exposed by its decoded name.
+                        current.put(entry.getValue().getFirst(), source.getAllRaw(name));
+                        unavailableNames.remove(name);
+                    } catch (NoSuchElementException _) {
+                        // A decoded parameter name need not be a raw lookup key.
+                    }
+                }
+            }
             // Keep ambiguous aliases together without discarding edits to unrelated parameters.
             for (Map.Entry<String, List<String>> entry : serialized.entrySet()) {
                 if (unavailableNames.contains(UriEncoding.decodeQuery(entry.getKey()))) {

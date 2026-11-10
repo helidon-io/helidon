@@ -92,6 +92,37 @@ class UriQueryCopyTest {
         assertThat(appended.all("token"), is(List.of("existing", "decoded-source-only")));
     }
 
+    @ParameterizedTest
+    @MethodSource("editedRawValues")
+    void testDecoratorCopyKeepsEditedRawValuesWhenNamesDiffer(List<String> rawValues) {
+        UriQuery source = new QueryDecorator(UriQuery.create("aa=old&keep=yes"), "a%61=old&keep=yes");
+        source.getAllRaw("aa").clear();
+        source.getAllRaw("aa").addAll(rawValues);
+
+        var copy = UriQueryWriteable.create().from(source);
+        String raw = copy.rawValue();
+        UriQuery serialized = UriQuery.create(raw);
+
+        assertThat(raw, not(containsString("old")));
+        assertThat(serialized.toMap().getOrDefault("aa", List.of()), is(rawValues));
+        assertThat(serialized.getAllRaw("keep"), is(List.of("yes")));
+        assertThat(copy.all("aa"), is(List.of("old")));
+        assertThat(source.all("aa"), is(List.of("old")));
+
+        source.getAllRaw("aa").add("source-only");
+        source.all("aa").set(0, "decoded-source-only");
+        assertThat(copy.rawValue(), is(raw));
+        assertThat(copy.all("aa"), is(List.of("old")));
+        copy.all("aa").set(0, "decoded-copy-only");
+        assertThat(copy.rawValue(), is(raw));
+        assertThat(source.all("aa"), is(List.of("decoded-source-only")));
+
+        copy.set("aa", "copy-only");
+        assertThat(UriQuery.create(copy.rawValue()).all("aa"), is(List.of("copy-only")));
+        assertThat(source.getAllRaw("aa").getLast(), is("source-only"));
+        assertThat(source.all("aa"), is(List.of("decoded-source-only")));
+    }
+
     @Test
     void testForwardingDecoratorCopyKeepsClearedRawMembership() {
         var delegate = UriQueryWriteable.create().set("token", "old");

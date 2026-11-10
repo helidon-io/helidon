@@ -273,6 +273,39 @@ class ClientUriQueryTest {
         assertThat(source.all("token"), is(List.of("decoded-source-only")));
     }
 
+    @ParameterizedTest
+    @MethodSource("editedDecoratorRawValues")
+    void testDecoratedQueryKeepsEditedRawValuesWhenNamesDiffer(List<String> rawValues) {
+        UriQuery source = UriQuery.create("aa=old&keep=yes");
+        UriQuery decorated = mock(UriQuery.class, delegatesTo(source));
+        doReturn("a%61=old&keep=yes").when(decorated).rawValue();
+        source.getAllRaw("aa").clear();
+        source.getAllRaw("aa").addAll(rawValues);
+
+        var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
+        String target = client.pathWithQueryAndFragment();
+        UriQuery serialized = UriQuery.create(URI.create(target).getRawQuery());
+
+        assertThat(target, not(containsString("old")));
+        assertThat(serialized.toMap().getOrDefault("aa", List.of()), is(rawValues));
+        assertThat(serialized.getAllRaw("keep"), is(List.of("yes")));
+        assertThat(client.query().all("aa"), is(List.of("old")));
+        assertThat(source.all("aa"), is(List.of("old")));
+
+        source.getAllRaw("aa").add("source-only");
+        source.all("aa").set(0, "decoded-source-only");
+        assertThat(client.pathWithQueryAndFragment(), is(target));
+        assertThat(client.query().all("aa"), is(List.of("old")));
+        client.query().all("aa").set(0, "decoded-client-only");
+        assertThat(source.all("aa"), is(List.of("decoded-source-only")));
+
+        client.writeableQuery().set("aa", "client-only");
+        UriQuery updated = UriQuery.create(URI.create(client.pathWithQueryAndFragment()).getRawQuery());
+        assertThat(updated.all("aa"), is(List.of("client-only")));
+        assertThat(source.getAllRaw("aa").getLast(), is("source-only"));
+        assertThat(source.all("aa"), is(List.of("decoded-source-only")));
+    }
+
     @Test
     void testForwardingDecoratorKeepsClearedRawMembershipOnCopyAndImport() {
         var source = UriQueryWriteable.create().set("token", "old");
