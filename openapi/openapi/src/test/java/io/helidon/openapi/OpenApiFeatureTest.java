@@ -18,6 +18,7 @@ package io.helidon.openapi;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.math.BigInteger;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -53,6 +54,7 @@ import io.helidon.http.Status;
 import io.helidon.json.JsonBoolean;
 import io.helidon.json.JsonNull;
 import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 import io.helidon.json.JsonString;
 import io.helidon.openapi.spi.OpenApiDocumentSource;
 import io.helidon.openapi.spi.OpenApiManagerProvider;
@@ -983,6 +985,58 @@ class OpenApiFeatureTest {
 
         Map<String, Object> document = parse(manager.content());
         assertThat(map(map(map(document, "paths"), "/generated"), "get").get("operationId"), is("configuredGet"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"JSON", "YAML"})
+    void generatedSchemaNumbersRetainIntegerRepresentation(String format) {
+        JsonObject schema = JsonParser.create("""
+                {
+                  "type": "object",
+                  "minProperties": 1,
+                  "maxProperties": 5,
+                  "properties": {
+                    "name": {"type": "string", "minLength": 1, "maxLength": 100},
+                    "months": {"type": "integer", "minimum": 1, "maximum": 120},
+                    "tags": {"type": "array", "minItems": 0, "maxItems": 10, "items": {"type": "string"}},
+                    "fraction": {"type": "number", "minimum": 1.25, "maximum": 2.5, "multipleOf": 0.25},
+                    "large": {"type": "integer", "minimum": 9223372036854775808}
+                  }
+                }
+                """).readJsonValue().asObject();
+        OpenApiDocumentSource source = (_, document) -> document.info("Probe API", "1.0.0")
+                .paths(Map.of())
+                .components(components -> components.schema("Probe", schema));
+        OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+                .servicesDiscoverServices(false)
+                .generatedMode(OpenApiGeneratedMode.GENERATED_ONLY)
+                .openApiVersion(OpenApi30Version.create())
+                .buildPrototype();
+        OpenApiFeature feature = testFeature(config, List.of(source), List.of());
+        WebServer webServer = WebServer.builder().port(0).addFeature(feature).build();
+        WebClient probeClient = WebClient.create();
+
+        try {
+            webServer.start();
+            ClientResponseTyped<String> response = probeClient.get("http://localhost:" + webServer.port() + "/openapi")
+                    .queryParam("format", format)
+                    .request(String.class);
+            assertThat(response.status(), is(Status.OK_200));
+            Map<String, Object> rendered = map(map(map(parse(response.entity()), "components"), "schemas"), "Probe");
+            assertThat(rendered.get("minProperties"), is(1));
+            assertThat(rendered.get("maxProperties"), is(5));
+            Map<String, Object> properties = map(rendered, "properties");
+            assertThat(map(properties, "name"), is(Map.of("type", "string", "minLength", 1, "maxLength", 100)));
+            assertThat(map(properties, "months"), is(Map.of("type", "integer", "minimum", 1, "maximum", 120)));
+            assertThat(map(properties, "tags"), is(Map.of("type", "array", "minItems", 0, "maxItems", 10,
+                                                        "items", Map.of("type", "string"))));
+            assertThat(map(properties, "fraction"), is(Map.of("type", "number", "minimum", 1.25, "maximum", 2.5,
+                                                            "multipleOf", 0.25)));
+            assertThat(map(properties, "large").get("minimum"), is(new BigInteger("9223372036854775808")));
+        } finally {
+            probeClient.closeResource();
+            webServer.stop();
+        }
     }
 
     @Test

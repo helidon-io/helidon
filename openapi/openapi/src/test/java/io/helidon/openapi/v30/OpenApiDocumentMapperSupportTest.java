@@ -16,6 +16,8 @@
 
 package io.helidon.openapi.v30;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,11 +25,15 @@ import java.util.Set;
 
 import io.helidon.json.JsonNull;
 import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 import io.helidon.json.JsonValueType;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.yaml.snakeyaml.error.YAMLException;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
@@ -35,6 +41,28 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OpenApiDocumentMapperSupportTest {
+
+    @ParameterizedTest
+    @ValueSource(strings = {"0", "1", "-1", "9223372036854775808", "-9223372036854775809"})
+    void preservesIntegerNumbers(String number) {
+        JsonObject object = JsonParser.create("{\"value\":" + number + ",\"nested\":[{\"value\":" + number + "}]}")
+                .readJsonValue()
+                .asObject();
+        BigInteger expected = new BigInteger(number);
+        Map<String, Object> converted = OpenApiDocumentMapperSupport.objectMap(object);
+
+        assertThat("Integer representation for " + number, converted.get("value"), instanceOf(BigInteger.class));
+        assertThat(converted,
+                   is(Map.of("value", expected, "nested", List.of(Map.of("value", expected)))));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"1.0", "1.25", "-1.25", "1e3", "1e-3", "1e100000"})
+    void preservesDecimalAndExponentNumbers(String number) {
+        JsonObject object = JsonParser.create("{\"value\":" + number + "}").readJsonValue().asObject();
+
+        assertThat(OpenApiDocumentMapperSupport.objectMap(object).get("value"), is(new BigDecimal(number)));
+    }
 
     @Test
     void rejectsNullInputs() {
