@@ -28,6 +28,7 @@ import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
 import io.helidon.json.JsonValue;
+import io.helidon.json.JsonValueType;
 import io.helidon.json.schema.spi.JsonSchemaProvider;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Services;
@@ -168,7 +169,13 @@ final class SchemaSupport {
             jsonObject.numberValue("minLength").ifPresent(it -> stringBuilder.minLength(it.longValue()));
             jsonObject.stringValue("pattern").ifPresent(stringBuilder::pattern);
             jsonObject.stringValue("format").ifPresent(stringBuilder::format);
-            jsonObject.arrayValue("enum").map(SchemaCustomMethods::stringArray).ifPresent(stringBuilder::enumValues);
+            jsonObject.arrayValue("enum")
+                    .map(values -> values.values().stream()
+                            .filter(value -> value.type() == JsonValueType.STRING)
+                            .map(JsonValue::asString)
+                            .map(value -> value.value())
+                            .toList())
+                    .ifPresent(stringBuilder::enumValues);
         }
 
         private static void parseInteger(SchemaInteger.Builder integerBuilder, JsonObject jsonObject) {

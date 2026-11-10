@@ -19,6 +19,7 @@ package io.helidon.json.schema;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.json.JsonException;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
 
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SchemaStringTest {
 
@@ -122,6 +124,108 @@ class SchemaStringTest {
         assertThat(items.enumValues().orElseThrow(), is(List.of("14:30:00Z", "09:00:00Z")));
         assertThat(schema.generateObjectNoKeywords(), is(expected));
         assertThat(Schema.parse(schema.generate()).generateObjectNoKeywords(), is(expected));
+    }
+
+    @Test
+    void testMixedTypeRootEnumRoundTrip() {
+        Schema schema = Schema.parse("""
+                {
+                    "type": "string",
+                    "enum": ["ON", null, 42, true, {}, [], "OFF"]
+                }
+                """);
+        JsonObject expected = JsonParser.create("""
+                {"type": "string", "enum": ["ON", "OFF"]}
+                """).readJsonObject();
+
+        assertThat(schema.rootString().orElseThrow().enumValues().orElseThrow(), is(List.of("ON", "OFF")));
+        assertThat(schema.generateObjectNoKeywords(), is(expected));
+        assertThat(Schema.parse(schema.generate()).generateObjectNoKeywords(), is(expected));
+    }
+
+    @Test
+    void testMixedTypePropertyEnumRoundTrip() {
+        Schema schema = Schema.parse("""
+                {
+                    "type": "object",
+                    "properties": {
+                        "state": {"type": "string", "enum": ["ON", null]}
+                    },
+                    "required": ["state"]
+                }
+                """);
+        JsonObject expected = JsonParser.create("""
+                {
+                    "type": "object",
+                    "properties": {
+                        "state": {"type": "string", "enum": ["ON"]}
+                    },
+                    "required": ["state"]
+                }
+                """).readJsonObject();
+
+        SchemaString state = schema.rootObject().orElseThrow().stringProperties().get("state");
+        assertThat(state.enumValues().orElseThrow(), is(List.of("ON")));
+        assertThat(state.required(), is(true));
+        assertThat(schema.generateObjectNoKeywords(), is(expected));
+        assertThat(Schema.parse(schema.generate()).generateObjectNoKeywords(), is(expected));
+    }
+
+    @Test
+    void testMixedTypeArrayItemEnumRoundTrip() {
+        Schema schema = Schema.parse("""
+                {
+                    "type": "array",
+                    "items": {"type": "string", "enum": ["ON", 42]}
+                }
+                """);
+        JsonObject expected = JsonParser.create("""
+                {
+                    "type": "array",
+                    "items": {"type": "string", "enum": ["ON"]}
+                }
+                """).readJsonObject();
+
+        SchemaString items = (SchemaString) schema.rootArray().orElseThrow().items().orElseThrow();
+        assertThat(items.enumValues().orElseThrow(), is(List.of("ON")));
+        assertThat(schema.generateObjectNoKeywords(), is(expected));
+        assertThat(Schema.parse(schema.generate()).generateObjectNoKeywords(), is(expected));
+    }
+
+    @Test
+    void testEnumsWithoutStringValuesRemainRestricted() {
+        List<String> templates = List.of(
+                """
+                {"type": "string", "enum": %s}
+                """,
+                """
+                {"type": "object", "properties": {"state": {"type": "string", "enum": %s}}}
+                """,
+                """
+                {"type": "array", "items": {"type": "string", "enum": %s}}
+                """);
+        for (String template : templates) {
+            JsonObject expected = JsonParser.create(template.formatted("[]")).readJsonObject();
+            for (String values : List.of("[null]", "[42]", "[true]", "[{}]", "[[]]", "[null, 42, true, {}, []]")) {
+                String input = template.formatted(values);
+                Schema schema = Schema.parse(input);
+                assertThat(input, schema.generateObjectNoKeywords(), is(expected));
+                assertThat(input, Schema.parse(schema.generate()).generateObjectNoKeywords(), is(expected));
+            }
+        }
+    }
+
+    @Test
+    void testNonStringRequiredPropertyRejected() {
+        assertThrows(JsonException.class, () -> Schema.parse("""
+                {
+                    "type": "object",
+                    "properties": {
+                        "state": {"type": "string", "enum": ["ON"]}
+                    },
+                    "required": ["state", 42]
+                }
+                """));
     }
 
     @Test
