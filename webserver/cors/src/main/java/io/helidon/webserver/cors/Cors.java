@@ -38,7 +38,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *
  * These annotations cannot be anywhere else and the compilation will fail if defined anywhere else.
  */
-@Api.Preview
+@Api.Stable
 public final class Cors {
     /*
     Retention is runtime, as this is also used from Microprofile
@@ -66,6 +66,7 @@ public final class Cors {
     @Target({METHOD, TYPE})
     @Retention(RUNTIME)
     @Documented
+    @Api.Preview
     public @interface Defaults {
     }
 
@@ -75,6 +76,7 @@ public final class Cors {
     @Target({METHOD, TYPE})
     @Retention(RUNTIME)
     @Documented
+    @Api.Preview
     public @interface AllowOrigins {
         /**
          * A list of origins that are allowed such as {@code "http://foo.com"} or
@@ -91,6 +93,7 @@ public final class Cors {
     @Target({METHOD, TYPE})
     @Retention(RUNTIME)
     @Documented
+    @Api.Preview
     public @interface AllowMethods {
         /**
          * A list of supported HTTP request methods. In response to pre-flight
@@ -107,6 +110,7 @@ public final class Cors {
     @Target({METHOD, TYPE})
     @Retention(RUNTIME)
     @Documented
+    @Api.Preview
     public @interface AllowHeaders {
         /**
          * A list of request headers that are allowed or {@code "*"} to allow all headers.
@@ -123,6 +127,7 @@ public final class Cors {
     @Target({METHOD, TYPE})
     @Retention(RUNTIME)
     @Documented
+    @Api.Preview
     public @interface ExposeHeaders {
         /**
          * A list of response headers allowed for clients other than the "standard"
@@ -142,6 +147,7 @@ public final class Cors {
     @Target({METHOD, TYPE})
     @Retention(RUNTIME)
     @Documented
+    @Api.Preview
     public @interface AllowCredentials {
         /**
          * Whether the client can send cookies or credentials. Corresponds to {@code
@@ -158,6 +164,7 @@ public final class Cors {
     @Target({METHOD, TYPE})
     @Retention(RUNTIME)
     @Documented
+    @Api.Preview
     public @interface MaxAgeSeconds {
         /**
          * Pre-flight response duration. After time expires, a new pre-flight
