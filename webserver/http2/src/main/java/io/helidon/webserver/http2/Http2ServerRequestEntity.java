@@ -24,6 +24,7 @@ import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.ServerRequestHeaders;
+import io.helidon.http.encoding.ContentDecoder;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.ReadableEntity;
 import io.helidon.http.media.ReadableEntityBase;
@@ -38,6 +39,7 @@ public final class Http2ServerRequestEntity extends ReadableEntityBase implement
     private final UnaryOperator<InputStream> decoder;
     private final UnaryOperator<InputStream> streamFilter;
     private final long maxPayloadSize;
+    private final long exactLength;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
     private Http2ServerRequestEntity(UnaryOperator<InputStream> streamFilter,
@@ -47,7 +49,8 @@ public final class Http2ServerRequestEntity extends ReadableEntityBase implement
                                      ServerRequestHeaders requestHeaders,
                                      MediaContext mediaContext,
                                      long maxPayloadSize,
-                                     long maxBufferedEntitySize) {
+                                     long maxBufferedEntitySize,
+                                     long exactLength) {
         super(readEntityFunction, entityProcessedRunnable, maxBufferedEntitySize);
 
         this.streamFilter = streamFilter;
@@ -55,6 +58,8 @@ public final class Http2ServerRequestEntity extends ReadableEntityBase implement
         this.requestHeaders = requestHeaders;
         this.mediaContext = mediaContext;
         this.maxPayloadSize = maxPayloadSize;
+        this.exactLength = decoder == ContentDecoder.NO_OP
+                && (maxPayloadSize == -1 || exactLength <= maxPayloadSize) ? exactLength : -1;
     }
 
     /**
@@ -115,6 +120,44 @@ public final class Http2ServerRequestEntity extends ReadableEntityBase implement
                                                   MediaContext mediaContext,
                                                   long maxPayloadSize,
                                                   long maxBufferedEntitySize) {
+        return create(streamFilter,
+                      decoder,
+                      readEntityFunction,
+                      entityProcessedRunnable,
+                      requestHeaders,
+                      mediaContext,
+                      maxPayloadSize,
+                      maxBufferedEntitySize,
+                      -1);
+    }
+
+    /**
+     * Create a new entity with an exact transport length when no stream filter is registered.
+     * The length is ignored when a content decoder is active or it exceeds the payload limit.
+     *
+     * @param streamFilter            stream filter to apply to the stream, provided by user
+     * @param decoder                 content decoder
+     * @param readEntityFunction      function to read buffer from entity (int is an estimated number of bytes needed, buffer
+     *                                will contain at least 1 byte)
+     * @param entityProcessedRunnable runnable to run once the entity is fully read
+     * @param requestHeaders          request headers
+     * @param mediaContext            media context to map to correct types
+     * @param maxPayloadSize          maximum size of a decoded entity
+     * @param maxBufferedEntitySize   max size of an entity that is buffered
+     * @param exactLength             exact entity length, or a negative value when unknown or a stream filter is registered
+     * @return a new entity
+     */
+    @Api.Internal
+    @SuppressWarnings("checkstyle:ParameterNumber")
+    public static Http2ServerRequestEntity create(UnaryOperator<InputStream> streamFilter,
+                                                  UnaryOperator<InputStream> decoder,
+                                                  Function<Integer, BufferData> readEntityFunction,
+                                                  Runnable entityProcessedRunnable,
+                                                  ServerRequestHeaders requestHeaders,
+                                                  MediaContext mediaContext,
+                                                  long maxPayloadSize,
+                                                  long maxBufferedEntitySize,
+                                                  long exactLength) {
         return new Http2ServerRequestEntity(streamFilter,
                                             decoder,
                                             readEntityFunction,
@@ -122,7 +165,8 @@ public final class Http2ServerRequestEntity extends ReadableEntityBase implement
                                             requestHeaders,
                                             mediaContext,
                                             maxPayloadSize,
-                                            maxBufferedEntitySize);
+                                            maxBufferedEntitySize,
+                                            exactLength);
     }
 
     @Override
@@ -136,13 +180,19 @@ public final class Http2ServerRequestEntity extends ReadableEntityBase implement
                                             requestHeaders,
                                             mediaContext,
                                             maxPayloadSize,
-                                            maxBufferedEntitySize());
+                                            maxBufferedEntitySize(),
+                                            exactLength);
     }
 
     @Override
     public InputStream inputStream() {
         var decoded = decoder.apply(super.inputStream());
         return streamFilter.apply(DecodedLimiter.limit(decoded, maxPayloadSize));
+    }
+
+    @Override
+    protected byte[] readAllBytes() {
+        return super.readAllBytes(exactLength);
     }
 
     @Override

@@ -27,6 +27,7 @@ import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.socket.SocketWriterException;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.Status;
@@ -46,6 +47,7 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
     private final boolean expectContinue;
     private final boolean continueImmediately;
     private boolean continueSent;
+    private boolean streamFilterRegistered;
     private UnaryOperator<InputStream> streamFilter = UnaryOperator.identity();
 
     Http1ServerRequestWithEntity(ConnectionContext ctx,
@@ -70,6 +72,7 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
         // was sent
         this.continueSent = continueImmediately || !expectContinue;
         var listenerCtx = ctx.listenerContext();
+        long exactLength = headers.contains(HeaderNames.TRANSFER_ENCODING) ? -1 : headers.contentLength().orElse(-1);
         // we need the same entity instance every time the entity() method is called
         this.entity = LazyValue.create(() -> ServerRequestEntity.create(this::trySend100,
                                                                         streamFilter,
@@ -79,7 +82,8 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
                                                                         headers,
                                                                         listenerCtx.mediaContext(),
                                                                         listenerCtx.config().maxPayloadSize(),
-                                                                        http1Config.maxBufferedEntitySize().toBytes()));
+                                                                        http1Config.maxBufferedEntitySize().toBytes(),
+                                                                        streamFilterRegistered ? -1 : exactLength));
     }
 
     @Override
@@ -102,6 +106,7 @@ final class Http1ServerRequestWithEntity extends Http1ServerRequest {
     @Override
     public void streamFilter(UnaryOperator<InputStream> filterFunction) {
         Objects.requireNonNull(filterFunction);
+        streamFilterRegistered = true;
         UnaryOperator<InputStream> current = this.streamFilter;
         this.streamFilter = it -> filterFunction.apply(current.apply(it));
     }

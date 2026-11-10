@@ -18,9 +18,11 @@ package io.helidon.http.media;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -37,6 +39,7 @@ import io.helidon.common.buffers.BufferData;
 @Api.Internal
 public abstract class ReadableEntityBase implements ReadableEntity {
     private static final int BUFFER_SIZE = 8 * 1024;
+    private static final int MAX_PREALLOCATED_ENTITY_SIZE = 1024 * 1024;
     private static final ReadableEntity EMPTY = new EmptyReadableEntity();
 
     private final AtomicBoolean consumed = new AtomicBoolean();
@@ -216,12 +219,62 @@ public abstract class ReadableEntityBase implements ReadableEntity {
      * @return all bytes of the entity
      */
     protected byte[] readAllBytes() {
+        return readAllBytes(-1);
+    }
+
+    /**
+     * Read all bytes using an exact entity length when available. Exact sizing is limited to 1 MiB;
+     * larger entities and unknown lengths use incremental allocation. For entities larger than 8 KiB,
+     * at least half the bytes are read incrementally before allocating the exact destination.
+     * The length must describe the stream returned by {@link #inputStream()}, after any transformations.
+     *
+     * @param exactLength exact entity length, or a negative value when unknown
+     * @return all bytes of the entity
+     */
+    protected byte[] readAllBytes(long exactLength) {
         try (InputStream stream = inputStream()) {
             if (inputStream != null) {
                 // Decoder cleanup must not request more transport data after a failed conversion.
                 inputStream.skipReadOnClose = true;
             }
-            return stream.readAllBytes();
+            if (exactLength < 0 || exactLength > MAX_PREALLOCATED_ENTITY_SIZE) {
+                return stream.readAllBytes();
+            }
+
+            int length = (int) exactLength;
+            byte[] bytes;
+            int read = 0;
+            if (length > BUFFER_SIZE) {
+                // Tie larger allocations to received data, rather than trusting a declared length alone.
+                int prefixLength = (length + 1) / 2;
+                var buffers = new ArrayList<byte[]>();
+                while (read < prefixLength) {
+                    byte[] buffer = new byte[Math.min(BUFFER_SIZE, prefixLength - read)];
+                    int received = stream.readNBytes(buffer, 0, buffer.length);
+                    read += received;
+                    if (received != buffer.length) {
+                        throw new EOFException("Expected " + exactLength + " entity bytes, received " + read);
+                    }
+                    buffers.add(buffer);
+                }
+                bytes = new byte[length];
+                int offset = 0;
+                for (byte[] buffer : buffers) {
+                    System.arraycopy(buffer, 0, bytes, offset, buffer.length);
+                    offset += buffer.length;
+                }
+            } else {
+                bytes = length == 0 ? BufferData.EMPTY_BYTES : new byte[length];
+            }
+            read += stream.readNBytes(bytes, read, bytes.length - read);
+            if (read != bytes.length) {
+                throw new EOFException("Expected " + exactLength + " entity bytes, received " + read);
+            }
+            // Observe completion even when the final bytes precede transport trailers or END_STREAM.
+            if (stream.read() != -1) {
+                throw new IOException("Entity exceeds expected length of " + exactLength + " bytes");
+            }
+            return bytes;
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
