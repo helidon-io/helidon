@@ -79,7 +79,6 @@
         <version.lib.jsoup>1.23.1</version.lib.jsoup>
         <version.lib.junit4>4.13.1</version.lib.junit4>
         <version.lib.kafka-junit5>3.2.3</version.lib.kafka-junit5>
-        <version.lib.kafka-test>3.9.2</version.lib.kafka-test>
         <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mockserver>5.15.0</version.lib.mockserver>
         <version.lib.restito>0.9.1</version.lib.restito>
@@ -1053,7 +1052,7 @@
             <dependency>
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka_2.12</artifactId>
-                <version>${version.lib.kafka-test}</version>
+                <version>${version.lib.kafka}</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.apache.zookeeper</groupId>

@@ -105,7 +105,7 @@
         <version.lib.jna>5.17.0</version.lib.jna>
         <version.lib.jspecify>1.0.1</version.lib.jspecify>
         <version.lib.junit>5.12.2</version.lib.junit>
-        <version.lib.kafka>4.4.0</version.lib.kafka>
+        <version.lib.kafka>3.9.2</version.lib.kafka>
         <!-- Kotlin: dependency convergence requirement, we never use this directly -->
         <version.lib.kotlin>1.9.10</version.lib.kotlin>
         <version.lib.langchain4j>1.18.1</version.lib.langchain4j>
