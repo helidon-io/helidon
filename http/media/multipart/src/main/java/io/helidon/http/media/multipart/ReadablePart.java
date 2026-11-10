@@ -28,6 +28,8 @@ import io.helidon.http.media.ReadableEntity;
 public interface ReadablePart extends ReadableEntity {
     /**
      * Name of this multipart part.
+     * Non-ASCII {@code Content-Disposition} parameters are decoded as UTF-8 when valid;
+     * otherwise, their original single-byte representation is preserved.
      *
      * @return param name
      */
@@ -35,6 +37,8 @@ public interface ReadablePart extends ReadableEntity {
 
     /**
      * File name of this part if defined in part {@code Content-Disposition}.
+     * Raw non-ASCII parameters are decoded as UTF-8 when valid; otherwise, their
+     * original single-byte representation is preserved.
      * <p>
      * The returned filename is percent-decoded and contains only the final path
      * segment. Invalid filenames, such as an empty segment, {@code .},
