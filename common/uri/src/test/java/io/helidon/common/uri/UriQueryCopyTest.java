@@ -39,6 +39,78 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UriQueryCopyTest {
+    @ParameterizedTest
+    @ValueSource(strings = {"a=1", ""})
+    void testDecoratorCopyIncludesParametersAddedAfterCapture(String capturedQuery) {
+        var delegate = UriQueryWriteable.create();
+        if (!capturedQuery.isEmpty()) {
+            delegate.fromQueryString(capturedQuery);
+        }
+        UriQuery source = new QueryDecorator(delegate);
+        delegate.add("token", "new");
+
+        var copy = UriQueryWriteable.create().from(source);
+
+        assertThat(source.rawValue(), is(capturedQuery));
+        assertThat(copy.getAllRaw("token"), is(List.of("new")));
+        assertThat(copy.all("token"), is(List.of("new")));
+        assertThat(copy.toMap(), is(delegate.toMap()));
+        assertThat(UriQuery.create(copy.rawValue()).getAllRaw("token"), is(List.of("new")));
+
+        source.getAllRaw("token").set(0, "raw-source-only");
+        source.all("token").set(0, "decoded-source-only");
+        assertThat(copy.getAllRaw("token"), is(List.of("new")));
+        assertThat(copy.all("token"), is(List.of("new")));
+        copy.getAllRaw("token").set(0, "raw-copy-only");
+        copy.all("token").set(0, "decoded-copy-only");
+        assertThat(source.getAllRaw("token"), is(List.of("raw-source-only")));
+        assertThat(source.all("token"), is(List.of("decoded-source-only")));
+    }
+
+    @ParameterizedTest
+    @MethodSource("editedRawValues")
+    void testDecoratorCopyKeepsEditedAddedRawValues(List<String> rawValues) {
+        var delegate = UriQueryWriteable.create().set("a", "1");
+        UriQuery source = new QueryDecorator(delegate);
+        delegate.add("token", "new");
+        source.getAllRaw("token").clear();
+        source.getAllRaw("token").addAll(rawValues);
+
+        var copy = UriQueryWriteable.create().from(source);
+
+        assertThat(copy.contains("token"), is(true));
+        assertThat(copy.getAllRaw("token"), is(rawValues));
+        assertThat(copy.all("token"), is(List.of("new")));
+        assertThat(copy.getAllRaw("a"), is(List.of("1")));
+        assertThat(UriQuery.create(copy.rawValue()).toMap().getOrDefault("token", List.of()), is(rawValues));
+
+        source.getAllRaw("token").add("source-only");
+        assertThat(copy.getAllRaw("token"), is(rawValues));
+        copy.getAllRaw("token").add("copy-only");
+        assertThat(source.getAllRaw("token").subList(0, rawValues.size()), is(rawValues));
+        assertThat(source.getAllRaw("token").getLast(), is("source-only"));
+    }
+
+    @Test
+    void testDecoratorCopyPreservesAliasesWhenAppendingAddedParameters() {
+        var delegate = UriQueryWriteable.create();
+        delegate.fromQueryString("%61=first&a=second");
+        UriQuery source = new QueryDecorator(delegate);
+        delegate.add("token", "new");
+
+        var copy = UriQueryWriteable.create().set("token", "existing").from(source);
+
+        assertThat(copy.getAllRaw("token"), is(List.of("existing", "new")));
+        assertThat(copy.all("token"), is(List.of("existing", "new")));
+        assertThat(copy.getAllRaw("%61"), is(List.of("first")));
+        assertThat(copy.getAllRaw("a"), is(List.of("second")));
+        assertThat(copy.all("a"), is(List.of("first", "second")));
+        UriQuery serialized = UriQuery.create(copy.rawValue());
+        assertThat(serialized.getAllRaw("token"), is(List.of("existing", "new")));
+        assertThat(serialized.getAllRaw("%61"), is(List.of("first")));
+        assertThat(serialized.getAllRaw("a"), is(List.of("second")));
+    }
+
     @Test
     void testOpaqueAliasDecoratorCopyUsesLegacyRawName() {
         UriQuery source = new QueryDecorator(UriQuery.create("aa=old"), "a%61=old");

@@ -352,14 +352,11 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
                 return legacy;
             }
         }
-        // Empty raw lists have no serialized entry, but can still be exposed through parameter names.
+        // Newly added parameters and empty raw lists may be absent from the captured serialization.
         for (String name : source.names()) {
             if (!current.containsKey(name)) {
                 try {
-                    List<String> values = source.getAllRaw(name);
-                    if (values.isEmpty()) {
-                        current.put(name, values);
-                    }
+                    current.put(name, source.getAllRaw(name));
                 } catch (NoSuchElementException _) {
                     // A decoded parameter name need not be a raw lookup key.
                 }
