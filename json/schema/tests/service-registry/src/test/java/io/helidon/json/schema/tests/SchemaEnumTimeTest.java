@@ -54,7 +54,7 @@ class SchemaEnumTimeTest {
         assertThat(root.stringProperties().get("state").enumValues().orElseThrow(),
                    is(JsonArray.createStrings(List.of("ON", "OFF")).values()));
         assertThat(root.stringProperties().get("since").format().orElseThrow(), is("date"));
-        assertThat(provider.schema().generateObject(), is(JsonParser.create(provider.jsonSchema()).readJsonObject()));
+        assertThat(JsonParser.create(provider.schema().generate()).readJsonObject(), is(JsonParser.create(provider.jsonSchema()).readJsonObject()));
     }
 
     @Test
@@ -86,7 +86,7 @@ class SchemaEnumTimeTest {
         var root = provider.schema().rootString().orElseThrow();
         assertThat(root.enumValues().orElseThrow(), is(JsonArray.createStrings(List.of("ON", "OFF")).values()));
         assertThat(root.description().orElseThrow(), is("An enabled or disabled state"));
-        assertThat(provider.schema().generateObject(), is(JsonParser.create(provider.jsonSchema()).readJsonObject()));
+        assertThat(JsonParser.create(provider.schema().generate()).readJsonObject(), is(JsonParser.create(provider.jsonSchema()).readJsonObject()));
     }
 
     @Test
@@ -95,6 +95,6 @@ class SchemaEnumTimeTest {
         var generated = JsonParser.create(provider.jsonSchema()).readJsonObject();
         assertThat(generated.arrayValue("enum").orElseThrow().values(), is(List.of()));
         assertThat(provider.schema().rootString().orElseThrow().enumValues().orElseThrow(), is(List.of()));
-        assertThat(provider.schema().generateObject(), is(generated));
+        assertThat(JsonParser.create(provider.schema().generate()).readJsonObject(), is(generated));
     }
 }
