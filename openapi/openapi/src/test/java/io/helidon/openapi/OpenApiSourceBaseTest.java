@@ -19,8 +19,11 @@ package io.helidon.openapi;
 import java.math.BigDecimal;
 
 import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
 import io.helidon.json.JsonValue;
 import io.helidon.json.JsonValueType;
+import io.helidon.json.schema.Schema;
+import io.helidon.json.schema.spi.JsonSchemaProvider;
 
 import org.junit.jupiter.api.Test;
 
@@ -30,6 +33,40 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OpenApiSourceBaseTest {
+
+    @Test
+    void componentSchemaPreservesMixedEnumValues() {
+        String jsonSchema = """
+                {
+                    "type": "string",
+                    "enum": ["ON", null, 42, "42", true, {"code": 42}, ["ON", null]]
+                }
+                """;
+        JsonSchemaProvider provider = new JsonSchemaProvider() {
+            @Override
+            public Class<?> schemaClass() {
+                return String.class;
+            }
+
+            @Override
+            public String jsonSchema() {
+                return jsonSchema;
+            }
+
+            @Override
+            public Schema schema() {
+                return Schema.parse(jsonSchema());
+            }
+        };
+        OpenApiDocument.Builder document = OpenApiDocument.builder();
+        OpenApiSourceBase.componentSchema(document, provider, "state");
+
+        JsonObject state = document.build().toJsonObject()
+                .objectValue("components").orElseThrow()
+                .objectValue("schemas").orElseThrow()
+                .objectValue("state").orElseThrow();
+        assertThat(state, is(JsonParser.create(jsonSchema).readJsonObject()));
+    }
 
     @Test
     void exampleValueParsesJsonObject() {
