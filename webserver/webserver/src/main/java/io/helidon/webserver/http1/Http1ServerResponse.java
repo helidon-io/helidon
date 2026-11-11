@@ -493,7 +493,8 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         keepConnectionOpen = resolveKeepConnectionOpen();
         nonEntityBytes(headers, usedStatus, responseBuffer, keepAlive, validateHeaders);
         if (compositeBody) {
-            responseBuffer = BufferData.create(responseBuffer, BufferData.create(bytes, position, length));
+            Objects.checkFromIndexSize(position, length, bytes.length);
+            responseBuffer = BufferData.create(responseBuffer, BufferData.createReadOnly(bytes, position, length));
         } else if (!headRequest && !noEntityResponse && forcedChunkedEncoding) {
             byte[] hex = Integer.toHexString(length).getBytes(StandardCharsets.US_ASCII);
             responseBuffer.write(hex);
