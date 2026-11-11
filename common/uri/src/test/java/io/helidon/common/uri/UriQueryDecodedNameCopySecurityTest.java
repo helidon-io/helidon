@@ -32,7 +32,7 @@ class UriQueryDecodedNameCopySecurityTest {
         UriQuery decorated = (UriQuery) Proxy.newProxyInstance(
                 UriQuery.class.getClassLoader(),
                 new Class<?>[] {UriQuery.class},
-                (proxy, method, args) -> switch (method.getName()) {
+                (_, method, args) -> switch (method.getName()) {
                     case "rawValue" -> "safe%26admin=true";
                     case "names" -> Set.of("safe&admin");
                     case "getAllRaw", "all" -> {
