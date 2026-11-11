@@ -53,6 +53,76 @@ class ClientUriQueryTest {
     private static final String RAW_QUERY = "z=1&flag&&a=first&a=second&a=third&%61=fourth&q=a+b&escaped=%2f%2F&";
 
     @ParameterizedTest
+    @MethodSource("rawLookupAliases")
+    void testDecoratorImportDoesNotSynthesizeDecodedLookupAlias(String rawName, String decodedName) {
+        UriQuery source = UriQuery.create(rawName + "=first");
+        UriQuery decorated = rawAliasDecorator(source, source.rawValue(), rawName, decodedName);
+
+        var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
+
+        assertThat(client.pathWithQueryAndFragment(), is("/?" + rawName + "=first"));
+        assertThat(client.query().getAllRaw(rawName), is(List.of("first")));
+        assertThat(client.query().all(decodedName), is(List.of("first")));
+        UriQuery outbound = UriQuery.create(URI.create(client.pathWithQueryAndFragment()).getRawQuery());
+        assertThat(outbound.all(decodedName), is(List.of("first")));
+    }
+
+    @ParameterizedTest
+    @MethodSource("explicitRawAliases")
+    void testDecoratorImportKeepsExplicitAliasesWithIndependentEditedValues(String firstName,
+                                                                         String secondName,
+                                                                         String decodedName) {
+        UriQuery source = UriQuery.create(firstName + "=first&" + secondName + "=second");
+        UriQuery decorated = rawAliasDecorator(source, source.rawValue(), firstName, decodedName);
+        source.getAllRaw(firstName).set(0, "raw-first");
+        source.getAllRaw(secondName).set(0, "raw-second");
+        source.all(decodedName).set(0, "decoded-first");
+
+        var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
+
+        assertThat(client.query().getAllRaw(firstName), is(List.of("raw-first")));
+        assertThat(client.query().getAllRaw(secondName), is(List.of("raw-second")));
+        assertThat(client.query().all(decodedName), is(List.of("decoded-first", "second")));
+        UriQuery outbound = UriQuery.create(URI.create(client.pathWithQueryAndFragment()).getRawQuery());
+        assertThat(outbound.getAllRaw(firstName), is(List.of("raw-first")));
+        assertThat(outbound.getAllRaw(secondName), is(List.of("raw-second")));
+        assertThat(outbound.all(decodedName).size(), is(2));
+
+        source.getAllRaw(firstName).clear();
+        source.all(decodedName).clear();
+        assertThat(client.query().getAllRaw(firstName), is(List.of("raw-first")));
+        assertThat(client.query().all(decodedName), is(List.of("decoded-first", "second")));
+        client.query().getAllRaw(secondName).clear();
+        assertThat(source.getAllRaw(secondName), is(List.of("raw-second")));
+    }
+
+    @ParameterizedTest
+    @MethodSource("editedDecoratorRawValues")
+    void testDecoratorImportKeepsOnlyEmptyHiddenSameFamilyBucket(List<String> hiddenRawValues) {
+        var source = UriQueryWriteable.create();
+        source.fromQueryString("%61=visible");
+        UriQuery decorated = rawAliasDecorator(source, source.rawValue(), "%61", "a");
+        source.fromQueryString("a=hidden");
+        source.getAllRaw("a").clear();
+        source.getAllRaw("a").addAll(hiddenRawValues);
+
+        var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
+
+        assertThat(client.pathWithQueryAndFragment(), is("/?%61=visible"));
+        assertThat(client.query().getAllRaw("%61"), is(List.of("visible")));
+        assertThat(client.query().all("a"), is(List.of("visible", "hidden")));
+        UriQuery outbound = UriQuery.create(URI.create(client.pathWithQueryAndFragment()).getRawQuery());
+        assertThat(outbound.all("a"), is(List.of("visible")));
+        if (hiddenRawValues.isEmpty()) {
+            assertThat(client.query().getAllRaw("a"), is(List.of()));
+            client.writeableQuery().setIfAbsent("a", "replacement");
+            assertThat(client.query().getAllRaw("a"), is(List.of()));
+        } else {
+            assertThrows(NoSuchElementException.class, () -> client.query().getAllRaw("a"));
+        }
+    }
+
+    @ParameterizedTest
     @MethodSource("decodedNameQueries")
     void testDecodedNameDecoratorImportEncodesFallbackNames(String name, String encodedName) {
         assertDecodedNameDecoratorImport(name, encodedName, false);
@@ -919,6 +989,40 @@ class ClientUriQueryTest {
         query.add("a", "additional");
 
         assertThrows(ConcurrentModificationException.class, iterator::next);
+    }
+
+    private static UriQuery rawAliasDecorator(UriQuery source, String captured, String rawName, String decodedName) {
+        UriQuery decorated = mock(UriQuery.class, delegatesTo(source));
+        doReturn(captured).when(decorated).rawValue();
+        doAnswer(invocation -> {
+            String name = invocation.getArgument(0);
+            try {
+                return source.getAllRaw(name);
+            } catch (NoSuchElementException e) {
+                if (name.equals(decodedName)) {
+                    return source.getAllRaw(rawName);
+                }
+                throw e;
+            }
+        }).when(decorated).getAllRaw(anyString());
+        return decorated;
+    }
+
+    private static Stream<Arguments> rawLookupAliases() {
+        return Stream.of(
+                Arguments.of("a%2fb", "a/b"),
+                Arguments.of("a%2Fb", "a/b"),
+                Arguments.of("%61", "a"),
+                Arguments.of("x[%61]", "x[a]"),
+                Arguments.of("a+b", "a b"),
+                Arguments.of("a%20b", "a b"));
+    }
+
+    private static Stream<Arguments> explicitRawAliases() {
+        return Stream.of(
+                Arguments.of("a%2fb", "a%2Fb", "a/b"),
+                Arguments.of("%61", "a", "a"),
+                Arguments.of("a+b", "a%20b", "a b"));
     }
 
     private static void assertDecodedNameDecoratorImport(String name, String encodedName, boolean supplemental) {

@@ -340,9 +340,11 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
         }
 
         Map<String, List<String>> current = new HashMap<>();
+        Set<String> decodedNames = new HashSet<>();
         for (String name : serializedNames) {
             try {
                 current.put(name, source.getAllRaw(name));
+                decodedNames.add(UriEncoding.decodeQuery(name));
             } catch (NoSuchElementException _) {
                 // Decorators may rewrite serialized names. Preserve their legacy lookup behavior as one complete copy.
                 Map<String, List<String>> legacy = new HashMap<>();
@@ -361,7 +363,11 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
                     continue;
                 }
                 try {
-                    current.put(encodedName, source.getAllRaw(name));
+                    List<String> values = source.getAllRaw(name);
+                    // Do not infer a second raw alias for a name already represented in the serialization.
+                    if (values.isEmpty() || !decodedNames.contains(name)) {
+                        current.put(encodedName, values);
+                    }
                 } catch (NoSuchElementException _) {
                     // A decoded parameter name need not be a raw lookup key.
                 }

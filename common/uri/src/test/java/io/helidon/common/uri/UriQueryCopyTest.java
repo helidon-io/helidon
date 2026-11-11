@@ -41,6 +41,74 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UriQueryCopyTest {
     @ParameterizedTest
+    @MethodSource("rawLookupAliases")
+    void testDecoratorCopyDoesNotSynthesizeDecodedLookupAlias(String rawName, String decodedName) {
+        UriQuery delegate = UriQuery.create(rawName + "=first");
+        UriQuery source = rawAliasDecorator(delegate, delegate.rawValue(), rawName, decodedName);
+
+        var copy = UriQueryWriteable.create().from(source);
+
+        assertThat(copy.rawValue(), is(rawName + "=first"));
+        assertThat(copy.getAllRaw(rawName), is(List.of("first")));
+        assertThat(copy.all(decodedName), is(List.of("first")));
+        assertThat(UriQuery.create(copy.rawValue()).all(decodedName), is(List.of("first")));
+    }
+
+    @ParameterizedTest
+    @MethodSource("explicitRawAliases")
+    void testDecoratorCopyKeepsExplicitAliasesWithIndependentEditedValues(String firstName,
+                                                                       String secondName,
+                                                                       String decodedName) {
+        UriQuery delegate = UriQuery.create(firstName + "=first&" + secondName + "=second");
+        UriQuery source = rawAliasDecorator(delegate, delegate.rawValue(), firstName, decodedName);
+        delegate.getAllRaw(firstName).set(0, "raw-first");
+        delegate.getAllRaw(secondName).set(0, "raw-second");
+        delegate.all(decodedName).set(0, "decoded-first");
+
+        var copy = UriQueryWriteable.create().from(source);
+
+        assertThat(copy.getAllRaw(firstName), is(List.of("raw-first")));
+        assertThat(copy.getAllRaw(secondName), is(List.of("raw-second")));
+        assertThat(copy.all(decodedName), is(List.of("decoded-first", "second")));
+        UriQuery serialized = UriQuery.create(copy.rawValue());
+        assertThat(serialized.getAllRaw(firstName), is(List.of("raw-first")));
+        assertThat(serialized.getAllRaw(secondName), is(List.of("raw-second")));
+        assertThat(serialized.all(decodedName).size(), is(2));
+
+        delegate.getAllRaw(firstName).clear();
+        delegate.all(decodedName).clear();
+        assertThat(copy.getAllRaw(firstName), is(List.of("raw-first")));
+        assertThat(copy.all(decodedName), is(List.of("decoded-first", "second")));
+        copy.getAllRaw(secondName).clear();
+        assertThat(delegate.getAllRaw(secondName), is(List.of("raw-second")));
+    }
+
+    @ParameterizedTest
+    @MethodSource("editedRawValues")
+    void testDecoratorCopyKeepsOnlyEmptyHiddenSameFamilyBucket(List<String> hiddenRawValues) {
+        var delegate = UriQueryWriteable.create();
+        delegate.fromQueryString("%61=visible");
+        UriQuery source = rawAliasDecorator(delegate, delegate.rawValue(), "%61", "a");
+        delegate.fromQueryString("a=hidden");
+        delegate.getAllRaw("a").clear();
+        delegate.getAllRaw("a").addAll(hiddenRawValues);
+
+        var copy = UriQueryWriteable.create().from(source);
+
+        assertThat(copy.rawValue(), is("%61=visible"));
+        assertThat(copy.getAllRaw("%61"), is(List.of("visible")));
+        assertThat(copy.all("a"), is(List.of("visible", "hidden")));
+        assertThat(UriQuery.create(copy.rawValue()).all("a"), is(List.of("visible")));
+        if (hiddenRawValues.isEmpty()) {
+            assertThat(copy.getAllRaw("a"), is(List.of()));
+            copy.setIfAbsent("a", "replacement");
+            assertThat(copy.getAllRaw("a"), is(List.of()));
+        } else {
+            assertThrows(NoSuchElementException.class, () -> copy.getAllRaw("a"));
+        }
+    }
+
+    @ParameterizedTest
     @MethodSource("decodedNameQueries")
     void testDecodedNameDecoratorFallbackEncodesNames(String name, String encodedName) {
         assertDecodedNameDecoratorCopy(name, encodedName, false);
@@ -613,6 +681,39 @@ class UriQueryCopyTest {
         assertThat(copy.all("b"), is(List.of("replacement")));
         assertThat(copy.getAllRaw("b"), is(List.of("replacement")));
         assertThat(copy.rawValue(), is("a=existing&b=replacement"));
+    }
+
+    private static UriQuery rawAliasDecorator(UriQuery delegate, String captured, String rawName, String decodedName) {
+        return new QueryDecorator(delegate, captured) {
+            @Override
+            public List<String> getAllRaw(String name) {
+                try {
+                    return super.getAllRaw(name);
+                } catch (NoSuchElementException e) {
+                    if (name.equals(decodedName)) {
+                        return super.getAllRaw(rawName);
+                    }
+                    throw e;
+                }
+            }
+        };
+    }
+
+    private static Stream<Arguments> rawLookupAliases() {
+        return Stream.of(
+                Arguments.of("a%2fb", "a/b"),
+                Arguments.of("a%2Fb", "a/b"),
+                Arguments.of("%61", "a"),
+                Arguments.of("x[%61]", "x[a]"),
+                Arguments.of("a+b", "a b"),
+                Arguments.of("a%20b", "a b"));
+    }
+
+    private static Stream<Arguments> explicitRawAliases() {
+        return Stream.of(
+                Arguments.of("a%2fb", "a%2Fb", "a/b"),
+                Arguments.of("%61", "a", "a"),
+                Arguments.of("a+b", "a%20b", "a b"));
     }
 
     private static void assertDecodedNameDecoratorCopy(String name, String encodedName, boolean supplemental) {
