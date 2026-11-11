@@ -24,7 +24,7 @@ import io.helidon.declarative.codegen.http.webserver.ParameterCodegenContext;
  * methods.
  * The parameter retrieval is expected to be code-generated.
  */
-@Api.Internal
+@Api.Preview
 public interface HttpParameterCodegenProvider {
     /**
      * Code generate parameter assignment.

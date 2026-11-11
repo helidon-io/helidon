@@ -23,7 +23,7 @@ import io.helidon.common.Api;
 /**
  * Code generation context for a GraphQL resolver method parameter.
  */
-@Api.Internal
+@Api.Preview
 public interface GraphQlParameterCodegenContext extends GraphQlParameterContext {
     /**
      * Builder of the generated GraphQL feature class.
