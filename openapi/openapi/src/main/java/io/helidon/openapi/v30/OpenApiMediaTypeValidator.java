@@ -34,6 +34,20 @@ final class OpenApiMediaTypeValidator {
         OpenApiDocumentWalker.walk(document, dialect, validator::validateNode);
     }
 
+    private static boolean excludesArray(Object value) {
+        Map<String, Object> schema = object(value);
+        Object type = schema.get("type");
+        if (type instanceof String string) {
+            return !"array".equals(string);
+        }
+        if (type instanceof List<?> list) {
+            return !list.contains("array");
+        }
+        // Schema is optional. Determining its effective type through JSON Schema keywords such as $ref
+        // requires schema evaluation, including $id scope, rather than OAS Reference Object resolution.
+        return false;
+    }
+
     private boolean validateNode(OpenApiDocumentWalker.Node node) {
         if (node.kind() == OpenApiDocumentWalker.Kind.ENCODING) {
             return validateEncoding(node.location(), node.value());
@@ -88,20 +102,6 @@ final class OpenApiMediaTypeValidator {
             throw new IllegalStateException("OpenAPI " + dialect.version() + " " + objectType + " at " + location
                                                     + " cannot combine encoding with prefixEncoding or itemEncoding");
         }
-    }
-
-    private static boolean excludesArray(Object value) {
-        Map<String, Object> schema = object(value);
-        Object type = schema.get("type");
-        if (type instanceof String string) {
-            return !"array".equals(string);
-        }
-        if (type instanceof List<?> list) {
-            return !list.contains("array");
-        }
-        // Schema is optional. Determining its effective type through JSON Schema keywords such as $ref
-        // requires schema evaluation, including $id scope, rather than OAS Reference Object resolution.
-        return false;
     }
 
     private static boolean isMultipart(String mediaType) {
