@@ -16,7 +16,9 @@
 
 package io.helidon.common.uri;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -37,18 +39,63 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UriQueryCopyTest {
+    @Test
+    void testOpaqueAliasDecoratorCopyUsesLegacyRawName() {
+        UriQuery source = new QueryDecorator(UriQuery.create("aa=old"), "a%61=old");
+
+        var copy = UriQueryWriteable.create().from(source);
+
+        assertThat(copy.rawValue(), is("aa=old"));
+        assertThat(copy.getAllRaw("aa"), is(List.of("old")));
+        assertThat(copy.all("aa"), is(List.of("old")));
+    }
+
     @ParameterizedTest
-    @MethodSource("opaqueAliasQueries")
-    void testOpaqueAliasDecoratorIsRejectedWithoutChangingDestination(String backing,
-                                                                    String serialized,
-                                                                    String editedName,
-                                                                    List<String> rawValues) {
-        UriQuery source = new QueryDecorator(UriQuery.create(backing), serialized);
-        source.getAllRaw(editedName).clear();
-        source.getAllRaw(editedName).addAll(rawValues);
+    @MethodSource("editedRawValues")
+    void testOpaqueAliasDecoratorCopyAppendsCurrentRawAndDecodedLists(List<String> rawValues) {
+        UriQuery source = new QueryDecorator(UriQuery.create("aa=old"), "a%61=old");
+        source.getAllRaw("aa").clear();
+        source.getAllRaw("aa").addAll(rawValues);
+        var copy = UriQueryWriteable.create().set("aa", "existing").from(source);
+        var expectedRaw = new ArrayList<>(List.of("existing"));
+        expectedRaw.addAll(rawValues);
+
+        assertThat(copy.getAllRaw("aa"), is(expectedRaw));
+        assertThat(copy.all("aa"), is(List.of("existing", "old")));
+        assertThat(UriQuery.create(copy.rawValue()).all("aa"), is(expectedRaw));
+
+        source.getAllRaw("aa").add("source-only");
+        source.all("aa").set(0, "decoded-source-only");
+        assertThat(copy.getAllRaw("aa"), is(expectedRaw));
+        assertThat(copy.all("aa"), is(List.of("existing", "old")));
+        copy.getAllRaw("aa").add("copy-only");
+        copy.all("aa").set(0, "decoded-copy-only");
+        assertThat(source.getAllRaw("aa").subList(0, rawValues.size()), is(rawValues));
+        assertThat(source.getAllRaw("aa").getLast(), is("source-only"));
+        assertThat(source.all("aa"), is(List.of("decoded-source-only")));
+    }
+
+    @Test
+    void testOpaqueAliasDecoratorFallbackDiscardsPartiallyCollectedRawValues() {
+        UriQuery source = new QueryDecorator(UriQuery.create("keep=source&aa=old"), "keep=source&a%61=old");
+        source.getAllRaw("aa").set(0, "replacement");
+
+        var copy = UriQueryWriteable.create().set("keep", "existing").from(source);
+
+        assertThat(copy.getAllRaw("keep"), is(List.of("existing", "source")));
+        assertThat(copy.all("keep"), is(List.of("existing", "source")));
+        assertThat(copy.getAllRaw("aa"), is(List.of("replacement")));
+        assertThat(copy.all("aa"), is(List.of("old")));
+        assertThat(UriQuery.create(copy.rawValue()).all("aa"), is(List.of("replacement")));
+    }
+
+    @Test
+    void testFailedLegacyRawLookupDoesNotChangeDestination() {
+        UriQuery source = new QueryDecorator(UriQuery.create("keep=source&%61=old"),
+                                             "keep=source&%61=old&a%61=old");
         var destination = UriQueryWriteable.create().set("keep", "existing");
 
-        assertThrows(IllegalArgumentException.class, () -> destination.from(source));
+        assertThrows(NoSuchElementException.class, () -> destination.from(source));
 
         assertThat(destination.rawValue(), is("keep=existing"));
         assertThat(destination.names(), is(Set.of("keep")));
@@ -440,14 +487,6 @@ class UriQueryCopyTest {
 
     private static Stream<List<String>> editedRawValues() {
         return Stream.of(List.of(), List.of("replacement"));
-    }
-
-    private static Stream<Arguments> opaqueAliasQueries() {
-        return Stream.of(
-                Arguments.of("aa=old", "a%61=old", "aa", List.of()),
-                Arguments.of("aa=old", "a%61=old", "aa", List.of("replacement")),
-                Arguments.of("aa=first&%61a=second", "a%61=first&a%61=second", "aa", List.of("first")),
-                Arguments.of("%2561=first&%61=second", "%25%36%31=first&%61=second", "%2561", List.of("first")));
     }
 
     private static Stream<Arguments> snapshotAliasQueries() {

@@ -17,9 +17,11 @@
 package io.helidon.webclient.api;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -47,20 +49,74 @@ import static org.mockito.Mockito.mock;
 class ClientUriQueryTest {
     private static final String RAW_QUERY = "z=1&flag&&a=first&a=second&a=third&%61=fourth&q=a+b&escaped=%2f%2F&";
 
-    @ParameterizedTest
-    @MethodSource("opaqueAliasQueries")
-    void testOpaqueAliasDecoratorIsRejectedWithoutChangingTarget(String backing,
-                                                               String serialized,
-                                                               String editedName,
-                                                               List<String> rawValues) {
-        UriQuery source = UriQuery.create(backing);
+    @Test
+    void testOpaqueAliasDecoratorImportUsesLegacyRawName() {
+        UriQuery source = UriQuery.create("aa=old");
         UriQuery decorated = mock(UriQuery.class, delegatesTo(source));
-        doReturn(serialized).when(decorated).rawValue();
-        source.getAllRaw(editedName).clear();
-        source.getAllRaw(editedName).addAll(rawValues);
+        doReturn("a%61=old").when(decorated).rawValue();
+
+        var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
+
+        assertThat(client.pathWithQueryAndFragment(), is("/?aa=old"));
+        assertThat(client.query().getAllRaw("aa"), is(List.of("old")));
+        assertThat(client.query().all("aa"), is(List.of("old")));
+    }
+
+    @ParameterizedTest
+    @MethodSource("editedDecoratorRawValues")
+    void testOpaqueAliasDecoratorAppendsCurrentRawAndDecodedLists(List<String> rawValues) {
+        UriQuery source = UriQuery.create("aa=old");
+        UriQuery decorated = mock(UriQuery.class, delegatesTo(source));
+        doReturn("a%61=old").when(decorated).rawValue();
+        source.getAllRaw("aa").clear();
+        source.getAllRaw("aa").addAll(rawValues);
+        var client = ClientUri.create(URI.create("https://upstream.example/%70ath?aa=existing"));
+
+        client.writeableQuery().from(decorated);
+
+        var expectedRaw = new ArrayList<>(List.of("existing"));
+        expectedRaw.addAll(rawValues);
+        assertThat(client.query().getAllRaw("aa"), is(expectedRaw));
+        assertThat(client.query().all("aa"), is(List.of("existing", "old")));
+        assertThat(UriQuery.create(URI.create(client.pathWithQueryAndFragment()).getRawQuery()).all("aa"), is(expectedRaw));
+
+        source.getAllRaw("aa").add("source-only");
+        source.all("aa").set(0, "decoded-source-only");
+        assertThat(client.query().getAllRaw("aa"), is(expectedRaw));
+        assertThat(client.query().all("aa"), is(List.of("existing", "old")));
+        client.query().getAllRaw("aa").add("client-only");
+        client.query().all("aa").set(0, "decoded-client-only");
+        assertThat(source.getAllRaw("aa").subList(0, rawValues.size()), is(rawValues));
+        assertThat(source.getAllRaw("aa").getLast(), is("source-only"));
+        assertThat(source.all("aa"), is(List.of("decoded-source-only")));
+    }
+
+    @Test
+    void testOpaqueAliasDecoratorFallbackDiscardsPartiallyCollectedRawValues() {
+        UriQuery source = UriQuery.create("keep=source&aa=old");
+        UriQuery decorated = mock(UriQuery.class, delegatesTo(source));
+        doReturn("keep=source&a%61=old").when(decorated).rawValue();
+        source.getAllRaw("aa").set(0, "replacement");
+        var client = ClientUri.create(URI.create("https://upstream.example/?keep=existing"));
+
+        client.writeableQuery().from(decorated);
+
+        assertThat(client.query().getAllRaw("keep"), is(List.of("existing", "source")));
+        assertThat(client.query().all("keep"), is(List.of("existing", "source")));
+        assertThat(client.query().getAllRaw("aa"), is(List.of("replacement")));
+        assertThat(client.query().all("aa"), is(List.of("old")));
+        assertThat(UriQuery.create(URI.create(client.pathWithQueryAndFragment()).getRawQuery()).all("aa"),
+                   is(List.of("replacement")));
+    }
+
+    @Test
+    void testFailedLegacyRawLookupDoesNotChangeTarget() {
+        UriQuery source = UriQuery.create("keep=source&%61=old");
+        UriQuery decorated = mock(UriQuery.class, delegatesTo(source));
+        doReturn("keep=source&%61=old&a%61=old").when(decorated).rawValue();
         var client = ClientUri.create(URI.create("https://upstream.example/%70ath?keep=%2f+"));
 
-        assertThrows(IllegalArgumentException.class, () -> client.writeableQuery().from(decorated));
+        assertThrows(NoSuchElementException.class, () -> client.writeableQuery().from(decorated));
 
         assertThat(client.pathWithQueryAndFragment(), is("/%70ath?keep=%2f+"));
         assertThat(client.query().names(), is(Set.of("keep")));
@@ -736,14 +792,6 @@ class ClientUriQueryTest {
 
     private static Stream<List<String>> editedDecoratorRawValues() {
         return Stream.of(List.of(), List.of("replacement"));
-    }
-
-    private static Stream<Arguments> opaqueAliasQueries() {
-        return Stream.of(
-                Arguments.of("aa=old", "a%61=old", "aa", List.of()),
-                Arguments.of("aa=old", "a%61=old", "aa", List.of("replacement")),
-                Arguments.of("aa=first&%61a=second", "a%61=first&a%61=second", "aa", List.of("first")),
-                Arguments.of("%2561=first&%61=second", "%25%36%31=first&%61=second", "%2561", List.of("first")));
     }
 
     private static Stream<Arguments> snapshotAliasQueries() {

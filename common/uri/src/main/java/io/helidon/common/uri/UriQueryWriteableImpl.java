@@ -344,8 +344,12 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
             try {
                 current.put(name, source.getAllRaw(name));
             } catch (NoSuchElementException _) {
-                throw new IllegalArgumentException("Query serialization contains raw parameter names that cannot be copied; "
-                                                           + "provide a UriQuery.Copyable snapshot");
+                // Decorators may rewrite serialized names. Preserve their legacy lookup behavior as one complete copy.
+                Map<String, List<String>> legacy = new HashMap<>();
+                for (String legacyName : source.names()) {
+                    legacy.put(legacyName, source.getAllRaw(legacyName));
+                }
+                return legacy;
             }
         }
         // Empty raw lists have no serialized entry, but can still be exposed through parameter names.
