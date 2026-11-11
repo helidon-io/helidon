@@ -16,16 +16,20 @@
 
 package io.helidon.json.schema;
 
+import java.util.List;
 import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.json.JsonArray;
 import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValue;
 
 /**
  * Json schema related to the strings.
  */
 @Prototype.Blueprint
+@Prototype.CustomMethods(SchemaSupport.SchemaStringCustomMethods.class)
 interface SchemaStringBlueprint extends SchemaItemBlueprint {
 
     /**
@@ -49,6 +53,27 @@ interface SchemaStringBlueprint extends SchemaItemBlueprint {
      */
     Optional<String> pattern();
 
+    /**
+     * String format, such as {@code date}, {@code time}, or {@code date-time}.
+     *
+     * @return string format
+     * @since 27.0.2
+     */
+    Optional<String> format();
+
+    /**
+     * Values of the enum keyword, in declaration order.
+     * Entries of any JSON type are preserved, including {@link io.helidon.json.JsonNull}.
+     * The string type restriction applies independently of these values.
+     * When absent, no enum keyword restricts the string values.
+     * A present empty list generates an empty enum, which allows no values.
+     *
+     * @return enum values
+     * @since 27.0.2
+     */
+    @Option.Singular("enumValue")
+    Optional<List<JsonValue>> enumValues();
+
     @Option.Access("")
     @Option.Default("STRING")
     @Override
@@ -60,6 +85,8 @@ interface SchemaStringBlueprint extends SchemaItemBlueprint {
         maxLength().ifPresent(maxLength -> builder.set("maxLength", maxLength));
         minLength().ifPresent(minLength -> builder.set("minLength", minLength));
         pattern().ifPresent(pattern -> builder.set("pattern", pattern));
+        format().ifPresent(format -> builder.set("format", format));
+        enumValues().ifPresent(values -> builder.set("enum", JsonArray.create(values)));
     }
 
 }

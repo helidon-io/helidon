@@ -129,6 +129,36 @@ over the parameter.
 Schema.find(MyClass.class);
 ```
 
+### Enum and Date/Time Properties
+
+For record and model properties, schema generation infers the following string
+schemas. An enum annotated with `@JsonSchema.Schema` can also define a root
+schema, using the enum constant names as its allowed values.
+
+| Java type | Generated JSON Schema |
+| --- | --- |
+| Enum | `type: "string"`, with `enum` containing the constant names in declaration order |
+| `LocalDate` | `type: "string"`, `format: "date"` |
+| `Instant` | `type: "string"`, `format: "date-time"` |
+| `LocalDateTime`, `LocalTime`, `OffsetDateTime`, `OffsetTime`, `ZonedDateTime`, `Duration`, `Period` | `type: "string"`, without an inferred `format` |
+
+The `date` and `date-time` formats describe the usual four-digit-year values.
+The other listed date/time types do not infer a standard format: depending on
+the type, Java's string representation can omit seconds or an offset, include
+a zone ID, or represent an amount of time instead of a date or time.
+
+Custom schema providers can use the `SchemaString` builder methods
+`format(String)`, `enumValues(List<JsonValue>)`, and `addEnumValue(JsonValue)` to
+describe their schema. The `addEnumValue(String)` overload adds a JSON string.
+Schema parsing and generation preserve `format` and every `enum` entry, including
+JSON null, numbers, booleans, objects, and arrays. Entries retain their JSON types
+and declaration order; they are not converted to strings or discarded.
+The `type: "string"` constraint still applies independently when validating an
+instance. An absent `enum` imposes no enum restriction; an explicit empty `enum`
+array allows no values.
+This metadata describes the JSON contract; it does not validate values or add
+serialization support for Java types.
+
 [jsonschema]: https://helidon.io/docs/core/v27/apidocs/io.helidon.json.schema/io/helidon/json/schema/JsonSchema.html
 [schema]: https://helidon.io/docs/core/v27/apidocs/io.helidon.json.schema/io/helidon/json/schema/Schema.html
 [service-named]: https://helidon.io/docs/core/v27/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Named.html
