@@ -356,6 +356,17 @@ final class SchemaSupport {
         }
 
         /**
+         * Add a JSON enum value.
+         *
+         * @param value JSON value to add
+         * @since 4.5.7
+         */
+        @Prototype.BuilderMethod
+        static void addEnumValue(SchemaString.BuilderBase<?, ?> builder, JsonValue value) {
+            builder.addEnumValues(List.of(Objects.requireNonNull(value)));
+        }
+
+        /**
          * Add a string enum value.
          *
          * @param value string value to add
