@@ -18,6 +18,7 @@ package io.helidon.http;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -62,6 +63,72 @@ class ContentDispositionTest {
         assertThat(cd.filename().orElseThrow(), is("a;b.txt"));
         assertThat(cd.size().orElseThrow(), is(128L));
         assertThat(cd.parameters().size(), is(3));
+    }
+
+    @Test
+    void testBuilderQuotedNameRoundTrip() {
+        ContentDisposition cd = ContentDisposition.builder().name("a\"b").filename("x.txt").build();
+        assertThat(cd.get(), is("form-data;name=\"a\\\"b\";filename=\"x.txt\""));
+        ContentDisposition parsed = ContentDisposition.parse(cd.get());
+        assertThat(parsed.contentName().orElseThrow(), is("a\"b"));
+        assertThat(parsed.filename().orElseThrow(), is("x.txt"));
+        assertThat(parsed.parameters().size(), is(2));
+    }
+
+    @Test
+    void testUnusualParameterRoundTrips() {
+        for (String name : List.of("", "a\\", "a\\\"b", "a\\;b", "a\";b", " a b ", "a%22%0A%25+b",
+                                   "a\";filename=\"other.txt", "\\\";\\\\;\"")) {
+            ContentDisposition cd = ContentDisposition.builder()
+                    .name(name)
+                    .parameter("custom", name)
+                    .filename("x.txt")
+                    .size(12)
+                    .build();
+            ContentDisposition parsed = ContentDisposition.parse(cd.get());
+            assertThat("name " + name, parsed.contentName().orElseThrow(), is(name));
+            assertThat("custom " + name, parsed.parameters().get("custom"), is(name));
+            assertThat(parsed.filename().orElseThrow(), is("x.txt"));
+            assertThat(parsed.size().orElseThrow(), is(12L));
+            assertThat(parsed.parameters().size(), is(4));
+        }
+    }
+
+    @Test
+    void testExternalBackslashBeforeSemicolon() {
+        ContentDisposition cd = ContentDisposition.parse("form-data;name=\"a\\\\;b\";filename=\"x.txt\";size=12");
+        assertThat(cd.contentName().orElseThrow(), is("a\\;b"));
+        assertThat(cd.filename().orElseThrow(), is("x.txt"));
+        assertThat(cd.size().orElseThrow(), is(12L));
+        assertThat(cd.parameters().size(), is(3));
+    }
+
+    @Test
+    void testUnknownBackslashAndLiteralPercentName() {
+        ContentDisposition cd = ContentDisposition.parse("form-data;name=\"a\\qb%22%0A%25+b\"");
+        assertThat(cd.contentName().orElseThrow(), is("a\\qb%22%0A%25+b"));
+    }
+
+    @Test
+    void testMalformedQuotedParametersRejected() {
+        for (String header : List.of("form-data;name=\"unterminated", "form-data;name=\"dangling\\",
+                                     "form-data;name=\"a\"b\";filename=\"x.txt\"",
+                                     "form-data;name=\"a\"b", "form-data;name=a\"b\"",
+                                     "form-data;name=\"a\" \"b\"")) {
+            assertThrows(IllegalArgumentException.class, () -> ContentDisposition.parse(header), header);
+        }
+    }
+
+    @Test
+    void testRawLineBreaksRejected() {
+        for (String lineBreak : List.of("\r", "\n", "\r\n")) {
+            assertThrows(IllegalArgumentException.class,
+                         () -> ContentDisposition.parse("form-data;name=\"a" + lineBreak + "b\""));
+            assertThrows(IllegalArgumentException.class,
+                         () -> ContentDisposition.builder().name("a" + lineBreak + "b").build().get());
+            assertThrows(IllegalArgumentException.class,
+                         () -> ContentDisposition.builder().parameter("custom", "a" + lineBreak + "b").build().get());
+        }
     }
 
     @Test
