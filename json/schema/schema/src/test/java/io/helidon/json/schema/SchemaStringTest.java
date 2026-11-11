@@ -16,7 +16,9 @@
 
 package io.helidon.json.schema;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.json.JsonArray;
@@ -26,7 +28,10 @@ import io.helidon.json.JsonNull;
 import io.helidon.json.JsonNumber;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
+import io.helidon.json.JsonValue;
 
+import org.hamcrest.FeatureMatcher;
+import org.hamcrest.Matcher;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -74,9 +79,9 @@ class SchemaStringTest {
                 """).readJsonObject();
 
         assertThat(schema.rootString().orElseThrow().enumValues().orElseThrow(),
-                   is(expected.arrayValue("enum").orElseThrow().values()));
-        assertThat(JsonParser.create(schema.generateNoKeywords()).readJsonObject(), is(expected));
-        assertThat(JsonParser.create(Schema.parse(schema.generate()).generateNoKeywords()).readJsonObject(), is(expected));
+                   jsonEqualTo(expected.arrayValue("enum").orElseThrow().values()));
+        assertThat(JsonParser.create(schema.generateNoKeywords()).readJsonObject(), jsonEqualTo(expected));
+        assertThat(JsonParser.create(Schema.parse(schema.generate()).generateNoKeywords()).readJsonObject(), jsonEqualTo(expected));
     }
 
     @Test
@@ -95,12 +100,12 @@ class SchemaStringTest {
         Schema schema = Schema.parse(expected.toString());
         SchemaString string = schema.rootString().orElseThrow();
         assertThat(string.format(), is(Optional.of("date")));
-        assertThat(string.enumValues().orElseThrow(), is(expected.arrayValue("enum").orElseThrow().values()));
+        assertThat(string.enumValues().orElseThrow(), jsonEqualTo(expected.arrayValue("enum").orElseThrow().values()));
         assertThat(string.minLength(), is(Optional.of(1L)));
         assertThat(string.maxLength(), is(Optional.of(10L)));
         assertThat(string.pattern(), is(Optional.of("[0-9-]+")));
-        assertThat(JsonParser.create(schema.generateNoKeywords()).readJsonObject(), is(expected));
-        assertThat(JsonParser.create(Schema.parse(schema.generate()).generateNoKeywords()).readJsonObject(), is(expected));
+        assertThat(JsonParser.create(schema.generateNoKeywords()).readJsonObject(), jsonEqualTo(expected));
+        assertThat(JsonParser.create(Schema.parse(schema.generate()).generateNoKeywords()).readJsonObject(), jsonEqualTo(expected));
     }
 
     @Test
@@ -124,10 +129,10 @@ class SchemaStringTest {
         Schema schema = Schema.parse(expected.toString());
         SchemaObject object = schema.rootObject().orElseThrow();
         assertThat(object.stringProperties().get("state").enumValues().orElseThrow(),
-                   is(JsonArray.createStrings(List.of("PENDING", "ACTIVE", "CLOSED")).values()));
+                   jsonEqualTo(JsonArray.createStrings(List.of("PENDING", "ACTIVE", "CLOSED")).values()));
         assertThat(object.stringProperties().get("updated").format(), is(Optional.of("date-time")));
-        assertThat(JsonParser.create(schema.generateNoKeywords()).readJsonObject(), is(expected));
-        assertThat(JsonParser.create(Schema.parse(schema.generate()).generateNoKeywords()).readJsonObject(), is(expected));
+        assertThat(JsonParser.create(schema.generateNoKeywords()).readJsonObject(), jsonEqualTo(expected));
+        assertThat(JsonParser.create(Schema.parse(schema.generate()).generateNoKeywords()).readJsonObject(), jsonEqualTo(expected));
     }
 
     @Test
@@ -147,9 +152,9 @@ class SchemaStringTest {
         SchemaString items = (SchemaString) schema.rootArray().orElseThrow().items().orElseThrow();
         assertThat(items.format(), is(Optional.of("time")));
         assertThat(items.enumValues().orElseThrow(),
-                   is(JsonArray.createStrings(List.of("14:30:00Z", "09:00:00Z")).values()));
-        assertThat(JsonParser.create(schema.generateNoKeywords()).readJsonObject(), is(expected));
-        assertThat(JsonParser.create(Schema.parse(schema.generate()).generateNoKeywords()).readJsonObject(), is(expected));
+                   jsonEqualTo(JsonArray.createStrings(List.of("14:30:00Z", "09:00:00Z")).values()));
+        assertThat(JsonParser.create(schema.generateNoKeywords()).readJsonObject(), jsonEqualTo(expected));
+        assertThat(JsonParser.create(Schema.parse(schema.generate()).generateNoKeywords()).readJsonObject(), jsonEqualTo(expected));
     }
 
     @Test
@@ -164,9 +169,9 @@ class SchemaStringTest {
         Schema schema = Schema.parse(expected.toString());
 
         assertThat(schema.rootString().orElseThrow().enumValues().orElseThrow(),
-                   is(expected.arrayValue("enum").orElseThrow().values()));
-        assertThat(JsonParser.create(schema.generateNoKeywords()).readJsonObject(), is(expected));
-        assertThat(JsonParser.create(Schema.parse(schema.generate()).generateNoKeywords()).readJsonObject(), is(expected));
+                   jsonEqualTo(expected.arrayValue("enum").orElseThrow().values()));
+        assertThat(JsonParser.create(schema.generateNoKeywords()).readJsonObject(), jsonEqualTo(expected));
+        assertThat(JsonParser.create(Schema.parse(schema.generate()).generateNoKeywords()).readJsonObject(), jsonEqualTo(expected));
     }
 
     @Test
@@ -184,11 +189,11 @@ class SchemaStringTest {
 
         SchemaString state = schema.rootObject().orElseThrow().stringProperties().get("state");
         assertThat(state.enumValues().orElseThrow(),
-                   is(expected.objectValue("properties").orElseThrow()
+                   jsonEqualTo(expected.objectValue("properties").orElseThrow()
                               .objectValue("state").orElseThrow().arrayValue("enum").orElseThrow().values()));
         assertThat(state.required(), is(true));
-        assertThat(JsonParser.create(schema.generateNoKeywords()).readJsonObject(), is(expected));
-        assertThat(JsonParser.create(Schema.parse(schema.generate()).generateNoKeywords()).readJsonObject(), is(expected));
+        assertThat(JsonParser.create(schema.generateNoKeywords()).readJsonObject(), jsonEqualTo(expected));
+        assertThat(JsonParser.create(Schema.parse(schema.generate()).generateNoKeywords()).readJsonObject(), jsonEqualTo(expected));
     }
 
     @Test
@@ -203,9 +208,9 @@ class SchemaStringTest {
 
         SchemaString items = (SchemaString) schema.rootArray().orElseThrow().items().orElseThrow();
         assertThat(items.enumValues().orElseThrow(),
-                   is(expected.objectValue("items").orElseThrow().arrayValue("enum").orElseThrow().values()));
-        assertThat(JsonParser.create(schema.generateNoKeywords()).readJsonObject(), is(expected));
-        assertThat(JsonParser.create(Schema.parse(schema.generate()).generateNoKeywords()).readJsonObject(), is(expected));
+                   jsonEqualTo(expected.objectValue("items").orElseThrow().arrayValue("enum").orElseThrow().values()));
+        assertThat(JsonParser.create(schema.generateNoKeywords()).readJsonObject(), jsonEqualTo(expected));
+        assertThat(JsonParser.create(Schema.parse(schema.generate()).generateNoKeywords()).readJsonObject(), jsonEqualTo(expected));
     }
 
     @Test
@@ -225,8 +230,9 @@ class SchemaStringTest {
                 String input = template.formatted(values);
                 JsonObject expected = JsonParser.create(input).readJsonObject();
                 Schema schema = Schema.parse(input);
-                assertThat(input, JsonParser.create(schema.generateNoKeywords()).readJsonObject(), is(expected));
-                assertThat(input, JsonParser.create(Schema.parse(schema.generate()).generateNoKeywords()).readJsonObject(), is(expected));
+                assertThat(input, JsonParser.create(schema.generateNoKeywords()).readJsonObject(), jsonEqualTo(expected));
+                assertThat(input, JsonParser.create(Schema.parse(schema.generate()).generateNoKeywords()).readJsonObject(),
+                           jsonEqualTo(expected));
             }
         }
     }
@@ -278,8 +284,8 @@ class SchemaStringTest {
 
         Schema schema = Schema.parse(expected.toString());
         assertThat(schema.rootString().orElseThrow().enumValues().orElseThrow(), is(List.of()));
-        assertThat(JsonParser.create(schema.generateNoKeywords()).readJsonObject(), is(expected));
-        assertThat(JsonParser.create(Schema.parse(schema.generate()).generateNoKeywords()).readJsonObject(), is(expected));
+        assertThat(JsonParser.create(schema.generateNoKeywords()).readJsonObject(), jsonEqualTo(expected));
+        assertThat(JsonParser.create(Schema.parse(schema.generate()).generateNoKeywords()).readJsonObject(), jsonEqualTo(expected));
     }
 
     @Test
@@ -290,12 +296,43 @@ class SchemaStringTest {
         SchemaString restricted = SchemaString.builder().enumValues(values.values()).build();
         SchemaString.Builder copy = SchemaString.builder().from(restricted);
         Schema copiedSchema = Schema.builder().rootString(copy.build()).build();
-        assertThat(copy.enumValues().orElseThrow(), is(values.values()));
-        assertThat(JsonParser.create(copiedSchema.generateNoKeywords()).readJsonObject().arrayValue("enum").orElseThrow(), is(values));
+        assertThat(copy.enumValues().orElseThrow(), jsonEqualTo(values.values()));
+        assertThat(JsonParser.create(copiedSchema.generateNoKeywords()).readJsonObject().arrayValue("enum").orElseThrow(),
+                   jsonEqualTo(values));
 
         Schema unrestricted = Schema.builder().rootString(copy.clearEnumValues().build()).build();
         assertThat(JsonParser.create(unrestricted.generateNoKeywords()).readJsonObject().containsKey("enum"), is(false));
         assertThat(JsonParser.create(Schema.builder().rootString(restricted).build().generateNoKeywords()).readJsonObject()
-                           .arrayValue("enum").orElseThrow(), is(values));
+                           .arrayValue("enum").orElseThrow(), jsonEqualTo(values));
+    }
+
+    // JsonNumber on 4.x uses identity equality. Compare typed values without losing precision or array order.
+    private static Matcher<Object> jsonEqualTo(Object expected) {
+        return new FeatureMatcher<>(is(jsonValue(expected)), "JSON value", "JSON value") {
+            @Override
+            protected Object featureValueOf(Object actual) {
+                return jsonValue(actual);
+            }
+        };
+    }
+
+    private static Object jsonValue(Object value) {
+        if (value instanceof List<?> values) {
+            return values.stream().map(SchemaStringTest::jsonValue).toList();
+        }
+        JsonValue json = (JsonValue) value;
+        return switch (json.type()) {
+            case STRING -> json.asString().value();
+            case NUMBER -> json.asNumber().bigDecimalValue();
+            case BOOLEAN -> json.asBoolean().value();
+            case NULL -> JsonNull.instance();
+            case ARRAY -> jsonValue(json.asArray().values());
+            case OBJECT -> {
+                Map<String, Object> properties = new LinkedHashMap<>();
+                json.asObject().keysAsStrings()
+                        .forEach(key -> properties.put(key, jsonValue(json.asObject().value(key).orElseThrow())));
+                yield properties;
+            }
+        };
     }
 }
