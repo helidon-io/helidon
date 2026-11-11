@@ -347,7 +347,8 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
                 // Decorators may rewrite serialized names. Preserve their legacy lookup behavior as one complete copy.
                 Map<String, List<String>> legacy = new HashMap<>();
                 for (String legacyName : source.names()) {
-                    legacy.put(legacyName, source.getAllRaw(legacyName));
+                    String encodedName = UriEncoding.encode(legacyName, UriEncoding.Type.QUERY_PARAM_SPACE_ENCODED);
+                    legacy.put(encodedName, source.getAllRaw(legacyName));
                 }
                 return legacy;
             }
@@ -355,8 +356,12 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
         // Newly added parameters and empty raw lists may be absent from the captured serialization.
         for (String name : source.names()) {
             if (!current.containsKey(name)) {
+                String encodedName = UriEncoding.encode(name, UriEncoding.Type.QUERY_PARAM_SPACE_ENCODED);
+                if (current.containsKey(encodedName)) {
+                    continue;
+                }
                 try {
-                    current.put(name, source.getAllRaw(name));
+                    current.put(encodedName, source.getAllRaw(name));
                 } catch (NoSuchElementException _) {
                     // A decoded parameter name need not be a raw lookup key.
                 }

@@ -41,6 +41,41 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class UriQueryCopyTest {
     @ParameterizedTest
+    @MethodSource("decodedNameQueries")
+    void testDecodedNameDecoratorFallbackEncodesNames(String name, String encodedName) {
+        assertDecodedNameDecoratorCopy(name, encodedName, false);
+    }
+
+    @ParameterizedTest
+    @MethodSource("decodedNameQueries")
+    void testDecodedNameDecoratorCopyEncodesSupplementalNames(String name, String encodedName) {
+        assertDecodedNameDecoratorCopy(name, encodedName, true);
+    }
+
+    @Test
+    void testDecodedNameDecoratorKeepsCollectedCanonicalKeyAndDistinctAliases() {
+        UriQuery delegate = UriQuery.create("a%20b=first&a%20b=second&%61=encoded&a=plain");
+        UriQuery source = new QueryDecorator(delegate) {
+            @Override
+            public List<String> getAllRaw(String name) {
+                return name.equals("a b") ? List.of("shadow") : super.getAllRaw(name);
+            }
+        };
+
+        var copy = UriQueryWriteable.create().from(source);
+
+        assertThat(copy.getAllRaw("a%20b"), is(List.of("first", "second")));
+        assertThat(copy.all("a b"), is(List.of("first", "second")));
+        assertThat(copy.getAllRaw("%61"), is(List.of("encoded")));
+        assertThat(copy.getAllRaw("a"), is(List.of("plain")));
+        UriQuery serialized = UriQuery.create(copy.rawValue());
+        assertThat(serialized.names(), is(Set.of("a b", "a")));
+        assertThat(serialized.all("a b"), is(List.of("first", "second")));
+        assertThat(serialized.getAllRaw("%61"), is(List.of("encoded")));
+        assertThat(serialized.getAllRaw("a"), is(List.of("plain")));
+    }
+
+    @ParameterizedTest
     @ValueSource(strings = {"a=1", ""})
     void testDecoratorCopyIncludesParametersAddedAfterCapture(String capturedQuery) {
         var delegate = UriQueryWriteable.create();
@@ -578,6 +613,51 @@ class UriQueryCopyTest {
         assertThat(copy.all("b"), is(List.of("replacement")));
         assertThat(copy.getAllRaw("b"), is(List.of("replacement")));
         assertThat(copy.rawValue(), is("a=existing&b=replacement"));
+    }
+
+    private static void assertDecodedNameDecoratorCopy(String name, String encodedName, boolean supplemental) {
+        var delegate = UriQueryWriteable.create().set("keep", "existing");
+        String captured = delegate.rawValue();
+        delegate.set(name, "old");
+        UriQuery source = new QueryDecorator(delegate, supplemental ? captured : delegate.rawValue()) {
+            @Override
+            public List<String> getAllRaw(String lookupName) {
+                if (!delegate.names().contains(lookupName)) {
+                    throw new NoSuchElementException(lookupName);
+                }
+                return delegate.getAllRaw(UriEncoding.encode(lookupName, UriEncoding.Type.QUERY_PARAM_SPACE_ENCODED));
+            }
+        };
+        delegate.getAllRaw(encodedName).set(0, "raw%2Fvalue");
+        delegate.all(name).set(0, "decoded-value");
+
+        var copy = UriQueryWriteable.create().from(source);
+
+        assertThat(copy.getAllRaw(encodedName), is(List.of("raw%2Fvalue")));
+        assertThat(copy.all(name), is(List.of("decoded-value")));
+        UriQuery serialized = UriQuery.create(copy.rawValue());
+        assertThat(serialized.names(), is(Set.of("keep", name)));
+        assertThat(serialized.all(name), is(List.of("raw/value")));
+        assertThat(serialized.all("keep"), is(List.of("existing")));
+
+        delegate.getAllRaw(encodedName).set(0, "source-only");
+        delegate.all(name).set(0, "decoded-source-only");
+        assertThat(copy.getAllRaw(encodedName), is(List.of("raw%2Fvalue")));
+        assertThat(copy.all(name), is(List.of("decoded-value")));
+        copy.getAllRaw(encodedName).set(0, "copy-only");
+        copy.all(name).set(0, "decoded-copy-only");
+        assertThat(delegate.getAllRaw(encodedName), is(List.of("source-only")));
+        assertThat(delegate.all(name), is(List.of("decoded-source-only")));
+    }
+
+    private static Stream<Arguments> decodedNameQueries() {
+        return Stream.of(
+                Arguments.of("safe&admin", "safe%26admin"),
+                Arguments.of("safe=admin", "safe%3Dadmin"),
+                Arguments.of("literal%26name", "literal%2526name"),
+                Arguments.of("plus+name", "plus%2Bname"),
+                Arguments.of("space name", "space%20name"),
+                Arguments.of("caf\u00e9", "caf%C3%A9"));
     }
 
     private static Stream<List<String>> editedRawValues() {

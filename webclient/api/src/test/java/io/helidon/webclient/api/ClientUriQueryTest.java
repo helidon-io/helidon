@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.common.uri.UriQueryWriteable;
@@ -50,6 +51,37 @@ import static org.mockito.Mockito.mock;
 
 class ClientUriQueryTest {
     private static final String RAW_QUERY = "z=1&flag&&a=first&a=second&a=third&%61=fourth&q=a+b&escaped=%2f%2F&";
+
+    @ParameterizedTest
+    @MethodSource("decodedNameQueries")
+    void testDecodedNameDecoratorImportEncodesFallbackNames(String name, String encodedName) {
+        assertDecodedNameDecoratorImport(name, encodedName, false);
+    }
+
+    @ParameterizedTest
+    @MethodSource("decodedNameQueries")
+    void testDecodedNameDecoratorImportEncodesSupplementalNames(String name, String encodedName) {
+        assertDecodedNameDecoratorImport(name, encodedName, true);
+    }
+
+    @Test
+    void testDecodedNameDecoratorImportKeepsCollectedCanonicalKeyAndDistinctAliases() {
+        UriQuery source = UriQuery.create("a%20b=first&a%20b=second&%61=encoded&a=plain");
+        UriQuery decorated = mock(UriQuery.class, delegatesTo(source));
+        doReturn(List.of("shadow")).when(decorated).getAllRaw("a b");
+
+        var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
+
+        assertThat(client.query().getAllRaw("a%20b"), is(List.of("first", "second")));
+        assertThat(client.query().all("a b"), is(List.of("first", "second")));
+        assertThat(client.query().getAllRaw("%61"), is(List.of("encoded")));
+        assertThat(client.query().getAllRaw("a"), is(List.of("plain")));
+        UriQuery outbound = UriQuery.create(URI.create(client.pathWithQueryAndFragment()).getRawQuery());
+        assertThat(outbound.names(), is(Set.of("a b", "a")));
+        assertThat(outbound.all("a b"), is(List.of("first", "second")));
+        assertThat(outbound.getAllRaw("%61"), is(List.of("encoded")));
+        assertThat(outbound.getAllRaw("a"), is(List.of("plain")));
+    }
 
     @Test
     void testSnapshotDecoratorImportIncludesParametersAddedAfterCapture() {
@@ -887,6 +919,53 @@ class ClientUriQueryTest {
         query.add("a", "additional");
 
         assertThrows(ConcurrentModificationException.class, iterator::next);
+    }
+
+    private static void assertDecodedNameDecoratorImport(String name, String encodedName, boolean supplemental) {
+        var source = UriQueryWriteable.create().set("keep", "existing");
+        String captured = source.rawValue();
+        source.set(name, "old");
+        UriQuery decorated = mock(UriQuery.class, delegatesTo(source));
+        doReturn(supplemental ? captured : source.rawValue()).when(decorated).rawValue();
+        doAnswer(invocation -> {
+            String lookupName = invocation.getArgument(0);
+            if (!source.names().contains(lookupName)) {
+                throw new NoSuchElementException(lookupName);
+            }
+            return source.getAllRaw(UriEncoding.encode(lookupName, UriEncoding.Type.QUERY_PARAM_SPACE_ENCODED));
+        }).when(decorated).getAllRaw(anyString());
+        source.getAllRaw(encodedName).set(0, "raw%2Fvalue");
+        source.all(name).set(0, "decoded-value");
+
+        var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
+
+        assertThat(client.query().getAllRaw(encodedName), is(List.of("raw%2Fvalue")));
+        assertThat(client.query().all(name), is(List.of("decoded-value")));
+        String target = client.pathWithQueryAndFragment();
+        UriQuery outbound = UriQuery.create(URI.create(target).getRawQuery());
+        assertThat(outbound.names(), is(Set.of("keep", name)));
+        assertThat(outbound.all(name), is(List.of("raw/value")));
+        assertThat(outbound.all("keep"), is(List.of("existing")));
+
+        source.getAllRaw(encodedName).set(0, "source-only");
+        source.all(name).set(0, "decoded-source-only");
+        assertThat(client.pathWithQueryAndFragment(), is(target));
+        assertThat(client.query().getAllRaw(encodedName), is(List.of("raw%2Fvalue")));
+        assertThat(client.query().all(name), is(List.of("decoded-value")));
+        client.query().getAllRaw(encodedName).set(0, "client-only");
+        client.query().all(name).set(0, "decoded-client-only");
+        assertThat(source.getAllRaw(encodedName), is(List.of("source-only")));
+        assertThat(source.all(name), is(List.of("decoded-source-only")));
+    }
+
+    private static Stream<Arguments> decodedNameQueries() {
+        return Stream.of(
+                Arguments.of("safe&admin", "safe%26admin"),
+                Arguments.of("safe=admin", "safe%3Dadmin"),
+                Arguments.of("literal%26name", "literal%2526name"),
+                Arguments.of("plus+name", "plus%2Bname"),
+                Arguments.of("space name", "space%20name"),
+                Arguments.of("caf\u00e9", "caf%C3%A9"));
     }
 
     private static ClientUriQuery importedQuery() {

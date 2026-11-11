@@ -40,8 +40,9 @@ public interface UriQueryWriteable extends UriQuery {
      * Raw and decoded parameter lists are copied independently.
      * Generic queries are copied using raw parameter names from {@link #rawValue()} when those names
      * can be looked up through {@link #getAllRaw(String)}. Otherwise, raw lookups use {@link #names()},
-     * preserving the historical behavior for decorators that rewrite serialized names. This fallback
-     * cannot retain raw aliases that the parameter names do not expose. Values are read from the
+     * preserving the historical lookup behavior for decorators that rewrite serialized names. Names from
+     * this fallback or absent from the serialized query are query-encoded before being written.
+     * This fallback cannot retain raw aliases that the parameter names do not expose. Values are read from the
      * current parameter lists rather than the serialized query.
      *
      * @param uriQuery uri query to read
