@@ -326,6 +326,7 @@ class SchemaStringTest {
             case NUMBER -> json.asNumber().bigDecimalValue();
             case BOOLEAN -> json.asBoolean().value();
             case NULL -> JsonNull.instance();
+            case UNKNOWN -> throw new AssertionError("Unknown JSON value: " + json);
             case ARRAY -> jsonValue(json.asArray().values());
             case OBJECT -> {
                 Map<String, Object> properties = new LinkedHashMap<>();
