@@ -26,6 +26,9 @@ import io.helidon.metadata.hson.Hson;
 
 /**
  * Metadata of a service descriptor, as stored in Helidon specific file {@value Descriptors#SERVICE_REGISTRY_LOCATION}.
+ * <p>
+ * This interface is intended for consumption only. Instances are supplied by Helidon, including through {@link #create}.
+ * Implementations and extensions outside Helidon are not supported.
  */
 @Api.Stable
 public interface DescriptorMetadata {
