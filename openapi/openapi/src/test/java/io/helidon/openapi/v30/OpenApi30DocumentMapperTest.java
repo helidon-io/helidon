@@ -541,30 +541,22 @@ class OpenApi30DocumentMapperTest {
     }
 
     @Test
-    void filtersUnsupportedHeaderFields() {
-        OpenApiDocument document = OpenApi30DocumentMapper.parse(Map.of(
-                "openapi", "3.0.3",
-                "info", Map.of(
-                        "title", "Static API",
-                        "version", "1.0.0"),
-                "paths", Map.of(
-                        "/items", Map.of(
-                                "get", Map.of(
-                                        "responses", Map.of(
-                                                "200", Map.of(
-                                                        "description", "OK",
-                                                        "headers", Map.of(
-                                                                "X-Test", Map.of(
-                                                                        "allowEmptyValue", true,
-                                                                        "allowReserved", true,
-                                                                        "schema", Map.of("type", "string"))))))))));
-
-        Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");
-        Map<String, Object> responses = map(map(map(map(rendered, "paths"), "/items"), "get"), "responses");
-        Map<String, Object> header = map(map(map(responses, "200"), "headers"), "X-Test");
-
-        assertThat(header.containsKey("allowEmptyValue"), is(false));
-        assertThat(header.containsKey("allowReserved"), is(false));
+    void rejectsUnsupportedHeaderFields() {
+        for (String field : List.of("allowEmptyValue", "allowReserved")) {
+            Map<String, Object> source = Map.of(
+                    "openapi", "3.0.3",
+                    "info", Map.of("title", "Static API", "version", "1.0.0"),
+                    "paths", Map.of("/items", Map.of("get", Map.of(
+                            "responses", Map.of("200", Map.of(
+                                    "description", "OK",
+                                    "headers", Map.of("X-Test", Map.of(
+                                            field, true,
+                                            "schema", Map.of("type", "string")))))))));
+            IllegalStateException thrown = assertThrows(IllegalStateException.class,
+                                                        () -> OpenApi30DocumentMapper.parse(source));
+            assertThat(thrown.getMessage(), containsString("must not specify " + field));
+            assertThat(thrown.getMessage(), containsString("paths./items.get.responses.200.headers.X-Test"));
+        }
     }
 
     @Test

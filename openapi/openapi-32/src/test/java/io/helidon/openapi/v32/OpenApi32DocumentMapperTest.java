@@ -479,30 +479,22 @@ class OpenApi32DocumentMapperTest {
     }
 
     @Test
-    void filtersUnsupportedHeaderFields() {
-        OpenApiDocument document = OpenApi32DocumentMapper.parse(Map.of(
-                "openapi", "3.2.0",
-                "info", Map.of(
-                        "title", "Static API",
-                        "version", "1.0.0"),
-                "paths", Map.of(
-                        "/items", Map.of(
-                                "get", Map.of(
-                                        "responses", Map.of(
-                                                "200", Map.of(
-                                                        "description", "OK",
-                                                        "headers", Map.of(
-                                                                "X-Test", Map.of(
-                                                                        "allowEmptyValue", true,
-                                                                        "allowReserved", true,
-                                                                        "schema", Map.of("type", "string"))))))))));
-
-        Map<String, Object> rendered = OpenApi32DocumentMapper.render(document, "3.2.0");
-        Map<String, Object> responses = map(map(map(map(rendered, "paths"), "/items"), "get"), "responses");
-        Map<String, Object> header = map(map(map(responses, "200"), "headers"), "X-Test");
-
-        assertThat(header.containsKey("allowEmptyValue"), is(false));
-        assertThat(header.containsKey("allowReserved"), is(false));
+    void rejectsUnsupportedHeaderFields() {
+        for (String field : List.of("allowEmptyValue")) {
+            Map<String, Object> source = Map.of(
+                    "openapi", "3.2.0",
+                    "info", Map.of("title", "Static API", "version", "1.0.0"),
+                    "paths", Map.of("/items", Map.of("get", Map.of(
+                            "responses", Map.of("200", Map.of(
+                                    "description", "OK",
+                                    "headers", Map.of("X-Test", Map.of(
+                                            field, true,
+                                            "schema", Map.of("type", "string")))))))));
+            IllegalStateException thrown = assertThrows(IllegalStateException.class,
+                                                        () -> OpenApi32DocumentMapper.parse(source));
+            assertThat(thrown.getMessage(), containsString("must not specify " + field));
+            assertThat(thrown.getMessage(), containsString("paths./items.get.responses.200.headers.X-Test"));
+        }
     }
 
     @Test
@@ -776,8 +768,6 @@ class OpenApi32DocumentMapperTest {
                         "encoding", Map.of("item", Map.of()),
                         "itemEncoding", Map.of())),
                 documentWithMediaType("multipart/mixed", Map.of(
-                        "prefixEncoding", List.of(Map.of()))),
-                documentWithMediaType("multipart/mixed", Map.of(
                         "schema", Map.of("type", "object"),
                         "itemEncoding", Map.of())));
 
@@ -873,16 +863,69 @@ class OpenApi32DocumentMapperTest {
                         "schema", Map.of("$ref", "#/components/schemas/Item"),
                         "prefixEncoding", List.of(Map.of())));
         localObjectRef.put("components", Map.of("schemas", Map.of("Item", Map.of("type", "object"))));
-        IllegalStateException nonArrayRef = assertThrows(
-                IllegalStateException.class,
-                () -> OpenApi32DocumentMapper.parse(localObjectRef));
-        assertThat(nonArrayRef.getMessage(), containsString("requires itemSchema or an array schema"));
+        assertValidPositionalEncodingDocument(localObjectRef);
 
         OpenApi32DocumentMapper.parse(documentWithMediaType(
                 "multipart/mixed",
                 Map.of(
                         "schema", Map.of("$ref", "https://example.test/schemas/Items"),
                         "prefixEncoding", List.of(Map.of()))));
+    }
+
+    @Test
+    void acceptsPositionalEncodingWithoutExplicitSchemaType() {
+        assertValidPositionalEncodingDocument(documentWithMediaType("multipart/mixed", Map.of(
+                "prefixEncoding", List.of(Map.of()),
+                "itemEncoding", Map.of())));
+        for (Object schema : List.of(true, false, Map.of(), Map.of("description", "Ordered parts"))) {
+            assertValidPositionalEncodingDocument(documentWithMediaType("multipart/mixed", Map.of(
+                    "schema", schema,
+                    "prefixEncoding", List.of(Map.of()),
+                    "itemEncoding", Map.of())));
+        }
+    }
+
+    @Test
+    void defersPositionalEncodingSchemaReferenceEvaluation() {
+        for (String reference : List.of("#/components/schemas/Items", "schemas.json#/$defs/Items",
+                                        "https://example.test/schemas/Items")) {
+            Map<String, Object> source = documentWithMediaType("multipart/mixed", Map.of(
+                    "schema", Map.of("$ref", reference),
+                    "prefixEncoding", List.of(Map.of())));
+            source.put("components", Map.of("schemas", Map.of("Items", Map.of("type", "array"))));
+            assertValidPositionalEncodingDocument(source);
+        }
+
+        Map<String, Object> scoped = documentWithMediaType("multipart/mixed", Map.of(
+                "schema", Map.of("$id", "https://example.test/schema.json",
+                                 "$ref", "#/components/schemas/Items",
+                                 "components", Map.of("schemas", Map.of("Items", Map.of("type", "array")))),
+                "itemEncoding", Map.of()));
+        scoped.put("components", Map.of("schemas", Map.of("Items", Map.of("type", "object"))));
+        assertValidPositionalEncodingDocument(scoped);
+
+        Map<String, Object> chained = documentWithMediaType("multipart/mixed", Map.of(
+                "schema", Map.of("$ref", "#/components/schemas/Alias"),
+                "prefixEncoding", List.of(Map.of())));
+        chained.put("components", Map.of("schemas", Map.of(
+                "Alias", Map.of("$ref", "#/components/schemas/Items", "type", "array"),
+                "Items", Map.of())));
+        assertValidPositionalEncodingDocument(chained);
+    }
+
+    @Test
+    void rejectsPositionalEncodingWithExplicitNonArraySchema() {
+        for (Object type : List.of("object", List.of("object", "null"))) {
+            Map<String, Object> source = documentWithMediaType("multipart/mixed", Map.of(
+                    "schema", Map.of("type", type),
+                    "itemEncoding", Map.of()));
+            IllegalStateException parsed = assertThrows(IllegalStateException.class,
+                                                        () -> OpenApi32DocumentMapper.parse(source));
+            assertThat(parsed.getMessage(), containsString("positional encoding schema must allow array values"));
+            IllegalStateException rendered = assertThrows(IllegalStateException.class,
+                    () -> OpenApi32DocumentMapper.render(openApiDocument(source), "3.2.0"));
+            assertThat(rendered.getMessage(), containsString("positional encoding schema must allow array values"));
+        }
     }
 
     @Test
@@ -1062,6 +1105,11 @@ class OpenApi32DocumentMapperTest {
 
     private static void assertValidPathTemplateDocument(Map<String, Object> source) {
         OpenApi32DocumentMapper.render(OpenApi32DocumentMapper.parse(source), "3.2.0");
+    }
+
+    private static void assertValidPositionalEncodingDocument(Map<String, Object> source) {
+        assertThat(OpenApi32DocumentMapper.render(OpenApi32DocumentMapper.parse(source), "3.2.0"), is(source));
+        assertThat(OpenApi32DocumentMapper.render(openApiDocument(source), "3.2.0"), is(source));
     }
 
     private static void assertInvalidReferenceUri(Map<String, Object> source, String expectedMessage) {

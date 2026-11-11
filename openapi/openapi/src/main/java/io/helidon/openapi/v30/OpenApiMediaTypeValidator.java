@@ -63,9 +63,9 @@ final class OpenApiMediaTypeValidator {
                 return false;
             }
             if (!isSchema(mediaTypeObject.get("itemSchema"))
-                    && !isArraySchema(mediaTypeObject.get("schema"))) {
+                    && excludesArray(mediaTypeObject.get("schema"))) {
                 throw new IllegalStateException("OpenAPI " + dialect.version() + " media type at " + location
-                                                        + " requires itemSchema or an array schema for positional encoding");
+                                                        + " positional encoding schema must allow array values");
             }
         }
         return true;
@@ -90,24 +90,18 @@ final class OpenApiMediaTypeValidator {
         }
     }
 
-    private boolean isArraySchema(Object value) {
+    private static boolean excludesArray(Object value) {
         Map<String, Object> schema = object(value);
-        if (schema.isEmpty()) {
-            return false;
-        }
         Object type = schema.get("type");
         if (type instanceof String string) {
-            return "array".equals(string);
+            return !"array".equals(string);
         }
         if (type instanceof List<?> list) {
-            return list.contains("array");
+            return !list.contains("array");
         }
-        if (!(schema.get("$ref") instanceof String)) {
-            return true;
-        }
-        OpenApiReferenceResolver.Resolution resolution = resolver.resolveComponent(schema, "schemas");
-        return resolution.status() != OpenApiReferenceResolver.Status.RESOLVED
-                || isArraySchema(resolution.value());
+        // Schema is optional. Determining its effective type through JSON Schema keywords such as $ref
+        // requires schema evaluation, including $id scope, rather than OAS Reference Object resolution.
+        return false;
     }
 
     private static boolean isMultipart(String mediaType) {

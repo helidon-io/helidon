@@ -319,6 +319,16 @@ See [Configuration options][io-helidon-opena].
 The base `helidon-openapi` module provides OpenAPI 3.0 support. To render
 OpenAPI 3.1 or 3.2 documents, add the corresponding module.
 
+Helidon accepts the clarification editions OpenAPI
+[3.0.4](https://spec.openapis.org/oas/v3.0.4.html),
+[3.1.2](https://spec.openapis.org/oas/v3.1.2.html), and
+[3.2.1](https://spec.openapis.org/oas/v3.2.1.html). Feature handling follows the
+major and minor version; selecting a patch version does not select a different
+feature set. These document APIs remain preview, and their structural checks
+do not establish complete OpenAPI or JSON Schema conformance. Helidon serves
+API descriptions; it does not use these descriptions to serialize application
+requests or validate request and response bodies against schemas.
+
 When the `document` provider is not configured, Helidon selects the highest
 available OpenAPI document version provider discovered at runtime. With only
 `helidon-openapi`, generated output uses OpenAPI 3.0.3. If
@@ -327,6 +337,11 @@ available OpenAPI document version provider discovered at runtime. With only
 Configure the `document` provider when your application must pin the generated
 OpenAPI document version independently of which OpenAPI version modules are
 present.
+
+The generated output defaults remain 3.0.3, 3.1.1, and 3.2.0 to preserve
+existing generated documents. To declare a clarification edition explicitly,
+set the corresponding provider's `version` to `3.0.4`, `3.1.2`, or `3.2.1`
+using the configuration examples below.
 
 Declarative `@OpenApi.MutualTlsSecurityScheme` metadata and
 `@OpenApi.SecurityScheme` metadata with type `mutualTLS` require OpenAPI 3.1 or
