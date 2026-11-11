@@ -50,6 +50,105 @@ class ClientUriQueryTest {
     private static final String RAW_QUERY = "z=1&flag&&a=first&a=second&a=third&%61=fourth&q=a+b&escaped=%2f%2F&";
 
     @Test
+    void testSnapshotDecoratorImportIncludesParametersAddedAfterCapture() {
+        var source = UriQueryWriteable.create().set("a", "1");
+        UriQuery decorated = snapshotDecorator(source);
+        doReturn(source.rawValue()).when(decorated).rawValue();
+        source.add("token", "new");
+
+        var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
+
+        assertThat(decorated.rawValue(), is("a=1"));
+        assertThat(client.query().getAllRaw("token"), is(List.of("new")));
+        assertThat(client.query().all("token"), is(List.of("new")));
+        String target = client.pathWithQueryAndFragment();
+        assertThat(UriQuery.create(URI.create(target).getRawQuery()).all("token"), is(List.of("new")));
+
+        source.getAllRaw("token").set(0, "raw-source-only");
+        source.all("token").set(0, "decoded-source-only");
+        assertThat(client.pathWithQueryAndFragment(), is(target));
+        assertThat(client.query().getAllRaw("token"), is(List.of("new")));
+        assertThat(client.query().all("token"), is(List.of("new")));
+        client.query().getAllRaw("token").set(0, "raw-client-only");
+        client.query().all("token").set(0, "decoded-client-only");
+        assertThat(source.getAllRaw("token"), is(List.of("raw-source-only")));
+        assertThat(source.all("token"), is(List.of("decoded-source-only")));
+    }
+
+    @Test
+    void testSnapshotDecoratorImportIncludesAddedRawAliasesAndRepeatedValues() {
+        var source = UriQueryWriteable.create().set("a", "1");
+        UriQuery decorated = snapshotDecorator(source);
+        doReturn(source.rawValue()).when(decorated).rawValue();
+        source.fromQueryString("%74oken=first&token=second&%74oken=third");
+
+        var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
+
+        assertThat(client.query().getAllRaw("%74oken"), is(List.of("first", "third")));
+        assertThat(client.query().getAllRaw("token"), is(List.of("second")));
+        assertThat(client.query().all("token"), is(List.of("first", "second", "third")));
+        UriQuery outbound = UriQuery.create(URI.create(client.pathWithQueryAndFragment()).getRawQuery());
+        assertThat(outbound.getAllRaw("%74oken"), is(List.of("first", "third")));
+        assertThat(outbound.getAllRaw("token"), is(List.of("second")));
+        assertThat(outbound.getAllRaw("a"), is(List.of("1")));
+    }
+
+    @Test
+    void testSnapshotDecoratorImportIncludesAddedEmptyRawName() {
+        var source = UriQueryWriteable.create().set("a", "1");
+        UriQuery decorated = snapshotDecorator(source);
+        doReturn(source.rawValue()).when(decorated).rawValue();
+        source.add("", "first").add("", "second");
+
+        var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
+
+        assertThat(client.query().getAllRaw(""), is(List.of("first", "second")));
+        assertThat(client.query().all(""), is(List.of("first", "second")));
+        UriQuery outbound = UriQuery.create(URI.create(client.pathWithQueryAndFragment()).getRawQuery());
+        assertThat(outbound.getAllRaw(""), is(List.of("first", "second")));
+        assertThat(outbound.getAllRaw("a"), is(List.of("1")));
+    }
+
+    @ParameterizedTest
+    @MethodSource("editedDecoratorRawValues")
+    void testSnapshotDecoratorImportKeepsEditedAddedRawValues(List<String> rawValues) {
+        var source = UriQueryWriteable.create().set("a", "1");
+        UriQuery decorated = snapshotDecorator(source);
+        doReturn(source.rawValue()).when(decorated).rawValue();
+        source.add("token", "new");
+        source.getAllRaw("token").clear();
+        source.getAllRaw("token").addAll(rawValues);
+
+        var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
+
+        assertThat(client.query().contains("token"), is(true));
+        assertThat(client.query().getAllRaw("token"), is(rawValues));
+        assertThat(client.query().all("token"), is(List.of("new")));
+        UriQuery outbound = UriQuery.create(URI.create(client.pathWithQueryAndFragment()).getRawQuery());
+        assertThat(outbound.toMap().getOrDefault("token", List.of()), is(rawValues));
+        assertThat(outbound.getAllRaw("a"), is(List.of("1")));
+        if (rawValues.isEmpty()) {
+            assertThat(client.pathWithQueryAndFragment(), is("/?a=1"));
+        }
+    }
+
+    @Test
+    void testSnapshotDecoratorImportPreservesFullyMatchingRawQuery() {
+        String raw = "z=last&escaped=%2f%2F&%61=first&a=second&flag&&";
+        UriQuery source = UriQuery.create(raw);
+        UriQuery decorated = snapshotDecorator(source);
+
+        var client = ClientUri.create(UriInfo.builder().host("upstream.example").query(decorated).build());
+
+        assertThat(client.pathWithQueryAndFragment(), is("/?" + raw));
+        assertThat(client.query().getAllRaw("escaped"), is(List.of("%2f%2F")));
+        assertThat(client.query().getAllRaw("%61"), is(List.of("first")));
+        assertThat(client.query().getAllRaw("a"), is(List.of("second")));
+        assertThat(client.query().all("a"), is(List.of("first", "second")));
+        assertThat(client.query().names(), is(Set.of("z", "escaped", "a", "flag", "")));
+    }
+
+    @Test
     void testOpaqueAliasDecoratorImportUsesLegacyRawName() {
         UriQuery source = UriQuery.create("aa=old");
         UriQuery decorated = mock(UriQuery.class, delegatesTo(source));

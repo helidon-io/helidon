@@ -291,6 +291,18 @@ final class ClientUriQuery implements UriQueryWriteable, UriQuery.Copyable {
                 return false;
             }
         }
+        // A snapshot can include nonempty raw lists added after the original serialization was captured.
+        String current = delegate.rawValue();
+        start = 0;
+        while (start < current.length()) {
+            int and = current.indexOf('&', start);
+            int end = and == -1 ? current.length() : and;
+            int eq = current.indexOf('=', start, end);
+            if (!offsets.containsKey(current.substring(start, eq == -1 ? end : eq))) {
+                return false;
+            }
+            start = end + 1;
+        }
         return true;
     }
 
