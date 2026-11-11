@@ -26,6 +26,8 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("Configuration module")
 @Features.Flavor(HelidonFlavor.SE)
 module io.helidon.config {
+    requires jdk.jfr;
+
     requires static io.helidon.common.features.api;
 
     requires transitive io.helidon.service.registry;

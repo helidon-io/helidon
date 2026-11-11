@@ -26,6 +26,8 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Path("FT")
 module io.helidon.faulttolerance {
 
+    requires jdk.jfr;
+
     requires io.helidon.common;
     requires io.helidon.common.configurable;
     requires io.helidon.builder.api;

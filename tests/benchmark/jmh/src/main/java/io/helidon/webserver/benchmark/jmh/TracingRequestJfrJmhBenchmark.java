@@ -30,9 +30,13 @@ import io.helidon.webserver.observe.ObserveFeature;
 import io.helidon.webserver.observe.tracing.TracingObserver;
 
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
+import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.ContextPropagators;
 import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.trace.ReadWriteSpan;
+import io.opentelemetry.sdk.trace.ReadableSpan;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
+import io.opentelemetry.sdk.trace.SpanProcessor;
 import jdk.jfr.Recording;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -111,7 +115,9 @@ public class TracingRequestJfrJmhBenchmark {
         }
         try {
             telemetry = OpenTelemetrySdk.builder()
-                    .setTracerProvider(SdkTracerProvider.builder().build())
+                    .setTracerProvider(SdkTracerProvider.builder()
+                                               .addSpanProcessor(new NonExportingSpanProcessor())
+                                               .build())
                     .setPropagators(ContextPropagators.create(W3CTraceContextPropagator.getInstance()))
                     .build();
             var tracer = HelidonOpenTelemetry.create(telemetry, telemetry.getTracer("jfr-benchmark"), Map.of());
@@ -147,5 +153,26 @@ public class TracingRequestJfrJmhBenchmark {
 
     Recording recording() {
         return transport.recording();
+    }
+
+    // Keep SDK spans enabled without exporting: a provider with no processors uses a no-op tracer.
+    private static final class NonExportingSpanProcessor implements SpanProcessor {
+        @Override
+        public void onStart(Context parentContext, ReadWriteSpan span) {
+        }
+
+        @Override
+        public boolean isStartRequired() {
+            return false;
+        }
+
+        @Override
+        public void onEnd(ReadableSpan span) {
+        }
+
+        @Override
+        public boolean isEndRequired() {
+            return false;
+        }
     }
 }
