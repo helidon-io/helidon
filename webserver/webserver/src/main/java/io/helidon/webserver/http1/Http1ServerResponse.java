@@ -61,6 +61,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
     private static final byte[] DATE = "Date: ".getBytes(StandardCharsets.UTF_8);
     private static final byte[] TERMINATING_CHUNK = "0\r\n\r\n".getBytes(StandardCharsets.UTF_8);
     private static final byte[] TERMINATING_CHUNK_TRAILERS = "0\r\n".getBytes(StandardCharsets.UTF_8);
+    private static final int MIN_COMPOSITE_BODY_SIZE = 1024;
 
     private static final WritableHeaders<?> EMPTY_HEADERS = WritableHeaders.create();
 
@@ -478,12 +479,22 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         sendListener.status(ctx, usedStatus);
         sendListener.headers(ctx, headers);
 
+        // Direct NIO writes consume the caller's array before returning, without flattening the composite.
+        boolean compositeBody = length >= MIN_COMPOSITE_BODY_SIZE
+                && !headRequest
+                && !noEntityResponse
+                && !forcedChunkedEncoding
+                && ctx.listenerContext().config().useNio()
+                && ctx.listenerContext().config().writeQueueLength() <= 1;
         // give some space for code and headers + entity
-        BufferData responseBuffer = BufferData.growing(256 + (headRequest || noEntityResponse ? 0 : length));
+        int bufferSize = 256 + (compositeBody || headRequest || noEntityResponse ? 0 : length);
+        BufferData responseBuffer = BufferData.growing(bufferSize);
 
         keepConnectionOpen = resolveKeepConnectionOpen();
         nonEntityBytes(headers, usedStatus, responseBuffer, keepAlive, validateHeaders);
-        if (!headRequest && !noEntityResponse && forcedChunkedEncoding) {
+        if (compositeBody) {
+            responseBuffer = BufferData.create(responseBuffer, BufferData.create(bytes, position, length));
+        } else if (!headRequest && !noEntityResponse && forcedChunkedEncoding) {
             byte[] hex = Integer.toHexString(length).getBytes(StandardCharsets.US_ASCII);
             responseBuffer.write(hex);
             responseBuffer.write('\r');
