@@ -21,6 +21,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.http.Method;
 import io.helidon.webserver.http.ServerRequest;
@@ -44,7 +45,7 @@ class SingleFileClassPathContentHandler extends ClassPathContentHandler {
     }
 
     @Override
-    public void beforeStart() {
+    void populateCacheOnStart() {
         try {
             // directly cache in memory
             URL resourceUrl = classLoader.getResource(location);
@@ -70,7 +71,7 @@ class SingleFileClassPathContentHandler extends ClassPathContentHandler {
                        "Failed to add classpath resource to in-memory cache, location: " + location,
                        e);
         }
-        super.beforeStart();
+        super.populateCacheOnStart();
     }
 
     @Override
@@ -83,26 +84,29 @@ class SingleFileClassPathContentHandler extends ClassPathContentHandler {
     boolean doHandle(Method method, String requestedPath, ServerRequest request, ServerResponse response, boolean mapped)
             throws IOException {
 
-        Optional<CachedHandler> handler = cachedClassPathHandler(location);
-        if (handler.isEmpty()) {
-            URL resourceUrl = classLoader.getResource(location);
-            if (resourceUrl == null) {
-                return false;
-            }
-            try {
-                handler = cachedHandler(location, resourceUrl);
-            } catch (URISyntaxException e) {
-                throw new IOException("Failed to resolve classpath resource " + location, e);
-            }
-            if (handler.isEmpty()) {
-                return false;
-            }
-            handler = Optional.of(cacheClassPathHandler(location, location, resourceUrl, handler.get()));
-        }
-
         try {
-            CachedHandler selected = selectCachedClassPathHandler(location, handler.get(), request);
-            return selected.handle(handlerCache(), method, request, response, location);
+            Optional<CachedHandler> handler = acquireClassPathHandler(location);
+            if (handler.isEmpty()) {
+                ReentrantLock lock = cacheLock(location);
+                lock.lock();
+                try {
+                    handler = acquireClassPathHandler(location);
+                    if (handler.isEmpty()) {
+                        URL resourceUrl = classLoader.getResource(location);
+                        if (resourceUrl == null) {
+                            return false;
+                        }
+                        handler = cachedHandler(location, resourceUrl);
+                        if (handler.isEmpty()) {
+                            return false;
+                        }
+                        handler = Optional.of(cacheAndAcquireClassPathHandler(location, location, resourceUrl, handler.get()));
+                    }
+                } finally {
+                    lock.unlock();
+                }
+            }
+            return handleAcquired(handler.get(), method, request, response, location);
         } catch (URISyntaxException e) {
             throw new IOException("Failed to resolve classpath resource " + location, e);
         }

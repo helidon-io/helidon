@@ -23,6 +23,21 @@ import io.helidon.common.LruCache;
 
 record CachedHandlerRepresentation(CachedHandler delegate, ResponseRepresentation representation) implements CachedHandler {
     @Override
+    public void acquire() {
+        delegate.acquire();
+    }
+
+    @Override
+    public void release() {
+        delegate.release();
+    }
+
+    @Override
+    public void dispose() {
+        delegate.dispose();
+    }
+
+    @Override
     public Optional<PreparedContent> prepare(LruCache<String, CachedHandler> cache,
                                              String requestedResource) throws IOException {
         return delegate.prepare(cache, requestedResource)

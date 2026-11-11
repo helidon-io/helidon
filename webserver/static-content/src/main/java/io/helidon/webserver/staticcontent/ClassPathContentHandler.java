@@ -35,6 +35,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -51,9 +52,11 @@ import io.helidon.webserver.http.ServerResponse;
  * Handles static content from the classpath.
  */
 class ClassPathContentHandler extends FileBasedContentHandler {
+    private static final int CACHE_LOCK_COUNT = 64;
     private static final System.Logger LOGGER = System.getLogger(ClassPathContentHandler.class.getName());
 
     private final AtomicBoolean populatedInMemoryCache = new AtomicBoolean();
+    private final ReentrantLock[] cacheLocks = createCacheLocks();
     private final Map<String, CachedClassPathMetadata> inMemoryMetadata = new ConcurrentHashMap<>();
     private final ClassLoader classLoader;
     private final String root;
@@ -108,7 +111,7 @@ class ClassPathContentHandler extends FileBasedContentHandler {
     }
 
     @Override
-    public void beforeStart() {
+    void populateCacheOnStart() {
         if (populatedInMemoryCache.compareAndSet(false, true)) {
             for (String resource : cacheInMemory) {
                 try {
@@ -118,14 +121,12 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                 }
             }
         }
-        super.beforeStart();
+        super.populateCacheOnStart();
     }
 
     @Override
     void releaseCache() {
-        populatedInMemoryCache.set(false);
-        inMemoryMetadata.clear();
-        super.releaseCache();
+        releaseCache(0);
     }
 
     @Override
@@ -140,88 +141,20 @@ class ClassPathContentHandler extends FileBasedContentHandler {
             return false;
         }
 
-        // we have a resource that we support, let's try to use one from the cache
-        Optional<CachedHandler> cached = cachedClassPathHandler(requestedResource);
-        if (cached.isPresent()) {
-            CachedHandler cachedRecord = cached.get();
-            if (cachedRecord instanceof CachedHandlerRedirect) {
-                return cachedRecord.handle(handlerCache(), method, request, response, requestedResource);
-            }
-            CachedHandler handler = selectCachedClassPathHandler(requestedResource, cachedRecord, request);
-            // this requested resource is cached and can be safely returned
-            return handler.handle(handlerCache(), method, request, response, requestedResource);
-        }
-
-        // if it is not cached, find the resource and cache it (or return 404 and do not cache)
-
-        // try to find the resource on classpath (cannot use root URL and then resolve, as root and sub-resource
-        // may be from different jar files/directories
-        URL url = classLoader.getResource(requestedResource);
-        String logicalResource = requestedResource;
-
-        String welcomeFileName = welcomePageName();
-        if (welcomeFileName != null) {
-            String welcomeFileResource = requestedResource
-                    + (requestedResource.endsWith("/") ? "" : "/")
-                    + welcomeFileName;
-            URL welcomeUrl = classLoader.getResource(welcomeFileResource);
-            if (welcomeUrl != null) {
-                // there is a welcome file under requested resource, ergo requested resource was a directory
-                if (rawPath.endsWith("/")) {
-                    // this is OK, as the path ends with a forward slash
-
-                    // first check if this is an in-memory resource
-                    Optional<CachedHandlerInMemory> inMemoryMaybe = cacheInMemory(welcomeFileResource);
-                    if (inMemoryMaybe.isPresent()) {
-                        // reference to the same definition, never times out
-                        cacheInMemory(requestedResource, inMemoryMaybe.get());
-                        CachedHandler cachedHandler = cacheClassPathHandler(requestedResource,
-                                                                            welcomeFileResource,
-                                                                            welcomeUrl,
-                                                                            inMemoryMaybe.get());
-                        CachedHandler handler = selectClassPathHandler(welcomeFileResource,
-                                                                       cachedHandler,
-                                                                       request,
-                                                                       welcomeUrl);
-                        return handler.handle(handlerCache(), method, request, response, requestedResource);
-                    }
-
-                    url = welcomeUrl;
-                    logicalResource = welcomeFileResource;
-                } else {
-                    // must redirect
-                    String redirectLocation = rawPath + "/";
-                    CachedHandlerRedirect handler = new CachedHandlerRedirect(redirectLocation);
-                    cacheHandler(requestedResource, handler);
-                    return handler.handle(handlerCache(), method, request, response, requestedResource);
+        Optional<CachedHandler> cached = acquireClassPathHandler(requestedResource);
+        if (cached.isEmpty()) {
+            ReentrantLock lock = cacheLock(requestedResource);
+            lock.lock();
+            try {
+                cached = acquireClassPathHandler(requestedResource);
+                if (cached.isEmpty()) {
+                    cached = findAndAcquireHandler(rawPath, requestedResource);
                 }
+            } finally {
+                lock.unlock();
             }
         }
-
-        if (url == null || url.getPath().endsWith("/")) {
-            if (LOGGER.isLoggable(Level.TRACE)) {
-                LOGGER.log(Level.TRACE, "Requested resource " + requestedResource
-                        + " does not exist or is a directory without welcome file.");
-            }
-            // not caching 404, to prevent intentional cache pollution by users
-            return false;
-        }
-
-        if (LOGGER.isLoggable(Level.TRACE)) {
-            LOGGER.log(Level.TRACE, "Located resource url. Resource: " + requestedResource + ", URL: " + url);
-        }
-
-        // now read the URL - we have direct support for files and jar files, others are handled by stream only
-        Optional<CachedHandler> handler = cachedHandler(logicalResource, url);
-
-        if (handler.isEmpty()) {
-            return false;
-        }
-
-        CachedHandler cachedHandler = cacheClassPathHandler(requestedResource, logicalResource, url, handler.get());
-
-        CachedHandler selected = selectClassPathHandler(logicalResource, cachedHandler, request, url);
-        return selected.handle(handlerCache(), method, request, response, requestedResource);
+        return cached.isPresent() && handleAcquired(cached.get(), method, request, response, requestedResource);
     }
 
     Optional<CachedHandler> cachedHandler(String requestedResource, URL url) throws IOException, URISyntaxException {
@@ -322,13 +255,45 @@ class ClassPathContentHandler extends FileBasedContentHandler {
                                         String logicalResource,
                                         URL identityUrl,
                                         CachedHandler delegate) {
-        CachedClassPathHandler handler = new CachedClassPathHandler(delegate, logicalResource, identityUrl);
-        if (delegate instanceof CachedHandlerInMemory) {
-            inMemoryMetadata.put(requestedResource, new CachedClassPathMetadata(logicalResource, identityUrl, handler));
-        } else {
-            cacheHandler(requestedResource, handler);
+        return cacheClassPathHandler(requestedResource, logicalResource, identityUrl, delegate, false);
+    }
+
+    CachedHandler cacheAndAcquireClassPathHandler(String requestedResource,
+                                                  String logicalResource,
+                                                  URL identityUrl,
+                                                  CachedHandler delegate) {
+        return cacheClassPathHandler(requestedResource, logicalResource, identityUrl, delegate, true);
+    }
+
+    Optional<CachedHandler> acquireClassPathHandler(String requestedResource) {
+        CachedClassPathMetadata metadata = inMemoryMetadata.get(requestedResource);
+        if (metadata != null) {
+            Optional<CachedHandlerInMemory> inMemoryHandler = acquireInMemory(requestedResource);
+            if (inMemoryHandler.isPresent()) {
+                return Optional.of(metadata.cachedHandler(inMemoryHandler.get()));
+            }
+            inMemoryMetadata.remove(requestedResource, metadata);
         }
-        return handler;
+        return acquireHandler(requestedResource);
+    }
+
+    ReentrantLock cacheLock(String resource) {
+        return cacheLocks[Math.floorMod(resource.hashCode(), cacheLocks.length)];
+    }
+
+    boolean handleAcquired(CachedHandler identityHandler,
+                           Method method,
+                           ServerRequest request,
+                           ServerResponse response,
+                           String requestedResource) throws IOException, URISyntaxException {
+        try {
+            CachedHandler selected = identityHandler instanceof CachedHandlerRedirect
+                    ? identityHandler
+                    : selectCachedClassPathHandler(requestedResource, identityHandler, request);
+            return selected.handle(handlerCache(), method, request, response, requestedResource);
+        } finally {
+            identityHandler.release();
+        }
     }
 
     Optional<CachedHandler> cachedClassPathHandler(String requestedResource) {
@@ -341,6 +306,14 @@ class ClassPathContentHandler extends FileBasedContentHandler {
             inMemoryMetadata.remove(requestedResource, metadata);
         }
         return handlerCache().get(requestedResource);
+    }
+
+    private static ReentrantLock[] createCacheLocks() {
+        ReentrantLock[] locks = new ReentrantLock[CACHE_LOCK_COUNT];
+        for (int i = 0; i < locks.length; i++) {
+            locks[i] = new ReentrantLock();
+        }
+        return locks;
     }
 
     private static String fileName(URL url) {
@@ -380,6 +353,89 @@ class ClassPathContentHandler extends FileBasedContentHandler {
         } catch (IOException | SecurityException e) {
             return Optional.empty();
         }
+    }
+
+    private void releaseCache(int lockIndex) {
+        if (lockIndex == cacheLocks.length) {
+            populatedInMemoryCache.set(false);
+            inMemoryMetadata.clear();
+            super.releaseCache();
+            return;
+        }
+        // Nest the fixed number of stripe locks so every acquired lock has its own finally block.
+        ReentrantLock lock = cacheLocks[lockIndex];
+        lock.lock();
+        try {
+            releaseCache(lockIndex + 1);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private CachedHandler cacheClassPathHandler(String requestedResource,
+                                                String logicalResource,
+                                                URL identityUrl,
+                                                CachedHandler delegate,
+                                                boolean acquire) {
+        CachedClassPathHandler handler = new CachedClassPathHandler(delegate, logicalResource, identityUrl);
+        if (acquire) {
+            handler.acquire();
+        }
+        try {
+            if (delegate instanceof CachedHandlerInMemory) {
+                inMemoryMetadata.put(requestedResource, new CachedClassPathMetadata(logicalResource, identityUrl, handler));
+            } else {
+                cacheHandler(requestedResource, handler);
+            }
+            return handler;
+        } catch (RuntimeException | Error e) {
+            handler.dispose();
+            if (acquire) {
+                handler.release();
+            }
+            throw e;
+        }
+    }
+
+    private Optional<CachedHandler> findAndAcquireHandler(String rawPath, String requestedResource)
+            throws IOException, URISyntaxException {
+        URL url = classLoader.getResource(requestedResource);
+        String logicalResource = requestedResource;
+        String welcomeFileName = welcomePageName();
+        if (welcomeFileName != null) {
+            String welcomeFileResource = requestedResource
+                    + (requestedResource.endsWith("/") ? "" : "/")
+                    + welcomeFileName;
+            URL welcomeUrl = classLoader.getResource(welcomeFileResource);
+            if (welcomeUrl != null) {
+                if (rawPath.endsWith("/")) {
+                    Optional<CachedHandlerInMemory> inMemoryMaybe = cacheInMemory(welcomeFileResource);
+                    if (inMemoryMaybe.isPresent()) {
+                        cacheInMemory(requestedResource, inMemoryMaybe.get());
+                        return Optional.of(cacheAndAcquireClassPathHandler(requestedResource,
+                                                                            welcomeFileResource,
+                                                                            welcomeUrl,
+                                                                            inMemoryMaybe.get()));
+                    }
+                    url = welcomeUrl;
+                    logicalResource = welcomeFileResource;
+                } else {
+                    CachedHandlerRedirect handler = new CachedHandlerRedirect(rawPath + "/");
+                    handler.acquire();
+                    cacheHandler(requestedResource, handler);
+                    return Optional.of(handler);
+                }
+            }
+        }
+        if (url == null || url.getPath().endsWith("/")) {
+            // Do not cache missing resources, to prevent intentional cache pollution.
+            return Optional.empty();
+        }
+        Optional<CachedHandler> handler = cachedHandler(logicalResource, url);
+        if (handler.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(cacheAndAcquireClassPathHandler(requestedResource, logicalResource, url, handler.get()));
     }
 
     private String requestedResource(String rawPath, String requestedPath, boolean mapped) throws URISyntaxException {
@@ -589,6 +645,21 @@ class ClassPathContentHandler extends FileBasedContentHandler {
     record CachedClassPathHandler(CachedHandler delegate,
                                   String logicalResource,
                                   URL identityUrl) implements CachedHandler {
+        @Override
+        public void acquire() {
+            delegate.acquire();
+        }
+
+        @Override
+        public void release() {
+            delegate.release();
+        }
+
+        @Override
+        public void dispose() {
+            delegate.dispose();
+        }
+
         @Override
         public Optional<PreparedContent> prepare(LruCache<String, CachedHandler> cache,
                                                  String requestedResource) throws IOException {

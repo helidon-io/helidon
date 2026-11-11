@@ -18,12 +18,16 @@ package io.helidon.webserver.staticcontent;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Per-resource sidecar lookup cache.
@@ -34,6 +38,11 @@ final class SidecarCache {
     private final ConcurrentMap<String, CachedHandler> entries;
     private final ConcurrentMap<String, AtomicReference<CompletableFuture<Optional<CachedHandler>>>> resolutions =
             new ConcurrentHashMap<>();
+    private final Set<CachedHandler> retired = Collections.newSetFromMap(new IdentityHashMap<>());
+    private final ReentrantLock lifecycleLock = new ReentrantLock();
+
+    private int users;
+    private boolean disposed;
 
     private SidecarCache(ConcurrentMap<String, CachedHandler> entries) {
         this.entries = entries;
@@ -45,6 +54,48 @@ final class SidecarCache {
 
     static SidecarCache disabled() {
         return DISABLED;
+    }
+
+    void acquire() {
+        if (entries == null) {
+            return;
+        }
+        lifecycleLock.lock();
+        try {
+            users++;
+        } finally {
+            lifecycleLock.unlock();
+        }
+    }
+
+    void release() {
+        if (entries == null) {
+            return;
+        }
+        Set<CachedHandler> removed;
+        lifecycleLock.lock();
+        try {
+            users--;
+            removed = drainRetired();
+        } finally {
+            lifecycleLock.unlock();
+        }
+        removed.forEach(CachedHandler::dispose);
+    }
+
+    void dispose() {
+        if (entries == null) {
+            return;
+        }
+        Set<CachedHandler> removed;
+        lifecycleLock.lock();
+        try {
+            disposed = true;
+            removed = drainRetired();
+        } finally {
+            lifecycleLock.unlock();
+        }
+        removed.forEach(CachedHandler::dispose);
     }
 
     Optional<CachedHandler> resolve(String coding, String suffix, Resolver resolver)
@@ -80,7 +131,7 @@ final class SidecarCache {
             }
 
             Optional<CachedHandler> resolved = resolver.resolve(coding, suffix);
-            resolved.ifPresent(handler -> entries.put(coding, handler));
+            resolved.ifPresent(handler -> cache(coding, handler));
             resolution.complete(resolved);
             return resolved;
         } catch (IOException | URISyntaxException | RuntimeException | Error e) {
@@ -92,9 +143,21 @@ final class SidecarCache {
     }
 
     void remove(String coding) {
-        if (entries != null) {
-            entries.remove(coding);
+        if (entries == null) {
+            return;
         }
+        Set<CachedHandler> removed;
+        lifecycleLock.lock();
+        try {
+            CachedHandler handler = entries.remove(coding);
+            if (handler != null) {
+                retired.add(handler);
+            }
+            removed = drainRetired();
+        } finally {
+            lifecycleLock.unlock();
+        }
+        removed.forEach(CachedHandler::dispose);
     }
 
     private static Optional<CachedHandler> await(CompletableFuture<Optional<CachedHandler>> resolution)
@@ -121,6 +184,40 @@ final class SidecarCache {
 
     private CachedHandler reusable(String coding) {
         return entries.get(coding);
+    }
+
+    private void cache(String coding, CachedHandler handler) {
+        Set<CachedHandler> removed;
+        lifecycleLock.lock();
+        try {
+            CachedHandler previous = entries.put(coding, handler);
+            if (previous != null && previous != handler) {
+                retired.add(previous);
+            }
+            removed = drainRetired();
+        } finally {
+            lifecycleLock.unlock();
+        }
+        removed.forEach(CachedHandler::dispose);
+    }
+
+    // Called with lifecycleLock held. A retained identity handler also retains its selected sidecars.
+    private Set<CachedHandler> drainRetired() {
+        if (users != 0) {
+            return Set.of();
+        }
+        if (disposed) {
+            retired.addAll(entries.values());
+            entries.clear();
+            resolutions.clear();
+        }
+        if (retired.isEmpty()) {
+            return Set.of();
+        }
+        Set<CachedHandler> removed = Collections.newSetFromMap(new IdentityHashMap<>());
+        removed.addAll(retired);
+        retired.clear();
+        return removed;
     }
 
     @FunctionalInterface

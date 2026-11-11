@@ -71,7 +71,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
     }
 
     @Override
-    public void beforeStart() {
+    void populateCacheOnStart() {
         realRoot();
         if (populatedInMemoryCache.compareAndSet(false, true)) {
             for (String resource : cacheInMemory) {
@@ -82,7 +82,7 @@ class FileSystemContentHandler extends FileBasedContentHandler {
                 }
             }
         }
-        super.beforeStart();
+        super.populateCacheOnStart();
     }
 
     @Override

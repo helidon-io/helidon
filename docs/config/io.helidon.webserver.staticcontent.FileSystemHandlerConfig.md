@@ -96,7 +96,7 @@ File system based static content handler configuration
 </td>
 <td>
 </td>
-<td>Configures the capacity of the cache used for resource metadata</td>
+<td>Configures the non-negative resource metadata cache capacity, defaulting to <code>10000</code> records when omitted; zero disables the record cache and negative values fail handler construction</td>
 </tr>
 <tr>
 <td>

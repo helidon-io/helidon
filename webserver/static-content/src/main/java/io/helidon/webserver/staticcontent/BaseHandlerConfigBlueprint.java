@@ -128,7 +128,8 @@ interface BaseHandlerConfigBlueprint {
     Function<String, String> pathMapper();
 
     /**
-     * Configures the capacity of the cache used for resource metadata.
+     * Configures the non-negative resource metadata cache capacity, defaulting to {@code 10000} records when omitted;
+     * zero disables the record cache and negative values fail handler construction.
      * Pre-compressed sidecar lookup state is attached to the corresponding normal resource record.
      * <p>
      * To cache content (bytes) in memory, use {@link io.helidon.webserver.staticcontent.BaseHandlerConfig#memoryCache()}

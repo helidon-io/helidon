@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.UnaryOperator;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -69,16 +70,22 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
+import org.openjdk.jmh.infra.ThreadParams;
 
 @State(Scope.Benchmark)
 public class StaticContentPreCompressedJmhTest {
     private static final String RESOURCE = "resource.txt";
     private static final String CLASSPATH_RESOURCE = "benchmark/" + RESOURCE;
+    private static final String OTHER_RESOURCE = "resource-other.txt";
+    private static final String CLASSPATH_OTHER_RESOURCE = "benchmark/" + OTHER_RESOURCE;
 
     private StaticContentHandler handler;
     private StaticContentHandler disabledHandler;
@@ -103,6 +110,7 @@ public class StaticContentPreCompressedJmhTest {
     private ServerRequest gzipRequest;
     private ServerRequest runtimeGzipRequest;
     private Path benchmarkDirectory;
+    private Path extractedDirectory;
     private Path classpathJarPath;
     private Path identityPath;
     private Path sidecarPath;
@@ -122,7 +130,14 @@ public class StaticContentPreCompressedJmhTest {
             jarOutput.putNextEntry(new JarEntry(CLASSPATH_RESOURCE));
             jarOutput.write("Content".getBytes(StandardCharsets.UTF_8));
             jarOutput.closeEntry();
+            jarOutput.putNextEntry(new JarEntry(CLASSPATH_OTHER_RESOURCE));
+            jarOutput.write("Other content".getBytes(StandardCharsets.UTF_8));
+            jarOutput.closeEntry();
         }
+        extractedDirectory = Files.createDirectory(benchmarkDirectory.resolve("extracted"));
+        TemporaryStorage temporaryStorage = TemporaryStorage.create(builder -> builder
+                .directory(extractedDirectory)
+                .deleteOnExit(false));
         classpathClassLoader = new URLClassLoader(new URL[] {classpathJarPath.toUri().toURL()}, null);
         URL classpathIdentityUrl = classpathClassLoader.getResource(CLASSPATH_RESOURCE);
         if (classpathIdentityUrl == null) {
@@ -154,6 +169,7 @@ public class StaticContentPreCompressedJmhTest {
                                                                        .location("benchmark")
                                                                        .classLoader(classpathClassLoader)
                                                                        .preCompressedEnabled(false)
+                                                                       .temporaryStorage(temporaryStorage)
                                                                        .build());
         classpathMemoryLookupHandler = new ClassPathContentHandler(ClasspathHandlerConfig.builder()
                                                                            .location("benchmark")
@@ -210,6 +226,25 @@ public class StaticContentPreCompressedJmhTest {
         gzipRequest = request("gzip", ContentEncodingContext.create());
         runtimeGzipRequest = request("gzip, identity;q=0", runtimeContentEncodingContext());
 
+        disabledClasspathHandler.beforeStart();
+        if (!disabledClasspathHandler.doHandle(Method.HEAD,
+                                               RESOURCE,
+                                               request(null, ContentEncodingContext.create(), RESOURCE, Method.HEAD),
+                                               new ResponseStub(),
+                                               false)
+                || !disabledClasspathHandler.doHandle(Method.HEAD,
+                                                      OTHER_RESOURCE,
+                                                      request(null, ContentEncodingContext.create(), OTHER_RESOURCE, Method.HEAD),
+                                                      new ResponseStub(),
+                                                      false)) {
+            throw new IllegalStateException("Benchmark JAR resources must be served before measuring warm cache hits");
+        }
+        try (var extracted = Files.list(extractedDirectory)) {
+            if (extracted.count() != 2) {
+                throw new IllegalStateException("Expected two extracted JAR resources in the warmed benchmark");
+            }
+        }
+
         fileSystemMissingSidecarHandler.beforeStart();
         disabledFileSystemMissingSidecarHandler.beforeStart();
         warmFileSystemHandler(fileSystemMissingSidecarHandler);
@@ -225,9 +260,16 @@ public class StaticContentPreCompressedJmhTest {
 
     @TearDown
     public void tearDown() throws IOException {
+        disabledClasspathHandler.afterStop();
         fileSystemMissingSidecarHandler.afterStop();
         disabledFileSystemMissingSidecarHandler.afterStop();
         classpathClassLoader.close();
+        try (var extracted = Files.list(extractedDirectory)) {
+            for (Path path : extracted.toList()) {
+                Files.deleteIfExists(path);
+            }
+        }
+        Files.deleteIfExists(extractedDirectory);
         Files.deleteIfExists(sidecarPath);
         Files.deleteIfExists(identityPath);
         Files.deleteIfExists(classpathJarPath);
@@ -327,6 +369,34 @@ public class StaticContentPreCompressedJmhTest {
     }
 
     @Benchmark
+    @BenchmarkMode({Mode.Throughput, Mode.SampleTime})
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public ServerResponse warmJarHeadHot(WarmJarRequestState state) throws IOException, URISyntaxException {
+        return serveWarmJar(Method.HEAD, RESOURCE, state.headHot);
+    }
+
+    @Benchmark
+    @BenchmarkMode({Mode.Throughput, Mode.SampleTime})
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public ServerResponse warmJarHeadDistributed(WarmJarRequestState state) throws IOException, URISyntaxException {
+        return serveWarmJar(Method.HEAD, state.distributedResource, state.headDistributed);
+    }
+
+    @Benchmark
+    @BenchmarkMode({Mode.Throughput, Mode.SampleTime})
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public ServerResponse warmJarGetHot(WarmJarRequestState state) throws IOException, URISyntaxException {
+        return serveWarmJar(Method.GET, RESOURCE, state.getHot);
+    }
+
+    @Benchmark
+    @BenchmarkMode({Mode.Throughput, Mode.SampleTime})
+    @OutputTimeUnit(TimeUnit.MICROSECONDS)
+    public ServerResponse warmJarGetDistributed(WarmJarRequestState state) throws IOException, URISyntaxException {
+        return serveWarmJar(Method.GET, state.distributedResource, state.getDistributed);
+    }
+
+    @Benchmark
     public CachedHandler runtimeFallback() throws IOException, URISyntaxException {
         return handler.selectHandler(identityHandler, runtimeGzipRequest, sidecarResolver);
     }
@@ -352,11 +422,21 @@ public class StaticContentPreCompressedJmhTest {
     }
 
     private static ServerRequest request(String acceptEncoding, ContentEncodingContext contentEncodingContext) {
+        return request(acceptEncoding, contentEncodingContext, RESOURCE, Method.GET);
+    }
+
+    private static ServerRequest request(String acceptEncoding,
+                                         ContentEncodingContext contentEncodingContext,
+                                         String resource,
+                                         Method method) {
         WritableHeaders<?> headers = WritableHeaders.create();
         if (acceptEncoding != null) {
             headers.add(HeaderNames.ACCEPT_ENCODING, acceptEncoding);
         }
-        return new RequestStub(ServerRequestHeaders.create(headers), new ListenerContextStub(contentEncodingContext));
+        return new RequestStub(ServerRequestHeaders.create(headers),
+                               new ListenerContextStub(contentEncodingContext),
+                               resource,
+                               method);
     }
 
     private static ContentEncodingContext runtimeContentEncodingContext() {
@@ -379,6 +459,15 @@ public class StaticContentPreCompressedJmhTest {
         return response;
     }
 
+    private ServerResponse serveWarmJar(Method method, String resource, ServerRequest request)
+            throws IOException, URISyntaxException {
+        var response = new ResponseStub();
+        if (!disabledClasspathHandler.doHandle(method, resource, request, response, false)) {
+            throw new IllegalStateException("Warmed JAR resource was not served: " + resource);
+        }
+        return response;
+    }
+
     private void warmFileSystemHandler(FileSystemContentHandler fileSystemContentHandler) throws IOException {
         boolean handled = fileSystemContentHandler.doHandle(Method.GET,
                                                             RESOURCE,
@@ -397,6 +486,25 @@ public class StaticContentPreCompressedJmhTest {
         @Setup
         public void setup() {
             request = request("gzip, identity;q=0.5", ContentEncodingContext.create());
+        }
+    }
+
+    @State(Scope.Thread)
+    public static class WarmJarRequestState {
+        private String distributedResource;
+        private ServerRequest headHot;
+        private ServerRequest headDistributed;
+        private ServerRequest getHot;
+        private ServerRequest getDistributed;
+
+        @Setup
+        public void setup(ThreadParams threadParams) {
+            distributedResource = (threadParams.getThreadIndex() & 1) == 0 ? RESOURCE : OTHER_RESOURCE;
+            ContentEncodingContext encoding = ContentEncodingContext.create();
+            headHot = request(null, encoding, RESOURCE, Method.HEAD);
+            headDistributed = request(null, encoding, distributedResource, Method.HEAD);
+            getHot = request(null, encoding, RESOURCE, Method.GET);
+            getDistributed = request(null, encoding, distributedResource, Method.GET);
         }
     }
 
@@ -528,7 +636,10 @@ public class StaticContentPreCompressedJmhTest {
         }
     }
 
-    private record RequestStub(ServerRequestHeaders headers, ListenerContext listenerContext) implements ServerRequest {
+    private record RequestStub(ServerRequestHeaders headers,
+                               ListenerContext listenerContext,
+                               String resource,
+                               Method method) implements ServerRequest {
         @Override
         public void reset() {
             throw unsupported();
@@ -589,8 +700,8 @@ public class StaticContentPreCompressedJmhTest {
             return HttpPrologue.create("HTTP/1.1",
                                        "HTTP",
                                        "1.1",
-                                       Method.GET,
-                                       UriPath.create("/" + RESOURCE),
+                                       method,
+                                       UriPath.create("/" + resource),
                                        UriQuery.empty(),
                                        UriFragment.empty());
         }

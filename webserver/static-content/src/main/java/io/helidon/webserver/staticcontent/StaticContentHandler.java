@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -69,10 +70,11 @@ abstract class StaticContentHandler implements HttpService {
     private static final System.Logger LOGGER = System.getLogger(StaticContentHandler.class.getName());
     private static final String SIDECAR_MEMORY_CACHE_PREFIX = "\u0000sidecar\u0000";
 
-    private final LruCache<String, CachedHandler> handlerCache;
+    private final CachedHandlerCache handlerCache;
     private final String welcomeFilename;
     private final Function<String, String> resolvePathFunction;
     private final AtomicInteger webServerCounter = new AtomicInteger();
+    private final ReentrantLock lifecycleLock = new ReentrantLock();
     private final MemoryCache memoryCache;
     private final boolean preCompressedEnabled;
     private final boolean preCompressedCrossOriginSourcingEnabled;
@@ -85,9 +87,7 @@ abstract class StaticContentHandler implements HttpService {
     StaticContentHandler(BaseHandlerConfig config, boolean preCompressedCrossOriginSourcingEnabled) {
         this.welcomeFilename = config.welcome().orElse(null);
         this.resolvePathFunction = config.pathMapper();
-        this.handlerCache = config.recordCacheCapacity()
-                .map(LruCache::<String, CachedHandler>create)
-                .orElseGet(LruCache::create);
+        this.handlerCache = new CachedHandlerCache(config.recordCacheCapacity().orElse(LruCache.DEFAULT_CAPACITY));
         this.memoryCache = config.memoryCache().orElseGet(MemoryCache::create);
         this.preCompressedEnabled = config.preCompressedEnabled().orElse(false);
         this.preCompressedCrossOriginSourcingEnabled = preCompressedCrossOriginSourcingEnabled;
@@ -212,18 +212,33 @@ abstract class StaticContentHandler implements HttpService {
     }
 
     @Override
-    public void beforeStart() {
-        webServerCounter.incrementAndGet();
+    public final void beforeStart() {
+        lifecycleLock.lock();
+        try {
+            populateCacheOnStart();
+            webServerCounter.incrementAndGet();
+        } finally {
+            lifecycleLock.unlock();
+        }
     }
 
     @Override
-    public void afterStop() {
-        int i = webServerCounter.decrementAndGet();
+    public final void afterStop() {
+        lifecycleLock.lock();
+        try {
+            int i = webServerCounter.decrementAndGet();
 
-        if (i <= 0) {
-            webServerCounter.set(0);
-            releaseCache();
+            if (i <= 0) {
+                webServerCounter.set(0);
+                releaseCache();
+            }
+        } finally {
+            lifecycleLock.unlock();
         }
+    }
+
+    void populateCacheOnStart() {
+        // Subclasses populate caches while the lifecycle lock prevents concurrent final shutdown.
     }
 
     @Override
@@ -396,6 +411,10 @@ abstract class StaticContentHandler implements HttpService {
         return memoryCache.get(this, resource);
     }
 
+    Optional<CachedHandlerInMemory> acquireInMemory(String resource) {
+        return memoryCache.acquire(this, resource);
+    }
+
     boolean canCacheInMemory(int size) {
         return memoryCache.available(size);
     }
@@ -419,6 +438,10 @@ abstract class StaticContentHandler implements HttpService {
 
     void cacheHandler(String resource, CachedHandler cachedResource) {
         handlerCache.put(resource, cachedResource);
+    }
+
+    Optional<CachedHandler> acquireHandler(String resource) {
+        return handlerCache.acquire(resource);
     }
 
     LruCache<String, CachedHandler> handlerCache() {

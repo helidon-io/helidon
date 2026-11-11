@@ -77,8 +77,10 @@ interface TemporaryStorageConfigBlueprint extends Prototype.Factory<TemporarySto
     String fileSuffix();
 
     /**
-     * Whether temporary files should be deleted on JVM exit.
-     * This is enabled by default, yet it may be useful for debugging purposes to keep the files in place.
+     * Whether temporary files should also be deleted on JVM exit; cache retirement and service shutdown delete
+     * extracted files independently of this setting, after active requests release them.
+     * This is enabled by default. Disabling it only disables the JVM-exit cleanup and does not retain extracted files
+     * for debugging after cache replacement, eviction, or service shutdown.
      *
      * @return whether to delete temporary files on JVM exit
      */
