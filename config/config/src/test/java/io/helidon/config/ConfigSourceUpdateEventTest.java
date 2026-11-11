@@ -20,7 +20,9 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.spi.ChangeEventType;
 import io.helidon.config.spi.ConfigContent.NodeContent;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
@@ -34,7 +36,10 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingFile;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
+import static io.helidon.config.ValueNodeMatcher.valueNode;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -48,6 +53,89 @@ class ConfigSourceUpdateEventTest {
 
     @TempDir
     Path directory;
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void comparesRawReloadsWhenInitialLoadMapsNodes(boolean parserMapping) throws Exception {
+        var initial = ObjectNode.builder().addValue("mapped", "key=initial").build();
+        var changed = ObjectNode.builder().addValue("mapped", "key=changed").build();
+        var builder = TestingConfigSource.builder().objectNode(initial).testingPollingStrategy();
+        if (parserMapping) {
+            builder.parserMapping(key -> key.name().equals("mapped")
+                    ? Optional.of(ConfigParsers.properties()) : Optional.empty());
+        } else {
+            builder.mediaTypeMapping(key -> key.name().equals("mapped")
+                    ? Optional.of(MediaTypes.TEXT_PROPERTIES) : Optional.empty());
+        }
+        var source = builder.build();
+        var runtime = new ConfigSourceRuntimeImpl(new BuilderImpl.ConfigContextImpl(Runnable::run,
+                                                                                   List.of(ConfigParsers.properties())),
+                                                  source);
+        try (var recording = new Recording()) {
+            recording.enable(EVENT_NAME);
+            recording.start();
+            var loaded = runtime.load().orElseThrow();
+            assertThat(((ObjectNode) loaded.get("mapped")).get("key"), valueNode("initial"));
+            var notifications = new ArrayList<ObjectNode>();
+            runtime.onChange((_, node) -> notifications.add((ObjectNode) node));
+            source.changeLoadedObjectNode(ObjectNode.builder().addValue("mapped", "key=initial").build());
+            source.changeLoadedObjectNode(changed);
+            source.changeLoadedObjectNode(ObjectNode.builder().addValue("mapped", "key=changed").build());
+            runtime.stopChangeSupport();
+
+            assertThat(notifications.size(), is(3));
+            assertThat(notifications.get(0).get("mapped"), valueNode("key=initial"));
+            assertThat(notifications.get(1).get("mapped"), valueNode("key=changed"));
+            assertThat(notifications.get(2).get("mapped"), valueNode("key=changed"));
+            assertThat(events(recording, TestingConfigSource.class).stream().map(it -> it.getString("outcome")).toList(),
+                       contains("INITIAL", "CHANGED"));
+        } finally {
+            runtime.stopChangeSupport();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void observesInitialMappingFailureAndRecovery(boolean parserMapping) throws Exception {
+        var failMapping = new AtomicBoolean(true);
+        var builder = TestingConfigSource.builder()
+                .objectNode(ObjectNode.builder().addValue("mapped", "key=initial").build());
+        if (parserMapping) {
+            builder.parserMapping(key -> {
+                if (failMapping.get()) {
+                    throw new ConfigException(SECRET);
+                }
+                return key.name().equals("mapped") ? Optional.of(ConfigParsers.properties()) : Optional.empty();
+            });
+        } else {
+            builder.mediaTypeMapping(key -> {
+                if (failMapping.get()) {
+                    throw new ConfigException(SECRET);
+                }
+                return key.name().equals("mapped") ? Optional.of(MediaTypes.TEXT_PROPERTIES) : Optional.empty();
+            });
+        }
+        var source = builder.build();
+        var runtime = new ConfigSourceRuntimeImpl(new BuilderImpl.ConfigContextImpl(Runnable::run,
+                                                                                   List.of(ConfigParsers.properties())),
+                                                  source);
+        try (var recording = new Recording()) {
+            recording.enable(EVENT_NAME);
+            recording.start();
+            assertThrows(ConfigException.class, runtime::load);
+            assertThrows(ConfigException.class, runtime::load);
+            failMapping.set(false);
+            var loaded = runtime.load().orElseThrow();
+            assertThat(((ObjectNode) loaded.get("mapped")).get("key"), valueNode("initial"));
+
+            var events = events(recording, TestingConfigSource.class);
+            assertThat(events.stream().map(it -> it.getString("outcome")).toList(), contains("FAILED", "RECOVERED"));
+            assertThat(events.getFirst().getString("exceptionClass"), is(ConfigException.class.getName()));
+            for (var event : events) {
+                assertThat(event.toString().contains(SECRET), is(false));
+            }
+        }
+    }
 
     @Test
     void observesCompletedLoadsAndSuppressesNoopsAndRepeatedFailures() throws Exception {
@@ -276,13 +364,17 @@ class ConfigSourceUpdateEventTest {
     }
 
     private List<RecordedEvent> events(Recording recording) throws Exception {
+        return events(recording, TestSource.class);
+    }
+
+    private List<RecordedEvent> events(Recording recording, Class<?> sourceClass) throws Exception {
         recording.stop();
         Path file = directory.resolve("config.jfr");
         recording.dump(file);
         // Source class identifies this test's producers; synchronous polling and stop complete them before the dump.
         return RecordingFile.readAllEvents(file).stream()
                 .filter(it -> it.getEventType().getName().equals(EVENT_NAME))
-                .filter(it -> TestSource.class.getName().equals(it.getString("sourceClass")))
+                .filter(it -> sourceClass.getName().equals(it.getString("sourceClass")))
                 .toList();
     }
 

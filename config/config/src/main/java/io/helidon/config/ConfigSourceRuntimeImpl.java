@@ -242,12 +242,13 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
 
         Optional<ObjectNode> loadedData = updates.load(() -> {
             configSource.init(configContext);
-            Optional<ObjectNode> data = configSource.retryPolicy()
+            return configSource.retryPolicy()
                     .map(policy -> policy.execute(reloader))
                     .orElseGet(reloader);
+        }, data -> {
             // we may have media type mapping per node configured as well
             if (configSource instanceof AbstractConfigSource abstractConfigSource) {
-                data = data.map(it -> abstractConfigSource
+                return data.map(it -> abstractConfigSource
                         .processNodeMapping(configContext::findParser, ConfigKeyImpl.of(), it));
             }
             return data;
