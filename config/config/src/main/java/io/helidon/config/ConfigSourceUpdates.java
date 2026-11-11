@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.config.spi.ConfigNode.ObjectNode;
@@ -44,9 +45,15 @@ final class ConfigSourceUpdates {
     }
 
     Optional<ObjectNode> load(Supplier<Optional<ObjectNode>> loader) {
+        return load(loader, UnaryOperator.identity());
+    }
+
+    Optional<ObjectNode> load(Supplier<Optional<ObjectNode>> loader, UnaryOperator<Optional<ObjectNode>> mapper) {
         var event = ConfigSourceUpdateEvent.beginObservation();
         try {
             var data = loader.get();
+            // Observe raw source nodes consistently, but include mapping in the operation's duration and failure handling.
+            var mappedData = mapper.apply(data);
             if (event != null) {
                 event.end();
             }
@@ -74,7 +81,7 @@ final class ConfigSourceUpdates {
             } finally {
                 lock.unlock();
             }
-            return data;
+            return mappedData;
         } catch (RuntimeException | Error e) {
             failed(event, e, false);
             throw e;
