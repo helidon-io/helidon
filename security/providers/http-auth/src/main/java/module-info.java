@@ -37,6 +37,7 @@ module io.helidon.security.providers.httpauth {
     requires transitive io.helidon.security;
 
     exports io.helidon.security.providers.httpauth;
+    exports io.helidon.security.providers.httpauth.spi;
 
     uses io.helidon.security.providers.httpauth.spi.UserStoreService;
 
