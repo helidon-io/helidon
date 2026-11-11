@@ -20,6 +20,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,22 +94,22 @@ public class ContentDisposition implements Header {
     public static ContentDisposition parse(String headerValue) {
         Builder builder = ContentDisposition.builder();
 
-        // first split by semicolon
-        String[] parts = headerValue.split("(?<=[^\\\\]);");
+        List<String> parts = splitParameters(headerValue);
 
-        if (parts.length > 0) {
-            String type = parts[0];
+        if (!parts.isEmpty()) {
+            String type = parts.getFirst();
             if (type.indexOf('=') > -1) {
                 throw new IllegalArgumentException("No type defined");
             } else {
                 builder.type(type.trim());
             }
-            for (int i = 1; i < parts.length; i++) {
-                String part = parts[i];
+            for (int i = 1; i < parts.size(); i++) {
+                String part = parts.get(i);
                 Matcher matcher = DISPOSITION_PART_PATTERN.matcher(part.trim());
                 if (matcher.matches()) {
                     String name = matcher.group(1);
                     String value = matcher.group(2) == null ? matcher.group(3) : matcher.group(2);
+                    // Preserve other backslashes for compatibility with raw Windows filenames.
                     value = value.replace("\\\\", "\\");
                     value = value.replace("\\\"", "\"");
                     value = value.replace("\\;", ";");
@@ -340,6 +341,29 @@ public class ContentDisposition implements Header {
      */
     public String type() {
         return type;
+    }
+
+    private static List<String> splitParameters(String headerValue) {
+        List<String> parts = new ArrayList<>();
+        boolean quoted = false;
+        boolean escaped = false;
+        int start = 0;
+        for (int i = 0; i < headerValue.length(); i++) {
+            char c = headerValue.charAt(i);
+            if (escaped) {
+                escaped = false;
+            } else if (c == '\\') {
+                escaped = true;
+            } else if (c == '"') {
+                quoted = !quoted;
+            } else if (c == ';' && !quoted) {
+                // MIME quoted strings may contain semicolons (RFC 2045 section 5.1).
+                parts.add(headerValue.substring(start, i));
+                start = i + 1;
+            }
+        }
+        parts.add(headerValue.substring(start));
+        return parts;
     }
 
     /**

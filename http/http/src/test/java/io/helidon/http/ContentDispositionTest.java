@@ -56,6 +56,40 @@ class ContentDispositionTest {
     }
 
     @Test
+    void testQuotedSemicolons() {
+        ContentDisposition cd = ContentDisposition.parse("form-data; name=\"field;name\"; filename=\"a;b.txt\"; size=128");
+        assertThat(cd.contentName().orElseThrow(), is("field;name"));
+        assertThat(cd.filename().orElseThrow(), is("a;b.txt"));
+        assertThat(cd.size().orElseThrow(), is(128L));
+        assertThat(cd.parameters().size(), is(3));
+    }
+
+    @Test
+    void testQuotedSemicolonAfterEscapedQuote() {
+        ContentDisposition cd = ContentDisposition.parse("form-data; name=\"a\\\";b\"; filename=\"file.txt\"");
+        assertThat(cd.contentName().orElseThrow(), is("a\";b"));
+        assertThat(cd.filename().orElseThrow(), is("file.txt"));
+        assertThat(cd.parameters().size(), is(2));
+    }
+
+    @Test
+    void testParameterAfterQuotedEscapedBackslash() {
+        ContentDisposition cd = ContentDisposition.parse("form-data; name=\"a\\\\\"; filename=\"a;b.txt\"");
+        assertThat(cd.contentName().orElseThrow(), is("a\\"));
+        assertThat(cd.filename().orElseThrow(), is("a;b.txt"));
+        assertThat(cd.parameters().size(), is(2));
+    }
+
+    @Test
+    void testQuotedSemicolonInWindowsFilename() {
+        ContentDisposition cd = ContentDisposition.parse("form-data; filename=\"C:\\dir\\a;b.txt\"; name=\"upload\"");
+        assertThat(cd.parameters().get("filename"), is("C:\\dir\\a;b.txt"));
+        assertThat(cd.filename().orElseThrow(), is("a;b.txt"));
+        assertThat(cd.contentName().orElseThrow(), is("upload"));
+        assertThat(cd.parameters().size(), is(2));
+    }
+
+    @Test
     void testName() {
         ContentDisposition cd = ContentDisposition.parse("form-data; name=user");
         assertThat(cd.type(), is(equalTo("form-data")));
