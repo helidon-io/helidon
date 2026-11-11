@@ -16,12 +16,18 @@
 
 package io.helidon.json.schema.tests;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.helidon.json.JsonArray;
+import io.helidon.json.JsonNull;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
+import io.helidon.json.JsonValue;
 
+import org.hamcrest.FeatureMatcher;
+import org.hamcrest.Matcher;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -34,7 +40,7 @@ class SchemaEnumTimeTest {
                 .readJsonObject()
                 .objectValue("properties").orElseThrow();
         assertThat(properties.objectValue("state").orElseThrow(),
-                   is(JsonObject.builder().set("type", "string").setStrings("enum", List.of("ON", "OFF")).build()));
+                   jsonEqualTo(JsonObject.builder().set("type", "string").setStrings("enum", List.of("ON", "OFF")).build()));
     }
 
     @Test
@@ -43,7 +49,7 @@ class SchemaEnumTimeTest {
                 .readJsonObject()
                 .objectValue("properties").orElseThrow();
         assertThat(properties.objectValue("since").orElseThrow(),
-                   is(JsonObject.builder().set("type", "string").set("format", "date").build()));
+                   jsonEqualTo(JsonObject.builder().set("type", "string").set("format", "date").build()));
     }
 
     @Test
@@ -55,7 +61,7 @@ class SchemaEnumTimeTest {
                    is(JsonArray.createStrings(List.of("ON", "OFF")).values()));
         assertThat(root.stringProperties().get("since").format().orElseThrow(), is("date"));
         assertThat(JsonParser.create(provider.schema().generate()).readJsonObject(),
-                   is(JsonParser.create(provider.jsonSchema()).readJsonObject()));
+                   jsonEqualTo(JsonParser.create(provider.jsonSchema()).readJsonObject()));
     }
 
     @Test
@@ -88,7 +94,7 @@ class SchemaEnumTimeTest {
         assertThat(root.enumValues().orElseThrow(), is(JsonArray.createStrings(List.of("ON", "OFF")).values()));
         assertThat(root.description().orElseThrow(), is("An enabled or disabled state"));
         assertThat(JsonParser.create(provider.schema().generate()).readJsonObject(),
-                   is(JsonParser.create(provider.jsonSchema()).readJsonObject()));
+                   jsonEqualTo(JsonParser.create(provider.jsonSchema()).readJsonObject()));
     }
 
     @Test
@@ -97,6 +103,37 @@ class SchemaEnumTimeTest {
         var generated = JsonParser.create(provider.jsonSchema()).readJsonObject();
         assertThat(generated.arrayValue("enum").orElseThrow().values(), is(List.of()));
         assertThat(provider.schema().rootString().orElseThrow().enumValues().orElseThrow(), is(List.of()));
-        assertThat(JsonParser.create(provider.schema().generate()).readJsonObject(), is(generated));
+        assertThat(JsonParser.create(provider.schema().generate()).readJsonObject(), jsonEqualTo(generated));
+    }
+
+    // JsonObject on 4.x does not compare exact key/value associations. Compare typed values instead.
+    private static Matcher<Object> jsonEqualTo(Object expected) {
+        return new FeatureMatcher<>(is(jsonValue(expected)), "JSON value", "JSON value") {
+            @Override
+            protected Object featureValueOf(Object actual) {
+                return jsonValue(actual);
+            }
+        };
+    }
+
+    private static Object jsonValue(Object value) {
+        if (value instanceof List<?> values) {
+            return values.stream().map(SchemaEnumTimeTest::jsonValue).toList();
+        }
+        JsonValue json = (JsonValue) value;
+        return switch (json.type()) {
+            case STRING -> json.asString().value();
+            case NUMBER -> json.asNumber().bigDecimalValue();
+            case BOOLEAN -> json.asBoolean().value();
+            case NULL -> JsonNull.instance();
+            case UNKNOWN -> throw new AssertionError("Unknown JSON value: " + json);
+            case ARRAY -> jsonValue(json.asArray().values());
+            case OBJECT -> {
+                Map<String, Object> properties = new LinkedHashMap<>();
+                json.asObject().keysAsStrings()
+                        .forEach(key -> properties.put(key, jsonValue(json.asObject().value(key).orElseThrow())));
+                yield properties;
+            }
+        };
     }
 }
