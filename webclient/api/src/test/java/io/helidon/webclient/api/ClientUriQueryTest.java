@@ -37,11 +37,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.AdditionalAnswers.delegatesTo;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -192,20 +194,39 @@ class ClientUriQueryTest {
 
     @Test
     void testOpaqueAliasDecoratorFallbackDiscardsPartiallyCollectedRawValues() {
-        UriQuery source = UriQuery.create("keep=source&aa=old");
-        UriQuery decorated = mock(UriQuery.class, delegatesTo(source));
-        doReturn("keep=source&a%61=old").when(decorated).rawValue();
-        source.getAllRaw("aa").set(0, "replacement");
-        var client = ClientUri.create(URI.create("https://upstream.example/?keep=existing"));
+        boolean partiallyCollected = false;
+        for (String accessibleName : List.of("first", "second")) {
+            UriQuery source = UriQuery.create(accessibleName + "=source&renamed=old");
+            source.getAllRaw("renamed").set(0, "replacement");
+            var rawLookups = new ArrayList<String>();
+            UriQuery decorated = mock(UriQuery.class, delegatesTo(source));
+            doReturn("first=source&second=source").when(decorated).rawValue();
+            doAnswer(invocation -> {
+                String name = invocation.getArgument(0);
+                try {
+                    List<String> values = source.getAllRaw(name);
+                    rawLookups.add(name);
+                    return values;
+                } catch (NoSuchElementException e) {
+                    rawLookups.add("missing");
+                    throw e;
+                }
+            }).when(decorated).getAllRaw(anyString());
+            var client = ClientUri.create(URI.create("https://upstream.example/?" + accessibleName + "=existing"));
 
-        client.writeableQuery().from(decorated);
+            client.writeableQuery().from(decorated);
 
-        assertThat(client.query().getAllRaw("keep"), is(List.of("existing", "source")));
-        assertThat(client.query().all("keep"), is(List.of("existing", "source")));
-        assertThat(client.query().getAllRaw("aa"), is(List.of("replacement")));
-        assertThat(client.query().all("aa"), is(List.of("old")));
-        assertThat(UriQuery.create(URI.create(client.pathWithQueryAndFragment()).getRawQuery()).all("aa"),
-                   is(List.of("replacement")));
+            assertThat(rawLookups, hasItem("missing"));
+            partiallyCollected |= rawLookups.indexOf("missing") > 0;
+            assertThat(client.query().getAllRaw(accessibleName), is(List.of("existing", "source")));
+            assertThat(client.query().all(accessibleName), is(List.of("existing", "source")));
+            assertThat(client.query().getAllRaw("renamed"), is(List.of("replacement")));
+            assertThat(client.query().all("renamed"), is(List.of("old")));
+            UriQuery outbound = UriQuery.create(URI.create(client.pathWithQueryAndFragment()).getRawQuery());
+            assertThat(outbound.getAllRaw(accessibleName), is(List.of("existing", "source")));
+            assertThat(outbound.getAllRaw("renamed"), is(List.of("replacement")));
+        }
+        assertThat("At least one import must collect a raw bucket before fallback", partiallyCollected, is(true));
     }
 
     @Test

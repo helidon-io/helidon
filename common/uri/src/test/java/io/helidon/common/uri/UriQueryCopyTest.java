@@ -33,6 +33,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -149,16 +150,38 @@ class UriQueryCopyTest {
 
     @Test
     void testOpaqueAliasDecoratorFallbackDiscardsPartiallyCollectedRawValues() {
-        UriQuery source = new QueryDecorator(UriQuery.create("keep=source&aa=old"), "keep=source&a%61=old");
-        source.getAllRaw("aa").set(0, "replacement");
+        boolean partiallyCollected = false;
+        for (String accessibleName : List.of("first", "second")) {
+            UriQuery delegate = UriQuery.create(accessibleName + "=source&renamed=old");
+            delegate.getAllRaw("renamed").set(0, "replacement");
+            var rawLookups = new ArrayList<String>();
+            UriQuery source = new QueryDecorator(delegate, "first=source&second=source") {
+                @Override
+                public List<String> getAllRaw(String name) {
+                    try {
+                        List<String> values = super.getAllRaw(name);
+                        rawLookups.add(name);
+                        return values;
+                    } catch (NoSuchElementException e) {
+                        rawLookups.add("missing");
+                        throw e;
+                    }
+                }
+            };
 
-        var copy = UriQueryWriteable.create().set("keep", "existing").from(source);
+            var copy = UriQueryWriteable.create().set(accessibleName, "existing").from(source);
 
-        assertThat(copy.getAllRaw("keep"), is(List.of("existing", "source")));
-        assertThat(copy.all("keep"), is(List.of("existing", "source")));
-        assertThat(copy.getAllRaw("aa"), is(List.of("replacement")));
-        assertThat(copy.all("aa"), is(List.of("old")));
-        assertThat(UriQuery.create(copy.rawValue()).all("aa"), is(List.of("replacement")));
+            assertThat(rawLookups, hasItem("missing"));
+            partiallyCollected |= rawLookups.indexOf("missing") > 0;
+            assertThat(copy.getAllRaw(accessibleName), is(List.of("existing", "source")));
+            assertThat(copy.all(accessibleName), is(List.of("existing", "source")));
+            assertThat(copy.getAllRaw("renamed"), is(List.of("replacement")));
+            assertThat(copy.all("renamed"), is(List.of("old")));
+            UriQuery serialized = UriQuery.create(copy.rawValue());
+            assertThat(serialized.getAllRaw(accessibleName), is(List.of("existing", "source")));
+            assertThat(serialized.getAllRaw("renamed"), is(List.of("replacement")));
+        }
+        assertThat("At least one copy must collect a raw bucket before fallback", partiallyCollected, is(true));
     }
 
     @Test
