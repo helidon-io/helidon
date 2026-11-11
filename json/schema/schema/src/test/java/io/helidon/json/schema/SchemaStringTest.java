@@ -263,7 +263,8 @@ class SchemaStringTest {
         Schema schema = Schema.builder().rootString(string -> string.enumValues(List.of())).build();
 
         assertThat(schema.rootString().orElseThrow().enumValues().orElseThrow(), is(List.of()));
-        assertThat(JsonParser.create(schema.generateNoKeywords()).readJsonObject().arrayValue("enum").orElseThrow().values(), is(List.of()));
+        assertThat(JsonParser.create(schema.generateNoKeywords()).readJsonObject().arrayValue("enum").orElseThrow().values(),
+                   is(List.of()));
     }
 
     @Test
@@ -294,7 +295,7 @@ class SchemaStringTest {
 
         Schema unrestricted = Schema.builder().rootString(copy.clearEnumValues().build()).build();
         assertThat(JsonParser.create(unrestricted.generateNoKeywords()).readJsonObject().containsKey("enum"), is(false));
-        assertThat(Schema.builder().rootString(restricted).build().generateObjectNoKeywords()
+        assertThat(JsonParser.create(Schema.builder().rootString(restricted).build().generateNoKeywords()).readJsonObject()
                            .arrayValue("enum").orElseThrow(), is(values));
     }
 }
