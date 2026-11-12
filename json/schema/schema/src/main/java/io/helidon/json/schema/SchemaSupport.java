@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.builder.api.Prototype;
@@ -27,6 +28,7 @@ import io.helidon.json.JsonArray;
 import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
+import io.helidon.json.JsonString;
 import io.helidon.json.JsonValue;
 import io.helidon.json.schema.spi.JsonSchemaProvider;
 import io.helidon.service.registry.Qualifier;
@@ -165,6 +167,8 @@ final class SchemaSupport {
             jsonObject.numberValue("maxLength").ifPresent(it -> stringBuilder.maxLength(it.longValue()));
             jsonObject.numberValue("minLength").ifPresent(it -> stringBuilder.minLength(it.longValue()));
             jsonObject.stringValue("pattern").ifPresent(stringBuilder::pattern);
+            jsonObject.stringValue("format").ifPresent(stringBuilder::format);
+            jsonObject.arrayValue("enum").map(JsonArray::values).ifPresent(stringBuilder::enumValues);
         }
 
         private static void parseInteger(SchemaInteger.Builder integerBuilder, JsonObject jsonObject) {
@@ -344,6 +348,34 @@ final class SchemaSupport {
             });
         }
 
+    }
+
+    static class SchemaStringCustomMethods {
+
+        private SchemaStringCustomMethods() {
+        }
+
+        /**
+         * Add a JSON enum value.
+         *
+         * @param value JSON value to add
+         * @since 4.5.7
+         */
+        @Prototype.BuilderMethod
+        static void addEnumValue(SchemaString.BuilderBase<?, ?> builder, JsonValue value) {
+            builder.addEnumValues(List.of(Objects.requireNonNull(value)));
+        }
+
+        /**
+         * Add a string enum value.
+         *
+         * @param value string value to add
+         * @since 4.5.7
+         */
+        @Prototype.BuilderMethod
+        static void addEnumValue(SchemaString.BuilderBase<?, ?> builder, String value) {
+            builder.addEnumValue(JsonString.create(Objects.requireNonNull(value)));
+        }
     }
 
     static class SchemaIntegerCustomMethods {
