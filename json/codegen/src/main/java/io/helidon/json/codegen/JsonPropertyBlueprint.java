@@ -31,6 +31,13 @@ import io.helidon.common.types.TypeName;
 interface JsonPropertyBlueprint {
 
     /**
+     * Unique Java identifier stem used for deserialization local variables.
+     *
+     * @return generated identifier
+     */
+    String identifier();
+
+    /**
      * The name of the field in the Java class.
      *
      * @return optional field name
