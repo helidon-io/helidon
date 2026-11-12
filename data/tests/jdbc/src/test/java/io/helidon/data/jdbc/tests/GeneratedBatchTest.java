@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import javax.sql.DataSource;
 
 import io.helidon.data.jdbc.JdbcBatchException;
@@ -50,6 +51,44 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 class GeneratedBatchTest {
+    /**
+     * Empty and misaligned inputs acquire no connection under any selection form.
+     * Successful and malformed JDBC outcomes share the same cleanup and completion ownership.
+     */
+    @Test
+    void inferredAndExplicitBatchesUseTheSameTerminalAndOutcomeRules() throws SQLException {
+        DataSource source = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        PreparedStatement statement = mock(PreparedStatement.class);
+        when(source.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true);
+        when(connection.prepareStatement("INSERT INTO T VALUES (?, ?)")).thenReturn(statement);
+        BatchCollisionRepository repository = new BatchCollisionRepository__Jdbc(
+                JdbcClient.builder().dataSource(source).build());
+        for (BiFunction<int[], byte[], JdbcClient.BatchResult> execute :
+                List.<BiFunction<int[], byte[], JdbcClient.BatchResult>>of(
+                        repository::array, repository::inferredArray, repository::explicitArray)) {
+            assertThat(execute.apply(new int[0], new byte[0]).totalUpdateCount().orElseThrow(), is(0L));
+            assertThrows(IllegalArgumentException.class, () -> execute.apply(new int[] {1}, new byte[0]));
+            when(statement.executeBatch()).thenReturn(new int[] {0, Statement.SUCCESS_NO_INFO});
+            JdbcClient.BatchResult result = execute.apply(new int[] {1, 2}, new byte[] {3, 4});
+            assertThat(result.entries().stream().map(JdbcClient.BatchResult.Entry::status).toList(),
+                       is(List.of(JdbcClient.BatchResult.Status.EXACT_COUNT, JdbcClient.BatchResult.Status.SUCCESS_NO_INFO)));
+            assertThat(result.totalUpdateCount().isEmpty(), is(true));
+            when(statement.executeBatch()).thenReturn(new int[] {1});
+            JdbcBatchException failure = assertThrows(JdbcBatchException.class,
+                    () -> execute.apply(new int[] {1, 2}, new byte[] {3, 4}));
+            assertThat(failure.result().entries().getLast().status(), is(JdbcClient.BatchResult.Status.NOT_REPORTED));
+        }
+        verify(source, times(6)).getConnection();
+        verify(statement, times(12)).addBatch();
+        verify(statement, times(6)).executeBatch();
+        verify(statement, times(6)).close();
+        verify(connection, times(6)).close();
+        verify(connection, never()).commit();
+        verify(connection, never()).rollback();
+    }
+
     /**
      * The generated callback validates both references before reading an item or assigning a binding.
      */
@@ -80,7 +119,8 @@ class GeneratedBatchTest {
     }
 
     /**
-     * Generated names retain application bindings and each record accessor runs once despite repeated markers.
+     * Generated variable names preserve application bindings.
+     * Repeated markers do not repeat record accessor calls.
      */
     @Test
     @SuppressWarnings("unchecked")

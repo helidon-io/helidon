@@ -10,4 +10,5 @@ index:
 - [Overview](data-jdbc.md)
 - [Declarative Programming Model](declarative.md)
 - [Imperative Programming Model](imperative.md)
+- [Batch Processing](batch.md)
 - [SQL In Configuration](configured-statements.md)

@@ -47,8 +47,6 @@ final class JdbcBatchGenerator {
         List<String> iterators = new ArrayList<>();
         List<String> elements = new ArrayList<>();
         List<String> available = new ArrayList<>();
-        // Validate references before creating a stage so invalid input cannot consume it.
-        // Obtain iterators only after the batch terminal has claimed the stage.
         for (JdbcBatchPlan.Source source : batch.sources()) {
             method.addContent(Objects.class).addContent(".requireNonNull(")
                     .addContent(parameterNames.get(source.parameter().elementName()))
@@ -61,6 +59,7 @@ final class JdbcBatchGenerator {
                 .addContent(JdbcCodegenTypes.GENERATED_JDBC_DATA).addContent(".createGenerated(")
                 .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME).addContent(", " + plan.sqlFieldName() + ", ")
                 .addContent(String.valueOf(plan.parameterPlan().parameterCount())).addContentLine(");");
+        // Iterator failures must occur after the terminal has claimed the statement stage.
         method.addContent(Iterable.class).addContent("<Object[]> " + rows + " = () -> {\n");
         for (int i = 0; i < batch.sources().size(); i++) {
             JdbcBatchPlan.Source source = batch.sources().get(i);

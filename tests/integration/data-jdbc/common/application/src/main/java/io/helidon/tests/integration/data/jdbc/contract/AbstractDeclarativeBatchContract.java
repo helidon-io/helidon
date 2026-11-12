@@ -15,13 +15,17 @@
  */
 package io.helidon.tests.integration.data.jdbc.contract;
 
+import java.sql.JDBCType;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.BiFunction;
 
 import io.helidon.data.jdbc.JdbcBatchException;
 import io.helidon.data.jdbc.JdbcClient;
 import io.helidon.tests.integration.data.jdbc.declarative.repository.BatchRepository;
+import io.helidon.tests.integration.data.jdbc.declarative.repository.BatchRepository.ScalarChange;
 import io.helidon.tests.integration.data.jdbc.support.DatabaseFixture;
 import io.helidon.transaction.Tx;
 import io.helidon.transaction.TxException;
@@ -39,6 +43,124 @@ public abstract class AbstractDeclarativeBatchContract extends AbstractJdbcBatch
     @Override
     protected final JdbcClient.BatchResult insert(List<String> rows, String email) {
         return service(BatchRepository.class).insert(rows, email);
+    }
+
+    @Override
+    protected final JdbcClient.BatchResult insertSource(Iterable<String> rows) {
+        return service(BatchRepository.class).insertIterable(rows);
+    }
+
+    @Override
+    protected final JdbcClient.BatchResult insertOrderedSet(Set<String> rows) {
+        return service(BatchRepository.class).insertSet(rows);
+    }
+
+    @Override
+    protected final JdbcClient.BatchResult storeScalars(Iterable<ScalarChange> rows) {
+        return service(BatchRepository.class).scalarRecords(rows);
+    }
+
+    /**
+     * Separate queries inspect stored rows after each generated or imperative batch completes.
+     */
+    @Test
+    protected final void inferredAndExplicitBatchesMatchImperativeOutcomesAndCommittedState() {
+        BatchRepository repository = service(BatchRepository.class);
+        DatabaseFixture fixture = service(DatabaseFixture.class);
+        JdbcClient.BatchResult imperative = client().create("INSERT INTO CONTACT (NAME, EMAIL) VALUES (?, ?)")
+                .executeBatch(List.of("imperative-one", "imperative-two"),
+                        (bindings, name) -> bindings.bind(1, name).bindNull(2, JDBCType.VARCHAR));
+        int mode = 0;
+        for (BiFunction<List<String>, String, JdbcClient.BatchResult> execute :
+                List.<BiFunction<List<String>, String, JdbcClient.BatchResult>>of(
+                        repository::insert, repository::insertAuto, repository::insertExplicit)) {
+            List<String> names = List.of("mode-" + mode + "-one", "mode-" + mode + "-two");
+            JdbcClient.BatchResult result = execute.apply(names, null);
+            assertThat(result.totalUpdateCount(), is(imperative.totalUpdateCount()));
+            assertThat(result.entries().stream().map(JdbcClient.BatchResult.Entry::status).toList(),
+                       is(imperative.entries().stream().map(JdbcClient.BatchResult.Entry::status).toList()));
+            for (String name : names) {
+                assertThat(fixture.committedByName(name).orElseThrow().email(), is(Optional.empty()));
+            }
+            assertThat(execute.apply(List.of(), null).totalUpdateCount().orElseThrow(), is(0L));
+            mode++;
+        }
+    }
+
+    @Test
+    protected final void executesRecordIteratorsAndAlignedRecordSources() {
+        BatchRepository repository = service(BatchRepository.class);
+        DatabaseFixture fixture = service(DatabaseFixture.class);
+        JdbcClient.BatchResult iterator = repository.recordIterator(oneShot(List.of(
+                new BatchRepository.Change("iterator-one", null, 1),
+                new BatchRepository.Change("iterator-two", "two@example.test", 2))).iterator());
+        assertThat(iterator.entries().size(), is(2));
+        assertThat(fixture.committedByName("iterator-one").orElseThrow().email(), is(Optional.empty()));
+        assertThat(fixture.committedByName("iterator-two").orElseThrow().email(), is(Optional.of("two@example.test")));
+        JdbcClient.BatchResult aligned = repository.alignedRecords(oneShot(List.of(
+                new BatchRepository.Change("aligned-one", "one@example.test", 1),
+                new BatchRepository.Change("aligned-two", null, 2))), oneShot(List.of(
+                new BatchRepository.Rename("excluded", 1), new BatchRepository.Rename("excluded", 2))).iterator());
+        assertThat(aligned.entries().size(), is(2));
+        assertThat(fixture.committedByName("aligned-one").orElseThrow().email(), is(Optional.of("one@example.test")));
+        assertThat(fixture.committedByName("aligned-two").orElseThrow().email(), is(Optional.empty()));
+        assertThat(repository.alignedRecords(oneShot(List.of()), List.<BatchRepository.Rename>of().iterator())
+                           .totalUpdateCount().orElseThrow(), is(0L));
+    }
+
+    @Test
+    protected final void executesObjectArraysAndNullableScalarIterables() {
+        BatchRepository repository = service(BatchRepository.class);
+        DatabaseFixture fixture = service(DatabaseFixture.class);
+        assertThat(repository.emailArrays(new String[] {"one@example.test", null}, 1, 2).entries().size(), is(2));
+        assertThat(fixture.committedByName("alpha").orElseThrow().email(), is(Optional.of("one@example.test")));
+        assertThat(fixture.committedByName("beta").orElseThrow().email(), is(Optional.empty()));
+        assertThat(repository.emailIterable(oneShot(Arrays.asList(null, "two@example.test")), 1, 2).entries().size(), is(2));
+        assertThat(fixture.committedByName("alpha").orElseThrow().email(), is(Optional.empty()));
+        assertThat(fixture.committedByName("beta").orElseThrow().email(), is(Optional.of("two@example.test")));
+        assertThat(repository.emailArrays(new String[0], new long[0]).totalUpdateCount().orElseThrow(), is(0L));
+    }
+
+    @Test
+    protected final void distinguishesBinaryElementsConstantsAndByteVarargs() {
+        BatchRepository repository = service(BatchRepository.class);
+        assertThat(repository.binaryValues(oneShot(List.of(new byte[] {1, 2}, new byte[] {3, 4})), 1)
+                           .entries().size(), is(2));
+        assertThat(client().create("SELECT BYTES_VALUE FROM SCALAR_VALUE WHERE ID = 1").map(byte[].class).one(),
+                   is(new byte[] {3, 4}));
+        assertThat(repository.binaryConstant(new long[] {1}, new byte[] {5, 6}).entries().size(), is(1));
+        assertThat(client().create("SELECT BYTES_VALUE FROM SCALAR_VALUE WHERE ID = 1").map(byte[].class).one(),
+                   is(new byte[] {5, 6}));
+        assertThat(repository.binaryValues(oneShot(Arrays.asList((byte[]) null)), 1).entries().size(), is(1));
+        assertThat(client().create("SELECT BYTES_VALUE FROM SCALAR_VALUE WHERE ID = 1").map(byte[].class).optional(),
+                   is(Optional.empty()));
+        assertThat(repository.byteValues((byte) 7, (byte) 8).entries().size(), is(2));
+        assertThat(client().create("SELECT BYTE_VALUE FROM SCALAR_VALUE WHERE ID = 1").map(Byte.class).one(), is((byte) 8));
+    }
+
+    @Test
+    protected final void rejectsNullAndUnequalSourcesBeforeApplyingAnyPrefix() {
+        BatchRepository repository = service(BatchRepository.class);
+        assertThrows(NullPointerException.class, () -> repository.recordIterator(null));
+        assertThrows(NullPointerException.class,
+                () -> repository.recordIterator(Arrays.asList((BatchRepository.Change) null).iterator()));
+        assertThrows(NullPointerException.class, () -> repository.emailArrays(null, 1));
+        assertThrows(NullPointerException.class, () -> repository.emailArrays(new String[] {"email"}, (long[]) null));
+        assertThrows(IllegalArgumentException.class, () -> repository.emailArrays(new String[] {"prefix", "extra"}, 1));
+        assertThrows(IllegalArgumentException.class, () -> repository.emailArrays(new String[0], 1));
+        assertThrows(IllegalArgumentException.class, () -> repository.emailArrays(new String[] {"prefix"}, new long[0]));
+        assertThrows(IllegalArgumentException.class, () -> repository.alignedRecords(oneShot(List.of(
+                new BatchRepository.Change("record-prefix", null, 1), new BatchRepository.Change("record-extra", null, 2))),
+                List.of(new BatchRepository.Rename("excluded", 1)).iterator()));
+        assertThrows(NullPointerException.class, () -> repository.alignedRecords(oneShot(Arrays.asList(
+                new BatchRepository.Change("record-prefix", null, 1), null)), List.of(
+                new BatchRepository.Rename("excluded", 1), new BatchRepository.Rename("excluded", 2)).iterator()));
+        DatabaseFixture fixture = service(DatabaseFixture.class);
+        assertThat(fixture.committedByName("alpha").orElseThrow().email(), is(Optional.of("alpha@example.test")));
+        assertThat(fixture.committedByName("beta").orElseThrow().email(), is(Optional.empty()));
+        assertThat(fixture.committedByName("record-prefix"), is(Optional.empty()));
+        repository.emailArrays(new String[] {"reused@example.test"}, 1);
+        assertThat(fixture.committedByName("alpha").orElseThrow().email(), is(Optional.of("reused@example.test")));
     }
 
     @Test

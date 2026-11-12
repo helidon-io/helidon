@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.OptionalLong;
 
 /**
- * Normalizes attributable JDBC evidence without retaining driver arrays.
+ * Converts JDBC counts to immutable item outcomes without retaining driver arrays.
  */
 final class JdbcBatchResult implements JdbcClient.BatchResult {
     private final List<Entry> entries;
