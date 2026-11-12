@@ -86,7 +86,7 @@
         <version.lib.opentelemetry.semconv>1.44.0</version.lib.opentelemetry.semconv>
         <version.lib.opentelemetry>1.67.0</version.lib.opentelemetry>
         <version.lib.parsson>1.1.9</version.lib.parsson>
-        <version.lib.postgresql>42.7.13</version.lib.postgresql>
+        <version.lib.postgresql>42.7.14</version.lib.postgresql>
         <version.lib.prometheus>1.7.0</version.lib.prometheus>
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
         <version.lib.slf4j>2.0.17</version.lib.slf4j>
