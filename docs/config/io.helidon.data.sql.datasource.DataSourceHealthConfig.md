@@ -1,8 +1,8 @@
-# io.<wbr>helidon.<wbr>data.<wbr>sql.<wbr>datasource.<wbr>Data<wbr>Source<wbr>Health<wbr>Check<wbr>Factory
+# io.<wbr>helidon.<wbr>data.<wbr>sql.<wbr>datasource.<wbr>Data<wbr>Source<wbr>Health<wbr>Config
 
 ## Description
 
-Configures independent datasource health discovery
+Configures health discovery without retaining or acquiring a data source
 
 ## Configuration options
 
@@ -38,7 +38,7 @@ Configures independent datasource health discovery
 </td>
 <td>
 </td>
-<td>Specifies a nonblank name for responses and individual check routes</td>
+<td>Overrides the data source name in responses and individual check routes</td>
 </tr>
 <tr>
 <td>
@@ -57,18 +57,6 @@ Configures independent datasource health discovery
 </tr>
 <tr>
 <td>
-<code>query-<wbr>timeout</code>
-</td>
-<td>
-<code>Duration</code>
-</td>
-<td>
-<code>PT2S</code>
-</td>
-<td>Specifies a query timeout in positive whole seconds, up to <code>Integer#<wbr>MAX_<wbr>VALUE</code></td>
-</tr>
-<tr>
-<td>
 <code>enabled</code>
 </td>
 <td>
@@ -77,7 +65,19 @@ Configures independent datasource health discovery
 <td>
 <code>false</code>
 </td>
-<td>Enables this health definition in its owning registry</td>
+<td>Enables health discovery for this data source definition</td>
+</tr>
+<tr>
+<td>
+<code>query-<wbr>timeout</code>
+</td>
+<td>
+<code>Duration</code>
+</td>
+<td>
+<code>PT2S</code>
+</td>
+<td>Specifies a query timeout in positive whole seconds within the JDBC integer range</td>
 </tr>
 </tbody>
 </table>
@@ -86,7 +86,7 @@ Configures independent datasource health discovery
 
 ## Usages
 
-- <a href="io.helidon.data.sql.datasource.DataSourceConfig.md#health-check"><code>data.<wbr>sources.<wbr>sql.<wbr>health-<wbr>check</code></a>
+- <a href="io.helidon.data.sql.datasource.DataSourceConfig.md#health"><code>data.<wbr>sources.<wbr>sql.<wbr>health</code></a>
 
 ---
 

@@ -1,8 +1,8 @@
-# io.<wbr>helidon.<wbr>data.<wbr>jdbc.<wbr>Jdbc<wbr>Health<wbr>Check<wbr>Factory
+# io.<wbr>helidon.<wbr>data.<wbr>jdbc.<wbr>Jdbc<wbr>Client<wbr>Health<wbr>Config
 
 ## Description
 
-Configures independent client health discovery
+Configures health discovery without retaining or acquiring a JDBC client
 
 ## Configuration options
 
@@ -38,7 +38,7 @@ Configures independent client health discovery
 </td>
 <td>
 </td>
-<td>Specifies a nonblank name for responses and individual check routes</td>
+<td>Overrides the client name in responses and individual check routes</td>
 </tr>
 <tr>
 <td>
@@ -57,18 +57,6 @@ Configures independent client health discovery
 </tr>
 <tr>
 <td>
-<code>query-<wbr>timeout</code>
-</td>
-<td>
-<code>Duration</code>
-</td>
-<td>
-<code>PT2S</code>
-</td>
-<td>Specifies a query timeout in positive whole seconds, up to <code>Integer#<wbr>MAX_<wbr>VALUE</code></td>
-</tr>
-<tr>
-<td>
 <code>enabled</code>
 </td>
 <td>
@@ -77,7 +65,19 @@ Configures independent client health discovery
 <td>
 <code>false</code>
 </td>
-<td>Enables this health definition in its owning registry</td>
+<td>Enables health discovery for this client definition</td>
+</tr>
+<tr>
+<td>
+<code>query-<wbr>timeout</code>
+</td>
+<td>
+<code>Duration</code>
+</td>
+<td>
+<code>PT2S</code>
+</td>
+<td>Specifies a query timeout in positive whole seconds within the JDBC integer range</td>
 </tr>
 </tbody>
 </table>
@@ -86,7 +86,7 @@ Configures independent client health discovery
 
 ## Usages
 
-- <a href="io.helidon.data.jdbc.JdbcClient.md#health-check"><code>data.<wbr>clients.<wbr>jdbc.<wbr>health-<wbr>check</code></a>
+- <a href="io.helidon.data.jdbc.JdbcClient.md#health"><code>data.<wbr>clients.<wbr>jdbc.<wbr>health</code></a>
 
 ---
 

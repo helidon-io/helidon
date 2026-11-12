@@ -72,10 +72,6 @@ Configures a health check over an existing client without duplicating connection
 
 
 
-## Dependent Types
-
-- [io.<wbr>helidon.<wbr>data.<wbr>jdbc.<wbr>Jdbc<wbr>Health<wbr>Check<wbr>Factory](io.helidon.data.jdbc.JdbcHealthCheckFactory.md)
-
 ---
 
 See the [manifest](manifest.md) for all available types.

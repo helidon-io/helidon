@@ -44,16 +44,17 @@ Configuration for a JDBC client
 </tr>
 <tr>
 <td>
-<a id="health-check"></a>
-<a href="io.helidon.data.jdbc.JdbcHealthCheckFactory.md">
-<code>health-<wbr>check</code>
+<a id="health"></a>
+<a href="io.helidon.data.jdbc.JdbcClientHealthConfig.md">
+<code>health</code>
 </a>
 </td>
 <td>
+<code>Jdbc<wbr>Client<wbr>Health<wbr>Config</code>
 </td>
 <td>
 </td>
-<td>Configuration for health-check</td>
+<td>Configures independent health discovery for this client definition</td>
 </tr>
 <tr>
 <td>
