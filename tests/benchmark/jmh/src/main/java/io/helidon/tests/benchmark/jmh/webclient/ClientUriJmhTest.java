@@ -106,6 +106,11 @@ public class ClientUriJmhTest {
     }
 
     @Benchmark
+    public String appendDecodedPathAndSerialize(PathAppendState state) {
+        return ClientUri.create(state.baseUri).resolvePath(state.path).pathWithQueryAndFragment();
+    }
+
+    @Benchmark
     public String forwardPrologueAndSerialize(ForwardingState state) {
         return state.client.get()
                 .requestTarget(state.prologue)
@@ -157,6 +162,22 @@ public class ClientUriJmhTest {
                     .query(UriQuery.create(uri))
                     .build();
             clientUri = ClientUri.create(uri);
+        }
+    }
+
+    @State(Scope.Thread)
+    public static class PathAppendState {
+        @Param({"/base", "/a%2fb;v=1"})
+        public String basePath;
+
+        @Param({"child", "item:revision", "child name:version%#?"})
+        public String path;
+
+        private ClientUri baseUri;
+
+        @Setup
+        public void setup() {
+            baseUri = ClientUri.create(URI.create("https://" + HOST + basePath + "?b=2&a=1&b=3&flag&&"));
         }
     }
 

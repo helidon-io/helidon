@@ -100,12 +100,25 @@ class ClientUriTest {
         assertThat(uri.pathWithQueryAndFragment(), is("/a%2fb;v=1/child%2fpart?b=2&a=1&flag&&"));
     }
 
-    @Test
-    void preservesRawPathWhenAppendingDecodedPath() {
-        ClientUri uri = ClientUri.create(URI.create("https://example.com/a%2fb;v=1?flag"));
-        uri.resolvePath("child name");
+    @ParameterizedTest
+    @CsvSource({
+            "/base, item:revision, /base/item:revision",
+            "/base, /item:revision, /base/item:revision",
+            "/base/, item:revision, /base/item:revision",
+            "'', item:revision, /item:revision",
+            "/, item:revision, /item:revision",
+            "/a%2fb;v=1, item:revision, /a%2fb;v=1/item:revision",
+            "/a%2fb;v=1, item:revision/child:two, /a%2fb;v=1/item:revision/child:two",
+            "/a%2fb;v=1, child name:version%#?, /a%2fb;v=1/child%20name:version%25%23%3F",
+            "/a%2fb;v=1, child name, /a%2fb;v=1/child%20name",
+            "/base, a/b:c, /base/a/b:c",
+            "/base, item;v=one:two, /base/item;v=one:two"
+    })
+    void preservesDecodedPathAppendCharacters(String basePath, String appendedPath, String expectedPath) {
+        ClientUri uri = ClientUri.create(URI.create("https://example.com" + basePath + "?flag&&a=1&a=2"));
+        uri.resolvePath(appendedPath);
 
-        assertThat(uri.pathWithQueryAndFragment(), is("/a%2fb;v=1/child%20name?flag"));
+        assertThat(uri.pathWithQueryAndFragment(), is(expectedPath + "?flag&&a=1&a=2"));
     }
 
     @Test
