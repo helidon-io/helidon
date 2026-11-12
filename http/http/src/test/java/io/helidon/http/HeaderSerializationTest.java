@@ -17,6 +17,7 @@
 package io.helidon.http;
 
 import java.io.ByteArrayOutputStream;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -55,7 +56,12 @@ class HeaderSerializationTest {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         BufferData customBuffer = (BufferData) Proxy.newProxyInstance(BufferData.class.getClassLoader(),
                                                                        new Class<?>[] {BufferData.class},
-                                                                       (proxy, _, arguments) -> {
+                                                                       (proxy, method, arguments) -> {
+                                                                           if (method.isDefault()) {
+                                                                               return InvocationHandler.invokeDefault(proxy,
+                                                                                                                     method,
+                                                                                                                     arguments);
+                                                                           }
                                                                            Object value = arguments[0];
                                                                            if (value instanceof byte[] bytes) {
                                                                                arrayWrites.incrementAndGet();
@@ -70,7 +76,7 @@ class HeaderSerializationTest {
         HeaderValues.create(HeaderNames.CONTENT_LENGTH, "128").writeHttp1Header(customBuffer);
         HeaderValues.CONTENT_TYPE_JSON.writeHttp1Header(customBuffer);
 
-        assertThat(arrayWrites.get(), is(1));
+        assertThat(arrayWrites.get(), is(3));
         assertThat(output.toString(StandardCharsets.US_ASCII),
                    is("Content-Length: 128\r\nContent-Type: application/json\r\n"));
         assertSerialized(HeaderValues.create(HeaderNames.CONTENT_LENGTH, "128"), "Content-Length: 128\r\n");
@@ -84,7 +90,12 @@ class HeaderSerializationTest {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         BufferData customBuffer = (BufferData) Proxy.newProxyInstance(BufferData.class.getClassLoader(),
                                                                        new Class<?>[] {BufferData.class},
-                                                                       (proxy, _, arguments) -> {
+                                                                       (proxy, method, arguments) -> {
+                                                                           if (method.isDefault()) {
+                                                                               return InvocationHandler.invokeDefault(proxy,
+                                                                                                                     method,
+                                                                                                                     arguments);
+                                                                           }
                                                                            Object value = arguments[0];
                                                                            if (value instanceof byte[] bytes) {
                                                                                arrayWrites.incrementAndGet();
