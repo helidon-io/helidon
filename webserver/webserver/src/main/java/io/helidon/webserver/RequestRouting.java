@@ -50,6 +50,22 @@ import io.helidon.webserver.spi.ProtocolUpgradeHandler;
 class RequestRouting implements Routing {
 
     private static final Logger LOGGER = Logger.getLogger(RequestRouting.class.getName());
+    private static final List<String> ENTITY_HEADERS = List.of(Http.Header.CONTENT_LENGTH,
+                                                               Http.Header.TRANSFER_ENCODING,
+                                                               Http.Header.TRAILER,
+                                                               Http.Header.CONTENT_RANGE,
+                                                               Http.Header.CONTENT_TYPE,
+                                                               Http.Header.CONTENT_ENCODING,
+                                                               Http.Header.CONTENT_LANGUAGE,
+                                                               Http.Header.CONTENT_LOCATION,
+                                                               Http.Header.CONTENT_DISPOSITION,
+                                                               "Content-Digest",
+                                                               "Content-MD5",
+                                                               "Digest",
+                                                               "Repr-Digest",
+                                                               Http.Header.ETAG,
+                                                               Http.Header.LAST_MODIFIED,
+                                                               Http.Header.ACCEPT_RANGES);
 
     private final RouteList routes;
     private final List<ErrorHandlerRecord<?>> errorHandlers;
@@ -705,6 +721,7 @@ class RequestRouting implements Routing {
 
             for (ErrorHandlerRecord<?> record = errorHandlers.pollFirst(); record != null; record = errorHandlers.pollFirst()) {
                 if (record.exceptionClass.isAssignableFrom(t.getClass())) {
+                    discardUnsentEntityHeaders(t);
                     ErrorRoutedRequest nextErrorRequest = new ErrorRoutedRequest(errorHandlers, t);
                     Span span = span();
                     if (null != span) {
@@ -733,6 +750,13 @@ class RequestRouting implements Routing {
         }
 
         private void defaultHandler(Throwable t) {
+            if (!discardUnsentEntityHeaders(t)) {
+                response.send().exceptionally(throwable -> {
+                    LOGGER.log(Level.WARNING, "Default error handler: Response wasn't successfully sent.", throwable);
+                    return null;
+                });
+                return;
+            }
             Span span = span();
             if (null != span) {
                 span.addEvent("error-handler", Map.of("handler.class", "DEFAULT-ERROR-HANDLER",
@@ -796,6 +820,19 @@ class RequestRouting implements Routing {
         @Override
         public URI absoluteUri() {
             return lazyAbsoluteUri.get();
+        }
+
+        private boolean discardUnsentEntityHeaders(Throwable cause) {
+            try {
+                ResponseHeaders headers = response.headers();
+                for (String name : ENTITY_HEADERS) {
+                    headers.remove(name);
+                }
+                return true;
+            } catch (AlreadyCompletedException e) {
+                LOGGER.log(Level.WARNING, "Cannot replace response entity after headers were sent", cause);
+                return false;
+            }
         }
 
         private class ErrorRoutedRequest extends RoutedRequest {

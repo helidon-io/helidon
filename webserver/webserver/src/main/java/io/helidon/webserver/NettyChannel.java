@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,17 @@
  */
 package io.helidon.webserver;
 
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Consumer;
 import java.util.function.Function;
+
+import io.helidon.webserver.spi.ResponseFailureHandler;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelId;
 import io.netty.handler.codec.http.HttpExpectationFailedEvent;
@@ -80,6 +85,44 @@ class NettyChannel {
         } else {
             channel.eventLoop().execute(channel::flush);
         }
+    }
+
+    /**
+     * Terminate a failed response through the protocol handlers on the event loop.
+     *
+     * @param responseId protocol response identifier, or null for a connection-level response
+     * @param cause failure preventing response completion
+     * @param completion receives whether the failure was isolated before completing the response
+     */
+    void fail(String responseId, Throwable cause, Consumer<Boolean> completion) {
+        runOnEventLoop(() -> {
+            if (responseId != null) {
+                for (ChannelHandler handler : ctx.pipeline().toMap().values()) {
+                    if (handler instanceof ResponseFailureHandler failureHandler) {
+                        CompletionStage<Void> aborted;
+                        try {
+                            ResponseContentCompressor compressor = ctx.pipeline().get(ResponseContentCompressor.class);
+                            if (compressor != null) {
+                                compressor.discardPendingResponse(ctx.pipeline().context(compressor));
+                            }
+                            aborted = Objects.requireNonNull(failureHandler.abortResponse(responseId, cause));
+                        } catch (Exception failure) {
+                            failConnection(cause, failure, completion);
+                            return;
+                        }
+                        aborted.whenComplete((ignored, failure) -> runOnEventLoop(() -> {
+                            if (failure == null) {
+                                completion.accept(true);
+                            } else {
+                                failConnection(cause, failure, completion);
+                            }
+                        }));
+                        return;
+                    }
+                }
+            }
+            failConnection(cause, null, completion);
+        });
     }
 
     /**
@@ -147,5 +190,21 @@ class NettyChannel {
         return "NettyChannel{"
                 + "channel=" + channel.toString()
                 + '}';
+    }
+
+    private void failConnection(Throwable cause, Throwable failure, Consumer<Boolean> completion) {
+        if (failure != null && failure != cause) {
+            cause.addSuppressed(failure);
+        }
+        completion.accept(false);
+        ctx.pipeline().fireExceptionCaught(cause);
+    }
+
+    private void runOnEventLoop(Runnable action) {
+        if (channel.eventLoop().inEventLoop()) {
+            action.run();
+        } else {
+            channel.eventLoop().execute(action);
+        }
     }
 }

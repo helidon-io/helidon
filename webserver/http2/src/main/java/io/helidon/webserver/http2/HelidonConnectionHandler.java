@@ -17,6 +17,12 @@
 package io.helidon.webserver.http2;
 
 import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+
+import io.helidon.webserver.SocketClosedException;
+import io.helidon.webserver.spi.ResponseFailureHandler;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
@@ -44,9 +50,10 @@ import io.netty.handler.logging.LogLevel;
 /**
  * Class HelidonConnectionHandler.
  */
-class HelidonConnectionHandler extends HttpToHttp2ConnectionHandler implements Http2FrameListener {
+class HelidonConnectionHandler extends HttpToHttp2ConnectionHandler implements Http2FrameListener, ResponseFailureHandler {
 
     private final InboundHttp2ToHttpAdapter inboundAdapter;
+    private ChannelHandlerContext context;
 
     HelidonConnectionHandler(Http2ConnectionDecoder decoder, Http2ConnectionEncoder encoder,
                              Http2Settings initialSettings, int maxContentLength) {
@@ -60,6 +67,48 @@ class HelidonConnectionHandler extends HttpToHttp2ConnectionHandler implements H
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
         ctx.pipeline().addLast(new ResetStreamChannelAdapter());
         super.handlerAdded(ctx);
+        context = ctx;
+    }
+
+    @Override
+    public CompletionStage<Void> abortResponse(String responseId, Throwable cause) {
+        Objects.requireNonNull(responseId, "responseId");
+        Objects.requireNonNull(cause, "cause");
+        int streamId = Integer.parseInt(responseId);
+        if (streamId <= 0) {
+            throw new IllegalArgumentException("Response stream ID must be positive");
+        }
+        ChannelHandlerContext ctx = context;
+        if (ctx == null) {
+            throw new IllegalStateException("HTTP/2 handler is not active");
+        }
+        CompletableFuture<Void> result = new CompletableFuture<>();
+        resetStream(ctx, streamId, Http2Error.INTERNAL_ERROR.code(), ctx.newPromise())
+                .addListener(future -> {
+                    if (future.isSuccess()) {
+                        result.complete(null);
+                    } else {
+                        result.completeExceptionally(future.cause());
+                    }
+                });
+        ctx.flush();
+        return result;
+    }
+
+    @Override
+    protected void handlerRemoved0(ChannelHandlerContext ctx) throws Exception {
+        context = null;
+        super.handlerRemoved0(ctx);
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        if (cause instanceof SocketClosedException) {
+            // A failed response cannot finish its stream; graceful close would wait for that stream.
+            onError(ctx, false, cause);
+        } else {
+            super.exceptionCaught(ctx, cause);
+        }
     }
 
     @Override

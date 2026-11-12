@@ -456,6 +456,23 @@ are equivalent.
 <1> Call a downstream error handler with the `Throwable` instance.
 <2> Here, `req.next()` is the same as `req.next(ex)`. In both cases, the downstream error handler is called.
 
+Before each matching custom error handler, and before the default error handler,
+routing removes the previous entity's headers if response headers have not been
+committed. This reset also occurs when one error handler forwards to another
+using `req.next()` or `req.next(ex)`. Entity metadata set by an upstream handler
+does not carry over to the downstream handler's replacement entity.
+
+The reset removes `Content-Length`, `Transfer-Encoding`, `Trailer`,
+`Content-Range`, `Content-Type`, `Content-Encoding`, `Content-Language`,
+`Content-Location`, `Content-Disposition`, `Content-Digest`, `Content-MD5`,
+`Digest`, `Repr-Digest`, `ETag`, `Last-Modified`, and `Accept-Ranges`.
+The reset itself preserves the response status and other headers, such as cookies,
+authentication challenges, and application correlation headers; the selected
+error handler can still change them. The handler that sends the replacement
+entity must set its entity metadata, including any content type or encoding.
+After response headers are committed, routing leaves them unchanged and still
+invokes matching custom error handlers.
+
 === Default Error Handling
 If no user-defined error handler is matched, or if the last error handler of the
 exception called `req.next()`, then the exception is translated to an HTTP response as follows:
@@ -470,6 +487,15 @@ exception called `req.next()`, then the exception is translated to an HTTP respo
 
 * Otherwise, the exceptions are translated to an Internal Server Error HTTP
 error code `500`.
+
+If response headers are already committed, the default handler cannot replace
+the response status or entity metadata. It completes a response without an
+entity only when that is consistent with the committed framing. An empty
+response with a positive `Content-Length` fails. HTTP/1 closes the connection;
+HTTP/2 resets the affected stream without successfully ending the response or
+interrupting other streams. If the protocol cannot isolate the failure, the
+connection is closed. HEAD responses and statuses that cannot carry content retain their
+bodyless semantics. A response whose entity was already sent is left alone.
 
 == Supported Technologies
 == HTTP/2 Support

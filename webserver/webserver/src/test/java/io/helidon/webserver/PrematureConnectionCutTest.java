@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -33,8 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.helidon.webclient.WebClient;
-import io.helidon.webclient.WebClientResponse;
+import io.helidon.webserver.utils.SocketHttpClient;
 
 import org.junit.jupiter.api.Test;
 
@@ -50,7 +48,7 @@ public class PrematureConnectionCutTest {
     private static final int CALL_NUM = 5;
 
     @Test
-    void cutConnectionBefore100Continue() {
+    void cutConnectionBefore100Continue() throws Exception {
         List<Exception> exceptions = Collections.synchronizedList(new ArrayList<>());
 
         TestAsyncRunner asyncRunner = null;
@@ -78,13 +76,9 @@ public class PrematureConnectionCutTest {
                     .start()
                     .await(TIMEOUT);
 
-            WebClient webClient = WebClient.builder()
-                    .baseUri("http://localhost:" + webServer.port())
-                    .build();
-
             for (int i = 0; i < CALL_NUM; i++) {
                 //Sending request with fake content length, but not continuing after 100 code
-                incomplete100Call(webClient);
+                incomplete100Call(webServer.port());
             }
 
             // Wait for all threads to finish
@@ -113,20 +107,16 @@ public class PrematureConnectionCutTest {
     /**
      * Force Netty to avoid auto close and wait for content with fake content-length
      */
-    private void incomplete100Call(WebClient webClient) {
-        WebClientResponse response = null;
-        try {
-            response = webClient
-                    .post()
-                    .headers(h -> {
-                        h.add("Expect", "100-continue");
-                        h.contentLength(100);
-                        return h;
-                    })
-                    .submit()
-                    .await(TIMEOUT);
-        } finally {
-            Objects.requireNonNull(response).close();
+    private void incomplete100Call(int port) throws Exception {
+        try (SocketHttpClient socketHttpClient = new SocketHttpClient(port)) {
+            socketHttpClient.manualRequest("""
+                    POST / HTTP/1.1
+                    Host: localhost:%d
+                    Expect: 100-continue
+                    Content-Length: 100
+
+                    """, port)
+                    .awaitResponse("HTTP/1.1 100 Continue\n", "\n\n");
         }
     }
 

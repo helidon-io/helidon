@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -242,6 +242,8 @@ public interface WebClientRequestBuilder {
 
     /**
      * Sets new read timeout for this request.
+     * A positive timeout also bounds the wait from the first informational response to final response headers.
+     * Further informational responses do not restart this wait. A nonpositive timeout disables both limits.
      *
      * @param amount amount of time
      * @param unit   time unit

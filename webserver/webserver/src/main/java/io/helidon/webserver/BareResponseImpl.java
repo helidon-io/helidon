@@ -42,6 +42,7 @@ import io.netty.handler.codec.http.DefaultLastHttpContent;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpUtil;
@@ -86,6 +87,7 @@ class BareResponseImpl implements BareResponse {
     private BackpressureStrategy backpressureStrategy;
     private final long backpressureBufferSize;
     private volatile boolean closeAfterResponse;
+    private volatile boolean failureIsolated;
 
     // Accessed by writeStatusHeaders(status, headers) method
     /*
@@ -208,6 +210,13 @@ class BareResponseImpl implements BareResponse {
         for (Map.Entry<String, List<String>> headerEntry : headers.entrySet()) {
             response.headers().add(headerEntry.getKey(), headerEntry.getValue());
         }
+        boolean transferEncodingSet = response.headers().contains(HttpHeaderNames.TRANSFER_ENCODING);
+        if (transferEncodingSet) {
+            response.headers().remove(HttpHeaderNames.CONTENT_LENGTH);
+            if (!HttpUtil.isTransferEncodingChunked(response)) {
+                response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
+            }
+        }
 
         // Copy HTTP/2 headers to response for correlation (streamId)
         requestHeaders.names().stream()
@@ -215,7 +224,7 @@ class BareResponseImpl implements BareResponse {
                 .forEach(header -> response.headers().add(header, requestHeaders.get(header)));
 
         lengthSet = HttpUtil.isContentLengthSet(response);
-        if (lengthSet || isSseEventStream(headers) || HttpUtil.isTransferEncodingChunked(response)) {
+        if (lengthSet || isSseEventStream(headers) || transferEncodingSet) {
             lengthOptimization = false;
         }
 
@@ -353,6 +362,27 @@ class BareResponseImpl implements BareResponse {
      * @param closeAction Close action listener.
      */
     private void writeLastContent(final Throwable throwable, final ChannelFutureListener closeAction) {
+        if (response != null && lengthSet) {
+            // Explicit length disables buffering, so pending headers imply that no body data was written.
+            int status = response.status().code();
+            HttpMethod method = requestContext.request().method();
+            if (HttpUtil.getContentLength(response, 0) > 0
+                    && !HttpMethod.HEAD.equals(method)
+                    && status >= 200
+                    && status != 204
+                    && status != 304
+                    && !(HttpMethod.CONNECT.equals(method) && status < 300)) {
+                SocketClosedException failure = new SocketClosedException("Response completed without its Content-Length body");
+                if (throwable != null) {
+                    failure.initCause(throwable);
+                }
+                channel.fail(http2StreamId, failure, isolated -> {
+                    failureIsolated = isolated;
+                    completeResponseFuture(throwable == null ? failure : throwable);
+                });
+                return;
+            }
+        }
         boolean chunked = true;
         if (response != null) {
             if (lengthOptimization) {
@@ -455,7 +485,7 @@ class BareResponseImpl implements BareResponse {
      */
     private void onNextPipe(DataChunk data) {
         if (response != null) {
-            if (!lengthSet) {
+            if (!lengthSet && !response.headers().contains(HttpHeaderNames.TRANSFER_ENCODING)) {
                 HttpUtil.setTransferEncodingChunked(response, true);
             }
             // lengthOptimization will be set to false in initWriteResponse
@@ -567,6 +597,10 @@ class BareResponseImpl implements BareResponse {
     @Override
     public long requestId() {
         return requestId;
+    }
+
+    boolean failureIsolated() {
+        return failureIsolated;
     }
 
     /**

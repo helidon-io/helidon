@@ -491,7 +491,10 @@ public class ForwardingHandler extends SimpleChannelInboundHandler<Object> {
         prevRequestFuture = new CompletableFuture<>();
         CompletableFuture<?> thisResp = prevRequestFuture;
         bareResponse.whenCompleted()
-                .thenRun(() -> {
+                .whenComplete((result, failure) -> {
+                    if (failure != null && !bareResponse.failureIsolated()) {
+                        return;
+                    }
                     // Mark response completed in context
                     requestContextRef.responseCompleted(true);
                     entityRequested.complete(false);

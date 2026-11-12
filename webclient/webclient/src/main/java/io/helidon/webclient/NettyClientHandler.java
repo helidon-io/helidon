@@ -16,10 +16,13 @@
 package io.helidon.webclient;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
@@ -48,6 +51,7 @@ import static io.helidon.webclient.WebClientRequestBuilderImpl.COMPLETED;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.IN_USE;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.RECEIVED;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.REQUEST;
+import static io.helidon.webclient.WebClientRequestBuilderImpl.REQUEST_CONTENT;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.REQUEST_ID;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.RESPONSE;
 import static io.helidon.webclient.WebClientRequestBuilderImpl.RESPONSE_RECEIVED;
@@ -77,6 +81,9 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
     private HttpResponsePublisher publisher;
     private ResponseCloser responseCloser;
     private long requestId;
+    private boolean interimResponse;
+    private boolean awaitingFinalResponse;
+    private ScheduledFuture<?> finalResponseTimeout;
 
     /**
      * Creates new instance.
@@ -88,7 +95,7 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
     public void channelReadComplete(ChannelHandlerContext ctx) {
         Channel channel = ctx.channel();
         ctx.flush();
-        if (publisher != null && publisher.hasRequests()) {
+        if (awaitingFinalResponse || (publisher != null && publisher.hasRequests())) {
             channel.read();
         }
         if (!channel.attr(WILL_CLOSE).get()
@@ -106,10 +113,24 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
     protected void channelRead0(ChannelHandlerContext ctx, HttpObject msg) throws IOException {
         Channel channel = ctx.channel();
         if (msg instanceof HttpResponse) {
-            channel.config().setAutoRead(false);
             HttpResponse response = (HttpResponse) msg;
+            int status = response.status().code();
+            if (status >= 100 && status < 200 && status != 101) {
+                if (!awaitingFinalResponse) {
+                    awaitingFinalResponse = true;
+                    scheduleFinalResponseTimeout(ctx);
+                }
+                interimResponse = !(msg instanceof LastHttpContent);
+                return;
+            }
+            clearFinalResponseTimeout();
+            channel.config().setAutoRead(false);
             this.requestId = channel.attr(REQUEST_ID).get();
             channel.attr(RESPONSE_RECEIVED).set(true);
+            RequestContentSubscriber requestContent = channel.attr(REQUEST_CONTENT).getAndSet(null);
+            if (requestContent != null && requestContent.cancelOnResponse()) {
+                channel.attr(WILL_CLOSE).set(true);
+            }
             WebClientRequestImpl clientRequest = channel.attr(REQUEST).get();
             RequestConfiguration requestConfiguration = clientRequest.configuration();
             LOGGER.finest(() -> "(client reqID: " + requestId + ") Initial http response message received");
@@ -181,21 +202,20 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
                     responseCloser.close();
                 } else {
                     responseReceived.complete(clientServiceResponse);
-                    responseReceived.thenRun(() -> {
-                        if (shouldResponseAutomaticallyClose(clientResponse)) {
-                            responseCloser.close()
-                                    .thenAccept(aVoid -> {
-                                        LOGGER.finest(() -> "Response automatically closed. No entity expected");
-                                    });
-                        }
-                        responseFuture.complete(clientResponse);
-                    }).exceptionally(t -> {
+                    responseReceived.thenRun(() -> responseFuture.complete(clientResponse)).exceptionally(t -> {
                         responseFuture.completeExceptionally(t);
                         responseCloser.close();
                         return null;
                     });
                 }
             });
+        }
+
+        if (interimResponse) {
+            if (msg instanceof LastHttpContent) {
+                interimResponse = false;
+            }
+            return;
         }
 
         if (responseCloser.isClosed()) {
@@ -233,6 +253,10 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        if (awaitingFinalResponse) {
+            exceptionCaught(ctx, new WebClientException("Connection closed before a final HTTP response"));
+        }
+        clearFinalResponseTimeout();
         super.channelInactive(ctx);
         // Connection closed without last HTTP content received. Some server problem
         // so we need to fail the publisher and report an exception.
@@ -242,39 +266,78 @@ class NettyClientHandler extends SimpleChannelInboundHandler<HttpObject> {
         }
     }
 
-    private boolean shouldResponseAutomaticallyClose(WebClientResponse clientResponse) {
-        WebClientResponseHeaders headers = clientResponse.headers();
-        if (clientResponse.status() == Http.Status.NO_CONTENT_204) {
-            return true;
-        }
-        return headers.contentType().isEmpty()
-                && noContentLength(headers)
-                && notChunked(headers);
-    }
-
-    private boolean noContentLength(WebClientResponseHeaders headers) {
-        return headers.contentLength()
-                .map(value -> value == 0)
-                .orElse(true);
-    }
-
-    private boolean notChunked(WebClientResponseHeaders headers) {
-        return !headers.transferEncoding().contains("chunked");
+    @Override
+    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+        clearFinalResponseTimeout();
+        super.handlerRemoved(ctx);
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        CompletableFuture<WebClientResponse> responseFuture = ctx.channel().attr(RESULT).get();
-        if (responseFuture.isDone()) {
-            // we failed during entity processing, or during connecting to the remote site
+        clearFinalResponseTimeout();
+        Channel channel = ctx.channel();
+        channel.attr(WILL_CLOSE).set(true);
+        CompletableFuture<WebClientServiceResponse> responseReceived = channel.attr(RECEIVED).get();
+        if (responseReceived != null) {
+            responseReceived.completeExceptionally(cause);
+        }
+        CompletableFuture<WebClientServiceResponse> requestComplete = channel.attr(COMPLETED).get();
+        if (requestComplete != null) {
+            requestComplete.completeExceptionally(cause);
+        }
+        CompletableFuture<WebClientResponse> responseFuture = channel.attr(RESULT).get();
+        if (responseFuture != null) {
+            responseFuture.completeExceptionally(cause);
+        }
+        RequestContentSubscriber requestContent = channel.attr(REQUEST_CONTENT).getAndSet(null);
+        try {
+            if (requestContent != null) {
+                requestContent.cancelOnFailure(cause);
+            }
             if (publisher != null) {
                 publisher.fail(cause);
             }
-        } else {
-            // we failed before getting response
-            responseFuture.completeExceptionally(cause);
+        } finally {
+            ctx.close().addListener(future -> {
+                if (responseCloser != null) {
+                    if (future.isSuccess()) {
+                        responseCloser.cf.complete(null);
+                    } else {
+                        responseCloser.cf.completeExceptionally(future.cause());
+                    }
+                }
+            });
         }
-        ctx.close();
+    }
+
+    private void scheduleFinalResponseTimeout(ChannelHandlerContext ctx) {
+        Channel channel = ctx.channel();
+        Duration timeout = channel.attr(REQUEST).get().configuration().readTimout();
+        if (timeout == null || timeout.isNegative() || timeout.isZero()) {
+            return;
+        }
+        CompletableFuture<WebClientResponse> result = channel.attr(RESULT).get();
+        finalResponseTimeout = ctx.executor().schedule(() -> {
+            if (awaitingFinalResponse && channel.attr(RESULT).get() == result) {
+                try {
+                    RequestContentSubscriber content = channel.attr(REQUEST_CONTENT).getAndSet(null);
+                    if (content != null) {
+                        content.cancelOnResponse();
+                    }
+                } finally {
+                    exceptionCaught(ctx, new WebClientException("Timed out waiting for a final HTTP response"));
+                }
+            }
+        }, timeout.toNanos(), TimeUnit.NANOSECONDS);
+    }
+
+    private void clearFinalResponseTimeout() {
+        awaitingFinalResponse = false;
+        interimResponse = false;
+        if (finalResponseTimeout != null) {
+            finalResponseTimeout.cancel(false);
+            finalResponseTimeout = null;
+        }
     }
 
     private Http.ResponseStatus helidonStatus(HttpResponseStatus nettyStatus) {

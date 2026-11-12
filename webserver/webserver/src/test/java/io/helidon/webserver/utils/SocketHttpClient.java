@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package io.helidon.webserver.utils;
 
 import java.io.BufferedReader;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -41,6 +42,7 @@ import org.hamcrest.core.Is;
 import org.hamcrest.core.StringEndsWith;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -290,8 +292,30 @@ public class SocketHttpClient implements AutoCloseable {
                     .append("\n");
 
             if ("".equalsIgnoreCase(t) && contentLength >= 0) {
-                char[] content = new char[contentLength];
-                socketReader.read(content);
+                StringBuilder content = new StringBuilder();
+                int receivedBytes = 0;
+                while (receivedBytes < contentLength) {
+                    int next = socketReader.read();
+                    if (next < 0) {
+                        throw new EOFException("Incomplete fixed-length response body");
+                    }
+                    char character = (char) next;
+                    int codePoint = character;
+                    if (Character.isHighSurrogate(character)) {
+                        int trailing = socketReader.read();
+                        if (trailing < 0 || !Character.isLowSurrogate((char) trailing)) {
+                            throw new IOException("Invalid UTF-8 response body");
+                        }
+                        codePoint = Character.toCodePoint(character, (char) trailing);
+                    } else if (Character.isLowSurrogate(character)) {
+                        throw new IOException("Invalid UTF-8 response body");
+                    }
+                    content.appendCodePoint(codePoint);
+                    receivedBytes += codePoint < 0x80 ? 1 : codePoint < 0x800 ? 2 : codePoint < 0x10000 ? 3 : 4;
+                }
+                if (receivedBytes != contentLength) {
+                    throw new IOException("Response body exceeds Content-Length");
+                }
                 sb.append(content);
                 break;
             }
@@ -319,6 +343,7 @@ public class SocketHttpClient implements AutoCloseable {
 
     /**
      * Wait for text coming from socket.
+     * Fails if the connection closes before both expected boundaries are received.
      *
      * @param expectedStartsWith expected beginning
      * @param expectedEndsWith expected end
@@ -329,7 +354,9 @@ public class SocketHttpClient implements AutoCloseable {
         String t;
         while (true) {
             try {
-                if ((t = socketReader.readLine()) == null) break;
+                if ((t = socketReader.readLine()) == null) {
+                    break;
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -338,6 +365,8 @@ public class SocketHttpClient implements AutoCloseable {
                 break;
             }
         }
+        assertThat(sb.toString(), startsWith(expectedStartsWith));
+        assertThat(sb.toString(), endsWith(expectedEndsWith));
         return this;
     }
 

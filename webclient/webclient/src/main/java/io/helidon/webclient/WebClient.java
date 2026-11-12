@@ -281,6 +281,8 @@ public interface WebClient {
 
         /**
          * Sets new read timeout.
+         * A positive timeout also bounds the wait from the first informational response to final response headers.
+         * Further informational responses do not restart this wait. A nonpositive timeout disables both limits.
          *
          * @param amount amount of time
          * @param unit   time unit

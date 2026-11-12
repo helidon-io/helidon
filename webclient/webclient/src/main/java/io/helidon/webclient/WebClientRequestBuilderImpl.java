@@ -89,13 +89,9 @@ import io.netty.util.AttributeKey;
  */
 class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
-    private static final Logger LOGGER = Logger.getLogger(WebClientRequestBuilderImpl.class.getName());
-
-    private static final List<DataPropagationProvider> PROPAGATION_PROVIDERS = HelidonServiceLoader
-            .builder(ServiceLoader.load(DataPropagationProvider.class)).build().asList();
-
     static final Map<ConnectionIdent, Set<ChannelRecord>> CHANNEL_CACHE = new ConcurrentHashMap<>();
     static final AttributeKey<WebClientRequestImpl> REQUEST = AttributeKey.valueOf("request");
+    static final AttributeKey<RequestContentSubscriber> REQUEST_CONTENT = AttributeKey.valueOf("requestContent");
     static final AttributeKey<CompletableFuture<WebClientServiceResponse>> RECEIVED = AttributeKey.valueOf("received");
     static final AttributeKey<CompletableFuture<WebClientServiceResponse>> COMPLETED = AttributeKey.valueOf("completed");
     static final AttributeKey<CompletableFuture<WebClientResponse>> RESULT = AttributeKey.valueOf("result");
@@ -111,6 +107,9 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
      */
     static final AttributeKey<Boolean> WILL_CLOSE = AttributeKey.valueOf("willClose");
 
+    private static final Logger LOGGER = Logger.getLogger(WebClientRequestBuilderImpl.class.getName());
+    private static final List<DataPropagationProvider> PROPAGATION_PROVIDERS = HelidonServiceLoader
+            .builder(ServiceLoader.load(DataPropagationProvider.class)).build().asList();
     private static final AtomicLong REQUEST_NUMBER = new AtomicLong(0);
     private static final String DEFAULT_TRANSPORT_PROTOCOL = "http";
     private static final Map<String, Integer> DEFAULT_SUPPORTED_PROTOCOLS = new HashMap<>();
@@ -644,6 +643,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
                                                                                                      result,
                                                                                                      sent,
                                                                                                      allowChunkedEncoding);
+                    channelFuture.channel().attr(REQUEST_CONTENT).set(requestContentSubscriber);
                     requestEntity.subscribe(requestContentSubscriber);
                 } else {
                     sent.completeExceptionally(cause);

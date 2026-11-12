@@ -406,6 +406,8 @@ class WebClientConfiguration {
 
         /**
          * Sets new read timeout of the response.
+         * A positive timeout also bounds the wait from the first informational response to final response headers.
+         * Further informational responses do not restart this wait. A nonpositive timeout disables both limits.
          *
          * @param readTimeout new read timeout
          * @return updated builder instance

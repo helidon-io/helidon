@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package io.helidon.tests.integration.webclient;
 
 import java.util.Optional;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -35,11 +34,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class HeadersTest {
 
@@ -94,35 +91,30 @@ public class HeadersTest {
     // Verify that invalid content type causes an exception when being parsed
     @Test
     void testInvalidContentType() {
+        WebClientResponse response = client.get()
+                .path("/invalidContentType")
+                .request()
+                .await(10, TimeUnit.SECONDS);
         try {
-            client.get()
-                    .path("/invalidContentType")
-                    .request()
-                    .await(10, TimeUnit.SECONDS);
-            fail("WebClient shall throw an exception");
-        } catch (Exception ex) {
-            assertThat(ex, is(instanceOf(CompletionException.class)));
-            Throwable cause = ex.getCause();
-            assertThat(cause, is(notNullValue()));
-            assertThat(cause, is(instanceOf(IllegalArgumentException.class)));
-            assertThat(cause.getMessage(), containsString(INVALID_CONTENT_TYPE_VALUE));
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, response.headers()::contentType);
+            assertThat(ex.getMessage(), containsString(INVALID_CONTENT_TYPE_VALUE));
+        } finally {
+            response.close().await(10, TimeUnit.SECONDS);
         }
     }
 
     // Verify that "text" content type causes an exception when being parsed in strict mode
     @Test
     void testInvalidTextContentTypeStrict() {
+        WebClientResponse response = client.get()
+                .path("/invalidTextContentType")
+                .request()
+                .await(10, TimeUnit.SECONDS);
         try {
-            client.get()
-                    .path("/invalidTextContentType")
-                    .request()
-                    .await(10, TimeUnit.SECONDS);
-        } catch (Exception ex) {
-            assertThat(ex, is(instanceOf(CompletionException.class)));
-            Throwable cause = ex.getCause();
-            assertThat(cause, is(notNullValue()));
-            assertThat(cause, is(instanceOf(IllegalArgumentException.class)));
-            assertThat(cause.getMessage(), containsString(INVALID_CONTENT_TYPE_TEXT));
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, response.headers()::contentType);
+            assertThat(ex.getMessage(), containsString(INVALID_CONTENT_TYPE_TEXT));
+        } finally {
+            response.close().await(10, TimeUnit.SECONDS);
         }
     }
 

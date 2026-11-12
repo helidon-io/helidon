@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.webclient;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Logger;
 
 import io.helidon.common.http.DataChunk;
@@ -54,10 +55,14 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
     private final NettyChannel channel;
     private final long requestId;
     private final boolean allowChunkedEncoding;
+    private final ReentrantLock lock = new ReentrantLock();
 
     private volatile Flow.Subscription subscription;
     private volatile DataChunk firstDataChunk;
     private volatile boolean lengthOptimization = true;
+    private volatile boolean canceled;
+    private volatile boolean finalResponse;
+    private boolean requestBodyComplete;
 
     RequestContentSubscriber(DefaultHttpRequest request,
                              Channel channel,
@@ -74,88 +79,173 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
 
     @Override
     public void onSubscribe(Flow.Subscription subscription) {
-        this.subscription = subscription;
-        subscription.request(1);
-        LOGGER.finest(() -> "(client reqID: " + requestId + ") Writing sending request and its content to the server.");
+        lock.lock();
+        try {
+            if (canceled) {
+                subscription.cancel();
+            } else {
+                this.subscription = subscription;
+                subscription.request(1);
+                LOGGER.finest(() -> "(client reqID: " + requestId + ") Writing sending request and its content to the server.");
+            }
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
     public void onNext(DataChunk data) {
-        if (data.isFlushChunk()) {
-            channel.flush();
-            return;
-        }
-
-        // if first chunk, do not write yet, return
-        if (lengthOptimization) {
-            if (firstDataChunk == null) {
-                firstDataChunk = data.isReadOnly() ? data : data.duplicate();      // cache first chunk
-                subscription.request(1);
+        lock.lock();
+        try {
+            if (canceled || requestBodyComplete) {
+                data.release();
                 return;
             }
-        }
 
-        if (null != firstDataChunk) {
-            lengthOptimization = false;
-            if (HttpUtil.isContentLengthSet(request)) {
-                //User set Content-Length explicitly. It should be kept.
-                if (allowChunkedEncoding) {
-                    request.headers().set(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
-                }
-            } else {
-                if (allowChunkedEncoding) {
-                    HttpUtil.setTransferEncodingChunked(request, true);
-                } else if (HttpUtil.isKeepAlive(request)) {
-                    throw new WebClientException("Chunked " + Http.Header.TRANSFER_ENCODING + " is disabled. "
-                                                         + Http.Header.CONTENT_LENGTH + " or "
-                                                         + Http.Header.CONNECTION + ": close, has to be set.");
+            if (data.isFlushChunk()) {
+                channel.flush();
+                return;
+            }
+
+            // if first chunk, do not write yet, return
+            if (lengthOptimization) {
+                if (firstDataChunk == null) {
+                    firstDataChunk = data.isReadOnly() ? data : data.duplicate();      // cache first chunk
+                    subscription.request(1);
+                    return;
                 }
             }
-            channel.write(true, request);
-            sendData(firstDataChunk);
-            firstDataChunk = null;
 
+            if (null != firstDataChunk) {
+                lengthOptimization = false;
+                if (HttpUtil.isContentLengthSet(request)) {
+                    //User set Content-Length explicitly. It should be kept.
+                    if (allowChunkedEncoding) {
+                        request.headers().set(HttpHeaderNames.TRANSFER_ENCODING, HttpHeaderValues.CHUNKED);
+                    }
+                } else {
+                    if (allowChunkedEncoding) {
+                        HttpUtil.setTransferEncodingChunked(request, true);
+                    } else if (HttpUtil.isKeepAlive(request)) {
+                        throw new WebClientException("Chunked " + Http.Header.TRANSFER_ENCODING + " is disabled. "
+                                                             + Http.Header.CONTENT_LENGTH + " or "
+                                                             + Http.Header.CONNECTION + ": close, has to be set.");
+                    }
+                }
+                channel.write(true, request);
+                sendData(firstDataChunk);
+                firstDataChunk = null;
+
+            }
+            sendData(data);
+        } finally {
+            lock.unlock();
         }
-        sendData(data);
     }
 
     @Override
     public void onError(Throwable throwable) {
-        responseFuture.completeExceptionally(throwable);
+        lock.lock();
+        try {
+            if (firstDataChunk != null) {
+                firstDataChunk.release();
+                firstDataChunk = null;
+            }
+            if (!finalResponse) {
+                sent.completeExceptionally(throwable);
+                responseFuture.completeExceptionally(throwable);
+            }
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
     public void onComplete() {
-        if (lengthOptimization) {
-            LOGGER.finest(() -> "(client reqID: " + requestId + ") "
-                    + "Message body contains only one data chunk. Setting chunked encoding to false.");
-            HttpUtil.setTransferEncodingChunked(request, false);
-            if (!HttpUtil.isContentLengthSet(request)) {
-                if (firstDataChunk != null) {
-                    HttpUtil.setContentLength(request, firstDataChunk.remaining());
-                } else if (EMPTY_CONTENT_LENGTH.contains(request.method())) {
-                    HttpUtil.setContentLength(request, 0);
-                }
-            } else if (HttpUtil.getContentLength(request) == 0 && firstDataChunk != null) {
-                HttpUtil.setContentLength(request, firstDataChunk.remaining());
+        lock.lock();
+        try {
+            if (canceled || requestBodyComplete) {
+                return;
             }
-            channel.write(true, request);
-            if (firstDataChunk != null) {
-                sendData(firstDataChunk);
-            }
-        }
-        WebClientServiceRequest serviceRequest = channel.serviceRequest();
-        LOGGER.finest(() -> "(client reqID: " + requestId + ") Sending last http content");
-        channel.write(true, LAST_HTTP_CONTENT, f -> f
-                .addListener(completeOnFailureListener("(client reqID: " + requestId + ") "
-                                                               + "An exception occurred when writing last http content."))
-                .addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
-                .addListener(future -> {
-                    if (future.isSuccess()) {
-                        sent.complete(serviceRequest);
-                        LOGGER.finest(() -> "(client reqID: " + requestId + ") Request sent");
+            requestBodyComplete = true;
+            if (lengthOptimization) {
+                LOGGER.finest(() -> "(client reqID: " + requestId + ") "
+                        + "Message body contains only one data chunk. Setting chunked encoding to false.");
+                HttpUtil.setTransferEncodingChunked(request, false);
+                if (!HttpUtil.isContentLengthSet(request)) {
+                    if (firstDataChunk != null) {
+                        HttpUtil.setContentLength(request, firstDataChunk.remaining());
+                    } else if (EMPTY_CONTENT_LENGTH.contains(request.method())) {
+                        HttpUtil.setContentLength(request, 0);
                     }
-                }));
+                } else if (HttpUtil.getContentLength(request) == 0 && firstDataChunk != null) {
+                    HttpUtil.setContentLength(request, firstDataChunk.remaining());
+                }
+                channel.write(true, request);
+                if (firstDataChunk != null) {
+                    sendData(firstDataChunk);
+                    firstDataChunk = null;
+                }
+            }
+            WebClientServiceRequest serviceRequest = channel.serviceRequest();
+            LOGGER.finest(() -> "(client reqID: " + requestId + ") Sending last http content");
+            channel.write(true, LAST_HTTP_CONTENT, f -> f
+                    .addListener(completeOnFailureListener("(client reqID: " + requestId + ") "
+                                                                   + "An exception occurred when writing last http content."))
+                    .addListener(ChannelFutureListener.CLOSE_ON_FAILURE)
+                    .addListener(future -> {
+                        if (future.isSuccess()) {
+                            sent.complete(serviceRequest);
+                            LOGGER.finest(() -> "(client reqID: " + requestId + ") Request sent");
+                        }
+                    }));
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    boolean cancelOnResponse() {
+        lock.lock();
+        try {
+            finalResponse = true;
+            if (sent.isDone()) {
+                return sent.isCompletedExceptionally();
+            }
+            if (!requestBodyComplete) {
+                canceled = true;
+                if (subscription != null) {
+                    subscription.cancel();
+                }
+                if (firstDataChunk != null) {
+                    firstDataChunk.release();
+                    firstDataChunk = null;
+                }
+                sent.completeExceptionally(new WebClientException("Server responded before request body completed"));
+            }
+            return true;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    void cancelOnFailure(Throwable cause) {
+        lock.lock();
+        try {
+            canceled = true;
+            sent.completeExceptionally(cause);
+            try {
+                if (subscription != null) {
+                    subscription.cancel();
+                }
+            } finally {
+                if (firstDataChunk != null) {
+                    firstDataChunk.release();
+                    firstDataChunk = null;
+                }
+            }
+        } finally {
+            lock.unlock();
+        }
     }
 
     private void sendData(DataChunk data) {
@@ -164,7 +254,9 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
         channel.write(true, httpContent, f -> f
                 .addListener(future -> {
                     data.release();
-                    subscription.request(1);
+                    if (!canceled) {
+                        subscription.request(1);
+                    }
                     LOGGER.finest(() -> "(client reqID: " + requestId + ") Data chunk sent with result: " + future.isSuccess());
                 })
                 .addListener(completeOnFailureListener("(client reqID: " + requestId + ") Failure when sending a content!"))
@@ -187,7 +279,10 @@ class RequestContentSubscriber implements Flow.Subscriber<DataChunk> {
 
     private void completeRequestFuture(Throwable throwable) {
         if (throwable != null) {
-            responseFuture.completeExceptionally(throwable);
+            sent.completeExceptionally(throwable);
+            if (!finalResponse) {
+                responseFuture.completeExceptionally(throwable);
+            }
         }
     }
 
