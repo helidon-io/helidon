@@ -238,8 +238,12 @@ public class ClientUri implements UriInfo {
      * @return updated URI
      */
     public ClientUri resolvePath(String path) {
-        uriBuilder.path(UriPath.create(resolvePath(uriBuilder.path().rawPath(),
-                                                   UriEncoding.encode(path, UriEncoding.Type.PATH))));
+        String encodedPath = UriEncoding.encode(path, UriEncoding.Type.PATH);
+        String rawPath = uriBuilder.path().rawPath();
+        if (rawPath.isEmpty() && !encodedPath.isEmpty()) {
+            rawPath = "/";
+        }
+        uriBuilder.path(UriPath.create(resolvePath(rawPath, encodedPath)));
         return this;
     }
 
