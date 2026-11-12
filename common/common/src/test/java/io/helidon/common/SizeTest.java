@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,6 +80,28 @@ public class SizeTest {
         assertThat(size.toString(Size.UnitKind.BINARY_BI), is("1 EiB"));
         assertThat(size.toString(Size.Unit.GIB, Size.UnitKind.BINARY_BI), is("1073741824 GiB"));
         assertThat(size.toString(Size.Unit.GIB, Size.UnitKind.BINARY_UPPER_CASE), is("1073741824 GB"));
+    }
+
+    @Test
+    void testToStringBinaryUnitKindNotExactTopUnit() {
+        // sizes that are not an exact multiple of the largest unit (EiB) must still render -
+        // the highest binary unit that divides evenly is used, instead of failing on EiB
+        Size kib = Size.create(2048);
+        assertThat(kib.toString(Size.UnitKind.BINARY_UPPER_CASE), is("2 KB"));
+        assertThat(kib.toString(Size.UnitKind.BINARY_BI), is("2 KiB"));
+
+        Size mib = Size.create(5L * 1024 * 1024);
+        assertThat(mib.toString(Size.UnitKind.BINARY_UPPER_CASE), is("5 MB"));
+        assertThat(mib.toString(Size.UnitKind.BINARY_BI), is("5 MiB"));
+
+        Size gib = Size.create(3L * 1024 * 1024 * 1024);
+        assertThat(gib.toString(Size.UnitKind.BINARY_UPPER_CASE), is("3 GB"));
+        assertThat(gib.toString(Size.UnitKind.BINARY_BI), is("3 GiB"));
+
+        // a byte count with no higher binary unit that divides evenly falls back to bytes
+        Size bytes = Size.create(3);
+        assertThat(bytes.toString(Size.UnitKind.BINARY_UPPER_CASE), is("3 B"));
+        assertThat(bytes.toString(Size.UnitKind.BINARY_BI), is("3 B"));
     }
 
     @Test

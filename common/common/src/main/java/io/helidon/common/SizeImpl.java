@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,12 +64,14 @@ class SizeImpl implements Size {
             if (value.isBinary() != unitKind.isBinary()) {
                 continue;
             }
-            BigDecimal bigDecimal = to(value);
             try {
+                // to(value) itself throws when the size cannot be expressed in this unit without losing
+                // information, so it must be inside the try as well, otherwise we never reach a smaller unit
+                BigDecimal bigDecimal = to(value);
                 // try to convert without any decimal spaces
                 BigInteger bi = bigDecimal.toBigIntegerExact();
                 return bi + " " + value.unitString(unitKind);
-            } catch (Exception ignored) {
+            } catch (ArithmeticException ignored) {
                 // ignored, we cannot convert to this unit, because it cannot be correctly divided
             }
         }
