@@ -156,7 +156,7 @@ The following annotations describe a JDBC repository and its methods:
 |------------|---------|
 | `@Jdbc.Client` | Selects the JDBC client managed by the Service Registry. |
 | `@Jdbc.Statement` | Declares the SQL for a method. |
-| `@Jdbc.Execution` | Selects `AUTO`, `QUERY`, or `UPDATE` execution. |
+| `@Jdbc.Execution` | Selects `AUTO`, `QUERY`, `UPDATE`, or `BATCH` execution. |
 | `@Jdbc.GeneratedKeys` | Requests generated keys from an update. |
 | `@Jdbc.RowMapper` | Selects a row mapper service supplied by the application. |
 | `@Data.Param` | Associates a repository parameter with a named SQL marker. It belongs to the Helidon Data API, but currently applies only to repository methods using `@Jdbc.Statement`. `Data.Query` and Jakarta Persistence repository generation ignore it. |
@@ -269,12 +269,17 @@ determines case sensitivity and collation.
 
 ### Execution Types
 
-`@Jdbc.Execution` defaults to `AUTO`. Helidon infers query or update execution
+`@Jdbc.Execution` defaults to `AUTO`. Helidon infers query, update, or batch execution
 from the Java method contract and JDBC annotations, not from SQL keywords.
+
+An exact `JdbcClient.BatchResult` return selects batching when no row mapper or
+generated keys select another operation. Void batch methods require explicit `BATCH`
+selection. See [Batch Processing](batch.md) for supported inputs and return types.
 
 | Method contract | Inferred execution |
 |-----------------|--------------------|
 | `@Jdbc.GeneratedKeys` | Update that maps generated keys |
+| Exactly `JdbcClient.BatchResult` without row mapping or generated keys | Batch |
 | `void` | Update |
 | `Optional<T>` or `List<T>` | Query |
 | Supported record or scalar other than primitive `int` or `long` | Query |

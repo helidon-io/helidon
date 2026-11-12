@@ -48,8 +48,10 @@ public final class Jdbc {
      */
     public enum ExecutionType {
         /**
-         * Allows code generation to infer query or update behavior from the method
-         * signature and its JDBC annotations.
+         * Allows code generation to infer query, update, or batch behavior from the method
+         * signature and its JDBC annotations. An exact {@link JdbcClient.BatchResult} return
+         * selects batch execution unless row mapping or generated keys select another operation.
+         * Input containers do not select batch execution.
          */
         AUTO,
 
@@ -65,7 +67,9 @@ public final class Jdbc {
 
         /**
          * Executes complete parameter sets through one prepared DML batch.
-         * Repository methods must select this mode explicitly and return {@code void} or {@link JdbcClient.BatchResult}.
+         * Repository methods must use literal SQL and return {@code void} or
+         * {@link JdbcClient.BatchResult}. Methods returning {@code void} must select
+         * this mode explicitly. AUTO can infer it from an exact batch result return.
          */
         BATCH
     }

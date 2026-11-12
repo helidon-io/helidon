@@ -31,6 +31,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.data.Data;
 import io.helidon.data.jdbc.Jdbc;
 
 import org.junit.jupiter.api.Test;
@@ -94,6 +95,27 @@ class JdbcTypeHierarchyTest {
                                                 () -> JdbcTypeHierarchy.abstractMethods(repository,
                                                                                        new TypesRoundContext(Map.of())));
 
+        assertThat(failure.getMessage(),
+                   is("Inherited repository method 'find()' has conflicting JDBC or transaction annotations."));
+    }
+
+    /**
+     * Batch inference applies only to JDBC statement declarations, so Data.Query execution conflicts remain visible.
+     */
+    @Test
+    void preservesExecutionConflictsForDataQueryContracts() {
+        TypedElementInfo query = TypedElementInfo.builder(method("find", JdbcCodegenTypes.JDBC_BATCH_RESULT,
+                                                                 "select VALUE from ITEM"))
+                .annotations(List.of(Annotation.builder().typeName(TypeName.create(Data.Query.class))
+                                             .value("select VALUE from ITEM").build()))
+                .build();
+        TypedElementInfo explicit = TypedElementInfo.builder(query)
+                .addAnnotation(Annotation.builder().typeName(JdbcCodegenTypes.JDBC_EXECUTION).value("BATCH").build())
+                .build();
+        TypeInfo repository = repository("example.Repository", repository("example.LeftRepository", query),
+                                          repository("example.RightRepository", explicit));
+        CodegenException failure = assertThrows(CodegenException.class,
+                () -> JdbcTypeHierarchy.abstractMethods(repository, new TypesRoundContext(Map.of())));
         assertThat(failure.getMessage(),
                    is("Inherited repository method 'find()' has conflicting JDBC or transaction annotations."));
     }

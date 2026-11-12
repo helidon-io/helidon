@@ -227,7 +227,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          * @param value The scalar value must not be null.
          * @return This binding view is returned.
          * @throws NullPointerException The value is null.
-         * @throws IllegalArgumentException The position is out of range, already assigned, or the scalar type is unsupported.
+         * @throws IllegalArgumentException The position is out of range or already assigned, or the scalar type is unsupported.
          * @throws IllegalStateException The callback has ended or the call is on another thread.
          */
         BatchBindings bind(int index, Object value);
@@ -241,7 +241,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          * @param type The standard JDBC type must support a null without a database type name.
          * @return This binding view is returned.
          * @throws NullPointerException The type is null.
-         * @throws IllegalArgumentException The position is out of range, already assigned, or the JDBC type is unsupported.
+         * @throws IllegalArgumentException The position is out of range or already assigned, or the JDBC type is unsupported.
          * @throws IllegalStateException The callback has ended or the call is on another thread.
          */
         BatchBindings bindNull(int index, JDBCType type);
@@ -297,7 +297,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
             /**
              * Returns the input item position, starting at zero.
              *
-             * @return The zero based index equals the position in the entries list.
+             * @return The index equals the position of this entry in {@link BatchResult#entries()}.
              */
             int itemIndex();
 

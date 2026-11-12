@@ -77,12 +77,17 @@ because the table requires it, and permits a null email.
 
 ### Declarative Usage
 
-Declare `BATCH` explicitly on every batch method. The return type is either
-`JdbcClient.BatchResult` or `void`. A void method discards a successful result, while
-failures still carry available outcomes.
+With the default `AUTO` execution, a method returning exactly `JdbcClient.BatchResult`
+selects batching unless row mapping or generated keys select another operation.
+Omitting `@Jdbc.Execution` has the same effect as selecting `AUTO`. Explicit execution
+choices always retain their meaning.
 
-Helidon does not infer batching from a collection parameter or a `BatchResult` return
-type. A `void` method without explicit `BATCH` selection remains an ordinary update.
+You can also select `BATCH` explicitly and return `JdbcClient.BatchResult` or `void`.
+A void batch method requires explicit `BATCH` selection. It discards a successful
+result, while failures still carry available outcomes. Input collections, result
+wrappers such as `Optional<JdbcClient.BatchResult>`, and subtypes of `BatchResult`
+do not select batching. Both inferred and explicit batches require the supported
+inputs described below and literal SQL. Configured statements are not supported.
 
 Save the repository as `src/main/java/example/ContactBatchRepository.java`:
 
@@ -298,7 +303,7 @@ logical item combines one element from every source and the ordinary scalar cons
 | --- | --- |
 | `Iterable<T>`, including collections | Obtains one iterator and traverses it once. Elements are supported scalars or flat records. |
 | `Iterator<T>` | Consumes the supplied iterator directly. It does not promise only one `hasNext()` call per item. |
-| One-dimensional arrays and varargs | Traverse their elements in array order. Primitive arrays are supported. |
+| One-dimensional arrays and varargs | Traverse supported scalar or flat record elements in array order, including arrays of supported primitives. |
 | An ordinary scalar parameter | Repeats its value for every logical item. A declarative reference constant may be null. |
 | Non-varargs `byte[]` | Supplies one binary scalar constant. `byte...` supplies repeated byte scalars. `Iterable<byte[]>` can supply binary values as source elements. |
 
@@ -356,7 +361,7 @@ execute after a batch has claimed their statement.
 
 The binding view is valid only during its callback on the calling thread. It expires
 when the callback returns or throws. Later use or use from another thread throws
-`IllegalStateException`; null reference arguments are rejected before those checks.
+`IllegalStateException`. Null reference arguments are rejected before those checks.
 Never retain the view or use it for asynchronous work.
 
 Capture copies mutable byte arrays, SQL `Date`, `Time`, and `Timestamp` values when
@@ -394,8 +399,9 @@ promise counts beyond the driver's integer range. `totalUpdateCount()` is presen
 only when all counts are exact and their sum fits in a `long`. It never returns a
 partial sum. Empty input has exact total zero.
 
-JDBC acquisition, preparation, binding, execution, unusable driver counts, or cleanup
-failures produce a sanitized `JdbcBatchException`, a subtype of `DataException`.
+Runtime failures during JDBC acquisition, preparation, binding, execution, or cleanup
+produce a sanitized `JdbcBatchException`, a subtype of `DataException`. Invalid driver
+counts also produce this exception. An `Error` propagates under the existing cleanup rules.
 Its `result()` preserves attributable evidence for every captured item. Missing counts
 become `NOT_REPORTED`. Drivers may stop at a failed item or report later successes.
 A setup failure has no item-level evidence, while a cleanup failure after successful

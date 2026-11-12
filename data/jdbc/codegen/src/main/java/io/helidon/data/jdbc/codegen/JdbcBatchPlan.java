@@ -32,7 +32,7 @@ import io.helidon.common.types.TypedElementInfo;
 record JdbcBatchPlan(List<Source> sources, List<Value> values, JdbcSqlParameterPlan parameters) {
     static JdbcBatchPlan create(String sql, TypedElementInfo method, RoundContext context) {
         if (!method.typeName().equals(TypeNames.PRIMITIVE_VOID)
-                && !method.typeName().equals(TypeName.create("io.helidon.data.jdbc.JdbcClient.BatchResult"))) {
+                && !method.typeName().equals(JdbcCodegenTypes.JDBC_BATCH_RESULT)) {
             throw JdbcMethodPlan.failure(method, "BATCH execution must return void or JdbcClient.BatchResult.");
         }
         if (method.hasAnnotation(JdbcCodegenTypes.JDBC_GENERATED_KEYS)
@@ -71,11 +71,14 @@ record JdbcBatchPlan(List<Source> sources, List<Value> values, JdbcSqlParameterP
             }
             int sourceIndex = sources.size();
             sources.add(new Source(parameter, element, array, iterable != null));
+            if (element.generic() || element.wildcard()) {
+                throw JdbcMethodPlan.failure(method, "A batch source element must be a concrete scalar or flat record.");
+            }
             if (JdbcScalarTypes.isScalar(element)) {
                 values.add(new Value(TypedElementInfo.builder(parameter).typeName(element).build(), sourceIndex, null));
                 continue;
             }
-            if (element.generic() || element.wildcard() || element.array()) {
+            if (element.array()) {
                 throw JdbcMethodPlan.failure(method, "A batch source element must be a concrete scalar or flat record.");
             }
             TypeInfo record = context.typeInfo(element).orElse(null);
