@@ -31,8 +31,8 @@ This type is an enumeration.
 
 ## Usages
 
-- <a href="io.helidon.data.jdbc.JdbcHealthCheckFactory.md#type"><code>data.<wbr>clients.<wbr>jdbc.<wbr>health-<wbr>check.<wbr>type</code></a>
-- <a href="io.helidon.data.sql.datasource.DataSourceHealthCheckFactory.md#type"><code>data.<wbr>sources.<wbr>sql.<wbr>health-<wbr>check.<wbr>type</code></a>
+- <a href="io.helidon.data.jdbc.JdbcClientHealthConfig.md#type"><code>data.<wbr>clients.<wbr>jdbc.<wbr>health.<wbr>type</code></a>
+- <a href="io.helidon.data.sql.datasource.DataSourceHealthConfig.md#type"><code>data.<wbr>sources.<wbr>sql.<wbr>health.<wbr>type</code></a>
 
 ---
 

@@ -19,16 +19,17 @@
 <tbody>
 <tr>
 <td>
-<a id="health-check"></a>
-<a href="io.helidon.data.sql.datasource.DataSourceHealthCheckFactory.md">
-<code>health-<wbr>check</code>
+<a id="provider"></a>
+<a href="io.helidon.data.sql.datasource.ProviderConfig.md">
+<code>provider</code>
 </a>
 </td>
 <td>
+<code>Map&lt;<wbr>String,<wbr> Provider<wbr>Config&gt;<wbr> or List&lt;<wbr>Provider<wbr>Config&gt;</code>
 </td>
 <td>
 </td>
-<td>Configuration for health-check</td>
+<td>Configuration of the used provider, such as UCP</td>
 </tr>
 <tr>
 <td>
@@ -44,17 +45,17 @@
 </tr>
 <tr>
 <td>
-<a id="provider"></a>
-<a href="io.helidon.data.sql.datasource.ProviderConfig.md">
-<code>provider</code>
+<a id="health"></a>
+<a href="io.helidon.data.sql.datasource.DataSourceHealthConfig.md">
+<code>health</code>
 </a>
 </td>
 <td>
-<code>Map&lt;<wbr>String,<wbr> Provider<wbr>Config&gt;<wbr> or List&lt;<wbr>Provider<wbr>Config&gt;</code>
+<code>Data<wbr>Source<wbr>Health<wbr>Config</code>
 </td>
 <td>
 </td>
-<td>Configuration of the used provider, such as UCP</td>
+<td>Configures independent health discovery for this data source definition</td>
 </tr>
 <tr>
 <td>
