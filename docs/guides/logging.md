@@ -18,7 +18,7 @@ Util Logging (JUL) by default. You can also use Log4j or SLF4J, as described in
 
 Call `LogConfig.configureRuntime()` early in an SE application's `main` method,
 before other Helidon code logs messages. Logging configuration runs once during
-class initialization; later calls do not reload it. 
+class initialization; later calls do not reload it.
 
 ## Customizing Java Util Logging
 
@@ -34,8 +34,8 @@ java.util.logging.SimpleFormatter.format=%1$tY.%1$tm.%1$td %1$tH:%1$tM:%1$tS.%1$
 .level=FINE
 ```
 
-`HelidonConsoleHandler` writes to standard output. It defaults its handler level
-to `ALL`, leaving level filtering to loggers, and uses `HelidonFormatter` by
+`HelidonConsoleHandler` writes to standard output. Its handler level defaults
+to `ALL`, leaving level filtering to loggers, and it uses `HelidonFormatter` by
 default. `HelidonFormatter` supports JUL `SimpleFormatter` formats, MDC tokens
 such as `%X{name}`, and `!thread!` for the current thread.
 
@@ -59,9 +59,9 @@ io.helidon.logging.jul.HelidonJsonFormatter.fields=ts:%1$tQ,level:%4$s,logger:%3
 
 The `fields` property is a comma-separated list of `name:value-format` pairs.
 The `value-format` can use JUL `SimpleFormatter` arguments, MDC tokens such as
-`%X{trace_id}`, and Helidon’s `!thread!` token. If `fields` is absent, it is derived
-from the value of `java.util.logging.SimpleFormatter.format` if that property is set;
-otherwise it uses a built-in JSON format.
+`%X{trace_id}`, and Helidon’s `!thread!` token. If `fields` is absent, the formatter
+derives fields from `java.util.logging.SimpleFormatter.format` when that property
+is set; otherwise, it uses its built-in JSON format.
 
 ## Using Log4j or SLF4J
 
@@ -148,7 +148,7 @@ configure the logger's output format to display them.
 ### Values Provided by Helidon
 
 When Helidon tracing is present, the `trace_id` MDC key supplies the current
-span's trace ID, or `none` when no span is active. OpenTelemetry integration
+span's trace ID or `none` when no span is active. OpenTelemetry integration
 also supplies `span_id` and `baggage` when its global configuration is enabled.
 
 ### Setting Values
