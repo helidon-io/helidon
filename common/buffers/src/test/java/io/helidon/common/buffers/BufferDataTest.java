@@ -18,8 +18,6 @@ package io.helidon.common.buffers;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.concurrent.atomic.AtomicReference;
@@ -81,23 +79,13 @@ class BufferDataTest {
     @Test
     void growingBufferWriteDoesNotExposeBackingArray() {
         AtomicReference<byte[]> retained = new AtomicReference<>();
-        BufferData source = (BufferData) Proxy.newProxyInstance(BufferData.class.getClassLoader(),
-                                                                 new Class<?>[] {BufferData.class},
-                                                                 (proxy, method, arguments) -> {
-                                                                     if (method.isDefault()) {
-                                                                         return InvocationHandler.invokeDefault(proxy, method, arguments);
-                                                                     }
-                                                                     return switch (method.getName()) {
-                                                                         case "available" -> 1;
-                                                                         case "read" -> {
-                                                                             byte[] target = (byte[]) arguments[0];
-                                                                             retained.set(target);
-                                                                             target[0] = 1;
-                                                                             yield 1;
-                                                                         }
-                                                                         default -> throw new IllegalStateException(method.toString());
-                                                                     };
-                                                                 });
+        BufferData source = new TestBufferData(BufferData.create(new byte[] {1})) {
+            @Override
+            public int read(byte[] bytes, int position, int length) {
+                retained.set(bytes);
+                return super.read(bytes, position, length);
+            }
+        };
         BufferData buffer = BufferData.growing(256);
 
         buffer.write(source);

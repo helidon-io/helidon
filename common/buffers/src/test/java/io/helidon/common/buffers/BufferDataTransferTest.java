@@ -16,8 +16,6 @@
 
 package io.helidon.common.buffers;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -108,15 +106,14 @@ class BufferDataTransferTest {
         AtomicReference<byte[]> retained = new AtomicReference<>();
         AtomicInteger calls = new AtomicInteger();
         BufferData backing = BufferData.create(new byte[] {1, 2, 3});
-        BufferData source = customBuffer((_, method, arguments) -> {
-            if (method.getName().equals("read")) {
-                byte[] target = (byte[]) arguments[0];
-                retained.set(target);
+        BufferData source = new TestBufferData(backing) {
+            @Override
+            public int read(byte[] bytes, int position, int length) {
+                retained.set(bytes);
                 calls.incrementAndGet();
-                return backing.read(target, (int) arguments[1], Math.min(1, (int) arguments[2]));
+                return super.read(bytes, position, Math.min(1, length));
             }
-            throw new IllegalStateException(method.toString());
-        });
+        };
         byte[] target = {9, 9, 9, 9};
 
         int read = source.readInto(target, 1, 3);
@@ -132,15 +129,14 @@ class BufferDataTransferTest {
     @Test
     void defaultWriteFromIsolatesRetainedSourceRange() {
         AtomicReference<byte[]> retained = new AtomicReference<>();
-        BufferData target = customBuffer((_, method, arguments) -> {
-            if (method.getName().equals("write")) {
-                retained.set((byte[]) arguments[0]);
-                assertThat(arguments[1], is(0));
-                assertThat(arguments[2], is(2));
-                return null;
+        BufferData target = new TestBufferData(BufferData.empty()) {
+            @Override
+            public void write(byte[] bytes, int offset, int length) {
+                retained.set(bytes);
+                assertThat(offset, is(0));
+                assertThat(length, is(2));
             }
-            throw new IllegalStateException(method.toString());
-        });
+        };
         byte[] source = {9, 1, 2, 9};
 
         target.writeFrom(source, 1, 2);
@@ -255,13 +251,12 @@ class BufferDataTransferTest {
     @Test
     void writeFromSharedIsolatesArbitraryTarget() {
         AtomicReference<byte[]> retained = new AtomicReference<>();
-        BufferData target = customBuffer((_, method, arguments) -> {
-            if (method.getName().equals("write")) {
-                retained.set((byte[]) arguments[0]);
-                return null;
+        BufferData target = new TestBufferData(BufferData.empty()) {
+            @Override
+            public void write(byte[] bytes, int offset, int length) {
+                retained.set(bytes);
             }
-            throw new IllegalStateException(method.toString());
-        });
+        };
         byte[] shared = {1, 2};
 
         BufferData.writeFromShared(target, shared);
@@ -287,14 +282,4 @@ class BufferDataTransferTest {
         assertThat(target.readBytes(), is(new byte[] {1, 2}));
     }
 
-    private static BufferData customBuffer(InvocationHandler handler) {
-        return (BufferData) Proxy.newProxyInstance(BufferData.class.getClassLoader(),
-                                                   new Class<?>[] {BufferData.class},
-                                                   (proxy, method, arguments) -> {
-                                                       if (method.isDefault()) {
-                                                           return InvocationHandler.invokeDefault(proxy, method, arguments);
-                                                       }
-                                                       return handler.invoke(proxy, method, arguments);
-                                                   });
-    }
 }
