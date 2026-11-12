@@ -127,10 +127,8 @@ class OpenApiDocumentComposerTest {
                           description: Static response header.
                           required: true
                           deprecated: true
-                          allowEmptyValue: true
                           style: simple
                           explode: false
-                          allowReserved: true
                           schema:
                             type: string
                           example: static-value

@@ -327,6 +327,7 @@ final class OpenApiStructuralValidator {
         }
         case HEADER -> {
             validateSchemaOrContent(node);
+            validateHeader(node);
             validateExampleFields(node);
         }
         case REQUEST_BODY -> requireObject(node, "content");
@@ -405,6 +406,62 @@ final class OpenApiStructuralValidator {
         }
         if (!"querystring".equals(location)) {
             validateSchemaOrContent(node);
+            validateSerialization(node, location);
+        }
+    }
+
+    private void validateHeader(OpenApiDocumentWalker.Node node) {
+        for (String field : List.of("name", "in", "allowEmptyValue")) {
+            if (node.value().containsKey(field)) {
+                throw new IllegalStateException(description(node) + " must not specify " + field);
+            }
+        }
+        if (!dialect.version().startsWith("3.2") && node.value().containsKey("allowReserved")) {
+            throw new IllegalStateException(description(node) + " must not specify allowReserved");
+        }
+        validateSerialization(node, "header");
+    }
+
+    private void validateSerialization(OpenApiDocumentWalker.Node node, String location) {
+        if (!node.value().containsKey("schema")) {
+            return;
+        }
+        String defaultStyle = "query".equals(location) || "cookie".equals(location) ? "form" : "simple";
+        String style = (String) node.value().getOrDefault("style", defaultStyle);
+        boolean supportedStyle = switch (location) {
+            case "path" -> Set.of("matrix", "label", "simple").contains(style);
+            case "query" -> Set.of("form", "spaceDelimited", "pipeDelimited", "deepObject").contains(style);
+            case "header" -> "simple".equals(style);
+            case "cookie" -> "form".equals(style) || dialect.version().startsWith("3.2") && "cookie".equals(style);
+            default -> false;
+        };
+        if (!supportedStyle) {
+            throw new IllegalStateException(description(node) + " style " + style + " is not supported for " + location);
+        }
+        if (!dialect.version().startsWith("3.2")
+                || !(node.value().get("schema") instanceof Map<?, ?> schema)) {
+            return;
+        }
+        // Only classify explicit types. Resolving Schema Object references requires JSON Schema scope and semantics.
+        Object type = schema.get("type");
+        List<?> types = switch (type) {
+            case String string -> List.of(string);
+            case List<?> list -> list;
+            case null, default -> List.of();
+        };
+        Set<String> supportedTypes = switch (style) {
+            case "deepObject" -> Set.of("object");
+            case "spaceDelimited", "pipeDelimited" -> Set.of("array", "object");
+            default -> Set.of();
+        };
+        if (!supportedTypes.isEmpty() && !types.isEmpty() && types.stream().noneMatch(supportedTypes::contains)) {
+            throw new IllegalStateException(description(node) + " style " + style + " does not support schema type " + type);
+        }
+        if ("cookie".equals(location)
+                && Boolean.FALSE.equals(node.value().get("explode"))
+                && types.stream().anyMatch(it -> "array".equals(it) || "object".equals(it))) {
+            throw new IllegalStateException(description(node) + " cookie parameter cannot use explode: false with schema type "
+                                                    + type);
         }
     }
 
