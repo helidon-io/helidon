@@ -16,6 +16,7 @@
 
 package io.helidon.common.buffers;
 
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -150,7 +151,10 @@ class FixedBufferDataTest {
         AtomicReference<byte[]> retained = new AtomicReference<>();
         BufferData source = (BufferData) Proxy.newProxyInstance(BufferData.class.getClassLoader(),
                                                                 new Class<?>[] {BufferData.class},
-                                                                (_, method, arguments) -> {
+                                                                (proxy, method, arguments) -> {
+                                                                    if (method.isDefault()) {
+                                                                        return InvocationHandler.invokeDefault(proxy, method, arguments);
+                                                                    }
                                                                     return switch (method.getName()) {
                                                                         case "read" -> {
                                                                             byte[] target = (byte[]) arguments[0];

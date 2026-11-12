@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.Objects;
 
 class FixedBufferData implements BufferData {
     private final byte[] bytes;
@@ -111,10 +112,16 @@ class FixedBufferData implements BufferData {
 
     @Override
     public int read(byte[] bytes, int position, int length) {
+        return readInto(bytes, position, length);
+    }
+
+    @Override
+    public int readInto(byte[] target, int offset, int length) {
+        Objects.requireNonNull(target, "target");
         int available = this.writePosition - readPosition;
         int toRead = Math.min(length, available);
 
-        System.arraycopy(this.bytes, readPosition, bytes, position, toRead);
+        System.arraycopy(this.bytes, readPosition, target, offset, toRead);
 
         readPosition += toRead;
         return toRead;
@@ -149,7 +156,13 @@ class FixedBufferData implements BufferData {
     }
 
     public void write(byte[] bytes, int offset, int length) {
-        System.arraycopy(bytes, offset, this.bytes, writePosition, length);
+        writeFrom(bytes, offset, length);
+    }
+
+    @Override
+    public void writeFrom(byte[] source, int offset, int length) {
+        Objects.requireNonNull(source, "source");
+        System.arraycopy(source, offset, this.bytes, writePosition, length);
         writePosition += length;
     }
 
@@ -163,7 +176,7 @@ class FixedBufferData implements BufferData {
         if (length < 0) {
             throw new NegativeArraySizeException(Integer.toString(length));
         }
-        int read = readSource(toWrite, length);
+        int read = toWrite.readInto(bytes, writePosition, length);
         writePosition += read;
     }
 
@@ -238,19 +251,5 @@ class FixedBufferData implements BufferData {
     @Override
     public String toString() {
         return "fixed: l=" + length + ", r=" + readPosition + ", w=" + writePosition;
-    }
-
-    private int readSource(BufferData source, int length) {
-        Class<?> sourceType = source.getClass();
-        if (sourceType == FixedBufferData.class
-                || sourceType == GrowingBufferData.class
-                || sourceType == ReadOnlyArrayData.class) {
-            return source.read(bytes, writePosition, length);
-        }
-
-        byte[] buffer = new byte[length];
-        int read = source.read(buffer);
-        System.arraycopy(buffer, 0, bytes, writePosition, read);
-        return read;
     }
 }

@@ -18,6 +18,7 @@ package io.helidon.common.buffers;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.HexFormat;
@@ -82,7 +83,10 @@ class BufferDataTest {
         AtomicReference<byte[]> retained = new AtomicReference<>();
         BufferData source = (BufferData) Proxy.newProxyInstance(BufferData.class.getClassLoader(),
                                                                  new Class<?>[] {BufferData.class},
-                                                                 (_, method, arguments) -> {
+                                                                 (proxy, method, arguments) -> {
+                                                                     if (method.isDefault()) {
+                                                                         return InvocationHandler.invokeDefault(proxy, method, arguments);
+                                                                     }
                                                                      return switch (method.getName()) {
                                                                          case "available" -> 1;
                                                                          case "read" -> {
