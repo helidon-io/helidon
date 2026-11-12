@@ -167,10 +167,10 @@ public class ClientUriJmhTest {
 
     @State(Scope.Thread)
     public static class PathAppendState {
-        @Param({"/base", "/a%2fb;v=1"})
+        @Param({"", "/base", "/a%2fb;v=1"})
         public String basePath;
 
-        @Param({"child", "item:revision", "child name:version%#?"})
+        @Param({"child", "item:revision", "child name:version%#?", "http://localhost:9876/private"})
         public String path;
 
         private ClientUri baseUri;
@@ -178,6 +178,9 @@ public class ClientUriJmhTest {
         @Setup
         public void setup() {
             baseUri = ClientUri.create(URI.create("https://" + HOST + basePath + "?b=2&a=1&b=3&flag&&"));
+            if (basePath.isEmpty()) {
+                baseUri.path("");
+            }
         }
     }
 

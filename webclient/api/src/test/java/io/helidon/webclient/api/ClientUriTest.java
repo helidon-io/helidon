@@ -121,6 +121,49 @@ class ClientUriTest {
         assertThat(uri.pathWithQueryAndFragment(), is(expectedPath + "?flag&&a=1&a=2"));
     }
 
+    @ParameterizedTest
+    @CsvSource({
+            "child, /child",
+            "/child, /child",
+            "item:revision, /item:revision",
+            "http://localhost:9876/private, /http://localhost:9876/private",
+            "https://other.example/private?q=a#b, /https://other.example/private%3Fq=a%23b",
+            "child name:version%#?, /child%20name:version%25%23%3F"
+    })
+    void keepsAppendsAgainstEmptyBaseInPath(String appendedPath, String expectedPath) {
+        ClientUri uri = ClientUri.create(URI.create("https://example.com?flag&&a=1&a=2")).path("");
+        uri.resolvePath(appendedPath);
+
+        assertThat(uri.requestTargetPath().rawPath(), is(expectedPath));
+        assertThat(uri.pathWithQueryAndFragment(), is(expectedPath + "?flag&&a=1&a=2"));
+        assertThat(uri.toUri().getHost(), is("example.com"));
+        assertThat(uri.toUri().getRawPath(), is(expectedPath));
+    }
+
+    @Test
+    void keepsAppendAgainstEmptyUriInfoBaseInPath() {
+        UriInfo baseUri = UriInfo.builder()
+                .scheme("https")
+                .host("example.com")
+                .path(UriPath.create(""))
+                .query(UriQuery.create("flag&&a=1&a=2"))
+                .build();
+        ClientUri uri = ClientUri.create(baseUri).resolvePath("http://localhost:9876/private");
+
+        assertThat(uri.requestTargetPath().rawPath(), is("/http://localhost:9876/private"));
+        assertThat(uri.pathWithQueryAndFragment(), is("/http://localhost:9876/private?flag&&a=1&a=2"));
+        assertThat(uri.toUri().getHost(), is("example.com"));
+    }
+
+    @Test
+    void emptyAppendPreservesEmptyBasePath() {
+        ClientUri uri = ClientUri.create(URI.create("https://example.com?flag&&a=1&a=2")).path("");
+        uri.resolvePath("");
+
+        assertThat(uri.path().rawPath(), is(""));
+        assertThat(uri.pathWithQueryAndFragment(), is("/?flag&&a=1&a=2"));
+    }
+
     @Test
     void preservesUriInfoRawComponents() {
         UriInfo baseUri = UriInfo.builder()
