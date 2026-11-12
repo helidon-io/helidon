@@ -127,15 +127,7 @@ public interface BufferData {
     static void writeFromShared(BufferData target, byte[] bytes) {
         Objects.requireNonNull(target, "target");
         Objects.requireNonNull(bytes, "bytes");
-        if (target.getClass() == FixedBufferData.class) {
-            ((FixedBufferData) target).write(bytes, 0, bytes.length);
-        } else if (target.getClass() == GrowingBufferData.class) {
-            ((GrowingBufferData) target).write(bytes, 0, bytes.length);
-        } else {
-            for (byte value : bytes) {
-                target.write(value);
-            }
-        }
+        target.writeFrom(bytes, 0, bytes.length);
     }
 
     /**
@@ -308,6 +300,27 @@ public interface BufferData {
      * @return actual number of bytes written
      */
     int read(byte[] bytes, int position, int length);
+
+    /**
+     * Read up to {@code length} bytes from this buffer into the target array, consuming the actual number of bytes read.
+     * A read may return fewer bytes than requested. Only the actual transferred range must fit in the target array.
+     * Implementations must not retain the target array or expose it to other code.
+     * If the target overlaps this buffer's storage, the result must be the same as reading into a separate array and
+     * then copying the bytes read into the target.
+     * If this method throws, the buffer and target array may already have changed.
+     *
+     * @param target array to write to
+     * @param offset offset in the target array
+     * @param length maximum number of bytes to read
+     * @return actual number of bytes read and consumed
+     */
+    default int readInto(byte[] target, int offset, int length) {
+        Objects.requireNonNull(target, "target");
+        byte[] copy = new byte[length];
+        int read = read(copy);
+        System.arraycopy(copy, 0, target, offset, read);
+        return read;
+    }
 
     /**
      * Do an operation on each byte in this buffer.
@@ -532,6 +545,25 @@ public interface BufferData {
      * @param length number of bytes to write (from the offset)
      */
     void write(byte[] bytes, int offset, int length);
+
+    /**
+     * Write bytes from the source array to this buffer.
+     * Implementations must not retain the source array or expose it to other code.
+     * If the source overlaps this buffer's storage, the result must be the same as copying the source range into a
+     * separate array and then writing that copy to this buffer.
+     * If this method throws, the buffer may already have changed.
+     *
+     * @param source array to read from
+     * @param offset offset in the source array
+     * @param length number of bytes to write
+     */
+    default void writeFrom(byte[] source, int offset, int length) {
+        Objects.requireNonNull(source, "source");
+        Objects.checkFromIndexSize(offset, length, source.length);
+        byte[] copy = new byte[length];
+        System.arraycopy(source, offset, copy, 0, length);
+        write(copy, 0, length);
+    }
 
     /**
      * Write the provided buffer to this buffer.

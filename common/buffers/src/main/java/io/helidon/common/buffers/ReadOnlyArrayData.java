@@ -98,9 +98,15 @@ class ReadOnlyArrayData extends ReadOnlyBufferData {
 
     @Override
     public int read(byte[] bytes, int position, int length) {
+        return readInto(bytes, position, length);
+    }
+
+    @Override
+    public int readInto(byte[] target, int offset, int length) {
+        Objects.requireNonNull(target, "target");
         int available = this.length - this.position;
         int toRead = Math.min(length, available);
-        System.arraycopy(this.bytes, this.offset + this.position, bytes, position, toRead);
+        System.arraycopy(this.bytes, this.offset + this.position, target, offset, toRead);
         this.position += toRead;
         return toRead;
 

@@ -23,6 +23,7 @@ import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.Objects;
 
 class GrowingBufferData implements BufferData {
     private byte[] bytes;
@@ -101,10 +102,16 @@ class GrowingBufferData implements BufferData {
     }
 
     public int read(byte[] bytes, int position, int length) {
+        return readInto(bytes, position, length);
+    }
+
+    @Override
+    public int readInto(byte[] target, int offset, int length) {
+        Objects.requireNonNull(target, "target");
         int available = writePosition - readPosition;
         int toRead = Math.min(length, available);
 
-        System.arraycopy(this.bytes, readPosition, bytes, position, toRead);
+        System.arraycopy(this.bytes, readPosition, target, offset, toRead);
 
         readPosition += toRead;
         return toRead;
@@ -142,8 +149,14 @@ class GrowingBufferData implements BufferData {
 
     @Override
     public void write(byte[] bytes, int offset, int length) {
+        writeFrom(bytes, offset, length);
+    }
+
+    @Override
+    public void writeFrom(byte[] source, int offset, int length) {
+        Objects.requireNonNull(source, "source");
         ensureSize(length);
-        System.arraycopy(bytes, offset, this.bytes, writePosition, length);
+        System.arraycopy(source, offset, this.bytes, writePosition, length);
         writePosition += length;
         this.length = Math.max(this.length, writePosition);
     }
@@ -156,7 +169,7 @@ class GrowingBufferData implements BufferData {
     @Override
     public void write(BufferData toWrite, int length) {
         ensureSize(length);
-        int read = readSource(toWrite, length);
+        int read = toWrite.readInto(bytes, writePosition, length);
         writePosition += read;
         this.length = Math.max(this.length, writePosition);
     }
@@ -233,20 +246,6 @@ class GrowingBufferData implements BufferData {
 
     byte[] bytes() {
         return Arrays.copyOfRange(bytes, 0, length);
-    }
-
-    private int readSource(BufferData source, int length) {
-        Class<?> sourceType = source.getClass();
-        if (sourceType == FixedBufferData.class
-                || sourceType == GrowingBufferData.class
-                || sourceType == ReadOnlyArrayData.class) {
-            return source.read(bytes, writePosition, length);
-        }
-
-        byte[] buffer = new byte[length];
-        int read = source.read(buffer);
-        System.arraycopy(buffer, 0, bytes, writePosition, read);
-        return read;
     }
 
     private void ensureSize(int i) {
