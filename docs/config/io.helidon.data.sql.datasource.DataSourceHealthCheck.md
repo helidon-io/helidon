@@ -72,10 +72,6 @@ Configures a health check over an existing data source without duplicating conne
 
 
 
-## Dependent Types
-
-- [io.<wbr>helidon.<wbr>data.<wbr>sql.<wbr>datasource.<wbr>Data<wbr>Source<wbr>Health<wbr>Check<wbr>Factory](io.helidon.data.sql.datasource.DataSourceHealthCheckFactory.md)
-
 ---
 
 See the [manifest](manifest.md) for all available types.
