@@ -277,7 +277,7 @@ class JdbcBatchTest {
         verify(source).getConnection();
     }
     /**
-     * A caught direct batch failure leaves physical commit and connection release with the transaction owner.
+     * The transaction owner controls commit and connection release after a caught batch failure.
      */
     @Test
     void caughtDirectFailureLeavesTransactionCompletionWithItsOwner() throws Exception {
@@ -304,7 +304,8 @@ class JdbcBatchTest {
     }
 
     /**
-     * A failure observed by a joined boundary forces outer rollback while preserving batch evidence through wrapping.
+     * A failure escaping a joined transaction marks the outer transaction for rollback.
+     * Transaction wrapping retains the batch outcomes.
      */
     @Test
     void escapingJoinedFailureRollsBackAndRetainsBatchEvidence() throws Exception {
