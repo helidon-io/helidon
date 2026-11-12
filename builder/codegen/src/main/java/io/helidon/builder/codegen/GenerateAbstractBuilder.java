@@ -338,7 +338,6 @@ final class GenerateAbstractBuilder {
         Javadoc javadoc = Javadoc.builder()
                 .addLine("Update builder from configuration (node of this type).")
                 .addLine("If a value is present in configuration, it would override currently configured values.")
-                .addThrows("java.lang.NullPointerException", List.of("The configuration is null."))
                 .build();
 
         Method.Builder builder = Method.builder()
@@ -393,17 +392,12 @@ final class GenerateAbstractBuilder {
         Method.Builder methodBuilder = Method.builder()
                 .name("from")
                 .returnType(TypeArgument.create("BUILDER"))
-                .javadoc(Javadoc.builder()
-                                 .addThrows("java.lang.NullPointerException", List.of("The prototype is null."))
-                                 .build())
                 .description("Update this builder from an existing prototype instance. "
                                      + "This method disables automatic service discovery.")
                 .addParameter(param -> param.name("prototype")
                         .type(prototype)
                         .description("existing prototype to update this builder from"))
-                .returnType(TypeArgument.create("BUILDER"), "updated builder instance")
-                .addContent(Objects.class)
-                .addContentLine(".requireNonNull(prototype, \"The prototype must not be null.\");");
+                .returnType(TypeArgument.create("BUILDER"), "updated builder instance");
 
         prototypeInfo.superPrototype()
                 .ifPresent(it -> methodBuilder.addContentLine("super.from(prototype);"));
@@ -430,16 +424,11 @@ final class GenerateAbstractBuilder {
                 .build();
         Method.Builder methodBuilder = Method.builder()
                 .name("from")
-                .javadoc(Javadoc.builder()
-                                 .addThrows("java.lang.NullPointerException", List.of("The builder is null."))
-                                 .build())
                 .addParameter(param -> param.name("builder")
                         .type(parameterType)
                         .description("existing builder prototype to update this builder from"))
                 .returnType(TypeArgument.create("BUILDER"), "updated builder instance")
-                .description("Update this builder from an existing prototype builder instance.")
-                .addContent(Objects.class)
-                .addContentLine(".requireNonNull(builder, \"The builder must not be null.\");");
+                .description("Update this builder from an existing prototype builder instance.");
 
         prototypeInfo.superPrototype()
                 .ifPresent(it -> methodBuilder.addContentLine("super.from(builder);"));
