@@ -155,17 +155,15 @@ class FixedBufferData implements BufferData {
 
     @Override
     public void write(BufferData toWrite) {
-        byte[] buffer = new byte[length - writePosition];
-        int read = toWrite.read(buffer);
-        System.arraycopy(buffer, 0, this.bytes, writePosition, read);
-        writePosition += read;
+        write(toWrite, length - writePosition);
     }
 
     @Override
     public void write(BufferData toWrite, int length) {
-        byte[] buffer = new byte[length];
-        int read = toWrite.read(buffer);
-        System.arraycopy(buffer, 0, this.bytes, writePosition, read);
+        if (length < 0) {
+            throw new NegativeArraySizeException(Integer.toString(length));
+        }
+        int read = readSource(toWrite, length);
         writePosition += read;
     }
 
@@ -240,5 +238,19 @@ class FixedBufferData implements BufferData {
     @Override
     public String toString() {
         return "fixed: l=" + length + ", r=" + readPosition + ", w=" + writePosition;
+    }
+
+    private int readSource(BufferData source, int length) {
+        Class<?> sourceType = source.getClass();
+        if (sourceType == FixedBufferData.class
+                || sourceType == GrowingBufferData.class
+                || sourceType == ReadOnlyArrayData.class) {
+            return source.read(bytes, writePosition, length);
+        }
+
+        byte[] buffer = new byte[length];
+        int read = source.read(buffer);
+        System.arraycopy(buffer, 0, bytes, writePosition, read);
+        return read;
     }
 }
