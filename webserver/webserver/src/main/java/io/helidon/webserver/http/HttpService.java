@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http;
 
+import io.helidon.common.Api;
 import io.helidon.webserver.ServerLifecycle;
 
 /**
@@ -25,6 +26,7 @@ import io.helidon.webserver.ServerLifecycle;
  * {@link HttpRouting.Builder#register(java.util.function.Supplier)} methods.
  */
 @FunctionalInterface
+@Api.Stable
 public interface HttpService extends ServerLifecycle {
 
     /**

@@ -21,6 +21,7 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
 /**
@@ -29,6 +30,7 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
 @Prototype.Blueprint(decorator = StuckThreadDetectionConfigSupport.BuilderDecorator.class)
 @Prototype.Configured(value = StuckThreadDetectionFeature.FEATURE_ID, root = false)
 @Prototype.Provides(ServerFeatureProvider.class)
+@Api.Stable
 interface StuckThreadDetectionConfigBlueprint extends Prototype.Factory<StuckThreadDetectionFeature> {
     /**
      * Whether this feature is enabled.

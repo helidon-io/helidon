@@ -19,6 +19,7 @@ import java.io.OutputStream;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
@@ -27,6 +28,7 @@ import io.helidon.webserver.http.ServerResponse;
  * A context for {@link io.helidon.webserver.http.spi.SinkProvider}s supplied
  * at creation time.
  */
+@Api.Stable
 public interface SinkProviderContext {
 
     /**

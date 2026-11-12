@@ -27,6 +27,7 @@ import io.helidon.http.RoutedPath;
 /**
  * Routing request.
  */
+@Api.Stable
 public interface RoutingRequest extends ServerRequest {
     /**
      * Update path of this request. For internal use only to Helidon.

@@ -19,6 +19,7 @@ package io.helidon.webserver.http1;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.parameters.Parameters;
@@ -38,6 +39,7 @@ import io.helidon.webserver.http.DirectTransportRequest;
 /**
  * HTTP 1 prologue parsing support.
  */
+@Api.Internal
 public final class Http1Prologue {
     /*
     The string HTTP/1.1 (as used in protocol version in prologue's third section)

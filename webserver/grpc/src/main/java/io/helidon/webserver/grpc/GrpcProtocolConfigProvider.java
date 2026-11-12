@@ -27,6 +27,7 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
 /**
  * Implementation of a service provider interface to create grpc protocol configuration.
  */
+@Api.Internal
 public class GrpcProtocolConfigProvider implements ProtocolConfigProvider<GrpcConfig> {
     private static final Config DISCOVERY_DISABLED_CONFIG = Config.just(ConfigSources.create(
             Map.of("grpc-services-discover-services", "false")));

@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.webserver.http.ServerRequest;
 
 /**
@@ -29,6 +30,7 @@ import io.helidon.webserver.http.ServerRequest;
  * the {@link ProxyProtocolData} interface. The object returned from {@link ServerRequest#proxyProtocolData()} will
  * additionally implement this interface when the proxy version used is the V2 (binary) version.
  */
+@Api.Stable
 public interface ProxyProtocolV2Data extends ProxyProtocolData {
     /**
      * The command kind, indicating whether the connection was established on purpose by the

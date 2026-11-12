@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+import io.helidon.common.Api;
 import io.helidon.common.parameters.Parameters;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriPathSegment;
@@ -33,6 +34,7 @@ import io.helidon.webserver.WebServer;
 /**
  * Handler of HTTP filters.
  */
+@Api.Internal
 public final class Filters implements ServerLifecycle {
     private static final System.Logger LOGGER = System.getLogger(Filters.class.getName());
     private final ErrorHandlers errorHandlers;

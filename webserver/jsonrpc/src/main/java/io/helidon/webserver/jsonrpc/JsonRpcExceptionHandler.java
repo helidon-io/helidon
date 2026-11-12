@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.webserver.jsonrpc;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.jsonrpc.core.JsonRpcError;
 import io.helidon.webserver.ServerLifecycle;
 
@@ -25,6 +26,7 @@ import io.helidon.webserver.ServerLifecycle;
  * handlers to {@code JsonRpcError}s.
  */
 @FunctionalInterface
+@Api.Preview
 public interface JsonRpcExceptionHandler extends ServerLifecycle {
 
     /**

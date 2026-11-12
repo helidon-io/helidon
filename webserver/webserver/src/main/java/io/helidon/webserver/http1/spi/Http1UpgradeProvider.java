@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.http1.spi;
 
+import io.helidon.common.Api;
 import io.helidon.webserver.ProtocolConfigs;
 import io.helidon.webserver.spi.ProtocolConfig;
 
@@ -27,6 +28,7 @@ import io.helidon.webserver.spi.ProtocolConfig;
  *
  * @param <T> type of the protocol configuration of this upgrade provider
  */
+@Api.Internal
 public interface Http1UpgradeProvider<T extends ProtocolConfig> {
 
     /**

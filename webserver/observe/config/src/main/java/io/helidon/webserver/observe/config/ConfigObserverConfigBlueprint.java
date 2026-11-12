@@ -20,6 +20,7 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.webserver.observe.ObserverConfigBase;
 import io.helidon.webserver.observe.spi.ObserveProvider;
 
@@ -30,6 +31,7 @@ import io.helidon.webserver.observe.spi.ObserveProvider;
 @Prototype.Configured(root = false, value = "config")
 @Prototype.Provides(ObserveProvider.class)
 @Prototype.IncludeDefaultMethods
+@Api.Stable
 interface ConfigObserverConfigBlueprint extends ObserverConfigBase, Prototype.Factory<ConfigObserver> {
     /**
      * Endpoint this observer is available on.

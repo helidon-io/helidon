@@ -26,6 +26,7 @@ import java.util.Objects;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.config.Config;
 import io.helidon.grpc.core.InterceptorWeights;
@@ -55,6 +56,7 @@ import io.grpc.Status;
  * class to configure security for services or methods.
  */
 @Weight(InterceptorWeights.AUTHENTICATION)
+@Api.Preview
 public final class GrpcSecurity implements ServerInterceptor, GrpcServerService, GrpcServiceDescriptor.Configurer {
     static final String TYPE = "security";
     private static final String TOP_LEVEL_CONFIG_KEY = "grpc.grpc-services.security";

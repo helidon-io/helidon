@@ -18,6 +18,7 @@ package io.helidon.webserver.websocket;
 
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
@@ -28,6 +29,7 @@ import io.helidon.websocket.WsListener;
  * WebSocket route. Result of routing in
  * {@link WsRouting#findRoute(io.helidon.http.HttpPrologue)}.
  */
+@Api.Stable
 public class WsRoute implements Route {
     private final PathMatcher pathMatcher;
     private final Supplier<? extends WsListener> listenerSupplier;

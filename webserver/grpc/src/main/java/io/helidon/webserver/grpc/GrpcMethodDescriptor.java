@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.grpc.core.InterceptorWeights;
 import io.helidon.grpc.core.MarshallerSupplier;
 import io.helidon.grpc.core.WeightedBag;
@@ -37,6 +38,7 @@ import io.grpc.ServerInterceptor;
  * @param <ReqT> request type
  * @param <ResT> response type
  */
+@Api.Preview
 public class GrpcMethodDescriptor<ReqT, ResT> {
     private final String name;
     private final MethodDescriptor<ReqT, ResT> descriptor;

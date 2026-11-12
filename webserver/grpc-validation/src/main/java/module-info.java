@@ -18,6 +18,7 @@
  * Helidon WebServer gRPC Validation Support.
  */
 module io.helidon.webserver.grpc.validation {
+    requires io.helidon.common;
     requires static io.helidon.config.metadata;
 
     requires io.helidon.grpc.core;

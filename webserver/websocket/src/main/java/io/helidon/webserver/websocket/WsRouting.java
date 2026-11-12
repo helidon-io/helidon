@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.NotFoundException;
 import io.helidon.http.PathMatchers;
@@ -30,6 +31,7 @@ import io.helidon.websocket.WsListener;
 /**
  * WebSocket specific routing.
  */
+@Api.Stable
 public class WsRouting implements Routing {
     private static final WsRouting EMPTY = WsRouting.builder().build();
     private final List<WsRoute> routes;

@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.ParserHelper;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataListener;
@@ -95,6 +96,7 @@ import static java.lang.System.Logger.Level.WARNING;
 /**
  * HTTP/1.1 server connection.
  */
+@Api.Internal
 public class Http1Connection implements ServerConnection, InterruptableTask<Void> {
     static final byte[] CONTINUE_100 = "HTTP/1.1 100 Continue\r\n\r\n".getBytes(StandardCharsets.UTF_8);
     private static final System.Logger LOGGER = System.getLogger(Http1Connection.class.getName());

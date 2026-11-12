@@ -23,6 +23,7 @@ import io.helidon.webserver.grpc.spi.GrpcServerServiceProvider;
 /**
  * Provider for {@link io.helidon.webserver.grpc.tracing.GrpcTracingService}.
  */
+@Api.Internal
 public class GrpcTracingServiceProvider implements GrpcServerServiceProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

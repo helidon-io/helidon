@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.SocketWriterException;
@@ -45,6 +46,7 @@ import io.helidon.webserver.spi.ServerConnection;
 /**
  * HTTP/1.1 to HTTP/2 connection upgrade.
  */
+@Api.Internal
 public class Http2Upgrader implements Http1Upgrader {
     private static final byte[] SWITCHING_PROTOCOLS_BYTES = (
             "HTTP/1.1 101 Switching Protocols\r\n"

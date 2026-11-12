@@ -17,10 +17,13 @@ package io.helidon.webserver.accesslog;
 
 import java.time.format.DateTimeFormatter;
 
+import io.helidon.common.Api;
+
 /**
  * Access log entry for timestamp.
  * Default time format is {@value DEFAULT_FORMAT}.
  */
+@Api.Stable
 public final class TimestampLogEntry extends AbstractLogEntry {
     private static final String DEFAULT_FORMAT = "'['dd/MMM/yyyy:HH:mm:ss ZZZ']'";
     private static final DateTimeFormatter DEFAULT_FORMATTER = DateTimeFormatter.ofPattern(DEFAULT_FORMAT);

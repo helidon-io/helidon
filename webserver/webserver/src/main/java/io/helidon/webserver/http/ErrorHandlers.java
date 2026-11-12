@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 
+import io.helidon.common.Api;
 import io.helidon.http.BadRequestException;
 import io.helidon.http.DirectHandler;
 import io.helidon.http.HeaderValues;
@@ -39,6 +40,7 @@ import io.helidon.webserver.ServerConnectionException;
 /**
  * Http routing Error handlers.
  */
+@Api.Internal
 public final class ErrorHandlers {
     private static final System.Logger LOGGER = System.getLogger(ErrorHandlers.class.getName());
     private final IdentityHashMap<Class<? extends Throwable>, ErrorHandler<?>> errorHandlers;

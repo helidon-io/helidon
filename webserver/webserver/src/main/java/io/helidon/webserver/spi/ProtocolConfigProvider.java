@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.spi;
 
+import io.helidon.common.Api;
 import io.helidon.config.ConfiguredProvider;
 
 /**
@@ -24,6 +25,7 @@ import io.helidon.config.ConfiguredProvider;
  *
  * @param <T> type of configuration supported by this provider
  */
+@Api.Internal
 public interface ProtocolConfigProvider<T extends ProtocolConfig> extends ConfiguredProvider<T> {
 
 }

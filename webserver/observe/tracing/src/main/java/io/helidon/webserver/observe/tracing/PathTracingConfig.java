@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import io.helidon.common.Api;
 import io.helidon.common.uri.UriPath;
 import io.helidon.config.Config;
 import io.helidon.http.Method;
@@ -30,6 +31,7 @@ import io.helidon.tracing.config.TracingConfig;
 /**
  * Traced system configuration for web server for a specific path.
  */
+@Api.Stable
 public interface PathTracingConfig {
 
     /**

@@ -18,6 +18,7 @@ package io.helidon.webserver;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.tls.Tls;
 
 /**
@@ -28,6 +29,7 @@ import io.helidon.common.tls.Tls;
  */
 @Prototype.Configured
 @Prototype.Blueprint
+@Api.Stable
 interface VirtualHostConfigBlueprint {
     /**
      * Exact DNS host name or narrow wildcard pattern such as {@code *.example.com}.

@@ -58,7 +58,12 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 
 /**
  * {@link io.helidon.webserver.http1.spi.Http1Upgrader} implementation to upgrade from HTTP/1.1 to WebSocket.
+ * <p>
+ * Creating and registering this upgrader with an HTTP/1.1 connection selector is Stable API.
+ * The {@link io.helidon.webserver.http1.spi.Http1Upgrader} SPI and direct invocation of its connection upgrade callback
+ * remain Internal API.
  */
+@Api.Stable
 public class WsUpgrader implements Http1Upgrader {
 
     /**
@@ -128,6 +133,9 @@ public class WsUpgrader implements Http1Upgrader {
 
     /**
      * WebSocket upgrader for HTTP/1.
+     * Register the result with
+     * {@link io.helidon.webserver.http1.Http1ConnectionSelectorConfig.BuilderBase#addUpgrader(
+     * io.helidon.webserver.http1.spi.Http1Upgrader)}.
      *
      * @param config configuration of web socket protocol
      * @return a new upgrader
@@ -141,6 +149,7 @@ public class WsUpgrader implements Http1Upgrader {
         return "websocket";
     }
 
+    @Api.Internal
     @Override
     public ServerConnection upgrade(ConnectionContext ctx, HttpPrologue prologue, WritableHeaders<?> headers) {
         Optional<PreparedUpgrade> preparedUpgrade = prepareUpgrade(ctx, prologue, headers);

@@ -24,6 +24,7 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
  * {@link java.util.ServiceLoader} provider implementation for gRPC reflection
  * feature for {@link io.helidon.webserver.WebServer}.
  */
+@Api.Internal
 public class GrpcReflectionFeatureProvider implements ServerFeatureProvider<GrpcReflectionFeature> {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.webserver.http;
 
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.webserver.ServerLifecycle;
 import io.helidon.webserver.WebServer;
 
@@ -33,6 +34,7 @@ import io.helidon.webserver.WebServer;
  * {@link io.helidon.common.Weighted} to order features according to their weight. Higher weighted features are registered first.
  * This is to allow ordering of features in a meaningful way (e.g. Context should be first, Tracing second, Security third etc.).
  */
+@Api.Stable
 public interface HttpFeature extends Supplier<HttpFeature>, ServerLifecycle {
     @Override
     default HttpFeature get() {

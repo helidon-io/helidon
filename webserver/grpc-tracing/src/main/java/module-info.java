@@ -18,6 +18,7 @@
  * Helidon WebServer gRPC Tracing Support.
  */
 module io.helidon.webserver.grpc.tracing {
+    requires io.helidon.common;
 
     requires static io.helidon.config.metadata;
 

@@ -30,6 +30,7 @@ import io.helidon.webserver.http.spi.SinkProviderContext;
  *
  * @see io.helidon.webserver.http.spi.SinkProvider
  */
+@Api.Internal
 public class SseSinkProvider implements SinkProvider<SseEvent> {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

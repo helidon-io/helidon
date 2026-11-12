@@ -24,6 +24,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("WebServer Health check support")
 @Features.Flavor(HelidonFlavor.SE)
 module io.helidon.webserver.observe.health {
+    requires io.helidon.common;
 
     requires io.helidon.http.media.json;
     requires io.helidon.service.registry;

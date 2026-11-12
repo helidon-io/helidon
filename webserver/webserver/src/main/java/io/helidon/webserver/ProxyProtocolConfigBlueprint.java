@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.common.configurable.AllowList;
 
 /**
@@ -27,6 +28,7 @@ import io.helidon.common.configurable.AllowList;
  */
 @Prototype.Blueprint
 @Prototype.Configured
+@Api.Stable
 interface ProxyProtocolConfigBlueprint {
     /**
      * Whether PROXY protocol support is enabled.

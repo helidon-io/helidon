@@ -21,6 +21,7 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.security.AuditEvent.AuditSeverity;
 import io.helidon.security.ClassToInstanceStore;
@@ -32,6 +33,7 @@ import io.helidon.security.ClassToInstanceStore;
 @Prototype.Configured
 @Prototype.CustomMethods(GrpcSecurityConfigSupport.GrpcSecurityMethodCustomMethods.class)
 @Prototype.IncludeDefaultMethods({"auditOkSeverity", "auditErrorSeverity"})
+@Api.Preview
 interface GrpcSecurityMethodConfigBlueprint {
     /**
      * Bare gRPC method name such as {@code Upper}, not the full gRPC method path such as

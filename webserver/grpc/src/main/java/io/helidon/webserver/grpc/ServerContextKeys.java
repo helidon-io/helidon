@@ -16,6 +16,8 @@
 
 package io.helidon.webserver.grpc;
 
+import io.helidon.common.Api;
+
 import io.grpc.Context;
 
 /**
@@ -23,6 +25,7 @@ import io.grpc.Context;
  * Other keys which are not specific to server handlers can be found in the {@link io.helidon.grpc.core.ContextKeys}
  * class.
  */
+@Api.Preview
 public final class ServerContextKeys {
     /**
      * The gRPC context key to use to obtain the Helidon {@link GrpcConnectionContext}

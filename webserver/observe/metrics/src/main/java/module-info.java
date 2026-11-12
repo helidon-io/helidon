@@ -24,6 +24,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Description("WebServer Metrics support")
 @Features.Flavor(HelidonFlavor.SE)
 module io.helidon.webserver.observe.metrics {
+    requires io.helidon.common;
 
     requires io.helidon.http.media.json;
     requires io.helidon.http.metrics;

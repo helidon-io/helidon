@@ -30,6 +30,7 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.Weighted;
 import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.context.Context;
@@ -61,6 +62,7 @@ import static io.helidon.webserver.WebServer.DEFAULT_SOCKET_NAME;
 /**
  * Observer that registers tracing endpoint, and collects all tracing checks.
  */
+@Api.Stable
 public class TracingObserver implements Observer, RuntimeType.Api<TracingObserverConfig> {
     private static final String CONTENT_READ_SPAN_NAME = "content-read";
     private static final String CONTENT_WRITE_SPAN_NAME = "content-write";

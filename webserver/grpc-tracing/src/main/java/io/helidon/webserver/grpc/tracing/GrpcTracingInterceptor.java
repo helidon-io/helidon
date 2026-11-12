@@ -25,6 +25,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.grpc.core.ContextKeys;
 import io.helidon.grpc.core.GrpcTracingContext;
@@ -52,6 +53,7 @@ import io.grpc.ServerInterceptor;
  * {@code io.helidon.webserver:io.helidon.webserver.grpc-tracing} instead.
  */
 @Weight(InterceptorWeights.TRACING)
+@Api.Preview
 public class GrpcTracingInterceptor implements ServerInterceptor {
 
     /**

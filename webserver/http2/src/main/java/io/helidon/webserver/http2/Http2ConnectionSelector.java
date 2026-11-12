@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.Header;
 import io.helidon.webserver.ConnectionContext;
@@ -39,6 +40,7 @@ import static io.helidon.http.http2.Http2Util.isPreface;
 /**
  * HTTP/2 server connection selector.
  */
+@Api.Internal
 public class Http2ConnectionSelector implements ServerConnectionSelector {
 
     private final Http2Config http2Config;

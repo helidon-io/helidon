@@ -19,6 +19,7 @@ package io.helidon.webserver.spi;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.Builder;
 import io.helidon.config.NamedService;
 import io.helidon.webserver.ListenerConfig;
@@ -31,6 +32,7 @@ import io.helidon.webserver.http.HttpRouting;
  * <p>
  * Server features are resolved when the {@link io.helidon.webserver.WebServer} is being created.
  */
+@Api.Stable
 public interface ServerFeature extends NamedService {
     /**
      * Set up a server feature. Server features can modify server configuration, right before the server is created.

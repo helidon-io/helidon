@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.websocket;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Service;
 import io.helidon.webserver.WebServer;
 
@@ -26,6 +27,7 @@ import io.helidon.webserver.WebServer;
  * and will be loaded through a {@link io.helidon.webserver.spi.ServerFeature}.
  */
 @Service.Contract
+@Api.Stable
 public interface WsRouteRegistration {
     /**
      * WebSocket route provided by this registration.

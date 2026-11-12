@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.LongConsumer;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
@@ -103,6 +104,7 @@ import static java.lang.System.Logger.Level.TRACE;
  * A single connection is created between a client and a server.
  * A single connection serves multiple streams.
  */
+@Api.Internal
 public class Http2Connection implements ServerConnection, InterruptableTask<Void> {
     static final String FULL_PROTOCOL = "HTTP/2.0";
     static final String PROTOCOL = "HTTP";

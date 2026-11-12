@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Map;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.webserver.http1.spi.Http1Upgrader;
 
 /**
@@ -27,9 +28,14 @@ import io.helidon.webserver.http1.spi.Http1Upgrader;
  */
 @Prototype.Blueprint
 @Prototype.CustomMethods(Http1ConnectionSelectorConfigBlueprint.CustomMethods.class)
+@Api.Stable
 interface Http1ConnectionSelectorConfigBlueprint extends Prototype.Factory<Http1ConnectionSelector> {
     /**
      * Upgraders to support upgrading from HTTP/1.1 to a different protocol (such as {@code websocket}).
+     * <p>
+     * Configuration and registration of built-in Helidon upgraders is Stable API.
+     * The {@link io.helidon.webserver.http1.spi.Http1Upgrader} SPI remains Internal API; implementing custom upgraders
+     * or directly invoking their connection upgrade callbacks is outside this Stable configuration contract.
      *
      * @return map of protocol name to upgrader
      */
@@ -43,12 +49,16 @@ interface Http1ConnectionSelectorConfigBlueprint extends Prototype.Factory<Http1
      */
     Http1Config config();
 
+    @Api.Internal
     final class CustomMethods {
         private CustomMethods() {
         }
 
         /**
          * Add a new upgrader, replacing an existing one for the same protocol.
+         * <p>
+         * Registration of built-in Helidon upgraders is Stable API. Custom implementations of
+         * {@link io.helidon.webserver.http1.spi.Http1Upgrader} use an Internal SPI.
          *
          * @param builder builder to update
          * @param upgrader upgrader to add

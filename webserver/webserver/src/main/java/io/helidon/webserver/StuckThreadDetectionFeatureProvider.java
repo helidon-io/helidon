@@ -25,6 +25,7 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
  * {@link java.util.ServiceLoader} provider for {@link StuckThreadDetectionFeature}.
  */
 @Weight(StuckThreadDetectionFeature.WEIGHT)
+@Api.Internal
 public final class StuckThreadDetectionFeatureProvider
         implements ServerFeatureProvider<StuckThreadDetectionFeature> {
     /**

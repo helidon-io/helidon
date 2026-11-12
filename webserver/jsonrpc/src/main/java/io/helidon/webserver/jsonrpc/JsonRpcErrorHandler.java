@@ -17,6 +17,7 @@ package io.helidon.webserver.jsonrpc;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.json.JsonObject;
 import io.helidon.jsonrpc.core.JsonRpcError;
 import io.helidon.webserver.ServerLifecycle;
@@ -26,6 +27,7 @@ import io.helidon.webserver.http.ServerRequest;
  * A JSON-RPC handler that can process invalid requests if registered.
  */
 @FunctionalInterface
+@Api.Preview
 public interface JsonRpcErrorHandler extends ServerLifecycle {
 
     /**

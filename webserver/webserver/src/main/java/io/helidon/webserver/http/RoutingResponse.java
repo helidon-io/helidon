@@ -27,6 +27,7 @@ import io.helidon.http.encoding.ContentEncoder;
 /**
  * Routing response of a server.
  */
+@Api.Stable
 public interface RoutingResponse extends ServerResponse {
     /**
      * Reset routing information (nexted, rerouted etc.).

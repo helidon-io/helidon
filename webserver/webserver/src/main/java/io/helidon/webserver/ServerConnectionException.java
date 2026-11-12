@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,15 @@ package io.helidon.webserver;
 
 import java.util.Objects;
 
+import io.helidon.common.Api;
+
 /**
  * An exception that was caused by server communication error (on the original client call).
  * <p>
  * This exception must bubble up through the error handling chain, as otherwise we would treat it
  * as an internal exception, and may end up logging too much information.
  */
+@Api.Internal
 public class ServerConnectionException extends CloseConnectionException {
     /**
      * Server connection exception based on a cause.

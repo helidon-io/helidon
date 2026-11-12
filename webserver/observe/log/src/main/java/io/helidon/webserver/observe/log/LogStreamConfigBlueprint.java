@@ -20,6 +20,7 @@ import java.time.Duration;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.http.HttpMediaType;
 
 /**
@@ -27,6 +28,7 @@ import io.helidon.http.HttpMediaType;
  */
 @Prototype.Blueprint
 @Prototype.Configured
+@Api.Stable
 interface LogStreamConfigBlueprint {
     /**
      * Whether stream is enabled.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
+import io.helidon.common.Api;
+
 /**
  * Log handler to support separation of access log to its own file.
  * <p>
@@ -38,6 +40,7 @@ import java.util.logging.LogRecord;
  * io.helidon.webserver.AccessLog.handlers=io.helidon.webserver.accesslog.AccessLogHandler
  * </pre>
  */
+@Api.Stable
 public class AccessLogHandler extends FileHandler {
     /**
      * Construct a default {@code AccessLogHandler}. This will be configured

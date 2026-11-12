@@ -26,6 +26,7 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
  * for security.
  */
 @Weight(SecurityFeature.WEIGHT)
+@Api.Internal
 public class SecurityFeatureProvider implements ServerFeatureProvider<SecurityFeature> {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

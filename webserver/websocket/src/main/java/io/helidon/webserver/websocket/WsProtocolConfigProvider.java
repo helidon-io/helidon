@@ -23,6 +23,7 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
 /**
  * Service provider implementation for WebSocket protocol configuration.
  */
+@Api.Internal
 public class WsProtocolConfigProvider implements ProtocolConfigProvider<WsConfig> {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.

@@ -16,11 +16,14 @@
 
 package io.helidon.webserver;
 
+import io.helidon.common.Api;
+
 /**
  * TLS handshake policy for ClientHello messages that cannot select a configured SNI virtual host.
  * <p>
  * The policy decides whether the listener falls back to its default TLS configuration or rejects the handshake.
  */
+@Api.Stable
 public enum SniSelectionPolicy {
     /**
      * Use listener default TLS.

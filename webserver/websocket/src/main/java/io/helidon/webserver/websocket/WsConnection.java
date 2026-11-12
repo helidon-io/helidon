@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.concurrency.limits.Limit;
@@ -50,6 +51,7 @@ import io.helidon.websocket.WsSession;
 /**
  * WebSocket connection, server side session implementation.
  */
+@Api.Internal
 public class WsConnection implements ServerConnection, WsSession {
     private static final System.Logger LOGGER = System.getLogger(WsConnection.class.getName());
 

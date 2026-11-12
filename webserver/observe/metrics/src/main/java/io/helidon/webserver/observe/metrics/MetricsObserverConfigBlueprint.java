@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.webserver.observe.ObserverConfigBase;
@@ -32,6 +33,7 @@ import io.helidon.webserver.observe.spi.ObserveProvider;
 @Prototype.Configured("metrics")
 @Prototype.Provides(ObserveProvider.class)
 @Prototype.IncludeDefaultMethods
+@Api.Stable
 interface MetricsObserverConfigBlueprint extends ObserverConfigBase, Prototype.Factory<MetricsObserver> {
     @Option.Configured
     @Option.Default("metrics")

@@ -18,6 +18,7 @@ package io.helidon.webserver.grpc;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.webserver.ListenerConfig;
 import io.helidon.webserver.ProxyProtocolData;
@@ -27,6 +28,7 @@ import io.helidon.webserver.ProxyProtocolData;
  * Exposes connection-level information to gRPC request handlers. An instance of this interface is
  * available from {@link ServerContextKeys#CONNECTION_CONTEXT} in the current gRPC context.
  */
+@Api.Preview
 public interface GrpcConnectionContext {
     /**
      * Server socket id.

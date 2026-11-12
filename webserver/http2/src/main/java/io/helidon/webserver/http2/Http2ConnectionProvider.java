@@ -32,6 +32,7 @@ import io.helidon.webserver.spi.ServerConnectionSelectorProvider;
 /**
  * {@link io.helidon.webserver.spi.ServerConnectionSelectorProvider} implementation for HTTP/2 server connection provider.
  */
+@Api.Internal
 public class Http2ConnectionProvider implements ServerConnectionSelectorProvider<Http2Config> {
     /**
      * HTTP/2 server connection provider configuration node name.

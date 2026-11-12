@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.webserver.WebServer;
@@ -33,6 +34,7 @@ import static java.lang.System.Logger.Level;
 /**
  * Adds gRPC reflection support to Helidon WebServer.
  */
+@Api.Preview
 public class GrpcReflectionFeature implements Weighted, ServerFeature, RuntimeType.Api<GrpcReflectionConfig> {
     private static final System.Logger LOGGER = System.getLogger(GrpcReflectionFeature.class.getName());
 

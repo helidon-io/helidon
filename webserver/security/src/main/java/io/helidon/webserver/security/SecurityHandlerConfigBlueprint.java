@@ -22,12 +22,14 @@ import java.util.Set;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.security.ClassToInstanceStore;
 
 /**
  * Configuration of a {@link io.helidon.webserver.security.SecurityHandler}.
  */
+@Api.Stable
 @Prototype.Blueprint(decorator = SecurityConfigSupport.SecurityHandlerDecorator.class)
 @Prototype.Configured
 @Prototype.CustomMethods(SecurityConfigSupport.SecurityHandlerCustomMethods.class)

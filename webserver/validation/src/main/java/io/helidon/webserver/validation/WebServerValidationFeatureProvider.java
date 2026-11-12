@@ -27,6 +27,7 @@ import io.helidon.webserver.spi.ServerFeatureProvider;
  * adds error handler for {@link io.helidon.validation.ValidationException} to all server sockets.
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 30)
+@Api.Internal
 public class WebServerValidationFeatureProvider implements ServerFeatureProvider<WebServerValidationFeature> {
     static final String VALIDATION_TYPE = "validation";
 

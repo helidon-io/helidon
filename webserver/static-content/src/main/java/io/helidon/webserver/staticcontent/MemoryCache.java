@@ -29,11 +29,13 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 
 /**
  * Memory cache to allow in-memory storage of static content, rather than reading it from file system each time the
  * resource is requested.
  */
+@Api.Stable
 public class MemoryCache implements RuntimeType.Api<MemoryCacheConfig> {
     private final MemoryCacheConfig config;
     private final long maxSize;

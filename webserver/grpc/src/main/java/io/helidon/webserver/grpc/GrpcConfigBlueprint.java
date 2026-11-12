@@ -20,6 +20,7 @@ import java.util.List;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.webserver.grpc.spi.GrpcServerService;
 import io.helidon.webserver.grpc.spi.GrpcServerServiceProvider;
 import io.helidon.webserver.spi.ProtocolConfig;
@@ -32,6 +33,7 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
 @Prototype.Configured(root = false, value = GrpcProtocolProvider.CONFIG_NAME)
 @Prototype.Provides(ProtocolConfigProvider.class)
 @Prototype.IncludeDefaultMethods("grpcServices")
+@Api.Preview
 interface GrpcConfigBlueprint extends ProtocolConfig {
 
     /**

@@ -27,6 +27,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Path({"WebServer", "GRPC"})
 @SuppressWarnings({ "requires-automatic"})
 module io.helidon.webserver.grpc {
+    requires io.helidon.common;
 
     requires io.helidon.builder.api;
     requires io.helidon.webserver.http2;

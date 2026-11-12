@@ -16,6 +16,8 @@
 
 package io.helidon.webserver.http;
 
+import io.helidon.common.Api;
+
 /**
  * The routing error handler.
  * Can be mapped to the error cause in {@link HttpRouting}.
@@ -24,6 +26,7 @@ package io.helidon.webserver.http;
  * @see io.helidon.webserver.http.HttpRouting.Builder#error(Class, ErrorHandler)
  */
 @FunctionalInterface
+@Api.Stable
 public interface ErrorHandler<T extends Throwable> {
     /**
      * Error handling consumer.

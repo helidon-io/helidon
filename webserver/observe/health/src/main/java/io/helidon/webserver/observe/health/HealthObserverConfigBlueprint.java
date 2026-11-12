@@ -20,6 +20,7 @@ import java.util.List;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.health.HealthCheck;
 import io.helidon.webserver.observe.ObserverConfigBase;
 import io.helidon.webserver.observe.spi.ObserveProvider;
@@ -34,6 +35,7 @@ import io.helidon.webserver.observe.spi.ObserveProvider;
 @Prototype.Configured("health")
 @Prototype.CustomMethods(HealthObserverSupport.CustomMethods.class)
 @Prototype.Provides(ObserveProvider.class)
+@Api.Stable
 interface HealthObserverConfigBlueprint extends ObserverConfigBase, Prototype.Factory<HealthObserver> {
     @Option.Configured
     @Option.Default("health")

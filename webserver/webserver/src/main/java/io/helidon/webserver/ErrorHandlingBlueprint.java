@@ -17,12 +17,14 @@ package io.helidon.webserver;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Error handling configuration.
  */
 @Prototype.Configured
 @Prototype.Blueprint
+@Api.Stable
 interface ErrorHandlingBlueprint {
 
     /**

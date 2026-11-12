@@ -33,6 +33,7 @@ import io.helidon.http.media.ReadableEntityBase;
 /**
  * Server request entity.
  */
+@Api.Internal
 public final class ServerRequestEntity extends ReadableEntityBase implements ReadableEntity {
     private final UnaryOperator<InputStream> streamFilter;
     private final UnaryOperator<InputStream> decoder;
