@@ -217,6 +217,45 @@ class ContentDispositionTest {
     }
 
     @Test
+    void testQuotedSizePreservesParameterBoundaries() {
+        ContentDisposition cd = ContentDisposition.parse("attachment;filename=\"safe.txt\";size=\"0;filename=other.txt\"");
+        assertThat(cd.get(), is("attachment;filename=\"safe.txt\";size=\"0;filename=other.txt\""));
+        ContentDisposition parsed = ContentDisposition.parse(cd.get());
+        assertThat(parsed.filename().orElseThrow(), is("safe.txt"));
+        assertThat(parsed.parameters().get("size"), is("0;filename=other.txt"));
+        assertThat(parsed.parameters().size(), is(2));
+    }
+
+    @Test
+    void testDecimalSizePreservesWireFormat() {
+        for (String size : List.of("0", "000128", "9223372036854775808")) {
+            ContentDisposition cd = ContentDisposition.builder().parameter("size", size).build();
+            assertThat(size, cd.get(), is("form-data;size=" + size));
+            assertThat(size, ContentDisposition.parse(cd.get()).parameters().get("size"), is(size));
+        }
+    }
+
+    @Test
+    void testNonDecimalSizeUsesQuotedValue() {
+        for (String size : List.of("", "+1", "-1", " 1 ", "1 2", "١٢", "１２")) {
+            ContentDisposition cd = ContentDisposition.builder().parameter("size", size).build();
+            assertThat(size, cd.get(), is("form-data;size=\"" + size + "\""));
+            ContentDisposition parsed = ContentDisposition.parse(cd.get());
+            assertThat(size, parsed.parameters().get("size"), is(size));
+            assertThat(size, parsed.parameters().size(), is(1));
+        }
+    }
+
+    @Test
+    void testSizeEscapesQuotesAndBackslashes() {
+        ContentDisposition cd = ContentDisposition.builder().parameter("size", "a\";custom=\\b").build();
+        assertThat(cd.get(), is("form-data;size=\"a\\\";custom=\\\\b\""));
+        ContentDisposition parsed = ContentDisposition.parse(cd.get());
+        assertThat(parsed.parameters().get("size"), is("a\";custom=\\b"));
+        assertThat(parsed.parameters().size(), is(1));
+    }
+
+    @Test
     void testPercentEncodedFilename() {
         ContentDisposition cd = ContentDisposition.parse("inline; filename=the%20great%20file.html");
         assertThat(cd.type(), is(equalTo("inline")));
