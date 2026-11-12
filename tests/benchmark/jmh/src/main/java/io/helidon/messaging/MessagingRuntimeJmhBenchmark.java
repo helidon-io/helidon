@@ -329,7 +329,7 @@ public class MessagingRuntimeJmhBenchmark {
                         .serviceRegistry(registryManager.registry())
                         .addConsumerRegistration(registration)
                         .buildPrototype();
-                registry = new ChannelRegistry(messagingConfig, new MessagingLifecycleGuard());
+                registry = new ChannelRegistry(messagingConfig, new MessagingLifecycleGuard(), registryManager.registry());
                 registry.start();
                 context = registry.incomingContext(CHANNEL);
             } catch (RuntimeException | Error e) {

@@ -52,6 +52,32 @@ class MessagingJmhRunnerTest {
     }
 
     @Test
+    void observability() throws RunnerException {
+        RunSettings settings = RunSettings.create();
+        String result = System.getProperty(PROPERTY_PREFIX + "observabilityResult",
+                                           "target/messaging-observability-jmh-result.json");
+        Options options = options(MessagingObservabilityJmhBenchmark.class, result, "observabilityInclude", settings)
+                .threads(1)
+                .addProfiler(GCProfiler.class)
+                .build();
+
+        new Runner(options).run();
+    }
+
+    @Test
+    void recorder() throws RunnerException {
+        RunSettings settings = RunSettings.create();
+        String result = System.getProperty(PROPERTY_PREFIX + "recorderResult",
+                                           "target/messaging-recorder-jmh-result.json");
+        Options options = options(MessagingRecorderJmhBenchmark.class, result, "recorderInclude", settings)
+                .threads(1)
+                .addProfiler(GCProfiler.class)
+                .build();
+
+        new Runner(options).run();
+    }
+
+    @Test
     void saturation() throws RunnerException {
         RunSettings settings = RunSettings.create();
         String resultPrefix = System.getProperty(PROPERTY_PREFIX + "saturationResultPrefix",

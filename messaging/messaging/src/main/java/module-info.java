@@ -31,6 +31,8 @@ module io.helidon.messaging {
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.config;
     requires transitive io.helidon.faulttolerance;
+    requires transitive io.helidon.health;
+    requires io.helidon.metrics.api;
     requires transitive io.helidon.service.registry;
     requires static io.helidon.common.features.api;
     requires static io.helidon.config.metadata;
