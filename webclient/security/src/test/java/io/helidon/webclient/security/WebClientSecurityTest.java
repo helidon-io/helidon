@@ -322,6 +322,64 @@ class WebClientSecurityTest {
         assertThat(environment.requestedQuery().orElseThrow().rawValue(), is(""));
     }
 
+    @Test
+    void requestedPathMatchesSerializedImportedPathWithoutChangingLogicalPath() {
+        AtomicReference<SecurityEnvironment> outboundEnvironment = new AtomicReference<>();
+        AtomicReference<String> outboundTarget = new AtomicReference<>();
+        Security security = Security.builder()
+                .addOutboundSecurityProvider((request, environment, config) -> {
+                    outboundEnvironment.set(environment);
+                    return OutboundSecurityResponse.abstain();
+                })
+                .build();
+        WebClientService stopBeforeNetwork = (chain, request) -> {
+            outboundTarget.set(request.uri().pathWithQueryAndFragment());
+            throw new TestException();
+        };
+        Http1Client client = Http1Client.builder()
+                .servicesDiscoverServices(false)
+                .addService(WebClientSecurity.create(security))
+                .addService(stopBeforeNetwork)
+                .build();
+        try {
+            for (boolean skipUriEncoding : List.of(false, true)) {
+                for (String suffix : List.of("/%7e?q=%2f",
+                                             "/a%2Fb?q=%3f",
+                                             "/a%3Fb?q=%23",
+                                             "/a%23b?q=%2f",
+                                             "?",
+                                             "",
+                                             "/")) {
+                    URI uri = URI.create("https://example.test" + suffix);
+                    String description = uri + ", skipUriEncoding=" + skipUriEncoding;
+
+                    assertThrows(TestException.class, () -> client.get()
+                            .uri(uri)
+                            .skipUriEncoding(skipUriEncoding)
+                            .request());
+
+                    String rawPath = uri.getRawPath().isEmpty() ? "/" : uri.getRawPath();
+                    String logicalPath = uri.getPath().isEmpty() ? "/" : uri.getPath();
+                    String expectedPath = skipUriEncoding ? logicalPath : rawPath;
+                    Optional<String> expectedQuery = Optional.ofNullable(skipUriEncoding ? uri.getQuery() : uri.getRawQuery());
+                    String expectedTarget = expectedPath + expectedQuery.map(query -> "?" + query).orElse("");
+                    SecurityEnvironment environment = outboundEnvironment.get();
+                    String signedTarget = environment.requestedPath().rawPath()
+                            + environment.requestedQuery().map(query -> "?" + query.rawValue()).orElse("");
+
+                    assertThat(description + " serialized target", outboundTarget.get(), is(expectedTarget));
+                    assertThat(description + " signing path", environment.requestedPath().rawPath(), is(expectedPath));
+                    assertThat(description + " signing query",
+                               environment.requestedQuery().map(query -> query.rawValue()), is(expectedQuery));
+                    assertThat(description + " signed target", signedTarget, is(expectedTarget));
+                    assertThat(description + " logical path", environment.path(), is(Optional.of(logicalPath)));
+                }
+            }
+        } finally {
+            client.closeResource();
+        }
+    }
+
     private static WebClientService managedSecurityService(ServiceRegistryManager manager) {
         WebClient managedClient = manager.registry().get(WebClient.class);
         return managedClient.prototype()

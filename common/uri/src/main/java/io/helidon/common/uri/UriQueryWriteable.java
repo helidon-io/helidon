@@ -37,9 +37,23 @@ public interface UriQueryWriteable extends UriQuery {
 
     /**
      * Update this query by copying all names and their value(s) from the provided query.
+     * Raw and decoded parameter lists are copied independently.
+     * Generic queries are copied using raw parameter names from {@link #rawValue()} when those names
+     * can be looked up through {@link #getAllRaw(String)}, retaining each serialized raw spelling.
+     * Additional nonempty raw lists exposed through {@link #names()} are copied only for decoded names
+     * absent from the serialization; empty raw lists can also retain parameter membership.
+     * A generic query cannot distinguish a decoded lookup alias from a new nonempty raw alias of an existing
+     * decoded name omitted by stale serialization. Such supplemental raw aliases are not copied.
+     * If a serialized name cannot be looked up, raw lookups instead use {@link #names()}, preserving the
+     * historical lookup behavior for decorators that rewrite serialized names. This fallback cannot retain
+     * raw aliases that the parameter names do not expose. Names from this fallback or supplemental lookups
+     * are query-encoded before being written. Values are read from the current parameter lists rather than
+     * the serialized query.
      *
      * @param uriQuery uri query to read
      * @return updated instance
+     * @throws java.util.NoSuchElementException if the source supports raw lookups by neither its serialized
+     *                                         names nor its parameter names
      */
     UriQueryWriteable from(UriQuery uriQuery);
 

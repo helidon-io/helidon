@@ -193,6 +193,11 @@ final class UriQueryImpl implements UriQuery {
         return this;
     }
 
+    Map<String, List<String>> rawParameters() {
+        ensureRaw();
+        return rawQueryParams;
+    }
+
     private void ensureDecoded() {
         if (decodedQueryParams == null) {
             Map<String, List<String>> newQueryParams = new HashMap<>();

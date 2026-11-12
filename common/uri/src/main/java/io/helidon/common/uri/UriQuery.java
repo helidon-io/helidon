@@ -119,4 +119,25 @@ public interface UriQuery extends Parameters {
      * @throws NoSuchElementException in case the parameter does not exist
      */
     List<String> getAllRaw(String name) throws NoSuchElementException;
+
+    /**
+     * A Helidon query that can provide an independent snapshot of its parameter state.
+     * This retains entries that cannot be reconstructed from {@link #rawValue()},
+     * such as raw parameters whose value lists have been cleared.
+     */
+    @Api.Internal
+    interface Copyable extends UriQuery {
+        /**
+         * Copy the current raw and decoded parameters independently, including raw names, empty entries,
+         * and edits made through parameter lists. The returned query and this query must not share mutable state.
+         * The raw query serialization may be normalized.
+         * Implementations should return a standard query created using {@link UriQueryWriteable#create()}
+         * so that its complete parameter state can be copied without serialization.
+         * A non-standard snapshot should expose every serialized raw parameter name through {@link #getAllRaw(String)}
+         * using the same encoded spelling to retain each raw alias.
+         *
+         * @return independent parameter-state snapshot
+         */
+        UriQuery copy();
+    }
 }
