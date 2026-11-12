@@ -25,6 +25,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class AnnotationTest {
 
@@ -65,6 +66,40 @@ class AnnotationTest {
                    containsString("java.lang.annotation.Target"));
         assertThat(toString,
                    containsString("value=" + AnnotationTest.class.getName() + ".CONSTANT_NAME"));
+    }
+
+    @Test
+    void preservesValuesIndependentlyOfProvenance() {
+        AnnotationProperty implicit = AnnotationProperty.create("value", false);
+        AnnotationProperty explicit = AnnotationProperty.create("value");
+        assertThat(implicit.explicit(), is(false));
+        assertThat(explicit.explicit(), is(true));
+        assertThat(implicit, is(explicit));
+        assertThat(implicit.hashCode(), is(explicit.hashCode()));
+        assertThat(implicit.toString(), is(explicit.toString()));
+        Annotation first = Annotation.builder().type(Target.class).putProperty("value", implicit).build();
+        Annotation second = Annotation.builder().type(Target.class).putProperty("value", explicit).build();
+        assertThat(first, is(second));
+        assertThat(first.hashCode(), is(second.hashCode()));
+        assertThat(first.toString(), is(second.toString()));
+        assertThat(Annotation.builder(first).build().property("value").orElseThrow().explicit(), is(false));
+        assertThat(AnnotationProperty.create(implicit).explicit(), is(false));
+        assertThat(AnnotationProperty.create(implicit, true).explicit(), is(true));
+        assertThat(Annotation.builder().type(Target.class).property("value", implicit).build()
+                           .property("value").orElseThrow().explicit(), is(false));
+    }
+
+    @Test
+    void existingImplementationsRemainExplicit() {
+        AnnotationProperty legacy = () -> "value";
+        assertThat(legacy.explicit(), is(true));
+        assertThat(AnnotationProperty.create(legacy).explicit(), is(true));
+    }
+
+    @Test
+    void validatesNullBeforeNormalizingValues() {
+        assertThrows(NullPointerException.class, () -> AnnotationProperty.create(null));
+        assertThrows(NullPointerException.class, () -> AnnotationProperty.create(null, false));
     }
 
 }

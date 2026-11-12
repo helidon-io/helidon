@@ -89,6 +89,29 @@ class JdbcSqlMarkerLexerTest {
         assertThat(several.markers(), is(List.of("", "")));
     }
 
+    @Test
+    void distinguishesEscapeFormsWithoutClassifyingRoutineNames() {
+        for (String routine : List.of("procedure", "function")) {
+            for (String prefix : List.of("{call ", "{?=call ", "{ ? = CALL ")) {
+                boolean leading = prefix.contains("?");
+                for (String arguments : List.of("", "?", "?, ?", ":first", ":first, :second")) {
+                    String sql = prefix + routine + "(" + arguments + ")}";
+                    JdbcSqlMarkerLexer.Result result = JdbcSqlMarkerLexer.parse(sql, true);
+                    assertThat(result.leadingReturn(), is(leading));
+                    assertThat(result.sql(), is(sql.replace(":first", "?").replace(":second", "?")));
+                    int inputs = arguments.isEmpty() ? 0 : arguments.contains(",") ? 2 : 1;
+                    assertThat(result.markers().size(), is(inputs + (leading ? 1 : 0)));
+                    if (arguments.contains(":")) {
+                        assertThat(result.style(), is(JdbcSqlMarkerLexer.MarkerStyle.NAMED));
+                    } else {
+                        assertThat(result.style(), is(inputs > 0 || leading
+                                ? JdbcSqlMarkerLexer.MarkerStyle.POSITIONAL : JdbcSqlMarkerLexer.MarkerStyle.NONE));
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * Verifies that a doubled question mark is preserved without contributing
      * physical bind positions to a generated statement.

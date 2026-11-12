@@ -15,6 +15,7 @@
  */
 package io.helidon.data.jdbc;
 
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -88,7 +89,7 @@ final class JdbcRunner {
         return switch (operation.preparationPlan().resultKind()) {
         case QUERY -> run(operation, SINGULAR_QUERY, scope -> queryHandler.one(scope, mapper));
         case GENERATED_KEYS -> run(operation, UNBOUNDED, scope -> updateHandler.one(scope, mapper));
-        case UPDATE -> throw incompatibleTerminal(operation, "one");
+        case UPDATE, CALL -> throw incompatibleTerminal(operation, "one");
         };
     }
 
@@ -104,7 +105,7 @@ final class JdbcRunner {
         return switch (operation.preparationPlan().resultKind()) {
         case QUERY -> run(operation, SINGULAR_QUERY, scope -> queryHandler.optional(scope, mapper));
         case GENERATED_KEYS -> run(operation, UNBOUNDED, scope -> updateHandler.optional(scope, mapper));
-        case UPDATE -> throw incompatibleTerminal(operation, "optional");
+        case UPDATE, CALL -> throw incompatibleTerminal(operation, "optional");
         };
     }
 
@@ -137,8 +138,70 @@ final class JdbcRunner {
         return switch (operation.preparationPlan().resultKind()) {
         case QUERY -> run(operation, UNBOUNDED, scope -> queryHandler.list(scope, mapper));
         case GENERATED_KEYS -> run(operation, UNBOUNDED, scope -> updateHandler.list(scope, mapper));
-        case UPDATE -> throw incompatibleTerminal(operation, "list");
+        case UPDATE, CALL -> throw incompatibleTerminal(operation, "list");
         };
+    }
+
+    <T> T call(JdbcOperation operation, List<JdbcCallOutput> outputs, JdbcClient.CallMapper<T> mapper) {
+        JdbcConnectionLease lease = null;
+        CallableStatement statement = null;
+        JdbcCallResult result = null;
+        T value = null;
+        Throwable failure = null;
+        try {
+            lease = leaseProvider.acquire(dataSource);
+            lease.reserve();
+            Connection connection = lease.connection();
+            statement = JdbcExceptionTranslator.invoke("preparing a callable JDBC statement",
+                                                        () -> connection.prepareCall(operation.sql()));
+            CallableStatement callable = statement;
+            for (JdbcCallOutput output : outputs) {
+                JdbcExceptionTranslator.invokeVoid("registering a callable JDBC output", () -> {
+                    if (!output.typeName().isEmpty()) {
+                        callable.registerOutParameter(output.index(), output.type().getVendorTypeNumber(), output.typeName());
+                    } else if (output.scale() >= 0) {
+                        callable.registerOutParameter(output.index(), output.type().getVendorTypeNumber(), output.scale());
+                    } else {
+                        callable.registerOutParameter(output.index(), output.type().getVendorTypeNumber());
+                    }
+                });
+            }
+            bind(statement, operation.binds());
+            result = new JdbcCallResult(operation, statement, outputs, lease);
+            result.start();
+            value = mapper.map(result);
+            if (value == null) {
+                throw new DataException("The callable mapper returned null.");
+            }
+        } catch (SQLException caught) {
+            failure = JdbcExceptionTranslator.translate(operation, caught);
+        } catch (Throwable caught) {
+            failure = caught;
+        }
+        if (result != null) {
+            failure = result.finish(failure);
+        }
+        failure = closeCallable(statement, "closing a callable statement", failure);
+        if (failure != null && lease != null) {
+            lease.processingFailed();
+        }
+        failure = closeCallable(lease, "closing a callable connection lease", failure);
+        if (failure != null) {
+            rethrow(operation, failure);
+        }
+        return value;
+    }
+
+    private static Throwable closeCallable(AutoCloseable resource, String operation, Throwable failure) {
+        if (resource == null) {
+            return failure;
+        }
+        try {
+            resource.close();
+        } catch (Throwable caught) {
+            return JdbcExceptionTranslator.mergeOperationCleanup(failure, operation, caught);
+        }
+        return failure;
     }
 
     /**
@@ -201,6 +264,9 @@ final class JdbcRunner {
         for (int index = 0; index < binds.length; index++) {
             int position = index + 1;
             JdbcOperation.Bind bind = binds[index];
+            if (bind == null) {
+                continue;
+            }
             if (bind.typed()) {
                 JdbcExceptionTranslator.invokeVoid("binding a typed null JDBC parameter",
                                                    () -> statement.setNull(position,
@@ -312,6 +378,10 @@ final class JdbcRunner {
         if (previousFailure == null) {
             return failure;
         }
+        if (failure instanceof Error && !(previousFailure instanceof Error)) {
+            failure.addSuppressed(previousFailure);
+            return failure;
+        }
         if (failure != null) {
             previousFailure.addSuppressed(cleanupException(operation, failure));
         }
@@ -333,8 +403,18 @@ final class JdbcRunner {
         try {
             resource.close();
         } catch (Throwable closeFailure) {
-            // Preserve a primary fatal error. An error attached below another failure is sanitized.
-            if (previousFailure == null && closeFailure instanceof Error) {
+            if (closeFailure instanceof Error) {
+                if (previousFailure == null) {
+                    return closeFailure;
+                }
+                if (previousFailure instanceof Error) {
+                    if (previousFailure != closeFailure) {
+                        previousFailure.addSuppressed(closeFailure);
+                    }
+                    return previousFailure;
+                }
+                closeFailure.addSuppressed(JdbcExceptionTranslator.sanitize("retaining an earlier cleanup failure",
+                                                                            previousFailure));
                 return closeFailure;
             }
             if (previousFailure == null) {
@@ -437,6 +517,24 @@ final class JdbcRunner {
             rethrow(operation, failure);
         }
         return result;
+    }
+
+    /**
+     * Operation-specific work performed inside the resource boundary.
+     *
+     * @param <T> terminal result type
+     */
+    @FunctionalInterface
+    private interface HandlerAction<T> {
+
+        /**
+         * Executes against a prepared and bound statement.
+         *
+         * @param scope runner-owned execution scope
+         * @return terminal result
+         * @throws SQLException when JDBC work fails
+         */
+        T execute(ExecutionScope scope) throws SQLException;
     }
 
     /**
@@ -619,22 +717,5 @@ final class JdbcRunner {
         }
     }
 
-    /**
-     * Operation-specific work performed inside the resource boundary.
-     *
-     * @param <T> terminal result type
-     */
-    @FunctionalInterface
-    private interface HandlerAction<T> {
-
-        /**
-         * Executes against a prepared and bound statement.
-         *
-         * @param scope runner-owned execution scope
-         * @return terminal result
-         * @throws SQLException when JDBC work fails
-         */
-        T execute(ExecutionScope scope) throws SQLException;
-    }
 
 }

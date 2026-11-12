@@ -34,12 +34,15 @@ final class JdbcConfiguredStatement {
     private final String sql;
     private final int parameterCount;
     private final boolean namedMarkers;
+    private final boolean leadingReturn;
     private final Map<String, List<Integer>> positions;
 
-    private JdbcConfiguredStatement(String sql, int parameterCount, Map<String, List<Integer>> positions, boolean namedMarkers) {
+    private JdbcConfiguredStatement(String sql, int parameterCount, Map<String, List<Integer>> positions, boolean namedMarkers,
+                                    boolean leadingReturn) {
         this.sql = sql;
         this.parameterCount = parameterCount;
         this.namedMarkers = namedMarkers;
+        this.leadingReturn = leadingReturn;
         this.positions = Map.copyOf(positions);
     }
 
@@ -49,9 +52,19 @@ final class JdbcConfiguredStatement {
         }
         PlanBuilder builder = new PlanBuilder(source);
         JdbcSqlScanner.scan(source, builder);
+        boolean leadingReturn = builder.firstPosition >= 0
+                && source.substring(0, builder.firstPosition).matches("(?is)\\s*\\{\\s*")
+                && source.substring(builder.firstPosition + 1).matches("(?is)\\s*=\\s*call\\b.*");
+        if (builder.named && builder.positionalCount > 0 && !(leadingReturn && builder.positionalCount == 1)) {
+            throw new IllegalArgumentException("The SQL statement must not mix named and positional markers.");
+        }
+        if (leadingReturn && builder.positions.putIfAbsent("return", List.of(1)) != null) {
+            throw new IllegalArgumentException("A leading callable return reserves the logical name return.");
+        }
         Map<String, List<Integer>> positions = new HashMap<>();
         builder.positions.forEach((marker, slots) -> positions.put(marker, List.copyOf(slots)));
-        return new JdbcConfiguredStatement(builder.sql.toString(), builder.parameterCount, positions, !positions.isEmpty());
+        return new JdbcConfiguredStatement(builder.sql.toString(), builder.parameterCount, positions,
+                                           builder.named, leadingReturn);
     }
 
     static JdbcConfiguredStatement create(String source, List<String> inputNames) {
@@ -71,6 +84,9 @@ final class JdbcConfiguredStatement {
             }
             return definition;
         }
+        if (definition.leadingReturn && (inputNames.isEmpty() || !inputNames.getFirst().equals("return"))) {
+            throw new IllegalArgumentException("A leading callable return requires return as the first layout name.");
+        }
         if (definition.parameterCount != inputNames.size()) {
             throw new IllegalArgumentException("The positional marker count must match the required input count.");
         }
@@ -78,7 +94,21 @@ final class JdbcConfiguredStatement {
         for (int index = 0; index < inputNames.size(); index++) {
             positions.put(inputNames.get(index), List.of(index + 1));
         }
-        return new JdbcConfiguredStatement(definition.sql, definition.parameterCount, positions, false);
+        return new JdbcConfiguredStatement(definition.sql, definition.parameterCount, positions, false, definition.leadingReturn);
+    }
+
+    static JdbcConfiguredStatement createCall(String source, List<String> logicalNames,
+                                               boolean namedOnly, boolean leadingReturn) {
+        JdbcConfiguredStatement definition = create(source, logicalNames);
+        if (namedOnly && !definition.namedMarkers) {
+            throw new IllegalArgumentException("The repository parameter contract requires named SQL markers.");
+        }
+        if (definition.leadingReturn != leadingReturn) {
+            throw new IllegalArgumentException(leadingReturn
+                    ? "The configured callable SQL requires a leading return slot."
+                    : "The configured callable SQL must not contain a leading return slot.");
+        }
+        return definition;
     }
 
     String sql() {
@@ -91,6 +121,16 @@ final class JdbcConfiguredStatement {
 
     boolean namedMarkers() {
         return namedMarkers;
+    }
+
+    boolean leadingReturn() {
+        return leadingReturn;
+    }
+
+    void validateOutputPosition(int index) {
+        if (positions.values().stream().anyMatch(slots -> slots.size() > 1 && slots.contains(index))) {
+            throw new IllegalArgumentException("An OUT or INOUT marker must occur exactly once.");
+        }
     }
 
     List<Integer> positions(String name) {
@@ -107,7 +147,9 @@ final class JdbcConfiguredStatement {
         private final StringBuilder sql;
         private final Map<String, List<Integer>> positions = new HashMap<>();
         private int parameterCount;
-        private boolean positional;
+        private boolean named;
+        private int positionalCount;
+        private int firstPosition = -1;
 
         private PlanBuilder(String source) {
             this.source = source;
@@ -127,22 +169,20 @@ final class JdbcConfiguredStatement {
 
         @Override
         public void namedMarker(int start, int end) {
-            if (positional) {
-                throw new IllegalArgumentException("The SQL statement must not mix named and positional markers.");
-            }
             if (end < source.length() && source.charAt(end) == '.') {
                 throw new IllegalArgumentException("The SQL statement does not support dotted marker names.");
             }
             positions.computeIfAbsent(source.substring(start + 1, end), _ -> new ArrayList<>()).add(++parameterCount);
+            named = true;
             sql.append('?');
         }
 
         @Override
         public void positionalMarker(int offset) {
-            if (!positions.isEmpty()) {
-                throw new IllegalArgumentException("The SQL statement must not mix named and positional markers.");
+            if (firstPosition < 0) {
+                firstPosition = offset;
             }
-            positional = true;
+            positionalCount++;
             parameterCount++;
             sql.append('?');
         }
