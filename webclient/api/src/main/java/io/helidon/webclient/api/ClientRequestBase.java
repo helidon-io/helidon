@@ -48,6 +48,7 @@ import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
+import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.media.MediaContext;
 import io.helidon.webclient.spi.WebClientService;
@@ -250,6 +251,13 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     public T uri(URI uri) {
         this.uriTemplate = null;
         this.clientUri.resolve(uri);
+        return identity();
+    }
+
+    @Override
+    public T requestTarget(HttpPrologue prologue) {
+        this.clientUri.requestTarget(prologue);
+        this.uriTemplate = null;
         return identity();
     }
 
