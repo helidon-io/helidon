@@ -17,7 +17,6 @@
 package io.helidon.webserver.observe.log;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.Config;
 import io.helidon.http.HttpMediaType;
 
 final class LogObserverConfigSupport {
@@ -35,8 +34,8 @@ final class LogObserverConfigSupport {
          * @return media type parsed from the config
          */
         @Prototype.ConfigFactoryMethod("contentType")
-        static HttpMediaType createContentType(Config config) {
-            return config.asString().map(HttpMediaType::create).orElseThrow();
+        static HttpMediaType createContentType(String contentType) {
+            return HttpMediaType.create(contentType);
         }
     }
 }

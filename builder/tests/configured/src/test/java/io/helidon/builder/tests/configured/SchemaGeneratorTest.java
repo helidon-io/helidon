@@ -31,6 +31,8 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.codegen.testing.CodegenMatchers.matches;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 
@@ -2189,6 +2191,7 @@ class SchemaGeneratorTest {
         assertThat(Files.exists(schema), is(true));
 
         var actual = Files.readString(schema);
+        //noinspection UnnecessaryModifier
         assertThat(actual, matches("""
                 //...
                 package com.acme;
@@ -2200,9 +2203,739 @@ class SchemaGeneratorTest {
                     })
                 //...
                 public interface AcmeConfig extends AcmeConfigBlueprint, Prototype.Api {
-                //...
+                        //...
+                        @Override
+                        public BUILDER config(Config config) {
+                            //...
+                            config.get("privatekey").as(AcmePrivateKeyConfig::create).ifPresent(this::privatekey);
+                            return self();
+                        }
+                        //...
+                        public BUILDER privatekey(AcmePrivateKeyConfig privatekey) {
+                            Objects.requireNonNull(privatekey);
+                            privatekey(AcmeConfigMethods.createPrivateKey(privatekey));
+                            return self();
+                        }
+                        //...
                 }
                 """));
+    }
+
+    @Test
+    void testConfigFactoryPrecedesRuntimeFactory() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .options(OPTS)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmePrivateKey.java", """
+                        package com.acme;
+
+                        interface AcmePrivateKey {
+                        }
+                        """)
+                .addSource("AcmePrivateKeyConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * ACME private key config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface AcmePrivateKeyConfigBlueprint {
+                        }
+                        """)
+                .addSource("AcmeConfigMethods.java", """
+                        package com.acme;
+
+                        import java.util.Optional;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        class AcmeConfigMethods {
+                            @Prototype.RuntimeTypeFactoryMethod("privatekey")
+                            static Optional<AcmePrivateKey> createPrivateKey(AcmePrivateKeyConfig config) {
+                                throw new UnsupportedOperationException();
+                            }
+
+                            @Prototype.ConfigFactoryMethod("privatekey")
+                            static AcmePrivateKey parsePrivateKey(String config) {
+                                throw new UnsupportedOperationException();
+                            }
+                        }
+                        """)
+                .addSource("AcmeConfigBlueprint.java", """
+                        package com.acme;
+
+                        import java.util.Optional;
+
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * ACME config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        @Prototype.CustomMethods(AcmeConfigMethods.class)
+                        interface AcmeConfigBlueprint {
+                            /**
+                             * Private key.
+                             */
+                            @Option.Configured
+                            Optional<AcmePrivateKey> privatekey();
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(String.join(System.lineSeparator(), result.diagnostics()), result.success(), is(true));
+        var actual = Files.readString(result.sourceOutput().resolve("com/acme/AcmeConfig.java"));
+        assertThat(actual, matches("""
+                //...
+                @Configured(
+                    //...
+                    options = {
+                        @ConfiguredOption(key = "privatekey", description = "Private key", type = String.class)
+                    })
+                //...
+                public interface AcmeConfig extends AcmeConfigBlueprint, Prototype.Api {
+                        //...
+                        @Override
+                        public BUILDER config(Config config) {
+                            //...
+                            config.get("privatekey").as(String.class).as(AcmeConfigMethods::parsePrivateKey).ifPresent(this::privatekey);
+                            return self();
+                        }
+                        //...
+                        public BUILDER privatekey(AcmePrivateKeyConfig privatekey) {
+                            Objects.requireNonNull(privatekey);
+                            privatekey(AcmeConfigMethods.createPrivateKey(privatekey));
+                            return self();
+                        }
+                        //...
+                }
+                """));
+    }
+
+    @Test
+    void testRawConfigFactory() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .options(OPTS)
+                .printDiagnostics(false)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeCustomType.java", """
+                        package com.acme;
+
+                        interface AcmeCustomType {
+                        }
+                        """)
+                .addSource("AcmeCustomMethods.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+                        import io.helidon.config.Config;
+
+                        class AcmeCustomMethods {
+                            @Prototype.ConfigFactoryMethod("custom")
+                            static AcmeCustomType custom(Config config) {
+                                throw new UnsupportedOperationException();
+                            }
+
+                            @Prototype.ConfigFactoryMethod("customs")
+                            static java.util.List<AcmeCustomType> customs(Config config) {
+                                throw new UnsupportedOperationException();
+                            }
+                        }
+                        """)
+                .addSource("AcmeConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * ACME config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        @Prototype.CustomMethods(AcmeCustomMethods.class)
+                        interface AcmeConfigBlueprint {
+                            /**
+                             * Custom option.
+                             */
+                            @Option.Configured
+                            AcmeCustomType custom();
+
+                            /**
+                             * Custom options.
+                             */
+                            @Option.Configured
+                            java.util.List<AcmeCustomType> customs();
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(result.success(), is(true));
+        assertThat(result.diagnostics(), is(hasItems("""
+                /AcmeConfigBlueprint.java:17: warning: Raw Config option
+                    AcmeCustomType custom();
+                                   ^""")));
+        var actual = Files.readString(result.sourceOutput().resolve("com/acme/AcmeConfig.java"));
+        assertThat(actual, matches("""
+                //...
+                        @ConfiguredOption(
+                            key = "customs",
+                            description = "Custom options",
+                            type = AcmeCustomType.class,
+                            kind = ConfiguredOption.Kind.LIST)
+                //...
+                """));
+        assertThat(actual, containsString("config.get(\"customs\").as(AcmeCustomMethods::customs)"
+                                                  + ".ifPresent(this::customs);"));
+    }
+
+    @Test
+    void testConfigFactoryScalar() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .options(OPTS)
+                .printDiagnostics(false)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeCustomType.java", """
+                        package com.acme;
+
+                        interface AcmeCustomType {
+                        }
+                        """)
+                .addSource("AcmeCustomMethods.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+                        class AcmeCustomMethods {
+                            @Prototype.ConfigFactoryMethod("custom")
+                            static AcmeCustomType custom(String config) {
+                                throw new UnsupportedOperationException();
+                            }
+                        }
+                        """)
+                .addSource("AcmeConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * ACME config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        @Prototype.CustomMethods(AcmeCustomMethods.class)
+                        interface AcmeConfigBlueprint {
+                            /**
+                             * Custom option.
+                             */
+                            @Option.Configured
+                            AcmeCustomType custom();
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(result.success(), is(true));
+        assertThat(result.diagnostics(), is(empty()));
+
+        var actual = Files.readString(result.sourceOutput().resolve("com/acme/AcmeConfig.java"));
+        //noinspection UnnecessaryModifier
+        assertThat(actual, matches("""
+                //...
+                @Configured(
+                    //...
+                    options = {
+                        @ConfiguredOption(key = "custom", description = "Custom option", type = String.class, required = true)
+                    })
+                //...
+                public interface AcmeConfig extends AcmeConfigBlueprint, Prototype.Api {
+                        //...
+                        @Override
+                        public BUILDER config(Config config) {
+                            //...
+                            config.get("custom").as(String.class).as(AcmeCustomMethods::custom).ifPresent(this::custom);
+                            return self();
+                        }
+                        //...
+                }
+                """));
+    }
+
+    @Test
+    void testConfigFactoryCollectionItems() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .options(OPTS)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeCustomType.java", """
+                        package com.acme;
+
+                        interface AcmeCustomType {
+                        }
+                        """)
+                .addSource("AcmeCustomMethods.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        class AcmeCustomMethods {
+                            @Prototype.ConfigFactoryMethod("customs")
+                            static AcmeCustomType custom(String config) {
+                                throw new UnsupportedOperationException();
+                            }
+                        }
+                        """)
+                .addSource("AcmeConfigBlueprint.java", """
+                        package com.acme;
+
+                        import java.util.List;
+
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * ACME config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        @Prototype.CustomMethods(AcmeCustomMethods.class)
+                        interface AcmeConfigBlueprint {
+                            /**
+                             * Custom options.
+                             */
+                            @Option.Configured
+                            List<AcmeCustomType> customs();
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(result.success(), is(true));
+        var actual = Files.readString(result.sourceOutput().resolve("com/acme/AcmeConfig.java"));
+        assertThat(actual, matches("""
+                //...
+                        @ConfiguredOption(
+                            key = "customs",
+                            description = "Custom options",
+                            type = String.class,
+                            kind = ConfiguredOption.Kind.LIST)
+                //...
+                """));
+        assertThat(actual, containsString("config.get(\"customs\")"
+                                                  + ".asList(cfg -> cfg.as(String.class)"
+                                                  + ".as(AcmeCustomMethods::custom).get())"
+                                                  + ".ifPresent(this::customs);"));
+    }
+
+    @Test
+    void testConfigFactoryOptionalCollection() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .options(OPTS)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeCustomType.java", """
+                        package com.acme;
+
+                        interface AcmeCustomType {
+                        }
+                        """)
+                .addSource("AcmeCustomMethods.java", """
+                        package com.acme;
+
+                        import java.util.List;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        class AcmeCustomMethods {
+                            @Prototype.ConfigFactoryMethod("customs")
+                            static List<AcmeCustomType> customs(String config) {
+                                throw new UnsupportedOperationException();
+                            }
+                        }
+                        """)
+                .addSource("AcmeConfigBlueprint.java", """
+                        package com.acme;
+
+                        import java.util.List;
+                        import java.util.Optional;
+
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * ACME config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        @Prototype.CustomMethods(AcmeCustomMethods.class)
+                        interface AcmeConfigBlueprint {
+                            /**
+                             * Custom options.
+                             */
+                            @Option.Configured
+                            Optional<List<AcmeCustomType>> customs();
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(String.join(System.lineSeparator(), result.diagnostics()), result.success(), is(true));
+        var actual = Files.readString(result.sourceOutput().resolve("com/acme/AcmeConfig.java"));
+        assertThat(actual, containsString("config.get(\"customs\")"
+                                                  + ".as(String.class)"
+                                                  + ".as(AcmeCustomMethods::<AcmeCustomType>customs)"
+                                                  + ".ifPresent(this::customs);"));
+    }
+
+    @Test
+    void testConfigFactoryOptionalCollectionItems() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .options(OPTS)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeCustomType.java", """
+                        package com.acme;
+
+                        interface AcmeCustomType {
+                        }
+                        """)
+                .addSource("AcmeCustomMethods.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        class AcmeCustomMethods {
+                            @Prototype.ConfigFactoryMethod("customs")
+                            static AcmeCustomType custom(String config) {
+                                throw new UnsupportedOperationException();
+                            }
+                        }
+                        """)
+                .addSource("AcmeConfigBlueprint.java", """
+                        package com.acme;
+
+                        import java.util.List;
+                        import java.util.Optional;
+
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * ACME config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        @Prototype.CustomMethods(AcmeCustomMethods.class)
+                        interface AcmeConfigBlueprint {
+                            /**
+                             * Custom options.
+                             */
+                            @Option.Configured
+                            Optional<List<AcmeCustomType>> customs();
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(String.join(System.lineSeparator(), result.diagnostics()), result.success(), is(true));
+        var actual = Files.readString(result.sourceOutput().resolve("com/acme/AcmeConfig.java"));
+        assertThat(actual, matches("""
+                //...
+                        @ConfiguredOption(
+                            key = "customs",
+                            description = "Custom options",
+                            type = String.class,
+                            kind = ConfiguredOption.Kind.LIST)
+                //...
+                """));
+        assertThat(actual, containsString("config.get(\"customs\")"
+                                                  + ".asList(cfg -> cfg.as(String.class)"
+                                                  + ".as(AcmeCustomMethods::custom).get())"
+                                                  + ".ifPresent(this::customs);"));
+    }
+
+    @Test
+    void testConfigFactoryAdapter() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .options(OPTS)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeNestedConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * Nested config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface AcmeNestedConfigBlueprint {
+                        }
+                        """)
+                .addSource("AcmeCustomMethods.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+                        import io.helidon.config.Config;
+
+                        class AcmeCustomMethods {
+                            @Prototype.ConfigFactoryMethod("nested")
+                            static AcmeNestedConfig nested(Config config) {
+                                throw new UnsupportedOperationException();
+                            }
+                        }
+                        """)
+                .addSource("AcmeConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * ACME config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        @Prototype.CustomMethods(AcmeCustomMethods.class)
+                        interface AcmeConfigBlueprint {
+                            /**
+                             * Nested option.
+                             */
+                            @Option.Configured
+                            AcmeNestedConfig nested();
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(result.success(), is(true));
+        var actual = Files.readString(result.sourceOutput().resolve("com/acme/AcmeConfig.java"));
+        assertThat(actual, matches("""
+                //...
+                @Configured(
+                    //...
+                    options = {
+                        @ConfiguredOption(key = "nested", description = "Nested option", type = AcmeNestedConfig.class, required = true)
+                    })
+                //...
+                public interface AcmeConfig extends AcmeConfigBlueprint, Prototype.Api {
+                        //...
+                        @Override
+                        public BUILDER config(Config config) {
+                            //...
+                            config.get("nested").as(AcmeCustomMethods::nested).ifPresent(this::nested);
+                            return self();
+                        }
+                        //...
+                }
+                """));
+    }
+
+    @Test
+    void testRuntimeTypeCollectionItems() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .options(OPTS)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeListener.java", """
+                        package com.acme;
+
+                        interface AcmeListener {
+                        }
+                        """)
+                .addSource("AcmeListenerConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * ACME listener config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface AcmeListenerConfigBlueprint {
+                            /**
+                             * Port.
+                             */
+                            @Option.Configured
+                            int port();
+                        }
+                        """)
+                .addSource("AcmeConfigMethods.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        class AcmeConfigMethods {
+                            @Prototype.RuntimeTypeFactoryMethod("listeners")
+                            static AcmeListener createListener(AcmeListenerConfig config) {
+                                throw new UnsupportedOperationException();
+                            }
+                        }
+                        """)
+                .addSource("AcmeConfigBlueprint.java", """
+                        package com.acme;
+
+                        import java.util.List;
+
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * ACME config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        @Prototype.CustomMethods(AcmeConfigMethods.class)
+                        interface AcmeConfigBlueprint {
+                            /**
+                             * Listeners.
+                             */
+                            @Option.Configured
+                            List<AcmeListener> listeners();
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(result.success(), is(true));
+        var actual = Files.readString(result.sourceOutput().resolve("com/acme/AcmeConfig.java"));
+        assertThat(actual, matches("""
+                //...
+                        @ConfiguredOption(
+                            key = "listeners",
+                            description = "Listeners",
+                            type = AcmeListenerConfig.class,
+                            kind = ConfiguredOption.Kind.LIST)
+                //...
+                """));
+        assertThat(actual, containsString("config.get(\"listeners\").asNodeList()"
+                                                  + ".map(nodeList -> nodeList.stream()"
+                                                  + ".map(cfg -> cfg.as(AcmeListenerConfig::create)"
+                                                  + ".as(AcmeConfigMethods::createListener).get())"
+                                                  + ".toList()).ifPresent(this::listeners);"));
+    }
+
+    @Test
+    void testPrecompiledRuntimeTypeCollectionItems() throws IOException {
+        var compiler = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .options(OPTS)
+                .addProcessor(AptProcessor::new)
+                .build();
+
+        var configResult = TestCompiler.builder()
+                .from(compiler)
+                .addSource("ViewRegistrationConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * View registration config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface ViewRegistrationConfigBlueprint {
+                            /**
+                             * View name.
+                             */
+                            @Option.Configured
+                            String name();
+                        }
+                        """)
+                .build()
+                .compile();
+        assertThat(configResult.success(), is(true));
+
+        var result = TestCompiler.builder()
+                .from(compiler)
+                .addClasspathEntry(configResult.classOutput())
+                .addSource("ViewRegistration.java", """
+                        package com.acme;
+
+                        interface ViewRegistration {
+                        }
+                        """)
+                .addSource("AcmeConfigMethods.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        class AcmeConfigMethods {
+                            @Prototype.RuntimeTypeFactoryMethod("views")
+                            static ViewRegistration createViewRegistration(ViewRegistrationConfig config) {
+                                throw new UnsupportedOperationException();
+                            }
+
+                            @Prototype.RuntimeTypeFactoryMethod("viewGroups")
+                            static java.util.List<ViewRegistration> createViewRegistrations(ViewRegistrationConfig config) {
+                                throw new UnsupportedOperationException();
+                            }
+                        }
+                        """)
+                .addSource("AcmeConfigBlueprint.java", """
+                        package com.acme;
+
+                        import java.util.List;
+
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * ACME config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        @Prototype.CustomMethods(AcmeConfigMethods.class)
+                        interface AcmeConfigBlueprint {
+                            /**
+                             * Views.
+                             */
+                            @Option.Configured
+                            List<ViewRegistration> views();
+
+                            /**
+                             * View groups.
+                             */
+                            @Option.Configured
+                            List<ViewRegistration> viewGroups();
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(result.success(), is(true));
+        var actual = Files.readString(result.sourceOutput().resolve("com/acme/AcmeConfig.java"));
+        assertThat(actual, containsString("config.get(\"views\").asNodeList()"
+                                                  + ".map(nodeList -> nodeList.stream()"
+                                                  + ".map(cfg -> cfg.as(ViewRegistrationConfig::create)"
+                                                  + ".as(AcmeConfigMethods::createViewRegistration).get())"
+                                                  + ".toList()).ifPresent(this::views);"));
+        assertThat(actual, containsString("config.get(\"view-groups\").as(ViewRegistrationConfig::create)"
+                                                  + ".ifPresent(this::viewGroups);"));
     }
 
     @Test
