@@ -32,6 +32,7 @@ import io.helidon.health.HealthCheckType;
 public final class JdbcClientHealthCheck implements HealthCheck, RuntimeType.Api<JdbcClientHealthCheckConfig> {
     private final JdbcClientHealthCheckConfig config;
     private final BooleanSupplier probe;
+    private final String name;
 
     private JdbcClientHealthCheck(JdbcClientHealthCheckConfig config) {
         this.config = config;
@@ -41,6 +42,7 @@ public final class JdbcClientHealthCheck implements HealthCheck, RuntimeType.Api
         if (!(config.client() instanceof JdbcClientImpl implementation)) {
             throw new IllegalArgumentException("Independent probes require a Helidon JDBC client.");
         }
+        this.name = config.name().orElseGet(() -> implementation.prototype().name());
         this.probe = implementation.createProbe(config.query(), config.queryTimeout());
     }
 
@@ -85,7 +87,7 @@ public final class JdbcClientHealthCheck implements HealthCheck, RuntimeType.Api
 
     @Override
     public String name() {
-        return config.name().orElseGet(HealthCheck.super::name);
+        return name;
     }
 
     @Override

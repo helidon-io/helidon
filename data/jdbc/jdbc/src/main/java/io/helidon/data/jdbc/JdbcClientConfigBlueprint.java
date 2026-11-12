@@ -45,6 +45,15 @@ interface JdbcClientConfigBlueprint extends SqlConfig, Prototype.Factory<JdbcCli
     String name();
 
     /**
+     * Configures independent health discovery for this client definition.
+     *
+     * @return The default policy disables discovery.
+     */
+    @Option.Configured
+    @Option.DefaultMethod("create")
+    JdbcClientHealthConfig health();
+
+    /**
      * The maximum number of SQL marker counts retained by this client must be between zero and 4096 inclusive,
      * where zero disables retention while marker validation continues.
      * This value is owned by Helidon Data JDBC and is not passed to JDBC.

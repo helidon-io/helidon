@@ -62,4 +62,13 @@ interface DataSourceConfigBlueprint {
     @Option.Provider(DataSourceConfigProvider.class)
     ProviderConfig provider();
 
+    /**
+     * Configures independent health discovery for this data source definition.
+     *
+     * @return The default policy disables discovery.
+     */
+    @Option.Configured
+    @Option.DefaultMethod("create")
+    DataSourceHealthConfig health();
+
 }

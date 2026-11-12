@@ -677,40 +677,6 @@ class TypeHandlerBasic implements TypeHandler {
                                    .build());
     }
 
-    private Optional<GeneratedMethod> prepareSetterConsumerPrototypedBy(Javadoc getterJavadoc, TypeName typeName) {
-        TypeName prototype = option().prototypedBy().get();
-        Javadoc javadoc = setterJavadoc(getterJavadoc, "consumer", "consumer of builder of ");
-
-        TypeName builderType = fixPackage(TypeName.builder()
-                                                  .className("Builder")
-                                                  .addEnclosingName(prototype.className())
-                                                  .packageName(prototype.packageName())
-                                                  .build());
-
-        var method = setterMethodBuilder(TypeName.builder()
-                                                 .type(Consumer.class)
-                                                 .addTypeArgument(builderType)
-                                                 .build(),
-                                         "consumer");
-
-        Consumer<ContentBuilder<?>> contentConsumer = it -> {
-            it.addContent(Objects.class)
-                    .addContentLine(".requireNonNull(consumer);")
-                    .addContent("var builder = ")
-                    .addContent(prototype)
-                    .addContentLine(".builder();")
-                    .addContentLine("consumer.accept(builder);")
-                    .addContentLine("this." + option().setterName() + "(builder.build());")
-                    .addContentLine("return self();");
-        };
-
-        return Optional.of(GeneratedMethod.builder()
-                                   .method(method.build())
-                                   .javadoc(javadoc)
-                                   .contentBuilder(contentConsumer)
-                                   .build());
-    }
-
     Optional<GeneratedMethod> prepareSetterSupplier(Javadoc getterJavadoc) {
         if (option().builderInfo().isEmpty()) {
             return Optional.empty();
@@ -1077,6 +1043,40 @@ class TypeHandlerBasic implements TypeHandler {
         return builder.build();
     }
 
+    private Optional<GeneratedMethod> prepareSetterConsumerPrototypedBy(Javadoc getterJavadoc, TypeName typeName) {
+        TypeName prototype = option().prototypedBy().get();
+        Javadoc javadoc = setterJavadoc(getterJavadoc, "consumer", "consumer of builder of ");
+
+        TypeName builderType = fixPackage(TypeName.builder()
+                                                  .className("Builder")
+                                                  .addEnclosingName(prototype.className())
+                                                  .packageName(prototype.packageName())
+                                                  .build());
+
+        var method = setterMethodBuilder(TypeName.builder()
+                                                 .type(Consumer.class)
+                                                 .addTypeArgument(builderType)
+                                                 .build(),
+                                         "consumer");
+
+        Consumer<ContentBuilder<?>> contentConsumer = it -> {
+            it.addContent(Objects.class)
+                    .addContentLine(".requireNonNull(consumer);")
+                    .addContent("var builder = ")
+                    .addContent(prototype)
+                    .addContentLine(".builder();")
+                    .addContentLine("consumer.accept(builder);")
+                    .addContentLine("this." + option().setterName() + "(builder.build());")
+                    .addContentLine("return self();");
+        };
+
+        return Optional.of(GeneratedMethod.builder()
+                                   .method(method.build())
+                                   .javadoc(javadoc)
+                                   .contentBuilder(contentConsumer)
+                                   .build());
+    }
+
     private boolean isBlueprint(TypeInfo declaringType) {
         return declaringType.hasAnnotation(PROTOTYPE_BLUEPRINT);
     }
@@ -1084,7 +1084,20 @@ class TypeHandlerBasic implements TypeHandler {
     private void generatedMethod(OptionMethodType type, Optional<GeneratedMethod> generatedMethod) {
         generatedMethod
                 .flatMap(method -> extensions(type, method))
-                .ifPresent(method -> generatedMethods.put(type, method));
+                .ifPresent(method -> {
+                    GeneratedMethod documented = method;
+                    if (method.javadoc().isPresent()
+                            && method.method().parameterArguments().stream()
+                            .anyMatch(parameter -> !parameter.typeName().primitive() || parameter.typeName().array())) {
+                        documented = GeneratedMethod.builder(method)
+                                .javadoc(Javadoc.builder(method.javadoc().get())
+                                                 .addThrows("java.lang.NullPointerException",
+                                                            List.of("A reference argument is null."))
+                                                 .build())
+                                .build();
+                    }
+                    generatedMethods.put(type, documented);
+                });
     }
 
     private Optional<GeneratedMethod> extensions(OptionMethodType type, GeneratedMethod method) {

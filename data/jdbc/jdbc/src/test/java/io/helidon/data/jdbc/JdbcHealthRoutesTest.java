@@ -80,7 +80,7 @@ class JdbcHealthRoutesTest {
     }
 
     /**
-     * Selects the first registered check for a duplicate path and includes both checks in aggregates.
+     * Selects the first check in each membership and includes every colliding source and client check in aggregates.
      */
     @Test
     void duplicateDefaultPathsPreserveObserverSelection() {
@@ -92,17 +92,23 @@ class JdbcHealthRoutesTest {
             HealthCheck second = datasource
                     ? DataSourceHealthCheck.builder().dataSource(source).query("SELECT * FROM MISSING").build()
                     : JdbcClientHealthCheck.builder().client(client).query("SELECT * FROM MISSING").build();
+            HealthCheck live = datasource
+                    ? JdbcClientHealthCheck.builder().client(client).name(first.name()).type(HealthCheckType.LIVENESS).build()
+                    : DataSourceHealthCheck.builder().dataSource(source).name(first.name()).type(HealthCheckType.LIVENESS).build();
             assertThat(first.name(), is(second.name()));
             WebServer server = WebServer.builder().host("127.0.0.1").port(0).featuresDiscoverServices(false)
                     .addFeature(ObserveFeature.just(HealthObserver.builder().useSystemServices(false)
-                            .addCheck(first).addCheck(second).build())).build().start();
+                            .addCheck(live).addCheck(first).addCheck(second).build())).build().start();
             try {
                 Http1Client http = Http1Client.builder().baseUri("http://127.0.0.1:" + server.port()).build();
                 assertStatus(http, "/observe/health/ready/" + first.path(), 204);
                 assertStatus(http, "/observe/health/check/" + first.path(), 204);
-                assertThat(acquisitionCount.get(), is(2));
+                assertStatus(http, "/observe/health/live/" + first.path(), 204);
+                assertThat(acquisitionCount.get(), is(3));
                 assertStatus(http, "/observe/health/ready", 503);
-                assertThat(acquisitionCount.get(), is(4));
+                assertThat(acquisitionCount.get(), is(5));
+                assertStatus(http, "/observe/health/", 503);
+                assertThat(acquisitionCount.get(), is(8));
             } finally {
                 server.stop();
             }

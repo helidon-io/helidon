@@ -50,6 +50,11 @@
             <artifactId>helidon-data-sql-datasource</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.data.sql.datasource</groupId>
+            <artifactId>helidon-data-sql-datasource-hikari</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common</artifactId>
         </dependency>
