@@ -629,6 +629,7 @@ record ConvertedTypeInfo(TypeName converterType,
 
     private static Map<String, JsonProperty> finalizeJsonProperties(Map<String, JsonProperty.Builder> properties) {
         Map<String, JsonProperty> finalProperties = new LinkedHashMap<>(properties.size());
+        GeneratedNames identifiers = new GeneratedNames();
         for (Map.Entry<String, JsonProperty.Builder> entry : properties.entrySet()) {
             JsonProperty.Builder builder = entry.getValue();
             if (!builder.directFieldRead()              // Field cant be read from
@@ -640,7 +641,8 @@ record ConvertedTypeInfo(TypeName converterType,
                 //Ignore
                 continue;
             }
-            finalProperties.put(entry.getKey(), builder.build());
+            String identifier = identifiers.unique(builder.deserializationName().orElse(entry.getKey()));
+            finalProperties.put(entry.getKey(), builder.identifier(identifier).build());
         }
         return finalProperties;
     }
