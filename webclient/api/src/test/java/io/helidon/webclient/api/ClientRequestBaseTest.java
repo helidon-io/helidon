@@ -22,15 +22,39 @@ import java.util.Collections;
 import java.util.List;
 
 import io.helidon.common.uri.UriPath;
+import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ClientRequestBaseTest {
+
+    @ParameterizedTest
+    @ValueSource(strings = {"item:revision", "http://localhost:9876/private"})
+    void keepsAppendedRequestPathAgainstEmptyBaseInPath(String path) {
+        TestRequest request = new TestRequest(Method.GET, "https://example.com?b=2&a=1&b=3&flag&&");
+        request.uri().path("");
+        request.path(path);
+
+        assertThat(request.resolvedUri().pathWithQueryAndFragment(), is("/" + path + "?b=2&a=1&b=3&flag&&"));
+        assertThat(request.resolvedUri().host(), is("example.com"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"item:revision", "/item:revision"})
+    void preservesColonWhenAppendingRequestPath(String path) {
+        TestRequest request = new TestRequest(Method.GET, "https://example.com/a%2fb?b=2&a=1&b=3&flag&&");
+        request.path(path);
+
+        assertThat(request.resolvedUri().pathWithQueryAndFragment(), is("/a%2fb/item:revision?b=2&a=1&b=3&flag&&"));
+    }
 
     /**
      * Verify that query parameters are preserved when resolving URI templates (cf. issue #8566).
@@ -455,7 +479,255 @@ class ClientRequestBaseTest {
         assertThat(second.query().all("request"), is(List.of("value")));
     }
 
-    private static final class FakeClientRequest extends ClientRequestBase<FakeClientRequest, HttpClientResponse> {
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/incoming?a=1",
+            "/incoming?b=2&a=1&b=3",
+            "/incoming?flag&&",
+            "/objects/a%2fb/%7e/%25/%3f/%23?b=%2f&a=hello+world&b=%2F",
+            "/objects;a=1/b;c=2?flag&",
+            "/a//b/./c/../d?&&x=1&&",
+            "/a+b?q=a+b&encoded=a%20b"
+    })
+    void requestTargetReplacesPathAndQueryWhileKeepingDestination(String target) {
+        FakeClientRequest request = new FakeClientRequest(ClientUri.create(
+                URI.create("https://backend.example:9443/base/path?base=secret#base-fragment")));
+
+        request.requestTarget(prologue(target));
+
+        ClientUri resolved = request.resolvedUri();
+        assertThat(resolved.pathWithQueryAndFragment(), is(target));
+        assertThat(resolved.scheme(), is("https"));
+        assertThat(resolved.host(), is("backend.example"));
+        assertThat(resolved.port(), is(9443));
+        assertThat(resolved.fragment().hasValue(), is(false));
+        assertThat(request.uri().pathWithQueryAndFragment(), is(target));
+    }
+
+    @Test
+    void requestTargetDistinguishesMissingAndEmptyQueries() {
+        FakeClientRequest request = new FakeClientRequest(ClientUri.create(
+                URI.create("https://backend.example/base?old=value")));
+
+        request.requestTarget(prologue("/without-query"));
+        assertThat(request.resolvedUri().pathWithQueryAndFragment(), is("/without-query"));
+        assertThat(request.resolvedUri().hasQuery(), is(false));
+        assertThat(request.resolvedUri().query().isEmpty(), is(true));
+
+        request.requestTarget(prologue("/empty-query?"));
+        assertThat(request.resolvedUri().pathWithQueryAndFragment(), is("/empty-query?"));
+        assertThat(request.resolvedUri().hasQuery(), is(true));
+        assertThat(request.resolvedUri().query().rawValue(), is(""));
+
+        request.requestTarget(prologue("/without-query-again"));
+        assertThat(request.resolvedUri().pathWithQueryAndFragment(), is("/without-query-again"));
+        assertThat(request.resolvedUri().hasQuery(), is(false));
+    }
+
+    @Test
+    void requestTargetClearsEarlierTemplateAndTrackedParameters() {
+        FakeClientRequest request = new FakeClientRequest(ClientUri.create(
+                URI.create("https://backend.example:9443/base?base=secret")))
+                .uri("/old/{unresolved}")
+                .queryParam("tracked", "old");
+
+        request.requestTarget(prologue("/replacement%2fpath?b=2&a=1&flag&&"));
+        request.pathParam("unresolved", "later-value");
+
+        assertThat(request.resolvedUri().pathWithQueryAndFragment(),
+                   is("/replacement%2fpath?b=2&a=1&flag&&"));
+        assertThat(request.resolvedUri().host(), is("backend.example"));
+        assertThat(request.resolvedUri().query().contains("tracked"), is(false));
+        assertThat(request.resolvedUri().query().contains("base"), is(false));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "http://incoming.example:8080/in%2fcoming?b=2&a=1&flag&&",
+            "https://a_1.example:8443/in%2fcoming?b=2&a=1&flag&&",
+            "HTTPS://incoming.example/in%2fcoming?b=2&a=1&flag&&"
+    })
+    void absoluteRequestTargetDoesNotReplaceDestinationAuthority(String target) {
+        TestRequest request = new TestRequest(Method.POST, "https://backend.example:9443/base?old=value");
+
+        request.requestTarget(prologue(target));
+
+        ClientUri resolved = request.resolvedUri();
+        assertThat(resolved.pathWithQueryAndFragment(), is("/in%2fcoming?b=2&a=1&flag&&"));
+        assertThat(resolved.scheme(), is("https"));
+        assertThat(resolved.host(), is("backend.example"));
+        assertThat(resolved.port(), is(9443));
+        assertThat(request.method(), is(Method.POST));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "http://incoming.example, /",
+            "https://a_1.example:8443, /",
+            "http://incoming.example?, /?",
+            "https://a_1.example:8443?flag, /?flag"
+    })
+    void absoluteRequestTargetWithEmptyPathUsesRoot(String target, String expectedTarget) {
+        FakeClientRequest request = new FakeClientRequest(ClientUri.create(
+                URI.create("https://backend.example:9443/base?old=value")));
+
+        request.requestTarget(prologue(target));
+
+        assertThat(request.resolvedUri().pathWithQueryAndFragment(), is(expectedTarget));
+        assertThat(request.resolvedUri().authority(), is("backend.example:9443"));
+    }
+
+    @Test
+    void leadingDoubleSlashInOriginTargetRemainsPartOfPath() {
+        FakeClientRequest request = new FakeClientRequest(ClientUri.create(
+                URI.create("https://backend.example:9443/base?old=value")));
+
+        request.requestTarget(prologue("//incoming.example/a%2fb?flag&&"));
+
+        assertThat(request.resolvedUri().pathWithQueryAndFragment(), is("//incoming.example/a%2fb?flag&&"));
+        assertThat(request.resolvedUri().authority(), is("backend.example:9443"));
+    }
+
+    @Test
+    void requestTargetDiscardsIncomingAndCurrentFragments() {
+        FakeClientRequest request = new FakeClientRequest(ClientUri.create(
+                URI.create("https://backend.example/base?old=value#current-fragment")));
+
+        request.requestTarget(prologue("/incoming%23path?q=%23#incoming-fragment"));
+
+        assertThat(request.resolvedUri().pathWithQueryAndFragment(), is("/incoming%23path?q=%23"));
+        assertThat(request.resolvedUri().fragment().hasValue(), is(false));
+    }
+
+    @Test
+    void requestTargetKeepsMethodAndEncodingMode() {
+        TestRequest request = new TestRequest(Method.POST, "https://backend.example/base?old=value");
+        request.skipUriEncoding(true);
+
+        request.requestTarget(prologue("/a%2fb?q=a%2Fb"));
+
+        assertThat(request.method(), is(Method.POST));
+        assertThat(request.skipUriEncoding(), is(true));
+        assertThat(request.resolvedUri().pathWithQueryAndFragment(), is("/a/b?q=a/b"));
+
+        request.skipUriEncoding(false);
+        assertThat(request.resolvedUri().pathWithQueryAndFragment(), is("/a%2fb?q=a%2Fb"));
+    }
+
+    @Test
+    void requestTargetDoesNotShareMutableQueryStateWithSourceOrResolvedCopies() {
+        String target = "/a%2fb?%61=first&a=second&flag&&";
+        HttpPrologue source = prologue(target);
+        FakeClientRequest request = new FakeClientRequest(ClientUri.create(
+                URI.create("https://backend.example/base?old=value")));
+        request.requestTarget(source);
+        ClientUri copy = request.resolvedUri();
+
+        source.query().getAllRaw("%61").set(0, "source-only");
+        source.query().all("a").set(0, "decoded-source-only");
+        assertThat(request.uri().pathWithQueryAndFragment(), is(target));
+        assertThat(copy.pathWithQueryAndFragment(), is(target));
+
+        request.uri().writeableQuery().set("a", "request-only");
+        assertThat(copy.pathWithQueryAndFragment(), is(target));
+        copy.writeableQuery().set("a", "copy-only");
+        assertThat(request.uri().query().all("a"), is(List.of("request-only")));
+        assertThat(source.query().getAllRaw("%61"), is(List.of("source-only")));
+        assertThat(source.query().all("a"), is(List.of("decoded-source-only", "second")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "*",
+            "incoming.example:443",
+            "relative/path",
+            "?query-only",
+            "",
+            "ftp://incoming.example/path",
+            "http:///path",
+            "https://"
+    })
+    void requestTargetRejectsUnsupportedForms(String target) {
+        FakeClientRequest request = new FakeClientRequest(ClientUri.create(URI.create("https://backend.example/base")));
+
+        assertThrows(IllegalArgumentException.class, () -> request.requestTarget(prologue(target)));
+    }
+
+    @Test
+    void requestTargetRejectsConnectAuthorityForm() {
+        FakeClientRequest request = new FakeClientRequest(ClientUri.create(URI.create("https://backend.example/base")));
+        HttpPrologue source = HttpPrologue.create("HTTP/1.1", "HTTP", "1.1", Method.CONNECT, "incoming.example:443", false);
+
+        assertThrows(IllegalArgumentException.class, () -> request.requestTarget(source));
+    }
+
+    @Test
+    void requestTargetRejectsNull() {
+        FakeClientRequest request = new FakeClientRequest(ClientUri.create(URI.create("https://backend.example/base")));
+
+        assertThrows(NullPointerException.class, () -> request.requestTarget(null));
+    }
+
+    @Test
+    void defaultRequestTargetIsUnsupportedWithoutChangingRequest() {
+        FakeClientRequest request = new FakeClientRequest(ClientUri.create(
+                URI.create("https://backend.example:9443/base?base=secret#current-fragment")))
+                .queryParam("tracked", "old")
+                .skipUriEncoding(true);
+        String originalTarget = request.resolvedUri().pathWithQueryAndFragment();
+
+        assertThrows(UnsupportedOperationException.class,
+                     () -> request.requestTargetUsingDefault(prologue("/new%2fpath?q=a%2Fb")));
+
+        assertThat(request.resolvedUri().pathWithQueryAndFragment(), is(originalTarget));
+        assertThat(request.resolvedUri().scheme(), is("https"));
+        assertThat(request.resolvedUri().authority(), is("backend.example:9443"));
+        assertThat(request.skipUriEncoding(), is(true));
+        assertThat(request.method(), is(Method.GET));
+    }
+
+    @Test
+    void defaultRequestTargetDoesNotResolveOrDiscardPendingTemplate() {
+        FakeClientRequest request = new FakeClientRequest(ClientUri.create(
+                URI.create("https://backend.example:9443/base?base=secret")))
+                .uri("/old/{missing}");
+        String originalTarget = request.uri().pathWithQueryAndFragment();
+
+        assertThrows(UnsupportedOperationException.class,
+                     () -> request.requestTargetUsingDefault(prologue("/incoming?x=1")));
+
+        assertThat(request.uri().pathWithQueryAndFragment(), is(originalTarget));
+        assertThrows(IllegalArgumentException.class, request::resolvedUri);
+    }
+
+    private static HttpPrologue prologue(String target) {
+        return HttpPrologue.create("HTTP/1.1", "HTTP", "1.1", Method.PUT, target, false);
+    }
+
+    private interface DefaultRequestTarget extends ClientRequest<FakeClientRequest> {
+        default FakeClientRequest requestTargetUsingDefault(HttpPrologue prologue) {
+            return ClientRequest.super.requestTarget(prologue);
+        }
+    }
+
+    private static final class TestRequest extends ClientRequestBase<TestRequest, HttpClientResponse> {
+        private TestRequest(Method method, String uri) {
+            super(WebClientConfig.create(), null, "test", method, ClientUri.create(URI.create(uri)), Collections.emptyMap());
+        }
+
+        @Override
+        protected HttpClientResponse doSubmit(Object entity) {
+            return null;
+        }
+
+        @Override
+        protected HttpClientResponse doOutputStream(OutputStreamHandler outputStreamHandler) {
+            return null;
+        }
+    }
+
+    private static final class FakeClientRequest extends ClientRequestBase<FakeClientRequest, HttpClientResponse>
+            implements DefaultRequestTarget {
         private FakeClientRequest() {
             this(ClientUri.create());
         }

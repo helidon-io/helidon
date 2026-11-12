@@ -18,21 +18,24 @@ package io.helidon.webclient.api;
 
 import java.net.URI;
 import java.util.Locale;
+import java.util.Objects;
 
 import io.helidon.common.Api;
+import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.common.uri.UriQueryWriteable;
 import io.helidon.common.uri.UriValidator;
+import io.helidon.http.HttpPrologue;
 
 /**
  * URI abstraction for WebClient.
  */
 public class ClientUri implements UriInfo {
     private final UriInfo base;
-    private final UriQueryWriteable query;
+    private final ClientUriQuery query;
 
     private UriInfo.Builder uriBuilder;
     private boolean skipUriEncoding = false;
@@ -40,7 +43,7 @@ public class ClientUri implements UriInfo {
 
     private ClientUri() {
         this.base = null;
-        this.query = UriQueryWriteable.create();
+        this.query = new ClientUriQuery();
         this.uriBuilder = UriInfo.builder();
     }
 
@@ -48,7 +51,7 @@ public class ClientUri implements UriInfo {
         this.base = baseUri;
         this.uriBuilder = UriInfo.builder(base);
         this.skipUriEncoding = baseUri.skipUriEncoding;
-        this.query = UriQueryWriteable.create().from(baseUri.query());
+        this.query = new ClientUriQuery(baseUri.query());
         this.emptyQueryDelimiter = baseUri.emptyQueryDelimiter;
     }
 
@@ -57,7 +60,7 @@ public class ClientUri implements UriInfo {
         this.uriBuilder = UriInfo.builder(baseUri);
         scheme(baseUri.scheme());
         this.skipUriEncoding = false;
-        this.query = UriQueryWriteable.create().from(baseUri.query());
+        this.query = new ClientUriQuery(baseUri.query());
     }
 
     /**
@@ -187,6 +190,11 @@ public class ClientUri implements UriInfo {
      * @throws IllegalArgumentException if the authority cannot be parsed as a host and optional port
      */
     public ClientUri resolve(URI uri) {
+        // Encode non-ASCII characters without changing existing percent escapes.
+        String asciiUri = uri.toASCIIString();
+        if (!asciiUri.equals(uri.toString())) {
+            uri = URI.create(asciiUri);
+        }
         if (uri.isAbsolute()) {
             this.uriBuilder = UriInfo.builder();
             this.query.clear();
@@ -207,14 +215,11 @@ public class ClientUri implements UriInfo {
             uriBuilder.port(uri.getPort());
         }
 
-        uriBuilder.path(resolvePath(uriBuilder.path().path(), uri.getPath()));
+        uriBuilder.path(UriPath.create(resolvePath(uriBuilder.path().rawPath(), uri.getRawPath())));
 
         String queryString = uri.getRawQuery();
         if (queryString != null) {
-            // class URI does not decode +'s, so we do it here
-            if (!queryString.isEmpty()) {
-                query.fromQueryString(queryString.replaceAll("\\+", "%20"));
-            }
+            query.appendRawQuery(queryString);
             emptyQueryDelimiter = queryString.isEmpty();
         }
 
@@ -232,7 +237,12 @@ public class ClientUri implements UriInfo {
      * @return updated URI
      */
     public ClientUri resolvePath(String path) {
-        uriBuilder.path(resolvePath(uriBuilder.path().path(), path));
+        String encodedPath = UriEncoding.encode(path, UriEncoding.Type.PATH);
+        String rawPath = uriBuilder.path().rawPath();
+        if (rawPath.isEmpty() && !encodedPath.isEmpty()) {
+            rawPath = "/";
+        }
+        uriBuilder.path(UriPath.create(resolvePath(rawPath, encodedPath)));
         return this;
     }
 
@@ -245,8 +255,7 @@ public class ClientUri implements UriInfo {
     public ClientUri resolve(ClientUri uri) {
         this.uriBuilder.from(uri);
         scheme(uri.scheme());
-        this.query.clear();
-        this.query.from(uri.query());
+        this.query.replace(uri.query());
         this.emptyQueryDelimiter = uri.emptyQueryDelimiter;
         return this;
     }
@@ -306,6 +315,17 @@ public class ClientUri implements UriInfo {
     }
 
     /**
+     * Path as serialized into the HTTP request target, using {@code /} when the path is empty.
+     *
+     * @return request target path
+     */
+    @Api.Internal
+    public UriPath requestTargetPath() {
+        UriPath path = skipUriEncoding ? UriPath.create(path().path()) : path();
+        return path.rawPath().isEmpty() ? UriPath.root() : path;
+    }
+
+    /**
      * Configure the fragment for this URI.
      *
      * @param fragment fragment to use
@@ -361,6 +381,36 @@ public class ClientUri implements UriInfo {
         }
 
         return path;
+    }
+
+    void requestTarget(HttpPrologue prologue) {
+        Objects.requireNonNull(prologue, "prologue");
+        String rawPath = prologue.uriPath().rawPath();
+        if (!rawPath.startsWith("/")) {
+            int authorityStart;
+            if (rawPath.regionMatches(true, 0, "http://", 0, 7)) {
+                authorityStart = 7;
+            } else if (rawPath.regionMatches(true, 0, "https://", 0, 8)) {
+                authorityStart = 8;
+            } else {
+                throw new IllegalArgumentException("Request target must use origin-form or absolute HTTP or HTTPS form");
+            }
+            int pathStart = rawPath.indexOf('/', authorityStart);
+            if (rawPath.length() == authorityStart || pathStart == authorityStart) {
+                throw new IllegalArgumentException("Absolute request target must contain an authority");
+            }
+            rawPath = pathStart == -1 ? "/" : rawPath.substring(pathStart);
+        }
+
+        UriPath path = UriPath.create(rawPath);
+        path.validate();
+        String rawQuery = prologue.query().rawValue();
+        UriValidator.validateQuery(rawQuery);
+
+        query.clear();
+        query.appendRawQuery(rawQuery);
+        emptyQueryDelimiter = prologue.hasQuery() && rawQuery.isEmpty();
+        uriBuilder.path(path).fragment(UriFragment.empty());
     }
 
     private void resolveAuthority(String rawAuthority) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -193,6 +193,11 @@ final class UriQueryImpl implements UriQuery {
     UriQuery validate() {
         UriValidator.validateQuery(query);
         return this;
+    }
+
+    Map<String, List<String>> rawParameters() {
+        ensureRaw();
+        return rawQueryParams;
     }
 
     private void ensureDecoded() {

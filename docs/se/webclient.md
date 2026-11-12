@@ -122,6 +122,49 @@ For more information about these methods, check out
 [ClientRequest][clientrequest] API, which is a parent class of
 [HttpClientRequest][httpclientreques].
 
+### Forwarding an Existing Request Target
+
+When forwarding a request whose HTTP signature covers its request-target,
+pass the server request's prologue to `requestTarget(HttpPrologue)` and keep
+URI encoding enabled (the default). Configure the upstream destination on
+the client:
+
+```java
+WebClient upstream = WebClient.builder()
+        .baseUri("https://upstream.example")
+        .build();
+
+void forwardGet(ServerRequest request, ServerResponse response) {
+    try (var upstreamResponse = upstream.get()
+            .requestTarget(request.prologue())
+            .request()) {
+        response.status(upstreamResponse.status())
+                .send(upstreamResponse.as(String.class));
+    }
+}
+```
+
+For an incoming target `/objects/a%2fb?b=2&a=1&b=3&flag`, the upstream receives
+that same path and query. The upstream scheme, host, and port remain those
+configured on the client. `requestTarget` replaces the entire path and query,
+including any base path, base query, or URI template; it does not append to
+them. The request method, headers, body, and fragment are not copied. The
+example shows target forwarding; forwarding headers and content requires the
+application's own proxy policy.
+
+WebClient preserves percent-escape spelling, matrix parameters, query order,
+repeated names, flags, empty query tokens, and the distinction between `/path`
+and `/path?`. Reading query parameters or copying a client URI does not change
+that representation. Changing query parameters rebuilds the query; changing
+the path leaves an unmodified query intact. Use the prologue rather than
+`request.path()` or `request.requestedUri()`, which expose routing or
+reconstructed URI information.
+
+For an absolute-form HTTP or HTTPS request target, `requestTarget` copies only
+the raw path and query and uses `/` if the path is empty. Asterisk-form and
+authority-form targets are not supported. `skipUriEncoding(true)` selects
+decoded serialization and does not provide raw request-target preservation.
+
 ### Sending the Request
 
 Once the request setup is completed, the following methods can be used to send
