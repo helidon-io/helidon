@@ -47,7 +47,7 @@ public class OciMetricsSupport implements HttpService {
     private final OciMetricsService delegate;
 
     private OciMetricsSupport(Builder builder) {
-        delegate = builder.delegate.build();
+        delegate = OciMetricsService.createStopped(builder.delegate.buildPrototype());
     }
 
     /**
@@ -65,7 +65,16 @@ public class OciMetricsSupport implements HttpService {
      * @deprecated Use {@link OciMetricsConfig.NameFormatter}.
      */
     @Deprecated(since = "4.4.1", forRemoval = true)
-    public interface NameFormatter extends OciMetricsConfig.NameFormatter{
+    public interface NameFormatter extends OciMetricsConfig.NameFormatter {
+        /**
+         * Converts a metric instance into the corresponding text representation of its metric type.
+         *
+         * @param metric meter to convert
+         * @return text type of the metric
+         */
+        static String textType(Meter metric) {
+            return OciMetricsConfigBase.NameFormatter.textType(metric);
+        }
     }
 
     @Override
@@ -74,12 +83,13 @@ public class OciMetricsSupport implements HttpService {
     }
 
     @Override
+    public void beforeStart() {
+        delegate.startup();
+    }
+
+    @Override
     public void afterStop() {
-        try {
-            delegate.close();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        delegate.close();
     }
 
     /**

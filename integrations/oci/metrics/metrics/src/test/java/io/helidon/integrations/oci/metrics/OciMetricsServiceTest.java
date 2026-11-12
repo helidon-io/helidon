@@ -89,13 +89,12 @@ class OciMetricsServiceTest {
         // asks the service registry for it.
         Services.set(Monitoring.class, monitoringClient);
         /*
-        Specify oci as a publisher to trigger the periodic push of the metrics data to OCI, and keep
-        prometheus so there is a functional Micrometer meter registry to hold meter data.
+        Use Prometheus for meter storage. Each test creates and closes its own OCI publisher so an
+        automatically configured publisher cannot post concurrently through the same mocked client.
          */
         var config = Config.just("""
                                          metrics:
                                            publishers:
-                                             - type: oci
                                              - type: prometheus
                                  """, MediaTypes.APPLICATION_YAML);
 
@@ -150,6 +149,7 @@ class OciMetricsServiceTest {
                 .monitoringClient(monitoringClient)
                 .enabled(true)
                 .build()) {
+            ociMetricsService.startPublishing();
 
             HttpRouting.Builder routing = createRouting();
 
@@ -205,6 +205,7 @@ class OciMetricsServiceTest {
                 .monitoringClient(monitoringClient)
                 .enabled(true)
                 .build()) {
+            ociMetricsService.startPublishing();
 
 
             HttpRouting.Builder routing = createRouting();
@@ -298,7 +299,7 @@ class OciMetricsServiceTest {
                     .build();
         }).when(monitoringClient).postMetricData(any());
 
-        try (var ignored = OciMetricsConfig.builder()
+        try (var ociMetricsService = OciMetricsConfig.builder()
                 .compartmentId("compartmentId")
                 .namespace("namespace")
                 .resourceGroup("resourceGroup")
@@ -309,6 +310,7 @@ class OciMetricsServiceTest {
                 .batchSize(batchSize)
                 .monitoringClient(monitoringClient)
                 .build()) {
+            ociMetricsService.startPublishing();
 
             Instant start = Instant.now();
 
@@ -411,6 +413,7 @@ class OciMetricsServiceTest {
                 .monitoringClient(monitoringClient)
                 .enabled(false)
                 .build()) {
+            ociMetricsService.startPublishing();
 
             testMetricCount = 0;
             HttpRouting.Builder routing = createRouting();
@@ -458,10 +461,10 @@ class OciMetricsServiceTest {
 
     private void validateMetricCount(String scopesList, int expectedMetricCount) {
         Config config = Config.just(ConfigSources.create(Map.of(
-                "compartmentId", "compartmentId",
+                "compartment-id", "compartmentId",
                 "namespace", "namespace",
-                "resourceGroup", "resourceGroup",
-                "initialDelay", "PT0.050S",
+                "resource-group", "resourceGroup",
+                "initial-delay", "PT0.050S",
                 "delay", "PT1.5S",
                 "scopes", scopesList)
         ));
@@ -491,7 +494,8 @@ class OciMetricsServiceTest {
     }
 
     private void validateMetricCount(OciMetricsConfig.Builder ociMetricsServiceBuilder, int expectedMetricCount) {
-        try (var ignored = ociMetricsServiceBuilder.build()) {
+        try (var publisher = ociMetricsServiceBuilder.build()) {
+            publisher.startPublishing();
             testMetricCount = 0;
             CountDownLatch countDownLatch = new CountDownLatch(1);
             mockPostMetricDataAndGetTestMetricCount(countDownLatch);

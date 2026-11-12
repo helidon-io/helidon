@@ -21,9 +21,6 @@ import java.util.Optional;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Errors;
 import io.helidon.integrations.oci.metrics.OciMetricsConfig;
-import io.helidon.service.registry.Services;
-
-import com.oracle.bmc.monitoring.Monitoring;
 
 final class DelegatingOciMetricsConfigSupport {
     private DelegatingOciMetricsConfigSupport() {
@@ -34,10 +31,6 @@ final class DelegatingOciMetricsConfigSupport {
         public void decorate(DelegatingOciMetricsConfig.BuilderBase<?, ?> builder) {
             Errors.Collector collector = Errors.collector();
             OciMetricsConfig.Builder delegateBuilder = OciMetricsConfig.builder();
-
-            if (builder.monitoringClient().isEmpty()) {
-                builder.monitoringClient(Services.get(Monitoring.class));
-            }
 
             builder.name().ifPresent(delegateBuilder::name);
             builder.compartmentId().ifPresent(delegateBuilder::compartmentId);

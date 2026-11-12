@@ -160,6 +160,7 @@ public class MetricsObserver implements Observer, RuntimeType.Api<MetricsObserve
         } else {
             for (HttpRouting.Builder builder : observeEndpointRouting) {
                 builder.addFeature(DisabledObserverFeature.create("Metrics", endpoint + "/*"));
+                metricsFeature.registerLifecycle(builder);
             }
         }
     }

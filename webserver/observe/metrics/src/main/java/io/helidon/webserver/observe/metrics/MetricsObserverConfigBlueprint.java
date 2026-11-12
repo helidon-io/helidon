@@ -53,11 +53,14 @@ interface MetricsObserverConfigBlueprint extends ObserverConfigBase, Prototype.F
 
     /**
      * Assigns {@code MetricsSettings} which will be used in creating the {@code MetricsSupport} instance at build-time.
+     * Configured publishers that implement {@link java.lang.AutoCloseable} are closed when the observer's server stops.
+     * Use separate closeable publisher instances for independently managed servers.
      *
      * @return the metrics settings to assign for use in building the {@code MetricsSupport} instance
      */
     @Option.Configured(merge = true)
-    @Option.DefaultMethod("create")
+    @Option.DefaultCode("io.helidon.service.registry.Services.get("
+            + "io.helidon.metrics.api.MetricsFactory.class).metricsConfig()")
     MetricsConfig metricsConfig();
 
     /**

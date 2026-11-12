@@ -19,7 +19,11 @@ package io.helidon.integrations.oci.metrics;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 
 import io.helidon.Main;
 import io.helidon.builder.api.RuntimeType;
@@ -27,8 +31,10 @@ import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MetricsPublisher;
+import io.helidon.service.registry.Services;
 import io.helidon.spi.HelidonShutdownHandler;
 
+import com.oracle.bmc.monitoring.Monitoring;
 import com.oracle.bmc.monitoring.model.MetricDataDetails;
 import com.oracle.bmc.monitoring.model.PostMetricDataDetails;
 import com.oracle.bmc.monitoring.requests.PostMetricDataRequest;
@@ -55,25 +61,35 @@ class OciMetricsService implements MetricsPublisher,
     private static final List<UnitConverter> UNIT_CONVERTERS = List.of(STORAGE_UNIT_CONVERTER, TIME_UNIT_CONVERTER);
 
     private final OciMetricsConfig prototype;
+    private final ReentrantLock lock = new ReentrantLock();
+    private final Condition idle = lock.newCondition();
 
+    // NEW can start once; STOPPING admits no work and permits close retries; CLOSED owns no executor or hook.
+    private volatile State state = State.NEW;
     private ScheduledExecutorService scheduledExecutorService;
+    private ScheduledFuture<?> scheduledTask;
     private OciMetricsData ociMetricsData;
+    private Monitoring monitoringClient;
+    private Thread activeThread;
+    private boolean shutdownHandlerRequested;
 
     private OciMetricsService(OciMetricsConfig prototype) {
         this.prototype = prototype;
-        prepareAutoStartup();
-        prepareAutoShutdown();
     }
 
     static OciMetricsConfig.Builder builder() {
         return OciMetricsConfig.builder();
     }
 
-    static OciMetricsService create(java.util.function.Consumer<OciMetricsConfig.Builder> consumer) {
+    static OciMetricsService create(Consumer<OciMetricsConfig.Builder> consumer) {
         return builder().update(consumer).build();
     }
 
     static OciMetricsService create(OciMetricsConfig ociMetricsConfig) {
+        return createStopped(ociMetricsConfig);
+    }
+
+    static OciMetricsService createStopped(OciMetricsConfig ociMetricsConfig) {
         return new OciMetricsService(ociMetricsConfig);
     }
 
@@ -99,6 +115,11 @@ class OciMetricsService implements MetricsPublisher,
     }
 
     @Override
+    public void startPublishing() {
+        startup();
+    }
+
+    @Override
     public void close() {
         shutdown();
     }
@@ -120,45 +141,176 @@ class OciMetricsService implements MetricsPublisher,
 
     @Override
     public void shutdown() {
-        if (scheduledExecutorService != null) {
-            LOGGER.log(System.Logger.Level.TRACE, "Shutting down OCI Metrics service {0}", name());
-            scheduledExecutorService.shutdownNow();
+        ScheduledExecutorService executor;
+        lock.lock();
+        try {
+            if (state == State.CLOSED) {
+                return;
+            }
+            state = State.STOPPING;
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                LOGGER.log(System.Logger.Level.TRACE, "Shutting down OCI Metrics service {0}", name());
+            }
+            if (scheduledTask != null) {
+                scheduledTask.cancel(false);
+            }
+            executor = scheduledExecutorService;
+            if (executor != null) {
+                executor.shutdownNow();
+            }
+            if (activeThread == Thread.currentThread()) {
+                throw new IllegalStateException("OCI metrics publisher cannot wait for its own transmission to finish");
+            }
+            long remaining = TimeUnit.SECONDS.toNanos(10);
+            while (activeThread != null) {
+                if (remaining <= 0) {
+                    throw new IllegalStateException("OCI metrics publisher shutdown timed out waiting for a transmission");
+                }
+                try {
+                    remaining = idle.awaitNanos(remaining);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("OCI metrics publisher shutdown was interrupted", e);
+                }
+            }
+        } finally {
+            lock.unlock();
+        }
+
+        // A cancelled future is not proof that the task has exited. Do not mark CLOSED until the executor terminates.
+        if (executor != null) {
+            try {
+                if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("OCI metrics publisher shutdown timed out waiting for the executor");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("OCI metrics publisher shutdown was interrupted", e);
+            }
+        }
+        // Main can call shutdown while holding its own handler lock. Never call Main with our lock held.
+        Main.removeShutdownHandler(this);
+        lock.lock();
+        try {
+            state = State.CLOSED;
+        } finally {
+            lock.unlock();
         }
     }
 
     void startup() {
-        if (isEligibleForTransmission()) {
-            prepareTransmission();
+        lock.lock();
+        try {
+            if (state == State.RUNNING) {
+                return;
+            }
+            if (state != State.NEW) {
+                throw new IllegalStateException("A stopping or closed OCI metrics publisher cannot be started");
+            }
+        } finally {
+            lock.unlock();
+        }
+        try {
+            registerShutdownHandler();
+            lock.lock();
+            try {
+                if (state == State.RUNNING) {
+                    return;
+                }
+                if (state != State.NEW) {
+                    throw new IllegalStateException("A stopping or closed OCI metrics publisher cannot be started");
+                }
+                if (!isEligibleForTransmission()) {
+                    state = State.RUNNING;
+                    return;
+                }
+                monitoringClient = prototype.monitoringClient().orElseGet(() -> Services.get(Monitoring.class));
+                ociMetricsData = new OciMetricsData(prototype.scopes(),
+                                                   prototype.nameFormatter(),
+                                                   prototype.compartmentId().orElse(null),
+                                                   prototype.namespace().orElse(null),
+                                                   prototype.resourceGroup().orElse(null),
+                                                   prototype.descriptionEnabled());
+                scheduledExecutorService = Executors.newScheduledThreadPool(1, Thread.ofVirtual().factory());
+                Context ctx = Contexts.context().orElseGet(Contexts::globalContext);
+                state = State.RUNNING;
+                scheduledTask = scheduledExecutorService.scheduleAtFixedRate(
+                        () -> runTransmission(ctx),
+                        prototype.initialDelay().toNanos(),
+                        prototype.delay().toNanos(),
+                        TimeUnit.NANOSECONDS);
+                if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                    LOGGER.log(System.Logger.Level.TRACE, "Started OCI Metrics publisher {0}", name());
+                }
+            } finally {
+                lock.unlock();
+            }
+        } catch (RuntimeException | Error failure) {
+            try {
+                shutdown();
+            } catch (RuntimeException | Error cleanupFailure) {
+                failure.addSuppressed(cleanupFailure);
+            }
+            throw failure;
         }
     }
 
-    /**
-     * Prepares for automatic start-up of the periodic "push" processing when this class is instantiated. Might be
-     * overridden by a subclass that provides for explicit start-up and shutdown.
-     */
-    void prepareAutoStartup() {
-        startup();
-    }
-
-    /**
-     * Prepares for automatic shutdown of the periodic "push" processing when the server shuts down. Might be overridden
-     * by a subclass that provides for explicit start-up and shutdown.
-     */
-    void prepareAutoShutdown() {
+    private void registerShutdownHandler() {
+        lock.lock();
+        try {
+            if (shutdownHandlerRequested) {
+                return;
+            }
+            shutdownHandlerRequested = true;
+        } finally {
+            lock.unlock();
+        }
         Main.addShutdownHandler(this);
+        boolean remove;
+        lock.lock();
+        try {
+            remove = state == State.STOPPING || state == State.CLOSED;
+        } finally {
+            lock.unlock();
+        }
+        if (remove) {
+            Main.removeShutdownHandler(this);
+        }
     }
 
-    private void prepareTransmission() {
-        LOGGER.log(System.Logger.Level.TRACE, "Starting OCI Metrics publisher {0}", name());
-
-        ociMetricsData = new OciMetricsData(
-                prototype.scopes(),
-                prototype.nameFormatter(),
-                prototype.compartmentId().orElse(null),
-                prototype.namespace().orElse(null),
-                prototype.resourceGroup().orElse(null),
-                prototype.descriptionEnabled());
-        startExecutor();
+    private void runTransmission(Context context) {
+        lock.lock();
+        try {
+            if (state != State.RUNNING) {
+                return;
+            }
+            activeThread = Thread.currentThread();
+        } finally {
+            lock.unlock();
+        }
+        try {
+            Contexts.runInContext(context, this::pushMetrics);
+        } catch (RuntimeException | Error failure) {
+            lock.lock();
+            try {
+                state = State.STOPPING;
+                scheduledExecutorService.shutdown();
+            } finally {
+                lock.unlock();
+            }
+            LOGGER.log(System.Logger.Level.ERROR, "OCI metrics publisher stopped after a transmission processing failure");
+            if (failure instanceof Error error) {
+                throw error;
+            }
+        } finally {
+            lock.lock();
+            try {
+                activeThread = null;
+                idle.signalAll();
+            } finally {
+                lock.unlock();
+            }
+        }
     }
 
     private boolean isEligibleForTransmission() {
@@ -178,20 +330,13 @@ class OciMetricsService implements MetricsPublisher,
 
     }
 
-    private void startExecutor() {
-        Context ctx = Contexts.context().orElseGet(Contexts::globalContext);
-        scheduledExecutorService = Executors.newScheduledThreadPool(1, Thread.ofVirtual().factory());
-        scheduledExecutorService.scheduleAtFixedRate(() -> Contexts.runInContext(ctx, this::pushMetrics),
-                                                     prototype.initialDelay().toNanos(),
-                                                     prototype.delay().toNanos(),
-                                                     TimeUnit.NANOSECONDS);
-    }
-
     private void pushMetrics() {
         List<MetricDataDetails> allMetricDataDetails = ociMetricsData.getMetricDataDetails();
-        LOGGER.log(System.Logger.Level.TRACE, String.format("Processing %d metrics", allMetricDataDetails.size()));
+        if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+            LOGGER.log(System.Logger.Level.TRACE, "Processing {0} metrics", allMetricDataDetails.size());
+        }
         if (!allMetricDataDetails.isEmpty()) {
-            while (true) {
+            while (state == State.RUNNING) {
                 if (allMetricDataDetails.size() > prototype.batchSize()) {
                     postBatch(allMetricDataDetails.subList(0, prototype.batchSize()));
                     // discard metrics that had been posted
@@ -199,8 +344,9 @@ class OciMetricsService implements MetricsPublisher,
                     if (prototype.batchDelay().isPositive()) {
                         try {
                             TimeUnit.NANOSECONDS.sleep(prototype.batchDelay().toNanos());
-                        } catch (InterruptedException ignore) {
+                        } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
+                            return;
                         }
                     }
                 } else {
@@ -221,35 +367,39 @@ class OciMetricsService implements MetricsPublisher,
                 .postMetricDataDetails(postMetricDataDetails)
                 .build();
 
-        LOGGER.log(System.Logger.Level.TRACE, String.format("Pushing %d metrics to OCI", metricDataDetailsList.size()));
         if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+            LOGGER.log(System.Logger.Level.TRACE, "Pushing {0} metrics to OCI", metricDataDetailsList.size());
             metricDataDetailsList
                     .forEach(m -> {
-                        LOGGER.log(System.Logger.Level.TRACE, String.format(
-                                "Metric details: name=%s, namespace=%s, dimensions=%s, "
-                                        + "datapoints.timestamp=%s, datapoints.value=%f, metadata=%s",
+                        LOGGER.log(System.Logger.Level.TRACE,
+                                "Metric details: name={0}, namespace={1}, dimensions={2}, "
+                                        + "datapoints.timestamp={3}, datapoints.value={4}, metadata={5}",
                                 m.getName(),
                                 m.getNamespace(),
                                 m.getDimensions(),
                                 m.getDatapoints().getFirst().getTimestamp(),
                                 m.getDatapoints().getFirst().getValue(),
-                                m.getMetadata()));
+                                m.getMetadata());
                     });
         }
-        var monitoringClient = prototype.monitoringClient();
         String originalMonitoringEndpoint = monitoringClient.getEndpoint();
         try {
             // Use the ingestion endpoint for posting
             monitoringClient.setEndpoint(
                     monitoringClient.getEndpoint().replaceFirst("telemetry\\.", "telemetry-ingestion."));
             monitoringClient.postMetricData(postMetricDataRequest);
-            LOGGER.log(System.Logger.Level.TRACE,
-                       String.format("Successfully posted %d metrics to OCI", metricDataDetailsList.size()));
-        } catch (Throwable e) {
-            LOGGER.log(System.Logger.Level.WARNING, String.format("Unable to send metrics to OCI: %s", e.getMessage()));
+            if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
+                LOGGER.log(System.Logger.Level.TRACE, "Successfully posted {0} metrics to OCI", metricDataDetailsList.size());
+            }
+        } catch (RuntimeException e) {
+            LOGGER.log(System.Logger.Level.WARNING, "Unable to send metrics to OCI");
         } finally {
             // restore original endpoint
             monitoringClient.setEndpoint(originalMonitoringEndpoint);
         }
+    }
+
+    private enum State {
+        NEW, RUNNING, STOPPING, CLOSED
     }
 }

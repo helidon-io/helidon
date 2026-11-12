@@ -30,6 +30,7 @@ class DelegatingOciMetricsService implements MetricsPublisher,
                                              RuntimeType.Api<DelegatingOciMetricsConfig> {
 
     private final DelegatingOciMetricsConfig prototype;
+    private final MetricsPublisher delegate;
 
     static DelegatingOciMetricsService create(DelegatingOciMetricsConfig metricsConfig) {
         return new DelegatingOciMetricsService(metricsConfig);
@@ -45,16 +46,17 @@ class DelegatingOciMetricsService implements MetricsPublisher,
 
     private DelegatingOciMetricsService(DelegatingOciMetricsConfig prototype) {
         this.prototype = prototype;
-        /*
-        Building the delegate (not just building the prototype) causes the OciMetricsService to be
-        created and started.
-         */
-        prototype.delegate().build();
+        delegate = prototype.delegate().build();
     }
 
     @Override
     public DelegatingOciMetricsConfig prototype() {
         return prototype;
+    }
+
+    @Override
+    public void startPublishing() {
+        delegate.startPublishing();
     }
 
     @Override
@@ -84,11 +86,15 @@ class DelegatingOciMetricsService implements MetricsPublisher,
 
     @Override
     public void shutdown() {
-
+        try {
+            close();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to close the OCI metrics delegate", e);
+        }
     }
 
     @Override
     public void close() throws Exception {
-
+        ((AutoCloseable) delegate).close();
     }
 }

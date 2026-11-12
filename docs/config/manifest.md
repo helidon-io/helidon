@@ -91,6 +91,7 @@ See the [root type](config_reference.md).
 - [io.<wbr>helidon.<wbr>integrations.<wbr>oci.<wbr>Imds<wbr>Instance<wbr>Info](io.helidon.integrations.oci.ImdsInstanceInfo.md)
 - [io.<wbr>helidon.<wbr>integrations.<wbr>oci.<wbr>OciConfig](io.helidon.integrations.oci.OciConfig.md)
 - [io.<wbr>helidon.<wbr>integrations.<wbr>oci.<wbr>Session<wbr>Token<wbr>Method<wbr>Config](io.helidon.integrations.oci.SessionTokenMethodConfig.md)
+- [io.<wbr>helidon.<wbr>integrations.<wbr>oci.<wbr>metrics.<wbr>OciMetrics<wbr>Service](io.helidon.integrations.oci.metrics.OciMetricsService.md)
 - [io.<wbr>helidon.<wbr>integrations.<wbr>oci.<wbr>metrics.<wbr>OciMetrics<wbr>Support](io.helidon.integrations.oci.metrics.OciMetricsSupport.md)
 - [io.<wbr>helidon.<wbr>integrations.<wbr>oci.<wbr>sdk.<wbr>runtime.<wbr>OciConfig](io.helidon.integrations.oci.sdk.runtime.OciConfig.md)
 - [io.<wbr>helidon.<wbr>integrations.<wbr>oci.<wbr>tls.<wbr>certificates.<wbr>OciCertificate<wbr>Bundle<wbr>TlsManager](io.helidon.integrations.oci.tls.certificates.OciCertificateBundleTlsManager.md)

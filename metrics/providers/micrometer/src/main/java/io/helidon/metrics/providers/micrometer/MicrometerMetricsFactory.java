@@ -366,11 +366,52 @@ class MicrometerMetricsFactory implements MetricsFactory {
 
     private void addMeterRegistriesForPublishers(CompositeMeterRegistry meterRegistry, MetricsConfig metricsConfig) {
         var meterRegistries = prepareMeterRegistries(metricsConfig);
-        meterRegistries.forEach(meterRegistry::add);
-        Contexts.globalContext().register(MetricsFactory.PULL_PUBLISHERS_PRESENT,
-                                          meterRegistries.stream()
-                                                  .anyMatch(r -> r instanceof PrometheusMeterRegistry));
+        try {
+            meterRegistries.forEach(meterRegistry::add);
+            Contexts.globalContext().register(MetricsFactory.PULL_PUBLISHERS_PRESENT,
+                                              meterRegistries.stream()
+                                                      .anyMatch(r -> r instanceof PrometheusMeterRegistry));
+            startPublishers(metricsConfig);
+        } catch (RuntimeException | Error failure) {
+            for (var registry : meterRegistries) {
+                try {
+                    try {
+                        meterRegistry.remove(registry);
+                    } finally {
+                        registry.close();
+                    }
+                } catch (Throwable cleanupFailure) {
+                    failure.addSuppressed(cleanupFailure);
+                }
+            }
+            throw failure;
+        }
+    }
 
+    private void startPublishers(MetricsConfig metricsConfig) {
+        List<MetricsPublisher> started = new ArrayList<>();
+        try {
+            for (var publisher : metricsConfig.publishers()) {
+                if (publisher.enabled()) {
+                    started.add(publisher);
+                    publisher.startPublishing();
+                }
+            }
+        } catch (RuntimeException | Error failure) {
+            for (var publisher : started) {
+                if (publisher instanceof AutoCloseable closeable) {
+                    try {
+                        closeable.close();
+                    } catch (Throwable cleanupFailure) {
+                        if (cleanupFailure instanceof InterruptedException) {
+                            Thread.currentThread().interrupt();
+                        }
+                        failure.addSuppressed(cleanupFailure);
+                    }
+                }
+            }
+            throw failure;
+        }
     }
 
     private MMeterRegistry save(MetricsConfig metricsConfig, MMeterRegistry meterRegistry) {

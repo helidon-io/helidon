@@ -24,6 +24,15 @@ import io.helidon.service.registry.Service;
  */
 @Service.Contract
 public interface MetricsPublisher extends NamedService {
+    /**
+     * Starts publishing when a meter registry begins using this publisher.
+     * Implementations must make repeated calls while running idempotent and clean up partial startup on failure.
+     * Creating publisher configuration must not start background work.
+     * The default implementation does nothing.
+     */
+    default void startPublishing() {
+    }
+
 
     /**
      * Whether this publisher is enabled.

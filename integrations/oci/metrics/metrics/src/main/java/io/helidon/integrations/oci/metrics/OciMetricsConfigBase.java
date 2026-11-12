@@ -148,11 +148,11 @@ public interface OciMetricsConfigBase extends MetricsPublisherConfig {
 
     /**
      * {@linkplain com.oracle.bmc.monitoring.Monitoring monitoring client} to use in transmitting meter data.
-     * Default: the automatically-configured {@code Monitoring} instance in the service registry.
+     * If absent, an enabled publisher obtains the {@code Monitoring} instance from the service registry when it starts.
      *
      * @return monitoring client
      */
-    Monitoring monitoringClient();
+    Optional<Monitoring> monitoringClient();
 
     /**
      * Formatter for adjusting meter names before transmission.

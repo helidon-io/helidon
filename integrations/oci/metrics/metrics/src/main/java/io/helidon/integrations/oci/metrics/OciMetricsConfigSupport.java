@@ -16,10 +16,10 @@
 
 package io.helidon.integrations.oci.metrics;
 
-import io.helidon.builder.api.Prototype;
-import io.helidon.service.registry.Services;
+import java.time.Duration;
 
-import com.oracle.bmc.monitoring.Monitoring;
+import io.helidon.builder.api.Prototype;
+import io.helidon.common.Errors;
 
 class OciMetricsConfigSupport {
 
@@ -29,8 +29,24 @@ class OciMetricsConfigSupport {
     static class BuilderDecorator implements Prototype.BuilderDecorator<OciMetricsConfig.BuilderBase<?, ?>> {
         @Override
         public void decorate(OciMetricsConfig.BuilderBase<?, ?> target) {
-            if (target.monitoringClient().isEmpty()) {
-                target.monitoringClient(Services.get(Monitoring.class));
+            var errors = Errors.collector();
+            validateDuration(errors, target.initialDelay(), "initial-delay", false);
+            validateDuration(errors, target.delay(), "delay", true);
+            validateDuration(errors, target.batchDelay(), "batch-delay", false);
+            if (target.batchSize() <= 0) {
+                errors.fatal(getClass(), "batch-size must be greater than zero");
+            }
+            errors.collect().checkValid();
+        }
+
+        private void validateDuration(Errors.Collector errors, Duration value, String key, boolean positive) {
+            if (value.isNegative() || (positive && value.isZero())) {
+                errors.fatal(getClass(), key + (positive ? " must be positive" : " must not be negative"));
+            }
+            try {
+                value.toNanos();
+            } catch (ArithmeticException e) {
+                errors.fatal(getClass(), key + " must be representable as a signed 64-bit number of nanoseconds");
             }
         }
     }

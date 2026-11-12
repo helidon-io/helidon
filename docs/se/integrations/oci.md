@@ -119,8 +119,7 @@ specifies the OCI client authentication method that should be used.
 
 ```yaml [oci-config.yaml]
 helidon.oci:
-  authentication-method: "auto"
-  allowed-authentication-methods: ["config", "config-file", "session-token", "resource-principal", "instance-principal", "oke-workload-identity"]
+  authentication-method: "config-file"
 ```
 
 - `auto`(default value): cycles through the list of authentication types from
@@ -248,6 +247,21 @@ OCI Monitoring backend system.
    publisher shown below, or use `OciMetricsConfig.builder()` to configure and
    build the publisher programmatically.
 
+An OCI publisher starts transmitting when a meter registry begins using it, so
+creating configuration alone does not start a sender. When included in a
+webserver metrics observer's configuration, it stops transmitting when that
+server stops. Use separate publisher instances for independently
+managed servers. A standalone publisher must be started using
+`MetricsPublisher.startPublishing()` and closed explicitly when the application
+no longer needs it; a JVM shutdown hook remains as a fallback.
+Closing a meter registry alone does not stop a publisher. If close is interrupted
+or times out, transmission admission remains stopped; retry close after active
+transmissions finish.
+
+The deprecated `OciMetricsSupport` adapter retains its webserver lifecycle: it
+starts transmitting when the server starts and stops when that server stops.
+A disabled publisher does not require a `Monitoring` instance or OCI credentials.
+
 ## Configuration
 
 `oci-config.yaml` auth config:
@@ -255,8 +269,6 @@ OCI Monitoring backend system.
 <!--@mdc ::code-collapse -->
 ```yaml [oci-config.yaml]
 helidon.oci:
-  authentication-method: "auto" # can select a specific authentication method to use, defaults to auto to choose from allowed.
-  allowed-authentication-methods: ["config", "config-file", "session-token", "resource-principal", "instance-principal", "oke-workload-identity"] # limit the list of authentication methods to try with auto
   authentication: # specific configuration of authentication methods
     config-file: # all details in a config file
       profile: "SOME-PROFILE" # optional, defaults to "DEFAULT"

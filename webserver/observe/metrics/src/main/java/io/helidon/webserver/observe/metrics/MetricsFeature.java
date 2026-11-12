@@ -15,6 +15,7 @@
  */
 package io.helidon.webserver.observe.metrics;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.ServiceLoader;
@@ -106,7 +107,11 @@ class MetricsFeature {
 
     void register(HttpRouting.Builder routing, String endpoint) {
         configureVendorMetrics(routing);
-        routing.register(endpoint, new MetricsService());
+        routing.register(endpoint, new MetricsService(true));
+    }
+
+    void registerLifecycle(HttpRouting.Builder routing) {
+        routing.register(new MetricsService(false));
     }
 
     Optional<?> output(ServerRequest req,
@@ -330,8 +335,17 @@ class MetricsFeature {
      * Separate metrics service class with an afterStop method that is properly invoked.
      */
     private class MetricsService implements HttpService {
+        private final boolean endpointsEnabled;
+
+        private MetricsService(boolean endpointsEnabled) {
+            this.endpointsEnabled = endpointsEnabled;
+        }
+
         @Override
         public void routing(HttpRules rules) {
+            if (!endpointsEnabled) {
+                return;
+            }
             if (enabled()) {
                 setUpEndpoints(rules);
             } else {
@@ -341,7 +355,33 @@ class MetricsFeature {
 
         @Override
         public void afterStop() {
-            kpiMetrics.close();
+            List<AutoCloseable> resources = new ArrayList<>();
+            for (var publisher : metricsConfig.publishers()) {
+                if (publisher instanceof AutoCloseable closeable) {
+                    resources.add(closeable);
+                }
+            }
+            if (kpiMetrics != null) {
+                resources.add(kpiMetrics::close);
+            }
+
+            IllegalStateException failure = null;
+            for (var resource : resources) {
+                try {
+                    resource.close();
+                } catch (Exception e) {
+                    if (e instanceof InterruptedException) {
+                        Thread.currentThread().interrupt();
+                    }
+                    if (failure == null) {
+                        failure = new IllegalStateException("Failed to close metrics resources after server stop");
+                    }
+                    failure.addSuppressed(e);
+                }
+            }
+            if (failure != null) {
+                throw failure;
+            }
         }
     }
 }
