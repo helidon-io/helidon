@@ -140,10 +140,10 @@ public final class HelidonOpenTelemetry {
      * {@snippet :
      *
      * io.opentelemetry.api.trace.Tracer nativeOtelTracer; // previously-assigned
-     * io.helidon.tracing.api.SpanListener mySpanListener; // previously-assigned
+     * io.helidon.tracing.SpanListener mySpanListener; // previously-assigned
      *
-     * io.opentelemetry.api.trace.Tracer callbackEnabledOtelTracer = HelidonOpenTelemetry.callbackEnabledFrom(nativeOtelTracer);
-     * callbackEnabledOtelTracer.unwrap(io.helidon.tracing.api.Tracer.class).register(mySpanListener);
+     * var callbackEnabledOtelTracer = HelidonOpenTelemetry.callbackEnabledFrom(nativeOtelTracer);
+     * callbackEnabledOtelTracer.unwrap(io.helidon.tracing.Tracer.class).register(mySpanListener);
      *}
      * Code which has a Helidon {@code Tracer} should instead invoke {@link #callbackEnabledFrom(io.helidon.tracing.Tracer)},
      * passing the Helidon tracer. Then Helidon will automatically notify all listeners already registered with the
