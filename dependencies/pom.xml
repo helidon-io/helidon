@@ -68,7 +68,7 @@
         <version.lib.hamcrest>1.3</version.lib.hamcrest>
         <version.lib.hibernate.family>6.3</version.lib.hibernate.family>
         <version.lib.hibernate>${version.lib.hibernate.family}.1.Final</version.lib.hibernate>
-        <version.lib.hibernate-validator>8.0.2.Final</version.lib.hibernate-validator>
+        <version.lib.hibernate-validator>8.0.6.Final</version.lib.hibernate-validator>
         <version.lib.hikaricp>5.0.1</version.lib.hikaricp>
         <version.lib.jackson>2.21.8</version.lib.jackson>
         <version.lib.jakarta.activation-api>2.1.3</version.lib.jakarta.activation-api>
@@ -115,8 +115,7 @@
         <version.lib.log4j>2.25.5</version.lib.log4j>
         <version.lib.mariadb-java-client>2.6.2</version.lib.mariadb-java-client>
         <version.lib.maven-wagon>2.10</version.lib.maven-wagon>
-        <version.lib.micrometer>1.15.12</version.lib.micrometer>
-        <version.lib.micrometer-prometheus>1.15.12</version.lib.micrometer-prometheus>
+        <version.lib.micrometer>1.17.1</version.lib.micrometer>
         <version.lib.micronaut>4.10.23</version.lib.micronaut>
         <version.lib.micronaut.validation>4.12.0</version.lib.micronaut.validation>
         <version.lib.micronaut.data>4.4.1</version.lib.micronaut.data>
@@ -156,7 +155,7 @@
         <version.lib.opentracing.grpc>0.2.1</version.lib.opentracing.grpc>
         <version.lib.opentracing.tracerresolver>0.1.8</version.lib.opentracing.tracerresolver>
         <version.lib.parsson>1.1.9</version.lib.parsson>
-        <version.lib.postgresql>42.7.13</version.lib.postgresql>
+        <version.lib.postgresql>42.7.14</version.lib.postgresql>
         <version.lib.prometheus>0.16.0</version.lib.prometheus>
         <version.lib.reactivestreams>1.0.4</version.lib.reactivestreams>
         <version.lib.slf4j>2.0.17</version.lib.slf4j>
@@ -589,28 +588,6 @@
                 <groupId>com.oracle.database.messaging</groupId>
                 <artifactId>aqapi</artifactId>
                 <version>${version.lib.database.messaging}</version>
-            </dependency>
-
-            <!-- Micrometer related -->
-            <dependency>
-                <groupId>io.micrometer</groupId>
-                <artifactId>micrometer-core</artifactId>
-                <version>${version.lib.micrometer}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micrometer</groupId>
-                <artifactId>micrometer-registry-prometheus</artifactId>
-                <version>${version.lib.micrometer-prometheus}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micrometer</groupId>
-                <artifactId>micrometer-registry-prometheus-simpleclient</artifactId>
-                <version>${version.lib.micrometer-prometheus}</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micrometer</groupId>
-                <artifactId>micrometer-registry-otlp</artifactId>
-                <version>${version.lib.micrometer}</version>
             </dependency>
 
             <!-- Microprofile related -->
@@ -1367,6 +1344,13 @@
             <!-- END OF Section 4: Testing -->
 
             <!-- imported boms -->
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-bom</artifactId>
+                <version>${version.lib.micrometer}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>com.oracle.coherence.ce</groupId>
                 <artifactId>coherence-bom</artifactId>
