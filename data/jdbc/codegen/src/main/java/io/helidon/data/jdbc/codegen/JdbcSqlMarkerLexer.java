@@ -37,6 +37,8 @@ final class JdbcSqlMarkerLexer implements JdbcSqlScanHandler {
     private final List<String> markers = new ArrayList<>();
     private boolean named;
     private boolean positional;
+    private int firstPosition = -1;
+    private int positionalCount;
 
     private JdbcSqlMarkerLexer(String source) {
         this.source = source;
@@ -50,15 +52,22 @@ final class JdbcSqlMarkerLexer implements JdbcSqlScanHandler {
      * @return marker plan
      */
     static Result parse(String sql) {
+        return parse(sql, false);
+    }
+
+    static Result parse(String sql, boolean callable) {
         JdbcSqlMarkerLexer lexer = new JdbcSqlMarkerLexer(sql);
         JdbcSqlScanner.scan(sql, lexer);
-        if (lexer.named && lexer.positional) {
+        boolean leadingReturn = callable && lexer.firstPosition >= 0
+                && sql.substring(0, lexer.firstPosition).matches("(?is)\\s*\\{\\s*")
+                && sql.substring(lexer.firstPosition + 1).matches("(?is)\\s*=\\s*call\\b.*");
+        if (lexer.named && lexer.positional && !(leadingReturn && lexer.positionalCount == 1)) {
             throw malformed("Declarative SQL cannot mix named and positional markers", sql.length());
         }
         MarkerStyle style = lexer.named
                 ? MarkerStyle.NAMED
                 : lexer.positional ? MarkerStyle.POSITIONAL : MarkerStyle.NONE;
-        return new Result(lexer.jdbcSql.toString(), List.copyOf(lexer.markers), style);
+        return new Result(lexer.jdbcSql.toString(), List.copyOf(lexer.markers), style, leadingReturn);
     }
 
     @Override
@@ -86,6 +95,10 @@ final class JdbcSqlMarkerLexer implements JdbcSqlScanHandler {
     @Override
     public void positionalMarker(int offset) {
         // Positional statements only need a physical marker count, so an empty entry avoids storing SQL text.
+        if (firstPosition < 0) {
+            firstPosition = offset;
+        }
+        positionalCount++;
         markers.add("");
         positional = true;
         jdbcSql.append('?');
@@ -112,7 +125,8 @@ final class JdbcSqlMarkerLexer implements JdbcSqlScanHandler {
      * @param sql positional JDBC SQL
      * @param markers named markers or empty positional entries
      * @param style marker style
+     * @param leadingReturn The flag identifies a leading callable return.
      */
-    record Result(String sql, List<String> markers, MarkerStyle style) {
+    record Result(String sql, List<String> markers, MarkerStyle style, boolean leadingReturn) {
     }
 }
