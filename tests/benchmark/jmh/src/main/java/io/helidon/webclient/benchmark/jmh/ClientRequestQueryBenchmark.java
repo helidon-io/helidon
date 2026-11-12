@@ -18,8 +18,10 @@ package io.helidon.webclient.benchmark.jmh;
 
 import java.net.URI;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.uri.UriQuery;
 import io.helidon.http.Method;
 import io.helidon.webclient.api.ClientRequest.OutputStreamHandler;
 import io.helidon.webclient.api.ClientRequestBase;
@@ -35,6 +37,7 @@ import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
@@ -52,6 +55,42 @@ public class ClientRequestQueryBenchmark {
 
     @Param({"1", "4"})
     public int queryParamCount;
+
+    @Param({"plain", "percent", "plus"})
+    public String queryNameStyle;
+
+    private String queryNamePrefix;
+
+    @Setup
+    public void setup() {
+        queryNamePrefix = switch (queryNameStyle) {
+            case "plain" -> "request";
+            case "percent" -> "request%";
+            case "plus" -> "request+";
+            default -> throw new IllegalArgumentException("Unknown query-name style: " + queryNameStyle);
+        };
+
+        FakeClientRequest request = newRequest();
+        request.uri("https://{host}/items/{id}");
+        request.pathParam("host", "other.example");
+        request.pathParam("id", "one");
+        addQueryParams(request);
+        ClientUri resolved = request.resolvedUri();
+        if (!"other.example".equals(resolved.host()) || !"/items/one".equals(resolved.path().rawPath())) {
+            throw new IllegalStateException("Unexpected absolute-template target: " + resolved);
+        }
+        UriQuery serializedQuery = UriQuery.create(resolved.toUri());
+        if (serializedQuery.size() != queryParamCount) {
+            throw new IllegalStateException("Unexpected absolute-template query: " + serializedQuery.rawValue());
+        }
+        for (int i = 0; i < queryParamCount; i++) {
+            String name = queryNamePrefix + i;
+            List<String> expected = List.of("value" + i);
+            if (!expected.equals(resolved.query().all(name)) || !expected.equals(serializedQuery.all(name))) {
+                throw new IllegalStateException("Absolute-template query parameter changed: " + name);
+            }
+        }
+    }
 
     @Benchmark
     public String nonTemplate() {
@@ -83,7 +122,7 @@ public class ClientRequestQueryBenchmark {
     @Benchmark
     public String absoluteTemplate() {
         FakeClientRequest request = newRequest();
-        request.uri("https://{host}/items/{id}?template=value");
+        request.uri("https://{host}/items/{id}");
         request.pathParam("host", "other.example");
         request.pathParam("id", "one");
         addQueryParams(request);
@@ -96,7 +135,7 @@ public class ClientRequestQueryBenchmark {
 
     private void addQueryParams(FakeClientRequest request) {
         for (int i = 0; i < queryParamCount; i++) {
-            request.queryParam("request" + i, "value" + i);
+            request.queryParam(queryNamePrefix + i, "value" + i);
         }
     }
 
