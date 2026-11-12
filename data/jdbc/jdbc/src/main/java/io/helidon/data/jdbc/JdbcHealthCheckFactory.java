@@ -50,7 +50,7 @@ final class JdbcHealthCheckFactory implements Service.ServicesFactory<HealthChec
         try {
             definitions = configurations.get();
         } catch (ConfigException | ServiceRegistryException _) {
-            throw new DataException("JDBC health definitions could not be read.");
+            throw new DataException("The JDBC client health check configuration could not be loaded.");
         }
         List<Service.QualifiedInstance<HealthCheck>> checks = new ArrayList<>();
         Set<String> names = new HashSet<>();
@@ -69,7 +69,8 @@ final class JdbcHealthCheckFactory implements Service.ServicesFactory<HealthChec
                 client = clients.get().stream()
                         .filter(instance -> instance.qualifiers().contains(qualifier))
                         .findFirst()
-                        .orElseThrow(() -> new DataException("An enabled JDBC health definition has no matching client."))
+                        .orElseThrow(() -> new DataException(
+                                "The JDBC client configured for an enabled health check is not registered."))
                         .get();
             } catch (ServiceRegistryException _) {
                 throw new DataException("The JDBC client for the health check could not be resolved.");

@@ -40,22 +40,23 @@ final class DataSourceProbeLease implements AutoCloseable {
         try {
             connection = dataSource.getConnection();
         } catch (SQLException | RuntimeException | Error failure) {
-            throw DataSourceProbeFailures.translateFailure("acquiring a probe connection", failure);
+            throw DataSourceProbeFailures.translateFailure("acquiring a connection", failure);
         }
         try {
             if (!connection.getAutoCommit()) {
-                throw DataSourceProbeFailures.safeException("An independent probe requires automatic commit mode.");
+                throw DataSourceProbeFailures.safeException(
+                        "An independent health check requires a connection with auto-commit enabled.");
             }
             return new DataSourceProbeLease(connection);
         } catch (SQLException | RuntimeException | Error failure) {
-            throw DataSourceProbeFailures.translateFailure("validating a probe connection",
+            throw DataSourceProbeFailures.translateFailure("validating a connection",
                     invalidate(connection, failure));
         }
     }
 
     Connection connection() {
         if (closed) {
-            throw new IllegalStateException("The probe connection lease is closed.");
+            throw new IllegalStateException("The health check connection lease is closed.");
         }
         return connection;
     }
@@ -73,7 +74,7 @@ final class DataSourceProbeLease implements AutoCloseable {
         Throwable failure = null;
         try {
             if (!connection.getAutoCommit()) {
-                throw DataSourceProbeFailures.safeException("The probe connection must retain automatic commit mode.");
+                throw DataSourceProbeFailures.safeException("The health check connection must remain in auto-commit mode.");
             }
             if (!unsafe) {
                 connection.close();
@@ -83,9 +84,9 @@ final class DataSourceProbeLease implements AutoCloseable {
             failure = inspectionFailure;
         }
         if (failure == null) {
-            failure = DataSourceProbeFailures.safeException("The probe connection cannot be safely reused.");
+            failure = DataSourceProbeFailures.safeException("The health check connection cannot be safely reused.");
         }
-        throw DataSourceProbeFailures.translateFailure("releasing a probe connection",
+        throw DataSourceProbeFailures.translateFailure("releasing a connection",
                 invalidate(connection, failure));
     }
 

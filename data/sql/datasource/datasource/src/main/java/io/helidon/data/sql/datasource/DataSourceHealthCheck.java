@@ -51,7 +51,7 @@ public final class DataSourceHealthCheck implements HealthCheck, RuntimeType.Api
         long seconds = queryTimeout.getSeconds();
         if (queryTimeout.getNano() != 0 || seconds < 1 || seconds > Integer.MAX_VALUE) {
             throw new IllegalArgumentException(
-                    "The query timeout must contain positive whole seconds within the JDBC integer range.");
+                    "The query timeout must be a whole number of seconds between 1 and 2147483647, inclusive.");
         }
         this.timeout = (int) seconds;
     }

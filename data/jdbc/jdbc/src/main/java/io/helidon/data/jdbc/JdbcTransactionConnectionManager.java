@@ -133,12 +133,12 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
             return;
         }
         if (state.failedJdbc != null || state.failedForeign != null || state.activeForeign != null) {
-            throw new DataException("The current transaction context cannot run an independent JDBC probe.");
+            throw new DataException("The current transaction context does not allow an independent JDBC client health check.");
         }
         if (state.activeJdbc != null) {
             Association association = state.jdbcTransactions.get(state.activeJdbc);
             if (association == null) {
-                throw new IllegalStateException("The active JDBC transaction has no lifecycle association.");
+                throw new IllegalStateException("The active JDBC transaction is not registered with the transaction manager.");
             }
             association.require(AssociationState.ACTIVE, "run an independent probe");
         }
