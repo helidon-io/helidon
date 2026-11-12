@@ -21,6 +21,7 @@ import java.util.Locale;
 import java.util.Objects;
 
 import io.helidon.common.Api;
+import io.helidon.common.uri.UriEncoding;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriPath;
@@ -239,7 +240,7 @@ public class ClientUri implements UriInfo {
      */
     public ClientUri resolvePath(String path) {
         uriBuilder.path(UriPath.create(resolvePath(uriBuilder.path().rawPath(),
-                                                   UriPath.createFromDecoded(path).rawPath())));
+                                                   UriEncoding.encode(path, UriEncoding.Type.PATH))));
         return this;
     }
 

@@ -46,6 +46,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ClientRequestBaseTest {
 
+    @ParameterizedTest
+    @ValueSource(strings = {"item:revision", "/item:revision"})
+    void preservesColonWhenAppendingRequestPath(String path) {
+        TestRequest request = new TestRequest(Method.GET, "https://example.com/a%2fb?b=2&a=1&b=3&flag&&");
+        request.path(path);
+
+        assertThat(request.resolvedUri().pathWithQueryAndFragment(), is("/a%2fb/item:revision?b=2&a=1&b=3&flag&&"));
+    }
+
     @Test
     void rejectsMultipleHostHeaderBeforeRequest() {
         TestRequest request = new TestRequest(Method.GET, "http://service.example");
