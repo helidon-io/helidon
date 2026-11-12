@@ -17,11 +17,13 @@
 package io.helidon.webserver.http1;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.SocketException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -92,6 +94,121 @@ class Http1ServerResponseTest {
     private static final List<Status> NO_ENTITY_STATUSES = List.of(Status.NO_CONTENT_204,
                                                                   Status.RESET_CONTENT_205,
                                                                   Status.NOT_MODIFIED_304);
+
+    @ParameterizedTest
+    @MethodSource("directResponseBodies")
+    void directWritesSendExactArraySlice(boolean useNio, int writeQueueLength, int length) {
+        DataWriter writer = mock(DataWriter.class);
+        var wire = new ByteArrayOutputStream();
+        var staging = ByteBuffer.allocate(8192);
+        doAnswer(invocation -> {
+            BufferData buffer = invocation.getArgument(0);
+            if (useNio) {
+                while (!buffer.consumed()) {
+                    staging.clear();
+                    int written = buffer.writeTo(staging, buffer.available());
+                    assertThat("Response buffer must make progress", written, greaterThan(0));
+                    wire.write(staging.array(), 0, written);
+                }
+            } else {
+                buffer.writeTo(wire);
+            }
+            return null;
+        }).when(writer).write(any(BufferData.class));
+        var config = WebServer.builder().useNio(useNio).writeQueueLength(writeQueueLength).buildPrototype();
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create(), config);
+        String expected = "abcdefghij".repeat((length + 9) / 10).substring(0, length);
+        byte[] reusable = ("ignored-prefix" + expected + "ignored-suffix").getBytes(StandardCharsets.US_ASCII);
+
+        response.send(reusable, "ignored-prefix".length(), length);
+        Arrays.fill(reusable, (byte) 'x');
+
+        String text = wire.toString(StandardCharsets.ISO_8859_1);
+        assertAll(
+                () -> assertThat(text, startsWith("HTTP/1.1 200 OK\r\n")),
+                () -> assertThat(text, containsString("\r\nContent-Length: " + length + "\r\n")),
+                () -> assertThat(responseEntity(text, true), is(expected)),
+                () -> assertThat(response.bytesWritten(), is((long) wire.size()))
+        );
+        verify(writer).write(any(BufferData.class));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"true,2,false", "true,8,true", "false,2,false", "false,8,true"})
+    void queuedSendsOwnReusableCallerArray(boolean useNio, int writeQueueLength, boolean smartAsyncWrites) {
+        DataWriter writer = mock(DataWriter.class);
+        var config = WebServer.builder()
+                .useNio(useNio)
+                .writeQueueLength(writeQueueLength)
+                .smartAsyncWrites(smartAsyncWrites)
+                .buildPrototype();
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create(), config);
+        String expected = "abcdefghij".repeat(27000);
+        byte[] reusable = ("ignored-prefix" + expected + "ignored-suffix").getBytes(StandardCharsets.US_ASCII);
+
+        response.send(reusable, "ignored-prefix".length(), expected.length());
+        Arrays.fill(reusable, (byte) 'x');
+
+        var queued = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer).write(queued.capture());
+        assertThat(responseEntity(responseText(queued), true), is(expected));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void directResponseSliceStaysBoundedForSendListener(boolean rewind) {
+        DataWriter writer = mock(DataWriter.class);
+        var debugData = new StringBuilder();
+        Http1ConnectionListener listener = new Http1ConnectionListener() {
+            @Override
+            public void data(ConnectionContext ctx, BufferData data) {
+                debugData.append(data.debugDataHex(true));
+                if (rewind) {
+                    data.readString(data.available(), StandardCharsets.ISO_8859_1);
+                    data.rewind();
+                }
+            }
+        };
+        var config = WebServer.builder().useNio(true).writeQueueLength(0).buildPrototype();
+        Http1ServerResponse response = createResponse(writer,
+                                                      Method.GET,
+                                                      ContentEncodingContext.create(),
+                                                      config,
+                                                      ServerRequestHeaders.create(WritableHeaders.create()),
+                                                      listener);
+        String prefix = "P".repeat(32);
+        String expected = "B".repeat(10240);
+        String suffix = "Z".repeat(32);
+        byte[] bytes = (prefix + expected + suffix).getBytes(StandardCharsets.US_ASCII);
+
+        response.send(bytes, prefix.length(), expected.length());
+
+        var sent = ArgumentCaptor.forClass(BufferData.class);
+        verify(writer).write(sent.capture());
+        String text = responseText(sent);
+        assertAll(
+                () -> assertThat(debugData.toString(), containsString("BBBBBBBB")),
+                () -> assertThat(debugData.toString(), not(containsString("PPPPPPPP"))),
+                () -> assertThat(debugData.toString(), not(containsString("ZZZZZZZZ"))),
+                () -> assertThat(text, containsString("\r\nContent-Length: " + expected.length() + "\r\n")),
+                () -> assertThat(responseEntity(text, true), is(expected)),
+                () -> assertThat(response.bytesWritten(), is((long) text.length()))
+        );
+    }
+
+    @ParameterizedTest
+    @CsvSource({"1024,0,1025", "65536,0,65537", "1024,-1,1024", "1024,1,1024", "1024,2147483647,1024"})
+    void invalidDirectResponseSlicesFailBeforeSending(int arrayLength, int position, int length) {
+        DataWriter writer = mock(DataWriter.class);
+        var config = WebServer.builder().useNio(true).writeQueueLength(0).buildPrototype();
+        Http1ServerResponse response = createResponse(writer, Method.GET, ContentEncodingContext.create(), config);
+        byte[] bytes = new byte[arrayLength];
+
+        assertThrows(IndexOutOfBoundsException.class, () -> response.send(bytes, position, length));
+
+        assertThat(response.isSent(), is(false));
+        verifyZeroInteractions(writer);
+    }
 
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
@@ -1714,6 +1831,13 @@ class Http1ServerResponseTest {
         }).when(dataWriter).write(any(BufferData.class));
     }
 
+    private static Stream<Arguments> directResponseBodies() {
+        return Stream.of(false, true)
+                .flatMap(useNio -> Stream.of(0, 1)
+                        .flatMap(queueLength -> Stream.of(0, 512, 1023, 1024, 1025, 10240, 262144)
+                                .map(length -> Arguments.of(useNio, queueLength, length))));
+    }
+
     private static Http1ServerResponse createResponse(DataWriter dataWriter,
                                                       Method method,
                                                       ContentEncodingContext contentEncodingContext) {
@@ -1736,6 +1860,20 @@ class Http1ServerResponseTest {
                                                       ContentEncodingContext contentEncodingContext,
                                                       ListenerConfig listenerConfig,
                                                       ServerRequestHeaders requestHeaders) {
+        return createResponse(dataWriter,
+                              method,
+                              contentEncodingContext,
+                              listenerConfig,
+                              requestHeaders,
+                              mock(Http1ConnectionListener.class));
+    }
+
+    private static Http1ServerResponse createResponse(DataWriter dataWriter,
+                                                      Method method,
+                                                      ContentEncodingContext contentEncodingContext,
+                                                      ListenerConfig listenerConfig,
+                                                      ServerRequestHeaders requestHeaders,
+                                                      Http1ConnectionListener sendListener) {
         Http1ServerRequest request = mock(Http1ServerRequest.class);
         HttpPrologue prologue = mock(HttpPrologue.class);
         when(prologue.method()).thenReturn(method);
@@ -1751,7 +1889,7 @@ class Http1ServerResponseTest {
         when(ctx.listenerContext()).thenReturn(listenerContext);
 
         return new Http1ServerResponse(ctx,
-                                       mock(Http1ConnectionListener.class),
+                                       sendListener,
                                        dataWriter,
                                        request,
                                        true,
