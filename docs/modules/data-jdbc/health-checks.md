@@ -392,14 +392,3 @@ Each invocation needs pool capacity in addition to any caller-held connection. P
 exhaustion returns DOWN without borrowing that connection or changing caller work.
 Concurrent probes use separate acquisitions, although a pool can reuse a physical
 connection across completed invocations. See [Local Transactions](data-jdbc.md#local-transactions).
-
-### Pool Recovery Limitation
-
-Unsafe connections must be discarded from the pool. The current abort-and-close
-sequence does not guarantee immediate healthy reuse for unwrapped HikariCP 7.1.0 pools
-with MySQL Connector/J 26.7.0 after an unsafe acquisition is rejected. Helidon's current
-Hikari provider also returns an unwrapped Hikari data source. Ordinary successful
-checks work, but reliable recovery in this fault scenario remains unresolved. Do not
-assume that releasing the logical lease proves that the physical pool entry was
-discarded. External sources must provide reliable invalidation as well as independent
-acquisition.
