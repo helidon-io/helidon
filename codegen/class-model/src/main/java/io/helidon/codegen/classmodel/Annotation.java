@@ -37,11 +37,13 @@ import io.helidon.common.types.TypeName;
 public final class Annotation extends CommonComponent {
 
     private final List<AnnotationParameter> parameters;
+    private final Map<String, AnnotationProperty> defaultedProperties;
     private final io.helidon.common.types.Annotation commonAnnotation;
 
     private Annotation(Builder builder) {
         super(builder);
         this.parameters = List.copyOf(builder.parameters.values());
+        this.defaultedProperties = Map.copyOf(builder.defaultedProperties);
         this.commonAnnotation = builder.commonAnntation;
     }
 
@@ -111,6 +113,48 @@ public final class Annotation extends CommonComponent {
         return builder().from(annotation).build();
     }
 
+    static boolean isMultiline(ModelWriter writer, ImportOrganizer imports, Object o) {
+        var sw = new StringWriter();
+        var mw = new ModelWriter(sw, "");
+        switch (o) {
+            case Annotation a -> a.writeComponent(mw, false, imports);
+            case AnnotationParameter p -> {
+                if (p.value() instanceof Collection<?> list) {
+                    for (var e : list) {
+                        if (e instanceof Annotation) {
+                            return true;
+                        }
+                        break;
+                    }
+                }
+                p.writeComponent(mw, false, imports);
+            }
+            default -> {
+                return false;
+            }
+        }
+        int lineSize = writer.currentPadding().length() + sw.getBuffer().length();
+        return lineSize > 120;
+    }
+
+    static Object toTypesValue(Object value) {
+        if (value instanceof Collection<?> values) {
+            var list = new ArrayList<>();
+            for (var e : values) {
+                if (e instanceof Annotation a) {
+                    list.add(a.toTypesAnnotation());
+                } else {
+                    list.add(e);
+                }
+            }
+            return list;
+        } else if (value instanceof Annotation a) {
+            return a.toTypesAnnotation();
+        } else {
+            return value;
+        }
+    }
+
     /**
      * Convert class model annotation to Helidon Common Types annotation.
      *
@@ -122,6 +166,7 @@ public final class Annotation extends CommonComponent {
         }
         var builder = io.helidon.common.types.Annotation.builder();
         builder.typeName(type().genericTypeName());
+        builder.addProperties(defaultedProperties);
         for (var parameter : parameters) {
             var value = toTypesValue(parameter.value());
             builder.property(parameter.name(), value);
@@ -200,54 +245,13 @@ public final class Annotation extends CommonComponent {
         }
     }
 
-    static boolean isMultiline(ModelWriter writer, ImportOrganizer imports, Object o) {
-        var sw = new StringWriter();
-        var mw = new ModelWriter(sw, "");
-        switch (o) {
-            case Annotation a -> a.writeComponent(mw, false, imports);
-            case AnnotationParameter p -> {
-                if (p.value() instanceof Collection<?> list) {
-                    for (var e : list) {
-                        if (e instanceof Annotation) {
-                            return true;
-                        }
-                        break;
-                    }
-                }
-                p.writeComponent(mw, false, imports);
-            }
-            default -> {
-                return false;
-            }
-        }
-        int lineSize = writer.currentPadding().length() + sw.getBuffer().length();
-        return lineSize > 120;
-    }
-
-    static Object toTypesValue(Object value) {
-        if (value instanceof Collection<?> values) {
-            var list = new ArrayList<>();
-            for (var e : values) {
-                if (e instanceof Annotation a) {
-                    list.add(a.toTypesAnnotation());
-                } else {
-                    list.add(e);
-                }
-            }
-            return list;
-        } else if (value instanceof Annotation a) {
-            return a.toTypesAnnotation();
-        } else {
-            return value;
-        }
-    }
-
     /**
      * Fluent API builder for {@link Annotation}.
      */
     public static final class Builder extends CommonComponent.Builder<Builder, Annotation> {
 
         private final Map<String, AnnotationParameter> parameters = new LinkedHashMap<>();
+        private final Map<String, AnnotationProperty> defaultedProperties = new LinkedHashMap<>();
         private io.helidon.common.types.Annotation commonAnntation;
 
         private Builder() {
@@ -293,11 +297,18 @@ public final class Annotation extends CommonComponent {
          * Adds annotation parameter.
          *
          * @param name     annotation parameter name
-         * @param property annotation property
-         * @return updated builder instance
+         * @param property The annotation property is emitted only when explicitly declared.
+         * @return The updated builder instance.
+         * @throws NullPointerException The name or property is null.
          */
         public Builder addParameter(String name, AnnotationProperty property) {
+            Objects.requireNonNull(name);
             Objects.requireNonNull(property);
+            if (!property.explicit()) {
+                parameters.remove(name);
+                defaultedProperties.put(name, property);
+                return this;
+            }
             var value = property.value();
             return addParameter(AnnotationParameter.builder()
                     .name(name)
@@ -338,6 +349,7 @@ public final class Annotation extends CommonComponent {
          */
         public Builder addParameter(AnnotationParameter parameter) {
             Objects.requireNonNull(parameter);
+            defaultedProperties.remove(parameter.name());
             parameters.put(parameter.name(), parameter);
             return this;
         }

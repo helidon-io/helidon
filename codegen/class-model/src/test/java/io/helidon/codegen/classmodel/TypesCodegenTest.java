@@ -20,6 +20,7 @@ import java.lang.annotation.ElementType;
 import java.util.List;
 
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.AnnotationProperty;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -33,6 +34,19 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class TypesCodegenTest {
+    @Test
+    void reconstructsDefaultedAnnotationProperties() {
+        Annotation nested = Annotation.builder().type(Deprecated.class)
+                .putProperty("since", AnnotationProperty.create("", false)).build();
+        Annotation annotation = Annotation.builder().typeName(TypeName.create("example.Choices"))
+                .property("value", List.of(nested))
+                .putProperty("count", AnnotationProperty.create(0, false)).build();
+        TestContentBuilder content = new TestContentBuilder();
+        ContentSupport.addCreateAnnotation(content, annotation);
+        assertThat(content.generatedString(), containsString("AnnotationProperty@.create(0, false)"));
+        assertThat(content.generatedString(), containsString("AnnotationProperty@.create(\"\", false)"));
+    }
+
     @Test
     void testIt() {
         Annotation annotation = Annotation.builder()

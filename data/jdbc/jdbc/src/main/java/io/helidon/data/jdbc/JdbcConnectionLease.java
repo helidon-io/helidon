@@ -48,6 +48,18 @@ interface JdbcConnectionLease extends AutoCloseable {
     Connection connection();
 
     /**
+     * Reserves a participating connection until this lease closes.
+     */
+    default void reserve() {
+    }
+
+    /**
+     * Marks a participating transaction for rollback after a processing failure.
+     */
+    default void processingFailed() {
+    }
+
+    /**
      * Releases the logical lease.
      *
      * @throws io.helidon.data.DataException when validation or release fails
@@ -66,6 +78,7 @@ interface JdbcConnectionLease extends AutoCloseable {
          *
          * @param dataSource operation datasource
          * @return acquired lease
+         * @throws NullPointerException The datasource is null.
          * @throws io.helidon.data.DataException when the connection cannot be acquired
          * @throws IllegalStateException when the driver reports an unchecked failure
          */

@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.AnnotationProperty;
 import io.helidon.common.types.EnumValue;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -90,7 +91,7 @@ final class ScanAnnotationFactory {
                 .forEach(builder::addMetaAnnotation);
 
         builder.typeName(typeName);
-        extractAnnotationValues(ctx, am).forEach(builder::property);
+        extractAnnotationValues(ctx, am).forEach(builder::putProperty);
         return Optional.of(builder.build());
     }
 
@@ -101,16 +102,17 @@ final class ScanAnnotationFactory {
      * @param am  the annotation mirror
      * @return the extracted values
      */
-    private static Map<String, Object> extractAnnotationValues(ScanContext ctx,
-                                                               AnnotationInfo am) {
+    private static Map<String, AnnotationProperty> extractAnnotationValues(ScanContext ctx,
+                                                                          AnnotationInfo am) {
 
-        Map<String, Object> result = new LinkedHashMap<>();
+        Map<String, AnnotationProperty> result = new LinkedHashMap<>();
+        AnnotationParameterValueList explicitValues = am.getParameterValues(false);
         AnnotationParameterValueList parameterValues = am.getParameterValues();
         for (AnnotationParameterValue parameterValue : parameterValues) {
             String name = parameterValue.getName();
             Object value = parameterValue.getValue();
             if (value != null) {
-                result.put(name, toAnnotationValue(ctx, value));
+                result.put(name, AnnotationProperty.create(toAnnotationValue(ctx, value), explicitValues.get(name) != null));
             }
         }
 

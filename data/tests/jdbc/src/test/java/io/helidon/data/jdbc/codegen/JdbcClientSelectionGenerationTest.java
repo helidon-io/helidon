@@ -59,7 +59,8 @@ class JdbcClientSelectionGenerationTest {
             Target target = annotationType.getAnnotation(Target.class);
             Retention retention = annotationType.getAnnotation(Retention.class);
 
-            assertThat(Set.of(target.value()), is(Set.of(ElementType.METHOD)));
+            assertThat(Set.of(target.value()), is(annotationType == Jdbc.RowMapper.class
+                    ? Set.of(ElementType.METHOD, ElementType.RECORD_COMPONENT) : Set.of(ElementType.METHOD)));
             assertThat(retention.value(), is(RetentionPolicy.CLASS));
         }
     }

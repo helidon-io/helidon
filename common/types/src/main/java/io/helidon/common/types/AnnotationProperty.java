@@ -35,13 +35,28 @@ public interface AnnotationProperty {
      * Create a new annotation property.
      *
      * @param value value of the property, must be one of the supported types, see
-     *              {@link Annotation}; must not be an instance of this class
+     *              {@link Annotation}. An existing property retains its value and explicit status.
      * @return a new annotation property
+     * @throws NullPointerException if {@code value} is {@code null}
      * @see io.helidon.common.types.Annotation.BuilderBase#property(String, Object)
      */
     static AnnotationProperty create(Object value) {
         Objects.requireNonNull(value);
-        return new AnnotationPropertyImpl(value(value));
+        return new AnnotationPropertyImpl(value(value), !(value instanceof AnnotationProperty property) || property.explicit());
+    }
+
+    /**
+     * Creates an annotation property with its declaration provenance.
+     * The explicit status does not affect value equality, hash codes, or rendering.
+     *
+     * @param value value of the property, using the types supported by {@link Annotation}
+     * @param explicit whether the annotation declaration supplies the value instead of using its default
+     * @return a new annotation property
+     * @throws NullPointerException if {@code value} is {@code null}
+     */
+    static AnnotationProperty create(Object value, boolean explicit) {
+        Objects.requireNonNull(value);
+        return new AnnotationPropertyImpl(value(value), explicit);
     }
 
     /**
@@ -94,6 +109,18 @@ public interface AnnotationProperty {
      * @return value of the property
      */
     Object value();
+
+    /**
+     * Returns whether the annotation declaration explicitly supplies this property.
+     * Annotation processors can distinguish an omitted default from an explicitly
+     * supplied value even when their values are equal. Properties created without
+     * declaration provenance, including existing implementations, are explicit.
+     *
+     * @return whether the property is explicit
+     */
+    default boolean explicit() {
+        return true;
+    }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
     private static Object value(Object value) {

@@ -38,6 +38,23 @@ class AnnotationTest {
     private static final TypeName ANNOTATION_TYPE = TypeName.create(Test.class);
 
     @Test
+    void omitsDefaultedPropertiesWhenCopyingAnnotations() {
+        Annotation annotation = Annotation.builder().type(Deprecated.class)
+                .putProperty("since", AnnotationProperty.create("", false))
+                .putProperty("forRemoval", AnnotationProperty.create(false, true)).build();
+        Field field = Field.builder().accessModifier(AccessModifier.PACKAGE_PRIVATE)
+                .type(String.class).name("value").addAnnotation(annotation).build();
+        assertThat(write(field), is("@java.lang.Deprecated(forRemoval = false)\nString value;"));
+        Annotation restored = io.helidon.codegen.classmodel.Annotation.create(annotation).toTypesAnnotation();
+        assertThat(restored.property("since").orElseThrow().explicit(), is(false));
+        assertThat(restored.property("forRemoval").orElseThrow().explicit(), is(true));
+        Annotation rebuilt = io.helidon.codegen.classmodel.Annotation.builder().type(Deprecated.class)
+                .addParameter("since", annotation.property("since").orElseThrow()).build().toTypesAnnotation();
+        assertThat(rebuilt.stringValue("since").orElseThrow(), is(""));
+        assertThat(rebuilt.property("since").orElseThrow().explicit(), is(false));
+    }
+
+    @Test
     void testAnnotationStringControlCharacters() {
         Field field = Field.builder()
                 .accessModifier(AccessModifier.PRIVATE)

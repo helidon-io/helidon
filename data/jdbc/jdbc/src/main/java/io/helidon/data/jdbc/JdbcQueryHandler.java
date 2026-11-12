@@ -27,7 +27,7 @@ import io.helidon.data.NoResultException;
 import io.helidon.data.NonUniqueResultException;
 
 /**
- * Maps and materializes query-shaped JDBC results.
+ * Maps query and generated key rows within their resource lifetime.
  * <p>
  * The runner owns every resource. This handler validates the result channel,
  * applies row mapping, and checks cardinality.

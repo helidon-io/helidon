@@ -19,6 +19,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import io.helidon.data.DataException;
 
@@ -36,6 +37,8 @@ final class JdbcRow implements JdbcClient.Row {
     private final JdbcColumnLayout columns;
     private final JdbcOperation operation;
     private final Thread callbackThread;
+    private final Runnable scopeCheck;
+    private final Consumer<Throwable> failureRecorder;
 
     // Volatile makes expiration visible to code that retained the row after the callback.
     private volatile boolean active = true;
@@ -48,6 +51,13 @@ final class JdbcRow implements JdbcClient.Row {
      * @param operation current operation
      */
     JdbcRow(ResultSet resultSet, JdbcColumnLayout columns, JdbcOperation operation) {
+        this(resultSet, columns, operation, null, null);
+    }
+
+    JdbcRow(ResultSet resultSet, JdbcColumnLayout columns, JdbcOperation operation,
+            Runnable scopeCheck, Consumer<Throwable> failureRecorder) {
+        this.scopeCheck = scopeCheck;
+        this.failureRecorder = failureRecorder;
         this.resultSet = resultSet;
         this.columns = columns;
         this.operation = operation;
@@ -70,7 +80,7 @@ final class JdbcRow implements JdbcClient.Row {
         if (label.isBlank()) {
             throw new IllegalArgumentException("The column label must not be blank.");
         }
-        return Optional.ofNullable(read(columns.index(label), type));
+        return Optional.ofNullable(read(columnIndex(label), type));
     }
 
     @Override
@@ -80,7 +90,9 @@ final class JdbcRow implements JdbcClient.Row {
         validateIndex(index);
         T value = read(index, type);
         if (value == null) {
-            throw new DataException("The result column " + index + " contains SQL NULL.");
+            DataException failure = new DataException("The result column " + index + " contains SQL NULL.");
+            record(failure);
+            throw failure;
         }
         return value;
     }
@@ -93,9 +105,11 @@ final class JdbcRow implements JdbcClient.Row {
         if (label.isBlank()) {
             throw new IllegalArgumentException("The column label must not be blank.");
         }
-        T value = read(columns.index(label), type);
+        T value = read(columnIndex(label), type);
         if (value == null) {
-            throw new DataException("The result column '" + label + "' contains SQL NULL.");
+            DataException failure = new DataException("The result column '" + label + "' contains SQL NULL.");
+            record(failure);
+            throw failure;
         }
         return value;
     }
@@ -129,11 +143,33 @@ final class JdbcRow implements JdbcClient.Row {
             T result = (T) value;
             return result;
         } catch (SQLException e) {
-            throw JdbcExceptionTranslator.translate(operation, e);
+            RuntimeException failure = JdbcExceptionTranslator.translate(operation, e);
+            record(failure);
+            throw failure;
+        } catch (Error failure) {
+            record(failure);
+            throw failure;
         } catch (RuntimeException _) {
             // Some drivers report conversion or protocol failures as runtime exceptions. Sanitize them here,
             // while their JDBC origin is known, so exceptions thrown by application row mappers remain unchanged.
-            throw JdbcExceptionTranslator.resultValueFailure();
+            RuntimeException failure = JdbcExceptionTranslator.resultValueFailure();
+            record(failure);
+            throw failure;
+        }
+    }
+
+    private int columnIndex(String label) {
+        try {
+            return columns.index(label);
+        } catch (RuntimeException | Error failure) {
+            record(failure);
+            throw failure;
+        }
+    }
+
+    private void record(Throwable failure) {
+        if (failureRecorder != null) {
+            failureRecorder.accept(failure);
         }
     }
 
@@ -154,6 +190,9 @@ final class JdbcRow implements JdbcClient.Row {
      * Verifies that the current callback can read this row.
      */
     private void ensureReadable() {
+        if (scopeCheck != null) {
+            scopeCheck.run();
+        }
         if (!active) {
             throw new IllegalStateException("A JDBC row is valid only during its mapper callback.");
         }
