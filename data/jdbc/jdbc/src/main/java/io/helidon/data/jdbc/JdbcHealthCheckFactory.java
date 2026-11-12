@@ -16,13 +16,12 @@
 package io.helidon.data.jdbc;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
-import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.data.DataException;
 import io.helidon.health.HealthCheck;
 import io.helidon.service.registry.Qualifier;
@@ -33,60 +32,52 @@ import io.helidon.service.registry.ServiceRegistryException;
 /**
  * Creates enabled health checks over the clients selected by the owning registry.
  */
-@Configured(root = true, prefix = "data.clients.jdbc.health-check",
-            description = "Configures independent client health discovery.",
-            inherits = JdbcClientHealthCheck.class,
-            options = @ConfiguredOption(key = "enabled", type = Boolean.class, value = "false",
-                                        description = "Enables this health definition in its owning registry."))
 @Service.Singleton
 final class JdbcHealthCheckFactory implements Service.ServicesFactory<HealthCheck> {
-    private final Supplier<Config> configuration;
+    private final Supplier<List<JdbcClientConfig>> configurations;
     private final Supplier<List<ServiceInstance<JdbcClient>>> clients;
 
     @Service.Inject
-    JdbcHealthCheckFactory(Supplier<Config> configuration, Supplier<List<ServiceInstance<JdbcClient>>> clients) {
-        this.configuration = configuration;
+    JdbcHealthCheckFactory(Supplier<List<JdbcClientConfig>> configurations,
+                          Supplier<List<ServiceInstance<JdbcClient>>> clients) {
+        this.configurations = configurations;
         this.clients = clients;
     }
 
     @Override
     public List<Service.QualifiedInstance<HealthCheck>> services() {
-        List<Config> definitions;
+        List<JdbcClientConfig> definitions;
         try {
-            definitions = configuration.get().get("data.clients.jdbc").asNodeList().orElse(List.of());
+            definitions = configurations.get();
         } catch (ConfigException | ServiceRegistryException _) {
             throw new DataException("JDBC health definitions could not be read.");
         }
         List<Service.QualifiedInstance<HealthCheck>> checks = new ArrayList<>();
-        for (Config definition : definitions) {
-            Config health = definition.get("health-check");
-            boolean enabled;
-            try {
-                enabled = health.get("enabled").asBoolean().orElse(false);
-            } catch (ConfigException _) {
-                throw new DataException("The JDBC health discovery setting is invalid.");
+        Set<String> names = new HashSet<>();
+        for (JdbcClientConfig definition : definitions) {
+            // Registry order selects the preferred definition without merging independent health paths.
+            if (!names.add(definition.name())) {
+                continue;
             }
-            if (!enabled) {
+            JdbcClientHealthConfig health = definition.health();
+            if (!health.enabled()) {
                 continue;
             }
             JdbcClient client;
             try {
-                String name = definition.get("name").asString().orElse(Service.Named.DEFAULT_NAME);
-                Qualifier qualifier = Qualifier.createNamed(name);
+                Qualifier qualifier = Qualifier.createNamed(definition.name());
                 client = clients.get().stream()
                         .filter(instance -> instance.qualifiers().contains(qualifier))
                         .findFirst()
                         .orElseThrow(() -> new DataException("An enabled JDBC health definition has no matching client."))
                         .get();
-            } catch (ConfigException | ServiceRegistryException _) {
+            } catch (ServiceRegistryException _) {
                 throw new DataException("The JDBC client for the health check could not be resolved.");
             }
-            try {
-                JdbcClientHealthCheck check = JdbcClientHealthCheck.builder().config(health).client(client).build();
-                checks.add(Service.QualifiedInstance.create(check));
-            } catch (ConfigException _) {
-                throw new DataException("The JDBC health configuration is invalid.");
-            }
+            JdbcClientHealthCheck check = JdbcClientHealthCheck.builder().client(client)
+                    .query(health.query()).queryTimeout(health.queryTimeout()).type(health.type())
+                    .name(health.name().orElse(definition.name())).build();
+            checks.add(Service.QualifiedInstance.create(check));
         }
         return List.copyOf(checks);
     }

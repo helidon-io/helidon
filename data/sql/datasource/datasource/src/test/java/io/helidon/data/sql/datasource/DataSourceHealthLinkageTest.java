@@ -93,11 +93,32 @@ class DataSourceHealthLinkageTest {
                 package sample;
                 import io.helidon.data.sql.datasource.DataSourceHealthCheck;
                 import io.helidon.data.sql.datasource.DataSourceHealthCheckConfig;
+                import io.helidon.data.sql.datasource.DataSourceHealthConfig;
+                import io.helidon.data.sql.datasource.DataSourceConfig;
                 import javax.sql.DataSource;
                 import io.helidon.health.HealthCheckType;
                 public class Main {
                     public static void main(String[] arguments) {
                         DataSourceHealthCheck.builder().query("SELECT 1").type(HealthCheckType.READINESS);
+                        var policy = DataSourceHealthConfig.builder().enabled(true).query("SELECT 2").build();
+                        var owner = DataSourceConfig.builder().health(policy);
+                        if (!owner.health().enabled() || !owner.health().query().equals("SELECT 2")) {
+                            throw new AssertionError("The owner must retain its configured health policy.");
+                        }
+                        owner.health(health -> health.enabled(false));
+                        if (owner.health().enabled()) {
+                            throw new AssertionError("The owner builder must accept policy updates.");
+                        }
+                        try {
+                            DataSourceHealthConfig.builder(null);
+                            throw new AssertionError("Null policy must be rejected.");
+                        } catch (NullPointerException _) {
+                        }
+                        try {
+                            owner.health((DataSourceHealthConfig) null);
+                            throw new AssertionError("Null owner policy must be rejected.");
+                        } catch (NullPointerException _) {
+                        }
                         try {
                             DataSourceHealthCheck.create((DataSourceHealthCheckConfig) null);
                             throw new AssertionError("Null configuration must be rejected.");
