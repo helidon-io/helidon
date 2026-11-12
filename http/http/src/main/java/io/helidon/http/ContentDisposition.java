@@ -141,6 +141,7 @@ public class ContentDisposition implements Header {
 
     /**
      * Get the header value, quoting parameter values and escaping embedded quotation marks and backslashes.
+     * A size consisting of one or more ASCII decimal digits is emitted without quotation marks.
      *
      * @return header value
      * @throws IllegalArgumentException if the disposition contains a raw line break
@@ -157,7 +158,7 @@ public class ContentDisposition implements Header {
                 sb.append(";");
                 sb.append(param.getKey());
                 sb.append("=");
-                if (SIZE_PARAMETER.equals(param.getKey())) {
+                if (SIZE_PARAMETER.equals(param.getKey()) && isDecimalSize(param.getValue())) {
                     sb.append(param.getValue());
                 } else {
                     sb.append("\"");
@@ -356,6 +357,19 @@ public class ContentDisposition implements Header {
      */
     public String type() {
         return type;
+    }
+
+    private static boolean isDecimalSize(String value) {
+        if (value.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c < '0' || c > '9') {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static List<String> splitParameters(String headerValue) {
