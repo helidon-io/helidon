@@ -18,6 +18,7 @@ package io.helidon.http;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -53,6 +54,106 @@ class ContentDispositionTest {
         assertThat(cd.parameters(), is(notNullValue()));
         assertThat(cd.parameters().size(), is(equalTo(1)));
         assertThat(cd.parameters().get("foo"), is(equalTo(" b a r")));
+    }
+
+    @Test
+    void testQuotedSemicolons() {
+        ContentDisposition cd = ContentDisposition.parse("form-data; name=\"field;name\"; filename=\"a;b.txt\"; size=128");
+        assertThat(cd.contentName().orElseThrow(), is("field;name"));
+        assertThat(cd.filename().orElseThrow(), is("a;b.txt"));
+        assertThat(cd.size().orElseThrow(), is(128L));
+        assertThat(cd.parameters().size(), is(3));
+    }
+
+    @Test
+    void testBuilderQuotedNameRoundTrip() {
+        ContentDisposition cd = ContentDisposition.builder().name("a\"b").filename("x.txt").build();
+        assertThat(cd.get(), is("form-data;name=\"a\\\"b\";filename=\"x.txt\""));
+        ContentDisposition parsed = ContentDisposition.parse(cd.get());
+        assertThat(parsed.contentName().orElseThrow(), is("a\"b"));
+        assertThat(parsed.filename().orElseThrow(), is("x.txt"));
+        assertThat(parsed.parameters().size(), is(2));
+    }
+
+    @Test
+    void testUnusualParameterRoundTrips() {
+        for (String name : List.of("", "a\\", "a\\\"b", "a\\;b", "a\";b", " a b ", "a%22%0A%25+b",
+                                   "a\";filename=\"other.txt", "\\\";\\\\;\"")) {
+            ContentDisposition cd = ContentDisposition.builder()
+                    .name(name)
+                    .parameter("custom", name)
+                    .filename("x.txt")
+                    .size(12)
+                    .build();
+            ContentDisposition parsed = ContentDisposition.parse(cd.get());
+            assertThat("name " + name, parsed.contentName().orElseThrow(), is(name));
+            assertThat("custom " + name, parsed.parameters().get("custom"), is(name));
+            assertThat(parsed.filename().orElseThrow(), is("x.txt"));
+            assertThat(parsed.size().orElseThrow(), is(12L));
+            assertThat(parsed.parameters().size(), is(4));
+        }
+    }
+
+    @Test
+    void testExternalBackslashBeforeSemicolon() {
+        ContentDisposition cd = ContentDisposition.parse("form-data;name=\"a\\\\;b\";filename=\"x.txt\";size=12");
+        assertThat(cd.contentName().orElseThrow(), is("a\\;b"));
+        assertThat(cd.filename().orElseThrow(), is("x.txt"));
+        assertThat(cd.size().orElseThrow(), is(12L));
+        assertThat(cd.parameters().size(), is(3));
+    }
+
+    @Test
+    void testUnknownBackslashAndLiteralPercentName() {
+        ContentDisposition cd = ContentDisposition.parse("form-data;name=\"a\\qb%22%0A%25+b\"");
+        assertThat(cd.contentName().orElseThrow(), is("a\\qb%22%0A%25+b"));
+    }
+
+    @Test
+    void testMalformedQuotedParametersRejected() {
+        for (String header : List.of("form-data;name=\"unterminated", "form-data;name=\"dangling\\",
+                                     "form-data;name=\"a\"b\";filename=\"x.txt\"",
+                                     "form-data;name=\"a\"b", "form-data;name=a\"b\"",
+                                     "form-data;name=\"a\" \"b\"")) {
+            assertThrows(IllegalArgumentException.class, () -> ContentDisposition.parse(header), header);
+        }
+    }
+
+    @Test
+    void testRawLineBreaksRejected() {
+        for (String lineBreak : List.of("\r", "\n", "\r\n")) {
+            assertThrows(IllegalArgumentException.class,
+                         () -> ContentDisposition.parse("form-data;name=\"a" + lineBreak + "b\""));
+            assertThrows(IllegalArgumentException.class,
+                         () -> ContentDisposition.builder().name("a" + lineBreak + "b").build().get());
+            assertThrows(IllegalArgumentException.class,
+                         () -> ContentDisposition.builder().parameter("custom", "a" + lineBreak + "b").build().get());
+        }
+    }
+
+    @Test
+    void testQuotedSemicolonAfterEscapedQuote() {
+        ContentDisposition cd = ContentDisposition.parse("form-data; name=\"a\\\";b\"; filename=\"file.txt\"");
+        assertThat(cd.contentName().orElseThrow(), is("a\";b"));
+        assertThat(cd.filename().orElseThrow(), is("file.txt"));
+        assertThat(cd.parameters().size(), is(2));
+    }
+
+    @Test
+    void testParameterAfterQuotedEscapedBackslash() {
+        ContentDisposition cd = ContentDisposition.parse("form-data; name=\"a\\\\\"; filename=\"a;b.txt\"");
+        assertThat(cd.contentName().orElseThrow(), is("a\\"));
+        assertThat(cd.filename().orElseThrow(), is("a;b.txt"));
+        assertThat(cd.parameters().size(), is(2));
+    }
+
+    @Test
+    void testQuotedSemicolonInWindowsFilename() {
+        ContentDisposition cd = ContentDisposition.parse("form-data; filename=\"C:\\dir\\a;b.txt\"; name=\"upload\"");
+        assertThat(cd.parameters().get("filename"), is("C:\\dir\\a;b.txt"));
+        assertThat(cd.filename().orElseThrow(), is("a;b.txt"));
+        assertThat(cd.contentName().orElseThrow(), is("upload"));
+        assertThat(cd.parameters().size(), is(2));
     }
 
     @Test
@@ -113,6 +214,45 @@ class ContentDispositionTest {
         assertThat(cd.size().getAsLong(), is(equalTo(128L)));
         assertThat(cd.parameters(), is(notNullValue()));
         assertThat(cd.parameters().size(), is(equalTo(1)));
+    }
+
+    @Test
+    void testQuotedSizePreservesParameterBoundaries() {
+        ContentDisposition cd = ContentDisposition.parse("attachment;filename=\"safe.txt\";size=\"0;filename=other.txt\"");
+        assertThat(cd.get(), is("attachment;filename=\"safe.txt\";size=\"0;filename=other.txt\""));
+        ContentDisposition parsed = ContentDisposition.parse(cd.get());
+        assertThat(parsed.filename().orElseThrow(), is("safe.txt"));
+        assertThat(parsed.parameters().get("size"), is("0;filename=other.txt"));
+        assertThat(parsed.parameters().size(), is(2));
+    }
+
+    @Test
+    void testDecimalSizePreservesWireFormat() {
+        for (String size : List.of("0", "000128", "9223372036854775808")) {
+            ContentDisposition cd = ContentDisposition.builder().parameter("size", size).build();
+            assertThat(size, cd.get(), is("form-data;size=" + size));
+            assertThat(size, ContentDisposition.parse(cd.get()).parameters().get("size"), is(size));
+        }
+    }
+
+    @Test
+    void testNonDecimalSizeUsesQuotedValue() {
+        for (String size : List.of("", "+1", "-1", " 1 ", "1 2", "١٢", "１２")) {
+            ContentDisposition cd = ContentDisposition.builder().parameter("size", size).build();
+            assertThat(size, cd.get(), is("form-data;size=\"" + size + "\""));
+            ContentDisposition parsed = ContentDisposition.parse(cd.get());
+            assertThat(size, parsed.parameters().get("size"), is(size));
+            assertThat(size, parsed.parameters().size(), is(1));
+        }
+    }
+
+    @Test
+    void testSizeEscapesQuotesAndBackslashes() {
+        ContentDisposition cd = ContentDisposition.builder().parameter("size", "a\";custom=\\b").build();
+        assertThat(cd.get(), is("form-data;size=\"a\\\";custom=\\\\b\""));
+        ContentDisposition parsed = ContentDisposition.parse(cd.get());
+        assertThat(parsed.parameters().get("size"), is("a\";custom=\\b"));
+        assertThat(parsed.parameters().size(), is(1));
     }
 
     @Test
@@ -185,8 +325,8 @@ class ContentDispositionTest {
 
     @Test
     void testMalformedQuotedFilenameWithBackslashRunRejected() {
-        ContentDisposition cd = ContentDisposition.parse("inline; filename=\"" + "\\".repeat(8_192));
-        assertThrows(IllegalArgumentException.class, cd::filename);
+        assertThrows(IllegalArgumentException.class,
+                     () -> ContentDisposition.parse("inline; filename=\"" + "\\".repeat(8_192)));
     }
 
     @Test

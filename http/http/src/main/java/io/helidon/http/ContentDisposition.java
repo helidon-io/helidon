@@ -20,6 +20,7 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,36 +82,38 @@ public class ContentDisposition implements Header {
 
     /**
      * Parse a received header value.
+     * Quoted backslashes, quotation marks and semicolons are unescaped once.
+     * Other backslashes are retained for compatibility with raw Windows filenames.
      *
      * @param headerValue content disposition header value
      * @return a parsed content disposition
+     * @throws IllegalArgumentException if the value contains a raw line break or malformed quotation marks
      */
     public static ContentDisposition parse(String headerValue) {
+        checkLineBreaks(headerValue);
         Builder builder = ContentDisposition.builder();
 
-        // first split by semicolon
-        String[] parts = headerValue.split("(?<=[^\\\\]);");
+        List<String> parts = splitParameters(headerValue);
 
-        if (parts.length > 0) {
-            String type = parts[0];
-            if (type.indexOf('=') > -1) {
+        if (!parts.isEmpty()) {
+            String type = parts.getFirst();
+            if (type.indexOf('=') > -1 || type.indexOf('"') > -1) {
                 throw new IllegalArgumentException("No type defined");
             } else {
                 builder.type(type.trim());
             }
-            for (int i = 1; i < parts.length; i++) {
-                String part = parts[i].trim();
+            for (int i = 1; i < parts.size(); i++) {
+                String part = parts.get(i);
                 int equals = part.indexOf('=');
                 if (equals > 0) {
-                    String name = part.substring(0, equals);
-                    String value = part.substring(equals + 1);
-                    if (value.length() >= 2 && value.charAt(0) == '"' && value.charAt(value.length() - 1) == '"') {
-                        value = value.substring(1, value.length() - 1);
+                    String name = part.substring(0, equals).trim();
+                    if (name.indexOf('"') >= 0) {
+                        throw new IllegalArgumentException("Unexpected quotation mark in content disposition parameter name.");
                     }
-                    value = value.replace("\\\\", "\\");
-                    value = value.replace("\\\"", "\"");
-                    value = value.replace("\\;", ";");
-                    builder.parameter(name, value);
+                    String value = part.substring(equals + 1).trim();
+                    builder.parameter(name, decodeParameter(value));
+                } else if (part.indexOf('"') >= 0) {
+                    throw new IllegalArgumentException("Unexpected quotation mark in content disposition parameter.");
                 }
             }
         }
@@ -136,20 +139,36 @@ public class ContentDisposition implements Header {
         return HeaderNames.CONTENT_DISPOSITION;
     }
 
+    /**
+     * Get the header value, quoting parameter values and escaping embedded quotation marks and backslashes.
+     * A size consisting of one or more ASCII decimal digits is emitted without quotation marks.
+     *
+     * @return header value
+     * @throws IllegalArgumentException if the disposition contains a raw line break
+     */
     @Override
     public String get() {
         if (value == null) {
+            checkLineBreaks(type);
             StringBuilder sb = new StringBuilder();
             sb.append(type);
             for (Map.Entry<String, String> param : parameters.entrySet()) {
+                checkLineBreaks(param.getKey());
+                checkLineBreaks(param.getValue());
                 sb.append(";");
                 sb.append(param.getKey());
                 sb.append("=");
-                if (SIZE_PARAMETER.equals(param.getKey())) {
+                if (SIZE_PARAMETER.equals(param.getKey()) && isDecimalSize(param.getValue())) {
                     sb.append(param.getValue());
                 } else {
                     sb.append("\"");
-                    sb.append(param.getValue());
+                    for (int i = 0; i < param.getValue().length(); i++) {
+                        char c = param.getValue().charAt(i);
+                        if (c == '\\' || c == '"') {
+                            sb.append('\\');
+                        }
+                        sb.append(c);
+                    }
                     sb.append("\"");
                 }
             }
@@ -338,6 +357,80 @@ public class ContentDisposition implements Header {
      */
     public String type() {
         return type;
+    }
+
+    private static boolean isDecimalSize(String value) {
+        if (value.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (c < '0' || c > '9') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static List<String> splitParameters(String headerValue) {
+        List<String> parts = new ArrayList<>();
+        boolean quoted = false;
+        boolean escaped = false;
+        int start = 0;
+        for (int i = 0; i < headerValue.length(); i++) {
+            char c = headerValue.charAt(i);
+            if (escaped) {
+                escaped = false;
+            } else if (c == '\\') {
+                escaped = true;
+            } else if (c == '"') {
+                quoted = !quoted;
+            } else if (c == ';' && !quoted) {
+                // MIME quoted strings may contain semicolons (RFC 2045 section 5.1).
+                parts.add(headerValue.substring(start, i));
+                start = i + 1;
+            }
+        }
+        if (quoted) {
+            throw new IllegalArgumentException("Unterminated quoted content disposition parameter.");
+        }
+        parts.add(headerValue.substring(start));
+        return parts;
+    }
+
+    private static String decodeParameter(String value) {
+        boolean quoted = value.startsWith("\"");
+        int start = quoted ? 1 : 0;
+        int end = value.length();
+        if (quoted) {
+            if (end < 2 || value.charAt(end - 1) != '"') {
+                throw new IllegalArgumentException("Invalid quoted content disposition parameter.");
+            }
+            end--;
+        }
+        StringBuilder decoded = new StringBuilder(end - start);
+        for (int i = start; i < end; i++) {
+            char c = value.charAt(i);
+            if (c == '"') {
+                throw new IllegalArgumentException("Unexpected quotation mark in content disposition parameter.");
+            }
+            if (c == '\\' && i + 1 < end) {
+                char next = value.charAt(i + 1);
+                if (next == '\\' || next == '"' || next == ';') {
+                    decoded.append(next);
+                    i++;
+                    continue;
+                }
+            }
+            decoded.append(c);
+        }
+        return decoded.toString();
+    }
+
+    private static void checkLineBreaks(String value) {
+        if (value.indexOf('\r') >= 0 || value.indexOf('\n') >= 0) {
+            throw new IllegalArgumentException("Content disposition must not contain a raw line break.");
+        }
     }
 
     /**
