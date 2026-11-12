@@ -19,12 +19,20 @@ package io.helidon.tests.benchmark.jmh.webclient;
 import java.net.URI;
 
 import io.helidon.common.uri.UriInfo;
+import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriQuery;
+import io.helidon.common.uri.UriQueryWriteable;
+import io.helidon.http.HttpPrologue;
+import io.helidon.http.Method;
 import io.helidon.webclient.api.ClientUri;
+import io.helidon.webclient.api.WebClient;
 
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.TearDown;
 
 @State(Scope.Thread)
 public class ClientUriJmhTest {
@@ -68,5 +76,144 @@ public class ClientUriJmhTest {
     @Benchmark
     public UriInfo buildUppercaseImplicitPort() {
         return UriInfo.builder().scheme("HTTPS").host(HOST).build();
+    }
+
+    @Benchmark
+    public String importUriAndSerialize(RequestTargetState state) {
+        return ClientUri.create(state.uri).pathWithQueryAndFragment();
+    }
+
+    @Benchmark
+    public String importUriInfoAndSerialize(RequestTargetState state) {
+        return ClientUri.create(state.uriInfo).pathWithQueryAndFragment();
+    }
+
+    @Benchmark
+    public String copyAndSerialize(RequestTargetState state) {
+        return ClientUri.create(state.clientUri).pathWithQueryAndFragment();
+    }
+
+    @Benchmark
+    public String copyExternalQueryAndSerialize(RequestTargetState state) {
+        return UriQueryWriteable.create().from(state.clientUri.query()).rawValue();
+    }
+
+    @Benchmark
+    public String mutateAndSerialize(RequestTargetState state) {
+        var uri = ClientUri.create(state.clientUri);
+        uri.writeableQuery().add("page", "2");
+        return uri.pathWithQueryAndFragment();
+    }
+
+    @Benchmark
+    public String appendDecodedPathAndSerialize(PathAppendState state) {
+        return ClientUri.create(state.baseUri).resolvePath(state.path).pathWithQueryAndFragment();
+    }
+
+    @Benchmark
+    public String forwardPrologueAndSerialize(ForwardingState state) {
+        return state.client.get()
+                .requestTarget(state.prologue)
+                .resolvedUri()
+                .pathWithQueryAndFragment();
+    }
+
+    @Benchmark
+    public String forwardThroughJdkUriAndSerialize(ForwardingState state) {
+        String path = state.prologue.uriPath().rawPath();
+        if (!path.startsWith("/")) {
+            path = URI.create(path).getRawPath();
+        }
+        if (path.isEmpty()) {
+            path = "/";
+        }
+        String query = state.prologue.hasQuery() ? "?" + state.prologue.query().rawValue() : "";
+        URI uri = URI.create(ForwardingState.UPSTREAM_ORIGIN + path + query);
+        return state.client.get().uri(uri).resolvedUri().pathWithQueryAndFragment();
+    }
+
+    @State(Scope.Thread)
+    public static class RequestTargetState {
+        @Param({"path", "shortQuery", "signedQuery"})
+        public String target;
+
+        private URI uri;
+        private UriInfo uriInfo;
+        private ClientUri clientUri;
+
+        @Setup
+        public void setup() {
+            String requestTarget = switch (target) {
+                case "path" -> "/api/items";
+                case "shortQuery" -> "/api/items?limit=10&sort=name";
+                case "signedQuery" -> "/bucket/a%2fb/%7euser/report%20one"
+                        + "?X-Amz-Algorithm=AWS4-HMAC-SHA256"
+                        + "&X-Amz-Credential=example%2f20261105%2fus-east-1%2fs3%2faws4_request"
+                        + "&X-Amz-Date=20261105T120000Z&X-Amz-Expires=900"
+                        + "&X-Amz-SignedHeaders=host&tag=a+b&flag&tag=a%20b"
+                        + "&X-Amz-Signature=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+                default -> throw new IllegalArgumentException("Unknown request target: " + target);
+            };
+            uri = URI.create("https://" + HOST + requestTarget);
+            uriInfo = UriInfo.builder()
+                    .scheme("https")
+                    .host(HOST)
+                    .path(UriPath.create(uri.getRawPath()))
+                    .query(UriQuery.create(uri))
+                    .build();
+            clientUri = ClientUri.create(uri);
+        }
+    }
+
+    @State(Scope.Thread)
+    public static class PathAppendState {
+        @Param({"", "/base", "/a%2fb;v=1"})
+        public String basePath;
+
+        @Param({"child", "item:revision", "child name:version%#?", "http://localhost:9876/private"})
+        public String path;
+
+        private ClientUri baseUri;
+
+        @Setup
+        public void setup() {
+            baseUri = ClientUri.create(URI.create("https://" + HOST + basePath + "?b=2&a=1&b=3&flag&&"));
+            if (basePath.isEmpty()) {
+                baseUri.path("");
+            }
+        }
+    }
+
+    @State(Scope.Thread)
+    public static class ForwardingState {
+        private static final String UPSTREAM_ORIGIN = "https://service.example:8443";
+
+        @Param({"encodedOrigin", "emptyQuery", "encodedAbsolute"})
+        public String target;
+
+        private WebClient client;
+        private HttpPrologue prologue;
+
+        @Setup
+        public void setup() {
+            String requestTarget = switch (target) {
+                case "encodedOrigin" -> "/bucket/a%2fb/%7euser;x=1?b=2&a=1&b=3&flag&&space=a+b";
+                case "emptyQuery" -> "/bucket/a%2fb?";
+                case "encodedAbsolute" -> "http://incoming.example:8123/bucket/a%2fb/%7euser;x=1"
+                        + "?b=2&a=1&b=3&flag&&space=a+b";
+                default -> throw new IllegalArgumentException("Unknown forwarding target: " + target);
+            };
+            prologue = HttpPrologue.create("HTTP/1.1", "HTTP", "1.1", Method.GET, requestTarget, false);
+            prologue.query().rawValue();
+            client = WebClient.builder()
+                    .baseUri(UPSTREAM_ORIGIN + "/base/path?discard=me")
+                    .shareConnectionCache(false)
+                    .build();
+        }
+
+        @TearDown
+        public void tearDown() {
+            client.closeResource();
+        }
     }
 }

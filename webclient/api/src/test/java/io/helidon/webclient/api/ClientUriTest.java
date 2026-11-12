@@ -17,9 +17,11 @@
 package io.helidon.webclient.api;
 
 import java.net.URI;
+import java.util.List;
 
 import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriPath;
+import io.helidon.common.uri.UriQuery;
 import io.helidon.common.uri.UriQueryWriteable;
 
 import org.junit.jupiter.api.Test;
@@ -33,6 +35,233 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ClientUriTest {
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "/proxy?a=1",
+            "/proxy?b=2&a=1&b=3",
+            "/proxy?flag",
+            "/proxy?x=1&&y=2",
+            "/proxy?",
+            "/objects/a%2Fb/%7euser/%25/%3f/%23?b=%2f&a=hello+world&b=%2F",
+            "/objects;a=1/b;c=2?flag&",
+            "/a//b/./c/../d?&&x=1&&",
+            "/a+b?q=a+b&encoded=a%20b"
+    })
+    void preservesImportedRequestTarget(String target) {
+        URI original = URI.create("https://example.com:8443" + target);
+        ClientUri uri = ClientUri.create(original);
+
+        assertThat(uri.path().rawPath(), is(original.getRawPath()));
+        assertThat(uri.query().rawValue(), is(original.getRawQuery()));
+        assertThat(uri.pathWithQueryAndFragment(), is(target));
+        assertThat(uri.toUri(), is(original));
+        assertThat(uri.toString(), is(original.toString()));
+        assertThat(uri.requestTargetQuery().rawValue(), is(original.getRawQuery()));
+        assertThat(ClientUri.create(uri).pathWithQueryAndFragment(), is(target));
+        assertThat(ClientUri.create().resolve(uri).pathWithQueryAndFragment(), is(target));
+    }
+
+    @Test
+    void readingParametersDoesNotChangeRequestTarget() {
+        String target = "/a%2fb;v=1?b=two+words&a=%2f&b=3&flag&&";
+        ClientUri uri = ClientUri.create(URI.create("https://example.com" + target));
+
+        assertThat(uri.path().path(), is("/a/b"));
+        assertThat(uri.query().get("b"), is("two words"));
+        assertThat(uri.query().all("b"), hasItems("two words", "3"));
+        assertThat(uri.query().getAllRaw("a"), hasItems("%2f"));
+        assertThat(uri.query().names(), hasItems("a", "b", "flag", ""));
+        uri.host("other.example.com").port(9443);
+
+        assertThat(uri.pathWithQueryAndFragment(), is(target));
+    }
+
+    @Test
+    void preservesRawPathWhenQueryChanges() {
+        ClientUri uri = ClientUri.create(URI.create("https://example.com/a%2fb/%7e?q=old"));
+        uri.writeableQuery().set("q", "new value");
+
+        assertThat(uri.pathWithQueryAndFragment(), is("/a%2fb/%7e?q=new%20value"));
+    }
+
+    @Test
+    void preservesRawQueryWhenPathChanges() {
+        ClientUri uri = ClientUri.create(URI.create("https://example.com/old?b=2&a=1&flag&&"));
+        uri.path("/new path");
+
+        assertThat(uri.pathWithQueryAndFragment(), is("/new%20path?b=2&a=1&flag&&"));
+    }
+
+    @Test
+    void preservesRawComponentsWhenResolvingRelativeUri() {
+        ClientUri uri = ClientUri.create(URI.create("https://example.com/a%2fb;v=1?b=2&a=1"));
+        uri.resolve(URI.create("child%2fpart?flag&&"));
+
+        assertThat(uri.pathWithQueryAndFragment(), is("/a%2fb;v=1/child%2fpart?b=2&a=1&flag&&"));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "/base, item:revision, /base/item:revision",
+            "/base, /item:revision, /base/item:revision",
+            "/base/, item:revision, /base/item:revision",
+            "'', item:revision, /item:revision",
+            "/, item:revision, /item:revision",
+            "/a%2fb;v=1, item:revision, /a%2fb;v=1/item:revision",
+            "/a%2fb;v=1, item:revision/child:two, /a%2fb;v=1/item:revision/child:two",
+            "/a%2fb;v=1, child name:version%#?, /a%2fb;v=1/child%20name:version%25%23%3F",
+            "/a%2fb;v=1, child name, /a%2fb;v=1/child%20name",
+            "/base, a/b:c, /base/a/b:c",
+            "/base, item;v=one:two, /base/item;v=one:two"
+    })
+    void preservesDecodedPathAppendCharacters(String basePath, String appendedPath, String expectedPath) {
+        ClientUri uri = ClientUri.create(URI.create("https://example.com" + basePath + "?flag&&a=1&a=2"));
+        uri.resolvePath(appendedPath);
+
+        assertThat(uri.pathWithQueryAndFragment(), is(expectedPath + "?flag&&a=1&a=2"));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "child, /child",
+            "/child, /child",
+            "item:revision, /item:revision",
+            "http://localhost:9876/private, /http://localhost:9876/private",
+            "https://other.example/private?q=a#b, /https://other.example/private%3Fq=a%23b",
+            "child name:version%#?, /child%20name:version%25%23%3F"
+    })
+    void keepsAppendsAgainstEmptyBaseInPath(String appendedPath, String expectedPath) {
+        ClientUri uri = ClientUri.create(URI.create("https://example.com?flag&&a=1&a=2")).path("");
+        uri.resolvePath(appendedPath);
+
+        assertThat(uri.requestTargetPath().rawPath(), is(expectedPath));
+        assertThat(uri.pathWithQueryAndFragment(), is(expectedPath + "?flag&&a=1&a=2"));
+        assertThat(uri.toUri().getHost(), is("example.com"));
+        assertThat(uri.toUri().getRawPath(), is(expectedPath));
+    }
+
+    @Test
+    void keepsAppendAgainstEmptyUriInfoBaseInPath() {
+        UriInfo baseUri = UriInfo.builder()
+                .scheme("https")
+                .host("example.com")
+                .path(UriPath.create(""))
+                .query(UriQuery.create("flag&&a=1&a=2"))
+                .build();
+        ClientUri uri = ClientUri.create(baseUri).resolvePath("http://localhost:9876/private");
+
+        assertThat(uri.requestTargetPath().rawPath(), is("/http://localhost:9876/private"));
+        assertThat(uri.pathWithQueryAndFragment(), is("/http://localhost:9876/private?flag&&a=1&a=2"));
+        assertThat(uri.toUri().getHost(), is("example.com"));
+    }
+
+    @Test
+    void emptyAppendPreservesEmptyBasePath() {
+        ClientUri uri = ClientUri.create(URI.create("https://example.com?flag&&a=1&a=2")).path("");
+        uri.resolvePath("");
+
+        assertThat(uri.path().rawPath(), is(""));
+        assertThat(uri.pathWithQueryAndFragment(), is("/?flag&&a=1&a=2"));
+    }
+
+    @Test
+    void preservesUriInfoRawComponents() {
+        UriInfo baseUri = UriInfo.builder()
+                .host("example.com")
+                .path(UriPath.create("/a%2fb;v=1"))
+                .query(UriQuery.create("b=2&a=1&b=3&flag&&"))
+                .build();
+
+        assertThat(ClientUri.create(baseUri).pathWithQueryAndFragment(), is("/a%2fb;v=1?b=2&a=1&b=3&flag&&"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"a&a=1&a", "a&a=&a", "&&x=&flag&", "%61&%61=1&a=2&%61", "a=b=c&flag"})
+    void preservesUriInfoQueryWithMixedFlagsAndValues(String query) {
+        UriInfo baseUri = UriInfo.builder()
+                .host("example.com")
+                .path(UriPath.create("/a%2fb"))
+                .query(UriQuery.create(query))
+                .build();
+
+        assertThat(ClientUri.create(baseUri).pathWithQueryAndFragment(), is("/a%2fb?" + query));
+    }
+
+    @Test
+    void importsRawQueryValuesAddedBeforeUriInfoCopy() {
+        UriQuery source = UriQuery.create("a=old");
+        source.getAllRaw("a").add("new");
+        UriInfo baseUri = UriInfo.builder().host("example.com").query(source).build();
+
+        ClientUri copy = ClientUri.create(baseUri);
+
+        assertThat(copy.pathWithQueryAndFragment(), is("/?a=old&a=new"));
+        assertThat(copy.query().all("a"), is(List.of("old")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"a", "%61"})
+    void importsRawQueryValuesEditedBeforeUriInfoCopy(String rawName) {
+        UriQuery source = UriQuery.create(rawName + "=old");
+        source.getAllRaw(rawName).set(0, "raw-new");
+        source.all("a").set(0, "decoded-new");
+        UriInfo baseUri = UriInfo.builder()
+                .host("example.com")
+                .path(UriPath.create("/a%2fb"))
+                .query(source)
+                .build();
+
+        ClientUri copy = ClientUri.create(baseUri);
+
+        assertThat(copy.pathWithQueryAndFragment(), is("/a%2fb?" + rawName + "=raw-new"));
+        assertThat(copy.query().getAllRaw(rawName), is(List.of("raw-new")));
+        assertThat(copy.query().all("a"), is(List.of("decoded-new")));
+
+        source.getAllRaw(rawName).set(0, "source-only");
+        source.all("a").set(0, "decoded-source-only");
+        assertThat(copy.pathWithQueryAndFragment(), is("/a%2fb?" + rawName + "=raw-new"));
+        assertThat(copy.query().all("a"), is(List.of("decoded-new")));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"a", "%61"})
+    void doesNotRestoreRawQueryValuesClearedBeforeUriInfoCopy(String rawName) {
+        UriQuery source = UriQuery.create(rawName + "=old");
+        source.getAllRaw(rawName).clear();
+        UriInfo baseUri = UriInfo.builder()
+                .host("example.com")
+                .path(UriPath.create("/a%2fb"))
+                .query(source)
+                .build();
+
+        ClientUri copy = ClientUri.create(baseUri);
+
+        assertThat(copy.pathWithQueryAndFragment(), is("/a%2fb?"));
+        assertThat(copy.query().getAllRaw(rawName), is(List.of()));
+        assertThat(copy.query().all("a"), is(List.of("old")));
+
+        source.getAllRaw(rawName).add("source-only");
+        assertThat(copy.pathWithQueryAndFragment(), is("/a%2fb?"));
+        assertThat(copy.query().getAllRaw(rawName), is(List.of()));
+    }
+
+    @Test
+    void replacingUriDoesNotRetainPreviousTarget() {
+        ClientUri uri = ClientUri.create(URI.create("https://example.com/a%2fb?b=2&a=1&flag"));
+        uri.resolve(URI.create("https://other.example.com/new%2fpath?z=1&&flag"));
+
+        assertThat(uri.pathWithQueryAndFragment(), is("/new%2fpath?z=1&&flag"));
+        uri.resolve(URI.create("https://other.example.com/clean"));
+        assertThat(uri.pathWithQueryAndFragment(), is("/clean"));
+    }
+
+    @Test
+    void encodesUnicodeWithoutChangingExistingEscapes() {
+        ClientUri uri = ClientUri.create(URI.create("https://example.com/café%2fmenu?q=café&raw=%2f"));
+
+        assertThat(uri.pathWithQueryAndFragment(), is("/caf%C3%A9%2fmenu?q=caf%C3%A9&raw=%2f"));
+    }
+
     @Test
     void testDefaults() {
         ClientUri helper = ClientUri.create(URI.create("http://localhost"));
@@ -187,6 +416,37 @@ class ClientUriTest {
 
         assertThat(helper.requestTargetQuery().rawValue(), is("q=a#b"));
         assertThat(helper.query().rawValue(), is("q=a%23b"));
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "/%7e | /~",
+            "/a%2fb | /a/b",
+            "/a%3fb%23c | /a?b#c",
+            "/a%25b | /a%b",
+            "/a;b=1/c;d=2 | /a/c",
+            "'' | /",
+            "/ | /"
+    })
+    void testRequestTargetPathUsesConfiguredEncoding(String rawPath, String skippedPath) {
+        ClientUri helper = ClientUri.create(URI.create("http://localhost" + rawPath + "?q=1"));
+        String originalPath = helper.path().rawPath();
+        String encodedPath = rawPath.isEmpty() ? "/" : rawPath;
+
+        assertThat(helper.requestTargetPath().rawPath(), is(encodedPath));
+        assertThat(helper.pathWithQueryAndFragment(), is(encodedPath + "?q=1"));
+
+        helper.skipUriEncoding(true);
+
+        assertThat(helper.requestTargetPath().rawPath(), is(skippedPath));
+        assertThat(helper.pathWithQueryAndFragment(), is(skippedPath + "?q=1"));
+        assertThat(helper.path().rawPath(), is(originalPath));
+        assertThat(ClientUri.create(helper).requestTargetPath().rawPath(), is(skippedPath));
+
+        helper.skipUriEncoding(false);
+
+        assertThat(helper.requestTargetPath().rawPath(), is(encodedPath));
+        assertThat(helper.pathWithQueryAndFragment(), is(encodedPath + "?q=1"));
     }
 
     @Test
