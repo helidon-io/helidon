@@ -73,7 +73,7 @@
         <version.lib.hibernate>${version.lib.hibernate.family}.11.Final</version.lib.hibernate>
         <!-- Database drivers used only by repository tests. -->
         <version.lib.mysql-connector-j>26.7.0</version.lib.mysql-connector-j>
-        <version.lib.postgresql>42.7.13</version.lib.postgresql>
+        <version.lib.postgresql>42.7.14</version.lib.postgresql>
         <!-- Dependencies convergence via jinjava -->
         <version.lib.mockito>2.23.4</version.lib.mockito>
         <version.lib.mockserver>5.15.0</version.lib.mockserver>
