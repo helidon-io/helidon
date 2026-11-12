@@ -70,7 +70,7 @@ data:
           url: "jdbc:mysql://localhost:3306/contacts"
           username: "contacts"
           password: "contacts-pass"
-        health-check:
+        health:
           enabled: true
           name: "contacts-db"
 ```
@@ -92,12 +92,12 @@ data:
           url: "jdbc:mysql://localhost:3306/contacts"
           username: "contacts"
           password: "contacts-pass"
-        health-check:
+        health:
           enabled: true
           name: "contacts-pool"
 ```
 
-The existing single-object data source configuration form also supports `health-check`.
+The existing single-object data source configuration form also supports `health`.
 Pool validation settings, including Hikari's `connection-test-query` and
 `health-check-properties`, do not enable or configure these observer checks.
 
@@ -112,7 +112,7 @@ data:
     jdbc:
       - name: "contacts"
         data-source: "contacts-source"
-        health-check:
+        health:
           enabled: true
           name: "contacts-db"
           query: "SELECT 1"
@@ -127,26 +127,68 @@ definitions that should contribute to application health.
 
 The service names `contacts` and `contacts-source` select the client and source.
 The health names `contacts-db` and `contacts-pool` identify checks and endpoint paths.
-Use unique explicit health names for individually addressable checks. If omitted,
-names default to `JdbcClientHealthCheck` and `DataSourceHealthCheck`. Duplicate default
-paths select the first registered check for an individual route, while every check
-still contributes to aggregates.
+An explicit `health.name` takes precedence. Otherwise, a discovered check uses its
+owning resource's registration name: `contacts` or `contacts-source` in these examples.
+Names need not be unique. An aggregate executes every applicable check, while each
+named handler selects the first matching check from its own membership list. Use
+distinct names when each check needs an independently addressable route.
+
+Enabling only the data source check creates no client check or alias. For example,
+with source health enabled and the client `health` node omitted, only the source's
+health routes are registered. Requests do not cause an additional client probe.
 
 ### Health Settings
 
-These settings belong under either definition's `health-check` node:
+These settings belong under either definition's `health` node:
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
 | `enabled` | `false` | Enables registry discovery for this definition. |
-| `name` | Check class name | A nonblank name for the check and its route. |
+| `name` | Owning registration name | An optional, nonblank name for the check and its route. |
 | `query` | `SELECT 1` | Trusted validation SELECT, without bind parameters. |
 | `query-timeout` | `PT2S` | Positive whole seconds, up to `2,147,483,647` seconds. |
 | `type` | `readiness` | Health membership. Select `liveness` explicitly when required. |
 
-The builders expose `name`, `query`, `queryTimeout`, and `type`; `config` applies
-configuration to a builder. `enabled` controls discovery and is not a check builder
-property. A constructed check runs whenever its `call()` method is invoked.
+`DataSourceConfig.health()` and `JdbcClientConfig.health()` return non-null policies,
+including when `health` is omitted. Their builders accept a typed policy or a builder
+consumer. These policies hold health settings without capturing a source, client, or
+connection configuration. Given an existing `DataSource contactsDataSource`, either
+builder form can configure a client:
+
+```java
+import io.helidon.data.jdbc.JdbcClient;
+import io.helidon.data.jdbc.JdbcClientHealthConfig;
+
+JdbcClientHealthConfig policy = JdbcClientHealthConfig.builder()
+        .enabled(true)
+        .name("contacts-db")
+        .query("SELECT 1")
+        .build();
+
+JdbcClient client = JdbcClient.builder()
+        .name("contacts")
+        .dataSource(contactsDataSource)
+        .health(policy)
+        .build();
+
+JdbcClient anotherClient = JdbcClient.builder()
+        .name("another")
+        .dataSource(contactsDataSource)
+        .health(health -> health.enabled(true).name("another-db"))
+        .build();
+```
+
+Standalone client construction does not publish checks into a registry, even with an
+enabled policy. Registry discovery binds an enabled policy to the preferred effective
+resource within that registry, preserving the owning definition's policy and name
+when the resource is replaced. It publishes each check once as an unqualified
+`HealthCheck` service.
+
+Executable check builders separately expose `name`, `query`, `queryTimeout`, and
+`type`; `config` applies configuration to a builder. `enabled` controls discovery
+and is not an executable check builder property. A constructed check runs whenever
+its `call()` method is invoked. The experimental `health-check` node is replaced by
+`health`; provider-specific `health-check-properties` keep their existing meaning.
 
 ## Register Checks Programmatically
 
@@ -194,6 +236,12 @@ DataSourceHealthCheck check = DataSourceHealthCheck.builder()
         .name("contacts-pool")
         .build();
 ```
+
+Without an explicit name, an imperative client check uses the supported client's
+logical name. A standalone data source check has no registration metadata and retains
+`DataSourceHealthCheck` as its fallback name. Names supplied through either builder
+must be nonblank. Explicit check builders use their own SQL, timeout, and membership
+settings. They do not apply a registration policy automatically.
 
 Construction validates SQL, timeout, and naming without acquiring a connection. The
 client check retains the client's actual source; it does not construct another client
@@ -272,7 +320,8 @@ values, and rejects update counts, missing result sets, and additional result se
 The query timeout does not bound connection acquisition, network operations, or the
 whole HTTP request. Configure pool acquisition and driver timeouts separately.
 
-Generated builders and immutable configurations conceal SQL when rendered as text.
+Generated builders and immutable configurations conceal SQL when rendered as text,
+including policies nested in their owning source or client configurations.
 The query accessor retains the real SQL. Source-check configuration also conceals the
 captured data source, whose own `toString()` could contain connection information.
 
@@ -294,8 +343,9 @@ For the readiness check named `contacts-db`, the default observer exposes:
 | `/observe/health` | All health checks. |
 
 Aggregate readiness can be DOWN while the named database check is UP because another
-readiness check failed. With `type: liveness`, the named readiness route returns 404,
-while `/observe/health/live/contacts-db` and the generic named route are available.
+readiness check failed. For a uniquely named check with `type: liveness`, the named
+readiness route returns 404, while `/observe/health/live/contacts-db` and the generic
+named route are available.
 There is no bare `/observe/health/check` route. These paths use the default Observe
 prefix and Health endpoint; the application name is not automatically prepended.
 

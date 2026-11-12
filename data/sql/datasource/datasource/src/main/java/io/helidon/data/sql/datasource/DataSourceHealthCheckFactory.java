@@ -16,15 +16,14 @@
 package io.helidon.data.sql.datasource;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import javax.sql.DataSource;
 
-import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
-import io.helidon.config.metadata.Configured;
-import io.helidon.config.metadata.ConfiguredOption;
 import io.helidon.health.HealthCheck;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
@@ -34,62 +33,53 @@ import io.helidon.service.registry.ServiceRegistryException;
 /**
  * Creates enabled health checks over the data sources selected by the owning registry.
  */
-@Configured(root = true, prefix = "data.sources.sql.health-check",
-            description = "Configures independent datasource health discovery.",
-            inherits = DataSourceHealthCheck.class,
-            options = @ConfiguredOption(key = "enabled", type = Boolean.class, value = "false",
-                                        description = "Enables this health definition in its owning registry."))
 @Service.Singleton
 final class DataSourceHealthCheckFactory implements Service.ServicesFactory<HealthCheck> {
-    private final Supplier<Config> configuration;
+    private final Supplier<List<DataSourceConfig>> configurations;
     private final Supplier<List<ServiceInstance<DataSource>>> sources;
 
     @Service.Inject
-    DataSourceHealthCheckFactory(Supplier<Config> configuration, Supplier<List<ServiceInstance<DataSource>>> sources) {
-        this.configuration = configuration;
+    DataSourceHealthCheckFactory(Supplier<List<DataSourceConfig>> configurations,
+                                Supplier<List<ServiceInstance<DataSource>>> sources) {
+        this.configurations = configurations;
         this.sources = sources;
     }
 
     @Override
     public List<Service.QualifiedInstance<HealthCheck>> services() {
-        List<Config> definitions;
+        List<DataSourceConfig> definitions;
         try {
-            Config node = configuration.get().get("data.sources.sql");
-            definitions = node.get("provider").exists() ? List.of(node) : node.asNodeList().orElse(List.of());
+            definitions = configurations.get();
         } catch (ConfigException | ServiceRegistryException _) {
             throw new IllegalStateException("Datasource health definitions could not be read.");
         }
         List<Service.QualifiedInstance<HealthCheck>> checks = new ArrayList<>();
-        for (Config definition : definitions) {
-            Config health = definition.get("health-check");
-            boolean enabled;
-            try {
-                enabled = health.get("enabled").asBoolean().orElse(false);
-            } catch (ConfigException _) {
-                throw new IllegalStateException("The datasource health discovery setting is invalid.");
+        Set<String> names = new HashSet<>();
+        for (DataSourceConfig definition : definitions) {
+            // Registry order selects the preferred definition without merging independent health paths.
+            if (!names.add(definition.name())) {
+                continue;
             }
-            if (!enabled) {
+            DataSourceHealthConfig health = definition.health();
+            if (!health.enabled()) {
                 continue;
             }
             DataSource source;
             try {
-                String name = definition.get("name").asString().orElse(Service.Named.DEFAULT_NAME);
-                Qualifier qualifier = Qualifier.createNamed(name);
+                Qualifier qualifier = Qualifier.createNamed(definition.name());
                 source = sources.get().stream()
                         .filter(instance -> instance.qualifiers().contains(qualifier))
                         .findFirst()
                         .orElseThrow(() -> new IllegalStateException(
                                 "An enabled datasource health definition has no matching source."))
                         .get();
-            } catch (ConfigException | ServiceRegistryException _) {
+            } catch (ServiceRegistryException _) {
                 throw new IllegalStateException("The data source for the health check could not be resolved.");
             }
-            try {
-                DataSourceHealthCheck check = DataSourceHealthCheck.builder().config(health).dataSource(source).build();
-                checks.add(Service.QualifiedInstance.create(check));
-            } catch (ConfigException _) {
-                throw new IllegalStateException("The datasource health configuration is invalid.");
-            }
+            DataSourceHealthCheck check = DataSourceHealthCheck.builder().dataSource(source)
+                    .query(health.query()).queryTimeout(health.queryTimeout()).type(health.type())
+                    .name(health.name().orElse(definition.name())).build();
+            checks.add(Service.QualifiedInstance.create(check));
         }
         return List.copyOf(checks);
     }

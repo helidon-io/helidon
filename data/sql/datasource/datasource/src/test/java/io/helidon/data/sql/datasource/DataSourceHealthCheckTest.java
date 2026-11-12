@@ -76,6 +76,84 @@ import static org.mockito.Mockito.when;
 
 class DataSourceHealthCheckTest {
     /**
+     * Keeps policy defaults, configuration, owner builders, and copies consistent without resolving a data source.
+     */
+    @Test
+    void healthPolicyDefaultsAndOwnerBuilderParity() {
+        DataSourceHealthConfig defaults = DataSourceHealthConfig.create();
+        assertThat(defaults.enabled(), is(false));
+        assertThat(defaults.query(), is("SELECT 1"));
+        assertThat(defaults.queryTimeout(), is(Duration.ofSeconds(2)));
+        assertThat(defaults.type(), is(HealthCheckType.READINESS));
+        assertThat(defaults.name().isEmpty(), is(true));
+
+        String query = "SELECT 'POLICY_SQL_CANARY'";
+        Config config = Config.just(ConfigSources.create(Map.of("name", "orders",
+                "health.enabled", "true", "health.query", query, "health.query-timeout", "PT3S",
+                "health.name", "source-db", "health.type", "liveness")));
+        ProviderConfig provider = mock(ProviderConfig.class);
+        var configured = DataSourceConfig.builder().config(config).provider(provider);
+        var policy = DataSourceHealthConfig.builder().enabled(true).query(query).queryTimeout(Duration.ofSeconds(3))
+                .name("source-db").type(HealthCheckType.LIVENESS);
+        var typed = DataSourceConfig.builder().name("orders").provider(provider).health(policy.build());
+        var nested = DataSourceConfig.builder().name("orders").provider(provider)
+                .health(health -> health.enabled(true).query(query).queryTimeout(Duration.ofSeconds(3))
+                        .name("source-db").type(HealthCheckType.LIVENESS));
+        assertThat(DataSourceConfig.builder().provider(provider).build().health(), is(defaults));
+        for (var builder : List.of(configured, typed, nested)) {
+            DataSourceConfig owner = builder.build();
+            assertThat(owner.health(), is(policy.build()));
+            assertThat(DataSourceConfig.builder(owner).build(), is(owner));
+            assertThat(DataSourceHealthConfig.builder(owner.health()).build(), is(owner.health()));
+            assertThat(builder.toString(), not(containsString("POLICY_SQL_CANARY")));
+            assertThat(owner.toString(), not(containsString("POLICY_SQL_CANARY")));
+            assertThat(owner.health().query(), is(query));
+        }
+        assertThat(policy.toString(), containsString("query=****"));
+        assertThat(policy.build().toString(), not(containsString("POLICY_SQL_CANARY")));
+        assertThrows(NullPointerException.class, () -> DataSourceHealthConfig.create((Config) null));
+        assertThrows(NullPointerException.class, () -> DataSourceHealthConfig.builder(null));
+        assertThrows(NullPointerException.class, () -> policy.from((DataSourceHealthConfig) null));
+        assertThrows(NullPointerException.class,
+                     () -> policy.from((DataSourceHealthConfig.BuilderBase<?, ?>) null));
+        assertThrows(NullPointerException.class, () -> policy.query(null));
+        assertThrows(NullPointerException.class, () -> policy.queryTimeout(null));
+        assertThrows(NullPointerException.class, () -> policy.type(null));
+        assertThrows(NullPointerException.class, () -> policy.name((String) null));
+        assertThrows(NullPointerException.class, () -> policy.config(null));
+        assertThrows(NullPointerException.class, () -> typed.health((DataSourceHealthConfig) null));
+        assertThrows(NullPointerException.class,
+                     () -> typed.health((Consumer<DataSourceHealthConfig.Builder>) null));
+    }
+
+    /**
+     * Rejects null configuration arguments without changing builder values or acquiring connections.
+     */
+    @Test
+    void generatedConfigurationRejectsNullAndPreservesCopies() {
+        DataSource source = mock(DataSource.class);
+        var builder = DataSourceHealthCheck.builder().dataSource(source).query("SELECT 2").name("database");
+        DataSourceHealthCheckConfig prototype = builder.buildPrototype();
+
+        assertThrows(NullPointerException.class, () -> DataSourceHealthCheckConfig.builder(null));
+        assertThrows(NullPointerException.class, () -> DataSourceHealthCheckConfig.create((Config) null));
+        assertThrows(NullPointerException.class, () -> builder.from((DataSourceHealthCheckConfig) null));
+        assertThrows(NullPointerException.class, () -> builder.from((DataSourceHealthCheckConfig.BuilderBase<?, ?>) null));
+        assertThrows(NullPointerException.class, () -> builder.config(null));
+        assertThrows(NullPointerException.class, () -> builder.dataSource(null));
+        assertThrows(NullPointerException.class, () -> builder.query(null));
+        assertThrows(NullPointerException.class, () -> builder.queryTimeout(null));
+        assertThrows(NullPointerException.class, () -> builder.type(null));
+        assertThrows(NullPointerException.class, () -> builder.name((String) null));
+
+        assertThat(builder.buildPrototype(), is(prototype));
+        assertThat(DataSourceHealthCheckConfig.builder(prototype).buildPrototype(), is(prototype));
+        assertThat(DataSourceHealthCheckConfig.builder().from(builder).buildPrototype(), is(prototype));
+        assertThat(prototype.dataSource(), sameInstance(source));
+        verifyZeroInteractions(source);
+    }
+
+    /**
      * Validates SQL and timeout settings before accessing the data source.
      */
     @Test
@@ -378,16 +456,17 @@ class DataSourceHealthCheckTest {
     @Test
     void disabledDiscoveryDoesNotResolveSources() {
         for (Map<String, String> values : List.of(Map.<String, String>of(),
-                Map.of("data.sources.sql.0.health-check.enabled", "false"),
-                Map.of("data.sources.sql.provider.hikari.url", "unused", "data.sources.sql.health-check.enabled", "false"))) {
-            var factory = new DataSourceHealthCheckFactory(() -> Config.just(ConfigSources.create(values)),
+                Map.of("data.sources.sql.0.health.enabled", "false"),
+                Map.of("data.sources.sql.0.health-check.enabled", "true"),
+                Map.of("data.sources.sql.provider.hikari.url", "unused", "data.sources.sql.health.enabled", "false"))) {
+            var factory = new DataSourceHealthCheckFactory(() -> configurations(Config.just(ConfigSources.create(values))),
                     () -> { throw new AssertionError("Disabled discovery must not resolve sources."); });
             assertThat(factory.services().isEmpty(), is(true));
         }
         Config invalid = mock(Config.class);
         when(invalid.get("data.sources.sql")).thenThrow(new ConfigException("CONFIG_CANARY"));
         IllegalStateException failure = assertThrows(IllegalStateException.class,
-                () -> new DataSourceHealthCheckFactory(() -> invalid, () -> {
+                () -> new DataSourceHealthCheckFactory(() -> configurations(invalid), () -> {
                     throw new AssertionError("Invalid discovery must not resolve its target.");
                 }).services());
         assertThat(failure.getMessage(), not(containsString("CONFIG_CANARY")));
@@ -408,16 +487,16 @@ class DataSourceHealthCheckTest {
             String prefix = single ? "data.sources.sql" : "data.sources.sql.0";
             Map<String, String> values = new HashMap<>();
             values.put(prefix + ".name", "orders");
-            values.put(prefix + ".health-check.enabled", "true");
-            values.put(prefix + ".health-check.query", "SELECT 2");
-            values.put(prefix + ".health-check.name", "source-db");
-            values.put(prefix + ".health-check.type", "liveness");
+            values.put(prefix + ".health.enabled", "true");
+            values.put(prefix + ".health.query", "SELECT 2");
+            values.put(prefix + ".health.name", "source-db");
+            values.put(prefix + ".health.type", "liveness");
             values.put(prefix + ".provider.hikari.url", "unused");
             values.put(prefix + ".provider.hikari.connection-test-query", "SELECT 3");
             Config config = Config.just(ConfigSources.create(values));
             assertThrows(IllegalStateException.class,
-                         () -> new DataSourceHealthCheckFactory(() -> config, List::of).services());
-            var services = new DataSourceHealthCheckFactory(() -> config, () -> List.of(instance)).services();
+                         () -> new DataSourceHealthCheckFactory(() -> configurations(config), List::of).services());
+            var services = new DataSourceHealthCheckFactory(() -> configurations(config), () -> List.of(instance)).services();
             assertThat(services.size(), is(1));
             assertThat(services.getFirst().qualifiers().isEmpty(), is(true));
             var check = (DataSourceHealthCheck) services.getFirst().get();
@@ -428,12 +507,51 @@ class DataSourceHealthCheckTest {
         }
         verifyZeroInteractions(source);
         Config invalid = Config.just(ConfigSources.create(Map.of("data.sources.sql.0.name", "orders",
-                "data.sources.sql.0.health-check.enabled", "true",
-                "data.sources.sql.0.health-check.query-timeout", "CONFIG_CANARY")));
+                "data.sources.sql.0.health.enabled", "true",
+                "data.sources.sql.0.health.query-timeout", "CONFIG_CANARY")));
         IllegalStateException failure = assertThrows(IllegalStateException.class,
-                () -> new DataSourceHealthCheckFactory(() -> invalid, () -> List.of(instance)).services());
+                () -> new DataSourceHealthCheckFactory(() -> configurations(invalid), () -> List.of(instance)).services());
         assertThat(failure.getMessage(), not(containsString("CONFIG_CANARY")));
         assertThat(failure.getCause(), is((Throwable) null));
+        verifyZeroInteractions(source);
+    }
+
+    /**
+     * Uses the preferred definition policy while retaining duplicate health paths and the effective source.
+     */
+    @Test
+    void preferredDefinitionsRetainNamesAndPermitCollidingPaths() {
+        ProviderConfig provider = mock(ProviderConfig.class);
+        DataSourceConfig preferred = DataSourceConfig.builder().name("orders").provider(provider)
+                .health(health -> health.enabled(true).query("SELECT 2")).build();
+        DataSourceConfig shadowed = DataSourceConfig.builder().name("orders").provider(provider)
+                .health(health -> health.enabled(true).query("UPDATE invalid")).build();
+        DataSourceConfig other = DataSourceConfig.builder().name("other").provider(provider)
+                .health(health -> health.enabled(true).name("orders")).build();
+        DataSource source = mock(DataSource.class);
+        @SuppressWarnings("unchecked")
+        ServiceInstance<DataSource> instance = mock(ServiceInstance.class);
+        when(instance.qualifiers()).thenReturn(Set.of(Qualifier.createNamed("orders"), Qualifier.createNamed("other")));
+        when(instance.get()).thenReturn(source);
+        var checks = new DataSourceHealthCheckFactory(() -> List.of(preferred, shadowed, other), () -> List.of(instance))
+                .services();
+        assertThat(checks.size(), is(2));
+        assertThat(checks.get(0).get().name(), is("orders"));
+        assertThat(checks.get(1).get().name(), is("orders"));
+        assertThat(((DataSourceHealthCheck) checks.get(0).get()).prototype().query(), is("SELECT 2"));
+        assertThat(((DataSourceHealthCheck) checks.get(1).get()).prototype().query(), is("SELECT 1"));
+        DataSourceConfig disabled = DataSourceConfig.builder(preferred).health(DataSourceHealthConfig.create()).build();
+        assertThat(new DataSourceHealthCheckFactory(() -> List.of(disabled, shadowed), () -> {
+            throw new AssertionError("The disabled preferred definition must not resolve a source.");
+        }).services().isEmpty(), is(true));
+        for (DataSourceHealthConfig invalid : List.of(
+                DataSourceHealthConfig.builder().enabled(true).query("UPDATE invalid").build(),
+                DataSourceHealthConfig.builder().enabled(true).name(" ").build(),
+                DataSourceHealthConfig.builder().enabled(true).queryTimeout(Duration.ZERO).build())) {
+            DataSourceConfig definition = DataSourceConfig.builder(preferred).health(invalid).build();
+            assertThrows(IllegalArgumentException.class,
+                         () -> new DataSourceHealthCheckFactory(() -> List.of(definition), () -> List.of(instance)).services());
+        }
         verifyZeroInteractions(source);
     }
 
@@ -446,7 +564,7 @@ class DataSourceHealthCheckTest {
         DataSource broken = mock(DataSource.class);
         when(broken.getConnection()).thenThrow(new SQLException("SECRET_SQL_CREDENTIAL"));
         Config config = Config.just(ConfigSources.create(Map.of("data.sources.sql.0.name", "orders",
-                "data.sources.sql.0.health-check.enabled", "true", "data.sources.sql.0.health-check.name", "source-db")));
+                "data.sources.sql.0.health.enabled", "true", "data.sources.sql.0.health.name", "source-db")));
         var first = registry(config, healthy.source());
         var second = registry(config, broken);
         try {
@@ -490,6 +608,14 @@ class DataSourceHealthCheckTest {
         }
     }
 
+    private static List<DataSourceConfig> configurations(Config config) {
+        Config sources = config.get("data.sources.sql");
+        List<Config> definitions = sources.get("provider").exists() ? List.of(sources) : sources.asNodeList().orElse(List.of());
+        return definitions.stream()
+                .map(definition -> DataSourceConfig.builder().config(definition).provider(mock(ProviderConfig.class)).build())
+                .toList();
+    }
+
     private static ServiceRegistryManager registry(Config config, DataSource source) {
         var manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
                 .discoverServices(false)
@@ -497,7 +623,7 @@ class DataSourceHealthCheckTest {
                 .addServiceDescriptor(DataSourceHealthCheckFactory__ServiceDescriptor.INSTANCE)
                 .build());
         GlobalServiceRegistry.registry(manager.registry());
-        Services.set(Config.class, config);
+        Services.set(DataSourceConfig.class, configurations(config).getFirst());
         Services.setNamed(DataSource.class, source, "orders");
         return manager;
     }

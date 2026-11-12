@@ -67,7 +67,7 @@ interface JdbcClientHealthCheckConfigBlueprint extends Prototype.Factory<JdbcCli
     /**
      * Specifies a nonblank name for responses and individual check routes.
      *
-     * @return An empty value uses the simple class name of the health check.
+     * @return An empty value uses the logical name of the client.
      */
     @Option.Configured
     Optional<String> name();

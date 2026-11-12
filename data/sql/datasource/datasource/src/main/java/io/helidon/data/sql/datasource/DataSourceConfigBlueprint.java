@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,5 +59,14 @@ interface DataSourceConfigBlueprint {
     @Option.Configured
     @Option.Provider(DataSourceConfigProvider.class)
     ProviderConfig provider();
+
+    /**
+     * Configures independent health discovery for this data source definition.
+     *
+     * @return The default policy disables discovery.
+     */
+    @Option.Configured
+    @Option.DefaultMethod("create")
+    DataSourceHealthConfig health();
 
 }

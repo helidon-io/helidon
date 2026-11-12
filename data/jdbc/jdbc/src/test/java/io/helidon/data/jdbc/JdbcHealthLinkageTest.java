@@ -91,10 +91,31 @@ class JdbcHealthLinkageTest {
                 package sample;
                 import io.helidon.data.jdbc.JdbcClientHealthCheck;
                 import io.helidon.data.jdbc.JdbcClientHealthCheckConfig;
+                import io.helidon.data.jdbc.JdbcClientHealthConfig;
+                import io.helidon.data.jdbc.JdbcClientConfig;
                 import io.helidon.health.HealthCheckType;
                 public class Main {
                     public static void main(String[] arguments) {
                         JdbcClientHealthCheck.builder().query("SELECT 1").type(HealthCheckType.READINESS);
+                        var policy = JdbcClientHealthConfig.builder().enabled(true).query("SELECT 2").build();
+                        var owner = JdbcClientConfig.builder().health(policy);
+                        if (!owner.health().enabled() || !owner.health().query().equals("SELECT 2")) {
+                            throw new AssertionError("The owner must retain its configured health policy.");
+                        }
+                        owner.health(health -> health.enabled(false));
+                        if (owner.health().enabled()) {
+                            throw new AssertionError("The owner builder must accept policy updates.");
+                        }
+                        try {
+                            JdbcClientHealthConfig.builder(null);
+                            throw new AssertionError("Null policy must be rejected.");
+                        } catch (NullPointerException _) {
+                        }
+                        try {
+                            owner.health((JdbcClientHealthConfig) null);
+                            throw new AssertionError("Null owner policy must be rejected.");
+                        } catch (NullPointerException _) {
+                        }
                         try {
                             JdbcClientHealthCheck.create((JdbcClientHealthCheckConfig) null);
                             throw new AssertionError("Null configuration must be rejected.");

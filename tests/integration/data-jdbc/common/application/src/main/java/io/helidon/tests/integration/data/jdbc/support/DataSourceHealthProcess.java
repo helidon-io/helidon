@@ -26,7 +26,9 @@ import javax.sql.DataSource;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.data.sql.datasource.DataSourceConfig;
 import io.helidon.data.sql.datasource.DataSourceHealthCheck;
+import io.helidon.data.sql.datasource.ProviderConfig;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.service.registry.GlobalServiceRegistry;
@@ -111,11 +113,24 @@ public final class DataSourceHealthProcess {
                     .build());
             GlobalServiceRegistry.registry(manager.registry());
             try {
-                Services.set(Config.class, Config.just(ConfigSources.create(Map.of("data.sources.sql.0.name", "standalone",
-                        "data.sources.sql.0.health-check.enabled", "true", "data.sources.sql.0.health-check.query", query))));
+                Config definition = Config.just(ConfigSources.create(Map.of("name", "standalone",
+                        "health.enabled", "true", "health.query", query)));
+                Services.set(DataSourceConfig.class, DataSourceConfig.builder().config(definition)
+                        .provider(new ProviderConfig() {
+                            @Override
+                            public String name() {
+                                return "existing";
+                            }
+
+                            @Override
+                            public String type() {
+                                return "existing";
+                            }
+                        }).build());
                 Services.setNamed(DataSource.class, source, "standalone");
                 var checks = manager.registry().all(HealthCheck.class);
-                if (checks.size() != 1 || checks.getFirst().call().status() != HealthCheckResponse.Status.UP) {
+                if (checks.size() != 1 || !checks.getFirst().name().equals("standalone")
+                        || checks.getFirst().call().status() != HealthCheckResponse.Status.UP) {
                     throw new AssertionError("Datasource-only registry discovery must produce a usable independent check.");
                 }
             } finally {
