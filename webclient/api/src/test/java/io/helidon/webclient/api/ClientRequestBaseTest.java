@@ -55,6 +55,17 @@ class ClientRequestBaseTest {
         assertThat(request.resolvedUri().pathWithQueryAndFragment(), is("/a%2fb/item:revision?b=2&a=1&b=3&flag&&"));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"item:revision", "http://localhost:9876/private"})
+    void keepsAppendedRequestPathAgainstEmptyBaseInPath(String path) {
+        TestRequest request = new TestRequest(Method.GET, "https://example.com?b=2&a=1&b=3&flag&&");
+        request.uri().path("");
+        request.path(path);
+
+        assertThat(request.resolvedUri().pathWithQueryAndFragment(), is("/" + path + "?b=2&a=1&b=3&flag&&"));
+        assertThat(request.resolvedUri().host(), is("example.com"));
+    }
+
     @Test
     void rejectsMultipleHostHeaderBeforeRequest() {
         TestRequest request = new TestRequest(Method.GET, "http://service.example");
