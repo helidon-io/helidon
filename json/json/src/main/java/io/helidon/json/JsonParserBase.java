@@ -89,7 +89,11 @@ public abstract class JsonParserBase implements JsonParser {
                 case 't', 'f' -> JsonBoolean.create(readBoolean());
                 default -> throw createException("Unexpected json value type", b);
                 };
-                values.put(key, value);
+                JsonValue previous = values.put(key, value);
+                if (previous != null) {
+                    // Do not let duplicate keys hide malformed strings in discarded values.
+                    JsonObject.validateDiscardedValue(previous);
+                }
                 b = nextToken();
                 if (b == '}') {
                     return JsonObject.createFromOwnedMap(values);
