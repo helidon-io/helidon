@@ -15,16 +15,21 @@
  */
 package io.helidon.data.jdbc.codegen;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.codegen.apt.AptProcessor;
 import io.helidon.codegen.testing.TestCompiler;
 import io.helidon.common.Generated;
+import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.types.TypeName;
+import io.helidon.config.Config;
 import io.helidon.data.Data;
 import io.helidon.data.codegen.DataGeneratorProvider;
 import io.helidon.data.codegen.common.RepositoryCodegenProvider;
@@ -39,6 +44,82 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class JdbcBatchGenerationTest {
+    /**
+     * An implementation compiled against the earlier indexed interface inherits the new named defaults at runtime.
+     */
+    @Test
+    void linksPreviouslyCompiledBatchBindingsToNamedDefaults() throws Exception {
+        TestCompiler.Result legacy = TestCompiler.builder().currentRelease().printDiagnostics(false)
+                .addSource("JdbcClient.java", """
+                        package io.helidon.data.jdbc;
+                        import java.sql.JDBCType;
+                        public interface JdbcClient {
+                            interface BatchBindings {
+                                BatchBindings bind(int index, Object value);
+                                BatchBindings bindNull(int index, JDBCType type);
+                            }
+                        }
+                        """)
+                .addSource("LegacyBindings.java", """
+                        package example;
+                        import java.sql.JDBCType;
+                        import io.helidon.data.jdbc.JdbcClient;
+                        public class LegacyBindings implements JdbcClient.BatchBindings {
+                            public JdbcClient.BatchBindings bind(int index, Object value) { return this; }
+                            public JdbcClient.BatchBindings bindNull(int index, JDBCType type) { return this; }
+                        }
+                        """).build().compile();
+        assertThat(String.join("\n", legacy.diagnostics()), legacy.success(), is(true));
+        TestCompiler.Result consumer = TestCompiler.builder().currentRelease().printDiagnostics(false)
+                .addClasspath(List.of(JdbcClient.class)).addClasspathEntry(legacy.classOutput())
+                .addSource("Consumer.java", """
+                        package example;
+                        import java.sql.JDBCType;
+                        import io.helidon.data.jdbc.JdbcClient;
+                        public class Consumer {
+                            public static void main(String[] args) {
+                                if (args.length != 0) {
+                                    throw new AssertionError("The linkage test does not accept arguments.");
+                                }
+                                JdbcClient.BatchBindings bindings = new LegacyBindings();
+                                bindings.bind(1, "value").bindNull(2, JDBCType.INTEGER);
+                                try {
+                                    bindings.bind("value", "value");
+                                    throw new AssertionError("The named value default must reject unsupported binding.");
+                                } catch (UnsupportedOperationException _) { }
+                                try {
+                                    bindings.bindNull("value", JDBCType.INTEGER);
+                                    throw new AssertionError("The named null default must reject unsupported binding.");
+                                } catch (UnsupportedOperationException _) { }
+                                try {
+                                    bindings.bind("value", null);
+                                    throw new AssertionError("The named value default must validate null first.");
+                                } catch (NullPointerException _) { }
+                                try {
+                                    bindings.bindNull("value", null);
+                                    throw new AssertionError("The named null default must validate null first.");
+                                } catch (NullPointerException _) { }
+                            }
+                        }
+                        """).build().compile();
+        assertThat(String.join("\n", consumer.diagnostics()), consumer.success(), is(true));
+        Path output = Files.createTempFile("jdbc-batch-linkage-", ".log");
+        Process process = new ProcessBuilder(Path.of(System.getProperty("java.home"), "bin", "java").toString(),
+                "-cp", System.getProperty("java.class.path") + File.pathSeparator + consumer.classOutput()
+                        + File.pathSeparator + legacy.classOutput(), "example.Consumer")
+                .redirectErrorStream(true).redirectOutput(output.toFile()).start();
+        try {
+            assertThat("The linkage consumer must finish within its test deadline.", process.waitFor(20, TimeUnit.SECONDS), is(true));
+            assertThat(Files.readString(output), process.exitValue(), is(0));
+        } finally {
+            if (process.isAlive()) {
+                process.destroyForcibly();
+                assertThat("The linkage consumer must terminate.", process.waitFor(10, TimeUnit.SECONDS), is(true));
+            }
+            Files.deleteIfExists(output);
+        }
+    }
+
     @Test
     void infersBatchForExactResultsAcrossSupportedShapes() throws IOException {
         for (String execution : List.of("", "@Jdbc.Execution", "@Jdbc.Execution(Jdbc.ExecutionType.AUTO)",
@@ -73,8 +154,10 @@ class JdbcBatchGenerationTest {
     @Test
     void rejectsInvalidInferredBatchesWithoutQueryFallback() {
         Map<String, String> declarations = Map.of(
-                "JdbcClient.BatchResult run(String rows)", "BATCH execution requires at least one contributing source.",
-                "JdbcClient.BatchResult run(Iterable<?> rows)", "A batch source element must be a concrete scalar or flat record.",
+                "JdbcClient.BatchResult run(String rows)", "A BATCH method must declare at least one Iterable, Iterator, array, "
+                        + "or varargs input source.",
+                "JdbcClient.BatchResult run(Iterable<?> rows)",
+                "Batch source elements cannot use wildcards or unresolved type parameters.",
                 "JdbcClient.BatchResult run(Iterable<String> rows, int unused)", "unused");
         for (String execution : List.of("", "@Jdbc.Execution(Jdbc.ExecutionType.AUTO)")) {
             for (var declaration : declarations.entrySet()) {
@@ -93,22 +176,7 @@ class JdbcBatchGenerationTest {
                 assertThat(declaration.getKey() + " " + result.diagnostics(), result.success(), is(false));
                 assertThat(String.join("\n", result.diagnostics()), containsString(declaration.getValue()));
             }
-            for (String reference : List.of("${application.batch}", "${application.batch:insert into T values (?)}")) {
-                TestCompiler.Result result = compile("BatchRepository.java", """
-                        package example;
-                        import java.util.*;
-                        import io.helidon.data.Data;
-                        import io.helidon.data.jdbc.*;
-                        @Data.Repository @Data.Provider("jdbc")
-                        interface BatchRepository {
-                            @Jdbc.Statement("%s") %s
-                            JdbcClient.BatchResult insert(Iterable<String> rows);
-                        }
-                        """.formatted(reference, execution));
-                assertThat(reference + " " + result.diagnostics(), result.success(), is(false));
-                assertThat(String.join("\n", result.diagnostics()),
-                           containsString("BATCH execution does not support configured statements."));
-            }
+
         }
     }
 
@@ -240,29 +308,33 @@ class JdbcBatchGenerationTest {
                     }
                 }
                 """;
-        for (boolean binary : List.of(false, true)) {
-            TestCompiler.Builder child = TestCompiler.builder().currentRelease().printDiagnostics(false)
-                    .addProcessor(AptProcessor::new)
-                    .addClasspath(List.of(RuntimeType.class, Data.class, JdbcClient.class, Service.class, Tx.class,
-                            Generated.class, TypeName.class, DataGeneratorProvider.class, RepositoryCodegenProvider.class,
-                            JdbcRepositoryGeneratorProvider.class))
-                    .addSource("Child.java", """
-                            package example;
-                            import io.helidon.data.Data;
-                            @Data.Repository @Data.Provider("jdbc")
-                            public interface Child extends Contracts.Left, Contracts.Right { }
-                            """);
-            if (binary) {
-                TestCompiler.Result parent = TestCompiler.builder().currentRelease().printDiagnostics(false)
-                        .addClasspath(List.of(Data.class, JdbcClient.class))
-                        .addSource("Contracts.java", contracts).build().compile();
-                assertThat(String.join("\n", parent.diagnostics()), parent.success(), is(true));
-                child.addClasspathEntry(parent.classOutput());
-            } else {
-                child.addSource("Contracts.java", contracts);
+        for (boolean configured : List.of(false, true)) {
+            String declarations = configured ? contracts.replace("insert into T values (:value, :constant, :value)",
+                    "${app.diamond:insert into T values (:value, :constant, :value)}") : contracts;
+            for (boolean binary : List.of(false, true)) {
+                TestCompiler.Builder child = TestCompiler.builder().currentRelease().printDiagnostics(false)
+                        .addProcessor(AptProcessor::new)
+                        .addClasspath(List.of(RuntimeType.class, Config.class, OptionalValue.class, Data.class, JdbcClient.class, Service.class, Tx.class,
+                                Generated.class, TypeName.class, DataGeneratorProvider.class, RepositoryCodegenProvider.class,
+                                JdbcRepositoryGeneratorProvider.class))
+                        .addSource("Child.java", """
+                                package example;
+                                import io.helidon.data.Data;
+                                @Data.Repository @Data.Provider("jdbc")
+                                public interface Child extends Contracts.Left, Contracts.Right { }
+                                """);
+                if (binary) {
+                    TestCompiler.Result parent = TestCompiler.builder().currentRelease().printDiagnostics(false)
+                            .addClasspath(List.of(Data.class, JdbcClient.class))
+                            .addSource("Contracts.java", declarations).build().compile();
+                    assertThat(String.join("\n", parent.diagnostics()), parent.success(), is(true));
+                    child.addClasspathEntry(parent.classOutput());
+                } else {
+                    child.addSource("Contracts.java", declarations);
+                }
+                TestCompiler.Result result = child.build().compile();
+                assertThat("binary=" + binary + " " + result.diagnostics(), result.success(), is(true));
             }
-            TestCompiler.Result result = child.build().compile();
-            assertThat("binary=" + binary + " " + result.diagnostics(), result.success(), is(true));
         }
     }
 
@@ -293,12 +365,12 @@ class JdbcBatchGenerationTest {
             assertThat(right + " " + result.diagnostics(), result.success(), is(false));
             assertThat(String.join("\n", result.diagnostics()), containsString(right.contains("OTHER")
                     || right.contains("@Tx") || right.contains("@Jdbc.RowMapper")
-                    ? "conflicting JDBC or transaction annotations" : "incompatible named SQL parameter bindings"));
+                    ? "conflicting JDBC or transaction annotations" : "incompatible SQL parameter bindings"));
         }
     }
 
     @Test
-    void rejectsConfiguredBatchWithOrWithoutDefaultSql() {
+    void compilesConfiguredBatchWithOrWithoutDefaultSql() throws IOException {
         for (String reference : List.of("${application.batch}", "${application.batch:insert into T values (?)}")) {
             TestCompiler.Result result = compile("BatchRepository.java", """
                     package example;
@@ -312,9 +384,226 @@ class JdbcBatchGenerationTest {
                         void insert(List<String> values);
                     }
                     """.formatted(reference));
-            assertThat(result.success(), is(false));
-            assertThat(String.join("\n", result.diagnostics()),
-                       containsString("BATCH execution does not support configured statements."));
+            assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
+            String source = Files.readString(result.sourceOutput().resolve("example/BatchRepository__Jdbc.java"));
+            assertThat(source, containsString(".prepareBatch("));
+            assertThat(source, containsString(".executeBatch("));
+        }
+    }
+
+    @Test
+    void compilesConfiguredShapesAliasesAndPositionalDuplicateComponents() throws IOException {
+        for (String execution : List.of("", "@Jdbc.Execution", "@Jdbc.Execution(Jdbc.ExecutionType.BATCH)")) {
+            TestCompiler.Result result = compile("BatchRepository.java", """
+                    package example;
+                    import java.util.*;
+                    import io.helidon.data.Data;
+                    import io.helidon.data.jdbc.*;
+                    record Replacement(String name) { }
+                    record Expected(long id, String name) { }
+                    record Item(String rows, Long id, byte[] bindings) { }
+                    @Data.Repository @Data.Provider("jdbc")
+                    interface BatchRepository {
+                        @Jdbc.Statement("${application.batch}") %1$s
+                        JdbcClient.BatchResult scalar(@Data.Param("value") Iterable<String> jdbcClient,
+                                                      @Data.Param("tag") String SQL_SCALAR);
+                        @Jdbc.Statement("${application.records}") %1$s
+                        JdbcClient.BatchResult records(Iterator<Item> statement);
+                        @Jdbc.Statement("${application.arrays}") %1$s
+                        JdbcClient.BatchResult arrays(String[] row, long... index);
+                        @Jdbc.Statement("${application.binary}") %1$s
+                        JdbcClient.BatchResult binary(Iterable<byte[]> rows, byte[] constant);
+                        @Jdbc.Statement("${application.bytes}") %1$s
+                        JdbcClient.BatchResult bytes(byte... values);
+                        @Jdbc.Statement("${application.duplicates:update T set NAME = ? where ID = ? and NAME = ?}") %1$s
+                        JdbcClient.BatchResult duplicates(Iterable<Replacement> replacements, Iterator<Expected> expected);
+                        @Jdbc.Statement("${application.names}") %1$s
+                        JdbcClient.BatchResult names(Iterable<String> arg0);
+                    }
+                    """.formatted(execution));
+            assertThat(result.diagnostics().toString(), result.success(), is(true));
+            String source = Files.readString(result.sourceOutput().resolve("example/BatchRepository__Jdbc.java"));
+            assertThat(source, containsString(", 3, List.of(), false)"));
+            assertThat(source, containsString(".bindNull(\"value\","));
+            assertThat(source, containsString(".bind(3,"));
+        }
+    }
+
+    @Test
+    void rejectsConfiguredDefaultsAndDeclarationsWithoutAValidStyle() {
+        Map<String, String> cases = Map.ofEntries(
+                Map.entry("@Jdbc.Statement(\"${app.sql:insert into T values (?)}\") "
+                        + "JdbcClient.BatchResult run(@Data.Param(\"name\") Iterable<String> rows)", "requires named SQL"),
+                Map.entry("@Jdbc.Statement(\"${app.sql:update T set NAME = :name where ID = :id and NAME = :name}\") "
+                        + "JdbcClient.BatchResult run(Iterable<Replacement> one, Iterable<Expected> two)",
+                          "a known, unique name"),
+                Map.entry("@Jdbc.Statement(\"${app.sql}\") "
+                        + "JdbcClient.BatchResult run(@Data.Param(\"id\") Iterable<Long> ids, Iterable<Expected> rows)",
+                          "a known, unique name"),
+                Map.entry("@Jdbc.Statement(\"${app.sql:insert into T values (?, ?)}\") "
+                        + "JdbcClient.BatchResult run(Iterable<String> rows)", "positional markers"),
+                Map.entry("@Jdbc.Statement(\"${app.sql:insert into T values (:missing)}\") "
+                        + "JdbcClient.BatchResult run(Iterable<String> rows)", "no matching input"),
+                Map.entry("@Jdbc.Statement(\"${app.sql:insert into T values (:rows, ?)}\") "
+                        + "JdbcClient.BatchResult run(Iterable<String> rows)", "mix named and positional"),
+                Map.entry("@Jdbc.Statement(\"${app.sql}\") "
+                        + "JdbcClient.BatchResult run(@Data.Param(\"record\") Iterable<Expected> rows)",
+                          "record source cannot declare"),
+                Map.entry("@Jdbc.Statement(\"${app.sql}\") "
+                        + "JdbcClient.BatchResult run(@Data.Param(\"bad name\") Iterable<String> rows)", "@Data.Param value"));
+        for (var declaration : cases.entrySet()) {
+            TestCompiler.Result result = compile("BatchRepository.java", """
+                    package example;
+                    import java.util.*;
+                    import io.helidon.data.Data;
+                    import io.helidon.data.jdbc.*;
+                    record Replacement(String name) { }
+                    record Expected(long id, String name) { }
+                    @Data.Repository @Data.Provider("jdbc")
+                    interface BatchRepository { %s; }
+                    """.formatted(declaration.getKey()));
+            assertThat(declaration.getKey() + result.diagnostics(), result.success(), is(false));
+            assertThat(result.diagnostics().toString(), containsString(declaration.getValue()));
+        }
+    }
+
+    /**
+     * Binary parents need no Java names for positional slots, while aliases retain a complete named contract.
+     */
+    @Test
+    void resolvesConfiguredGenericContractsFromSourceAndBinaryParents() throws IOException {
+        String contracts = """
+                package example;
+                import java.util.*;
+                import io.helidon.data.Data;
+                import io.helidon.data.jdbc.*;
+                public interface Parent<T, R> {
+                    @Jdbc.Statement("${app.positional:insert into T values (?, ?)}")
+                    R positional(Iterable<T> values, T constant);
+                    @Jdbc.Statement("${app.named:insert into T values (:value, :tag, :value)}")
+                    R named(@Data.Param("value") Iterable<T> original, @Data.Param("tag") T constant);
+                    @Jdbc.Statement("${app.arg0}")
+                    R spelling(Iterable<T> arg0);
+                }
+                """;
+        for (boolean binary : List.of(false, true)) {
+            TestCompiler.Builder child = TestCompiler.builder().currentRelease().printDiagnostics(false)
+                    .addProcessor(AptProcessor::new)
+                    .addClasspath(List.of(RuntimeType.class, Config.class, OptionalValue.class, Data.class, JdbcClient.class, Service.class, Tx.class,
+                            Generated.class, TypeName.class, DataGeneratorProvider.class, RepositoryCodegenProvider.class,
+                            JdbcRepositoryGeneratorProvider.class))
+                    .addSource("Child.java", """
+                            package example;
+                            import io.helidon.data.Data;
+                            import io.helidon.data.jdbc.JdbcClient;
+                            @Data.Repository @Data.Provider("jdbc")
+                            interface Child extends Parent<String, JdbcClient.BatchResult> { }
+                            """);
+            if (binary) {
+                TestCompiler.Result parent = TestCompiler.builder().currentRelease().printDiagnostics(false)
+                        .addClasspath(List.of(Data.class, JdbcClient.class)).addSource("Parent.java", contracts).build().compile();
+                assertThat(parent.diagnostics().toString(), parent.success(), is(true));
+                child.addClasspathEntry(parent.classOutput());
+            } else {
+                child.addSource("Parent.java", contracts);
+            }
+            TestCompiler.Result result = child.build().compile();
+            assertThat(result.diagnostics().toString(), result.success(), is(true));
+            String source = Files.readString(result.sourceOutput().resolve("example/Child__Jdbc.java"));
+            assertThat(source, containsString(binary ? ", 2, List.of(), false)" : "List.of(\"values\", \"constant\")"));
+            assertThat(source, containsString("List.of(\"value\", \"tag\"), true)"));
+            assertThat(source, containsString(binary ? ", 1, List.of(), false)" : "List.of(\"arg0\"), false)"));
+        }
+    }
+
+    @Test
+    void validatesNamedDefaultsAndAliasesAgainstActualBinaryNameMetadata() {
+        for (String scenario : List.of("missing-alias-input", "missing-default-input", "retained-arg0")) {
+            String declaration = scenario.equals("missing-alias-input")
+                    ? "@Jdbc.Statement(\"${app.sql}\") JdbcClient.BatchResult run(@Data.Param(\"value\") Iterable<T> rows, T constant);"
+                    : "@Jdbc.Statement(\"${app.sql:insert into T values (:arg0)}\") JdbcClient.BatchResult run(Iterable<T> arg0);";
+            TestCompiler.Builder parent = TestCompiler.builder().currentRelease().printDiagnostics(false)
+                    .addClasspath(List.of(Data.class, JdbcClient.class))
+                    .addSource("Parent.java", """
+                            package example;
+                            import java.util.*;
+                            import io.helidon.data.Data;
+                            import io.helidon.data.jdbc.*;
+                            public interface Parent<T> { %s }
+                            """.formatted(declaration));
+            if (scenario.equals("retained-arg0")) {
+                parent.addOption("-parameters");
+            }
+            TestCompiler.Result library = parent.build().compile();
+            assertThat(library.diagnostics().toString(), library.success(), is(true));
+            TestCompiler.Result child = TestCompiler.builder().currentRelease().printDiagnostics(false)
+                    .addProcessor(AptProcessor::new)
+                    .addClasspath(List.of(RuntimeType.class, Config.class, OptionalValue.class, Data.class, JdbcClient.class,
+                            Service.class, Tx.class, Generated.class, TypeName.class, DataGeneratorProvider.class,
+                            RepositoryCodegenProvider.class, JdbcRepositoryGeneratorProvider.class))
+                    .addClasspathEntry(library.classOutput()).addSource("Child.java", """
+                            package example;
+                            import io.helidon.data.Data;
+                            @Data.Repository @Data.Provider("jdbc")
+                            interface Child extends Parent<String> { }
+                            """).build().compile();
+            assertThat(scenario + child.diagnostics(), child.success(), is(scenario.equals("retained-arg0")));
+            if (!child.success()) {
+                assertThat(child.diagnostics().toString(), containsString("a known, unique name"));
+            }
+        }
+    }
+
+    @Test
+    void rejectsConflictingConfiguredBatchNamesAcrossInheritedDeclarations() {
+        TestCompiler.Result result = compile("BatchRepository.java", """
+                package example;
+                import java.util.*;
+                import io.helidon.data.Data;
+                import io.helidon.data.jdbc.*;
+                interface Left {
+                    @Jdbc.Statement("${app.sql}")
+                    JdbcClient.BatchResult run(Iterable<String> a, Iterable<String> b);
+                }
+                interface Right {
+                    @Jdbc.Statement("${app.sql}") @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
+                    JdbcClient.BatchResult run(Iterable<String> b, Iterable<String> a);
+                }
+                @Data.Repository @Data.Provider("jdbc")
+                interface BatchRepository extends Left, Right { }
+                """);
+        assertThat(result.success(), is(false));
+        assertThat(result.diagnostics().toString(), containsString("incompatible parameter names or types"));
+    }
+
+    /**
+     * An implementation can resolve a competing provider default explicitly under normal Java inheritance rules.
+     */
+    @Test
+    void namedDefaultsAllowExplicitResolutionOfCompetingProviderDefaults() {
+        for (boolean override : List.of(false, true)) {
+            TestCompiler.Result result = TestCompiler.builder().currentRelease().printDiagnostics(false)
+                    .addClasspath(List.of(RuntimeType.class, JdbcClient.class)).addSource("Bindings.java", """
+                            package example;
+                            import java.sql.JDBCType;
+                            import io.helidon.data.jdbc.JdbcClient;
+                            interface Names {
+                                default JdbcClient.BatchBindings bind(String name, Object value) {
+                                    return (JdbcClient.BatchBindings) this;
+                                }
+                            }
+                            class Bindings implements Names, JdbcClient.BatchBindings {
+                                public JdbcClient.BatchBindings bind(int index, Object value) { return this; }
+                                public JdbcClient.BatchBindings bindNull(int index, JDBCType type) { return this; }
+                                %s
+                            }
+                            """.formatted(override
+                                    ? "public JdbcClient.BatchBindings bind(String name, Object value) { return this; }" : ""))
+                    .build().compile();
+            assertThat(result.diagnostics().toString(), result.success(), is(override));
+            if (!override) {
+                assertThat(result.diagnostics().toString(), containsString("unrelated defaults"));
+            }
         }
     }
 
@@ -404,7 +693,7 @@ class JdbcBatchGenerationTest {
                 """);
         assertThat(duplicate.success(), is(false));
         assertThat(String.join("\n", duplicate.diagnostics()),
-                   containsString("The effective repository parameter name 'value' is duplicated."));
+                   containsString("The input name 'value' is used more than once."));
 
         TestCompiler.Result positional = compile("BatchRepository.java", """
                 package example;
@@ -567,25 +856,27 @@ class JdbcBatchGenerationTest {
     @Test
     void rejectsUnsupportedSourceElementsWithSpecificDiagnostics() {
         Map<String, String> declarations = Map.ofEntries(
-                Map.entry("void run(Iterable<?> rows)", "A batch source element must be a concrete scalar or flat record."),
+                Map.entry("void run(Iterable<?> rows)",
+                          "Batch source elements cannot use wildcards or unresolved type parameters."),
                 Map.entry("void run(Iterable<? extends String> rows)",
-                          "A batch source element must be a concrete scalar or flat record."),
+                          "Batch source elements cannot use wildcards or unresolved type parameters."),
                 Map.entry("void run(Iterable<? super String> rows)",
-                          "A batch source element must be a concrete scalar or flat record."),
+                          "Batch source elements cannot use wildcards or unresolved type parameters."),
                 Map.entry("<T> void run(Iterable<T> rows)",
-                          "A batch source element must be a concrete scalar or flat record."),
+                          "Batch source elements cannot use wildcards or unresolved type parameters."),
                 Map.entry("void run(Iterable<Optional<String>> rows)",
                           "A batch source element must be a supported scalar or flat record."),
                 Map.entry("void run(Iterable<Bean> rows)",
                           "A batch source element must be a supported scalar or flat record."),
                 Map.entry("void run(Iterable<Nested> rows)", "Every batch record component must be a supported scalar."),
                 Map.entry("void run(Iterable<byte[][]> rows)",
-                          "A batch source element must be a concrete scalar or flat record."),
+                          "A batch source element that is an array must have type byte[]."),
                 Map.entry("void run(byte[][] rows)", "Batch source arrays must have one dimension."),
                 Map.entry("void run(char[] rows)", "A batch source element must be a supported scalar or flat record."),
                 Map.entry("void run(Iterable rows)", "A batch source must declare one concrete element type."),
                 Map.entry("void run(Flow.Publisher<String> rows)",
-                          "A batch input must be a supported scalar or source."));
+                          "A batch parameter must be a supported scalar value or an Iterable, Iterator, "
+                                  + "or one-dimensional array of supported elements."));
         for (Map.Entry<String, String> declaration : declarations.entrySet()) {
             TestCompiler.Result result = compile("BatchRepository.java", """
                     package example;
@@ -649,7 +940,7 @@ class JdbcBatchGenerationTest {
         assertThat(String.join("\n", parent.diagnostics()), parent.success(), is(true));
         TestCompiler.Result child = TestCompiler.builder().currentRelease().printDiagnostics(false)
                 .addProcessor(AptProcessor::new)
-                .addClasspath(List.of(RuntimeType.class, Data.class, JdbcClient.class, Service.class, Tx.class,
+                .addClasspath(List.of(RuntimeType.class, Config.class, OptionalValue.class, Data.class, JdbcClient.class, Service.class, Tx.class,
                         Generated.class, TypeName.class, DataGeneratorProvider.class, RepositoryCodegenProvider.class,
                         JdbcRepositoryGeneratorProvider.class))
                 .addClasspathEntry(parent.classOutput())
@@ -681,7 +972,7 @@ class JdbcBatchGenerationTest {
         assertThat(String.join("\n", parent.diagnostics()), parent.success(), is(true));
         TestCompiler.Result child = TestCompiler.builder().currentRelease().printDiagnostics(false)
                 .addProcessor(AptProcessor::new)
-                .addClasspath(List.of(RuntimeType.class, Data.class, JdbcClient.class, Service.class, Tx.class,
+                .addClasspath(List.of(RuntimeType.class, Config.class, OptionalValue.class, Data.class, JdbcClient.class, Service.class, Tx.class,
                         Generated.class, TypeName.class, DataGeneratorProvider.class, RepositoryCodegenProvider.class,
                         JdbcRepositoryGeneratorProvider.class))
                 .addClasspathEntry(parent.classOutput())
@@ -707,6 +998,8 @@ class JdbcBatchGenerationTest {
                 .printDiagnostics(false)
                 .addProcessor(AptProcessor::new)
                 .addClasspath(List.of(RuntimeType.class,
+                                      Config.class,
+                                      OptionalValue.class,
                                       Data.class,
                                       JdbcClient.class,
                                       Service.class,

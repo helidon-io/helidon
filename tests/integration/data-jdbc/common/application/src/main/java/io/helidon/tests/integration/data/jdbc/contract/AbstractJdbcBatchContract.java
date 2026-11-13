@@ -32,8 +32,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.data.Data;
 import io.helidon.data.jdbc.JdbcBatchException;
 import io.helidon.data.jdbc.JdbcClient;
@@ -42,6 +45,7 @@ import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.tests.integration.data.jdbc.declarative.repository.BatchRepository.ScalarChange;
 import io.helidon.tests.integration.data.jdbc.support.DatabaseFixture;
+import io.helidon.tests.integration.data.jdbc.support.TestConfigFactory;
 import io.helidon.transaction.Tx;
 import io.helidon.transaction.TxException;
 import io.helidon.transaction.spi.TxSupport;
@@ -85,6 +89,12 @@ public abstract class AbstractJdbcBatchContract {
 
     protected final TxSupport transactions() {
         return transactions;
+    }
+
+    protected final void restartBatch(Config config) {
+        manager.shutdown();
+        TestConfigFactory.config(config);
+        startBatch();
     }
 
     protected JdbcClient.BatchResult insert(List<String> rows, String email) {
@@ -250,12 +260,13 @@ public abstract class AbstractJdbcBatchContract {
         };
         for (JdbcClient.Statement stage : List.of(client.prepare("INSERT INTO CONTACT (NAME) VALUES (?)").get(),
                 client.prepare("INSERT INTO CONTACT (NAME) VALUES (:name)", List.of("name")).get())) {
+            stage.bind(1, "prebound");
             assertThrows(NullPointerException.class, () -> stage.executeBatch(forbidden, null));
-            assertThrows(UnsupportedOperationException.class,
+            assertThrows(IllegalArgumentException.class,
                     () -> stage.executeBatch(forbidden, (_, _) -> {
                         throw new AssertionError("Rejected definitions must not invoke the binder.");
                     }));
-            assertThrows(UnsupportedOperationException.class, () -> stage.executeBatch(List.of(), (_, _) -> { }));
+            assertThrows(IllegalArgumentException.class, () -> stage.executeBatch(List.of(), (_, _) -> { }));
         }
         assertThat(client.create("SELECT NAME FROM CONTACT ORDER BY ID").map(String.class).list(),
                    is(List.of("alpha", "beta")));
@@ -263,16 +274,62 @@ public abstract class AbstractJdbcBatchContract {
         assertThat(fixture.committedByName("after-rejection").isPresent(), is(true));
     }
 
+    /**
+     * YAML replacements retain named identities while changing physical marker order and repetition.
+     */
+    @Test
+    protected final void executesPreparedBatchesFromApplicationYamlWithFreshStages() {
+        for (String variant : List.of("", "reordered/", "positional/")) {
+            Supplier<JdbcClient.Statement> definition = preparedDefinition(variant);
+            assertThat(insertPrepared(definition, List.of(), null).totalUpdateCount().orElseThrow(), is(0L));
+            JdbcClient.BatchResult result = insertPrepared(definition, List.of("prepared-one", "prepared-two"), null);
+            assertThat(result.entries().size(), is(2));
+            assertThat(fixture.committedByName("prepared-one").orElseThrow().email(), is(Optional.empty()));
+            assertThat(fixture.committedByName("prepared-two").orElseThrow().email(), is(Optional.empty()));
+            assertThat(insertPrepared(definition, List.of("prepared-reused"), "email@example.test").entries().size(), is(1));
+            assertThat(fixture.committedByName("prepared-reused").orElseThrow().email(),
+                       is(Optional.of("email@example.test")));
+            fixture.reset();
+        }
+    }
+
+    /**
+     * Independent connections establish transaction effects rather than treating batch counts as commit evidence.
+     */
+    @Test
+    protected final void preparedBatchesPreserveTransactionOwnershipFailureEvidenceAndReuse() {
+        for (String variant : List.of("", "reordered/", "positional/")) {
+            Supplier<JdbcClient.Statement> definition = preparedDefinition(variant);
+            transactions.transaction(Tx.Type.REQUIRED,
+                    () -> insertPrepared(definition, List.of("prepared-commit"), null));
+            assertThat(fixture.committedByName("prepared-commit").isPresent(), is(true));
+            assertThrows(TxException.class, () -> transactions.transaction(Tx.Type.REQUIRED, () -> {
+                insertPrepared(definition, List.of("prepared-rollback"), null);
+                throw new IllegalStateException("The application rejected the prepared batch.");
+            }));
+            assertThat(fixture.committedByName("prepared-rollback"), is(Optional.empty()));
+            JdbcBatchException failure = assertThrows(JdbcBatchException.class,
+                    () -> insertPrepared(definition, Arrays.asList("batch-before", null, "batch-after"), null));
+            assertThat(failure.result().entries().size(), is(3));
+            assertThat(List.of("batch-before", "batch-after").stream()
+                    .filter(name -> fixture.committedByName(name).isPresent()).toList(), is(committedAfterPartialFailure()));
+            transactions.transaction(Tx.Type.REQUIRED, () -> {
+                insertPrepared(definition, List.of("prepared-before-caught"), null);
+                assertThrows(JdbcBatchException.class, () -> insertPrepared(definition, Arrays.asList((String) null), null));
+                return null;
+            });
+            assertThat(fixture.committedByName("prepared-before-caught").isPresent(),
+                       is(!constraintFailureAbortsTransaction()));
+            insertPrepared(definition, List.of("prepared-after-failure"), null);
+            assertThat(fixture.committedByName("prepared-after-failure").isPresent(), is(true));
+            fixture.reset();
+        }
+    }
+
     @BeforeEach
     protected final void setupBatch() {
         beforeStartApplication();
-        manager = ServiceRegistryManager.start();
-        client = manager.registry().get(JdbcClient.class, Qualifier.createNamed(Service.Named.DEFAULT_NAME),
-                Qualifier.builder().typeName(Data.ProviderType.TYPE).value("jdbc").build());
-        transactions = manager.registry().all(TxSupport.class).stream()
-                .filter(support -> support.type().equals("jdbc")).findFirst().orElseThrow();
-        fixture = service(DatabaseFixture.class);
-        fixture.reset();
+        startBatch();
     }
 
     /**
@@ -413,5 +470,38 @@ public abstract class AbstractJdbcBatchContract {
         if (manager != null) {
             manager.shutdown();
         }
+    }
+
+    private Supplier<JdbcClient.Statement> preparedDefinition(String variant) {
+        Config config = Config.just(ConfigSources.classpath("configured-batches/" + variant + "application.yaml"));
+        return client.prepare(config.get("application.batches.insert").asString().get(), List.of("name", "email"));
+    }
+
+    private void startBatch() {
+        manager = ServiceRegistryManager.start();
+        client = manager.registry().get(JdbcClient.class, Qualifier.createNamed(Service.Named.DEFAULT_NAME),
+                Qualifier.builder().typeName(Data.ProviderType.TYPE).value("jdbc").build());
+        transactions = manager.registry().all(TxSupport.class).stream()
+                .filter(support -> support.type().equals("jdbc")).findFirst().orElseThrow();
+        fixture = service(DatabaseFixture.class);
+        fixture.reset();
+    }
+
+    private JdbcClient.BatchResult insertPrepared(Supplier<JdbcClient.Statement> definition, List<String> names, String email) {
+        return definition.get().executeBatch(oneShot(IntStream.range(0, names.size()).boxed().toList()), (bindings, index) -> {
+            Objects.requireNonNull(bindings, "The batch bindings must not be null.");
+            Objects.requireNonNull(index, "The batch index must not be null.");
+            String name = names.get(index);
+            if (name == null) {
+                bindings.bindNull("name", JDBCType.VARCHAR);
+            } else {
+                bindings.bind("name", name);
+            }
+            if (email == null) {
+                bindings.bindNull("email", JDBCType.VARCHAR);
+            } else {
+                bindings.bind("email", email);
+            }
+        });
     }
 }

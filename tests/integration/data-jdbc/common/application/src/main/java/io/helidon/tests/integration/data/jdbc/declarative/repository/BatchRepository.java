@@ -112,6 +112,70 @@ public interface BatchRepository extends BatchAliasStatements<String> {
     @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
     JdbcClient.BatchResult byteValues(byte... values);
 
+    @Jdbc.Statement("${application.batches.insert:INSERT INTO CONTACT (NAME, EMAIL) VALUES (:name, :email)}")
+    JdbcClient.BatchResult configuredInsert(Iterable<String> name, String email);
+
+    @Jdbc.Statement("${application.batches.insert:INSERT INTO CONTACT (NAME, EMAIL) VALUES (:name, :email)}")
+    @Jdbc.Execution(Jdbc.ExecutionType.AUTO)
+    JdbcClient.BatchResult configuredAuto(Iterable<String> name, String email);
+
+    @Jdbc.Statement("${application.batches.insert:INSERT INTO CONTACT (NAME, EMAIL) VALUES (:name, :email)}")
+    @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
+    void configuredVoid(Iterable<String> name, String email);
+
+    @Jdbc.Statement("${application.batches.names:INSERT INTO CONTACT (NAME) VALUES (:name)}")
+    JdbcClient.BatchResult configuredSet(Set<String> name);
+
+    @Jdbc.Statement("${application.batches.records:UPDATE CONTACT SET NAME = :name, EMAIL = :email WHERE ID = :id}")
+    JdbcClient.BatchResult configuredRecords(Iterator<Change> values);
+
+    @Jdbc.Statement("${application.batches.arrays:UPDATE CONTACT SET EMAIL = :emails WHERE ID = :ids}")
+    JdbcClient.BatchResult configuredArrays(String[] emails, long... ids);
+
+    @Jdbc.Statement("${application.batches.duplicates:UPDATE CONTACT SET NAME = ? WHERE ID = ? AND NAME = ?}")
+    JdbcClient.BatchResult configuredDuplicates(Iterable<Replacement> replacements, Iterator<Expected> expected);
+
+    @Jdbc.Statement("${application.batches.aligned:UPDATE CONTACT SET NAME = ?, EMAIL = ? WHERE ID = ? AND NAME <> ? AND ID = ?}")
+    JdbcClient.BatchResult configuredAligned(Iterable<Change> rows, Iterator<Rename> filters);
+
+    @Jdbc.Statement("${application.batches.aliases:UPDATE CONTACT SET NAME = :name, EMAIL = :email WHERE ID = :id OR ID = :id}")
+    JdbcClient.BatchResult configuredAliases(@Data.Param("name") Iterator<String> jdbcClient,
+                                           @Data.Param("email") String SQL_CONFIGURED_ALIASES,
+                                           @Data.Param("id") long... iterator);
+
+    @Jdbc.Statement("${application.batches.bytes:UPDATE SCALAR_VALUE SET BYTES_VALUE = :values WHERE ID = :id}")
+    JdbcClient.BatchResult configuredBinary(Iterable<byte[]> values, long id);
+
+    @Jdbc.Statement("${application.batches.constant:UPDATE SCALAR_VALUE SET BYTES_VALUE = :value WHERE ID = :ids}")
+    JdbcClient.BatchResult configuredBinaryConstant(long[] ids, byte[] value);
+
+    @Jdbc.Statement("${application.batches.varargs:UPDATE SCALAR_VALUE SET BYTE_VALUE = :values WHERE ID = 1}")
+    JdbcClient.BatchResult configuredBytes(byte... values);
+
+    @Jdbc.Statement("""
+            ${application.batches.scalars:UPDATE SCALAR_VALUE
+            SET BYTES_VALUE = :bytes, DECIMAL_VALUE = :decimal, LOCAL_DATE_VALUE = :date, LOCAL_TIME_VALUE = :time,
+                LOCAL_DATE_TIME_VALUE = :dateTime, DATE_VALUE = :sqlDate, TIME_VALUE = :sqlTime,
+                TIMESTAMP_VALUE = :sqlTimestamp WHERE ID = :id}
+            """)
+    JdbcClient.BatchResult configuredScalars(Iterable<ScalarChange> values);
+
+    /**
+     * Requires a deployment key independently of methods with SQL defaults.
+     */
+    @Data.Repository
+    @Data.Provider("jdbc")
+    interface Required {
+        @Jdbc.Statement("${application.batches.required}")
+        JdbcClient.BatchResult insert(Iterable<String> name);
+    }
+
+    record Replacement(String name) {
+    }
+
+    record Expected(long id, String name) {
+    }
+
     record Rename(String name, long id) {
     }
 

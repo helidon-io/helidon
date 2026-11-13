@@ -137,7 +137,7 @@ class JdbcTypeHierarchyTest {
                                                                                        new TypesRoundContext(Map.of())));
 
         assertThat(failure.getMessage(),
-                   is("Inherited repository method 'find(java.lang.String,java.lang.String)' has incompatible named SQL "
+                   is("Inherited repository method 'find(java.lang.String,java.lang.String)' has incompatible SQL "
                               + "parameter bindings."));
     }
 

@@ -202,19 +202,22 @@ long updateStatus(String status, long id);
 ```
 
 A statement uses either named markers or positional markers rather than mixing
-the two forms. Every method parameter must be referenced by at least one named
-marker or represented by one positional marker. A named parameter can appear
-more than once. With positional markers, the number of Java parameters must
-equal the number of markers.
+the two forms. For ordinary queries and updates, every scalar method parameter must
+be referenced by at least one named marker or represented by one positional marker.
+A named parameter can appear more than once. With positional markers, the number
+of scalar parameters must equal the number of markers. Batch methods instead bind
+expanded scalar inputs, including record components, in the order described in
+[Batch Processing](batch.md#sources-and-parameter-binding).
 
 Repository parameters cannot represent a variable length SQL `IN` list. Each
 value requires a separate scalar parameter and marker. The imperative model can
 construct SQL when the number of values is determined at runtime.
 
-Repository parameters use the [supported scalar types](#supported-scalar-types).
+Ordinary query and update parameters use the [supported scalar types](#supported-scalar-types).
 Reference arguments can be `null`, in which case the generated implementation
 binds SQL `NULL` with the corresponding JDBC type. Primitive parameters cannot
-be null, and repository parameters do not use `Optional`.
+be null, and repository parameters do not use `Optional`. Batch methods also accept
+the [supported source types](batch.md#sources-and-parameter-binding).
 
 SQL continues to determine what a null argument means. In the following
 example, a null `email` removes the filter and allows every row to match:
@@ -265,7 +268,9 @@ determines case sensitivity and collation.
 > parameters in inherited methods do not require `-parameters`. For named
 > markers whose parameters have no aliases, compile the parent interface with
 > `-parameters` or redeclare the method with explicit parameter names. Literal
-> positional statements need no parameter-name metadata.
+> positional statements and positional configured batches need no parameter-name
+> metadata. Ordinary configured queries and updates retain the name requirements
+> described in [SQL In Configuration](configured-statements.md#declarative-repositories).
 
 ### Execution Types
 

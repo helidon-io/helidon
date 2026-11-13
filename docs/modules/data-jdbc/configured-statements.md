@@ -13,8 +13,8 @@ Loading SQL from configuration changes how a statement is selected. The existing
 [execution contracts](data-jdbc.md#sql-guidelines),
 [result mapping](declarative.md#result-mapping), and
 [transaction rules](data-jdbc.md#local-transactions) still govern its execution. This
-support covers materialized queries, updates, and generated keys. Streaming, stored
-procedure calls, and batch processing are outside its scope.
+support covers materialized queries, updates, generated keys, and
+[prepared DML batches](batch.md). Streaming and stored procedure calls are outside its scope.
 
 ## Application Configuration
 
@@ -90,9 +90,11 @@ with independent bindings.
 
 The configured statements follow the same binding rules as literal SQL. Named markers
 match the `@Data.Param` alias assigned to a parameter, or its Java name when no alias is
-present. Repeating a marker supplies the same argument to each occurrence. For methods
-without aliases, positional SQL provides an alternative with one marker per parameter
-in declaration order. The `rename` statement can therefore be replaced with the
+present. Repeating a marker supplies the same argument to each occurrence. For ordinary
+queries and updates without aliases, positional SQL provides an alternative with one
+marker per scalar parameter in declaration order. Batches use
+[expanded scalar input order](batch.md#sources-and-parameter-binding).
+The `rename` statement can therefore be replaced with the
 following value without recompiling the repository:
 
 ```yaml [application.yaml]
@@ -120,13 +122,16 @@ including those without aliases. Any explicit or inherited `@Data.Param` alias r
 named SQL in both defaults and deployment replacements. The positional replacement
 shown earlier therefore applies only to methods without aliases.
 
-For an inherited configured method, each parameter without an alias needs a reliable
-Java name from the parent declaration. A parent compiled with `-parameters` preserves
-that name. An application can instead supply `@Data.Param` or redeclare the method with
-explicit parameter names. This requirement still applies when the current configured
-SQL is positional, because a later replacement can use named markers. Inherited aliases
-are retained without `-parameters`, while literal positional methods need no parameter
-name metadata.
+For an inherited configured query or update, each parameter without an alias needs a
+reliable Java name from the parent declaration. A parent compiled with `-parameters`
+preserves that name. An application can instead supply `@Data.Param` or redeclare the
+method with explicit parameter names. This requirement still applies when the current
+configured SQL is positional, because a later replacement can use named markers.
+Inherited aliases are retained without `-parameters`, while literal positional methods
+need no parameter name metadata. Positional configured batches also permit unavailable
+Java names or duplicate record component names. A named batch replacement requires
+known, unique names for every input and fails activation when those names are unavailable.
+See [Batch Processing](batch.md#sources-and-parameter-binding).
 
 ### Optional Defaults
 
@@ -214,11 +219,13 @@ holds the definition, and the client retains no history of these definitions. Th
 plans are separate from the [parameter count cache](data-jdbc.md#parameter-count-cache)
 used by `JdbcClient.create(sql)`.
 
-Unlike generated repository bindings, imperative value bindings require nonnull scalars
-and provide no typed SQL NULL operation. Null handling remains explicit in the SQL, as
-described in [Parameter Binding](imperative.md#parameter-binding). Applications can also
-continue to use `JdbcClient.create(sql)` for positional statements when they do not need
-a reusable definition.
+Unlike generated repository bindings, ordinary imperative `Statement.bind` operations
+require scalar values that are not `null` and provide no typed SQL NULL operation.
+Null handling remains explicit in the SQL, as described in
+[Parameter Binding](imperative.md#parameter-binding). Batches use `BatchBindings.bindNull`
+for typed SQL NULL and can execute fresh statements from these definitions; see
+[Batch Processing](batch.md#imperative-applications). Applications can also continue to
+use `JdbcClient.create(sql)` for positional statements when they do not need a reusable definition.
 
 ## Binding and Validation
 
@@ -231,9 +238,13 @@ ordered input list must be empty.
 
 Validation is divided between compilation and initialization because deployment SQL
 is not available to the annotation processor. During compilation, Helidon checks the
-reference syntax, parameter types and reliable names, aliases, return types, execution
-contracts, and markers in known inline defaults. It reads neither deployment
-configuration nor database metadata at this stage.
+reference syntax, parameter types, aliases, return types, execution contracts, and
+markers in known inline defaults. Ordinary configured queries and updates require
+reliable input names. For batches, Helidon checks source shapes and scalar types
+independently of deployment SQL. Names must be known and unique when the declaration
+requires named SQL; positional layouts can use inputs without those names. Deployed
+SQL and its compatibility with the available names are checked at activation.
+The annotation processor reads neither deployment configuration nor database metadata.
 
 The actual SQL is validated when the repository is activated or the imperative
 application calls `prepare(...)`. At that point, Helidon checks that the string is
@@ -243,12 +254,16 @@ repository activation may first resolve or activate a client or data source. A f
 in that setup can therefore occur before SQL validation.
 
 During binding, each physical JDBC position must receive exactly one assignment,
-either directly or through a logical name. Unknown names, invalid positions, and
-duplicate assignments fail immediately. A named binding validates all matching positions
-before assigning any of them, and missing bindings are rejected before the operation
-acquires a connection. Once execution begins, the database validates SQL grammar and
-schema references, while the existing mapping, cardinality, and generated key checks
-apply to its results.
+either directly or through a logical name. A batch must satisfy this rule for every
+captured item. Unknown names, invalid positions, and duplicate assignments fail
+immediately. A named binding validates all matching positions before assigning any
+of them, and missing bindings are rejected before the operation acquires a connection.
+An ordinary statement with missing bindings can be completed and executed later.
+Once batch capture starts, the statement cannot execute again even if capture fails;
+see [Capture and Binding Lifetime](batch.md#capture-and-binding-lifetime).
+Once execution begins, the database validates SQL grammar and schema references,
+while the existing mapping, cardinality, and generated key checks apply to their
+supported execution types.
 
 ## Lifetime and Configuration Changes
 
