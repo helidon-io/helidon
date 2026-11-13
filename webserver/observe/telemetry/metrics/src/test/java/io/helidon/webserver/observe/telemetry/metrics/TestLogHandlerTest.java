@@ -17,6 +17,9 @@
 package io.helidon.webserver.observe.telemetry.metrics;
 
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
@@ -24,9 +27,11 @@ import java.util.logging.Logger;
 import io.helidon.json.JsonParser;
 import io.helidon.json.JsonValue;
 
+import org.hamcrest.FeatureMatcher;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -96,6 +101,66 @@ class TestLogHandlerTest {
     }
 
     @Test
+    void requiresPersonalizedGreetingBeforeBaseline() {
+        var ready = TestOpenTelemetrySemanticConventions.hasPersonalizedGreetingCount(greaterThan(0L));
+
+        assertThat("SDK-only export is not a baseline",
+                   "{\"name\":\"otel.sdk.metric_reader.collection.duration\"}", not(ready));
+        assertThat("Another route is not a baseline", httpMetrics(dataPoint("private", "/greet", 1)), not(ready));
+        assertThat("An unrecorded greeting is not a baseline",
+                   httpMetrics(dataPoint("@default", "/greet/{name}", 0)), not(ready));
+        assertThat("A recorded greeting is a baseline",
+                   httpMetrics(dataPoint("@default", "/greet/{name}", 1)), ready);
+    }
+
+    @Test
+    void waitsForPersonalizedGreetingCountToAdvance() throws Exception {
+        String before = httpMetrics(dataPoint("@default", "/greet/{name}", 1));
+        String unrelated = httpMetrics(dataPoint("private", "/greet", 2));
+        String after = httpMetrics(dataPoint("@default", "/greet/{name}", 2));
+        var ready = TestOpenTelemetrySemanticConventions.hasPersonalizedGreetingCount(greaterThan(1L));
+        var staleExamined = new CountDownLatch(1);
+
+        assertThat("Unchanged personalized count is stale", before, not(ready));
+        assertThat("Another route advancing does not record the greeting", unrelated, not(ready));
+
+        try (TestLogHandler handler = TestLogHandler.create(Logger.getAnonymousLogger());
+             var executor = Executors.newSingleThreadExecutor()) {
+            handler.publish(new LogRecord(Level.INFO, before));
+            assertThat("Consume the baseline", handler.lastMessageMatching(
+                    TestOpenTelemetrySemanticConventions.hasPersonalizedGreetingCount(greaterThan(0L))), is(before));
+
+            // A periodic export can arrive after clearing the baseline but before the next request is recorded.
+            handler.publish(new LogRecord(Level.INFO, before));
+            handler.publish(new LogRecord(Level.INFO, unrelated));
+            var selected = executor.submit(() -> handler.lastMessageMatching(new FeatureMatcher<String, String>(
+                    ready, "export", "export") {
+                @Override
+                protected String featureValueOf(String jsonText) {
+                    if (jsonText.equals(before)) {
+                        staleExamined.countDown();
+                    }
+                    return jsonText;
+                }
+            }));
+
+            assertThat("Lookup examines the stale export before the updated export is delivered",
+                       staleExamined.await(10, TimeUnit.SECONDS), is(true));
+            handler.publish(new LogRecord(Level.INFO, after));
+
+            assertThat("Lookup waits for the recorded second greeting", selected.get(10, TimeUnit.SECONDS), is(after));
+        }
+    }
+
+    @Test
+    void advancedCountLeavesOvercountForAssertion() {
+        var ready = TestOpenTelemetrySemanticConventions.hasPersonalizedGreetingCount(greaterThan(1L));
+
+        assertThat("An excessive count must reach the exact count-difference assertion",
+                   httpMetrics(dataPoint("@default", "/greet/{name}", 3)), ready);
+    }
+
+    @Test
     void readinessLeavesCountsAndExcludedMeasurementsForAssertions() {
         var ready = TestOpenTelemetrySemanticConventions.hasExpectedHttpMeasurements();
         String invalidCounts = httpMetrics(dataPoint("@default", "/greet/{name}", 2),
@@ -149,7 +214,7 @@ class TestLogHandlerTest {
 
     private static String httpMetrics(String... dataPoints) {
         return """
-                {"scopeMetrics":[{"metrics":[{"name":"http.server.request.duration",
+                {"scopeMetrics":[{"metrics":[{"name":"http.server.request.duration","unit":"s",
                   "histogram":{"dataPoints":[%s]}}]}]}
                 """.formatted(String.join(",", dataPoints));
     }

@@ -165,6 +165,18 @@ class TestOpenTelemetrySemanticConventions {
                                                      hasEntry(HTTP_ROUTE, "/greet"))))));
     }
 
+    static Matcher<String> hasPersonalizedGreetingCount(Matcher<? super Long> countMatcher) {
+        return allOf(containsString(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME),
+                     new FeatureMatcher<String, Long>(countMatcher,
+                                                      "personalized greeting count",
+                                                      "personalized greeting count") {
+                         @Override
+                         protected Long featureValueOf(String jsonText) {
+                             return personalizedGreetingMeasurement(JsonParser.create(jsonText).readJsonObject()).count();
+                         }
+                     });
+    }
+
     @Test
     void checkAutoMetrics() {
 
@@ -303,7 +315,7 @@ class TestOpenTelemetrySemanticConventions {
             }
 
             var beforeJsonText =
-                    testLogHandler.lastMessageContaining(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME);
+                    testLogHandler.lastMessageMatching(hasPersonalizedGreetingCount(greaterThan(0L)));
             var beforeMeasurement = personalizedGreetingMeasurement(JsonParser.create(beforeJsonText).readJsonObject());
 
             var startTime = System.nanoTime();
@@ -315,7 +327,7 @@ class TestOpenTelemetrySemanticConventions {
             var elapsedTimeFromClient = System.nanoTime() - startTime;
 
             var afterJsonText =
-                    testLogHandler.lastMessageContaining(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME);
+                    testLogHandler.lastMessageMatching(hasPersonalizedGreetingCount(greaterThan(beforeMeasurement.count())));
             var afterMeasurement = personalizedGreetingMeasurement(JsonParser.create(afterJsonText).readJsonObject());
 
             var personalizedGreetingCount = afterMeasurement.count() - beforeMeasurement.count();
