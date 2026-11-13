@@ -19,6 +19,9 @@ package io.helidon.metadata;
 /**
  * Constants used during metadata discovery.
  * <p>
+ * Internal to Helidon; not supported public API. Classification and enforcement are manual to keep metadata
+ * bootstrap dependency-free and avoid a cycle with Helidon Common's API stability annotations.
+ * <p>
  * For backward compatibility, we must explicitly list the files that should be loaded, as we expected their location
  * directly under {@link #LOCATION}, without a directory structure and a manifest file.
  */

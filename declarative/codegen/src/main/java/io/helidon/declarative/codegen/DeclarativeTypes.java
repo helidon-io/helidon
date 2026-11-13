@@ -29,6 +29,7 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_
 /**
  * Types used by Helidon Declarative code generators.
  */
+@Api.Internal
 public final class DeclarativeTypes {
     /**
      * Mappers type.

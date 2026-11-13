@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -40,6 +41,7 @@ import io.helidon.common.types.TypeNames;
 /**
  * Reflection based handler of {@link io.helidon.common.types.Annotation} and {@link java.lang.annotation.Annotation}.
  */
+@Api.Internal
 public final class AnnotationFactory {
     private AnnotationFactory() {
     }

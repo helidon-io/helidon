@@ -16,6 +16,7 @@
 
 package io.helidon.declarative.codegen.common;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
@@ -23,6 +24,7 @@ import io.helidon.common.types.TypedElementInfo;
 /**
  * Utilities for declarative element processing.
  */
+@Api.Internal
 public final class DeclarativeElementInfo {
     private DeclarativeElementInfo() {
     }

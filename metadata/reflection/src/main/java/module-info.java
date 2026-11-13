@@ -18,6 +18,7 @@
  * Reflection support to get types from {@link io.helidon.common.types} at runtime.
  */
 module io.helidon.metadata.reflection {
+    requires io.helidon.common;
     requires io.helidon.common.types;
 
     exports io.helidon.metadata.reflection;

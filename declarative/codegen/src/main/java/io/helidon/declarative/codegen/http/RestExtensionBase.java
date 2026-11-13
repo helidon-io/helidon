@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.codegen.CodegenException;
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
@@ -45,6 +46,7 @@ import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_PRODUCES_ANNOTA
 /**
  * A base class for HTTP Rest extensions (server and client).
  */
+@Api.Internal
 public abstract class RestExtensionBase {
     /**
      * Constructor with no side effects.

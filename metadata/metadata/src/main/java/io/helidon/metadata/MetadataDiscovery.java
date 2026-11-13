@@ -20,6 +20,9 @@ import java.util.List;
 
 /**
  * Helidon metadata discovery.
+ * <p>
+ * Internal to Helidon; not supported public API. Classification and enforcement are manual to keep metadata
+ * bootstrap dependency-free and avoid a cycle with Helidon Common's API stability annotations.
  */
 public interface MetadataDiscovery {
 
@@ -60,6 +63,8 @@ public interface MetadataDiscovery {
     /**
      * Modes of discovery.
      * Can be controlled through system property {@value MetadataDiscoveryImpl#SYSTEM_PROPERTY_MODE}.
+     * <p>
+     * Internal to Helidon, with the manual classification and enforcement described by {@link MetadataDiscovery}.
      */
     enum Mode {
         /**

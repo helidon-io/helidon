@@ -47,6 +47,7 @@ public class Descriptors {
      * @return a list of descriptor metadata
      * @throws java.lang.IllegalStateException in case the format is not as expected
      */
+    @Api.Internal
     public static List<DescriptorMetadata> descriptors(String location, Hson.Array moduleRegistries) {
         List<DescriptorMetadata> descriptors = new ArrayList<>();
 

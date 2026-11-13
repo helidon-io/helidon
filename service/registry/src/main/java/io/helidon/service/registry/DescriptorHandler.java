@@ -21,6 +21,10 @@ import io.helidon.common.Api;
 /**
  * Metadata of a single service descriptor.
  * This information is stored within the Helidon specific {code META-INF} services file.
+ * <p>
+ * This interface is intended for consumption only. Instances are supplied by
+ * {@link io.helidon.service.registry.ServiceDiscovery#allMetadata()}.
+ * Implementations and extensions outside Helidon are not supported.
  */
 @Api.Stable
 public interface DescriptorHandler extends io.helidon.service.metadata.DescriptorMetadata {

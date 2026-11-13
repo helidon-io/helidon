@@ -16,9 +16,12 @@
 
 package io.helidon.metadata.hson;
 
+import io.helidon.common.Api;
+
 /**
  * Exception to indicate a required key is not found.
  */
+@Api.Internal
 public class HsonNotFoundException extends HsonException {
     /**
      * Create a new instance.

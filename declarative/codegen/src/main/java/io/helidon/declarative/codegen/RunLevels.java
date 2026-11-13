@@ -16,9 +16,12 @@
 
 package io.helidon.declarative.codegen;
 
+import io.helidon.common.Api;
+
 /**
  * Helidon Declarative Run Levels.
  */
+@Api.Internal
 public final class RunLevels {
     /**
      * Services to run on startup (not used by Helidon services).

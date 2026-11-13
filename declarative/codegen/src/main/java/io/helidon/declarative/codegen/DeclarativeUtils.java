@@ -19,6 +19,7 @@ package io.helidon.declarative.codegen;
 import java.util.Collection;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeName;
@@ -26,6 +27,7 @@ import io.helidon.common.types.TypeName;
 /**
  * Utilities of Declarative code generators.
  */
+@Api.Internal
 public class DeclarativeUtils {
     private DeclarativeUtils() {
     }

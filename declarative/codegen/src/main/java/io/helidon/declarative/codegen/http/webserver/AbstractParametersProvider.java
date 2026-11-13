@@ -35,7 +35,7 @@ import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_SUPPORT;
  * A provider of parameters when code generating call of methods with annotated parameter, such
  * as HTTP headers, path parameters etc.
  */
-@Api.Preview
+@Api.Internal
 public abstract class AbstractParametersProvider {
     /**
      * Constructor with no side effects.

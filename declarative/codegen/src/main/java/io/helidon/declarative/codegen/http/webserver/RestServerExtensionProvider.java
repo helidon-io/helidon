@@ -33,6 +33,7 @@ import static io.helidon.declarative.codegen.http.webserver.WebServerCodegenType
  * to support code generation for WebServer declarative.
  */
 @Weight(Weighted.DEFAULT_WEIGHT + 10)
+@Api.Internal
 public class RestServerExtensionProvider implements RegistryCodegenExtensionProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
