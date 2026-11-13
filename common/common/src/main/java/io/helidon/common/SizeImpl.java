@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,13 +64,9 @@ class SizeImpl implements Size {
             if (value.isBinary() != unitKind.isBinary()) {
                 continue;
             }
-            BigDecimal bigDecimal = to(value);
-            try {
-                // try to convert without any decimal spaces
-                BigInteger bi = bigDecimal.toBigIntegerExact();
-                return bi + " " + value.unitString(unitKind);
-            } catch (Exception ignored) {
-                // ignored, we cannot convert to this unit, because it cannot be correctly divided
+            BigInteger[] quotientAndRemainder = bytes.divideAndRemainder(value.bytesInteger());
+            if (quotientAndRemainder[1].signum() == 0) {
+                return quotientAndRemainder[0] + " " + value.unitString(unitKind);
             }
         }
 
