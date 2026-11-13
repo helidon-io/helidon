@@ -388,7 +388,18 @@ check has no client transaction manager; external transaction-aware sources must
 independent connections themselves. A second `getConnection()` call alone does not
 establish independence if the source returns a caller's associated connection.
 
+The data source must discard unsafe physical pool entries when their connections
+are aborted.
+
 Each invocation needs pool capacity in addition to any caller-held connection. Pool
 exhaustion returns DOWN without borrowing that connection or changing caller work.
 Concurrent probes use separate acquisitions, although a pool can reuse a physical
 connection across completed invocations. See [Local Transactions](data-jdbc.md#local-transactions).
+
+### Pool Recovery Limitation
+
+With HikariCP 7.1.0 and MySQL Connector/J 26.7.0, aborting and closing an unsafe
+connection may leave its terminated physical connection available for reuse in the
+pool. A subsequent health check or ordinary query can therefore fail even while the
+database is available. This limitation also applies to data sources created by
+Helidon's Hikari provider.

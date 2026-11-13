@@ -38,6 +38,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
@@ -124,11 +125,20 @@ public abstract class AbstractJdbcHealthContract {
     protected abstract String query();
 
     /**
-     * Supplies bounded slow SQL for driver query timeout coverage.
+     * Supplies SQL that waits for a fixture lock or a database delay during timeout coverage.
      *
-     * @return The SELECT takes longer than one second without cancellation.
+     * @return The SELECT normally waits beyond the query timeout under the configured fixture conditions.
      */
     protected abstract String slowQuery();
+
+    /**
+     * Indicates whether the fixture must retain a row lock while testing query cancellation.
+     *
+     * @return Whether successful execution of the timeout SELECT must retain a fixture lock.
+     */
+    protected boolean requiresTimeoutLock() {
+        return false;
+    }
 
     /**
      * Supplies driver properties through the existing pool configuration.
@@ -211,27 +221,107 @@ public abstract class AbstractJdbcHealthContract {
     }
 
     /**
-     * Executes valid slow SQL before testing cancellation and subsequent pooled reuse.
+     * Verifies that cancelled validation SQL produces DOWN with empty details for client and data source checks.
+     * The checks must make no transaction control calls and leave the pool usable for later checks and queries.
      */
     @Test
-    protected void driverTimeoutAndSqlFailureLeaveThePoolUsable() throws Exception {
-        // Executing without cancellation verifies the SQL before testing the query timeout.
-        try (Connection connection = pool.getConnection();
-             PreparedStatement statement = connection.prepareStatement(slowQuery())) {
-            statement.setQueryTimeout(10);
-            try (ResultSet result = statement.executeQuery()) {
-                assertThat(result.next(), is(true));
+    protected void driverQueryTimeoutLeavesThePoolUsable() throws Exception {
+        String timeoutQuery = slowQuery();
+        AtomicReference<SQLException> executionFailure = new AtomicReference<>();
+        // Record real execution failures so an unrelated acquisition or cleanup failure
+        // cannot satisfy the timeout assertions.
+        DataSource observedSource = mock(DataSource.class);
+        when(observedSource.getConnection()).thenAnswer(_ -> {
+            Connection delegate = source.getConnection();
+            Connection recording = mock(Connection.class, delegatesTo(delegate));
+            doAnswer(_ -> {
+                PreparedStatement statement = delegate.prepareStatement(timeoutQuery);
+                PreparedStatement observed = mock(PreparedStatement.class, delegatesTo(statement));
+                doAnswer(_ -> {
+                    try {
+                        return statement.execute();
+                    } catch (SQLException failure) {
+                        executionFailure.set(failure);
+                        throw failure;
+                    }
+                }).when(observed).execute();
+                return observed;
+            }).when(recording).prepareStatement(timeoutQuery);
+            return recording;
+        });
+        JdbcClient checkedClient = JdbcClient.builder().dataSource(observedSource).build();
+        var executor = Executors.newSingleThreadExecutor();
+        List<Future<?>> workers = new ArrayList<>();
+        Throwable primary = null;
+        boolean lockQuery = requiresTimeoutLock();
+        // When a row lock is required, the fixture owns its transaction and releases it before worker cleanup.
+        try (Connection blocker = pool.getConnection();
+             AutoCloseable _ = () -> {
+                 if (lockQuery) {
+                     blocker.rollback();
+                 }
+             }) {
+            if (lockQuery) {
+                blocker.setAutoCommit(false);
             }
+            // For Oracle, this execution acquires the row lock and closing the result retains it.
+            // Independent timeout queries cannot acquire that row lock while the fixture retains it.
+            try (PreparedStatement statement = blocker.prepareStatement(timeoutQuery)) {
+                statement.setQueryTimeout(10);
+                try (ResultSet result = statement.executeQuery()) {
+                    assertThat(result.next(), is(true));
+                    assertThat(result.next(), is(false));
+                }
+            }
+            Future<SQLException> driver = executor.submit(() -> {
+                try (Connection connection = pool.getConnection();
+                     PreparedStatement statement = connection.prepareStatement(timeoutQuery)) {
+                    statement.setQueryTimeout(1);
+                    return assertThrows(SQLException.class, statement::execute);
+                }
+            });
+            workers.add(driver);
+            // This wait is a test watchdog. The driver exception must establish query cancellation.
+            assertQueryCancellation(driver.get(20, TimeUnit.SECONDS));
+            List<HealthCheck> checks = List.of(
+                    JdbcClientHealthCheck.builder().client(checkedClient)
+                            .query(timeoutQuery).queryTimeout(Duration.ofSeconds(1)).build(),
+                    DataSourceHealthCheck.builder().dataSource(observedSource)
+                            .query(timeoutQuery).queryTimeout(Duration.ofSeconds(1)).build());
+            for (HealthCheck check : checks) {
+                executionFailure.set(null);
+                Future<HealthCheckResponse> worker = executor.submit(check::call);
+                workers.add(worker);
+                HealthCheckResponse response = worker.get(20, TimeUnit.SECONDS);
+                assertThat(response.status(), is(HealthCheckResponse.Status.DOWN));
+                assertThat(response.details().isEmpty(), is(true));
+                assertThat(executionFailure.get(), notNullValue());
+                assertQueryCancellation(executionFailure.get());
+            }
+        } catch (Exception | Error failure) {
+            primary = failure;
+            throw failure;
+        } finally {
+            finishWorkers(workers, executor, primary);
         }
-        try (Connection connection = pool.getConnection();
-             PreparedStatement statement = connection.prepareStatement(slowQuery())) {
-            statement.setQueryTimeout(1);
-            SQLException cancellation = assertThrows(SQLException.class, statement::execute);
-            assertThat("The driver must report timeout or query cancellation.",
-                       cancellation instanceof SQLTimeoutException || "57014".equals(cancellation.getSQLState()), is(true));
+        // Reusing the Oracle locking SELECT verifies that cleanup released the row lock.
+        String reuseQuery = lockQuery ? timeoutQuery : query();
+        assertThat(probe(checkedClient, reuseQuery, Duration.ofSeconds(2)).getAsBoolean(), is(true));
+        assertThat(probe(observedSource, reuseQuery, Duration.ofSeconds(2)).getAsBoolean(), is(true));
+        for (Connection connection : acquisitions) {
+            verify(connection, never()).setAutoCommit(anyBoolean());
+            verify(connection, never()).commit();
+            verify(connection, never()).rollback();
         }
-        assertThat(probe(client, slowQuery(), Duration.ofSeconds(1)).getAsBoolean(), is(false));
-        assertThat(probe(source, slowQuery(), Duration.ofSeconds(1)).getAsBoolean(), is(false));
+        assertThat(checkedClient.create(query()).map(row -> row.get(1, Integer.class)).one(), is(1));
+        assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
+    }
+
+    /**
+     * Verifies sanitized SQL failures and subsequent client and data source reuse.
+     */
+    @Test
+    protected void sqlFailureLeavesThePoolUsable() throws Exception {
         var sourceFailure = DataSourceHealthCheck.builder().dataSource(source)
                 .query("SELECT * FROM JDBC_HEALTH_TABLE_MISSING").build().call();
         assertThat(sourceFailure.status(), is(HealthCheckResponse.Status.DOWN));
@@ -241,6 +331,9 @@ public abstract class AbstractJdbcHealthContract {
         assertThat(failed.call().status(), is(HealthCheckResponse.Status.DOWN));
         assertThat(failed.call().details().isEmpty(), is(true));
         assertThat(probe(client, query(), Duration.ofSeconds(2)).getAsBoolean(), is(true));
+        assertThat(probe(source, query(), Duration.ofSeconds(2)).getAsBoolean(), is(true));
+        assertThat(client.create(query()).map(row -> row.get(1, Integer.class)).one(), is(1));
+        assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
     }
 
     /**
@@ -835,12 +928,23 @@ public abstract class AbstractJdbcHealthContract {
         assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
     }
 
+    private static void assertQueryCancellation(SQLException failure) {
+        assertThat("The driver must report query timeout or cancellation, but it reported " + failure + ".",
+                   failure instanceof SQLTimeoutException || "57014".equals(failure.getSQLState()), is(true));
+    }
+
     private static void finishWorkers(CountDownLatch release,
                                       List<Future<Boolean>> workers,
                                       ExecutorService executor,
                                       Throwable primary) throws InterruptedException {
+        release.countDown();
+        finishWorkers(workers, executor, primary);
+    }
+
+    private static void finishWorkers(List<? extends Future<?>> workers,
+                                      ExecutorService executor,
+                                      Throwable primary) throws InterruptedException {
         try {
-            release.countDown();
             workers.forEach(worker -> worker.cancel(true));
             executor.shutdownNow();
             assertThat(executor.awaitTermination(5, TimeUnit.SECONDS), is(true));
