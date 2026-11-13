@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.types.Annotation;
@@ -52,7 +53,8 @@ final class ScanAnnotationFactory {
      */
     public static Annotation createAnnotation(ScanContext ctx,
                                               AnnotationInfo am) {
-        TypeName typeName = ScanTypeFactory.create(am.getClassInfo());
+        TypeName typeName = ScanTypeFactory.create(Objects.requireNonNull(am.getClassInfo(),
+                                                                        "Class info is missing for annotation " + am.getName()));
 
         // ignore these annotations, unless one of them was explicitly requested
         var set = new HashSet<TypeName>();
@@ -79,7 +81,7 @@ final class ScanAnnotationFactory {
         }
         var builder = Annotation.builder();
 
-        classInfo.getAnnotationInfo()
+        classInfo.getAllAnnotationInfo()
                 .stream()
                 .map(it -> {
                     var newProcessed = new HashSet<>(processedTypes);

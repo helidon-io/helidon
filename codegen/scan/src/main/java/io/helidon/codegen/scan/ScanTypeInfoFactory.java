@@ -149,7 +149,7 @@ public final class ScanTypeInfoFactory extends TypeInfoFactoryBase {
                 .forEach(allInterestingTypeNames::add);
 
         try {
-            List<Annotation> annotations = createAnnotations(ctx, classInfo.getAnnotationInfo(), kind(classInfo));
+            List<Annotation> annotations = createAnnotations(ctx, classInfo.getAllAnnotationInfo(), kind(classInfo));
             Set<TypeName> annotationsOnTypeOrElements = new HashSet<>();
             annotations.stream()
                     .map(Annotation::typeName)
@@ -182,7 +182,7 @@ public final class ScanTypeInfoFactory extends TypeInfoFactoryBase {
                                                  it,
                                                  false));
 
-            classInfo.getInnerClasses()
+            classInfo.getNestedClasses()
                     .forEach(it -> processInnerClass(ctx,
                                                      elementPredicate,
                                                      elementsWeCareAbout,
@@ -235,7 +235,7 @@ public final class ScanTypeInfoFactory extends TypeInfoFactoryBase {
                 }
             }
 
-            classInfo.getInterfaces().forEach(ifaceClassInfo -> {
+            classInfo.getAllSuperinterfaces().forEach(ifaceClassInfo -> {
                 TypeName fqInterfaceTypeName = ScanTypeFactory.create(ifaceClassInfo);
 
                 TypeName genericInterfaceTypeName = fqInterfaceTypeName.genericTypeName();
@@ -261,10 +261,11 @@ public final class ScanTypeInfoFactory extends TypeInfoFactoryBase {
 
             allInterestingTypeNames.forEach(it -> {
                 ClassInfo referencedType = ctx.scanResult().getClassInfo(it.fqName());
-                if (referencedType != null
-                        && referencedType.getModuleInfo() != null) {
-                    if (moduleName == null || !referencedType.getModuleInfo().getName().equals(moduleName)) {
-                        builder.putReferencedModuleName(it, referencedType.getModuleInfo().getName());
+                if (referencedType != null) {
+                    var referencedModule = referencedType.getModuleInfo();
+                    if (referencedModule != null
+                            && (moduleName == null || !referencedModule.getName().equals(moduleName))) {
+                        builder.putReferencedModuleName(it, referencedModule.getName());
                     }
                 }
             });
@@ -293,7 +294,7 @@ public final class ScanTypeInfoFactory extends TypeInfoFactoryBase {
                 .accessModifier(toAccessModifier(methodInfo))
                 .elementName(methodInfo.getName())
                 .kind(kind)
-                .annotations(createAnnotations(ctx, methodInfo.getAnnotationInfo(), kind))
+                .annotations(createAnnotations(ctx, methodInfo.getAllAnnotationInfo(), kind))
                 .originatingElement(methodInfo);
 
         int index = 0;
@@ -332,11 +333,16 @@ public final class ScanTypeInfoFactory extends TypeInfoFactoryBase {
                                                TypedElementInfo.Builder methodBuilder,
                                                String paramName) {
 
+        var parameterType = methodParameterInfo.getTypeSignatureOrTypeDescriptor();
+        if (parameterType == null) {
+            throw new CodegenException("Cannot determine type of parameter " + paramName, methodParameterInfo);
+        }
+
         TypedElementInfo paramInfo = TypedElementInfo.builder()
-                .typeName(ScanTypeFactory.create(methodParameterInfo.getTypeSignatureOrTypeDescriptor()))
+                .typeName(ScanTypeFactory.create(parameterType))
                 .elementName(paramName)
                 .kind(ElementKind.PARAMETER)
-                .annotations(createAnnotations(ctx, methodParameterInfo.getAnnotationInfo(), ElementKind.PARAMETER))
+                .annotations(createAnnotations(ctx, methodParameterInfo.getAllAnnotationInfo(), ElementKind.PARAMETER))
                 .build();
         paramInfo = processElement(ctx,
                                    paramInfo,
@@ -367,7 +373,7 @@ public final class ScanTypeInfoFactory extends TypeInfoFactoryBase {
                 .accessModifier(toAccessModifier(classInfo))
                 .elementName(classInfo.getName())
                 .kind(kind)
-                .annotations(createAnnotations(ctx, classInfo.getAnnotationInfo(), kind))
+                .annotations(createAnnotations(ctx, classInfo.getAllAnnotationInfo(), kind))
                 .originatingElement(classInfo)
                 .build();
 
@@ -392,7 +398,7 @@ public final class ScanTypeInfoFactory extends TypeInfoFactoryBase {
                 .accessModifier(toAccessModifier(fieldInfo))
                 .elementName(fieldInfo.getName())
                 .kind(ElementKind.FIELD)
-                .annotations(createAnnotations(ctx, fieldInfo.getAnnotationInfo(), ElementKind.FIELD))
+                .annotations(createAnnotations(ctx, fieldInfo.getAllAnnotationInfo(), ElementKind.FIELD))
                 .originatingElement(fieldInfo)
                 .build();
 
@@ -577,7 +583,7 @@ public final class ScanTypeInfoFactory extends TypeInfoFactoryBase {
                         ClassInfo classInfo = ctx.scanResult().getClassInfo(it.name());
                         if (classInfo != null) {
                             List<Annotation> metaAnnotations = createAnnotations(ctx,
-                                                                                 classInfo.getAnnotationInfo(),
+                                                                                 classInfo.getAllAnnotationInfo(),
                                                                                  ElementKind.ANNOTATION_TYPE);
                             result.put(it, new ArrayList<>(metaAnnotations));
                             // now rinse and repeat for the referenced annotations

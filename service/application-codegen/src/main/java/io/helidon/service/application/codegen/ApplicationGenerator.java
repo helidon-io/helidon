@@ -130,8 +130,16 @@ public final class ApplicationGenerator {
 
         try (URLClassLoader loader = createClassLoader(classpath, prev);
                 ScanResult scan = new ClassGraph()
-                .overrideClasspath(classpath)
-                .enableAllInfo()
+                .enableClasspathEntries(classpath)
+                .enableClassInfo()
+                .enableFieldInfo()
+                .enableMethodInfo()
+                .enableAnnotationInfo()
+                .enableStaticFinalFieldConstantInitializerValues()
+                .ignoreClassVisibility()
+                .ignoreFieldVisibility()
+                .ignoreMethodVisibility()
+                .enableExternalClasses()
                 .scan()) {
             ApplicationCodegenContext scanContext = ApplicationCodegenContext.create(codegenOptions,
                                                                                      scan,
