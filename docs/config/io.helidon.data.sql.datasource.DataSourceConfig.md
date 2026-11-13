@@ -45,6 +45,20 @@
 </tr>
 <tr>
 <td>
+<a id="health"></a>
+<a href="io.helidon.data.sql.datasource.DataSourceHealthConfig.md">
+<code>health</code>
+</a>
+</td>
+<td>
+<code>Data<wbr>Source<wbr>Health<wbr>Config</code>
+</td>
+<td>
+</td>
+<td>Configures independent health discovery for this data source definition</td>
+</tr>
+<tr>
+<td>
 <code>provider-<wbr>discover-<wbr>services</code>
 </td>
 <td>

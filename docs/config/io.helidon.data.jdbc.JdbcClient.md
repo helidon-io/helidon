@@ -44,6 +44,20 @@ Configuration for a JDBC client
 </tr>
 <tr>
 <td>
+<a id="health"></a>
+<a href="io.helidon.data.jdbc.JdbcClientHealthConfig.md">
+<code>health</code>
+</a>
+</td>
+<td>
+<code>Jdbc<wbr>Client<wbr>Health<wbr>Config</code>
+</td>
+<td>
+</td>
+<td>Configures independent health discovery for this client definition</td>
+</tr>
+<tr>
+<td>
 <code>name</code>
 </td>
 <td>
