@@ -16,20 +16,26 @@
 
 package io.helidon.security.providers.oidc;
 
+import java.net.IDN;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import io.helidon.common.parameters.Parameters;
+import io.helidon.common.uri.UriHost;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.HttpException;
+import io.helidon.http.UnauthorizedException;
+import io.helidon.security.SecurityEnvironment;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.providers.oidc.common.TenantConfig;
 import io.helidon.webclient.api.HttpClientRequest;
 
 class OidcUtil {
-
     private OidcUtil() {
     }
 
@@ -62,6 +68,31 @@ class OidcUtil {
         return Optional.of(uri);
     }
 
+    static URI requestedUri(SecurityEnvironment environment) {
+        return environment.targetUri();
+    }
+
+    static String frontendUri(OidcConfig oidcConfig, TenantConfig tenantConfig, Supplier<URI> requestedUri) {
+        Optional<String> configuredFrontendUri = oidcConfig.frontendUri();
+        if (configuredFrontendUri.isPresent()) {
+            return configuredFrontendUri.get();
+        }
+
+        URI uri;
+        try {
+            uri = requestedUri.get();
+        } catch (IllegalArgumentException | HttpException e) {
+            throw frontendUriFailure(tenantConfig, "Requested URI does not have a valid HTTP origin", e);
+        }
+        String origin = normalizedOrigin(uri, oidcConfig.forceHttpsRedirects());
+        if (origin == null || !oidcConfig.frontendUriAllowList().test(origin)) {
+            throw frontendUriFailure(tenantConfig,
+                                     "Frontend URI is not configured and requested URI origin is not allowed",
+                                     null);
+        }
+        return origin;
+    }
+
     static void updateRequest(OidcConfig.RequestType type,
                               TenantConfig tenantConfig,
                               Parameters.Builder form,
@@ -83,4 +114,89 @@ class OidcUtil {
         }
     }
 
+    private static UnauthorizedException frontendUriFailure(TenantConfig tenantConfig, String message, Throwable cause) {
+        UnauthorizedException failure = new UnauthorizedException(message, cause);
+        String realm = tenantConfig.realm().replace("\\", "\\\\").replace("\"", "\\\"");
+        failure.header(HeaderValues.create(HeaderNames.WWW_AUTHENTICATE, "Bearer realm=\"" + realm + "\""));
+        return failure;
+    }
+
+    private static String normalizedOrigin(URI uri, boolean forceHttps) {
+        if (uri == null || uri.getScheme() == null || uri.getRawUserInfo() != null) {
+            return null;
+        }
+        String requestedScheme = uri.getScheme().toLowerCase(Locale.ROOT);
+        if (!"http".equals(requestedScheme) && !"https".equals(requestedScheme)) {
+            return null;
+        }
+        String scheme = forceHttps ? "https" : requestedScheme;
+        String host = uri.getHost();
+        if (host == null || host.isBlank()) {
+            return null;
+        }
+        if (host.startsWith("[") && host.endsWith("]")) {
+            try {
+                host = '[' + UriHost.create(host.substring(1, host.length() - 1)).value() + ']';
+            } catch (IllegalArgumentException _) {
+                return null;
+            }
+        } else {
+            try {
+                host = IDN.toASCII(host, IDN.USE_STD3_ASCII_RULES).toLowerCase(Locale.ROOT);
+            } catch (IllegalArgumentException _) {
+                return null;
+            }
+            if (isIpv4AddressLike(host)) {
+                String[] segments = host.split("\\.", -1);
+                if (segments.length != 4) {
+                    return null;
+                }
+                for (String segment : segments) {
+                    if (segment.isEmpty()
+                            || segment.length() > 3
+                            || segment.length() > 1 && segment.charAt(0) == '0'
+                            || Integer.parseInt(segment) > 255) {
+                        return null;
+                    }
+                }
+            }
+        }
+
+        int port = uri.getPort();
+        if (port < -1 || port == 0 || port > 65535) {
+            return null;
+        }
+        // Discovery exposes an effective port, not whether it was explicit in the request.
+        if (forceHttps && "http".equals(requestedScheme) && port == 80) {
+            port = -1;
+        }
+        if ((port == 80 && "http".equals(scheme)) || (port == 443 && "https".equals(scheme))) {
+            port = -1;
+        }
+        return scheme + "://" + host + (port == -1 ? "" : ":" + port);
+    }
+
+    private static boolean isIpv4AddressLike(String host) {
+        String ipv4Candidate = host.endsWith(".") ? host.substring(0, host.length() - 1) : host;
+        String[] segments = ipv4Candidate.split("\\.", -1);
+        if (segments.length > 4) {
+            return false;
+        }
+        for (String segment : segments) {
+            if (segment.isEmpty()) {
+                return false;
+            }
+            int firstDigit = segment.startsWith("0x") ? 2 : 0;
+            if (firstDigit == segment.length()) {
+                return false;
+            }
+            for (int i = firstDigit; i < segment.length(); i++) {
+                char character = segment.charAt(i);
+                if (firstDigit == 0 ? !Character.isDigit(character) : Character.digit(character, 16) == -1) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 }
