@@ -146,6 +146,8 @@ public final class OracleDatabase {
                     )
                     """).execute();
             client.create("INSERT INTO TX_MATRIX (DATA_VALUE) VALUES ('baseline')").execute();
+            client.create("CREATE TABLE JDBC_HEALTH_TIMEOUT (ID NUMBER(10) PRIMARY KEY)").execute();
+            client.create("INSERT INTO JDBC_HEALTH_TIMEOUT (ID) VALUES (1)").execute();
             System.setProperty(GENERATED_KEY_COLUMN_PROPERTY, "ID");
             return Config.just(ConfigSources.create(Map.of(
                     "data.clients.jdbc.0.name", "@default",
