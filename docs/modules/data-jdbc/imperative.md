@@ -192,10 +192,12 @@ List<String> names = jdbcClient.create("""
         .list();
 ```
 
-Each bound value must be a nonnull
-[supported scalar type](declarative.md#supported-scalar-types). Because the
-imperative API does not support typed null bindings, an operation that needs SQL
+Ordinary `Statement.bind` operations require a
+[supported scalar value](declarative.md#supported-scalar-types) that is not `null`.
+These operations do not support typed null bindings, so an operation that needs SQL
 `NULL` includes it in the SQL and uses a separate statement for that case.
+For batches, `BatchBindings.bindNull` supplies an explicitly typed SQL NULL; see
+[Batch Processing](batch.md#imperative-applications).
 
 Parameter markers represent values rather than SQL structure. Identifiers,
 operators, and sort directions remain values selected and controlled by the

@@ -169,7 +169,7 @@ final class JdbcRepositoryClassGenerator {
                         .addContent(nodeName).addContent(".type() != ").addContent(JdbcCodegenTypes.CONFIG)
                         .addContentLine(".Type.VALUE) {")
                         .addContent("throw new ").addContent(JdbcCodegenTypes.DATA_EXCEPTION)
-                        .addContentLine("(\"The configured SQL must be a scalar value.\");")
+                        .addContentLine("(\"The configured SQL must be a single value, not an object or list.\");")
                         .addContentLine("}")
                         .addContent(sqlName).addContent(" = ").addContent(nodeName).addContent(".asString()");
                 if (reference.defaultSql() == null) {
@@ -185,23 +185,38 @@ final class JdbcRepositoryClassGenerator {
                         .addContentLine("}")
                         .addContent("this.").addContent(plan.sqlFieldName()).addContent(" = ");
                 // Any parameter alias requires named SQL for the whole method input contract.
-                if (plan.method().parameterArguments().stream()
+                boolean batch = plan.operation() == JdbcMethodPlan.Operation.BATCH;
+                if (batch) {
+                    constructor.addContent(JdbcCodegenTypes.GENERATED_JDBC_DATA).addContent(".prepareBatch(")
+                            .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME).addContent(", ");
+                } else if (plan.method().parameterArguments().stream()
                         .anyMatch(parameter -> parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM))) {
                     constructor.addContent(JdbcCodegenTypes.GENERATED_JDBC_DATA).addContent(".prepareNamed(")
                             .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME).addContent(", ");
                 } else {
                     constructor.addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME).addContent(".prepare(");
                 }
-                constructor.addContent(sqlName).addContent(", ").addContent(List.class).addContent(".of(");
+                constructor.addContent(sqlName).addContent(", ");
+                if (batch) {
+                    constructor.addContent(String.valueOf(plan.batchPlan().values().size())).addContent(", ");
+                }
+                constructor.addContent(List.class).addContent(".of(");
                 boolean first = true;
-                for (JdbcSqlParameterPlan.Bind bind : plan.parameterPlan().binds()) {
+                List<String> inputNames = batch ? plan.batchPlan().inputNames()
+                        : plan.parameterPlan().binds().stream()
+                                .map(bind -> JdbcSqlParameterPlan.effectiveName(bind.parameter())).toList();
+                for (String inputName : inputNames) {
                     if (!first) {
                         constructor.addContent(", ");
                     }
-                    constructor.addContentLiteral(JdbcSqlParameterPlan.effectiveName(bind.parameter()));
+                    constructor.addContentLiteral(inputName);
                     first = false;
                 }
-                constructor.addContentLine("));").addContentLine("}");
+                constructor.addContent(")");
+                if (batch) {
+                    constructor.addContent(", " + plan.batchPlan().namedOnly());
+                }
+                constructor.addContentLine(");").addContentLine("}");
             }
         }
         classModel.addConstructor(constructor);

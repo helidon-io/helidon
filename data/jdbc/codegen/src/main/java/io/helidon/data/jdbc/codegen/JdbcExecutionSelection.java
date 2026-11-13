@@ -25,21 +25,33 @@ import io.helidon.common.types.TypedElementInfo;
 enum JdbcExecutionSelection {
     AUTO,
     QUERY,
-    UPDATE;
+    UPDATE,
+    BATCH;
 
     /**
-     * Reads the requested execution choice, treating an omitted annotation or
-     * annotation value as {@link #AUTO}.
+     * Resolves the execution choice after inherited types and controls have been resolved.
+     * An omitted annotation or value selects {@link #AUTO}. An exact {@code JdbcClient.BatchResult}
+     * return type selects {@link #BATCH} under AUTO unless mapping or generated keys select another operation.
      *
-     * @param method repository method
-     * @return requested execution
+     * @param method The method supplies resolved types and effective annotations.
+     * @return The result is the explicit choice or the normalized AUTO selection.
      */
     static JdbcExecutionSelection create(TypedElementInfo method) {
         String value = method.findAnnotation(JdbcCodegenTypes.JDBC_EXECUTION)
                 .flatMap(Annotation::stringValue)
                 .orElse(AUTO.name());
         try {
-            return JdbcExecutionSelection.valueOf(value);
+            JdbcExecutionSelection requested = JdbcExecutionSelection.valueOf(value);
+            if (requested == AUTO
+                    && method.hasAnnotation(JdbcCodegenTypes.JDBC_STATEMENT)
+                    && !method.typeName().generic()
+                    && !method.typeName().wildcard()
+                    && method.typeName().equals(JdbcCodegenTypes.JDBC_BATCH_RESULT)
+                    && !method.hasAnnotation(JdbcCodegenTypes.JDBC_ROW_MAPPER)
+                    && !method.hasAnnotation(JdbcCodegenTypes.JDBC_GENERATED_KEYS)) {
+                return BATCH;
+            }
+            return requested;
         } catch (IllegalArgumentException _) {
             throw new CodegenException("@Jdbc.Execution does not support the value '" + value + "'.",
                                        method.originatingElementValue());

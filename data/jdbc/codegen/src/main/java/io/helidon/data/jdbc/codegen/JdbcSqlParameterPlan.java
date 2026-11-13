@@ -53,13 +53,23 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
     static JdbcSqlParameterPlan create(String sql,
                                        List<TypedElementInfo> parameters,
                                        TypedElementInfo method) {
-        validateParameters(parameters, method);
+        return create(sql, parameters, method, true);
+    }
+
+    static JdbcSqlParameterPlan create(String sql, List<TypedElementInfo> parameters,
+                                       TypedElementInfo method, boolean namesAvailable) {
         JdbcSqlMarkerLexer.Result parsed;
         try {
             parsed = JdbcSqlMarkerLexer.parse(sql);
         } catch (IllegalArgumentException e) {
             throw failure(method, e.getMessage());
         }
+        if (parsed.style() == JdbcSqlMarkerLexer.MarkerStyle.NAMED && !namesAvailable) {
+            throw failure(method, "Named SQL requires a known, unique name for every batch input. "
+                    + "Use distinct record component names, positional SQL, "
+                    + "or compile the parent interface with -parameters.");
+        }
+        validateParameters(parameters, method, parsed.style() == JdbcSqlMarkerLexer.MarkerStyle.NAMED);
         if (parsed.style() == JdbcSqlMarkerLexer.MarkerStyle.POSITIONAL
                 && parameters.stream().anyMatch(parameter -> parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM))) {
             throw failure(method, "@Data.Param requires named SQL markers and cannot be used with positional SQL.");
@@ -86,7 +96,7 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
                                             List<TypedElementInfo> parameters,
                                             TypedElementInfo method,
                                             TypeHierarchyResolver resolver) {
-        validateParameters(parameters, method);
+        validateParameters(parameters, method, true);
         for (int index = 0; index < parameters.size(); index++) {
             TypedElementInfo parameter = parameters.get(index);
             if (!parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM) && !resolver.parameterNameAvailable(parameter)) {
@@ -111,22 +121,13 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
     }
 
     /**
-     * Returns the number of binding entries. For literal SQL, each entry represents
-     * a physical marker position. For configured SQL, each entry represents a logical input.
+     * Validates scalar inputs after any batch sources have been expanded.
      *
-     * @return The count includes every binding entry.
+     * @param parameters The inputs supply scalar bindings.
+     * @param method The method declares the repository operation.
+     * @param uniqueNames Whether names must identify distinct logical inputs.
      */
-    int parameterCount() {
-        return binds.size();
-    }
-
-    /**
-     * Validates the fixed declarative scalar input boundary.
-     *
-     * @param parameters repository parameters
-     * @param method enclosing method
-     */
-    private static void validateParameters(List<TypedElementInfo> parameters, TypedElementInfo method) {
+    static void validateParameters(List<TypedElementInfo> parameters, TypedElementInfo method, boolean uniqueNames) {
         Set<String> names = new HashSet<>();
         for (TypedElementInfo parameter : parameters) {
             String name = effectiveName(parameter);
@@ -147,14 +148,39 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
                 }
             }
             // An alias must also remain distinct from Java names used by parameters without an alias.
-            if (!names.add(name)) {
-                throw failure(method, "The effective repository parameter name '" + name + "' is duplicated.");
+            if (uniqueNames && !names.add(name)) {
+                throw failure(method, "The input name '" + name + "' is used more than once.");
             }
             if (!JdbcScalarTypes.isScalar(parameter.typeName())) {
                 throw failure(method, "Declarative SQL does not support the parameter type '"
                         + parameter.typeName().resolvedName() + "'.");
             }
         }
+    }
+
+    /**
+     * Creates one bind and records how a nullable reference is bound.
+     *
+     * @param position The position identifies a physical JDBC index or ordered configured batch slot.
+     * @param parameter The parameter supplies the declared scalar type.
+     * @return The binding retains its position and typed null descriptor.
+     */
+    static Bind binding(int position, TypedElementInfo parameter) {
+        boolean nullable = !parameter.typeName().primitive() || parameter.typeName().array();
+        return new Bind(position,
+                        parameter,
+                        nullable,
+                        JdbcScalarTypes.nullJdbcTypeConstant(parameter.typeName()));
+    }
+
+    /**
+     * Returns the number of binding entries. For literal SQL, each entry represents
+     * a physical marker position. For configured SQL, each entry represents a logical input.
+     *
+     * @return The count includes every binding entry.
+     */
+    int parameterCount() {
+        return binds.size();
     }
 
     /**
@@ -166,7 +192,7 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
      */
     private static List<Bind> noMarkers(List<TypedElementInfo> parameters, TypedElementInfo method) {
         if (!parameters.isEmpty()) {
-            throw failure(method, "The repository parameters are not used by the SQL statement.");
+            throw failure(method, "The SQL statement has no parameter markers for the supplied inputs.");
         }
         return List.of();
     }
@@ -192,16 +218,16 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
             String marker = markers.get(index);
             TypedElementInfo parameter = byName.get(marker);
             if (parameter == null) {
-                throw failure(method, "SQL marker ':" + marker + "' has no matching repository parameter. "
-                        + "Declare @Data.Param, use positional SQL, or preserve Java parameter names with -parameters.");
+                throw failure(method, "SQL marker ':" + marker + "' has no matching input. "
+                        + "Match the marker to an input name, use @Data.Param on scalar parameters, "
+                        + "or use positional SQL where permitted.");
             }
             used.add(marker);
             binds.add(binding(index + 1, parameter));
         }
         for (TypedElementInfo parameter : parameters) {
             if (!used.contains(effectiveName(parameter))) {
-                throw failure(method, "Repository parameter '" + effectiveName(parameter)
-                                              + "' is not used by the SQL statement.");
+                throw failure(method, "Input '" + effectiveName(parameter) + "' is not used by the SQL statement.");
             }
         }
         return binds;
@@ -220,8 +246,8 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
                                                  TypedElementInfo method) {
         if (markerCount != parameters.size()) {
             throw failure(method, "The SQL statement contains " + markerCount + " positional "
-                    + countNoun(markerCount, "marker") + ", but the repository method declares " + parameters.size()
-                    + " " + countNoun(parameters.size(), "parameter") + ".");
+                    + countNoun(markerCount, "marker") + ", but the inputs provide " + parameters.size()
+                    + " scalar " + countNoun(parameters.size(), "value") + ".");
         }
         List<Bind> binds = new ArrayList<>(markerCount);
         for (int index = 0; index < markerCount; index++) {
@@ -242,21 +268,6 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
     }
 
     /**
-     * Creates one bind and records how a nullable reference is bound.
-     *
-     * @param position one-based JDBC position
-     * @param parameter repository parameter
-     * @return binding
-     */
-    private static Bind binding(int position, TypedElementInfo parameter) {
-        boolean nullable = !parameter.typeName().primitive() || parameter.typeName().array();
-        return new Bind(position,
-                        parameter,
-                        nullable,
-                        JdbcScalarTypes.nullJdbcTypeConstant(parameter.typeName()));
-    }
-
-    /**
      * Creates a code-generation diagnostic.
      *
      * @param method enclosing method
@@ -268,12 +279,12 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
     }
 
     /**
-     * One physical JDBC bind.
+     * Describes a scalar input and its physical position or configured slot.
      *
-     * @param position one-based JDBC position
-     * @param parameter repository parameter
-     * @param nullable whether generated code accepts a null argument
-     * @param nullJdbcTypeConstant name of the {@code JDBCType} constant used for null
+     * @param position The position identifies a JDBC index or batch slot, or is zero before ordinary configured preparation.
+     * @param parameter The parameter supplies the declared scalar type.
+     * @param nullable The flag indicates whether generated code accepts a null argument.
+     * @param nullJdbcTypeConstant The name identifies the {@code JDBCType} constant used for null.
      */
     record Bind(int position,
                 TypedElementInfo parameter,

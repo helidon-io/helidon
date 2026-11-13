@@ -56,6 +56,7 @@ final class JdbcMethodPlan {
     private final List<String> generatedColumns;
     private final TypeName explicitMapper;
     private final List<TypedElementInfo> recordComponents;
+    private JdbcBatchPlan batchPlan;
     private String sqlFieldName;
     private String mapperFieldName;
 
@@ -112,6 +113,15 @@ final class JdbcMethodPlan {
             throw failure(method, "The @Jdbc.Statement value must not be blank.");
         }
         JdbcSqlReference reference = JdbcSqlReference.parse(sql, method);
+
+        if (JdbcExecutionSelection.create(method) == JdbcExecutionSelection.BATCH) {
+            JdbcBatchPlan batch = reference == null ? JdbcBatchPlan.create(sql, method, roundContext)
+                    : JdbcBatchPlan.configured(reference, method, roundContext);
+            JdbcMethodPlan plan = new JdbcMethodPlan(method, Operation.BATCH, ReturnShape.ITEM, MappingKind.NONE,
+                                                    method.typeName(), batch.parameters(), reference, List.of(), null, List.of());
+            plan.batchPlan = batch;
+            return plan;
+        }
 
         Return result = returnPlan(method);
         boolean generatedKeys = method.hasAnnotation(JdbcCodegenTypes.JDBC_GENERATED_KEYS);
@@ -170,6 +180,10 @@ final class JdbcMethodPlan {
      */
     static CodegenException failure(TypedElementInfo method, String message) {
         return new CodegenException(message, method.originatingElementValue());
+    }
+
+    JdbcBatchPlan batchPlan() {
+        return batchPlan;
     }
 
     TypedElementInfo method() {
@@ -560,7 +574,8 @@ final class JdbcMethodPlan {
     enum Operation {
         QUERY,
         UPDATE,
-        GENERATED_KEYS
+        GENERATED_KEYS,
+        BATCH
     }
 
     /**

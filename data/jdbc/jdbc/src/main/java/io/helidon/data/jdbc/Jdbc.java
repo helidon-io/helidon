@@ -48,8 +48,10 @@ public final class Jdbc {
      */
     public enum ExecutionType {
         /**
-         * Allows code generation to infer query or update behavior from the method
-         * signature and its JDBC annotations.
+         * Allows code generation to infer query, update, or batch behavior from the method
+         * signature and its JDBC annotations. An exact {@link JdbcClient.BatchResult} return
+         * selects batch execution unless row mapping or generated keys select another operation.
+         * Input containers do not select batch execution.
          */
         AUTO,
 
@@ -61,7 +63,17 @@ public final class Jdbc {
         /**
          * Executes the statement as an update.
          */
-        UPDATE
+        UPDATE,
+
+        /**
+         * Executes a prepared DML statement for each captured parameter set.
+         * Repository SQL may be literal or loaded from application configuration.
+         * Methods must return {@code void} or {@link JdbcClient.BatchResult}.
+         * Methods returning {@code void} must select this mode explicitly.
+         * {@link #AUTO} can select this mode for a method returning exactly {@link JdbcClient.BatchResult}.
+         * Generated keys and row mapping are not supported.
+         */
+        BATCH
     }
 
     /**
@@ -92,16 +104,18 @@ public final class Jdbc {
      * such as {@code "${application.orders.find}"}, with an optional SQL default.
      * Literal and configured SQL support named, positional, or no markers and must
      * not mix marker styles. Named markers match effective
-     * {@link io.helidon.data.Data.Param} aliases or reliable Java parameter names.
+     * {@link io.helidon.data.Data.Param} aliases, reliable Java parameter names, or
+     * flat record component names for batch inputs.
      * A method with any explicit or inherited alias requires named SQL. Positional
      * markers bind arguments in declaration order with an exact marker count.
+     * Batch methods expand record sources into scalar inputs in record component order.
      * <p>
      * A repository invocation supplies the SQL, after rewriting any named bind
      * markers, to the driver as one {@link java.sql.PreparedStatement}. Helidon
      * validates the repository method and bind markers but does not parse
      * database grammar, split scripts, or validate statement boundaries
      * specific to a database. The literal or configured SQL must therefore describe
-     * exactly one SQL statement. SQL scripts, batches, compound or multiple statement
+     * exactly one SQL statement. SQL scripts, compound or multiple statement
      * strings specific to a JDBC driver, stored procedure calls, SQL that
      * controls transactions, and commands that change connection or session
      * state, including auto-commit mode, are not supported.
@@ -133,7 +147,8 @@ public final class Jdbc {
          * A reference uses the owning registry's root configuration at repository activation.
          * Resolved SQL remains fixed until a new repository is created. Named or positional
          * markers are supported, but they must not be mixed. Positional markers bind method
-         * arguments in declaration order. Methods with effective {@link io.helidon.data.Data.Param}
+         * arguments in declaration order, expanding batch record sources in component order.
+         * Methods with effective {@link io.helidon.data.Data.Param}
          * aliases require named markers. SQL and inline defaults are trusted application input.
          * Inline defaults remain visible in source, classfiles, and generated literals.
          *

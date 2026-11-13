@@ -144,6 +144,31 @@ final class JdbcClientImpl implements JdbcClient {
         return new JdbcStatementFactory(runner, definition);
     }
 
+    Supplier<Statement> prepareBatch(String sql, int inputCount, List<String> inputNames, boolean namedOnly) {
+        List<String> names = List.copyOf(inputNames);
+        if (inputCount < 0) {
+            throw new IllegalArgumentException("The batch input count must not be negative.");
+        }
+        if (!names.isEmpty() && names.size() != inputCount) {
+            throw new IllegalArgumentException("The number of input names must match the batch input count.");
+        }
+        if (namedOnly && names.isEmpty()) {
+            throw new IllegalArgumentException("Named batch preparation requires a complete list of input names "
+                    + "with at least one entry.");
+        }
+        JdbcConfiguredStatement definition = names.isEmpty()
+                ? JdbcConfiguredStatement.create(sql) : JdbcConfiguredStatement.create(sql, names);
+        if (names.isEmpty() && (definition.namedMarkers() || definition.parameterCount() != inputCount)) {
+            throw new IllegalArgumentException("Without input names, batch SQL must have one positional marker per input "
+                    + "and no named markers.");
+        }
+        if (namedOnly && !definition.namedMarkers()) {
+            throw new IllegalArgumentException("Named SQL parameter markers are required, "
+                    + "but the SQL statement does not use them.");
+        }
+        return new JdbcStatementFactory(runner, definition);
+    }
+
     /**
      * Creates a statement stage from a code-generation plan whose SQL and
      * physical marker count were validated at compilation time.
