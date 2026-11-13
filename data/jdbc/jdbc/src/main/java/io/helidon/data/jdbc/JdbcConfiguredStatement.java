@@ -96,7 +96,7 @@ final class JdbcConfiguredStatement {
     List<Integer> positions(String name) {
         List<Integer> slots = positions.get(name);
         if (slots == null) {
-            throw new IllegalArgumentException("The bind name does not match a required input.");
+            throw new IllegalArgumentException("The prepared statement does not define an input with this name.");
         }
         return slots;
     }

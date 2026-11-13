@@ -16,6 +16,7 @@
 package io.helidon.data.jdbc.codegen;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
@@ -27,13 +28,24 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
 /**
- * Adapts source elements and constants to the existing physical binding plan.
+ * Plans source capture and ordered scalar inputs for literal or configured batches.
  */
-record JdbcBatchPlan(List<Source> sources, List<Value> values, JdbcSqlParameterPlan parameters) {
+record JdbcBatchPlan(List<Source> sources, List<Value> values, JdbcSqlParameterPlan parameters,
+                     List<String> inputNames, boolean namedOnly) {
     static JdbcBatchPlan create(String sql, TypedElementInfo method, RoundContext context) {
+        return create(sql, null, method, context);
+    }
+
+    static JdbcBatchPlan configured(JdbcSqlReference reference, TypedElementInfo method, RoundContext context) {
+        return create(reference.key(), reference, method, context);
+    }
+
+    private static JdbcBatchPlan create(String sql, JdbcSqlReference reference,
+                                        TypedElementInfo method, RoundContext context) {
         if (!method.typeName().equals(TypeNames.PRIMITIVE_VOID)
                 && !method.typeName().equals(JdbcCodegenTypes.JDBC_BATCH_RESULT)) {
-            throw JdbcMethodPlan.failure(method, "BATCH execution must return void or JdbcClient.BatchResult.");
+            throw JdbcMethodPlan.failure(method, "A BATCH repository method must return void or JdbcClient.BatchResult. "
+                    + "Use JdbcClient.BatchResult to inspect individual execution outcomes and update counts.");
         }
         if (method.hasAnnotation(JdbcCodegenTypes.JDBC_GENERATED_KEYS)
                 || method.hasAnnotation(JdbcCodegenTypes.JDBC_ROW_MAPPER)) {
@@ -51,7 +63,8 @@ record JdbcBatchPlan(List<Source> sources, List<Value> values, JdbcSqlParameterP
                             .orElse(null);
             if (!array && iterable == null && iterator == null) {
                 if (!JdbcScalarTypes.isScalar(type)) {
-                    throw JdbcMethodPlan.failure(method, "A batch input must be a supported scalar or source.");
+                    throw JdbcMethodPlan.failure(method, "A batch parameter must be a supported scalar value or an Iterable, "
+                            + "Iterator, or one-dimensional array of supported elements.");
                 }
                 values.add(new Value(parameter, -1, null));
                 continue;
@@ -72,14 +85,14 @@ record JdbcBatchPlan(List<Source> sources, List<Value> values, JdbcSqlParameterP
             int sourceIndex = sources.size();
             sources.add(new Source(parameter, element, array, iterable != null));
             if (element.generic() || element.wildcard()) {
-                throw JdbcMethodPlan.failure(method, "A batch source element must be a concrete scalar or flat record.");
+                throw JdbcMethodPlan.failure(method, "Batch source elements cannot use wildcards or unresolved type parameters.");
             }
             if (JdbcScalarTypes.isScalar(element)) {
                 values.add(new Value(TypedElementInfo.builder(parameter).typeName(element).build(), sourceIndex, null));
                 continue;
             }
             if (element.array()) {
-                throw JdbcMethodPlan.failure(method, "A batch source element must be a concrete scalar or flat record.");
+                throw JdbcMethodPlan.failure(method, "A batch source element that is an array must have type byte[].");
             }
             TypeInfo record = context.typeInfo(element).orElse(null);
             if (record == null || record.kind() != ElementKind.RECORD) {
@@ -102,15 +115,44 @@ record JdbcBatchPlan(List<Source> sources, List<Value> values, JdbcSqlParameterP
                 }
             }
             if (values.size() == before) {
-                throw JdbcMethodPlan.failure(method, "A batch record must contribute at least one binding.");
+                throw JdbcMethodPlan.failure(method, "A batch record must declare at least one supported scalar component.");
             }
         }
         if (sources.isEmpty()) {
-            throw JdbcMethodPlan.failure(method, "BATCH execution requires at least one contributing source.");
+            throw JdbcMethodPlan.failure(method, "A BATCH method must declare at least one Iterable, Iterator, array, "
+                    + "or varargs input source.");
         }
-        JdbcSqlParameterPlan parameters = JdbcSqlParameterPlan.create(sql,
-                values.stream().map(Value::parameter).toList(), method);
-        return new JdbcBatchPlan(List.copyOf(sources), List.copyOf(values), parameters);
+        List<TypedElementInfo> inputs = values.stream().map(Value::parameter).toList();
+        List<String> names = List.of();
+        boolean namedOnly = false;
+        JdbcSqlParameterPlan parameters;
+        if (reference == null) {
+            parameters = JdbcSqlParameterPlan.create(sql, inputs, method);
+        } else {
+            JdbcSqlParameterPlan.validateParameters(inputs, method, false);
+            namedOnly = inputs.stream().anyMatch(parameter -> parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM));
+            boolean reliable = values.stream().allMatch(value -> value.component() != null
+                    || value.parameter().hasAnnotation(JdbcCodegenTypes.DATA_PARAM)
+                    || context.typeHierarchyResolver().parameterNameAvailable(value.parameter()));
+            List<String> candidates = inputs.stream().map(JdbcSqlParameterPlan::effectiveName).toList();
+            if (reliable && new HashSet<>(candidates).size() == candidates.size()) {
+                names = candidates;
+            }
+            if (namedOnly && names.isEmpty()) {
+                throw JdbcMethodPlan.failure(method, "A configured batch method using @Data.Param requires a known, unique "
+                        + "name for every input. Use distinct record component names, alias scalar parameters, "
+                        + "or compile the parent interface with -parameters.");
+            }
+            List<JdbcSqlParameterPlan.Bind> binds = new ArrayList<>();
+            for (int i = 0; i < inputs.size(); i++) {
+                binds.add(JdbcSqlParameterPlan.binding(i + 1, inputs.get(i)));
+            }
+            parameters = new JdbcSqlParameterPlan(sql, binds);
+            if (reference.defaultSql() != null) {
+                JdbcSqlParameterPlan.create(reference.defaultSql(), inputs, method, !names.isEmpty());
+            }
+        }
+        return new JdbcBatchPlan(List.copyOf(sources), List.copyOf(values), parameters, names, namedOnly);
     }
 
     record Source(TypedElementInfo parameter, TypeName element, boolean array, boolean iterable) {
