@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,6 +80,21 @@ public class SizeTest {
         assertThat(size.toString(Size.UnitKind.BINARY_BI), is("1 EiB"));
         assertThat(size.toString(Size.Unit.GIB, Size.UnitKind.BINARY_BI), is("1073741824 GiB"));
         assertThat(size.toString(Size.Unit.GIB, Size.UnitKind.BINARY_UPPER_CASE), is("1073741824 GB"));
+    }
+
+    @Test
+    void testBinaryFormatting() {
+        assertThat(Size.create(2048).toString(Size.UnitKind.BINARY_UPPER_CASE), is("2 KB"));
+        assertThat(Size.create(2048).toString(Size.UnitKind.BINARY_BI), is("2 KiB"));
+        assertThat(Size.create(1025).toString(Size.UnitKind.BINARY_BI), is("1025 B"));
+        assertThat(Size.create(1).toString(Size.UnitKind.BINARY_UPPER_CASE), is("1 B"));
+        assertThat(Size.create(3, Size.Unit.MIB).toString(Size.UnitKind.BINARY_BI), is("3 MiB"));
+        assertThat(Size.create(7, Size.Unit.GIB).toString(Size.UnitKind.BINARY_UPPER_CASE), is("7 GB"));
+        assertThat(Size.create(-2048).toString(Size.UnitKind.BINARY_BI), is("-2 KiB"));
+        assertThat(Size.ZERO.toString(Size.UnitKind.BINARY_BI), is("0 B"));
+        assertThat(Size.create(Long.MAX_VALUE).toString(Size.UnitKind.BINARY_BI), is(Long.MAX_VALUE + " B"));
+        assertThat(Size.create(Long.MAX_VALUE, Size.Unit.EIB).toString(Size.UnitKind.BINARY_BI),
+                   is(Long.MAX_VALUE + " EiB"));
     }
 
     @Test
