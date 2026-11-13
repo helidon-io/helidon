@@ -18,6 +18,7 @@ package io.helidon.dbclient;
 import java.util.Optional;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperException;
 import io.helidon.common.mapper.Mappers;
@@ -26,6 +27,7 @@ import io.helidon.common.mapper.OptionalValue;
 /**
  * Base {@link DbColumn} implementation.
  */
+@Api.Internal
 public abstract class DbColumnBase implements DbColumn {
 
     private final Object value;

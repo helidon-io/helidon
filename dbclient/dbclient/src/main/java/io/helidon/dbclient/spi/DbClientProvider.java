@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.dbclient.spi;
 
 import java.util.ServiceLoader;
 
+import io.helidon.common.Api;
 import io.helidon.dbclient.DbClient;
 
 /**
@@ -24,6 +25,7 @@ import io.helidon.dbclient.DbClient;
  * This is DbClient SPI entry point which returns unique name of the provider and an implementation
  * of the {@link DbClient} builder, the {@link DbClientBuilder} interface.
  */
+@Api.Preview
 public interface DbClientProvider {
 
     /**

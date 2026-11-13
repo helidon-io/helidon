@@ -17,6 +17,7 @@ package io.helidon.dbclient;
 
 import java.util.List;
 
+import io.helidon.common.Api;
 import io.helidon.common.mapper.Mappers;
 
 /**
@@ -24,6 +25,7 @@ import io.helidon.common.mapper.Mappers;
  * This instance holds configuration and runtimes that are shared by any execution
  * within this client runtime.
  */
+@Api.Internal
 public class DbClientContext implements DbContext {
 
     private final DbMapperManager dbMapperManager;

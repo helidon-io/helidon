@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.data.codegen.common;
 import java.util.List;
 
 import io.helidon.codegen.CodegenException;
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 
@@ -28,6 +29,7 @@ import io.helidon.common.types.TypeName;
  * @param entityType type of the entity
  * @param idType     type of the ID
  */
+@Api.Internal
 public record RepositoryInterfaceInfo(TypeName typeName, TypeName entityType, TypeName idType) {
 
     /**

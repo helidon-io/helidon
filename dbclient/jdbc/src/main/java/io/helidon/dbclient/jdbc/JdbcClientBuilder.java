@@ -15,6 +15,7 @@
  */
 package io.helidon.dbclient.jdbc;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbClientBuilderBase;
@@ -24,6 +25,7 @@ import io.helidon.dbclient.spi.DbClientBuilder;
  * Fluent API builder for {@link JdbcClientBuilder} that implements
  * the {@link DbClientBuilder} from Helidon DB API.
  */
+@Api.Preview
 public final class JdbcClientBuilder
         extends DbClientBuilderBase<JdbcClientBuilder>
         implements DbClientBuilder<JdbcClientBuilder> {

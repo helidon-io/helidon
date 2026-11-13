@@ -17,12 +17,14 @@ package io.helidon.dbclient.spi;
 
 import java.util.Collection;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClientService;
 
 /**
  * Java service loader service to configure client services.
  */
+@Api.Internal
 public interface DbClientServiceProvider {
 
     /**

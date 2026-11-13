@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 package io.helidon.transaction.spi;
+
+import io.helidon.common.Api;
 
 /**
  * Transaction event listener service.
@@ -33,6 +35,7 @@ package io.helidon.transaction.spi;
  * Supplied {@code txIdentity} values are managed by {@link TxSupport} implementation class
  * and serve as unique transaction identifiers.
  */
+@Api.Incubating
 public interface TxLifeCycle {
 
     /**

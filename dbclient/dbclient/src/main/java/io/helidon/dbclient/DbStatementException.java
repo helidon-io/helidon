@@ -15,9 +15,12 @@
  */
 package io.helidon.dbclient;
 
+import io.helidon.common.Api;
+
 /**
  * A {@link DbClientException} used for database statement.
  */
+@Api.Preview
 public class DbStatementException extends DbClientException {
 
     /**

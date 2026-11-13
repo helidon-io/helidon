@@ -17,12 +17,14 @@ package io.helidon.dbclient.hikari.spi;
 
 import java.util.ServiceLoader;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.dbclient.hikari.HikariMetricsRegistry;
 
 /**
  * Java {@link ServiceLoader} interface that provides implementations of {@link HikariMetricsRegistry}.
  */
+@Api.Internal
 public interface HikariMetricsProvider {
 
     /**

@@ -20,6 +20,7 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.data.sql.common.ConnectionConfig;
 import io.helidon.data.sql.datasource.ProviderConfig;
 import io.helidon.data.sql.datasource.TransactionIsolation;
@@ -28,6 +29,7 @@ import io.helidon.data.sql.datasource.spi.DataSourceConfigProvider;
 /**
  * Hikari connection pool specific configuration for {@link javax.sql.DataSource}.
  */
+@Api.Preview
 @Prototype.Blueprint
 @Prototype.Configured(root = false, value = HikariDataSourceProviderService.PROVIDER_TYPE)
 @Prototype.Provides(DataSourceConfigProvider.class)

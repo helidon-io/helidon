@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import io.helidon.common.Api;
 import io.helidon.dbclient.DbClientException;
 import io.helidon.dbclient.DbClientServiceContext;
 import io.helidon.dbclient.DbIndexedStatementParameters;
@@ -44,6 +45,7 @@ import io.helidon.dbclient.DbStatementParameters;
  *
  * @param <S> type of subclass
  */
+@Api.Internal
 public abstract class JdbcStatement<S extends DbStatement<S>> extends DbStatementBase<S> {
 
     private static final System.Logger LOGGER = System.getLogger(JdbcStatement.class.getName());

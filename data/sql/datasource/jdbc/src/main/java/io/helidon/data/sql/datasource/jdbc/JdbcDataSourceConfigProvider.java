@@ -16,6 +16,7 @@
 
 package io.helidon.data.sql.datasource.jdbc;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.data.sql.datasource.ProviderConfig;
 import io.helidon.data.sql.datasource.spi.DataSourceConfigProvider;
@@ -24,6 +25,7 @@ import io.helidon.data.sql.datasource.spi.DataSourceConfigProvider;
  * A {@link java.util.ServiceLoader} provider implementation of
  * {@link io.helidon.data.sql.datasource.spi.DataSourceConfigProvider} for a data source based on direct JDBC connections.
  */
+@Api.Internal
 public class JdbcDataSourceConfigProvider implements DataSourceConfigProvider {
     static final String PROVIDER_TYPE = "jdbc";
 

@@ -18,9 +18,12 @@ package io.helidon.dbclient;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.helidon.common.Api;
+
 /**
  * Named {@link DbStatementParameters}.
  */
+@Api.Preview
 public class DbNamedStatementParameters extends DbStatementParameters {
 
     private final Map<String, Object> parameters = new HashMap<>();

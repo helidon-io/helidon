@@ -20,12 +20,14 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.MapperException;
 
 /**
  * Base {@link DbRow} implementation.
  */
+@Api.Internal
 public abstract class DbRowBase implements DbRow {
 
     private final DbMapperManager dbMapperManager;

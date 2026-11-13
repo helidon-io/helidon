@@ -15,6 +15,7 @@
  */
 package io.helidon.dbclient.mongodb;
 
+import io.helidon.common.Api;
 import io.helidon.dbclient.spi.DbClientProvider;
 
 /**
@@ -22,6 +23,7 @@ import io.helidon.dbclient.spi.DbClientProvider;
  *
  * @see MongoDbClientBuilder
  */
+@Api.Internal
 public class MongoDbClientProvider implements DbClientProvider {
 
     static final String DB_TYPE = "mongoDb";

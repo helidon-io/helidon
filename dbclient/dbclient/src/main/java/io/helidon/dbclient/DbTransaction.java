@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,14 @@
  */
 package io.helidon.dbclient;
 
+import io.helidon.common.Api;
+
 /**
  * Database transaction.
  * Holds a single transaction to the database (if supported).
  * The transaction completes once the {@link #commit()} method is called.
  */
+@Api.Preview
 public interface DbTransaction extends DbExecute {
 
     /**

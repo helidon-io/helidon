@@ -15,11 +15,13 @@
  */
 package io.helidon.dbclient.jdbc;
 
+import io.helidon.common.Api;
 import io.helidon.dbclient.spi.DbClientProvider;
 
 /**
  * Provider for JDBC database implementation.
  */
+@Api.Internal
 public class JdbcClientProvider implements DbClientProvider {
 
     // Name of this JDBC DB client provider and also JDBC database URL prefix.

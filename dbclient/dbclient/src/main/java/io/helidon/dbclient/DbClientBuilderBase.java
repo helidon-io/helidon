@@ -19,6 +19,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.Mappers;
 import io.helidon.common.mapper.MappersConfig;
@@ -31,6 +32,7 @@ import io.helidon.dbclient.spi.DbMapperProvider;
  *
  * @param <T> type of builder subclass
  */
+@Api.Preview
 public abstract class DbClientBuilderBase<T extends DbClientBuilderBase<T>>
         implements DbClientBuilder<T> {
 

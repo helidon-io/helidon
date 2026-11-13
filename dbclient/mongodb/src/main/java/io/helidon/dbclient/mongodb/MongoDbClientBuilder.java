@@ -15,6 +15,7 @@
  */
 package io.helidon.dbclient.mongodb;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClient;
 import io.helidon.dbclient.DbClientBuilderBase;
@@ -24,6 +25,7 @@ import io.helidon.dbclient.spi.DbClientBuilder;
 /**
  * Builder for mongoDB database.
  */
+@Api.Preview
 public final class MongoDbClientBuilder
         extends DbClientBuilderBase<MongoDbClientBuilder>
         implements DbClientBuilder<MongoDbClientBuilder> {

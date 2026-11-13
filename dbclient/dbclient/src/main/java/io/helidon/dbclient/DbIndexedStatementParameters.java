@@ -18,9 +18,12 @@ package io.helidon.dbclient;
 import java.util.LinkedList;
 import java.util.List;
 
+import io.helidon.common.Api;
+
 /**
  * Indexed {@link DbStatementParameters}.
  */
+@Api.Preview
 public class DbIndexedStatementParameters extends DbStatementParameters {
 
     private final List<Object> parameters = new LinkedList<>();

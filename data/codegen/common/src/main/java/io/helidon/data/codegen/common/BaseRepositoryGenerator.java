@@ -25,6 +25,7 @@ import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.TypeHierarchyResolver;
 import io.helidon.codegen.classmodel.ClassModel;
+import io.helidon.common.Api;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.data.codegen.common.spi.PersistenceGenerator;
@@ -33,6 +34,7 @@ import io.helidon.data.codegen.common.spi.RepositoryGenerator;
 /**
  * Base implementation for Data repository generators such as Jakarta Data.
  */
+@Api.Internal
 public abstract class BaseRepositoryGenerator implements RepositoryGenerator {
 
     /**

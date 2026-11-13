@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package io.helidon.data.codegen.parser.spi;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weighted;
 import io.helidon.data.codegen.parser.MethodNameParser;
 
@@ -22,6 +23,7 @@ import io.helidon.data.codegen.parser.MethodNameParser;
  * Method name parser provider for specific platform.
  * Implementation of this class serves as factory class to build platform specific method name parser.
  */
+@Api.Internal
 public interface MethodNameParserProvider extends Weighted {
 
     /**

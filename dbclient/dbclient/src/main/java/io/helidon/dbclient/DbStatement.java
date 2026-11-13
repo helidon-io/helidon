@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.common.Api;
+
 /**
  * Database statement that can process parameters.
  * <p>
@@ -32,6 +34,7 @@ import java.util.Map;
  *
  * @param <D> Type of the descendant of this class
  */
+@Api.Preview
 public interface DbStatement<D extends DbStatement<D>> {
 
     /**

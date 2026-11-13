@@ -15,6 +15,7 @@
  */
 package io.helidon.dbclient.spi;
 
+import io.helidon.common.Api;
 import io.helidon.common.Builder;
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.Mappers;
@@ -30,6 +31,7 @@ import io.helidon.dbclient.DbStatements;
  *
  * @param <T> type of the builder extending or implementing this interface.
  */
+@Api.Preview
 public interface DbClientBuilder<T extends DbClientBuilder<T>> extends Builder<T, DbClient> {
 
     /**

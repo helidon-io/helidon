@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClientException;
 import io.helidon.dbclient.DbClientService;
@@ -27,6 +28,7 @@ import io.helidon.dbclient.spi.DbClientServiceProvider;
 /**
  * Java service loader service for DB metrics.
  */
+@Api.Internal
 public class DbClientMetricsProvider implements DbClientServiceProvider {
     private static final System.Logger LOGGER = System.getLogger(DbClientMetricsProvider.class.getName());
 

@@ -17,6 +17,7 @@ package io.helidon.data.sql.datasource.hikari;
 
 import javax.sql.DataSource;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.data.sql.datasource.TransactionIsolation;
 
@@ -27,6 +28,7 @@ import com.zaxxer.hikari.HikariDataSource;
  * Hikari {@link javax.sql.DataSource} factory.
  * Builds Hikari {@link DataSource} instance from config.
  */
+@Api.Internal
 public class HikariDataSourceFactory {
 
     private final HikariDataSourceConfig dataSourceConfig;

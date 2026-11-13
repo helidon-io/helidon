@@ -20,10 +20,12 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 
 /**
  * Configuration of a JDBC connection to a database.
  */
+@Api.Preview
 @Prototype.Blueprint(decorator = ConnectionConfigSupport.Decorator.class)
 @Prototype.Configured
 interface ConnectionConfigBlueprint {

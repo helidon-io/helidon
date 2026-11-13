@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.dbclient.DbClientService;
 import io.helidon.dbclient.spi.DbClientServiceProvider;
@@ -26,6 +27,7 @@ import io.helidon.dbclient.spi.DbClientServiceProvider;
 /**
  * Provider of tracing interceptors.
  */
+@Api.Internal
 public class DbClientTracingProvider implements DbClientServiceProvider {
 
     private static final System.Logger LOGGER = System.getLogger(DbClientTracingProvider.class.getName());

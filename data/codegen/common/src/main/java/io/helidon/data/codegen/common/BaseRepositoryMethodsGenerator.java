@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import io.helidon.codegen.classmodel.Annotation;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.codegen.classmodel.Parameter;
+import io.helidon.common.Api;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -36,6 +37,7 @@ import static io.helidon.data.codegen.common.DataCommonCodegenTypes.SLICE;
 /**
  * Data repository interface code generator base class for methods generators.
  */
+@Api.Internal
 public abstract class BaseRepositoryMethodsGenerator extends BaseRepositoryInterfaceGenerator {
 
     /**

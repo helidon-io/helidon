@@ -19,12 +19,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 
 /**
  * Configuration of statements to be used by database provider.
  */
 @FunctionalInterface
+@Api.Preview
 public interface DbStatements {
     /**
      * Get statement text for a named statement.
