@@ -21,9 +21,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Base64;
@@ -72,6 +69,9 @@ import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.providers.oidc.common.OidcConfig;
 import io.helidon.security.providers.oidc.common.TenantConfig;
 import io.helidon.security.providers.oidc.common.spi.TenantIdFinder;
+import io.helidon.webclient.api.HttpClientRequest;
+import io.helidon.webclient.api.HttpClientResponse;
+import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ServerConnectionException;
 import io.helidon.webserver.WebServer;
@@ -920,17 +920,22 @@ class OidcFeatureTest {
     }
 
     @Test
-    void frontendAllowListDoesNotRejectNonOidcRoutes() throws Exception {
+    void frontendAllowListDoesNotRejectNonOidcRoutes() {
         WebServer server = WebServer.builder()
                 .routing(routing -> routing.addFeature(OidcFeature.create(oidcConfig))
                         .get("/public", (request, response) -> response.send(request.path().path())))
                 .build().start();
         try {
-            HttpResponse<String> response = HttpClient.newHttpClient().send(
-                    HttpRequest.newBuilder(URI.create("http://localhost:" + server.port() + "/public")).GET().build(),
-                    HttpResponse.BodyHandlers.ofString());
-            assertThat(response.statusCode(), is(200));
-            assertThat(response.body(), is("/public"));
+            WebClient client = WebClient.builder()
+                    .followRedirects(false)
+                    .shareConnectionCache(false)
+                    .build();
+            try (HttpClientResponse response = client.get("http://localhost:" + server.port() + "/public").request()) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.as(String.class), is("/public"));
+            } finally {
+                client.closeResource();
+            }
         } finally {
             server.stop();
         }
@@ -1277,34 +1282,40 @@ class OidcFeatureTest {
                     expectedRedirectUri += "?" + config.tenantParamName() + "=" + tenantName;
                 }
 
-                HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(URI.create(callbackUri))
-                        .header(HeaderNames.COOKIE.defaultCase(), stateCookie);
-                if (discoveredOrigin != null) {
-                    requestBuilder.header(HeaderNames.FORWARDED.defaultCase(),
-                                          "for=client.example;host=frontend.example;proto=https");
+                WebClient client = WebClient.builder()
+                        .followRedirects(false)
+                        .shareConnectionCache(false)
+                        .build();
+                try {
+                    HttpClientRequest request = client.get()
+                            .uri(URI.create(callbackUri))
+                            .header(HeaderNames.COOKIE, stateCookie);
+                    if (discoveredOrigin != null) {
+                        request.header(HeaderNames.FORWARDED, "for=client.example;host=frontend.example;proto=https");
+                    }
+                    try (HttpClientResponse response = request.request()) {
+                        if (!allowRequestedOrigin) {
+                            assertThat(response.status(), is(Status.UNAUTHORIZED_401));
+                            String expectedRealm = DEFAULT_TENANT_ID.equals(tenantName) ? "helidon" : TENANT_REALM;
+                            assertThat(response.headers().first(HeaderNames.WWW_AUTHENTICATE),
+                                       is(Optional.of("Bearer realm=\"" + expectedRealm + "\"")));
+                            assertThat(tokenRequestCount.get(), is(0));
+                            assertThat(response.headers().first(HeaderNames.LOCATION), is(Optional.empty()));
+                            return "";
+                        }
+                        assertThat(response.status(), is(Status.TEMPORARY_REDIRECT_307));
+                        Parameters tokenParams = tokenRequestParameters.get();
+                        assertThat(tokenRequestCount.get(), is(1));
+                        assertThat(tokenParams.first("grant_type").orElseThrow(), is("authorization_code"));
+                        assertThat(tokenParams.first("code").orElseThrow(), is("code"));
+                        assertThat(tokenParams.first("redirect_uri").orElseThrow(), is(expectedRedirectUri));
+                        return response.headers()
+                                .first(HeaderNames.LOCATION)
+                                .orElseThrow();
+                    }
+                } finally {
+                    client.closeResource();
                 }
-                HttpRequest request = requestBuilder.GET().build();
-                HttpResponse<Void> response = HttpClient.newHttpClient()
-                        .send(request, HttpResponse.BodyHandlers.discarding());
-
-                if (!allowRequestedOrigin) {
-                    assertThat(response.statusCode(), is(Status.UNAUTHORIZED_401.code()));
-                    String expectedRealm = DEFAULT_TENANT_ID.equals(tenantName) ? "helidon" : TENANT_REALM;
-                    assertThat(response.headers().firstValue(HeaderNames.WWW_AUTHENTICATE.defaultCase()),
-                               is(Optional.of("Bearer realm=\"" + expectedRealm + "\"")));
-                    assertThat(tokenRequestCount.get(), is(0));
-                    assertThat(response.headers().firstValue(HeaderNames.LOCATION.defaultCase()), is(Optional.empty()));
-                    return "";
-                }
-                assertThat(response.statusCode(), is(Status.TEMPORARY_REDIRECT_307.code()));
-                Parameters tokenParams = tokenRequestParameters.get();
-                assertThat(tokenRequestCount.get(), is(1));
-                assertThat(tokenParams.first("grant_type").orElseThrow(), is("authorization_code"));
-                assertThat(tokenParams.first("code").orElseThrow(), is("code"));
-                assertThat(tokenParams.first("redirect_uri").orElseThrow(), is(expectedRedirectUri));
-                return response.headers()
-                        .firstValue(HeaderNames.LOCATION.defaultCase())
-                        .orElseThrow();
             } finally {
                 callbackServer.stop();
             }

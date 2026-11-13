@@ -53,7 +53,7 @@ record here.
             checks="FileLength"/>
 
     <!-- Rule 0.1 exception to Rule 0.4 (FileLength): retain the existing OidcConfig API, nested Builder, and
-         configuration table layout. This legacy class has the same file-specific exception on the 4.x line. -->
+         configuration table layout. -->
     <suppress files="security/providers/oidc-common/src/main/java/io/helidon/security/providers/oidc/common/OidcConfig\.java"
             checks="FileLength"/>
 
