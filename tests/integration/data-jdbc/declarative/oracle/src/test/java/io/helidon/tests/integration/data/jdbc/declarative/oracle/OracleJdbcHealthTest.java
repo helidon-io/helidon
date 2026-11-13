@@ -37,7 +37,8 @@ class OracleJdbcHealthTest extends AbstractJdbcHealthContract {
     @Override
     protected Map<String, String> poolProperties() {
         // Use ordinary network data for cancellation instead of urgent data.
-        return Map.of("oracle.net.disableOob", "true");
+        // The socket timeout bounds failed cancellation and must not satisfy the query timeout assertions.
+        return Map.of("oracle.net.disableOob", "true", "oracle.jdbc.ReadTimeout", "15000");
     }
 
     @Override
@@ -47,8 +48,11 @@ class OracleJdbcHealthTest extends AbstractJdbcHealthContract {
 
     @Override
     protected String slowQuery() {
-        // A bounded Cartesian product keeps execution busy without a stored function or a large hierarchy.
-        return "SELECT SUM(a.r * b.r) FROM (SELECT LEVEL r FROM DUAL CONNECT BY LEVEL <= 10000) a "
-                + "CROSS JOIN (SELECT LEVEL r FROM DUAL CONNECT BY LEVEL <= 10000) b";
+        return "SELECT ID FROM JDBC_HEALTH_TIMEOUT WHERE ID = 1 FOR UPDATE WAIT 30";
+    }
+
+    @Override
+    protected boolean requiresTimeoutLock() {
+        return true;
     }
 }
