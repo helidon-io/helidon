@@ -16,6 +16,7 @@
 
 package io.helidon.security.providers.httpsign;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SecurityProviderService;
@@ -24,6 +25,7 @@ import io.helidon.security.spi.SecurityProviderService;
  * Implementation of {@link SecurityProviderService} to enable
  * automatic loading of this provider from configuration.
  */
+@Api.Internal
 public class HttpSignService implements SecurityProviderService {
 
     static final String PROVIDER_CONFIG_KEY = "http-signatures";

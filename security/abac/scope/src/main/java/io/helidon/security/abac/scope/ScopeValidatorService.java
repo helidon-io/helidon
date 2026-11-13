@@ -16,6 +16,7 @@
 
 package io.helidon.security.abac.scope;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.security.providers.abac.AbacProvider;
 import io.helidon.security.providers.abac.AbacValidatorConfig;
@@ -25,6 +26,7 @@ import io.helidon.security.providers.abac.spi.AbacValidatorService;
 /**
  * A service to provide {@link ScopeValidator} to {@link AbacProvider}.
  */
+@Api.Internal
 public class ScopeValidatorService implements AbacValidatorService {
     /**
      * Create a scope validator service.

@@ -28,6 +28,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
 import io.helidon.common.Errors;
 import io.helidon.common.GenericType;
 import io.helidon.json.JsonArray;
@@ -43,6 +44,7 @@ import io.helidon.json.JsonValue;
  *
  * @see #parseToken(String)
  */
+@Api.Stable
 public class JwtHeaders extends JwtClaims {
 
     static final String ALGORITHM = "alg";

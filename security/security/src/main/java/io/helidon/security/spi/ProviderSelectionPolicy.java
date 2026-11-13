@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.security.spi;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.security.NamedProvider;
 
 /**
@@ -30,6 +31,7 @@ import io.helidon.security.NamedProvider;
  * builder a function that accepts {@link Providers} and returns an instance of this interface,
  * which could be the constructor itself.
  */
+@Api.Stable
 public interface ProviderSelectionPolicy {
     /**
      * Select a provider instance of the type defined that this policy has configured as the default.

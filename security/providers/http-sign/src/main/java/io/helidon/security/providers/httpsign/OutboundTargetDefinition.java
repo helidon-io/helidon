@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.pki.Keys;
 import io.helidon.config.Config;
 import io.helidon.security.util.TokenHandler;
@@ -28,6 +29,7 @@ import io.helidon.security.util.TokenHandler;
 /**
  * Configuration of outbound target to sign outgoing requests.
  */
+@Api.Stable
 public final class OutboundTargetDefinition {
     private final String keyId;
     private final String algorithm;

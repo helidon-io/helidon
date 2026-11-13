@@ -31,6 +31,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.parameters.Parameters;
@@ -85,6 +86,7 @@ import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.D
  * Administrator"</li>
  * </ul>
  */
+@Api.Stable
 public final class OidcProvider implements AuthenticationProvider, OutboundSecurityProvider {
     private static final System.Logger LOGGER = System.getLogger(OidcProvider.class.getName());
     static final String DEFAULT_JWT_GROUPS_PATH = "groups";

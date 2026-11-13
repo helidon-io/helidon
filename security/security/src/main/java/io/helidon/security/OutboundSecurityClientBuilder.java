@@ -19,11 +19,13 @@ package io.helidon.security;
 import java.util.Objects;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.Builder;
 
 /**
  * Builder constructing a security client - extends the {@link SecurityRequestBuilder} for convenience.
  */
+@Api.Stable
 public class OutboundSecurityClientBuilder extends SecurityRequestBuilder<OutboundSecurityClientBuilder>
         implements Builder<OutboundSecurityClientBuilder, SecurityClient<OutboundSecurityResponse>> {
 

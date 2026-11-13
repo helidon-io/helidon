@@ -16,6 +16,7 @@
 
 package io.helidon.security.abac.role;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.security.providers.abac.AbacValidatorConfig;
 import io.helidon.security.providers.abac.spi.AbacValidator;
@@ -24,6 +25,7 @@ import io.helidon.security.providers.abac.spi.AbacValidatorService;
 /**
  * Java service for {@link RoleValidator} ABAC security provider.
  */
+@Api.Internal
 public class RoleValidatorService implements AbacValidatorService {
     /**
      * Create a role validator service.

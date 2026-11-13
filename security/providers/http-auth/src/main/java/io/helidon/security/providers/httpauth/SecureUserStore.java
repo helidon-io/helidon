@@ -20,6 +20,8 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.Set;
 
+import io.helidon.common.Api;
+
 /**
  * Store of users for resolving HTTP basic authentication.
  * This implementation does not require exposing stored passwords to the provider itself.
@@ -27,6 +29,7 @@ import java.util.Set;
  * local testing and demos.
  */
 @FunctionalInterface
+@Api.Stable
 public interface SecureUserStore {
     /**
      * Get user based on login.

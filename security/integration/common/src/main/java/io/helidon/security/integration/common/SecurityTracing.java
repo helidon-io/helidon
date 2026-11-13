@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package io.helidon.security.integration.common;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
 import io.helidon.security.SecurityContext;
@@ -31,6 +32,7 @@ import io.helidon.tracing.config.TracingConfigUtil;
 /**
  * Security integration utility for tracing support in integration components.
  */
+@Api.Internal
 public final class SecurityTracing extends CommonTracing {
     private static final String COMPONENT = "security";
     private static final String SPAN_SECURITY = "security";

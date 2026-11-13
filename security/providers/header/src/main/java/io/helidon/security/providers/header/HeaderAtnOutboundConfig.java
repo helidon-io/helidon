@@ -18,6 +18,7 @@ package io.helidon.security.providers.header;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.util.TokenHandler;
@@ -27,6 +28,7 @@ import static java.util.Objects.requireNonNull;
 /**
  * Header assertion security provider configuration for outbound.
  */
+@Api.Stable
 public class HeaderAtnOutboundConfig {
     private final Optional<TokenHandler> tokenHandler;
     private final Optional<String> explicitUser;

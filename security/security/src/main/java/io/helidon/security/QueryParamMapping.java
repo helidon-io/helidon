@@ -18,6 +18,7 @@ package io.helidon.security;
 
 import java.util.Map;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.security.util.TokenHandler;
 
@@ -26,6 +27,7 @@ import io.helidon.security.util.TokenHandler;
  * Uses the {@link TokenHandler#header(Map, String)} to create a new header for
  * the extracted parameter.
  */
+@Api.Stable
 public final class QueryParamMapping {
     private final String queryParamName;
     private final TokenHandler tokenHandler;

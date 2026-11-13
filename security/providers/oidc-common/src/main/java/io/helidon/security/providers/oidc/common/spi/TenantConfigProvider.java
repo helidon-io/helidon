@@ -16,11 +16,13 @@
 
 package io.helidon.security.providers.oidc.common.spi;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 
 /**
  * Java {@link java.util.ServiceLoader} service interface for multitenancy support.
  */
+@Api.Stable
 public interface TenantConfigProvider {
     /**
      * Create a tenant configuration API from Helidon config. This method is only called once.

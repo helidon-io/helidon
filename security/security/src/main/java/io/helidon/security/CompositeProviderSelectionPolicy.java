@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.security.spi.AuthenticationProvider;
 import io.helidon.security.spi.AuthorizationProvider;
@@ -60,6 +61,7 @@ import io.helidon.security.spi.SecurityProvider;
  * }
  * </pre>
  */
+@Api.Stable
 public final class CompositeProviderSelectionPolicy implements ProviderSelectionPolicy {
     private final CompositeOutboundProvider outbound;
     private final CompositeAuthenticationProvider atn;

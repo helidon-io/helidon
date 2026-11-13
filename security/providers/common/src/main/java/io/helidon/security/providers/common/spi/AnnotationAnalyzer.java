@@ -18,6 +18,7 @@ package io.helidon.security.providers.common.spi;
 import java.util.List;
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
@@ -34,6 +35,7 @@ import io.helidon.security.ClassToInstanceStore;
  * Note: This type is no longer a {@link java.lang.FunctionalInterface}, as we need to support both SE and MP types.
  * We are refactoring our approach so we do not use reflection.
  */
+@Api.Stable
 public interface AnnotationAnalyzer {
     /**
      * Provides configuration on node "security.jersey.analyzers".

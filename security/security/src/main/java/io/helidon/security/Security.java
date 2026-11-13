@@ -35,6 +35,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigValue;
@@ -68,6 +69,7 @@ import io.helidon.tracing.Tracer;
  * @see #builder()
  * @see #create(Config)
  */
+@Api.Stable
 public interface Security {
     /**
      * Integration should add a special header to each request. The value will contain the original

@@ -19,6 +19,7 @@ package io.helidon.security.spi;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 
 /**
@@ -26,6 +27,7 @@ import io.helidon.config.Config;
  *
  * @param <T> type of the custom configuration object
  */
+@Api.Stable
 public interface SecretsProvider<T extends ProviderConfig> extends SecurityProvider {
     /**
      * Create secret supplier from configuration.

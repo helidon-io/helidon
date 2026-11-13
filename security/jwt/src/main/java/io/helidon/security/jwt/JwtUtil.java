@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
 
+import io.helidon.common.Api;
 import io.helidon.json.JsonArray;
 import io.helidon.json.JsonBoolean;
 import io.helidon.json.JsonNull;
@@ -53,6 +54,7 @@ import io.helidon.json.JsonValue;
 /**
  * Utilities for JWT and JWK parsing.
  */
+@Api.Stable
 public final class JwtUtil {
     private static final DateTimeFormatter YEAR_FORMAT = DateTimeFormatter.ofPattern("yyyy");
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd");

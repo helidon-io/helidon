@@ -20,6 +20,7 @@ import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.Collections;
 
+import io.helidon.common.Api;
 import io.helidon.common.Errors;
 import io.helidon.config.Config;
 import io.helidon.security.EndpointConfig;
@@ -40,6 +41,7 @@ import io.helidon.security.providers.abac.AbacValidatorConfig;
  * @param <T> type of configuration used by this validator. Each validator must have its own {@link AbacValidatorConfig} class, so
  *            we can uniquely identify the one to call
  */
+@Api.Stable
 public interface AbacValidator<T extends AbacValidatorConfig> {
     /**
      * Provide extension annotations supported by this validator (e.g. {@link jakarta.annotation.security.RolesAllowed}).

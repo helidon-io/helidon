@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import io.helidon.common.Api;
 import io.helidon.common.Builder;
 import io.helidon.common.Errors;
 import io.helidon.common.types.TypeName;
@@ -36,6 +37,7 @@ import io.helidon.metadata.reflection.AnnotationFactory;
  * The first level represents {@link io.helidon.security.EndpointConfig.AnnotationScope#APPLICATION} level annotations.
  * Other levels are representations of resource, sub-resource and method used on path to get to the target method.
  */
+@Api.Stable
 public class SecurityLevel {
 
     private final TypeName typeName;

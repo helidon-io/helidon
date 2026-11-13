@@ -35,6 +35,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.security.providers</groupId>
             <artifactId>helidon-security-providers-common</artifactId>
         </dependency>
@@ -119,6 +123,35 @@
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>default-compile</id>
+                        <configuration>
+                            <annotationProcessorPaths>
+                                <path>
+                                    <groupId>io.helidon.codegen</groupId>
+                                    <artifactId>helidon-codegen-apt</artifactId>
+                                    <version>${helidon.version}</version>
+                                </path>
+                                <path>
+                                    <groupId>io.helidon.common.features</groupId>
+                                    <artifactId>helidon-common-features-codegen</artifactId>
+                                    <version>${helidon.version}</version>
+                                </path>
+                                <path>
+                                    <groupId>io.helidon.config.metadata</groupId>
+                                    <artifactId>helidon-config-metadata-codegen</artifactId>
+                                    <version>${helidon.version}</version>
+                                </path>
+                                <path>
+                                    <groupId>io.helidon.codegen</groupId>
+                                    <artifactId>helidon-codegen-api-stability-enforcer</artifactId>
+                                    <version>${helidon.version}</version>
+                                </path>
+                            </annotationProcessorPaths>
+                        </configuration>
+                    </execution>
+                </executions>
                 <dependencies>
                     <dependency>
                         <groupId>io.helidon.codegen</groupId>
@@ -133,6 +166,11 @@
                     <dependency>
                         <groupId>io.helidon.config.metadata</groupId>
                         <artifactId>helidon-config-metadata-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.codegen</groupId>
+                        <artifactId>helidon-codegen-api-stability-enforcer</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                 </dependencies>

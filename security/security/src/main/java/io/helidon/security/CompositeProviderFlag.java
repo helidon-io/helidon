@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,14 @@ package io.helidon.security;
 import java.util.EnumSet;
 import java.util.Set;
 
+import io.helidon.common.Api;
+
 /**
  * Flag driving resolution of providers.
  * If provider returns a FINISH state (either {@link SecurityResponse.SecurityStatus#SUCCESS_FINISH} or {@link
  * SecurityResponse.SecurityStatus#FAILURE_FINISH}, the processing is finished with that status.
  */
+@Api.Stable
 public enum CompositeProviderFlag {
     /**
      * Provider may fail, nothing happens if it does.

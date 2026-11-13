@@ -32,6 +32,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.helidon.common.Api;
 import io.helidon.json.JsonObject;
 import io.helidon.security.jwt.JwtException;
 
@@ -44,6 +45,7 @@ import static io.helidon.security.jwt.JwtUtil.getKeyFactory;
  * Elliptic curve JSON web key.
  */
 @SuppressWarnings("WeakerAccess") // constants should be public
+@Api.Stable
 public class JwkEC extends JwkPki {
     /**
      * The main Java security algorithm used.
@@ -214,6 +216,7 @@ public class JwkEC extends JwkPki {
     }
 
     @Override
+    @Api.Internal
     public boolean doVerify(byte[] signedBytes, byte[] signatureToVerify) {
         return super.doVerify(signedBytes, signatureToVerify);
     }

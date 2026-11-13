@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.security.util.AbacSupport;
 
 /**
@@ -36,6 +37,7 @@ import io.helidon.security.util.AbacSupport;
  * custom attributes</li>
  * </ul>
  */
+@Api.Stable
 public interface ProviderRequest extends AbacSupport {
     /**
      * Create a new provider request.

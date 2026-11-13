@@ -20,6 +20,7 @@ import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.security.EndpointConfig;
 import io.helidon.security.SecurityContext;
 
@@ -29,6 +30,7 @@ import io.helidon.security.SecurityContext;
  * @see EndpointConfig
  * @see SecurityContext#endpointConfig()
  */
+@Api.Stable
 public interface SecurityProvider {
     /**
      * Provide extension annotations supported by this provider (e.g. {@code jakarta.annotation.security.RolesAllowed}).

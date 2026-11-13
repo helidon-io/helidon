@@ -26,6 +26,8 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Path({"Security", "Provider", "ABAC", "Role"})
 module io.helidon.security.abac.role {
 
+    requires io.helidon.common;
+
     requires io.helidon.security.providers.abac;
     requires jakarta.annotation;
 

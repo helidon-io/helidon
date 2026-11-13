@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.security.jwt;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
 import io.helidon.common.Errors;
 
 abstract class OptionalValidator extends CommonValidator {
@@ -58,6 +59,7 @@ abstract class OptionalValidator extends CommonValidator {
          * @param mandatory mandatory to be present
          * @return updated builder instance
          */
+        @Api.Stable
         public B mandatory(boolean mandatory) {
             this.mandatory = mandatory;
             return me();
@@ -69,6 +71,7 @@ abstract class OptionalValidator extends CommonValidator {
          * @param missingClaimMessage missing claim error message
          * @return updated builder instance
          */
+        @Api.Stable
         public B missingClaimMessage(String missingClaimMessage) {
             this.missingClaimMessage = missingClaimMessage;
             return me();

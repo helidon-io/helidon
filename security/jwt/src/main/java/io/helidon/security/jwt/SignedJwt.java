@@ -23,6 +23,7 @@ import java.util.Base64;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.common.Api;
 import io.helidon.common.Errors;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
@@ -33,6 +34,7 @@ import io.helidon.security.jwt.jwk.JwkKeys;
  * The JWT used to transfer content across network - e.g. the base64 parts concatenated
  * with a dot.
  */
+@Api.Stable
 public final class SignedJwt {
     private static final Pattern JWT_PATTERN = Pattern
             .compile("([a-zA-Z0-9-_=]+)\\.([a-zA-Z0-9-_=]+)\\.([a-zA-Z0-9-_=]*)");

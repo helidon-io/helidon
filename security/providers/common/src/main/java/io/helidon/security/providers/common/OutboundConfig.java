@@ -29,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
 import io.helidon.config.metadata.ConfiguredOption;
@@ -44,6 +45,7 @@ import io.helidon.security.spi.OutboundSecurityProvider;
  *
  * Use from {@link OutboundSecurityProvider#isOutboundSupported(ProviderRequest, SecurityEnvironment, EndpointConfig)}
  */
+@Api.Stable
 public final class OutboundConfig {
     /**
      * Configuration key (expected under provider configuration) that holds the object list of {@link OutboundTarget}s

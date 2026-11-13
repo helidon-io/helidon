@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.security;
 
 import java.util.Optional;
 
+import io.helidon.common.Api;
+
 /**
  * Response as returned from an authentication provider. Provider should return a response even for failed authentications.
  * Only throw an exception if an error has occurred (e.g. misconfiguration). Do not throw exception
@@ -26,6 +28,7 @@ import java.util.Optional;
  * @see #failed(String)
  * @see #success(Subject)
  */
+@Api.Stable
 public final class AuthenticationResponse extends SecurityResponse {
     private final Optional<Subject> user;
     private final Optional<Subject> service;

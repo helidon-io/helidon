@@ -19,6 +19,8 @@
  */
 module io.helidon.security.providers.oidc.common {
 
+    requires io.helidon.common;
+
     requires io.helidon.common.context;
     requires io.helidon.common.crypto;
     requires io.helidon.common.parameters;

@@ -35,6 +35,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.Errors;
 import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
@@ -53,6 +54,7 @@ import io.helidon.security.providers.abac.spi.AbacValidator;
  * <li>days of week (e.g. MONDAY, TUESDAY)</li>
  * </ul>
  */
+@Api.Stable
 public final class TimeValidator implements AbacValidator<TimeValidator.TimeConfig> {
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm:ss");
     private static final TypeName DAYS_OF_WEEK = TypeName.create(DaysOfWeek.class);

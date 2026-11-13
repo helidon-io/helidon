@@ -28,11 +28,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import io.helidon.common.Api;
 import io.helidon.security.util.AbacSupport;
 
 /**
  * A security subject, representing a user or a service.
  */
+@Api.Stable
 public final class Subject implements AbacSupport {
     private final List<Grant> grants = new LinkedList<>();
     private final List<Principal> principals = new LinkedList<>();

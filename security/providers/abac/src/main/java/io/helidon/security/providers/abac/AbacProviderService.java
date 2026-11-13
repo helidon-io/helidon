@@ -16,6 +16,7 @@
 
 package io.helidon.security.providers.abac;
 
+import io.helidon.common.Api;
 import io.helidon.config.Config;
 import io.helidon.security.spi.SecurityProvider;
 import io.helidon.security.spi.SecurityProviderService;
@@ -23,6 +24,7 @@ import io.helidon.security.spi.SecurityProviderService;
 /**
  * A java service to register this provider with {@link io.helidon.security.Security}.
  */
+@Api.Internal
 public class AbacProviderService implements SecurityProviderService {
 
     static final String PROVIDER_CONFIG_KEY = "abac";

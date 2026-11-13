@@ -324,6 +324,7 @@ import io.helidon.webclient.tracing.WebClientTracing;
  * </tr>
  * </table>
  */
+@Api.Stable
 public final class OidcConfig extends TenantConfigImpl {
     /**
      * Default name of the header we expect JWT in.
@@ -1995,6 +1996,5 @@ public final class OidcConfig extends TenantConfigImpl {
             this.clientCredentialsConfig = builder.build();
             return this;
         }
-
     }
 }

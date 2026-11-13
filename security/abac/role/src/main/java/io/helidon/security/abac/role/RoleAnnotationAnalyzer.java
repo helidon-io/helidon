@@ -17,6 +17,7 @@ package io.helidon.security.abac.role;
 
 import java.util.List;
 
+import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.types.Annotation;
@@ -34,6 +35,7 @@ import jakarta.annotation.security.PermitAll;
  * authentication is needed or not.
  */
 @Weight(Weighted.DEFAULT_WEIGHT) // Helidon service loader loaded and ordered
+@Api.Internal
 public class RoleAnnotationAnalyzer implements AnnotationAnalyzer {
 
     /**

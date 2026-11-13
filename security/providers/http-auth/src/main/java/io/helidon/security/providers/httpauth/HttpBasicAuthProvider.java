@@ -28,6 +28,7 @@ import java.util.ServiceLoader;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import io.helidon.common.Api;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.config.metadata.Configured;
@@ -55,6 +56,7 @@ import io.helidon.security.util.TokenHandler;
  * Http authentication security provider.
  * Provides support for username and password authentication, with support for roles list.
  */
+@Api.Stable
 public class HttpBasicAuthProvider implements AuthenticationProvider, OutboundSecurityProvider {
     static final String HEADER_AUTHENTICATION_REQUIRED = "WWW-Authenticate";
     static final String HEADER_AUTHENTICATION = "authorization";
