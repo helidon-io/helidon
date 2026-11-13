@@ -34,6 +34,8 @@ import io.helidon.common.Api;
 /**
  * Represents a JSON object value containing key-value pairs.
  * Keys and values must not be {@code null}.
+ * When duplicate member names are parsed, the last value is retained.
+ * Discarded values are validated recursively so duplicate names cannot hide malformed string data.
  */
 @Api.Preview
 public final class JsonObject extends JsonValue {
@@ -84,6 +86,21 @@ public final class JsonObject extends JsonValue {
 
     static JsonObject createFromOwnedMap(LinkedHashMap<String, JsonValue> content) {
         return new JsonObject(content);
+    }
+
+    static void validateDiscardedValue(JsonValue value) {
+        Iterable<JsonValue> children = switch (value.type()) {
+            case STRING -> {
+                value.asString().value();
+                yield List.of();
+            }
+            case OBJECT -> value.asObject().content.values();
+            case ARRAY -> value.asArray().values();
+            case NUMBER, BOOLEAN, NULL, UNKNOWN -> List.of();
+        };
+        for (JsonValue child : children) {
+            validateDiscardedValue(child);
+        }
     }
 
     @Override
