@@ -136,7 +136,13 @@ final class ContentSupport {
             contentBuilder.addContent(".property(\"")
                     .addContent(key)
                     .addContent("\", ");
+            if (!value.explicit()) {
+                contentBuilder.addContent(AnnotationProperty.class).addContent(".create(");
+            }
             addAnnotationValue(contentBuilder, value.value());
+            if (!value.explicit()) {
+                contentBuilder.addContent(", false)");
+            }
             contentBuilder.addContentLine(")");
         });
 

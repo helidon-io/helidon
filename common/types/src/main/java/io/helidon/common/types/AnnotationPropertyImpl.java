@@ -20,14 +20,25 @@ import java.util.Objects;
 
 class AnnotationPropertyImpl implements AnnotationProperty {
     private final Object value;
+    private final boolean explicit;
 
     AnnotationPropertyImpl(Object value) {
+        this(value, true);
+    }
+
+    AnnotationPropertyImpl(Object value, boolean explicit) {
         this.value = value;
+        this.explicit = explicit;
     }
 
     @Override
     public Object value() {
         return value;
+    }
+
+    @Override
+    public boolean explicit() {
+        return explicit;
     }
 
     @Override

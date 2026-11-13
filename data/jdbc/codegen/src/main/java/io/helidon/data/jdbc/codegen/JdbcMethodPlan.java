@@ -36,7 +36,7 @@ import io.helidon.common.types.TypedElementInfo;
 /**
  * Validated compile-time plan for one JDBC repository method.
  * <p>
- * Planning resolves execution, materialized cardinality, mapping, generated
+ * Planning resolves execution, result shape, mapping, generated
  * keys, and SQL bindings before source emission. No generated method needs to
  * interpret annotations or SQL structure at runtime.
  */
@@ -46,16 +46,28 @@ final class JdbcMethodPlan {
                                                                              TypeNames.MAP,
                                                                              TypeName.create(BaseStream.class));
 
+    private static final Set<TypeName> UNSUPPORTED_CALL_ROW_TYPES = Set.of(
+            TypeName.create("io.helidon.data.jdbc.JdbcClient.Rows"),
+            TypeName.create("io.helidon.data.jdbc.JdbcClient.CallResult"),
+            TypeName.create("io.helidon.data.jdbc.JdbcClient.Call"),
+            TypeName.create("io.helidon.data.jdbc.JdbcClient.OutParameters"),
+            TypeName.create("java.sql.ResultSet"), TypeName.create("java.sql.Blob"), TypeName.create("java.sql.Clob"),
+            TypeName.create("java.sql.NClob"), TypeName.create("java.sql.Array"), TypeName.create("java.sql.Ref"),
+            TypeName.create("java.sql.SQLXML"), TypeName.create("java.sql.Statement"),
+            TypeName.create("java.sql.PreparedStatement"), TypeName.create("java.sql.CallableStatement"),
+            TypeName.create("java.sql.Connection"));
+
     private final TypedElementInfo method;
     private final Operation operation;
     private final ReturnShape returnShape;
     private final MappingKind mappingKind;
     private final TypeName mappedType;
     private final JdbcSqlParameterPlan parameterPlan;
-    private final JdbcSqlReference reference;
     private final List<String> generatedColumns;
     private final TypeName explicitMapper;
     private final List<TypedElementInfo> recordComponents;
+    private JdbcSqlReference reference;
+    private JdbcCallablePlan callable;
     private String sqlFieldName;
     private String mapperFieldName;
 
@@ -113,6 +125,10 @@ final class JdbcMethodPlan {
         }
         JdbcSqlReference reference = JdbcSqlReference.parse(sql, method);
 
+        if (JdbcCallablePlan.selected(method, roundContext)) {
+            return JdbcCallablePlan.create(method, roundContext, sql);
+        }
+
         Return result = returnPlan(method);
         boolean generatedKeys = method.hasAnnotation(JdbcCodegenTypes.JDBC_GENERATED_KEYS);
         Annotation rowMapperAnnotation = method.findAnnotation(JdbcCodegenTypes.JDBC_ROW_MAPPER).orElse(null);
@@ -161,6 +177,39 @@ final class JdbcMethodPlan {
                                   mapping.recordComponents());
     }
 
+    static JdbcMethodPlan callableMapping(TypedElementInfo declaration, RoundContext context,
+                                          TypeName resultType, JdbcSqlParameterPlan parameters) {
+        TypeName mapped = resultType;
+        ReturnShape shape = ReturnShape.ITEM;
+        if (mapped.isOptional() || mapped.isList()) {
+            shape = mapped.isList() ? ReturnShape.LIST : ReturnShape.OPTIONAL;
+            mapped = singleTypeArgument(declaration, mapped);
+            if (shape == ReturnShape.OPTIONAL && mapped.isList()) {
+                if (JdbcCallablePlan.declarations(declaration).isEmpty()) {
+                    throw failure(declaration, "Optional<List<T>> requires an explicit cursor output.");
+                }
+                mapped = singleTypeArgument(declaration, mapped);
+            }
+        }
+        if (mapped.isOptional() || UNSUPPORTED_CALL_ROW_TYPES.contains(mapped.genericTypeName())) {
+            throw failure(declaration,
+                          "Callable row mapping cannot return nested containers, snapshots, or live JDBC resources.");
+        }
+        validateReturn(declaration, context.typeHierarchyResolver(), Operation.QUERY, new Return(shape, mapped));
+        boolean mapperRequested = declaration.hasAnnotation(JdbcCodegenTypes.JDBC_ROW_MAPPER);
+        TypeName explicit = declaration.findAnnotation(JdbcCodegenTypes.JDBC_ROW_MAPPER)
+                .flatMap(Annotation::typeValue).filter(type -> !JdbcCodegenTypes.ROW_MAPPER.equals(type)).orElse(null);
+        Mapping mapping = mapping(declaration, context, Operation.QUERY, mapped, mapperRequested, explicit);
+        validateMappedTypeParameters(declaration, Operation.QUERY, mapped);
+        return new JdbcMethodPlan(declaration, Operation.CALL, shape, mapping.kind(), mapped,
+                                  parameters, null, List.of(), explicit, mapping.recordComponents());
+    }
+
+    static JdbcMethodPlan callableUnmapped(TypedElementInfo method, JdbcSqlParameterPlan parameters) {
+        return new JdbcMethodPlan(method, Operation.CALL, ReturnShape.ITEM, MappingKind.NONE,
+                                  method.typeName(), parameters, null, List.of(), null, List.of());
+    }
+
     /**
      * Creates a code-generation diagnostic attached to a repository method.
      *
@@ -170,6 +219,18 @@ final class JdbcMethodPlan {
      */
     static CodegenException failure(TypedElementInfo method, String message) {
         return new CodegenException(message, method.originatingElementValue());
+    }
+
+    JdbcCallablePlan callable() {
+        return callable;
+    }
+
+    void callable(JdbcCallablePlan plan) {
+        callable = plan;
+    }
+
+    void reference(JdbcSqlReference sqlReference) {
+        reference = sqlReference;
     }
 
     TypedElementInfo method() {
@@ -560,11 +621,12 @@ final class JdbcMethodPlan {
     enum Operation {
         QUERY,
         UPDATE,
-        GENERATED_KEYS
+        GENERATED_KEYS,
+        CALL
     }
 
     /**
-     * Supported materialized cardinalities.
+     * Supported repository result shapes.
      */
     enum ReturnShape {
         ITEM,

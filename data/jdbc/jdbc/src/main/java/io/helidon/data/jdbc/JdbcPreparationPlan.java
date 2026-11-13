@@ -65,6 +65,10 @@ record JdbcPreparationPlan(ResultKind resultKind, List<String> generatedColumns)
         return UPDATE;
     }
 
+    static JdbcPreparationPlan call() {
+        return new JdbcPreparationPlan(ResultKind.CALL, NO_COLUMNS);
+    }
+
     /**
      * Creates a generated key plan and takes an immutable column snapshot.
      *
@@ -102,6 +106,7 @@ record JdbcPreparationPlan(ResultKind resultKind, List<String> generatedColumns)
     enum ResultKind {
         QUERY,
         UPDATE,
-        GENERATED_KEYS
+        GENERATED_KEYS,
+        CALL
     }
 }

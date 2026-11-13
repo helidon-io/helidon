@@ -18,7 +18,9 @@ package io.helidon.codegen.apt;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -29,6 +31,7 @@ import javax.lang.model.element.TypeElement;
 
 import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.codegen.testing.TestCompiler;
+import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -366,6 +369,49 @@ class AptTypeFactoryTest {
         assertThat(genericArray.componentType().orElseThrow().generic(), is(true));
     }
 
+    @Test
+    void preservesSourceAndClassfileValueProvenance() {
+        Map<String, Annotation> source = new LinkedHashMap<>();
+        TestCompiler.Result parent = TestCompiler.builder().currentRelease()
+                .addProcessor(new ModelProcessor(source))
+                .addSource("example/Library.java", """
+                        package example;
+                        import java.lang.annotation.Retention;
+                        import java.lang.annotation.RetentionPolicy;
+                        @Retention(RetentionPolicy.CLASS)
+                        @interface Choice {
+                            Mode mode() default Mode.NONE;
+                            int count() default 0;
+                            Nested nested() default @Nested;
+                        }
+                        enum Mode { NONE }
+                        @interface Nested { String value() default "default"; }
+                        @Choice class Implicit { }
+                        @Choice(mode = Mode.NONE, count = 0, nested = @Nested("default")) class Explicit { }
+                        """)
+                .build().compile();
+        assertThat(parent.diagnostics().toString(), parent.success(), is(true));
+        Map<String, Annotation> binary = new LinkedHashMap<>();
+        TestCompiler.Result child = TestCompiler.builder().currentRelease()
+                .addProcessor(new ModelProcessor(binary))
+                .addClasspathEntry(parent.classOutput())
+                .addSource("example/Child.java", "package example; class Child { }")
+                .build().compile();
+        assertThat(child.diagnostics().toString(), child.success(), is(true));
+        for (Map<String, Annotation> model : List.of(source, binary)) {
+            Annotation implicit = model.get("Implicit");
+            Annotation explicit = model.get("Explicit");
+            assertThat(implicit, is(explicit));
+            assertThat(implicit.hashCode(), is(explicit.hashCode()));
+            for (String property : Set.of("mode", "count", "nested")) {
+                assertThat(property, implicit.property(property).orElseThrow().explicit(), is(false));
+                assertThat(property, explicit.property(property).orElseThrow().explicit(), is(true));
+            }
+            assertThat(implicit.annotationValue("nested").orElseThrow().property("value").orElseThrow().explicit(), is(false));
+            assertThat(explicit.annotationValue("nested").orElseThrow().property("value").orElseThrow().explicit(), is(true));
+        }
+    }
+
     private static TypeInfo compile(String methods) {
         var typeInfo = new AtomicReference<TypeInfo>();
         var result = TestCompiler.builder()
@@ -485,5 +531,35 @@ class AptTypeFactoryTest {
                 .filter(it -> it.elementName().equals(name))
                 .findFirst()
                 .orElseThrow();
+    }
+
+    private static final class ModelProcessor extends AbstractProcessor {
+        private final Map<String, Annotation> values;
+
+        private ModelProcessor(Map<String, Annotation> values) {
+            this.values = values;
+        }
+
+        @Override
+        public Set<String> getSupportedAnnotationTypes() {
+            return Set.of("*");
+        }
+
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            return SourceVersion.RELEASE_27;
+        }
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment round) {
+            if (!round.processingOver() && values.isEmpty()) {
+                for (String name : Set.of("Implicit", "Explicit")) {
+                    TypeElement type = processingEnv.getElementUtils().getTypeElement("example." + name);
+                    values.put(name, AptAnnotationFactory.createAnnotation(type.getAnnotationMirrors().getFirst(),
+                                                                           processingEnv.getElementUtils()));
+                }
+            }
+            return false;
+        }
     }
 }
