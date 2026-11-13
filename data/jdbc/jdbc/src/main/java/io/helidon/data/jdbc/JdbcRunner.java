@@ -107,7 +107,7 @@ final class JdbcRunner {
                         || evidence[0].entries().stream().anyMatch(entry ->
                                 entry.status() == JdbcClient.BatchResult.Status.EXECUTE_FAILED
                                         || entry.status() == JdbcClient.BatchResult.Status.NOT_REPORTED)) {
-                    throw JdbcExceptionTranslator.safeException("The JDBC batch returned malformed execution evidence.");
+                    throw JdbcExceptionTranslator.safeException("The JDBC driver returned invalid batch update counts.");
                 }
                 return evidence[0];
             });

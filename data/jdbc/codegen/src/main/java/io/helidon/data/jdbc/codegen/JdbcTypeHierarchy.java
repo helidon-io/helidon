@@ -138,9 +138,9 @@ final class JdbcTypeHierarchy {
         Optional<String> value = declarations.getFirst()
                 .findAnnotation(JdbcCodegenTypes.JDBC_STATEMENT).flatMap(Annotation::stringValue);
         if (value.isPresent() && JdbcSqlReference.parse(value.get(), declarations.getFirst()) != null) {
-            List<ConfiguredParameterBinding> bindings = configuredParameterBindings(declarations.getFirst());
+            List<ConfiguredParameterBinding> bindings = configuredParameterBindings(declarations.getFirst(), context);
             for (TypedElementInfo declaration : declarations) {
-                if (!bindings.equals(configuredParameterBindings(declaration))) {
+                if (!bindings.equals(configuredParameterBindings(declaration, context))) {
                     throw new CodegenException("Inherited configured statements have incompatible parameter names or types.",
                                                declaration.originatingElementValue());
                 }
@@ -162,17 +162,30 @@ final class JdbcTypeHierarchy {
             // The same named SQL must bind the same logical parameter positions across inherited declarations.
             if (!firstContract.equals(declarationContract)) {
                 throw new CodegenException("Inherited repository method '" + signature.text()
-                                                   + "' has incompatible named SQL parameter bindings.",
+                                                   + "' has incompatible SQL parameter bindings.",
                                            first.originatingElementValue(),
                                            declaration.originatingElementValue());
             }
         }
     }
 
-    private static List<ConfiguredParameterBinding> configuredParameterBindings(TypedElementInfo method) {
+    private static List<ConfiguredParameterBinding> configuredParameterBindings(TypedElementInfo method, RoundContext context) {
+        if (JdbcExecutionSelection.create(method) == JdbcExecutionSelection.BATCH) {
+            String sql = method.findAnnotation(JdbcCodegenTypes.JDBC_STATEMENT).flatMap(Annotation::stringValue).orElseThrow();
+            JdbcBatchPlan batch = JdbcBatchPlan.configured(JdbcSqlReference.parse(sql, method), method, context);
+            List<ConfiguredParameterBinding> bindings = new ArrayList<>();
+            for (int index = 0; index < batch.values().size(); index++) {
+                JdbcBatchPlan.Value value = batch.values().get(index);
+                TypedElementInfo parameter = value.sourceIndex() < 0 ? value.parameter()
+                        : batch.sources().get(value.sourceIndex()).parameter();
+                bindings.add(new ConfiguredParameterBinding(batch.inputNames().isEmpty() ? "" : batch.inputNames().get(index),
+                        value.parameter().typeName(), parameterIndex(method.parameterArguments(), parameter), value.component()));
+            }
+            return List.copyOf(bindings);
+        }
         return method.parameterArguments().stream()
                 .map(parameter -> new ConfiguredParameterBinding(JdbcSqlParameterPlan.effectiveName(parameter),
-                                                                  parameter.typeName()))
+                        parameter.typeName(), parameterIndex(method.parameterArguments(), parameter), null))
                 .toList();
     }
 
@@ -233,6 +246,6 @@ final class JdbcTypeHierarchy {
     private record ParameterBinding(int parameterIndex, boolean nullable, String nullJdbcTypeConstant, String component) {
     }
 
-    private record ConfiguredParameterBinding(String name, TypeName type) {
+    private record ConfiguredParameterBinding(String name, TypeName type, int parameterIndex, String component) {
     }
 }

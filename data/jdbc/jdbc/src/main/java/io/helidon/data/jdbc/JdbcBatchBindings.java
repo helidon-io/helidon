@@ -16,6 +16,7 @@
 package io.helidon.data.jdbc;
 
 import java.sql.JDBCType;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -24,10 +25,12 @@ import java.util.Objects;
 final class JdbcBatchBindings implements JdbcClient.BatchBindings {
     private final Thread owner = Thread.currentThread();
     private final JdbcOperation.Bind[] binds;
+    private final JdbcConfiguredStatement configured;
     private boolean open = true;
 
-    JdbcBatchBindings(int parameterCount) {
+    JdbcBatchBindings(int parameterCount, JdbcConfiguredStatement configured) {
         binds = new JdbcOperation.Bind[parameterCount];
+        this.configured = configured;
     }
 
     @Override
@@ -45,13 +48,36 @@ final class JdbcBatchBindings implements JdbcClient.BatchBindings {
     public JdbcClient.BatchBindings bindNull(int index, JDBCType type) {
         Objects.requireNonNull(type, "The JDBC type must not be null.");
         validate(index);
-        switch (type) {
-            case NULL, REF_CURSOR, ARRAY, DISTINCT, JAVA_OBJECT, REF, STRUCT ->
-                    throw new IllegalArgumentException("The JDBC type cannot represent a portable typed null.");
-            default -> {
-            }
-        }
+        validateType(type);
         binds[index - 1] = new JdbcOperation.Bind(null, type);
+        return this;
+    }
+
+    @Override
+    public JdbcClient.BatchBindings bind(String name, Object value) {
+        Objects.requireNonNull(name, "The bind name must not be null.");
+        Objects.requireNonNull(value, "The bind value must not be null.");
+        List<Integer> positions = positions(name);
+        if (!JdbcScalarAccess.supported(value.getClass())) {
+            throw new IllegalArgumentException("The batch value must be a supported scalar.");
+        }
+        JdbcOperation.Bind bind = new JdbcOperation.Bind(value, null);
+        for (int index : positions) {
+            binds[index - 1] = bind;
+        }
+        return this;
+    }
+
+    @Override
+    public JdbcClient.BatchBindings bindNull(String name, JDBCType type) {
+        Objects.requireNonNull(name, "The bind name must not be null.");
+        Objects.requireNonNull(type, "The JDBC type must not be null.");
+        List<Integer> positions = positions(name);
+        validateType(type);
+        JdbcOperation.Bind bind = new JdbcOperation.Bind(null, type);
+        for (int index : positions) {
+            binds[index - 1] = bind;
+        }
         return this;
     }
 
@@ -62,16 +88,42 @@ final class JdbcBatchBindings implements JdbcClient.BatchBindings {
     JdbcOperation.Bind[] complete() {
         for (JdbcOperation.Bind bind : binds) {
             if (bind == null) {
-                throw new IllegalStateException("Every batch binding position must be assigned exactly once.");
+                throw new IllegalStateException("The current batch item does not bind every SQL parameter position.");
             }
         }
         return binds;
     }
 
-    private void validate(int index) {
-        if (!open || Thread.currentThread() != owner) {
-            throw new IllegalStateException("Batch bindings are valid only during the callback on its invocation thread.");
+    private static void validateType(JDBCType type) {
+        switch (type) {
+            case NULL, REF_CURSOR, ARRAY, DISTINCT, JAVA_OBJECT, REF, STRUCT ->
+                    throw new IllegalArgumentException("This JDBC type is not supported for batch SQL NULL bindings.");
+            default -> {
+            }
         }
+    }
+
+    private void validateOpen() {
+        if (!open || Thread.currentThread() != owner) {
+            throw new IllegalStateException("Batch bindings may be used only while the callback is running "
+                    + "and on the thread that invoked it.");
+        }
+    }
+
+    private List<Integer> positions(String name) {
+        validateOpen();
+        if (configured == null) {
+            throw new IllegalStateException("Named batch bindings require a prepared statement definition with input names.");
+        }
+        List<Integer> positions = configured.positions(name);
+        for (int index : positions) {
+            validate(index);
+        }
+        return positions;
+    }
+
+    private void validate(int index) {
+        validateOpen();
         if (index < 1 || index > binds.length) {
             throw new IllegalArgumentException("The batch binding position is outside the statement parameter range.");
         }

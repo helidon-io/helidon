@@ -81,3 +81,58 @@ interface BatchAliasContract<T> {
                                   @Data.Param("name") Iterator<T> values,
                                   @Data.Param("email") T constant);
 }
+
+/**
+ * Compiles configured batch slots separately from deployment SQL and generated Java names.
+ */
+@Data.Repository
+@Data.Provider("jdbc")
+interface ConfiguredBatchRepository extends ConfiguredBatchParent<String> {
+    @Jdbc.Statement("${app.batch:INSERT INTO T VALUES (:name, :email)}")
+    JdbcClient.BatchResult scalar(Iterable<String> name, String email);
+
+    @Jdbc.Statement("${app.records:UPDATE T SET NAME = :name WHERE ID = :id}")
+    JdbcClient.BatchResult records(Iterator<Change> bindings);
+
+    @Jdbc.Statement("${app.duplicates:UPDATE T SET NAME = ? WHERE ID = ? AND NAME = ?}")
+    JdbcClient.BatchResult duplicates(Iterable<Replacement> statement, Iterator<Expected> rows);
+
+    @Jdbc.Statement("${app.arrays:UPDATE T SET NAME = :rows, EMAIL = :SQL_ARRAYS WHERE ID = :iterator}")
+    @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
+    JdbcClient.BatchResult arrays(String[] rows, String SQL_ARRAYS, long... iterator);
+
+    @Jdbc.Statement("${app.alias:UPDATE T SET NAME = :name WHERE ID = :id OR ID = :id}")
+    JdbcClient.BatchResult aliases(@Data.Param("name") Iterator<String> jdbcClient, @Data.Param("id") long[] SQL_ALIASES);
+
+    @Jdbc.Statement("${app.binary:INSERT INTO T VALUES (:values, :values)}")
+    JdbcClient.BatchResult binary(Iterator<byte[]> values);
+
+    record Change(String name, Long id) {
+        static final AtomicInteger ACCESSES = new AtomicInteger();
+
+        @Override
+        public String name() {
+            ACCESSES.incrementAndGet();
+            if ("fail".equals(name)) {
+                throw new IllegalStateException("The configured record accessor failed.");
+            }
+            return name;
+        }
+    }
+
+    record Replacement(String name) {
+    }
+
+    record Expected(long id, String name) {
+    }
+}
+
+/**
+ * Supplies a configured generic scalar source.
+ *
+ * @param <T> The concrete repository supplies the scalar type.
+ */
+interface ConfiguredBatchParent<T> {
+    @Jdbc.Statement("${app.inherited:INSERT INTO T VALUES (:value, :value)}")
+    JdbcClient.BatchResult inherited(@Data.Param("value") Iterable<T> original);
+}

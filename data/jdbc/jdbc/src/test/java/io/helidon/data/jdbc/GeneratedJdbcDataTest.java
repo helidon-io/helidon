@@ -178,6 +178,100 @@ class GeneratedJdbcDataTest {
         assertThrows(UnsupportedOperationException.class, () -> statement.executeBatch(source, (_, _) -> { }));
     }
 
+    @Test
+    void existingBatchBindingsRetainValidatedUnsupportedNamedDefaults() {
+        JdbcClient.BatchBindings bindings = new JdbcClient.BatchBindings() {
+            @Override
+            public JdbcClient.BatchBindings bind(int index, Object value) {
+                throw new AssertionError("Named defaults must not delegate to indexed binding.");
+            }
+
+            @Override
+            public JdbcClient.BatchBindings bindNull(int index, JDBCType type) {
+                throw new AssertionError("Named defaults must not delegate to indexed binding.");
+            }
+        };
+        assertThrows(NullPointerException.class, () -> bindings.bind((String) null, new Object()));
+        assertThrows(NullPointerException.class, () -> bindings.bind("", null));
+        assertThrows(NullPointerException.class, () -> bindings.bindNull((String) null, JDBCType.STRUCT));
+        assertThrows(NullPointerException.class, () -> bindings.bindNull("", null));
+        assertThrows(UnsupportedOperationException.class, () -> bindings.bind("", new Object()));
+        assertThrows(UnsupportedOperationException.class, () -> bindings.bindNull("", JDBCType.STRUCT));
+    }
+
+    @Test
+    void batchPreparationValidatesReferencesBeforeAlternateProviderRejection() {
+        JdbcClient alternate = mock(JdbcClient.class);
+        assertThrows(NullPointerException.class, () -> GeneratedJdbcData.prepareBatch(null, " ", -1, List.of(), true));
+        assertThrows(NullPointerException.class, () -> GeneratedJdbcData.prepareBatch(alternate, null, -1, List.of(), true));
+        assertThrows(NullPointerException.class, () -> GeneratedJdbcData.prepareBatch(alternate, " ", -1, null, true));
+        assertThrows(NullPointerException.class,
+                () -> GeneratedJdbcData.prepareBatch(alternate, " ", -1, Arrays.asList("", null), true));
+        assertThrows(UnsupportedOperationException.class,
+                () -> GeneratedJdbcData.prepareBatch(alternate, " ", -1, List.of(""), true));
+        assertThrows(UnsupportedOperationException.class,
+                () -> GeneratedJdbcData.prepareBatch(alternate, "select ?", 1, List.of(), false));
+        verifyZeroInteractions(alternate);
+    }
+
+    /**
+     * Preparation rejects incompatible deployment layouts without creating a stage or acquiring JDBC resources.
+     */
+    @Test
+    void batchPreparationRejectsInvalidSchemasAndMarkerLayouts() {
+        DataSource source = mock(DataSource.class);
+        JdbcClient client = JdbcClient.builder().dataSource(source).build();
+        assertThrows(NullPointerException.class,
+                () -> GeneratedJdbcData.prepareBatch(client, " ", -1, Arrays.asList("", null), true));
+        IllegalArgumentException negativeCount = assertThrows(IllegalArgumentException.class,
+                () -> GeneratedJdbcData.prepareBatch(client, "select ?", -1, List.of(), false));
+        assertThat(negativeCount.getMessage(), is("The batch input count must not be negative."));
+        IllegalArgumentException incompleteNames = assertThrows(IllegalArgumentException.class,
+                () -> GeneratedJdbcData.prepareBatch(client, "select ?, ?", 2, List.of("one"), false));
+        assertThat(incompleteNames.getMessage(), is("The number of input names must match the batch input count."));
+        for (List<String> names : List.of(List.of("name", "name"), List.of("name", ""), List.of("name", ":id"))) {
+            assertThrows(IllegalArgumentException.class,
+                    () -> GeneratedJdbcData.prepareBatch(client, "select ?, ?", 2, names, false));
+        }
+        for (String sql : List.of(" ", "select :name", "select ?, ?", "select 1", "select :name, ?", "select /* SQL_CANARY")) {
+            IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                    () -> GeneratedJdbcData.prepareBatch(client, sql, 1, List.of(), false));
+            assertThat(failure.toString(), not(containsString("SQL_CANARY")));
+        }
+        for (String sql : List.of("select ?", "select :other", "select :name, :extra")) {
+            assertThrows(IllegalArgumentException.class,
+                    () -> GeneratedJdbcData.prepareBatch(client, sql, 1, List.of("name"), true));
+        }
+        IllegalArgumentException missingNames = assertThrows(IllegalArgumentException.class,
+                () -> GeneratedJdbcData.prepareBatch(client, "delete from T", 0, List.of(), true));
+        assertThat(missingNames.getMessage(), is("Named batch preparation requires a complete list of input names "
+                + "with at least one entry."));
+        verifyZeroInteractions(source);
+    }
+
+    @Test
+    void batchPreparationKeepsSlotCountsSeparateFromNamesAndPhysicalRepeats() {
+        DataSource source = mock(DataSource.class);
+        JdbcClient client = JdbcClient.builder().dataSource(source).build();
+        var positional = GeneratedJdbcData.prepareBatch(client, "update T set NAME = ? where ID = ? and NAME = ?",
+                3, List.of(), false);
+        positional.get().bind(1, "replacement").bind(2, 1).bind(3, "expected");
+        assertThrows(IllegalArgumentException.class, () -> positional.get().bind("name", "ambiguous"));
+        List<String> names = new ArrayList<>(List.of("𐐀name", "id"));
+        var named = GeneratedJdbcData.prepareBatch(client, "update T set NAME = :𐐀name where ID = :id or NAME = :𐐀name",
+                2, names, true);
+        names.clear();
+        named.get().bind("𐐀name", "value").bind("id", 1);
+        named.get().bind("𐐀name", "other").bind("id", 2);
+        var ordered = GeneratedJdbcData.prepareBatch(client, "update T set NAME = ? where ID = ?",
+                2, List.of("name", "id"), false);
+        ordered.get().bind("name", "value").bind("id", 1);
+        var markerFree = GeneratedJdbcData.prepareBatch(client, "delete from T", 0, List.of(), false);
+        assertThat(markerFree.get().executeBatch(List.of(), (_, _) -> { }).entries(), is(List.of()));
+        assertThrows(IllegalArgumentException.class, () -> client.prepare("select ?, ?", List.of("name", "name")));
+        verifyZeroInteractions(source);
+    }
+
     private static final class AlternateClient implements JdbcClient {
         private static final JdbcClientConfig CONFIG = JdbcClientConfig.builder()
                 .dataSourceName("test-data-source")

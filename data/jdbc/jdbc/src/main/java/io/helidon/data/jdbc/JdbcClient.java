@@ -203,10 +203,11 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
     @FunctionalInterface
     interface BatchBinder<T> {
         /**
-         * Assigns every physical binding position exactly once for one nonnull item.
+         * Assigns every physical binding position exactly once for one item that is not {@code null}.
          *
-         * @param bindings The nonnull view is valid only during this callback on this thread.
-         * @param item The nonnull item supplies application values.
+         * @param bindings The view must not be {@code null}. It is valid only while this callback is running
+         *                 and on the thread that invoked it.
+         * @param item The item supplies application values and must not be {@code null}.
          * @throws NullPointerException The binding view or item is null.
          */
         void bind(BatchBindings bindings, T item);
@@ -233,6 +234,29 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
         BatchBindings bind(int index, Object value);
 
         /**
+         * Binds one scalar value to every position associated with an input name.
+         * Definitions from {@link JdbcClient#prepare(String)} use the names of SQL markers.
+         * Definitions from {@link JdbcClient#prepare(String, List)} can also assign names to positional inputs.
+         * All destination positions are validated before any assignment. A position assigned through both
+         * a name and an index is a duplicate assignment.
+         * Mutable values are copied as described by {@link #bind(int, Object)}.
+         *
+         * @param name The name identifies a logical input without a colon prefix.
+         * @param value The scalar value must not be null.
+         * @return This binding view is returned.
+         * @throws NullPointerException The name or value is null.
+         * @throws IllegalArgumentException The name is unknown or ambiguous, a position is assigned, or the type is unsupported.
+         * @throws IllegalStateException The callback has ended, the call is on another thread, or no prepared definition exists.
+         * @throws UnsupportedOperationException The provider does not support named batch bindings.
+         */
+        @Api.Since("28.0.0")
+        default BatchBindings bind(String name, Object value) {
+            Objects.requireNonNull(name, "The bind name must not be null.");
+            Objects.requireNonNull(value, "The bind value must not be null.");
+            throw new UnsupportedOperationException("This JDBC provider does not support named batch bindings.");
+        }
+
+        /**
          * Captures an explicitly typed SQL NULL.
          * The provider rejects {@code NULL}, {@code REF_CURSOR}, {@code ARRAY}, {@code DISTINCT},
          * {@code JAVA_OBJECT}, {@code REF}, and {@code STRUCT}.
@@ -245,6 +269,28 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          * @throws IllegalStateException The callback has ended or the call is on another thread.
          */
         BatchBindings bindNull(int index, JDBCType type);
+
+        /**
+         * Captures a typed SQL NULL at every physical position of a logical input.
+         * Input names come from the prepared definition as described by {@link #bind(String, Object)}.
+         * All destination positions are validated before any assignment. A position assigned through both
+         * a name and an index is a duplicate assignment.
+         * Supported types match {@link #bindNull(int, JDBCType)}.
+         *
+         * @param name The name identifies a logical input without a colon prefix.
+         * @param type The standard JDBC type must support a null without a database type name.
+         * @return This binding view is returned.
+         * @throws NullPointerException The name or type is null.
+         * @throws IllegalArgumentException The name is unknown or ambiguous, a position is assigned, or the type is unsupported.
+         * @throws IllegalStateException The callback has ended, the call is on another thread, or no prepared definition exists.
+         * @throws UnsupportedOperationException The provider does not support named batch bindings.
+         */
+        @Api.Since("28.0.0")
+        default BatchBindings bindNull(String name, JDBCType type) {
+            Objects.requireNonNull(name, "The bind name must not be null.");
+            Objects.requireNonNull(type, "The JDBC type must not be null.");
+            throw new UnsupportedOperationException("This JDBC provider does not support named batch bindings.");
+        }
     }
 
     /**
@@ -269,7 +315,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
         OptionalLong totalUpdateCount();
 
         /**
-         * Describes the evidence reported for an item.
+         * Describes the outcome information available for a batch item.
          */
         enum Status {
             /**
@@ -285,13 +331,13 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
              */
             EXECUTE_FAILED,
             /**
-             * Reliable evidence is unavailable. This does not establish whether execution occurred.
+             * No reliable outcome was reported for this item. This does not indicate whether it was executed.
              */
             NOT_REPORTED
         }
 
         /**
-         * Describes one logical item without exposing raw JDBC sentinels.
+         * Provides the input position, execution status, and optional update count for one batch item.
          */
         interface Entry {
             /**
@@ -309,7 +355,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
             Status status();
 
             /**
-             * Returns an exact count when available.
+             * Returns the number of rows affected by this item when the driver reports an exact count.
              *
              * @return The count is present only for {@link Status#EXACT_COUNT} and may be zero.
              */
@@ -332,25 +378,26 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
          * The source remains owned by the application and is not closed. It must be finite and bounded because
          * all bindings and copied mutable values remain in memory until execution.
          * <p>
-         * Empty input consumes this terminal and returns an exact total of zero without invoking the binder
-         * or acquiring JDBC resources. Source and callback failures propagate unchanged before JDBC acquisition
-         * and consume this terminal. A statement with ordinary bindings is rejected before traversal and remains
-         * available for ordinary execution.
+         * Once capture starts, this statement cannot be executed again, even if the input is empty or capture fails.
+         * Empty input returns no entries and an exact total of zero without invoking the binder or acquiring JDBC
+         * resources. Source and callback failures propagate unchanged before JDBC acquisition.
+         * A statement with ordinary bindings is rejected before traversal and remains available for ordinary execution.
          * <p>
          * The batch participates in the existing transaction without creating a transaction, retrying, or
          * partitioning the input. Outcomes describe execution and do not establish commit or rollback.
          * Reusable definitions created through {@link JdbcClient#prepare(String)} or
-         * {@link JdbcClient#prepare(String, List)} do not support batch execution.
+         * {@link JdbcClient#prepare(String, List)} support the same terminal. Named batch bindings use
+         * logical names retained by the definition. Indexed bindings always address physical JDBC positions.
          *
-         * @param items The source supplies nonnull items in encounter order.
+         * @param items The source supplies items in encounter order. Each item must not be {@code null}.
          * @param binder The callback binds every physical position exactly once for each item.
          * @param <T> The type represents an application item.
-         * @return The result contains immutable evidence for every item.
+         * @return The result contains immutable outcomes for every captured item.
          * @throws NullPointerException A source, binder, or item is null.
          * @throws IllegalStateException The stage is consumed or an item does not bind every physical position.
          * @throws IllegalArgumentException The statement already has bindings or a captured binding is invalid.
          * @throws JdbcBatchException JDBC setup, execution, or cleanup fails, or the driver returns invalid counts.
-         * @throws UnsupportedOperationException The provider or reusable statement definition does not support batching.
+         * @throws UnsupportedOperationException The provider does not support batching.
          */
         default <T> BatchResult executeBatch(Iterable<T> items, BatchBinder<? super T> binder) {
             Objects.requireNonNull(items, "The batch source must not be null.");
@@ -371,7 +418,7 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
         Statement bind(int index, Object value);
 
         /**
-         * Binds a supported nonnull scalar to every physical position of a logical input.
+         * Binds a supported scalar value that is not {@code null} to every physical position of a logical input.
          * All destination slots are validated before any assignment.
          *
          * @param name The name identifies a logical input without a colon.

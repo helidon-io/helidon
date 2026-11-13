@@ -1,4 +1,4 @@
-/*
+ /*
  * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -99,6 +99,45 @@ public final class GeneratedJdbcData {
         }
         throw new UnsupportedOperationException(
                 "Named preparation for generated aliases requires the native Helidon JDBC client.");
+    }
+
+    /**
+     * Prepares a reusable statement definition for a generated configured batch.
+     * The input count describes the scalar values supplied for each batch item, in method parameter order.
+     * Each scalar source or constant contributes one input, and each flat record source contributes its components
+     * in declaration order. Input names must identify every input uniquely in that order, or the list must be empty.
+     * An empty list permits only positional SQL with exactly one marker per input.
+     * Supplied names follow Java identifier character rules and permit named SQL with repeated markers
+     * or positional SQL in input order. Named SQL must contain exactly the supplied names.
+     * The {@code namedOnly} flag requires a nonempty name list and named SQL.
+     * Zero inputs permit SQL without markers when {@code namedOnly} is false.
+     * <p>
+     * The Helidon JDBC provider validates and scans SQL once without acquiring JDBC resources.
+     * The returned supplier retains an immutable definition and creates fresh stages without rescanning SQL,
+     * consulting configuration, or capturing a transaction context. The input names are defensively copied.
+     * Alternate clients are rejected after reference checks without delegation.
+     *
+     * @param client The client from the Helidon JDBC provider owns execution.
+     * @param sql The SQL defines the resolved prepared DML statement.
+     * @param inputCount The count identifies all ordered scalar inputs for one batch item.
+     * @param inputNames The list contains every known, unique input name or is empty.
+     * @param namedOnly The flag requires named markers when true.
+     * @return The shareable supplier creates fresh statements with independent bindings.
+     * @throws NullPointerException The client, SQL, name list, or a list entry is null.
+     * @throws IllegalArgumentException The input count, input names, SQL, marker style, or marker coverage is invalid.
+     * @throws UnsupportedOperationException The client is not from the Helidon JDBC provider.
+     */
+    @Api.Since("28.0.0")
+    public static Supplier<Statement> prepareBatch(JdbcClient client, String sql, int inputCount,
+                                                    List<String> inputNames, boolean namedOnly) {
+        Objects.requireNonNull(client, "The JDBC client must not be null.");
+        Objects.requireNonNull(sql, "The SQL statement must not be null.");
+        Objects.requireNonNull(inputNames, "The input names must not be null.");
+        inputNames.forEach(name -> Objects.requireNonNull(name, "The input name must not be null."));
+        if (client instanceof JdbcClientImpl clientImpl) {
+            return clientImpl.prepareBatch(sql, inputCount, inputNames, namedOnly);
+        }
+        throw new UnsupportedOperationException("Configured batch preparation requires a client from the Helidon JDBC provider.");
     }
 
     /**

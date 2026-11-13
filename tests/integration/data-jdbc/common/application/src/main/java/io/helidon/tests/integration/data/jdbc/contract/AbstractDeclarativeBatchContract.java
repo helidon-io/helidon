@@ -16,12 +16,20 @@
 package io.helidon.tests.integration.data.jdbc.contract;
 
 import java.sql.JDBCType;
+import java.sql.Timestamp;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
+import io.helidon.data.DataException;
 import io.helidon.data.jdbc.JdbcBatchException;
 import io.helidon.data.jdbc.JdbcClient;
 import io.helidon.tests.integration.data.jdbc.declarative.repository.BatchRepository;
@@ -33,6 +41,7 @@ import io.helidon.transaction.TxException;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -58,6 +67,209 @@ public abstract class AbstractDeclarativeBatchContract extends AbstractJdbcBatch
     @Override
     protected final JdbcClient.BatchResult storeScalars(Iterable<ScalarChange> rows) {
         return service(BatchRepository.class).scalarRecords(rows);
+    }
+
+    /**
+     * The same generated repository accepts reordered named SQL and compatible positional YAML replacements.
+     */
+    @Test
+    protected final void configuredRepositoriesLoadYamlAcrossAllSupportedSourceShapes() {
+        for (String variant : List.of("", "reordered/", "positional/")) {
+            restartBatch(batchConfiguration(variant));
+            BatchRepository repository = service(BatchRepository.class);
+            DatabaseFixture fixture = service(DatabaseFixture.class);
+            assertThat(repository.configuredInsert(oneShot(List.of("configured-one", "configured-two")), null)
+                               .entries().size(), is(2));
+            assertThat(fixture.committedByName("configured-one").orElseThrow().email(), is(Optional.empty()));
+            assertThat(repository.configuredAuto(oneShot(List.of("configured-auto")), "auto@example.test")
+                               .entries().size(), is(1));
+            repository.configuredVoid(oneShot(List.of("configured-void")), null);
+            assertThat(fixture.committedByName("configured-void").isPresent(), is(true));
+            assertThat(repository.configuredSet(new LinkedHashSet<>(List.of("set-z", "set-a"))).entries().size(), is(2));
+            assertThat(client().create("SELECT NAME FROM CONTACT WHERE NAME LIKE 'set-%' ORDER BY ID")
+                               .map(String.class).list(), is(List.of("set-z", "set-a")));
+            assertThat(repository.configuredRecords(oneShot(List.of(new BatchRepository.Change("record-one", null, 1),
+                    new BatchRepository.Change("record-two", "two@example.test", 2))).iterator()).entries().size(), is(2));
+            assertThat(fixture.committedByName("record-one").orElseThrow().email(), is(Optional.empty()));
+            assertThat(repository.configuredArrays(new String[] {"one@example.test", null}, 1, 2).entries().size(), is(2));
+            assertThat(repository.configuredDuplicates(oneShot(List.of(new BatchRepository.Replacement("renamed"))),
+                    oneShot(List.of(new BatchRepository.Expected(1, "record-one"))).iterator()).entries().size(), is(1));
+            assertThat(fixture.committedByName("renamed").orElseThrow().id(), is(1L));
+            assertThat(repository.configuredAligned(oneShot(List.of(new BatchRepository.Change("aligned", null, 1))),
+                    oneShot(List.of(new BatchRepository.Rename("excluded", 1))).iterator()).entries().size(), is(1));
+            assertThat(repository.configuredAliases(oneShot(List.of("aliased")).iterator(), null, 2).entries().size(), is(1));
+            assertThat(repository.configuredInherited(oneShot(List.of("inherited")), null).entries().size(), is(1));
+            assertThat(repository.configuredWithoutNames(oneShot(List.of("without-metadata")), null).entries().size(), is(1));
+            assertThat(fixture.committedByName("without-metadata").orElseThrow().email(), is(Optional.empty()));
+            assertThat(repository.configuredBinary(oneShot(Arrays.asList(new byte[] {3, 4}, null)), 1).entries().size(), is(2));
+            assertThat(client().create("SELECT BYTES_VALUE FROM SCALAR_VALUE WHERE ID = 1").map(byte[].class).optional(),
+                       is(Optional.empty()));
+            assertThat(repository.configuredBinaryConstant(new long[] {1}, new byte[] {5, 6}).entries().size(), is(1));
+            assertThat(client().create("SELECT BYTES_VALUE FROM SCALAR_VALUE WHERE ID = 1").map(byte[].class).one(),
+                       is(new byte[] {5, 6}));
+            assertThat(repository.configuredBytes((byte) 7, (byte) 8).entries().size(), is(2));
+            assertThat(client().create("SELECT BYTE_VALUE FROM SCALAR_VALUE WHERE ID = 1").map(Byte.class).one(), is((byte) 8));
+            assertThat(repository.configuredScalars(oneShot(List.of(new ScalarChange(1, null, null, null, null, null,
+                    null, null, null)))).entries().size(), is(1));
+            assertThat(client().create("SELECT TIMESTAMP_VALUE FROM SCALAR_VALUE WHERE ID = 1")
+                               .map(Timestamp.class).optional(), is(Optional.empty()));
+        }
+    }
+
+    /**
+     * Empty and failed capture performs no database work and leaves no executed prefix.
+     */
+    @Test
+    protected final void configuredCaptureRejectsUnequalAndFailedSourcesBeforeExecution() {
+        for (String variant : List.of("", "reordered/", "positional/")) {
+            restartBatch(batchConfiguration(variant));
+            BatchRepository repository = service(BatchRepository.class);
+            DatabaseFixture fixture = service(DatabaseFixture.class);
+            assertThat(repository.configuredInsert(oneShot(List.of()), null).totalUpdateCount().orElseThrow(), is(0L));
+            assertThat(repository.configuredRecords(List.<BatchRepository.Change>of().iterator())
+                               .totalUpdateCount().orElseThrow(), is(0L));
+            assertThat(repository.configuredArrays(new String[0], new long[0]).totalUpdateCount().orElseThrow(), is(0L));
+            assertThat(repository.configuredDuplicates(oneShot(List.of()), List.<BatchRepository.Expected>of().iterator())
+                               .totalUpdateCount().orElseThrow(), is(0L));
+            assertThrows(IllegalArgumentException.class,
+                    () -> repository.configuredArrays(new String[] {"prefix@example.test", "late@example.test"}, 1));
+            assertThrows(IllegalArgumentException.class,
+                    () -> repository.configuredDuplicates(oneShot(List.of(new BatchRepository.Replacement("prefix"))),
+                            List.<BatchRepository.Expected>of().iterator()));
+            assertThrows(NullPointerException.class, () -> repository.configuredInsert(null, null));
+            assertThrows(NullPointerException.class,
+                    () -> repository.configuredRecords(Arrays.asList((BatchRepository.Change) null).iterator()));
+            IllegalStateException failure = new IllegalStateException("The configured batch source failed.");
+            Iterable<String> broken = () -> new Iterator<>() {
+                private int position;
+
+                @Override
+                public boolean hasNext() {
+                    return position < 2;
+                }
+
+                @Override
+                public String next() {
+                    if (position++ == 0) {
+                        return "configured-prefix";
+                    }
+                    throw failure;
+                }
+            };
+            assertThat(assertThrows(IllegalStateException.class, () -> repository.configuredInsert(broken, null)),
+                       sameInstance(failure));
+            assertThat(fixture.committedByName("configured-prefix"), is(Optional.empty()));
+            assertThat(fixture.committedByName("alpha").orElseThrow().email(), is(Optional.of("alpha@example.test")));
+            assertThat(repository.configuredInsert(oneShot(List.of("configured-reused")), null).entries().size(), is(1));
+            assertThat(fixture.committedByName("configured-reused").isPresent(), is(true));
+        }
+    }
+
+    /**
+     * Invalid deployment metadata fails at repository activation even when the requested batch would be empty.
+     */
+    @Test
+    protected final void configuredRepositoriesRejectInvalidStylesAndCoverageAtActivation() {
+        Config clean = batchConfiguration("");
+        Map<String, String> invalid = Map.ofEntries(
+                Map.entry("application.batches.insert", "INSERT INTO CONTACT (NAME, EMAIL) VALUES (:name, ?)"),
+                Map.entry("application.batches.records", "UPDATE CONTACT SET NAME = :missing, EMAIL = :email WHERE ID = :id"),
+                Map.entry("application.batches.arrays", "UPDATE CONTACT SET EMAIL = ? WHERE ID = ? OR ID = ?"),
+                Map.entry("application.batches.names", "INSERT INTO CONTACT (NAME) VALUES (:name, :extra)"),
+                Map.entry("application.batches.duplicates", "UPDATE CONTACT SET NAME = :name WHERE ID = :id AND NAME = :name"),
+                Map.entry("application.batches.without-names", "INSERT INTO CONTACT (NAME, EMAIL) VALUES (:arg0, :arg1)"),
+                Map.entry("application.batches.aliases", "UPDATE CONTACT SET NAME = ?, EMAIL = ? WHERE ID = ?"),
+                Map.entry("application.batches.inherited", "INSERT INTO CONTACT (NAME, EMAIL) VALUES (?, ?)"),
+                Map.entry("application.batches.bytes", " "));
+        Iterable<String> forbidden = () -> {
+            throw new AssertionError("Invalid configured SQL must fail before source traversal.");
+        };
+        for (var scenario : invalid.entrySet()) {
+            Map<String, String> values = new HashMap<>(clean.asMap().get());
+            values.put(scenario.getKey(), scenario.getValue());
+            restartBatch(Config.just(ConfigSources.create(values)));
+            assertThrows(IllegalArgumentException.class,
+                    () -> service(BatchRepository.class).configuredInsert(forbidden, null));
+            assertThrows(IllegalArgumentException.class,
+                    () -> service(BatchRepository.class).configuredInsert(List.of(), null));
+        }
+        restartBatch(clean);
+        assertThrows(DataException.class, () -> service(BatchRepository.Required.class).insert(forbidden));
+        assertThat(service(BatchRepository.class).configuredInsert(oneShot(List.of("after-invalid")), null).entries().size(), is(1));
+    }
+
+    @Test
+    protected final void configuredDefaultsExecuteOnlyWhenTheirKeyIsMissing() {
+        Config clean = batchConfiguration("");
+        Map<String, String> values = new HashMap<>(clean.asMap().get());
+        values.remove("application.batches.insert");
+        restartBatch(Config.just(ConfigSources.create(values)));
+        assertThat(service(Config.class).get("application.batches.insert").exists(), is(false));
+        service(BatchRepository.class).configuredInsert(oneShot(List.of("configured-default")), null);
+        assertThat(service(DatabaseFixture.class).committedByName("configured-default").orElseThrow().email(), is(Optional.empty()));
+        for (String shape : List.of("object", "list")) {
+            Config invalid = Config.just(ConfigSources.classpath("configured-batches/invalid-" + shape + "/application.yaml"),
+                    ConfigSources.create(clean.asMap().get()));
+            assertThat(invalid.get("application.batches.insert").type(),
+                       is(shape.equals("object") ? Config.Type.OBJECT : Config.Type.LIST));
+            restartBatch(invalid);
+            assertThrows(DataException.class, () -> service(BatchRepository.class).configuredInsert(List.of(), null));
+        }
+    }
+
+    /**
+     * Prepared repository batches retain propagation, caller-owned completion, and failure evidence.
+     */
+    @Test
+    protected final void configuredTransactionsPreserveCommittedStateAndLaterReuse() {
+        for (String variant : List.of("", "reordered/", "positional/")) {
+            restartBatch(batchConfiguration(variant));
+            BatchRepository repository = service(BatchRepository.class);
+            DatabaseFixture fixture = service(DatabaseFixture.class);
+            transactions().transaction(Tx.Type.REQUIRED, () -> repository.configuredInsert(List.of("configured-commit"), null));
+            assertThat(fixture.committedByName("configured-commit").isPresent(), is(true));
+            assertThrows(TxException.class, () -> transactions().transaction(Tx.Type.REQUIRED, () -> {
+                repository.configuredInsert(List.of("configured-rollback"), null);
+                throw new IllegalStateException("Roll back the configured batch.");
+            }));
+            assertThat(fixture.committedByName("configured-rollback"), is(Optional.empty()));
+            JdbcBatchException partial = assertThrows(JdbcBatchException.class,
+                    () -> repository.configuredInsert(Arrays.asList("batch-before", null, "batch-after"), null));
+            assertThat(partial.result().entries().size(), is(3));
+            assertThat(List.of("batch-before", "batch-after").stream()
+                    .filter(name -> fixture.committedByName(name).isPresent()).toList(), is(committedAfterPartialFailure()));
+            assertThrows(TxException.class, () -> transactions().transaction(Tx.Type.REQUIRED, () -> {
+                repository.configuredInsert(List.of("configured-joined"), null);
+                assertThrows(TxException.class, () -> transactions().transaction(Tx.Type.REQUIRED,
+                        () -> repository.configuredInsert(Arrays.asList("configured-partial", null), null)));
+                return null;
+            }));
+            assertThat(fixture.committedByName("configured-joined"), is(Optional.empty()));
+            assertThat(fixture.committedByName("configured-partial"), is(Optional.empty()));
+            transactions().transaction(Tx.Type.REQUIRED, () -> {
+                repository.configuredInsert(List.of("configured-caught"), null);
+                assertThrows(JdbcBatchException.class, () -> repository.configuredInsert(Arrays.asList((String) null), null));
+                return null;
+            });
+            assertThat(fixture.committedByName("configured-caught").isPresent(), is(!constraintFailureAbortsTransaction()));
+            for (Tx.Type type : List.of(Tx.Type.REQUIRED, Tx.Type.SUPPORTED, Tx.Type.MANDATORY, Tx.Type.NEW, Tx.Type.UNSUPPORTED)) {
+                String name = "configured-" + type;
+                assertThrows(TxException.class, () -> transactions().transaction(Tx.Type.REQUIRED, () -> {
+                    repository.configuredInsert(List.of(name + "-outer"), null);
+                    transactions().transaction(type, () -> repository.configuredInsert(List.of(name), null));
+                    throw new IllegalStateException("Roll back the outer configured batch scope.");
+                }));
+                assertThat(fixture.committedByName(name + "-outer"), is(Optional.empty()));
+                assertThat(fixture.committedByName(name).isPresent(), is(type == Tx.Type.NEW || type == Tx.Type.UNSUPPORTED));
+            }
+            assertThrows(TxException.class, () -> transactions().transaction(Tx.Type.MANDATORY,
+                    () -> repository.configuredInsert(List.of("configured-mandatory"), null)));
+            assertThrows(TxException.class, () -> transactions().transaction(Tx.Type.REQUIRED,
+                    () -> transactions().transaction(Tx.Type.NEVER,
+                            () -> repository.configuredInsert(List.of("configured-never"), null))));
+            transactions().transaction(Tx.Type.NEVER, () -> repository.configuredInsert(List.of("configured-reuse"), null));
+            assertThat(fixture.committedByName("configured-reuse").isPresent(), is(true));
+        }
     }
 
     /**
@@ -260,4 +472,10 @@ public abstract class AbstractDeclarativeBatchContract extends AbstractJdbcBatch
         });
         assertThat(fixture.committedByName("alias-before-caught").isPresent(), is(!constraintFailureAbortsTransaction()));
     }
+    private Config batchConfiguration(String variant) {
+        Map<String, String> values = new HashMap<>(service(Config.class).asMap().get());
+        values.putAll(Config.just(ConfigSources.classpath("configured-batches/" + variant + "application.yaml")).asMap().get());
+        return Config.just(ConfigSources.create(values));
+    }
+
 }

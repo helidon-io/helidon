@@ -91,20 +91,18 @@ final class JdbcStatement implements JdbcClient.Statement {
     public <T> JdbcClient.BatchResult executeBatch(Iterable<T> items, JdbcClient.BatchBinder<? super T> binder) {
         Objects.requireNonNull(items, "The batch source must not be null.");
         Objects.requireNonNull(binder, "The batch binder must not be null.");
-        if (configured != null) {
-            throw new UnsupportedOperationException("Reusable statement definitions do not support batch execution.");
-        }
         ensureMutable();
         for (JdbcOperation.Bind bind : binds) {
             if (bind != null) {
-                throw new IllegalArgumentException("Statement bindings cannot accompany batch bindings.");
+                throw new IllegalArgumentException("The statement already has bindings and cannot be used for batch execution. "
+                        + "Use a fresh statement for the batch.");
             }
         }
         terminalState = true;
         List<JdbcOperation.Bind[]> captured = new ArrayList<>();
         for (T item : items) {
             Objects.requireNonNull(item, "The batch item must not be null.");
-            JdbcBatchBindings bindings = new JdbcBatchBindings(binds.length);
+            JdbcBatchBindings bindings = new JdbcBatchBindings(binds.length, configured);
             try {
                 binder.bind(bindings, item);
                 captured.add(bindings.complete());

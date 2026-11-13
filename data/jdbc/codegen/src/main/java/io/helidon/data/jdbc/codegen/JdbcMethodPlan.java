@@ -115,12 +115,10 @@ final class JdbcMethodPlan {
         JdbcSqlReference reference = JdbcSqlReference.parse(sql, method);
 
         if (JdbcExecutionSelection.create(method) == JdbcExecutionSelection.BATCH) {
-            if (reference != null) {
-                throw failure(method, "BATCH execution does not support configured statements.");
-            }
-            JdbcBatchPlan batch = JdbcBatchPlan.create(sql, method, roundContext);
+            JdbcBatchPlan batch = reference == null ? JdbcBatchPlan.create(sql, method, roundContext)
+                    : JdbcBatchPlan.configured(reference, method, roundContext);
             JdbcMethodPlan plan = new JdbcMethodPlan(method, Operation.BATCH, ReturnShape.ITEM, MappingKind.NONE,
-                                                    method.typeName(), batch.parameters(), null, List.of(), null, List.of());
+                                                    method.typeName(), batch.parameters(), reference, List.of(), null, List.of());
             plan.batchPlan = batch;
             return plan;
         }

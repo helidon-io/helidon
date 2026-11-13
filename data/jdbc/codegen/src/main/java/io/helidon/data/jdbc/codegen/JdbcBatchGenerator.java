@@ -55,10 +55,14 @@ final class JdbcBatchGenerator {
             elements.add(unique(names, "element"));
             available.add(unique(names, "available"));
         }
-        method.addContent(JdbcCodegenTypes.JDBC_CLIENT_STATEMENT).addContent(" " + statement + " = ")
-                .addContent(JdbcCodegenTypes.GENERATED_JDBC_DATA).addContent(".createGenerated(")
-                .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME).addContent(", " + plan.sqlFieldName() + ", ")
-                .addContent(String.valueOf(plan.parameterPlan().parameterCount())).addContentLine(");");
+        method.addContent(JdbcCodegenTypes.JDBC_CLIENT_STATEMENT).addContent(" " + statement + " = ");
+        if (plan.configured()) {
+            method.addContent("this.").addContent(plan.sqlFieldName()).addContentLine(".get();");
+        } else {
+            method.addContent(JdbcCodegenTypes.GENERATED_JDBC_DATA).addContent(".createGenerated(")
+                    .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME).addContent(", " + plan.sqlFieldName() + ", ")
+                    .addContent(String.valueOf(plan.parameterPlan().parameterCount())).addContentLine(");");
+        }
         // Iterator failures must occur after the terminal has claimed the statement stage.
         method.addContent(Iterable.class).addContent("<Object[]> " + rows + " = () -> {\n");
         for (int i = 0; i < batch.sources().size(); i++) {
@@ -98,7 +102,11 @@ final class JdbcBatchGenerator {
             if (record) {
                 method.addContent(Objects.class).addContent(".requireNonNull(");
             }
-            method.addContent(iterators.get(i) + ".next()" + (record ? ")" : "")).addContentLine(";");
+            method.addContent(iterators.get(i) + ".next()");
+            if (record) {
+                method.addContent(", \"The batch record element must not be null.\")");
+            }
+            method.addContentLine(";");
         }
         method.addContentLine("return new Object[] {");
         for (JdbcBatchPlan.Value value : batch.values()) {
@@ -124,11 +132,22 @@ final class JdbcBatchGenerator {
         for (JdbcSqlParameterPlan.Bind bind : plan.parameterPlan().binds()) {
             String value = row + "[" + slots.get(bind.parameter()) + "]";
             method.addContentLine("if (" + value + " == null) {")
-                    .addContent(bindings + ".bindNull(" + bind.position() + ", ")
+                    .addContent(bindings + ".bindNull(");
+            if (plan.configured() && !batch.inputNames().isEmpty()) {
+                method.addContentLiteral(JdbcSqlParameterPlan.effectiveName(bind.parameter()));
+            } else {
+                method.addContent(String.valueOf(bind.position()));
+            }
+            method.addContent(", ")
                     .addContent(JdbcCodegenTypes.JDBC_TYPE).addContentLine("." + bind.nullJdbcTypeConstant() + ");")
                     .decreaseContentPadding().addContentLine("} else {")
-                    .addContentLine(bindings + ".bind(" + bind.position() + ", " + value + ");")
-                    .addContentLine("}");
+                    .addContent(bindings + ".bind(");
+            if (plan.configured() && !batch.inputNames().isEmpty()) {
+                method.addContentLiteral(JdbcSqlParameterPlan.effectiveName(bind.parameter()));
+            } else {
+                method.addContent(String.valueOf(bind.position()));
+            }
+            method.addContentLine(", " + value + ");").addContentLine("}");
         }
         method.decreaseContentPadding().addContentLine("});");
     }

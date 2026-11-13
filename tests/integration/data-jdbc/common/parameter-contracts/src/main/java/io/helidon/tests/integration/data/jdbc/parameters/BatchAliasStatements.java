@@ -53,4 +53,25 @@ public interface BatchAliasStatements<T> {
     JdbcClient.BatchResult alignedAliases(@Data.Param("rows") Iterator<T> original,
                                          @Data.Param("email") T constant,
                                          @Data.Param("ids") long... identifiers);
+
+    /**
+     * Supplies configured aliases from a separately compiled generic declaration.
+     *
+     * @param original The source supplies contact names.
+     * @param constant The nullable email repeats for every item.
+     * @return The result contains detached execution evidence.
+     */
+    @Jdbc.Statement("${application.batches.inherited:INSERT INTO CONTACT (NAME, EMAIL) VALUES (:name, :email)}")
+    JdbcClient.BatchResult configuredInherited(@Data.Param("name") Iterable<T> original,
+                                              @Data.Param("email") T constant);
+
+    /**
+     * Uses positional slots without Java parameter-name metadata from the library.
+     *
+     * @param original The source supplies contact names.
+     * @param constant The nullable email repeats for every item.
+     * @return The result contains detached execution evidence.
+     */
+    @Jdbc.Statement("${application.batches.without-names:INSERT INTO CONTACT (NAME, EMAIL) VALUES (?, ?)}")
+    JdbcClient.BatchResult configuredWithoutNames(Iterable<T> original, T constant);
 }
