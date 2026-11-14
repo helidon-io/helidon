@@ -4,8 +4,15 @@ description: "Dependency Injection"
 # Injection
 
 > [!NOTE]
-> Injection is a preview feature. The APIs shown here are subject to change.
-> These APIs will be finalized in a future release of Helidon.
+> The service registry is ready for production use in Helidon SE. Its APIs marked
+> [`@Api.Stable`][api-stable] are backward compatible within the current major
+> version.
+>
+> Some service registry APIs remain Preview, including
+> [`Service.EntryPoint`][service-entrypoint] and
+> [`Interception.EntryPointInterceptor`][entrypoint-interceptor].
+> [Helidon Declarative](declarative.md) is also Preview and guarantees backward
+> compatibility within a major version.
 
 ## Overview
 
@@ -1359,6 +1366,9 @@ level2 destroyed
 level1 destroyed
 ```
 
+[api-stable]: https://helidon.io/docs/core/v28/apidocs/io.helidon.common/io/helidon/common/Api.Stable.html
+[service-entrypoint]: https://helidon.io/docs/core/v28/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.EntryPoint.html
+[entrypoint-interceptor]: https://helidon.io/docs/core/v28/apidocs/io.helidon.service.registry/io/helidon/service/registry/Interception.EntryPointInterceptor.html
 [service-singleto]: https://helidon.io/docs/core/v28/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Singleton.html
 [service-scope]: https://helidon.io/docs/core/v28/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Scope.html
 [service-inject]: https://helidon.io/docs/core/v28/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Inject.html
