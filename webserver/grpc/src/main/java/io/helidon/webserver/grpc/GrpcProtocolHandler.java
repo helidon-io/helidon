@@ -1198,8 +1198,10 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 if (!headersSent) {
                     http2Headers.status(io.helidon.http.Status.OK_200);
                 }
+                boolean trailersWritten = false;
                 try {
                     writeHeaders(http2Headers, HeaderFlags.create(END_OF_HEADERS | END_OF_STREAM));
+                    trailersWritten = true;
                 } catch (CloseConnectionException e) {
                     callCancelled = true;
                     callState.set(CallState.CANCELLED);
@@ -1212,7 +1214,8 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     completionFinalized = true;
                     updateStreamState(closeState);
                 }
-                if (callState.get() == CallState.COMPLETED && status.isOk() && methodMetrics != null) {
+                // A concurrent reset can cancel the listener after successful terminal publication.
+                if (trailersWritten && status.isOk() && methodMetrics != null) {
                     methodMetrics.sentMessageSize.record(bytesSent);
                     methodMetrics.callDuration.record(Duration.ofMillis(System.currentTimeMillis() - startMillis));
                 }
