@@ -24,7 +24,9 @@ import java.io.UncheckedIOException;
 import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -161,6 +163,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
     private Metadata closeMetadata;
     private boolean closeNotified;
+    private boolean metricsRecorded;
     private volatile boolean closeComplete;
 
     private AtomicLong bytesSent;
@@ -241,25 +244,24 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
     public void start(Listener<ResT> responseListener, Metadata metadata) {
         LOGGER.log(DEBUG, "start called");
 
-        // init metrics
-        if (grpcConfig.enableMetrics()) {
-            initMetrics();
-            bytesSent = new AtomicLong(0L);
-            bytesRcvd = new AtomicLong(0L);
-            startMillis = System.currentTimeMillis();
-            methodMetrics.callStarted.increment();
-        }
-
         lifecycleLock.lock();
         try {
             if (this.responseListener != null) {
                 throw new IllegalStateException("Call already started");
             }
             this.responseListener = Objects.requireNonNull(responseListener);
+            if (grpcConfig.enableMetrics()) {
+                initMetrics();
+                bytesSent = new AtomicLong(0L);
+                bytesRcvd = new AtomicLong(0L);
+                startMillis = System.currentTimeMillis();
+                methodMetrics.callStarted.increment();
+            }
         } finally {
             lifecycleLock.unlock();
         }
         if (isClosed()) {
+            recordMetrics(closeStatus);
             notifyClose();
             return;
         }
@@ -396,14 +398,13 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
             LOGGER.log(DEBUG, "Failed to close gRPC stream", t);
         } finally {
             try {
-                Http2ClientConnection currentConnection = connection;
-                if (currentConnection != null) {
-                    currentConnection.close();
-                }
-                if (enableMetrics() && bytesSent != null && bytesRcvd != null && status.isOk()) {
-                    methodMetrics.callDuration().record(Duration.ofMillis(System.currentTimeMillis() - startMillis));
-                    methodMetrics.recvMessageSize().record(bytesRcvd.get());
-                    methodMetrics.sentMessageSize().record(bytesSent.get());
+                try {
+                    Http2ClientConnection currentConnection = connection;
+                    if (currentConnection != null) {
+                        currentConnection.close();
+                    }
+                } finally {
+                    recordMetrics(status);
                 }
             } catch (Throwable t) {
                 LOGGER.log(DEBUG, "Failed to close gRPC connection", t);
@@ -649,7 +650,6 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
             MetricsFactory metricsFactory = grpcChannel.metricsFactory();
             MeterRegistry meterRegistry = grpcChannel.meterRegistry();
 
-            Tag okTag = metricsFactory.tagCreate("grpc.status", "OK");
             Tag grpcMethod = metricsFactory.tagCreate("grpc.method", methodName);
             Tag grpcTarget = metricsFactory.tagCreate("grpc.target", baseUri);
 
@@ -658,27 +658,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                             .tags(List.of(grpcMethod, grpcTarget))
                             .origin(GrpcClient.class.getName()));
 
-            Timer callDuration = meterRegistry.getOrCreate(
-                    metricsFactory.timerBuilder("grpc.client.attempt.duration")
-                            .baseUnit(Timer.BaseUnits.MILLISECONDS)
-                            .tags(List.of(grpcMethod, grpcTarget, okTag))
-                            .origin(GrpcClient.class.getName()));
-
-            DistributionSummary sentMessageSize = meterRegistry.getOrCreate(
-                    metricsFactory.distributionSummaryBuilder(
-                                    "grpc.client.attempt.sent_total_compressed_message_size",
-                                    metricsFactory.distributionStatisticsConfigBuilder())
-                            .tags(List.of(grpcMethod, grpcTarget, okTag))
-                            .origin(GrpcClient.class.getName()));
-
-            DistributionSummary recvMessageSize = meterRegistry.getOrCreate(
-                    metricsFactory.distributionSummaryBuilder(
-                                    "grpc.client.attempt.rcvd_total_compressed_message_size",
-                                    metricsFactory.distributionStatisticsConfigBuilder())
-                            .tags(List.of(grpcMethod, grpcTarget, okTag))
-                            .origin(GrpcClient.class.getName()));
-
-            return new MethodMetrics(callStarted, callDuration, sentMessageSize, recvMessageSize);
+            return new MethodMetrics(callStarted, new ConcurrentHashMap<>());
         });
     }
 
@@ -693,6 +673,52 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
                 Thread.ofPlatform().daemon().name("grpc-client-deadline").factory());
         scheduler.setRemoveOnCancelPolicy(true);
         return scheduler;
+    }
+
+    private void recordMetrics(Status status) {
+        if (!enableMetrics()) {
+            return;
+        }
+        lifecycleLock.lock();
+        try {
+            if (bytesSent == null || bytesRcvd == null || metricsRecorded) {
+                return;
+            }
+            metricsRecorded = true;
+        } finally {
+            lifecycleLock.unlock();
+        }
+        CompletionMetrics metrics = methodMetrics.completed().computeIfAbsent(status.getCode(), code -> {
+            MetricsFactory metricsFactory = grpcChannel.metricsFactory();
+            MeterRegistry meterRegistry = grpcChannel.meterRegistry();
+            List<Tag> tags = List.of(metricsFactory.tagCreate("grpc.method", methodDescriptor.getFullMethodName()),
+                                     metricsFactory.tagCreate("grpc.target", grpcChannel.baseUri().toString()),
+                                     metricsFactory.tagCreate("grpc.status", code.name()));
+            Timer callDuration = meterRegistry.getOrCreate(
+                    metricsFactory.timerBuilder("grpc.client.attempt.duration")
+                            .baseUnit(Timer.BaseUnits.MILLISECONDS)
+                            .tags(tags)
+                            .origin(GrpcClient.class.getName()));
+
+            DistributionSummary sentMessageSize = meterRegistry.getOrCreate(
+                    metricsFactory.distributionSummaryBuilder(
+                                    "grpc.client.attempt.sent_total_compressed_message_size",
+                                    metricsFactory.distributionStatisticsConfigBuilder())
+                            .tags(tags)
+                            .origin(GrpcClient.class.getName()));
+
+            DistributionSummary recvMessageSize = meterRegistry.getOrCreate(
+                    metricsFactory.distributionSummaryBuilder(
+                                    "grpc.client.attempt.rcvd_total_compressed_message_size",
+                                    metricsFactory.distributionStatisticsConfigBuilder())
+                            .tags(tags)
+                            .origin(GrpcClient.class.getName()));
+
+            return new CompletionMetrics(callDuration, sentMessageSize, recvMessageSize);
+        });
+        metrics.callDuration().record(Duration.ofMillis(System.currentTimeMillis() - startMillis));
+        metrics.recvMessageSize().record(bytesRcvd.get());
+        metrics.sentMessageSize().record(bytesSent.get());
     }
 
     private String authority(ClientUri clientUri) {
@@ -980,10 +1006,11 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         deframer.endOfStream();
     }
 
-    record MethodMetrics(Counter callStarted,
-                                   Timer callDuration,
-                                   DistributionSummary sentMessageSize,
-                                   DistributionSummary recvMessageSize) { }
+    record MethodMetrics(Counter callStarted, Map<Status.Code, CompletionMetrics> completed) { }
+
+    record CompletionMetrics(Timer callDuration,
+                             DistributionSummary sentMessageSize,
+                             DistributionSummary recvMessageSize) { }
 
     // Expose the call's connection listener without constructing another set of protocol clients.
     private static final class CallWebClient implements WebClient {
