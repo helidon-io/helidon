@@ -9,16 +9,34 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/helidon-io/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## Unreleased
+## [3.2.23]
+
+This patch release contains important bug fixes. Helidon 3 requires Java 17 or newer.
 
 ### NOTABLE CHANGES
 
-- Security: Helidon 3.x JWE tokens using `A128CBC-HS256`, `A192CBC-HS384`, or `A256CBC-HS512` now use corrected
-  CBC-HMAC keys and authentication tags. Tokens issued by older Helidon 3.x versions cannot be decrypted by updated
+- Security: JWE tokens using `A128CBC-HS256`, `A192CBC-HS384`, or `A256CBC-HS512` now use corrected
+  CBC-HMAC keys and authentication tags. Tokens issued by older versions cannot be decrypted by updated
   instances, and older instances cannot decrypt newly issued tokens. During a rolling upgrade, avoid exchanging CBC-HS
   tokens between mixed-version instances: let existing tokens expire before upgrading the issuers and consumers, or
   reissue them after all instances are upgraded. The AES-GCM token wire format, including the default `A256GCM`,
   is unchanged.
+- Media: Materializing request or response entities now has a 1 MiB decoded-input limit by default, including strings,
+  byte arrays, JSON, forms, and buffered multipart parts. Streaming readers are unaffected. Applications that
+  materialize larger entities must increase `max-buffered-entity-size` on the server, client, or media context.
+
+### CHANGES
+
+- Build: Use GraalVM JDK 17 in packaging validation [12883](https://github.com/helidon-io/helidon/pull/12883)
+- Dependencies: Upgrade Jackson to 2.21.8 [12875](https://github.com/helidon-io/helidon/pull/12875)
+- Dependencies: Upgrade Netty to 4.1.140.Final [13046](https://github.com/helidon-io/helidon/pull/13046)
+- Dependencies: Upgrade Guava, ASM, and Byte Buddy [12914](https://github.com/helidon-io/helidon/pull/12914)
+- HTTP: Fix HTTP/1 response framing and completion [9a539d267f](https://github.com/helidon-io/helidon/commit/9a539d267f479335508ba3d7f2172ef708ef9705)
+- Media: Limit decoded entities materialized in memory [f864a9d8cf](https://github.com/helidon-io/helidon/commit/f864a9d8cfaa13eb963da4fa861b7f8566c925e7)
+- Security: Authenticate original JWE headers and validate content keys [9185e4b2e9](https://github.com/helidon-io/helidon/commit/9185e4b2e9017211676cfb5beff58b27bee916bc)
+- Security: Correct JWE CBC-HMAC authentication [de055b5a00](https://github.com/helidon-io/helidon/commit/de055b5a0096a7cb2639e27d60f5679804dd86da)
+- Security: Redact outbound security headers in trace logs [1f2e176591](https://github.com/helidon-io/helidon/commit/1f2e1765919b9aaf9cd1754e816135744695c816)
+- WebServer: Harden static content access and resource cleanup [35fc2aa88d](https://github.com/helidon-io/helidon/commit/35fc2aa88d167ac6e1c2fc4b3580c7b956b45c0f)
 
 ## [3.2.22]
 
@@ -1192,6 +1210,7 @@ Notable changes:
 - Examples: Update bare-mp archetype to use microprofile-core [3795](https://github.com/helidon-io/helidon/pull/3795)
 
 
+[3.2.23]: https://github.com/helidon-io/helidon/compare/3.2.22...3.2.23
 [3.2.22]: https://github.com/helidon-io/helidon/compare/3.2.21...3.2.22
 [3.2.21]: https://github.com/helidon-io/helidon/compare/3.2.20...3.2.21
 [3.2.20]: https://github.com/helidon-io/helidon/compare/3.2.19...3.2.20
