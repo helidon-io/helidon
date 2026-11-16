@@ -37,6 +37,41 @@ import io.helidon.tests.integration.data.jdbc.parameters.BatchAliasStatements;
 @Data.Repository
 @Data.Provider("jdbc")
 public interface BatchRepository extends BatchAliasStatements<String> {
+    @Jdbc.Statement("INSERT INTO CONTACT (NAME, EMAIL) VALUES (:arg0, :arg1)")
+    @Jdbc.BatchSize(2)
+    JdbcClient.BatchResult declaredNames(Iterable<String> arg1, Iterable<String> arg0);
+
+    @Jdbc.Statement("INSERT INTO CONTACT (NAME, EMAIL) VALUES (:rows, :statement)")
+    @Jdbc.BatchSize(2)
+    JdbcClient.BatchResult sizedInsert(Iterable<String> rows, String statement);
+
+    @Jdbc.Statement("${application.batches.insert:INSERT INTO CONTACT (NAME, EMAIL) VALUES (:name, :email)}")
+    @Jdbc.BatchSize(2)
+    JdbcClient.BatchResult sizedConfigured(Iterable<String> name, String email);
+
+    @Jdbc.Statement("${application.batches.names:INSERT INTO CONTACT (NAME) VALUES (:name)}")
+    @Jdbc.BatchSize(2)
+    @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
+    void sizedSet(Set<String> name);
+
+    @Jdbc.Statement("${application.batches.records:UPDATE CONTACT SET NAME = :name, EMAIL = :email WHERE ID = :id}")
+    @Jdbc.BatchSize(2)
+    JdbcClient.BatchResult sizedRecords(Iterator<Change> rows);
+
+    @Jdbc.Statement("${application.batches.arrays:UPDATE CONTACT SET EMAIL = :emails WHERE ID = :ids}")
+    @Jdbc.BatchSize(2)
+    JdbcClient.BatchResult sizedArrays(String[] emails, long... ids);
+
+    @Jdbc.Statement("${application.batches.duplicates:UPDATE CONTACT SET NAME = ? WHERE ID = ? AND NAME = ?}")
+    @Jdbc.BatchSize(2)
+    JdbcClient.BatchResult sizedDuplicates(Iterable<Replacement> replacements, Iterator<Expected> expected);
+
+    @Jdbc.Statement("${application.batches.aliases:UPDATE CONTACT SET NAME = :name, EMAIL = :email WHERE ID = :id OR ID = :id}")
+    @Jdbc.BatchSize(2)
+    JdbcClient.BatchResult sizedAliases(@Data.Param("name") Iterator<String> batchSize,
+                                       @Data.Param("email") String size,
+                                       @Data.Param("id") long... offset);
+
     @Jdbc.Statement("INSERT INTO CONTACT (NAME, EMAIL) VALUES (:rows, :statement)")
     JdbcClient.BatchResult insert(List<String> rows, String statement);
 

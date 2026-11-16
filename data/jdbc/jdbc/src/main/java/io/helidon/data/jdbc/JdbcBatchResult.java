@@ -30,20 +30,6 @@ final class JdbcBatchResult implements JdbcClient.BatchResult {
         this.entries = List.copyOf(entries);
     }
 
-    static JdbcBatchResult capture(int size, int[] counts) {
-        List<Entry> entries = new ArrayList<>(size);
-        for (int i = 0; i < size; i++) {
-            int count = counts != null && i < counts.length ? counts[i] : -1;
-            Status status = count >= 0 ? Status.EXACT_COUNT : switch (count) {
-                case Statement.SUCCESS_NO_INFO -> Status.SUCCESS_NO_INFO;
-                case Statement.EXECUTE_FAILED -> Status.EXECUTE_FAILED;
-                default -> Status.NOT_REPORTED;
-            };
-            entries.add(new Item(i, status, count >= 0 ? OptionalLong.of(count) : OptionalLong.empty()));
-        }
-        return new JdbcBatchResult(entries);
-    }
-
     @Override
     public List<Entry> entries() {
         return entries;
@@ -63,6 +49,41 @@ final class JdbcBatchResult implements JdbcClient.BatchResult {
             }
         }
         return OptionalLong.of(total);
+    }
+
+    /**
+     * Retains global evidence without copying the full result between submissions.
+     */
+    static final class Accumulator {
+        private final Entry[] entries;
+
+        Accumulator(int size) {
+            entries = new Entry[size];
+        }
+
+        boolean record(int offset, int size, int[] counts) {
+            boolean valid = counts != null && counts.length == size;
+            for (int index = 0; index < size; index++) {
+                int count = counts != null && index < counts.length ? counts[index] : -1;
+                Status status = count >= 0 ? Status.EXACT_COUNT : switch (count) {
+                    case Statement.SUCCESS_NO_INFO -> Status.SUCCESS_NO_INFO;
+                    case Statement.EXECUTE_FAILED -> Status.EXECUTE_FAILED;
+                    default -> Status.NOT_REPORTED;
+                };
+                entries[offset + index] = new Item(offset + index, status,
+                                                 count >= 0 ? OptionalLong.of(count) : OptionalLong.empty());
+                valid &= status == Status.EXACT_COUNT || status == Status.SUCCESS_NO_INFO;
+            }
+            return valid;
+        }
+
+        JdbcBatchResult result() {
+            List<Entry> result = new ArrayList<>(entries.length);
+            for (int index = 0; index < entries.length; index++) {
+                result.add(entries[index] == null ? new Item(index, Status.NOT_REPORTED, OptionalLong.empty()) : entries[index]);
+            }
+            return new JdbcBatchResult(result);
+        }
     }
 
     private record Item(int itemIndex, Status status, OptionalLong updateCount) implements Entry {

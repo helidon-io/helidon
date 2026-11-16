@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
@@ -55,6 +56,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -632,6 +634,391 @@ class JdbcBatchTest {
             assertSanitized(failure);
             verify(prepared).executeBatch();
             verify(connection).close();
+        }
+    }
+
+    @Test
+    void sizedBoundariesReuseOneStatementAndClearOnlyBetweenSubmissions() throws Exception {
+        for (boolean reusable : List.of(false, true)) {
+            for (int batchSize : new int[] {1, 3, Integer.MAX_VALUE}) {
+                for (int count : new int[] {0, 1, 2, 3, 4, 6, 7}) {
+                    setup();
+                    AtomicInteger queued = new AtomicInteger();
+                    doAnswer(_ -> { queued.incrementAndGet(); return null; }).when(prepared).addBatch();
+                    when(prepared.executeBatch()).thenAnswer(_ -> {
+                        int[] counts = new int[queued.getAndSet(0)];
+                        Arrays.fill(counts, 1);
+                        return counts;
+                    });
+                    JdbcClient.Statement stage = stage(reusable, "INSERT INTO T VALUES (?)");
+                    AtomicInteger captured = new AtomicInteger();
+                    JdbcClient.BatchResult result = stage.executeBatch(IntStream.range(0, count).boxed().toList(), batchSize,
+                            (bindings, value) -> {
+                                assertThat(captured.getAndIncrement(), is(value));
+                                bindings.bind(1, value);
+                                verifyZeroInteractions(source);
+                            });
+                    assertThat(result.entries().size(), is(count));
+                    assertThat(result.totalUpdateCount(), is(OptionalLong.of(count)));
+                    assertThat(result.entries().stream().map(JdbcClient.BatchResult.Entry::itemIndex).toList(),
+                               is(IntStream.range(0, count).boxed().toList()));
+                    int submissions = count == 0 ? 0 : 1 + (count - 1) / batchSize;
+                    verify(source, times(count == 0 ? 0 : 1)).getConnection();
+                    verify(connection, times(count == 0 ? 0 : 1)).prepareStatement(anyString());
+                    verify(prepared, times(count)).addBatch();
+                    verify(prepared, times(submissions)).executeBatch();
+                    verify(prepared, times(Math.max(0, submissions - 1))).clearBatch();
+                    verify(prepared, never()).clearParameters();
+                    verify(prepared, never()).executeLargeBatch();
+                    assertThrows(IllegalStateException.class, () -> stage.executeBatch(List.of(), 1, (_, _) -> { }));
+                }
+            }
+        }
+    }
+
+    @Test
+    void sizedValidationPreservesNullPrecedenceAndAnUnconsumedStage() throws Exception {
+        Iterable<Integer> forbidden = () -> { throw new AssertionError("Validation must precede traversal."); };
+        JdbcClient.BatchBinder<Integer> binder = (b, v) -> b.bind(1, v);
+        for (boolean reusable : List.of(false, true)) {
+            JdbcClient.Statement stage = stage(reusable, "INSERT INTO T VALUES (?)");
+            for (int size : new int[] {0, -1, Integer.MIN_VALUE}) {
+                assertThrows(NullPointerException.class, () -> stage.executeBatch(null, size, null));
+                assertThrows(NullPointerException.class, () -> stage.executeBatch(null, size, binder));
+                assertThrows(NullPointerException.class, () -> stage.executeBatch(forbidden, size, null));
+                assertThat(assertThrows(IllegalArgumentException.class,
+                        () -> stage.executeBatch(forbidden, size, binder)).getMessage(),
+                        is("The batch size must be greater than zero."));
+            }
+            stage.bind(1, 1);
+            assertThrows(IllegalArgumentException.class, () -> stage.executeBatch(forbidden, 1, binder));
+            when(prepared.getLargeUpdateCount()).thenReturn(1L, -1L);
+            assertThat(stage.execute(), is(1L));
+            assertThrows(NullPointerException.class, () -> stage.executeBatch(null, 0, binder));
+            assertThrows(IllegalArgumentException.class, () -> stage.executeBatch(forbidden, 0, binder));
+            assertThrows(IllegalStateException.class, () -> stage.executeBatch(forbidden, 1, binder));
+        }
+    }
+
+    @Test
+    void sizedCaptureFailuresBeyondBoundariesPerformNoJdbcWork() {
+        for (boolean reusable : List.of(false, true)) {
+            IllegalStateException application = new IllegalStateException("The application rejected a later item.");
+            AtomicReference<JdbcClient.BatchBindings> retained = new AtomicReference<>();
+            JdbcClient.Statement stage = stage(reusable, "INSERT INTO T VALUES (?)");
+            assertThat(assertThrows(IllegalStateException.class, () -> stage.executeBatch(List.of(1, 2, 3, 4, 5), 2,
+                    (bindings, value) -> {
+                        retained.set(bindings);
+                        bindings.bind(1, value);
+                        if (value == 5) {
+                            throw application;
+                        }
+                    })), sameInstance(application));
+            assertThrows(IllegalStateException.class, () -> retained.get().bind(1, 1));
+            assertThrows(IllegalStateException.class, () -> stage.executeBatch(List.of(), 2, (_, _) -> { }));
+            assertThrows(IllegalStateException.class, () -> stage(reusable, "INSERT INTO T VALUES (?)")
+                    .executeBatch(List.of(1, 2, 3, 4, 5), 2, (b, v) -> {
+                        if (v < 5) {
+                            b.bind(1, v);
+                        }
+                    }));
+        }
+        verifyZeroInteractions(source);
+    }
+
+    @Test
+    void sizedFailureKeepsGlobalPrefixAndDoesNotSubmitTheSuffix() throws Exception {
+        for (boolean reusable : List.of(false, true)) {
+            setup();
+            when(prepared.executeBatch()).thenReturn(new int[] {1, 1, 1})
+                    .thenThrow(new BatchUpdateException("SECRET", "23000", 42, new int[] {1, Statement.EXECUTE_FAILED}));
+            JdbcBatchException failure = assertThrows(JdbcBatchException.class,
+                    () -> stage(reusable, "INSERT INTO T VALUES (?)").executeBatch(IntStream.range(0, 8).boxed().toList(),
+                            3, (b, v) -> b.bind(1, v)));
+            assertThat(failure.result().entries().stream().map(JdbcClient.BatchResult.Entry::status).toList(), is(List.of(
+                    JdbcClient.BatchResult.Status.EXACT_COUNT, JdbcClient.BatchResult.Status.EXACT_COUNT,
+                    JdbcClient.BatchResult.Status.EXACT_COUNT, JdbcClient.BatchResult.Status.EXACT_COUNT,
+                    JdbcClient.BatchResult.Status.EXECUTE_FAILED, JdbcClient.BatchResult.Status.NOT_REPORTED,
+                    JdbcClient.BatchResult.Status.NOT_REPORTED, JdbcClient.BatchResult.Status.NOT_REPORTED)));
+            assertThat(failure.result().totalUpdateCount(), is(OptionalLong.empty()));
+            assertSanitized(failure);
+            assertThat(failure.getCause().toString(), containsString("23000"));
+            assertThat(failure.getCause().toString(), containsString("42"));
+            verify(prepared, times(6)).addBatch();
+            verify(prepared, times(2)).executeBatch();
+            verify(prepared).clearBatch();
+            verify(prepared).close();
+            verify(connection).close();
+        }
+    }
+
+    @Test
+    void sizedMalformedEvidenceCannotDescribeTheNextSubmission() throws Exception {
+        for (boolean exceptional : List.of(false, true)) {
+            for (int[] counts : new int[][] {null, {}, {2}, {2, 3, 4}, {-9, 1}, {Statement.EXECUTE_FAILED, 1}}) {
+                setup();
+                if (exceptional) {
+                    when(prepared.executeBatch()).thenReturn(new int[] {1, 1})
+                            .thenThrow(new BatchUpdateException("SECRET", "23000", 42, counts));
+                } else {
+                    when(prepared.executeBatch()).thenReturn(new int[] {1, 1}).thenReturn(counts);
+                }
+                JdbcBatchException failure = assertThrows(JdbcBatchException.class,
+                        () -> client.create("INSERT INTO T VALUES (?)")
+                                .executeBatch(List.of(1, 2, 3, 4, 5), 2, (b, v) -> b.bind(1, v)));
+                assertThat(failure.result().entries().get(0).updateCount(), is(OptionalLong.of(1)));
+                assertThat(failure.result().entries().get(1).updateCount(), is(OptionalLong.of(1)));
+                assertThat(failure.result().entries().get(4).status(), is(JdbcClient.BatchResult.Status.NOT_REPORTED));
+                assertThat(failure.result().entries().get(4).itemIndex(), is(4));
+                assertSanitized(failure);
+                verify(prepared, times(2)).executeBatch();
+                verify(prepared).clearBatch();
+            }
+        }
+    }
+
+    @Test
+    void sizedClearAndLaterSetupFailuresRetainOnlyExecutedEvidence() throws Exception {
+        for (String operation : List.of("clear", "bind", "add", "execute")) {
+            setup();
+            when(prepared.executeBatch()).thenReturn(new int[] {1, 1});
+            if (operation.equals("clear")) {
+                doThrow(new SQLException("SECRET")).when(prepared).clearBatch();
+            } else if (operation.equals("bind")) {
+                doThrow(new SQLException("SECRET")).when(prepared).setInt(1, 3);
+            } else if (operation.equals("add")) {
+                AtomicInteger additions = new AtomicInteger();
+                doAnswer(_ -> {
+                    if (additions.incrementAndGet() == 3) {
+                        throw new SQLException("SECRET");
+                    }
+                    return null;
+                }).when(prepared).addBatch();
+            } else {
+                when(prepared.executeBatch()).thenReturn(new int[] {1, 1}).thenThrow(new SQLException("SECRET"));
+            }
+            JdbcBatchException failure = assertThrows(JdbcBatchException.class,
+                    () -> client.create("INSERT INTO T VALUES (?)")
+                            .executeBatch(List.of(1, 2, 3, 4, 5), 2, (b, v) -> b.bind(1, v)));
+            assertThat(failure.result().entries().stream().map(JdbcClient.BatchResult.Entry::status).toList(), is(List.of(
+                    JdbcClient.BatchResult.Status.EXACT_COUNT, JdbcClient.BatchResult.Status.EXACT_COUNT,
+                    JdbcClient.BatchResult.Status.NOT_REPORTED, JdbcClient.BatchResult.Status.NOT_REPORTED,
+                    JdbcClient.BatchResult.Status.NOT_REPORTED)));
+            assertSanitized(failure);
+            verify(prepared).close();
+            verify(connection).close();
+        }
+    }
+
+    @Test
+    void sizedSuccessCountsAndCleanupFailureRetainAllGlobalEvidence() throws Exception {
+        for (boolean cleanupFailure : List.of(false, true)) {
+            setup();
+            when(prepared.executeBatch()).thenReturn(new int[] {Integer.MAX_VALUE, Integer.MAX_VALUE})
+                    .thenReturn(new int[] {0});
+            if (cleanupFailure) {
+                doThrow(new SQLException("SECRET")).when(prepared).close();
+            }
+            Supplier<JdbcClient.BatchResult> execution = () -> client.create("INSERT INTO T VALUES (?)")
+                    .executeBatch(List.of(1, 2, 3), 2, (b, v) -> b.bind(1, v));
+            JdbcClient.BatchResult result = cleanupFailure
+                    ? assertThrows(JdbcBatchException.class, execution::get).result() : execution.get();
+            assertThat(result.totalUpdateCount(), is(OptionalLong.of(2L * Integer.MAX_VALUE)));
+            assertThrows(UnsupportedOperationException.class, () -> result.entries().clear());
+            var order = inOrder(prepared);
+            order.verify(prepared).executeBatch();
+            order.verify(prepared).clearBatch();
+            order.verify(prepared).executeBatch();
+            order.verify(prepared).close();
+        }
+        setup();
+        when(prepared.executeBatch()).thenReturn(new int[] {0, Statement.SUCCESS_NO_INFO}).thenReturn(new int[] {1});
+        JdbcClient.BatchResult result = client.create("INSERT INTO T VALUES (?)")
+                .executeBatch(List.of(1, 2, 3), 2, (b, v) -> b.bind(1, v));
+        assertThat(result.entries().get(0).updateCount(), is(OptionalLong.of(0)));
+        assertThat(result.entries().get(1).status(), is(JdbcClient.BatchResult.Status.SUCCESS_NO_INFO));
+        assertThat(result.totalUpdateCount(), is(OptionalLong.empty()));
+    }
+
+    @Test
+    void sizedCaptureSnapshotsRepeatedMutableValuesAndExpiresEveryCallback() throws Exception {
+        byte[] bytes = {1};
+        Timestamp timestamp = Timestamp.valueOf("2026-11-16 12:00:00.123456789");
+        List<Timestamp> expected = new ArrayList<>();
+        AtomicReference<JdbcClient.BatchBindings> retained = new AtomicReference<>();
+        when(prepared.executeBatch()).thenReturn(new int[] {1, 1}, new int[] {1});
+        client.prepare("INSERT INTO T VALUES (:bytes, :bytes, :time, :empty)").get()
+                .executeBatch(List.of(1, 2, 3), 2, (bindings, _) -> {
+                    if (retained.get() != null) {
+                        assertThrows(IllegalStateException.class, () -> retained.get().bind("bytes", bytes));
+                    }
+                    retained.set(bindings);
+                    Timestamp snapshot = new Timestamp(timestamp.getTime());
+                    snapshot.setNanos(timestamp.getNanos());
+                    expected.add(snapshot);
+                    bindings.bind("bytes", bytes).bind("time", timestamp).bindNull("empty", JDBCType.VARCHAR);
+                    bytes[0]++;
+                    timestamp.setNanos(timestamp.getNanos() + 1);
+                    verifyZeroInteractions(source);
+                });
+        for (byte value : new byte[] {1, 2, 3}) {
+            verify(prepared).setBytes(1, new byte[] {value});
+            verify(prepared).setBytes(2, new byte[] {value});
+        }
+        for (Timestamp value : expected) {
+            verify(prepared).setTimestamp(3, value);
+        }
+        verify(prepared, times(3)).setNull(4, JDBCType.VARCHAR.getVendorTypeNumber());
+        assertThrows(IllegalStateException.class, () -> retained.get().bindNull("empty", JDBCType.VARCHAR));
+    }
+
+    @Test
+    void sizedFatalCleanupPreservesPrecedenceAndAttemptsEveryRelease() throws Exception {
+        for (String location : List.of("clear", "statement", "lease")) {
+            setup();
+            OutOfMemoryError fatal = new OutOfMemoryError("The controlled cleanup failure is fatal.");
+            when(prepared.executeBatch()).thenReturn(new int[] {1, 1})
+                    .thenThrow(new BatchUpdateException("SECRET", new int[] {1}));
+            if (location.equals("clear")) {
+                doThrow(fatal).when(prepared).clearBatch();
+            } else if (location.equals("statement")) {
+                doThrow(fatal).when(prepared).close();
+            } else {
+                doThrow(fatal).when(connection).close();
+            }
+            assertThat(assertThrows(OutOfMemoryError.class,
+                    () -> client.create("INSERT INTO T VALUES (?)")
+                            .executeBatch(List.of(1, 2, 3, 4, 5), 2, (b, v) -> b.bind(1, v))), sameInstance(fatal));
+            verify(prepared, times(location.equals("clear") ? 1 : 2)).executeBatch();
+            verify(prepared).close();
+            verify(connection, times(location.equals("lease") ? 2 : 1)).close();
+            if (location.equals("lease")) {
+                verify(connection).abort(any());
+            }
+        }
+    }
+
+    @Test
+    void sharedPreparedDefinitionKeepsConcurrentSubmissionSizesIndependent() throws Exception {
+        Supplier<JdbcClient.Statement> definition = client.prepare("INSERT INTO T VALUES (:value)");
+        CountDownLatch entered = new CountDownLatch(2);
+        CountDownLatch release = new CountDownLatch(1);
+        AtomicReference<Throwable> failure = new AtomicReference<>();
+        List<PreparedStatement> statements = new ArrayList<>();
+        List<Connection> connections = new ArrayList<>();
+        List<AtomicInteger> submissions = new ArrayList<>();
+        for (int index = 0; index < 2; index++) {
+            Connection borrowed = mock(Connection.class);
+            PreparedStatement statement = mock(PreparedStatement.class);
+            when(borrowed.getAutoCommit()).thenReturn(true);
+            when(borrowed.prepareStatement(anyString())).thenReturn(statement);
+            AtomicInteger queued = new AtomicInteger();
+            AtomicInteger executions = new AtomicInteger();
+            submissions.add(executions);
+            doAnswer(_ -> { queued.incrementAndGet(); return null; }).when(statement).addBatch();
+            when(statement.executeBatch()).thenAnswer(_ -> {
+                executions.incrementAndGet();
+                int[] counts = new int[queued.getAndSet(0)];
+                Arrays.fill(counts, 1);
+                return counts;
+            });
+            statements.add(statement);
+            connections.add(borrowed);
+        }
+        when(source.getConnection()).thenReturn(connections.getFirst(), connections.getLast());
+        List<Thread> workers = new ArrayList<>();
+        try {
+            for (int size : new int[] {1, 2}) {
+                workers.add(Thread.ofVirtual().start(() -> {
+                    try {
+                        JdbcClient.BatchResult result = definition.get().executeBatch(List.of(1, 2, 3), size, (bindings, value) -> {
+                            if (value == 1) {
+                                entered.countDown();
+                                try {
+                                    assertThat("Both captures must be released.", release.await(10, TimeUnit.SECONDS), is(true));
+                                } catch (InterruptedException interrupted) {
+                                    Thread.currentThread().interrupt();
+                                    throw new AssertionError(interrupted);
+                                }
+                            }
+                            bindings.bind("value", value);
+                        });
+                        assertThat(result.totalUpdateCount(), is(OptionalLong.of(3)));
+                    } catch (Throwable problem) {
+                        failure.compareAndSet(null, problem);
+                        entered.countDown();
+                        release.countDown();
+                    }
+                }));
+            }
+            assertThat("Both workers must enter capture or report failure.", entered.await(10, TimeUnit.SECONDS), is(true));
+            if (failure.get() != null) {
+                throw new AssertionError(failure.get());
+            }
+            verifyZeroInteractions(source);
+            release.countDown();
+            for (Thread worker : workers) {
+                worker.join(Duration.ofSeconds(10));
+                assertThat("The worker must finish.", worker.isAlive(), is(false));
+            }
+            assertThat(failure.get(), is((Throwable) null));
+            verify(statements.getFirst(), times(3)).addBatch();
+            verify(statements.getLast(), times(3)).addBatch();
+            assertThat(submissions.stream().map(AtomicInteger::get).sorted().toList(), is(List.of(2, 3)));
+            for (int index = 0; index < statements.size(); index++) {
+                verify(statements.get(index), times(submissions.get(index).get() - 1)).clearBatch();
+                verify(statements.get(index)).close();
+                verify(connections.get(index)).close();
+            }
+        } finally {
+            release.countDown();
+            for (Thread worker : workers) {
+                worker.interrupt();
+                worker.join(Duration.ofSeconds(10));
+                assertThat("The worker must terminate during cleanup.", worker.isAlive(), is(false));
+            }
+        }
+    }
+
+    @Test
+    void sizedAcquisitionPreparationAndLeaseFailuresKeepCaptureAndOutcomes() throws Exception {
+        for (String operation : List.of("acquire", "prepare", "lease")) {
+            setup();
+            AtomicInteger captured = new AtomicInteger();
+            when(source.getConnection()).thenAnswer(_ -> {
+                assertThat(captured.get(), is(3));
+                if (operation.equals("acquire")) {
+                    throw new SQLException("SECRET");
+                }
+                return connection;
+            });
+            if (operation.equals("prepare")) {
+                when(connection.prepareStatement(anyString())).thenThrow(new SQLException("SECRET"));
+            }
+            if (operation.equals("lease")) {
+                when(prepared.executeBatch()).thenReturn(new int[] {1, 1}, new int[] {1});
+                doThrow(new SQLException("SECRET")).when(connection).close();
+            }
+            JdbcBatchException failure = assertThrows(JdbcBatchException.class,
+                    () -> client.create("INSERT INTO T VALUES (?)").executeBatch(List.of(1, 2, 3), 2,
+                            (bindings, value) -> {
+                                captured.incrementAndGet();
+                                bindings.bind(1, value);
+                            }));
+            assertThat(failure.result().entries().size(), is(3));
+            for (JdbcClient.BatchResult.Entry entry : failure.result().entries()) {
+                assertThat(entry.status(), is(operation.equals("lease")
+                        ? JdbcClient.BatchResult.Status.EXACT_COUNT : JdbcClient.BatchResult.Status.NOT_REPORTED));
+            }
+            assertSanitized(failure);
+            verify(source).getConnection();
+            if (operation.equals("lease")) {
+                assertThat(failure.result().totalUpdateCount(), is(OptionalLong.of(3)));
+                verify(connection).abort(any());
+                verify(connection, times(2)).close();
+            } else {
+                verify(prepared, never()).executeBatch();
+            }
         }
     }
 

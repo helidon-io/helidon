@@ -113,8 +113,11 @@ final class JdbcMethodPlan {
             throw failure(method, "The @Jdbc.Statement value must not be blank.");
         }
         JdbcSqlReference reference = JdbcSqlReference.parse(sql, method);
-
-        if (JdbcExecutionSelection.create(method) == JdbcExecutionSelection.BATCH) {
+        JdbcExecutionSelection execution = JdbcExecutionSelection.create(method);
+        if (method.hasAnnotation(JdbcCodegenTypes.JDBC_BATCH_SIZE) && execution != JdbcExecutionSelection.BATCH) {
+            throw failure(method, "@Jdbc.BatchSize can be used only with BATCH execution.");
+        }
+        if (execution == JdbcExecutionSelection.BATCH) {
             JdbcBatchPlan batch = reference == null ? JdbcBatchPlan.create(sql, method, roundContext)
                     : JdbcBatchPlan.configured(reference, method, roundContext);
             JdbcMethodPlan plan = new JdbcMethodPlan(method, Operation.BATCH, ReturnShape.ITEM, MappingKind.NONE,

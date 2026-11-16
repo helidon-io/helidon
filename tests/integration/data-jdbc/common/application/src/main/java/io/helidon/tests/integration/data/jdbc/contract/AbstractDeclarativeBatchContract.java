@@ -65,8 +65,96 @@ public abstract class AbstractDeclarativeBatchContract extends AbstractJdbcBatch
     }
 
     @Override
+    protected final JdbcClient.BatchResult insertSized(List<String> rows) {
+        return service(BatchRepository.class).sizedInsert(oneShot(rows), null);
+    }
+
+    @Override
     protected final JdbcClient.BatchResult storeScalars(Iterable<ScalarChange> rows) {
         return service(BatchRepository.class).scalarRecords(rows);
+    }
+
+    @Test
+    protected final void literalBatchesDistinguishDeclaredArgNamesAcrossSubmissions() {
+        BatchRepository repository = service(BatchRepository.class);
+        DatabaseFixture fixture = service(DatabaseFixture.class);
+        assertThat(repository.declaredNames(List.of(), List.of()).totalUpdateCount().orElseThrow(), is(0L));
+        assertThrows(IllegalArgumentException.class,
+                () -> repository.declaredNames(List.of("first@example.test", "second@example.test"),
+                        List.of("declared-invalid-one", "declared-invalid-two", "declared-invalid-three")));
+        assertThat(fixture.committedByName("declared-invalid-one"), is(Optional.empty()));
+        assertThat(fixture.committedByName("declared-invalid-two"), is(Optional.empty()));
+        assertThrows(TxException.class, () -> transactions().transaction(Tx.Type.REQUIRED, () -> {
+            repository.declaredNames(List.of("first@example.test", "second@example.test", "third@example.test"),
+                    List.of("declared-rollback-one", "declared-rollback-two", "declared-rollback-three"));
+            throw new IllegalStateException("The application rejected the batch with declared parameter names.");
+        }));
+        assertThat(fixture.committedByName("declared-rollback-one"), is(Optional.empty()));
+        assertThat(fixture.committedByName("declared-rollback-three"), is(Optional.empty()));
+        assertThat(repository.declaredNames(Arrays.asList("first@example.test", null, "third@example.test"),
+                List.of("declared-one", "declared-two", "declared-three")).totalUpdateCount().orElseThrow(), is(3L));
+        assertThat(fixture.committedByName("declared-one").orElseThrow().email(), is(Optional.of("first@example.test")));
+        assertThat(fixture.committedByName("declared-two").orElseThrow().email(), is(Optional.empty()));
+        assertThat(fixture.committedByName("declared-three").orElseThrow().email(), is(Optional.of("third@example.test")));
+    }
+
+    @Test
+    protected final void sizedConfiguredRepositoriesExecuteSupportedShapesAndRejectLateAlignmentFailures() {
+        for (String variant : List.of("", "reordered/", "positional/")) {
+            restartBatch(batchConfiguration(variant));
+            BatchRepository repository = service(BatchRepository.class);
+            DatabaseFixture fixture = service(DatabaseFixture.class);
+            assertThat(repository.sizedConfigured(oneShot(List.of("sized-config-one", "sized-config-two", "sized-config-three")),
+                                                 null).entries().size(), is(3));
+            assertThat(fixture.committedByName("sized-config-three").orElseThrow().email(), is(Optional.empty()));
+            repository.sizedSet(new LinkedHashSet<>(List.of("sized-set-one", "sized-set-two", "sized-set-three")));
+            assertThat(fixture.committedByName("sized-set-three").isPresent(), is(true));
+            assertThat(repository.sizedRecords(oneShot(List.of(new BatchRepository.Change("sized-record-one", null, 1),
+                    new BatchRepository.Change("sized-record-two", "two@example.test", 2),
+                    new BatchRepository.Change("sized-record-last", null, 1))).iterator()).entries().size(), is(3));
+            assertThat(repository.sizedArrays(new String[] {"first@example.test", null, "last@example.test"}, 1, 2, 1)
+                               .entries().size(), is(3));
+            assertThat(repository.sizedDuplicates(oneShot(List.of(new BatchRepository.Replacement("sized-renamed-one"),
+                    new BatchRepository.Replacement("sized-renamed-two"), new BatchRepository.Replacement("sized-renamed-three"))),
+                    List.of(new BatchRepository.Expected(1, "sized-record-last"),
+                            new BatchRepository.Expected(1, "sized-renamed-one"),
+                            new BatchRepository.Expected(1, "sized-renamed-two")).iterator()).entries().size(), is(3));
+            assertThat(fixture.committedByName("sized-renamed-three").orElseThrow().id(), is(1L));
+            assertThat(repository.sizedAliases(oneShot(List.of("sized-alias-one", "sized-alias-two", "sized-alias-last")).iterator(),
+                                              null, 1, 2, 1).entries().size(), is(3));
+            assertThrows(IllegalArgumentException.class,
+                    () -> repository.sizedArrays(new String[] {"invalid-one", "invalid-two", "invalid-three", "invalid-four"},
+                                                  1, 2, 1));
+            assertThat(fixture.committedByName("sized-alias-last").orElseThrow().email(), is(Optional.empty()));
+            assertThat(repository.sizedConfigured(oneShot(List.of()), null).totalUpdateCount().orElseThrow(), is(0L));
+            assertThat(repository.sizedArrays(new String[0], new long[0]).totalUpdateCount().orElseThrow(), is(0L));
+            assertThrows(NullPointerException.class, () -> repository.sizedRecords(
+                    Arrays.asList(new BatchRepository.Change("invalid-first", null, 1),
+                                  new BatchRepository.Change("invalid-second", null, 2), null).iterator()));
+            assertThat(fixture.committedByName("invalid-first"), is(Optional.empty()));
+            assertThat(fixture.committedByName("invalid-second"), is(Optional.empty()));
+        }
+    }
+
+    @Test
+    protected final void sizedConfiguredTransactionsUseOneCompletionBoundary() {
+        restartBatch(batchConfiguration(""));
+        BatchRepository repository = service(BatchRepository.class);
+        DatabaseFixture fixture = service(DatabaseFixture.class);
+        assertThrows(TxException.class, () -> transactions().transaction(Tx.Type.REQUIRED, () -> {
+            repository.sizedConfigured(oneShot(List.of("sized-config-rollback-one", "sized-config-rollback-two",
+                                                       "sized-config-rollback-three")), null);
+            throw new IllegalStateException("The application rejected the configured batch.");
+        }));
+        assertThat(fixture.committedByName("sized-config-rollback-one"), is(Optional.empty()));
+        assertThat(fixture.committedByName("sized-config-rollback-three"), is(Optional.empty()));
+        JdbcBatchException failure = assertThrows(JdbcBatchException.class,
+                () -> repository.sizedConfigured(oneShot(Arrays.asList("sized-config-before-one", "sized-config-before-two",
+                                                                       null, "sized-config-may-run", "sized-config-never")), null));
+        assertThat(failure.result().entries().get(4).status(), is(JdbcClient.BatchResult.Status.NOT_REPORTED));
+        assertThat(fixture.committedByName("sized-config-before-one").isPresent(), is(true));
+        assertThat(fixture.committedByName("sized-config-never"), is(Optional.empty()));
+        assertThat(repository.sizedConfigured(List.of("sized-config-reused"), null).entries().size(), is(1));
     }
 
     /**

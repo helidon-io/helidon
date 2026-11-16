@@ -16,14 +16,17 @@
 package io.helidon.data.jdbc.codegen;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.TypeHierarchy;
 import io.helidon.codegen.TypeHierarchyResolver;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.ElementSignature;
 import io.helidon.common.types.Modifier;
 import io.helidon.common.types.TypeInfo;
@@ -49,6 +52,7 @@ final class JdbcTypeHierarchy {
      * @return resolved abstract methods in declaration order
      */
     static List<TypedElementInfo> abstractMethods(TypeInfo repository, RoundContext context) {
+        validateBatchSizeTargets(repository, new HashSet<>());
         TypeHierarchyResolver resolver = context.typeHierarchyResolver();
         List<TypeHierarchyResolver.ResolvedMethod> methods = resolver.effectiveInterfaceMethods(repository);
         List<TypedElementInfo> result = new ArrayList<>();
@@ -90,6 +94,22 @@ final class JdbcTypeHierarchy {
             result.add(method);
         }
         return List.copyOf(result);
+    }
+
+    private static void validateBatchSizeTargets(TypeInfo type, Set<TypeName> visited) {
+        if (!visited.add(type.typeName().genericTypeName())) {
+            return;
+        }
+        for (TypedElementInfo method : type.elementInfo()) {
+            if (method.kind() == ElementKind.METHOD && method.hasAnnotation(JdbcCodegenTypes.JDBC_BATCH_SIZE)
+                    && (!method.elementModifiers().contains(Modifier.ABSTRACT)
+                    || !method.hasAnnotation(JdbcCodegenTypes.JDBC_STATEMENT))) {
+                throw JdbcMethodPlan.failure(method, "@Jdbc.BatchSize can be used only with BATCH execution.");
+            }
+        }
+        for (TypeInfo parent : type.interfaceTypeInfo()) {
+            validateBatchSizeTargets(parent, visited);
+        }
     }
 
     private static TypedElementInfo withAliases(TypedElementInfo method, List<Annotation> aliases) {
@@ -232,10 +252,11 @@ final class JdbcTypeHierarchy {
     }
 
     private static List<TypeName> exactMethodAnnotations() {
-        List<TypeName> annotations = new ArrayList<>(3 + JdbcCodegenTypes.TX_ANNOTATIONS.size());
+        List<TypeName> annotations = new ArrayList<>(4 + JdbcCodegenTypes.TX_ANNOTATIONS.size());
         annotations.add(JdbcCodegenTypes.JDBC_STATEMENT);
         annotations.add(JdbcCodegenTypes.JDBC_GENERATED_KEYS);
         annotations.add(JdbcCodegenTypes.JDBC_ROW_MAPPER);
+        annotations.add(JdbcCodegenTypes.JDBC_BATCH_SIZE);
         annotations.addAll(JdbcCodegenTypes.TX_ANNOTATIONS);
         return List.copyOf(annotations);
     }

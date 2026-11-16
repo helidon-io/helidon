@@ -66,8 +66,8 @@ record JdbcSqlParameterPlan(String sql, List<Bind> binds) {
         }
         if (parsed.style() == JdbcSqlMarkerLexer.MarkerStyle.NAMED && !namesAvailable) {
             throw failure(method, "Named SQL requires a known, unique name for every batch input. "
-                    + "Use distinct record component names, positional SQL, "
-                    + "or compile the parent interface with -parameters.");
+                    + "Use @Data.Param for scalar inputs, use distinct record component names, "
+                    + "compile the parent interface with -parameters, or use positional SQL.");
         }
         validateParameters(parameters, method, parsed.style() == JdbcSqlMarkerLexer.MarkerStyle.NAMED);
         if (parsed.style() == JdbcSqlMarkerLexer.MarkerStyle.POSITIONAL

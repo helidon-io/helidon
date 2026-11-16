@@ -120,7 +120,9 @@ final class JdbcBatchGenerator {
         if (!plan.method().typeName().equals(TypeNames.PRIMITIVE_VOID)) {
             method.addContent("return ");
         }
-        method.addContentLine(statement + ".executeBatch(" + rows + ", (" + bindings + ", " + row + ") -> {");
+        method.addContentLine(statement + ".executeBatch(" + rows + ", "
+                + (batch.batchSize() == 0 ? "" : batch.batchSize() + ", ")
+                + "(" + bindings + ", " + row + ") -> {");
         method.addContent(Objects.class).addContent(".requireNonNull(" + bindings)
                 .addContentLine(", \"The batch bindings must not be null.\");")
                 .addContent(Objects.class).addContent(".requireNonNull(" + row)
