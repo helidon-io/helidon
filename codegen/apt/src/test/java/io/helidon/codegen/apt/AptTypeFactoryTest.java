@@ -221,6 +221,37 @@ class AptTypeFactoryTest {
     }
 
     @Test
+    void testAnnotatedObjectBounds() {
+        TypeInfo type = compile("""
+                <R extends @A Object> R direct();
+                <R extends @B Object & @C Runnable> R intersection();
+                <R> R implicit();
+                <R extends Object> R unannotated();
+                <R extends Object & Runnable> R unannotatedIntersection();
+                """);
+        TypeName direct = returnType(type, "direct");
+        TypeName intersection = returnType(type, "intersection");
+
+        assertAll(() -> {
+            assertThat("direct upper bounds", direct.upperBounds(), hasSize(1));
+            TypeName bound = direct.upperBounds().getFirst();
+            assertThat("direct bound type", bound.fqName(), is("java.lang.Object"));
+            assertAnnotations("direct bound", bound, "A");
+        }, () -> {
+            assertThat("intersection bound types",
+                       intersection.upperBounds().stream().map(TypeName::fqName).toList(),
+                       is(List.of("java.lang.Object", "java.lang.Runnable")));
+            assertAnnotations("intersection Object bound", intersection.upperBounds().getFirst(), "B");
+            assertAnnotations("intersection interface bound", intersection.upperBounds().get(1), "C");
+        }, () -> assertThat("implicit Object bound", returnType(type, "implicit").upperBounds(), empty()),
+                  () -> assertThat("unannotated Object bound", returnType(type, "unannotated").upperBounds(), empty()),
+                  () -> assertThat("unannotated intersection bounds",
+                                   returnType(type, "unannotatedIntersection").upperBounds().stream()
+                                           .map(TypeName::fqName).toList(),
+                                   is(List.of("java.lang.Runnable"))));
+    }
+
+    @Test
     void testTypeVariableArrayAnnotations() {
         TypeName type = returnType(compile("@A T @B [] value();"), "value");
 

@@ -356,12 +356,12 @@ final class AptTypeFactory {
                         .filter(Predicate.not(processed::equals))
                         .map(typeMirror -> createTypeName(elements, processed, typeMirror))
                         .flatMap(Optional::stream)
-                        .filter(Predicate.not(TypeNames.OBJECT::equals))
+                        .filter(type -> !TypeNames.OBJECT.equals(type) || !type.annotations().isEmpty())
                         .forEach(boundHandler);
 
             } else {
                 createTypeName(elements, processed, boundMirror)
-                        .filter(Predicate.not(TypeNames.OBJECT::equals))
+                        .filter(type -> !TypeNames.OBJECT.equals(type) || !type.annotations().isEmpty())
                         .ifPresent(boundHandler);
             }
         }
