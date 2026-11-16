@@ -19,13 +19,17 @@ package io.helidon.http.media;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.stream.Stream;
 
 import io.helidon.common.parameters.Parameters;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.WritableHeaders;
 
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -35,6 +39,34 @@ class FormParamsSupportTest {
     private static final MediaSupport SUPPORT = FormParamsSupport.create();
     private static final String URL_ENCODED = "application/x-www-form-urlencoded;charset=UTF-8";
     private static final String PLAIN_TEXT = "text/plain;charset=UTF-8";
+
+    @TestFactory
+    Stream<DynamicTest> readsUrlEncodedFields() {
+        Map<String, Map<String, List<String>>> cases = Map.ofEntries(
+                Map.entry("", Map.of()),
+                Map.entry("&&", Map.of()),
+                Map.entry("q", Map.of("q", List.of(""))),
+                Map.entry("q=", Map.of("q", List.of(""))),
+                Map.entry("=value", Map.of("", List.of("value"))),
+                Map.entry("=", Map.of("", List.of(""))),
+                Map.entry("=a=b", Map.of("", List.of("a=b"))),
+                Map.entry("q=a=b", Map.of("q", List.of("a=b"))),
+                Map.entry("q&x=1", Map.of("q", List.of(""), "x", List.of("1"))),
+                Map.entry("a=1&b", Map.of("a", List.of("1"), "b", List.of(""))),
+                Map.entry("&q&&q=&q=one+two&&q&", Map.of("q", List.of("", "", "one two", ""))),
+                Map.entry("=first&&=&=last", Map.of("", List.of("first", "", "last"))),
+                Map.entry("a%26b=c%3Dd%26e&%3D=%26&%2B=+%2B&caf%C3%A9=%E2%82%AC",
+                          Map.of("a&b", List.of("c=d&e"), "=", List.of("&"), "+", List.of(" +"), "café", List.of("€"))),
+                Map.entry("multiple=value1,value2&special=some+%26%40%23%2F+special+value&noValue=",
+                          Map.of("multiple", List.of("value1,value2"),
+                                 "special", List.of("some &@#/ special value"), "noValue", List.of(""))));
+
+        return cases.entrySet().stream().flatMap(entry -> Stream.of(
+                DynamicTest.dynamicTest("request: " + entry.getKey(),
+                                        () -> assertThat(read(entry.getKey(), URL_ENCODED).toMap(), is(entry.getValue()))),
+                DynamicTest.dynamicTest("response: " + entry.getKey(),
+                                        () -> assertThat(readResponse(entry.getKey()).toMap(), is(entry.getValue())))));
+    }
 
     @Test
     void readsEmptyUrlEncodedValue() {
@@ -66,14 +98,7 @@ class FormParamsSupportTest {
 
     @Test
     void readsEmptyResponseValue() {
-        var requestHeaders = WritableHeaders.create();
-        var responseHeaders = WritableHeaders.create().set(HeaderNames.CONTENT_TYPE, URL_ENCODED);
-        var stream = new ByteArrayInputStream("q=".getBytes(StandardCharsets.UTF_8));
-
-        Parameters parameters = SUPPORT.reader(Parameters.GENERIC_TYPE, requestHeaders, responseHeaders)
-                .supplier().get().read(Parameters.GENERIC_TYPE, stream, requestHeaders, responseHeaders);
-
-        assertValues(parameters, List.of(""));
+        assertValues(readResponse("q="), List.of(""));
     }
 
     @Test
@@ -86,6 +111,15 @@ class FormParamsSupportTest {
             assertThrows(NoSuchElementException.class, () -> parameters.all("q"));
             assertThat(contentType, read("", contentType).isEmpty(), is(true));
         }
+    }
+
+    private static Parameters readResponse(String body) {
+        var requestHeaders = WritableHeaders.create();
+        var responseHeaders = WritableHeaders.create().set(HeaderNames.CONTENT_TYPE, URL_ENCODED);
+        var stream = new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8));
+
+        return SUPPORT.reader(Parameters.GENERIC_TYPE, requestHeaders, responseHeaders)
+                .supplier().get().read(Parameters.GENERIC_TYPE, stream, requestHeaders, responseHeaders);
     }
 
     private static Parameters read(String body, String contentType) {

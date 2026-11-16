@@ -48,6 +48,10 @@ class FormParamsSupportTest {
 
     @SetUpRoute
     static void routing(HttpRules rules) {
+        rules.post("/echo", (req, resp) -> {
+            resp.header(HeaderNames.CONTENT_TYPE, MediaTypes.APPLICATION_FORM_URLENCODED.text());
+            resp.send(req.content().as(Parameters.class));
+        });
         rules.route(Method.QUERY, "/ui/search", (req, resp) -> {
             Parameters parameters = req.content().as(Parameters.class);
             resp.send("OK: " + parameters.get("q"));
@@ -63,6 +67,18 @@ class FormParamsSupportTest {
 
             resp.send(map.toString());
         });
+    }
+
+    @Test
+    void preservesBareFieldsAndEmptyNamesThroughServerAndClient() {
+        try (var response = client.post()
+                .path("/echo")
+                .header(HeaderNames.CONTENT_TYPE, MediaTypes.APPLICATION_FORM_URLENCODED.text())
+                .submit("q&=value&=&q=&q=one+two&=a=b&&")) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(Parameters.class).toMap(),
+                       is(Map.of("q", List.of("", "", "one two"), "", List.of("value", "", "a=b"))));
+        }
     }
 
     @Test
