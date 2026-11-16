@@ -26,7 +26,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -283,15 +282,11 @@ public class FormParamsSupport implements MediaSupport {
         }
     }
 
-    private static class FormParamsReader implements EntityReader<Parameters> {
+    private abstract static class FormParamsReader implements EntityReader<Parameters> {
         private final System.Logger logger;
-        private final Pattern pattern;
-        private final BiFunction<Charset, String, String> decoder;
 
-        private FormParamsReader(System.Logger logger, Pattern pattern, BiFunction<Charset, String, String> decoder) {
+        private FormParamsReader(System.Logger logger) {
             this.logger = logger;
-            this.pattern = pattern;
-            this.decoder = decoder;
         }
 
         @Override
@@ -307,6 +302,8 @@ public class FormParamsSupport implements MediaSupport {
             return read(stream, responseHeaders.contentType());
         }
 
+        abstract void readParameters(String encodedString, Charset charset, Parameters.Builder builder);
+
         private Parameters read(InputStream stream, Optional<HttpMediaType> contentType) {
             Charset charset = contentType
                     .flatMap(HttpMediaType::charset)
@@ -321,12 +318,7 @@ public class FormParamsSupport implements MediaSupport {
                                "Reading encoded form parameters, characters: {0}",
                                encodedString.length());
                 }
-                Matcher matcher = pattern.matcher(encodedString);
-                while (matcher.find()) {
-                    String key = decoder.apply(charset, matcher.group(1));
-                    String value = decoder.apply(charset, matcher.group(2));
-                    builder.add(key, value);
-                }
+                readParameters(encodedString, charset, builder);
                 return builder.build();
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
@@ -334,23 +326,53 @@ public class FormParamsSupport implements MediaSupport {
         }
     }
 
-    static final class FormParamsUrlReader extends FormParamsReader {
-        static final Pattern PATTERN = Pattern.compile("([^=&]+)=([^&]*)&?");
+    private static final class FormParamsUrlReader extends FormParamsReader {
         private static final System.Logger LOGGER = System.getLogger(FormParamsUrlReader.class.getName());
-        private static final BiFunction<Charset, String, String> DECODER = (charset, value) -> URLDecoder.decode(value, charset);
 
         private FormParamsUrlReader() {
-            super(LOGGER, PATTERN, DECODER);
+            super(LOGGER);
+        }
+
+        @Override
+        void readParameters(String encodedString, Charset charset, Parameters.Builder builder) {
+            int start = 0;
+            while (start < encodedString.length()) {
+                int end = encodedString.indexOf('&', start);
+                if (end == -1) {
+                    end = encodedString.length();
+                }
+                if (start < end) {
+                    int equals = encodedString.indexOf('=', start, end);
+                    String name;
+                    String value;
+                    if (equals == -1) {
+                        name = encodedString.substring(start, end);
+                        value = "";
+                    } else {
+                        name = encodedString.substring(start, equals);
+                        value = encodedString.substring(equals + 1, end);
+                    }
+                    builder.add(URLDecoder.decode(name, charset), URLDecoder.decode(value, charset));
+                }
+                start = end + 1;
+            }
         }
     }
 
     private static final class FormParamsPlaintextReader extends FormParamsReader {
         private static final System.Logger LOGGER = System.getLogger(FormParamsPlaintextReader.class.getName());
         private static final Pattern PATTERN = Pattern.compile("([^=]+)=([^\\n]*)\\n?");
-        private static final BiFunction<Charset, String, String> DECODER = (charset, value) -> value;
 
         private FormParamsPlaintextReader() {
-            super(LOGGER, PATTERN, DECODER);
+            super(LOGGER);
+        }
+
+        @Override
+        void readParameters(String encodedString, Charset charset, Parameters.Builder builder) {
+            Matcher matcher = PATTERN.matcher(encodedString);
+            while (matcher.find()) {
+                builder.add(matcher.group(1), matcher.group(2));
+            }
         }
     }
 
