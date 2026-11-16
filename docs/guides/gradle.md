@@ -68,6 +68,36 @@ dependencies {
 }
 ```
 
+### Annotation Processing Scope
+
+Helidon infers the annotation-processing scope from conventional compiler output
+directories. Gradle's `classes/java/main` output uses production scope, while
+`classes/java/test` uses test scope. Other source sets under `classes/java/`
+use their source-set name. This keeps unnamed-module service metadata in
+separate directories for production and test compilation.
+
+For custom output layouts, set the scope explicitly on the corresponding
+compilation task:
+
+```groovy [build.gradle]
+tasks.named('compileTestJava', JavaCompile) {
+    options.compilerArgs.add('-Ahelidon.codegen.scope=test')
+}
+```
+
+An explicit `helidon.codegen.scope` overrides output-directory inference.
+Unrecognized layouts default to production scope.
+
+Eclipse and VS Code Java tooling can use different output directories from
+Gradle. Helidon recognizes `bin/main` and `bin/test`, and uses Eclipse's
+`.apt_generated_tests` source-output directory as a test-scope clue when the
+binary output does not identify a scope. Shared binary output and custom
+generated-source directories may not provide enough information to infer the
+scope. IDE annotation processing must be enabled separately; this inference
+does not configure the IDE or run the Gradle application-binding tasks.
+
+### Application Bindings
+
 An application binding is an optional build-time linker. It can hard-wire
 service metadata and injection plans to avoid classpath scanning and reflection
 during bootstrap. The linker runs after compilation and before packaging.
