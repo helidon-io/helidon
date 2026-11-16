@@ -2,7 +2,7 @@
 
 ## Description
 
-Configuration settings for OpenTelemetry logging
+Configuration settings for OpenTelemetry logging; optional values left unspecified in the configuration defer to the OpenTelemetry defaults
 
 ## Configuration options
 
@@ -23,7 +23,7 @@ Configuration settings for OpenTelemetry logging
 <td>
 <code>Boolean</code>
 </td>
-<td>Whether to include <em>only</em> log records from traces which are sampled</td>
+<td>Whether to drop log records associated with valid, unsampled trace contexts; records without a valid trace context are unaffected; defaults to the OpenTelemetry default</td>
 </tr>
 <tr>
 <td>
@@ -44,7 +44,7 @@ Configuration settings for OpenTelemetry logging
 <td>
 <code>Severity</code>
 </td>
-<td>Minimum severity level of log records to process</td>
+<td>Minimum severity level of log records to process; records with an unspecified severity are unaffected</td>
 </tr>
 <tr>
 <td>
@@ -65,7 +65,7 @@ Configuration settings for OpenTelemetry logging
 <td>
 <code>Boolean</code>
 </td>
-<td>Whether the OpenTelemetry logger should be enabled</td>
+<td>Whether the OpenTelemetry logger should be enabled; passed to OpenTelemetry</td>
 </tr>
 <tr>
 <td>
