@@ -275,11 +275,11 @@ Here is the list of gRPC client metrics available in Helidon:
 | grpc.client.attempt.rcvd_total_compressed_message_size | Distribution Summary | grpc.method, grpc.target, grpc.status | Summary of message sizes received from clients for a certain method and target.                   |
 
 The value of the label `grpc.method` is the fully-qualified method name; the
-value of the label `grpc.target` is the base URI of the gRPC service. At the
-time of writing, Helidon only tracks *successful* client method calls, so the
-value of the `grpc.status` label is always set to the string "OK". Support for
-metrics of unsuccessful calls may be added in the future, hence the need to
-include the label at this time.
+value of the label `grpc.target` is the base URI of the gRPC service. Completed
+unary and streaming calls record duration and message-size metrics with the
+terminal gRPC `Status.Code` name in the `grpc.status` label, such as `OK`,
+`UNAVAILABLE`, or `CANCELLED`. This includes successful, failed, and cancelled
+calls. The started counter does not include a status label.
 
 As stated above, gRPC client metrics are disabled by default but can be enabled
 programmatically when building the client as shown next:
