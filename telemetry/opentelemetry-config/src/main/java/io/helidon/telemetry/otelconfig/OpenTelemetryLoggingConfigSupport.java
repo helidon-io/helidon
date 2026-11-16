@@ -26,6 +26,7 @@ import io.opentelemetry.sdk.logs.LogLimits;
 import io.opentelemetry.sdk.logs.SdkLoggerProvider;
 import io.opentelemetry.sdk.logs.export.LogRecordExporter;
 import io.opentelemetry.sdk.logs.internal.LoggerConfig;
+import io.opentelemetry.sdk.logs.internal.SdkLoggerProviderUtil;
 
 class OpenTelemetryLoggingConfigSupport {
 
@@ -49,6 +50,8 @@ class OpenTelemetryLoggingConfigSupport {
             target.traceBased().ifPresent(loggerConfigBuilder::setTraceBased);
 
             var sdkLoggerProviderBuilder = SdkLoggerProvider.builder();
+            var loggerConfig = loggerConfigBuilder.build();
+            SdkLoggerProviderUtil.setLoggerConfigurator(sdkLoggerProviderBuilder, _ -> loggerConfig);
 
             target.logLimits().ifPresent(limits -> sdkLoggerProviderBuilder.setLogLimits(() -> limits));
 
