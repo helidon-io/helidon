@@ -74,6 +74,7 @@ import io.helidon.http.http2.StreamFlowControl;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.testing.junit5.Testing;
+import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
@@ -557,6 +558,21 @@ class GrpcProtocolHandlerTest {
     @Test
     void testPeerResetDuringTrailersCancelsListenerOnce() throws Exception {
         terminalWriteWithTransportClose(true, false);
+    }
+
+    @Test
+    void testSuccessfulTrailersRecordMetrics() throws Exception {
+        terminalWriteMetrics(false, false);
+    }
+
+    @Test
+    void testPeerResetAfterPublishedTrailersPreservesMetrics() throws Exception {
+        terminalWriteMetrics(true, false);
+    }
+
+    @Test
+    void testFailedTrailersDoNotRecordSuccessMetrics() throws Exception {
+        terminalWriteMetrics(false, true);
     }
 
     @Test
@@ -2384,6 +2400,96 @@ class GrpcProtocolHandlerTest {
                 call.close(Status.OK, new Metadata());
             }
         }
+    }
+
+    private void terminalWriteMetrics(boolean peerReset, boolean failWrite) throws Exception {
+        var release = new CountDownLatch(1);
+        var writing = new CompletableFuture<Http2Headers>();
+        var callReference = new AtomicReference<ServerCall<String, String>>();
+        var cancellations = new AtomicInteger();
+        var completions = new AtomicInteger();
+        RecordingWriter writer = new RecordingWriter() {
+            @Override
+            public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags,
+                                    FlowControl.Outbound flowControl) {
+                if (flags.endOfStream()) {
+                    if (!failWrite) {
+                        super.writeHeaders(headers, streamId, flags, flowControl);
+                    }
+                    writing.complete(headers);
+                    await(release);
+                    if (failWrite) {
+                        throw new CloseConnectionException("terminal publication failed");
+                    }
+                    return 0;
+                }
+                return super.writeHeaders(headers, streamId, flags, flowControl);
+            }
+        };
+        String methodName = "test.TerminalMetrics/" + (failWrite ? "Failure" : peerReset ? "Reset" : "Control");
+        var descriptor = stringMethodDescriptor().toBuilder().setFullMethodName(methodName).build();
+        ServerCallHandler<String, String> callHandler = (call, _) -> {
+            callReference.set(call);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onCancel() {
+                    cancellations.incrementAndGet();
+                }
+
+                @Override
+                public void onComplete() {
+                    completions.incrementAndGet();
+                }
+            };
+        };
+        var handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                Http2Headers.create(WritableHeaders.create()),
+                                                writer,
+                                                1,
+                                                null,
+                                                Http2StreamState.OPEN,
+                                                GrpcRouteHandler.methodDefinition(
+                                                        ServerMethodDefinition.create(descriptor, callHandler),
+                                                        null,
+                                                        WeightedBag.create()),
+                                                GrpcConfig.builder().enableMetrics(true).build(),
+                                                metrics);
+        handler.init();
+        var methodMetrics = metrics.methodMetrics().get(methodName);
+        long started = methodMetrics.callStarted().count();
+        long duration = methodMetrics.callDuration().count();
+        long sent = methodMetrics.sentMessageSize().count();
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var closing = executor.submit(() -> callReference.get().close(Status.OK, new Metadata()));
+            try {
+                writing.get(5, TimeUnit.SECONDS);
+                if (!failWrite) {
+                    assertThat("the writer published OK before returning",
+                               writer.trailers.get(5, TimeUnit.SECONDS).httpHeaders().first(GrpcStatus.STATUS_NAME),
+                               is(Optional.of("0")));
+                }
+                if (peerReset) {
+                    handler.rstStream(new Http2RstStream(Http2ErrorCode.CANCEL));
+                }
+            } finally {
+                release.countDown();
+            }
+            closing.get(5, TimeUnit.SECONDS);
+        } finally {
+            release.countDown();
+            handler.close();
+        }
+        assertAll(
+                () -> assertThat("started call", started, is(1L)),
+                () -> assertThat("duration count follows terminal publication",
+                                 methodMetrics.callDuration().count() - duration, is(failWrite ? 0L : 1L)),
+                () -> assertThat("sent-size count follows terminal publication",
+                                 methodMetrics.sentMessageSize().count() - sent, is(failWrite ? 0L : 1L)),
+                () -> assertThat("cancellation remains independent of metric accounting",
+                                 cancellations.get(), is(peerReset || failWrite ? 1 : 0)),
+                () -> assertThat("completion remains independent of metric accounting",
+                                 completions.get(), is(peerReset || failWrite ? 0 : 1))
+        );
     }
 
     private void terminalWriteWithTransportClose(boolean peerReset, boolean finishFirst) throws Exception {
