@@ -123,6 +123,21 @@ public abstract class AbstractJdbcBatchContract {
                 });
     }
 
+    protected JdbcClient.BatchResult insertSized(List<String> names) {
+        return client.create("INSERT INTO CONTACT (NAME, EMAIL) VALUES (?, ?)")
+                .executeBatch(oneShot(IntStream.range(0, names.size()).boxed().toList()), 2, (bindings, index) -> {
+                    Objects.requireNonNull(bindings, "The batch bindings must not be null.");
+                    Objects.requireNonNull(index, "The batch index must not be null.");
+                    String name = names.get(index);
+                    if (name == null) {
+                        bindings.bindNull(1, JDBCType.VARCHAR);
+                    } else {
+                        bindings.bind(1, name);
+                    }
+                    bindings.bindNull(2, JDBCType.VARCHAR);
+                });
+    }
+
     protected JdbcClient.BatchResult insertOrderedSet(Set<String> rows) {
         return insertSource(rows);
     }
@@ -463,6 +478,83 @@ public abstract class AbstractJdbcBatchContract {
      */
     protected List<String> committedAfterPartialFailure() {
         return List.of("batch-before");
+    }
+
+    @Test
+    protected final void sizedBatchesPreserveGlobalOrderAndIndependentCommittedState() {
+        List<String> names = List.of("sized-one", "sized-two", "sized-three", "sized-four", "sized-five");
+        JdbcClient.BatchResult result = insertSized(names);
+        assertThat(result.entries().stream().map(JdbcClient.BatchResult.Entry::itemIndex).toList(), is(List.of(0, 1, 2, 3, 4)));
+        for (String name : names) {
+            assertThat(fixture.committedByName(name).orElseThrow().email(), is(Optional.empty()));
+        }
+        assertThat(insertSized(List.of()).totalUpdateCount().orElseThrow(), is(0L));
+    }
+
+    @Test
+    protected final void sizedDriverFailureRetainsCompletedSubmissionsAndStopsTheSuffix() {
+        JdbcBatchException failure = assertThrows(JdbcBatchException.class,
+                () -> insertSized(Arrays.asList("sized-before-one", "sized-before-two", null,
+                                                "sized-driver-dependent", "sized-never-submitted")));
+        assertThat(failure.result().entries().size(), is(5));
+        assertThat(failure.result().entries().get(4).status(), is(JdbcClient.BatchResult.Status.NOT_REPORTED));
+        assertThat(failure.result().totalUpdateCount().isEmpty(), is(true));
+        assertThat(fixture.committedByName("sized-before-one").isPresent(), is(true));
+        assertThat(fixture.committedByName("sized-before-two").isPresent(), is(true));
+        assertThat(fixture.committedByName("sized-never-submitted"), is(Optional.empty()));
+        assertThat(insertSized(List.of("sized-reused")).entries().size(), is(1));
+        assertThat(fixture.committedByName("sized-reused").isPresent(), is(true));
+    }
+
+    @Test
+    protected final void sizedSubmissionsRetainAllPropagationAndCompletionBoundaries() {
+        for (Tx.Type type : List.of(Tx.Type.REQUIRED, Tx.Type.SUPPORTED, Tx.Type.MANDATORY, Tx.Type.NEW,
+                                    Tx.Type.UNSUPPORTED)) {
+            String prefix = "sized-" + type;
+            assertThrows(TxException.class, () -> transactions.transaction(Tx.Type.REQUIRED, () -> {
+                transactions.transaction(type, () -> insertSized(List.of(prefix + "-one", prefix + "-two", prefix + "-three")));
+                throw new IllegalStateException("The application rejected the outer transaction.");
+            }));
+            boolean independent = type == Tx.Type.NEW || type == Tx.Type.UNSUPPORTED;
+            for (String suffix : List.of("-one", "-two", "-three")) {
+                assertThat(type.toString(), fixture.committedByName(prefix + suffix).isPresent(), is(independent));
+            }
+        }
+        assertThrows(TxException.class, () -> transactions.transaction(Tx.Type.MANDATORY,
+                () -> insertSized(List.of("sized-mandatory"))));
+        assertThrows(TxException.class, () -> transactions.transaction(Tx.Type.REQUIRED,
+                () -> transactions.transaction(Tx.Type.NEVER, () -> insertSized(List.of("sized-never")))));
+        transactions.transaction(Tx.Type.NEVER, () -> insertSized(List.of("sized-never-independent")));
+        assertThat(fixture.committedByName("sized-never-independent").isPresent(), is(true));
+        assertThrows(TxException.class, () -> transactions.transaction(Tx.Type.REQUIRED,
+                () -> transactions.transaction(Tx.Type.REQUIRED,
+                        () -> insertSized(Arrays.asList("sized-joined-one", "sized-joined-two", null, "sized-joined-later")))));
+        assertThat(fixture.committedByName("sized-joined-one"), is(Optional.empty()));
+        assertThat(fixture.committedByName("sized-joined-two"), is(Optional.empty()));
+        transactions.transaction(Tx.Type.REQUIRED, () -> {
+            assertThrows(JdbcBatchException.class,
+                    () -> insertSized(Arrays.asList("sized-caught-one", "sized-caught-two", null)));
+            return null;
+        });
+        assertThat(fixture.committedByName("sized-caught-one").isPresent(), is(!constraintFailureAbortsTransaction()));
+        assertThat(fixture.committedByName("sized-caught-two").isPresent(), is(!constraintFailureAbortsTransaction()));
+    }
+
+    @Test
+    protected final void sizedPreparedDefinitionsKeepNamedAndPositionalYamlLayouts() {
+        for (String variant : List.of("", "reordered/", "positional/")) {
+            Supplier<JdbcClient.Statement> definition = preparedDefinition(variant);
+            List<String> names = List.of("sized-prepared-" + variant + "one", "sized-prepared-" + variant + "two",
+                                         "sized-prepared-" + variant + "three");
+            transactions.transaction(Tx.Type.REQUIRED, () -> definition.get().executeBatch(oneShot(names), 2, (bindings, name) -> {
+                Objects.requireNonNull(bindings, "The batch bindings must not be null.");
+                Objects.requireNonNull(name, "The batch item must not be null.");
+                bindings.bind("name", name).bindNull("email", JDBCType.VARCHAR);
+            }));
+            for (String name : names) {
+                assertThat(fixture.committedByName(name).orElseThrow().email(), is(Optional.empty()));
+            }
+        }
     }
 
     @AfterEach

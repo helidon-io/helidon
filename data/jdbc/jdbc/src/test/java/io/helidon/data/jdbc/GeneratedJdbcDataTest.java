@@ -272,6 +272,26 @@ class GeneratedJdbcDataTest {
         verifyZeroInteractions(source);
     }
 
+    @Test
+    void sizedBatchDefaultsValidateBeforeRejectingWithoutDelegation() {
+        JdbcClient.Statement statement = new AlternateStatement();
+        Iterable<Integer> forbidden = () -> { throw new AssertionError("The default must not traverse the source."); };
+        JdbcClient.BatchBinder<Integer> binder = (_, _) -> {
+            throw new AssertionError("The default must not invoke the binder.");
+        };
+        for (int size : new int[] {0, -1, 1, Integer.MAX_VALUE}) {
+            assertThrows(NullPointerException.class, () -> statement.executeBatch(null, size, binder));
+            assertThrows(NullPointerException.class, () -> statement.executeBatch(forbidden, size, null));
+            assertThrows(NullPointerException.class, () -> statement.executeBatch(null, size, null));
+            if (size < 1) {
+                assertThrows(IllegalArgumentException.class, () -> statement.executeBatch(forbidden, size, binder));
+            } else {
+                assertThrows(UnsupportedOperationException.class, () -> statement.executeBatch(forbidden, size, binder));
+                assertThrows(UnsupportedOperationException.class, () -> statement.executeBatch(List.of(), size, binder));
+            }
+        }
+    }
+
     private static final class AlternateClient implements JdbcClient {
         private static final JdbcClientConfig CONFIG = JdbcClientConfig.builder()
                 .dataSourceName("test-data-source")

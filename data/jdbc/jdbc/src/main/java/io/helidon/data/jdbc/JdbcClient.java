@@ -406,6 +406,42 @@ public interface JdbcClient extends RuntimeType.Api<JdbcClientConfig> {
         }
 
         /**
+         * Captures complete bindings and executes sequential JDBC submissions of at most the requested size.
+         * The capture, binding, lifetime, and ownership rules of {@link #executeBatch(Iterable, BatchBinder)} apply.
+         * All items are captured before acquiring JDBC resources, including items beyond submission boundaries.
+         * Empty input consumes the stage and returns an empty result with exact total zero without JDBC work.
+         * <p>
+         * Nonempty input uses one connection lease and one prepared statement. Each item is added once, and there
+         * is no empty final submission. A submission failure stops later submissions. The immutable result retains
+         * global item indices, earlier successful outcomes, and attributable partial failure evidence.
+         * <p>
+         * The size counts parameter sets, not affected rows or bytes. It does not bound capture memory or create
+         * transaction boundaries. Existing transaction participation and completion ownership apply throughout.
+         * Outcomes do not establish commit or rollback. Applications partition inputs themselves when they need
+         * bounded capture or separate transaction boundaries.
+         *
+         * @param items The source supplies items in encounter order. Each item must not be {@code null}.
+         * @param batchSize The maximum number of parameter sets per JDBC submission must be greater than zero.
+         * @param binder The callback binds every physical position exactly once for each item.
+         * @param <T> The type represents an application item.
+         * @return The result contains immutable outcomes for every captured item.
+         * @throws NullPointerException A source, binder, or item is null.
+         * @throws IllegalArgumentException The size is not positive, the statement already has bindings,
+         *                                  or a captured binding is invalid.
+         * @throws IllegalStateException The stage is consumed or an item does not bind every physical position.
+         * @throws JdbcBatchException JDBC setup, execution, clearing, or cleanup fails, or the driver returns invalid counts.
+         * @throws UnsupportedOperationException The provider does not support explicit batch submission sizing.
+         */
+        default <T> BatchResult executeBatch(Iterable<T> items, int batchSize, BatchBinder<? super T> binder) {
+            Objects.requireNonNull(items, "The batch source must not be null.");
+            Objects.requireNonNull(binder, "The batch binder must not be null.");
+            if (batchSize < 1) {
+                throw new IllegalArgumentException("The batch size must be greater than zero.");
+            }
+            throw new UnsupportedOperationException("This JDBC provider does not support explicit batch submission sizing.");
+        }
+
+        /**
          * Binds a supported scalar value that is not {@code null}.
          *
          * @param index JDBC position, starting at one

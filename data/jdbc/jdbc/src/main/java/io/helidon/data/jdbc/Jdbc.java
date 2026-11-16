@@ -77,6 +77,27 @@ public final class Jdbc {
     }
 
     /**
+     * Limits the number of parameter sets submitted in each JDBC batch execution.
+     * The value must be positive, and the method must resolve to {@link ExecutionType#BATCH}.
+     * This annotation does not select batch execution. It applies to literal and configured SQL.
+     * <p>
+     * All bindings are captured before JDBC acquisition. Submissions reuse one connection and prepared statement
+     * without creating transaction boundaries. The size does not bound capture memory or establish commit or rollback.
+     * Without this annotation, a nonempty batch uses one JDBC batch execution.
+     */
+    @Target(ElementType.METHOD)
+    @Retention(RetentionPolicy.CLASS)
+    public @interface BatchSize {
+
+        /**
+         * Returns the maximum number of parameter sets in one JDBC submission.
+         *
+         * @return The value must be greater than zero.
+         */
+        int value();
+    }
+
+    /**
      * Selects the JDBC client managed by the registry, used by a repository.
      * <p>
      * The value names the required {@link JdbcClient} qualified with

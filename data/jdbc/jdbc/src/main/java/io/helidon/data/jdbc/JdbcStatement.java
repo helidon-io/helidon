@@ -91,26 +91,19 @@ final class JdbcStatement implements JdbcClient.Statement {
     public <T> JdbcClient.BatchResult executeBatch(Iterable<T> items, JdbcClient.BatchBinder<? super T> binder) {
         Objects.requireNonNull(items, "The batch source must not be null.");
         Objects.requireNonNull(binder, "The batch binder must not be null.");
-        ensureMutable();
-        for (JdbcOperation.Bind bind : binds) {
-            if (bind != null) {
-                throw new IllegalArgumentException("The statement already has bindings and cannot be used for batch execution. "
-                        + "Use a fresh statement for the batch.");
-            }
+        return runner.executeBatch(new JdbcOperation(sql, new JdbcOperation.Bind[0], JdbcPreparationPlan.update()),
+                                   capture(items, binder), Integer.MAX_VALUE);
+    }
+
+    @Override
+    public <T> JdbcClient.BatchResult executeBatch(Iterable<T> items, int batchSize, JdbcClient.BatchBinder<? super T> binder) {
+        Objects.requireNonNull(items, "The batch source must not be null.");
+        Objects.requireNonNull(binder, "The batch binder must not be null.");
+        if (batchSize < 1) {
+            throw new IllegalArgumentException("The batch size must be greater than zero.");
         }
-        terminalState = true;
-        List<JdbcOperation.Bind[]> captured = new ArrayList<>();
-        for (T item : items) {
-            Objects.requireNonNull(item, "The batch item must not be null.");
-            JdbcBatchBindings bindings = new JdbcBatchBindings(binds.length, configured);
-            try {
-                binder.bind(bindings, item);
-                captured.add(bindings.complete());
-            } finally {
-                bindings.close();
-            }
-        }
-        return runner.executeBatch(new JdbcOperation(sql, new JdbcOperation.Bind[0], JdbcPreparationPlan.update()), captured);
+        return runner.executeBatch(new JdbcOperation(sql, new JdbcOperation.Bind[0], JdbcPreparationPlan.update()),
+                                   capture(items, binder), batchSize);
     }
 
     /**
@@ -256,6 +249,29 @@ final class JdbcStatement implements JdbcClient.Statement {
         default -> {
         }
         }
+    }
+
+    private <T> List<JdbcOperation.Bind[]> capture(Iterable<T> items, JdbcClient.BatchBinder<? super T> binder) {
+        ensureMutable();
+        for (JdbcOperation.Bind bind : binds) {
+            if (bind != null) {
+                throw new IllegalArgumentException("The statement already has bindings and cannot be used for batch execution. "
+                        + "Use a fresh statement for the batch.");
+            }
+        }
+        terminalState = true;
+        List<JdbcOperation.Bind[]> captured = new ArrayList<>();
+        for (T item : items) {
+            Objects.requireNonNull(item, "The batch item must not be null.");
+            JdbcBatchBindings bindings = new JdbcBatchBindings(binds.length, configured);
+            try {
+                binder.bind(bindings, item);
+                captured.add(bindings.complete());
+            } finally {
+                bindings.close();
+            }
+        }
+        return captured;
     }
 
     private JdbcClient.Statement bind(String name, JdbcOperation.Bind value) {

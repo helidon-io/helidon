@@ -575,6 +575,104 @@ class GeneratedBatchTest {
         verify(connection).close();
     }
 
+    @Test
+    void sizedGeneratedAdaptersCaptureOnceBeforeExecutingLiteralAndConfiguredSubmissions() throws SQLException {
+        DataSource source = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        PreparedStatement statement = mock(PreparedStatement.class);
+        AtomicInteger captured = new AtomicInteger();
+        when(source.getConnection()).thenAnswer(_ -> {
+            assertThat(captured.get(), is(5));
+            return connection;
+        });
+        when(connection.getAutoCommit()).thenReturn(true);
+        when(connection.prepareStatement(anyString())).thenReturn(statement);
+        when(statement.executeBatch()).thenReturn(new int[] {1, 1}, new int[] {1, 1}, new int[] {1});
+        JdbcClient client = JdbcClient.builder().dataSource(source).build();
+        BatchCollisionRepository literal = new BatchCollisionRepository__Jdbc(client);
+        JdbcClient.BatchResult result = literal.sized(
+                () -> List.of("one", "two", "three", "four", "five").stream()
+                        .peek(_ -> captured.incrementAndGet()).iterator(),
+                null, new long[] {1, 2, 3, 4, 5}, 5, 4, 3, 2, 1);
+        assertThat(result.totalUpdateCount().orElseThrow(), is(5L));
+        verify(statement, times(3)).executeBatch();
+        verify(statement, times(2)).clearBatch();
+        verify(statement, times(5)).setNull(2, JDBCType.VARCHAR.getVendorTypeNumber());
+        verify(statement).setString(1, "five");
+        verify(statement).setLong(3, 5);
+        verify(statement).setInt(4, 1);
+        Config config = mock(Config.class);
+        when(config.get(anyString())).thenAnswer(call -> Config.just(ConfigSources.create(Map.of(
+                "app.sized", "INSERT INTO T VALUES (:email, :name, :name)"))).get((String) call.getArgument(0)));
+        ConfiguredBatchRepository configured = new ConfiguredBatchRepository__Jdbc(client, config);
+        when(statement.executeBatch()).thenReturn(new int[] {1, 1}, new int[] {1, 1}, new int[] {1});
+        captured.set(0);
+        Iterable<String> names = () -> List.of("one", "two", "three", "four", "five").stream()
+                .peek(_ -> captured.incrementAndGet()).iterator();
+        assertThat(configured.sized(names, null).totalUpdateCount().orElseThrow(), is(5L));
+        verify(config).get("app.sized");
+        verify(statement, times(6)).executeBatch();
+        verify(statement, times(4)).clearBatch();
+        verify(statement).setString(3, "five");
+        verify(source, times(2)).getConnection();
+        verify(connection, times(2)).close();
+        verify(connection, never()).commit();
+        verify(connection, never()).rollback();
+    }
+
+    @Test
+    void sizedGeneratedSourcesAndAccessorsFailBeforeAnySubmission() throws SQLException {
+        DataSource source = mock(DataSource.class);
+        JdbcClient client = JdbcClient.builder().dataSource(source).build();
+        ConfiguredBatchRepository repository = new ConfiguredBatchRepository__Jdbc(client, Config.empty());
+        ConfiguredBatchRepository.Change.ACCESSES.set(0);
+        List<ConfiguredBatchRepository.Change> brokenRecords = List.of(
+                new ConfiguredBatchRepository.Change("one", 1L), new ConfiguredBatchRepository.Change("two", 2L),
+                new ConfiguredBatchRepository.Change("three", 3L), new ConfiguredBatchRepository.Change("four", 4L),
+                new ConfiguredBatchRepository.Change("fail", 5L));
+        assertThat(assertThrows(IllegalStateException.class, () -> repository.sizedRecords(brokenRecords.iterator())).getMessage(),
+                   is("The configured record accessor failed."));
+        assertThat(ConfiguredBatchRepository.Change.ACCESSES.get(), is(5));
+        IllegalStateException application = new IllegalStateException("The fifth source item failed.");
+        Iterable<String> brokenSource = () -> new Iterator<>() {
+            private int position;
+
+            @Override
+            public boolean hasNext() {
+                return position < 5;
+            }
+
+            @Override
+            public String next() {
+                if (++position == 5) {
+                    throw application;
+                }
+                return "value";
+            }
+        };
+        assertThat(assertThrows(IllegalStateException.class, () -> repository.sized(brokenSource, null)), sameInstance(application));
+        verifyZeroInteractions(source);
+        ConfiguredBatchRepository.Change.ACCESSES.set(0);
+        Connection connection = mock(Connection.class);
+        PreparedStatement statement = mock(PreparedStatement.class);
+        when(source.getConnection()).thenAnswer(_ -> {
+            assertThat(ConfiguredBatchRepository.Change.ACCESSES.get(), is(5));
+            return connection;
+        });
+        when(connection.getAutoCommit()).thenReturn(true);
+        when(connection.prepareStatement(anyString())).thenReturn(statement);
+        when(statement.executeBatch()).thenReturn(new int[] {1, 1}, new int[] {1, 1}, new int[] {1});
+        assertThat(repository.sizedRecords(List.of(new ConfiguredBatchRepository.Change(null, null),
+                new ConfiguredBatchRepository.Change("two", 2L), new ConfiguredBatchRepository.Change("three", 3L),
+                new ConfiguredBatchRepository.Change("four", 4L), new ConfiguredBatchRepository.Change("five", 5L)).iterator())
+                           .totalUpdateCount().orElseThrow(), is(5L));
+        assertThat(ConfiguredBatchRepository.Change.ACCESSES.get(), is(5));
+        verify(statement).setNull(1, JDBCType.VARCHAR.getVendorTypeNumber());
+        verify(statement).setNull(2, JDBCType.BIGINT.getVendorTypeNumber());
+        verify(statement, times(3)).executeBatch();
+        verify(statement, times(2)).clearBatch();
+    }
+
     private static void assertConfidential(Throwable failure) {
         assertThat(failure.toString(), not(containsString("CANARY")));
         if (failure.getCause() != null) {

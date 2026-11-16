@@ -35,6 +35,7 @@ final class JdbcCodegenTypes {
     static final TypeName JDBC_CLIENT_ANNOTATION = TypeName.create("io.helidon.data.jdbc.Jdbc.Client");
     static final TypeName JDBC_STATEMENT = TypeName.create("io.helidon.data.jdbc.Jdbc.Statement");
     static final TypeName JDBC_EXECUTION = TypeName.create("io.helidon.data.jdbc.Jdbc.Execution");
+    static final TypeName JDBC_BATCH_SIZE = TypeName.create("io.helidon.data.jdbc.Jdbc.BatchSize");
     static final TypeName JDBC_GENERATED_KEYS = TypeName.create("io.helidon.data.jdbc.Jdbc.GeneratedKeys");
     static final TypeName JDBC_ROW_MAPPER = TypeName.create("io.helidon.data.jdbc.Jdbc.RowMapper");
     static final TypeName DATA_PARAM = TypeName.create("io.helidon.data.Data.Param");

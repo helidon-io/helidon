@@ -82,37 +82,42 @@ final class JdbcRunner {
      *
      * @param operation The operation supplies literal SQL and preparation rules.
      * @param items Each item contains a complete binding snapshot.
+     * @param batchSize The maximum number of parameter sets in one JDBC submission.
      * @return The result contains detached execution evidence.
      */
-    JdbcClient.BatchResult executeBatch(JdbcOperation operation, List<JdbcOperation.Bind[]> items) {
-        JdbcBatchResult[] evidence = {JdbcBatchResult.capture(items.size(), null)};
+    JdbcClient.BatchResult executeBatch(JdbcOperation operation, List<JdbcOperation.Bind[]> items, int batchSize) {
+        JdbcBatchResult.Accumulator evidence = new JdbcBatchResult.Accumulator(items.size());
         if (items.isEmpty()) {
-            return evidence[0];
+            return evidence.result();
         }
         try {
             return run(operation, UNBOUNDED, scope -> {
-                for (JdbcOperation.Bind[] item : items) {
-                    bind(scope.statement(), item);
-                    JdbcExceptionTranslator.invokeVoid("adding a JDBC batch item", scope.statement()::addBatch);
+                for (int offset = 0; offset < items.size();) {
+                    int size = Math.min(batchSize, items.size() - offset);
+                    int end = offset + size;
+                    for (int index = offset; index < end; index++) {
+                        bind(scope.statement(), items.get(index));
+                        JdbcExceptionTranslator.invokeVoid("adding a JDBC batch item", scope.statement()::addBatch);
+                    }
+                    int[] counts;
+                    try {
+                        counts = JdbcExceptionTranslator.invoke("executing a JDBC batch", scope.statement()::executeBatch);
+                    } catch (BatchUpdateException failure) {
+                        evidence.record(offset, size, failure.getUpdateCounts());
+                        throw failure;
+                    }
+                    if (!evidence.record(offset, size, counts)) {
+                        throw JdbcExceptionTranslator.safeException("The JDBC driver returned invalid batch update counts.");
+                    }
+                    offset = end;
+                    if (offset < items.size()) {
+                        JdbcExceptionTranslator.invokeVoid("clearing a JDBC batch", scope.statement()::clearBatch);
+                    }
                 }
-                int[] counts;
-                try {
-                    counts = JdbcExceptionTranslator.invoke("executing a JDBC batch", scope.statement()::executeBatch);
-                } catch (BatchUpdateException failure) {
-                    evidence[0] = JdbcBatchResult.capture(items.size(), failure.getUpdateCounts());
-                    throw failure;
-                }
-                evidence[0] = JdbcBatchResult.capture(items.size(), counts);
-                if (counts == null || counts.length != items.size()
-                        || evidence[0].entries().stream().anyMatch(entry ->
-                                entry.status() == JdbcClient.BatchResult.Status.EXECUTE_FAILED
-                                        || entry.status() == JdbcClient.BatchResult.Status.NOT_REPORTED)) {
-                    throw JdbcExceptionTranslator.safeException("The JDBC driver returned invalid batch update counts.");
-                }
-                return evidence[0];
+                return evidence.result();
             });
         } catch (RuntimeException failure) {
-            throw new JdbcBatchException(evidence[0], JdbcExceptionTranslator.sanitize("executing a JDBC batch", failure));
+            throw new JdbcBatchException(evidence.result(), JdbcExceptionTranslator.sanitize("executing a JDBC batch", failure));
         }
     }
 

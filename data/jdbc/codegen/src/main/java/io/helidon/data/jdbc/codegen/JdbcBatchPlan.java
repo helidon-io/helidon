@@ -31,7 +31,7 @@ import io.helidon.common.types.TypedElementInfo;
  * Plans source capture and ordered scalar inputs for literal or configured batches.
  */
 record JdbcBatchPlan(List<Source> sources, List<Value> values, JdbcSqlParameterPlan parameters,
-                     List<String> inputNames, boolean namedOnly) {
+                     List<String> inputNames, boolean namedOnly, int batchSize) {
     static JdbcBatchPlan create(String sql, TypedElementInfo method, RoundContext context) {
         return create(sql, null, method, context);
     }
@@ -42,6 +42,13 @@ record JdbcBatchPlan(List<Source> sources, List<Value> values, JdbcSqlParameterP
 
     private static JdbcBatchPlan create(String sql, JdbcSqlReference reference,
                                         TypedElementInfo method, RoundContext context) {
+        int batchSize = 0;
+        if (method.hasAnnotation(JdbcCodegenTypes.JDBC_BATCH_SIZE)) {
+            batchSize = method.annotation(JdbcCodegenTypes.JDBC_BATCH_SIZE).intValue().orElse(0);
+            if (batchSize < 1) {
+                throw JdbcMethodPlan.failure(method, "The batch size must be greater than zero.");
+            }
+        }
         if (!method.typeName().equals(TypeNames.PRIMITIVE_VOID)
                 && !method.typeName().equals(JdbcCodegenTypes.JDBC_BATCH_RESULT)) {
             throw JdbcMethodPlan.failure(method, "A BATCH repository method must return void or JdbcClient.BatchResult. "
@@ -123,17 +130,17 @@ record JdbcBatchPlan(List<Source> sources, List<Value> values, JdbcSqlParameterP
                     + "or varargs input source.");
         }
         List<TypedElementInfo> inputs = values.stream().map(Value::parameter).toList();
+        boolean reliable = values.stream().allMatch(value -> value.component() != null
+                || value.parameter().hasAnnotation(JdbcCodegenTypes.DATA_PARAM)
+                || context.typeHierarchyResolver().parameterNameAvailable(value.parameter()));
         List<String> names = List.of();
         boolean namedOnly = false;
         JdbcSqlParameterPlan parameters;
         if (reference == null) {
-            parameters = JdbcSqlParameterPlan.create(sql, inputs, method);
+            parameters = JdbcSqlParameterPlan.create(sql, inputs, method, reliable);
         } else {
             JdbcSqlParameterPlan.validateParameters(inputs, method, false);
             namedOnly = inputs.stream().anyMatch(parameter -> parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM));
-            boolean reliable = values.stream().allMatch(value -> value.component() != null
-                    || value.parameter().hasAnnotation(JdbcCodegenTypes.DATA_PARAM)
-                    || context.typeHierarchyResolver().parameterNameAvailable(value.parameter()));
             List<String> candidates = inputs.stream().map(JdbcSqlParameterPlan::effectiveName).toList();
             if (reliable && new HashSet<>(candidates).size() == candidates.size()) {
                 names = candidates;
@@ -152,7 +159,7 @@ record JdbcBatchPlan(List<Source> sources, List<Value> values, JdbcSqlParameterP
                 JdbcSqlParameterPlan.create(reference.defaultSql(), inputs, method, !names.isEmpty());
             }
         }
-        return new JdbcBatchPlan(List.copyOf(sources), List.copyOf(values), parameters, names, namedOnly);
+        return new JdbcBatchPlan(List.copyOf(sources), List.copyOf(values), parameters, names, namedOnly, batchSize);
     }
 
     record Source(TypedElementInfo parameter, TypeName element, boolean array, boolean iterable) {

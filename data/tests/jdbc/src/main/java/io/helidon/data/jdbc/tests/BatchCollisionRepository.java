@@ -29,6 +29,10 @@ import io.helidon.data.jdbc.JdbcClient;
 @Data.Repository
 @Data.Provider("jdbc")
 public interface BatchCollisionRepository extends BatchAliasContract<String> {
+    @Jdbc.Statement("INSERT INTO T VALUES (:batchSize, :size, :offset, :counts)")
+    @Jdbc.BatchSize(2)
+    JdbcClient.BatchResult sized(Iterable<String> batchSize, String size, long[] offset, int... counts);
+
     @Jdbc.Statement("INSERT INTO T VALUES (:SQL_INSERT, :jdbcClient, :SQL_INSERT, :statement, :rows, :statement)")
     JdbcClient.BatchResult insert(List<String> SQL_INSERT, String jdbcClient, Iterator<Item> iterator);
 
@@ -88,6 +92,14 @@ interface BatchAliasContract<T> {
 @Data.Repository
 @Data.Provider("jdbc")
 interface ConfiguredBatchRepository extends ConfiguredBatchParent<String> {
+    @Jdbc.Statement("${app.sized:INSERT INTO T VALUES (:name, :email)}")
+    @Jdbc.BatchSize(2)
+    JdbcClient.BatchResult sized(Iterable<String> name, String email);
+
+    @Jdbc.Statement("${app.sized-records:UPDATE T SET NAME = :name WHERE ID = :id}")
+    @Jdbc.BatchSize(2)
+    JdbcClient.BatchResult sizedRecords(Iterator<Change> rows);
+
     @Jdbc.Statement("${app.batch:INSERT INTO T VALUES (:name, :email)}")
     JdbcClient.BatchResult scalar(Iterable<String> name, String email);
 
