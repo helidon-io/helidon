@@ -10,6 +10,59 @@ For previous releases of Helidon please see:
 * [Helidon 2.x CHANGELOG.md](https://github.com/helidon-io/helidon/blob/helidon-2.x/CHANGELOG.md)
 * [Helidon 1.x CHANGELOG.md](https://github.com/helidon-io/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [27.0.2]
+
+This patch release contains important bug fixes. Helidon 27 requires Java 27 or newer.
+
+### NOTABLE CHANGES
+
+- In-memory entity conversion now has a 1 MiB decoded-input limit by default, including strings, byte arrays, JSON, forms, and buffered multipart parts. Streaming reads are unaffected. Applications that materialize larger entities must increase `max-buffered-entity-size` for the affected HTTP protocol or WebClient protocol.
+
+### CHANGES
+
+- Build: Update macOS CI runners to macOS 15 [12996](https://github.com/helidon-io/helidon/pull/12996)
+- Build: Upgrade cache actions to 4.2.4 [12892](https://github.com/helidon-io/helidon/pull/12892)
+- Builders: Fix Configured config key Javadoc [12902](https://github.com/helidon-io/helidon/pull/12902)
+- Common: Fix exact binary size formatting [13134](https://github.com/helidon-io/helidon/pull/13134)
+- CORS: Fix CORS preflight header list parsing [12920](https://github.com/helidon-io/helidon/pull/12920)
+- Data: Redact password and secret properties in JPA debug logs [1d7b370d7f](https://github.com/helidon-io/helidon/commit/1d7b370d7f4961053768dab904317c5343ef188f)
+- Data: Update package name for Data JDBC integration tests [12957](https://github.com/helidon-io/helidon/pull/12957)
+- Dependencies: Upgrade Jackson to 2.21.8 [12876](https://github.com/helidon-io/helidon/pull/12876)
+- Dependencies: Upgrade Guava to 33.8.0 and MongoDB driver to 5.14.0 [13029](https://github.com/helidon-io/helidon/pull/13029)
+- Dependencies: Upgrade Handlebars, ASM, Guava, and Byte Buddy [12911](https://github.com/helidon-io/helidon/pull/12911)
+- Dependencies: Upgrade MongoDB driver to 5.12.0 [12888](https://github.com/helidon-io/helidon/pull/12888)
+- Dependencies: Upgrade opentelemetry to 1.67.0 and semantic-conv to 1.44.0 [13005](https://github.com/helidon-io/helidon/pull/13005)
+- Dependencies: Upgrade PostgreSQL JDBC driver to 42.7.14 [13127](https://github.com/helidon-io/helidon/pull/13127)
+- Docs: Refresh generated configuration reference [cb2b630148](https://github.com/helidon-io/helidon/commit/cb2b63014858f9c2a820d277994e4b65a4d95f2e)
+- Fault Tolerance: Make timeout monitor tests portable across JDK thread states [12882](https://github.com/helidon-io/helidon/pull/12882)
+- gRPC: Make gRPC request sender backpressure test deterministic [12919](https://github.com/helidon-io/helidon/pull/12919)
+- gRPC: Preserve gRPC completion metrics after connection close [12952](https://github.com/helidon-io/helidon/pull/12952)
+- gRPC: Stabilize gRPC transport-close writer test [12944](https://github.com/helidon-io/helidon/pull/12944)
+- HTTP: Fix HTTP/1 response framing and completion [1c9e29f474](https://github.com/helidon-io/helidon/commit/1c9e29f474810eb6b37754bae4b6951d8c92bdee)
+- HTTP: Fix zero cookie max age serialization [13021](https://github.com/helidon-io/helidon/pull/13021)
+- HTTP: Limit decoded entities materialized in memory [992b7ec3ac](https://github.com/helidon-io/helidon/commit/992b7ec3acee17c4b6cf9b0b10ec50638e85824d)
+- HTTP: Omit HTTP token contents from validation errors [12898](https://github.com/helidon-io/helidon/pull/12898)
+- HTTP: Preserve quoted semicolons in content disposition parameters [13111](https://github.com/helidon-io/helidon/pull/13111)
+- HTTP/2: 12405 Fix HTTP/2 flow-control Javadoc [12832](https://github.com/helidon-io/helidon/pull/12832)
+- JSON Schema: Support enum and time properties in JSON Schema [13100](https://github.com/helidon-io/helidon/pull/13100)
+- JSON: Fix JSON stream parsing at buffer boundaries and on short reads [13074](https://github.com/helidon-io/helidon/pull/13074)
+- JSON: Preserve negative zero in JSON output streams [12856](https://github.com/helidon-io/helidon/pull/12856)
+- JSON: Sanitize generated JSON converter identifiers [13125](https://github.com/helidon-io/helidon/pull/13125)
+- JSON: Validate JSON values discarded by duplicate keys [12857](https://github.com/helidon-io/helidon/pull/12857)
+- Media: Decode multipart Content-Disposition parameters as UTF-8 [13086](https://github.com/helidon-io/helidon/pull/13086)
+- Media: Preserve empty form parameter values [13076](https://github.com/helidon-io/helidon/pull/13076)
+- Observability: Mask escaped configuration keys in observe output [acb0dd6622](https://github.com/helidon-io/helidon/commit/acb0dd662275b9d0527056e645b651581e9f65c0)
+- OpenAPI: Preserve integer numbers in OpenAPI documents [13088](https://github.com/helidon-io/helidon/pull/13088)
+- Security: Authenticate original JWE headers and validate content keys [8e69ec8372](https://github.com/helidon-io/helidon/commit/8e69ec8372ecf8e26c7d3dea94c45fe90d4413c8)
+- Service Registry: Preserve service dependencies during shutdown [12860](https://github.com/helidon-io/helidon/pull/12860)
+- Socket: Preserve zero bytes during idle socket monitoring [12938](https://github.com/helidon-io/helidon/pull/12938)
+- Telemetry: Stabilize OpenTelemetry HTTP metrics test and avoid duplicate SDK creation [12877](https://github.com/helidon-io/helidon/pull/12877)
+- Testing: Fix JUnit test context AutoCloseable compatibility [12936](https://github.com/helidon-io/helidon/pull/12936)
+- WebClient: Fix redirects to hosts containing underscores [12977](https://github.com/helidon-io/helidon/pull/12977)
+- WebClient: Preserve WebClient request targets [13115](https://github.com/helidon-io/helidon/pull/13115)
+- WebClient: Reset the port when a network-path URI replaces the request authority [13072](https://github.com/helidon-io/helidon/pull/13072)
+- WebServer: Prevent static content temporary file leaks [0f2085593d](https://github.com/helidon-io/helidon/commit/0f2085593df0b8f2cfc2da61d9cc36df268a8aea)
+
 ## [27.0.1]
 
 This patch release of Helidon contains important bug fixes and is strongly recommended for all users of Helidon 27.
@@ -545,5 +598,6 @@ For more information see the [27 upgrade guide](docs/guides/upgrade/27.md).
 - Tests: Stabilize HTTP/2 window update writer test [12579](https://github.com/helidon-io/helidon/pull/12579)
 - Tests: Stabilize listener port refusal lifecycle test [12198](https://github.com/helidon-io/helidon/pull/12198)
 
+[27.0.2]: https://github.com/helidon-io/helidon/compare/27.0.1...27.0.2
 [27.0.1]: https://github.com/helidon-io/helidon/compare/27.0.0...27.0.1
 [27.0.0]: https://github.com/helidon-io/helidon/compare/4.4.0...27.0.0
