@@ -63,6 +63,9 @@ import org.openjdk.jmh.annotations.Warmup;
 @State(Scope.Thread)
 @SuppressWarnings("helidon:api:internal")
 public class GrpcClientMetricsJmhBenchmark {
+    private final Metadata metadata = new Metadata();
+    private final TerminalListener listener = new TerminalListener();
+
     @Param({"UNARY", "BIDI_STREAMING"})
     public MethodDescriptor.MethodType methodType;
 
@@ -75,8 +78,6 @@ public class GrpcClientMetricsJmhBenchmark {
     @Param({"shared", "new-channel"})
     public String channelCache;
 
-    private final Metadata metadata = new Metadata();
-    private final TerminalListener listener = new TerminalListener();
     private GrpcClient client;
     private GrpcChannel channel;
     private MeterRegistry registry;
