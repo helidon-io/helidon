@@ -11,6 +11,59 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/helidon-io/helidon/blob/helidon-1.x/CHANGELOG.md)
 
+## [4.5.7]
+
+This patch release of Helidon contains important bug fixes and is strongly recommended for all users of Helidon 4.
+
+A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
+
+### NOTABLE CHANGES
+
+- In-memory entity conversion now has a 1 MiB decoded-input limit by default, including strings, byte arrays, JSON, forms, and buffered multipart parts. Streaming reads are unaffected. Applications that materialize larger entities must increase `max-buffered-entity-size` for the affected HTTP protocol or WebClient protocol.
+- The deprecated MicroStream integration has been removed. Applications using its cache, CDI, health, or metrics modules must remove or replace those dependencies.
+- OpenTelemetry 1.67.0 removed its Zipkin exporter. Applications configured to export spans to Zipkin through OpenTelemetry should migrate to OTLP.
+
+### CHANGES
+
+- Archetypes: Remove deprecated tracing providers from archetypes [13019](https://github.com/helidon-io/helidon/pull/13019)
+- Common: Count queued concurrency-limit rejections [12998](https://github.com/helidon-io/helidon/pull/12998)
+- Common: Fix exact binary size formatting [13133](https://github.com/helidon-io/helidon/pull/13133)
+- Config: Mask escaped configuration observer keys [0a482fb6cd](https://github.com/helidon-io/helidon/commit/0a482fb6cd1c179bff08a7d240cbf59b7069ea54)
+- CORS: Fix CORS preflight header list parsing [12923](https://github.com/helidon-io/helidon/pull/12923)
+- Data: Redact password and secret properties in JPA DEBUG logs [98be016cd2](https://github.com/helidon-io/helidon/commit/98be016cd2af975c0a0ee9dffd674b251faf7675)
+- Declarative Client: Fix declarative client query and optional header generation [13146](https://github.com/helidon-io/helidon/pull/13146)
+- Dependencies: Upgrade Handlebars, ASM, Guava, Byte Buddy, mongodb-driver-sync [12910](https://github.com/helidon-io/helidon/pull/12910)
+- Dependencies: Upgrade jackson-bom from 2.21.7 to 2.21.8 [12874](https://github.com/helidon-io/helidon/pull/12874)
+- Dependencies: Upgrade Micrometer, Hibernate Validator, and PostgreSQL [13081](https://github.com/helidon-io/helidon/pull/13081)
+- Dependencies: Upgrade netty-bom from 4.1.139.Final to 4.1.140.Final [13045](https://github.com/helidon-io/helidon/pull/13045)
+- Docs: Refresh generated static-content configuration reference [17ca01c5d4](https://github.com/helidon-io/helidon/commit/17ca01c5d49a20fdc9feccfedfb5ecb61fb341ba)
+- Fault Tolerance: Make timeout monitor tests portable across JDK thread states [12881](https://github.com/helidon-io/helidon/pull/12881)
+- gRPC: Align gRPC transport-close writer assertions [12945](https://github.com/helidon-io/helidon/pull/12945)
+- HTTP: Fix zero cookie max age serialization [13023](https://github.com/helidon-io/helidon/pull/13023)
+- HTTP: Limit decoded entities materialized in memory [e034a0456a](https://github.com/helidon-io/helidon/commit/e034a0456add05181fa8ac6f269499f8575af9a0)
+- HTTP: Preserve quoted semicolons in content disposition parameters [13112](https://github.com/helidon-io/helidon/pull/13112)
+- JSON: Fix JSON parser array tokens and stream buffer handling [13075](https://github.com/helidon-io/helidon/pull/13075)
+- JSON: Sanitize generated JSON converter identifiers [13126](https://github.com/helidon-io/helidon/pull/13126)
+- JSON Schema: Support enum and time properties in JSON Schema [13101](https://github.com/helidon-io/helidon/pull/13101)
+- JUnit: Fix JUnit test context AutoCloseable compatibility [12934](https://github.com/helidon-io/helidon/pull/12934)
+- Media: Decode multipart Content-Disposition parameters as UTF-8 [13085](https://github.com/helidon-io/helidon/pull/13085)
+- Media: Preserve empty form parameter values [13077](https://github.com/helidon-io/helidon/pull/13077)
+- MicroStream: Remove deprecated MicroStream integration [12879](https://github.com/helidon-io/helidon/pull/12879)
+- Native Image: Fix annotation analyzer initialization in native images [13041](https://github.com/helidon-io/helidon/pull/13041)
+- Security: Authenticate original JWE headers and validate content keys [98fc79b39e](https://github.com/helidon-io/helidon/commit/98fc79b39e708aa16b01be9efa805baeb4b8cc00)
+- Security: Redact security data from trace logs [c069c31ff2](https://github.com/helidon-io/helidon/commit/c069c31ff2190ffc358dc2a1f1c374ae4aed2784)
+- Service Registry: Preserve service dependencies during shutdown [12861](https://github.com/helidon-io/helidon/pull/12861)
+- Socket: Preserve zero bytes during idle socket monitoring [12939](https://github.com/helidon-io/helidon/pull/12939)
+- Telemetry: Adopt OpenTelemetry 1.67.0 and remove use of its now-deleted Zipkin exporter [13090](https://github.com/helidon-io/helidon/pull/13090)
+- Telemetry: Stabilize OpenTelemetry HTTP metrics test and avoid duplicate SDK creation [12878](https://github.com/helidon-io/helidon/pull/12878)
+- Telemetry: Warn once for deprecated telemetry span settings [13054](https://github.com/helidon-io/helidon/pull/13054)
+- WebClient: Fix HTTP/1 response framing and completion [d6ec3c8243](https://github.com/helidon-io/helidon/commit/d6ec3c8243b7b0d1deb38e83bdc61ea1bf984eec)
+- WebClient: Fix redirects to hosts containing underscores [12960](https://github.com/helidon-io/helidon/pull/12960)
+- WebClient: Preserve WebClient request targets [13116](https://github.com/helidon-io/helidon/pull/13116)
+- WebClient: Reset the port when a network-path URI replaces the request authority [13073](https://github.com/helidon-io/helidon/pull/13073)
+- WebServer: Configure request method in closed-buffer response test [528705470c](https://github.com/helidon-io/helidon/commit/528705470cad3b86b5c70f25ce2de15e3eeb125b)
+- WebServer: Prevent static content temporary file leaks [b7b9680dcf](https://github.com/helidon-io/helidon/commit/b7b9680dcff3485a2e587eece45fdf75ebb43b7e)
+
 ## [4.5.6]
 
 This patch release of Helidon contains important bug fixes and is strongly recommended for all users of Helidon 4.
@@ -2938,6 +2991,7 @@ Helidon 4.0.0 is a major release that includes significant new features and fixe
 - MicroProfile: MP path based static content should use index.html (4.x) [4737](https://github.com/helidon-io/helidon/pull/4737)
 - Build: 4.0 version and poms [4655](https://github.com/helidon-io/helidon/pull/4655)
 
+[4.5.7]: https://github.com/helidon-io/helidon/compare/4.5.6...4.5.7
 [4.5.6]: https://github.com/helidon-io/helidon/compare/4.5.5...4.5.6
 [4.5.5]: https://github.com/helidon-io/helidon/compare/4.5.4...4.5.5
 [4.5.4]: https://github.com/helidon-io/helidon/compare/4.5.3...4.5.4
