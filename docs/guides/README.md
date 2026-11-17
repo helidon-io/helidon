@@ -20,6 +20,7 @@ index:
 - [Config](config.md)
 - [DbClient](dbclient.md)
 - [Health](health.md)
+- [Logging](logging.md)
 - [Metrics](metrics.md)
 - [OIDC](oidc.md)
 - [Tracing](tracing.md)
