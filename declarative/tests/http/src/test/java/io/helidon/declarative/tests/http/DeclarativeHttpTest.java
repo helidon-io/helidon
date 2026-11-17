@@ -272,6 +272,21 @@ class DeclarativeHttpTest {
     }
 
     @Test
+    void testTypedClientParameters() {
+        GreetServiceClient typedClient = registry.get(Lookup.builder()
+                                                              .addContract(GreetServiceClient.class)
+                                                              .addQualifier(Qualifier.create(RestClient.Client.class))
+                                                              .build());
+
+        assertThat(typedClient.queryParam("value with spaces & symbols"), is("value with spaces & symbols"));
+        assertThat(typedClient.queryInt(42), is("42"));
+        assertThat(typedClient.optionalHeader(Optional.of("request-id")), is("request-id"));
+
+        HttpException exception = assertThrows(HttpException.class, () -> typedClient.optionalHeader(Optional.empty()));
+        assertThat(exception.status(), is(Status.BAD_REQUEST_400));
+    }
+
+    @Test
     void testTypedClient() {
         GreetServiceClient typedClient = registry.get(Lookup.builder()
                                                               .addContract(GreetServiceClient.class)

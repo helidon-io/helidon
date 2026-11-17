@@ -419,13 +419,18 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
                     .addContent(").ifPresent(declarative__it -> declarative__builder.header(declarative__it));");
         }
         for (RestMethodParameter headerParameter : method.headerParameters()) {
+            boolean optional = headerParameter.typeName().isOptional();
+            if (optional) {
+                it.addContent(headerParameter.name())
+                        .addContent(".ifPresent(declarative__it -> ");
+            }
             it.addContent("declarative__builder.header(")
                     .addContent(HTTP_HEADER_VALUES)
                     .addContent(".create(")
                     .addContent(HttpFields.ensureHeaderNameConstant(fieldHandler, headerNameFromHeaderParam(headerParameter)))
                     .addContent(", ")
-                    .addContent(headerParameter.name())
-                    .addContentLine("));");
+                    .addContent(optional ? "declarative__it" : headerParameter.name())
+                    .addContentLine(optional ? ")));" : "));");
         }
         // query parameter
         for (RestMethodParameter parameter : method.queryParameters()) {
@@ -441,7 +446,7 @@ class RestClientExtension extends RestExtensionBase implements RegistryCodegenEx
                         .addContent(queryParamName)
                         .addContent("\", String.valueOf(")
                         .addContent(parameter.name())
-                        .addContentLine(")));");
+                        .addContentLine("));");
             }
 
         }

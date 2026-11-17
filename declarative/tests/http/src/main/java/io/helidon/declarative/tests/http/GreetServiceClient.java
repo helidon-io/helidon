@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 package io.helidon.declarative.tests.http;
+
+import java.util.Optional;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.http.Http;
@@ -35,4 +37,16 @@ public interface GreetServiceClient extends GreetService {
     @Http.Produces(MediaTypes.TEXT_PLAIN_VALUE)
     @RestClient.ComputedHeader(name = ClientHeaderFunction.HEADER_NAME, function = ClientHeaderFunction.SERVICE_NAME)
     String getDefaultMessageHandlerPlain();
+
+    @Http.GET
+    @Http.Path("/query-param")
+    String queryParam(@Http.QueryParam("param") String value);
+
+    @Http.GET
+    @Http.Path("/query-int")
+    String queryInt(@Http.QueryParam("param") int value);
+
+    @Http.GET
+    @Http.Path("/custom-header")
+    String optionalHeader(@Http.HeaderParam("X-CUSTOM") Optional<String> value);
 }
