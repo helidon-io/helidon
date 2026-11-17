@@ -418,7 +418,15 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 // start of new request?
                 if (entityBytes == null) {
                     if (newData.available() >= GRPC_HEADER_SIZE) {
-                        entityCompressed = (newData.read() == 1);
+                        int compressionFlag = newData.read();
+                        if (compressionFlag != 0 && compressionFlag != 1) {
+                            closeOnException(Status.INTERNAL
+                                                     .withDescription("Invalid gRPC compression flag: " + compressionFlag)
+                                                     .asRuntimeException(),
+                                             header);
+                            return;
+                        }
+                        entityCompressed = (compressionFlag == 1);
                         entityBytesLeft = newData.readUnsignedInt32();
                         int maxReadBufferSize = grpcConfig.maxReadBufferSize();
                         if (entityBytesLeft > maxReadBufferSize) {
