@@ -17,6 +17,7 @@
 package io.helidon.codegen.scan;
 
 import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleReference;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -25,8 +26,6 @@ import io.helidon.codegen.ModuleInfo;
 import io.helidon.codegen.ModuleInfoRequires;
 import io.helidon.common.Api;
 import io.helidon.common.types.TypeName;
-
-import io.github.classgraph.ModuleRef;
 
 /**
  * Module info created from classpath scanning.
@@ -42,11 +41,8 @@ public final class ScanModuleInfo {
      * @param scanModuleInfo module info from classpath scanning
      * @return module info if it is possible to parse it from the module ref
      */
-    public static Optional<ModuleInfo> map(ModuleRef scanModuleInfo) {
-        Object descriptor = scanModuleInfo.getDescriptor();
-        if (!(descriptor instanceof ModuleDescriptor javaDescriptor)) {
-            return Optional.empty();
-        }
+    public static Optional<ModuleInfo> map(ModuleReference scanModuleInfo) {
+        ModuleDescriptor javaDescriptor = scanModuleInfo.descriptor();
         ModuleInfo.Builder builder = ModuleInfo.builder()
                 .name(javaDescriptor.name())
                 .isOpen(javaDescriptor.isOpen());

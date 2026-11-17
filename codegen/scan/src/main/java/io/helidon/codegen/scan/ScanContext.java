@@ -27,7 +27,9 @@ import io.github.classgraph.ScanResult;
 @Api.Internal
 public interface ScanContext extends CodegenContext {
     /**
-     * Scan result that should have types from the whole classpath.
+     * Scan result that should have types from the whole application classpath. The scan must enable class, field,
+     * method, and annotation information and ignore class, field, and method visibility. External classes must also
+     * be enabled so that type information includes supertypes and annotations outside the scanned classpath.
      *
      * @return scan result
      */

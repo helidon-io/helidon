@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,10 +119,10 @@ class MavenLogger implements CodegenLogger {
             return ci.getName();
         }
         if (object instanceof MethodInfo mi) {
-            return mi.getClassInfo().getName() + "#" + mi.toStringWithSimpleNames();
+            return mi.getClassName() + "#" + mi.toStringWithSimpleNames();
         }
         if (object instanceof FieldInfo fi) {
-            return fi.getClassInfo().getName() + "." + fi.getName();
+            return fi.getClassName() + "." + fi.getName();
         }
         return String.valueOf(object);
     }
