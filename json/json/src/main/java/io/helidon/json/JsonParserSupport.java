@@ -68,4 +68,23 @@ public final class JsonParserSupport {
                 : BigIntegerExpansionBudget.noAggregate();
         return budget.toBigInteger(value, parser);
     }
+
+    static BigInteger toBigInteger(JsonParserBase parser, String value) {
+        int fraction = value.indexOf('.');
+        int exponent = Math.max(value.indexOf('e'), value.indexOf('E'));
+        if (fraction < 0 && exponent < 0) {
+            return new BigInteger(value);
+        }
+        // BigDecimal also accepts leading zeros and decimal points without digits on both sides.
+        int firstDigit = value.charAt(0) == '-' ? 1 : 0;
+        int integerEnd = fraction < 0 ? exponent : fraction;
+        if (value.charAt(0) == '+'
+                || (integerEnd > firstDigit + 1 && value.charAt(firstDigit) == '0')
+                || fraction == firstDigit
+                || fraction == value.length() - 1
+                || (fraction >= 0 && fraction + 1 == exponent)) {
+            throw parser.createException("Invalid number");
+        }
+        return toBigInteger(parser, new BigDecimal(value));
+    }
 }
