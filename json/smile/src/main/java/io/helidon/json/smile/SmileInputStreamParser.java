@@ -1155,29 +1155,16 @@ final class SmileInputStreamParser extends JsonParserBase {
     @Override
     public void skip() {
         switch (currentByte()) {
-        case '"':
-            skipString();
-            break;
-        case '{':
-            skipObject();
-            break;
-        case '[':
-            skipArray();
-            break;
-        case '1':
-            skipNumber();
-            break;
-        case 't':
-        case 'n':
-        case 'f':
-            checkNextAfterValue();
-            break;
-        case ',':
-        case ':':
-            // Synthetic events — nothing to consume.
-            break;
-        default:
-            throw createException("Invalid JSON value to skip", currentByte());
+        case '"' -> skipString();
+        case '{' -> skipObject();
+        case '[' -> skipArray();
+        case '1' -> skipNumber();
+        case 'B' -> skipBinary();
+        case 't', 'n', 'f' -> checkNextAfterValue();
+        case ',', ':' -> {
+            // Synthetic events do not consume data.
+        }
+        default -> throw createException("Invalid JSON value to skip", currentByte());
         }
     }
 
@@ -2185,6 +2172,52 @@ final class SmileInputStreamParser extends JsonParserBase {
         } catch (CharacterCodingException e) {
             throw createException("Invalid UTF-8 sequence in Smile string", e);
         }
+    }
+
+    private void skipBinary() {
+        if (currentByte == (SmileConstants.TOKEN_BINARY_RAW & 0xFF) && !rawBinaryEnabled) {
+            throw createException("Raw binary not enabled in Smile header");
+        }
+        long remaining = readBinaryLength();
+        if (currentByte == (SmileConstants.TOKEN_BINARY_7BIT & 0xFF)) {
+            long extra = remaining / 7 + (remaining % 7 == 0 ? 0 : 1);
+            if (remaining > Long.MAX_VALUE - extra) {
+                throw createException("Binary length is too large");
+            }
+            remaining += extra;
+        }
+        while (remaining > 0) {
+            int available = bufferLength - currentIndex - 1;
+            if (available == 0) {
+                readNextByte();
+                remaining--;
+            } else {
+                int consumed = (int) Math.min(remaining, available);
+                currentIndex += consumed;
+                remaining -= consumed;
+            }
+        }
+        checkNextAfterValue();
+    }
+
+    private long readBinaryLength() {
+        long length = 0;
+        for (int i = 0; i < 10; i++) {
+            int b = readNextByte() & 0xFF;
+            boolean last = (b & 0x80) != 0;
+            if (last && (b & 0x40) != 0) {
+                throw createException("Invalid Smile VInt final byte: 0x" + Integer.toHexString(b));
+            }
+            int bits = last ? 6 : 7;
+            if (length > (Long.MAX_VALUE >>> bits)) {
+                throw createException("Binary length is too large");
+            }
+            length = (length << bits) | (b & (last ? 0x3F : 0x7F));
+            if (last) {
+                return length;
+            }
+        }
+        throw createException("Binary length is too large");
     }
 
     // -----------------------------------------------------------------------
