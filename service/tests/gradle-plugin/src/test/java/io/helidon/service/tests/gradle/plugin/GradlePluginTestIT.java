@@ -66,6 +66,16 @@ class GradlePluginTestIT {
         assertThat(Files.readString(root.resolve("build/test-results/test/TEST-example.BindingTest.xml")),
                    containsString("tests=\"1\""));
 
+        String mainMetadata = Files.readString(root.resolve(
+                "build/classes/java/main/META-INF/helidon/unnamed/example/service-registry.json"));
+        assertThat(mainMetadata, containsString("Main_Greeting__ServiceDescriptor"));
+        assertThat(mainMetadata, not(containsString("BindingTest_TestOnly__ServiceDescriptor")));
+        String testMetadata = Files.readString(root.resolve(
+                "build/classes/java/test/META-INF/helidon/unnamed/example/test/service-registry.json"));
+        assertThat(testMetadata, containsString("BindingTest_TestOnly__ServiceDescriptor"));
+        assertThat(Files.readString(root.resolve("build/classes/java/test/META-INF/helidon/manifest")),
+                   containsString("META-INF/helidon/unnamed/example/test/service-registry.json"));
+
         String binding = Files.readString(root.resolve(
                 "build/generated/sources/helidon/main/example/ApplicationBinding.java"));
         assertThat(binding, containsString("Main_Greeting__ServiceDescriptor"));

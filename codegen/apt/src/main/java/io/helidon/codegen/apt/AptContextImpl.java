@@ -176,38 +176,45 @@ class AptContextImpl extends CodegenContextBase implements AptContext {
         if (scopeFromOptions != null) {
             return scopeFromOptions;
         }
-        try {
-            URI resourceUri = env.getFiler()
-                    .getResource(StandardLocation.CLASS_OUTPUT, "does.not.exist", "DefinitelyDoesNotExist")
-                    .toUri();
-
-            // should be something like:
-            // file:///projects/helidon_4/inject/tests/resources-inject/target/test-classes/does/not/exist/DefinitlyDoesNotExist
-            String resourceUriString = resourceUri.toString();
-            if (!resourceUriString.endsWith("/does/not/exist/DefinitelyDoesNotExist")) {
-                // cannot guess, not ending in expected string, assume production scope
-                return CodegenScope.PRODUCTION;
+        String classOutput = outputDirectory(env.getFiler(), StandardLocation.CLASS_OUTPUT);
+        if (classOutput != null) {
+            int lastSlash = classOutput.lastIndexOf('/');
+            String directory = classOutput.substring(lastSlash + 1);
+            // Gradle Java output is classes/java/<sourceSet>, independent of the build directory name.
+            if (classOutput.substring(0, lastSlash + 1).endsWith("/classes/java/")) {
+                return "main".equals(directory) ? CodegenScope.PRODUCTION : new CodegenScope(directory);
             }
-            // full URI
-            resourceUriString = resourceUriString
-                    .substring(0, resourceUriString.length() - "/does/not/exist/DefinitelyDoesNotExist".length());
-            // file:///projects/helidon_4/inject/tests/resources-inject/target/test-classes
-            int lastSlash = resourceUriString.lastIndexOf('/');
-            if (lastSlash < 0) {
-                // cannot guess, no path, assume production scope
-                return CodegenScope.PRODUCTION;
-            }
-            resourceUriString = resourceUriString.substring(lastSlash + 1);
-            // test-classes
-            Matcher matcher = SCOPE_PATTERN.matcher(resourceUriString);
+            Matcher matcher = SCOPE_PATTERN.matcher(directory);
             if (matcher.matches()) {
                 return new CodegenScope(matcher.group(1));
             }
-            // not matched, either production (just "classes"), or could not match - assume production scope
-            return CodegenScope.PRODUCTION;
-        } catch (IOException e) {
-            // we assume production scope
-            return CodegenScope.PRODUCTION;
+            // Buildship uses separate bin/main and bin/test output directories in Eclipse and JDT LS.
+            if (classOutput.endsWith("/bin/test")) {
+                return new CodegenScope("test");
+            }
+            if (classOutput.endsWith("/bin/main")) {
+                return CodegenScope.PRODUCTION;
+            }
         }
+        // Eclipse can share binary output while keeping test-generated sources in a distinct folder.
+        String sourceOutput = outputDirectory(env.getFiler(), StandardLocation.SOURCE_OUTPUT);
+        if (sourceOutput != null && sourceOutput.endsWith("/.apt_generated_tests")) {
+            return new CodegenScope("test");
+        }
+        return CodegenScope.PRODUCTION;
+    }
+
+    private static String outputDirectory(Filer filer, StandardLocation location) {
+        try {
+            URI resourceUri = filer.getResource(location, "does.not.exist", "DefinitelyDoesNotExist").toUri();
+            String path = resourceUri.getPath();
+            String suffix = "/does/not/exist/DefinitelyDoesNotExist";
+            if (path != null && path.endsWith(suffix)) {
+                return path.substring(0, path.length() - suffix.length());
+            }
+        } catch (IOException | IllegalArgumentException e) {
+            // An unsupported output location provides no scope information.
+        }
+        return null;
     }
 }

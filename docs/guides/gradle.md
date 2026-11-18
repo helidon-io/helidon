@@ -68,6 +68,8 @@ dependencies {
 }
 ```
 
+### Application Bindings
+
 An application binding is an optional build-time linker. It can hard-wire
 service metadata and injection plans to avoid classpath scanning and reflection
 during bootstrap. The linker runs after compilation and before packaging.
