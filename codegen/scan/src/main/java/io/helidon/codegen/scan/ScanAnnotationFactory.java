@@ -108,7 +108,7 @@ final class ScanAnnotationFactory {
                                                                           AnnotationInfo am) {
 
         Map<String, AnnotationProperty> result = new LinkedHashMap<>();
-        AnnotationParameterValueList explicitValues = am.getParameterValues(false);
+        AnnotationParameterValueList explicitValues = am.getDeclaredParameterValues();
         AnnotationParameterValueList parameterValues = am.getParameterValues();
         for (AnnotationParameterValue parameterValue : parameterValues) {
             String name = parameterValue.getName();
