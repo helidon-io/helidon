@@ -30,6 +30,7 @@ import io.helidon.data.jdbc.JdbcClient;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
+import org.testcontainers.utility.MountableFile;
 
 /**
  * Oracle Database Free Testcontainers fixture shared by imperative and declarative JDBC tests.
@@ -57,9 +58,11 @@ public final class OracleDatabase {
     public static GenericContainer<?> container() {
         return new GenericContainer<>(IMAGE)
                 .withEnv("ORACLE_PWD", PASSWORD)
+                .withCopyFileToContainer(MountableFile.forClasspathResource("db/oracle/startup.sql"),
+                                         "/opt/oracle/scripts/startup/helidon.sql")
                 .withExposedPorts(1521)
                 .withStartupAttempts(3)
-                .waitingFor(Wait.forLogMessage(".*DATABASE IS READY TO USE.*", 1)
+                .waitingFor(Wait.forLogMessage(".*HELIDON ORACLE TEST DATABASE READY.*", 1)
                         .withStartupTimeout(Duration.ofMinutes(5)));
     }
 
