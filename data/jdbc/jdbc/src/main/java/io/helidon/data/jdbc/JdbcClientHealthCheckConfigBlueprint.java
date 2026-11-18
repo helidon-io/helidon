@@ -20,11 +20,13 @@ import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.health.HealthCheckType;
 
 /**
  * Configures a health check over an existing client without duplicating connection settings.
  */
+@Api.Incubating
 @Prototype.Blueprint
 @Prototype.Configured
 interface JdbcClientHealthCheckConfigBlueprint extends Prototype.Factory<JdbcClientHealthCheck> {

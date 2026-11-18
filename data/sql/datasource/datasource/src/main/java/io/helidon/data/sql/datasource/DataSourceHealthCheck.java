@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.health.HealthCheckType;
@@ -36,6 +37,7 @@ import io.helidon.health.HealthCheckType;
  * <p>The data source must discard unsafe physical pool entries when their connections are aborted.
  * The query timeout does not bound acquisition, network operations, or HTTP requests.</p>
  */
+@Api.Preview
 public final class DataSourceHealthCheck implements HealthCheck, RuntimeType.Api<DataSourceHealthCheckConfig> {
     private final DataSourceHealthCheckConfig config;
     private final String query;

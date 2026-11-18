@@ -22,11 +22,13 @@ import javax.sql.DataSource;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
+import io.helidon.common.Api;
 import io.helidon.health.HealthCheckType;
 
 /**
  * Configures a health check over an existing data source without duplicating connection settings.
  */
+@Api.Preview
 @Prototype.Blueprint
 @Prototype.Configured
 interface DataSourceHealthCheckConfigBlueprint extends Prototype.Factory<DataSourceHealthCheck> {

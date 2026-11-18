@@ -20,6 +20,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.Api;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.health.HealthCheckType;
@@ -29,6 +30,7 @@ import io.helidon.health.HealthCheckType;
  * The check uses the actual connection source of an existing Helidon JDBC client.
  * Register an instance with a HealthObserver builder.
  */
+@Api.Incubating
 public final class JdbcClientHealthCheck implements HealthCheck, RuntimeType.Api<JdbcClientHealthCheckConfig> {
     private final JdbcClientHealthCheckConfig config;
     private final BooleanSupplier probe;
