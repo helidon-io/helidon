@@ -1606,6 +1606,72 @@ class GrpcProtocolHandlerTest {
     }
 
     @Test
+    void testCompressionFlagsWithFragmentedHeaders() throws IOException {
+        for (int flag = 0; flag <= 1; flag++) {
+            for (int split = 0; split < 5; split++) {
+                List<String> messages = new ArrayList<>();
+                ServerCallHandler<String, String> callHandler = (call, _) -> {
+                    call.request(1);
+                    return new ServerCall.Listener<>() {
+                        @Override
+                        public void onMessage(String message) {
+                            messages.add(message);
+                        }
+                    };
+                };
+                var writer = new RecordingWriter();
+                var handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                        Http2Headers.create(WritableHeaders.create().add(GRPC_ENCODING, "gzip")),
+                                                        writer,
+                                                        1,
+                                                        null,
+                                                        Http2StreamState.OPEN,
+                                                        route(callHandler),
+                                                        GrpcConfig.create(),
+                                                        metrics);
+                try {
+                    handler.init();
+                    byte[] payload = flag == 1 ? gzip("message") : "message".getBytes(StandardCharsets.UTF_8);
+                    BufferData data = BufferData.create(5 + payload.length);
+                    data.write(flag);
+                    data.writeUnsignedInt32(payload.length);
+                    data.write(payload);
+                    if (split > 0) {
+                        BufferData first = BufferData.create(split);
+                        first.write(data, split);
+                        handler.data(Http2FrameHeader.create(split, Http2FrameTypes.DATA,
+                                                             Http2Flag.DataFlags.create(0), 1), first);
+                        assertThat("partial header must not deliver a message", messages, is(List.of()));
+                    }
+                    handler.data(Http2FrameHeader.create(data.available(), Http2FrameTypes.DATA,
+                                                         Http2Flag.DataFlags.create(0), 1), data);
+                    String context = "compression flag " + flag + ", header split " + split;
+                    assertThat(context, messages, is(List.of("message")));
+                    assertThat(context + ": no failure trailers", writer.trailerWrites.get(), is(0));
+                } finally {
+                    handler.close();
+                }
+            }
+        }
+    }
+
+    @Test
+    void testReservedCompressionFlagsAreRejected() {
+        for (int flag = 2; flag <= 255; flag++) {
+            assertInvalidCompressionFlag(flag, 0);
+        }
+    }
+
+    @Test
+    void testReservedCompressionFlagsWithFragmentedHeaders() {
+        for (int flag : List.of(2, 127, 128, 255)) {
+            for (int split = 1; split < 5; split++) {
+                assertInvalidCompressionFlag(flag, split);
+            }
+        }
+    }
+
+    @Test
     void testCompressedMessageBodyMaySpanDataFrames() throws IOException {
         List<String> messages = new ArrayList<>();
         ServerCallHandler<String, String> callHandler = (call, _) -> {
@@ -2961,6 +3027,59 @@ class GrpcProtocolHandlerTest {
         headers.add(GRPC_ACCEPT_ENCODING, "identity");
         handler.initCompression(null, headers);
         return handler.createServerCall();
+    }
+
+    private void assertInvalidCompressionFlag(int flag, int split) {
+        List<String> messages = new ArrayList<>();
+        ServerCallHandler<String, String> callHandler = (call, _) -> {
+            call.request(2);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onMessage(String message) {
+                    messages.add(message);
+                }
+            };
+        };
+        var writer = new RecordingWriter();
+        var handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                Http2Headers.create(WritableHeaders.create()),
+                                                writer,
+                                                1,
+                                                null,
+                                                Http2StreamState.OPEN,
+                                                route(callHandler),
+                                                GrpcConfig.create(),
+                                                metrics);
+        try {
+            handler.init();
+            BufferData data = BufferData.growing(32);
+            data.write(flag);
+            data.writeUnsignedInt32(1);
+            data.write('x');
+            data.write(grpcData("following"));
+            if (split > 0) {
+                BufferData first = BufferData.create(split);
+                first.write(data, split);
+                handler.data(Http2FrameHeader.create(split, Http2FrameTypes.DATA,
+                                                     Http2Flag.DataFlags.create(0), 1), first);
+                assertThat("partial header must not produce trailers", writer.trailerWrites.get(), is(0));
+            }
+            handler.data(Http2FrameHeader.create(data.available(), Http2FrameTypes.DATA,
+                                                 Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM), 1), data);
+            String context = "reserved compression flag " + flag + ", header split " + split;
+            assertAll(
+                    () -> assertThat(context + ": no message delivery", messages, is(List.of())),
+                    () -> assertThat(context + ": stream closed", handler.streamState(), is(Http2StreamState.CLOSED)),
+                    () -> assertThat(context + ": exactly one terminal response", writer.trailerWrites.get(), is(1))
+            );
+            Http2Headers trailers = writer.trailers.join();
+            assertThat(context + ": gRPC status", trailers.httpHeaders().first(GrpcStatus.STATUS_NAME),
+                       is(Optional.of(String.valueOf(Status.Code.INTERNAL.value()))));
+            assertThat(context + ": gRPC message", trailers.httpHeaders().first(GrpcStatus.MESSAGE_NAME),
+                       is(Optional.of("Invalid gRPC compression flag: " + flag)));
+        } finally {
+            handler.close();
+        }
     }
 
     private void assertOversizedMessage(long messageSize, int maxReadBufferSize) {
