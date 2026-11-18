@@ -90,17 +90,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>default-testCompile</id>
-                        <configuration>
-                            <compilerArgs combine.children="append">
-                                <arg>--add-modules=java.compiler</arg>
-                                <arg>--add-reads=io.helidon.data.sql.datasource=java.compiler</arg>
-                            </compilerArgs>
-                        </configuration>
-                    </execution>
-                </executions>
                 <configuration>
                     <annotationProcessorPaths>
                         <path>
@@ -126,6 +115,15 @@
                     </annotationProcessorPaths>
                 </configuration>
                 <executions>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <compilerArgs combine.children="append">
+                                <arg>--add-modules=java.compiler</arg>
+                                <arg>--add-reads=io.helidon.data.sql.datasource=java.compiler</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
                     <execution>
                         <id>default-compile</id>
                         <configuration>
