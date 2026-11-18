@@ -22,7 +22,9 @@ import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.Objects;
 
 import io.helidon.common.buffers.BufferData;
 
@@ -142,12 +144,9 @@ final class JsonParserStream extends JsonParserBase {
 
                 // 2. Grow the backing array if it still cannot hold currentIndex + amount + 1 bytes.
                 int required = currentIndex + amount + 1;
-                if (required > bufferLength) {
-                    // Round up to the nearest configuredBufferSize multiple to avoid many small grows.
-                    int newSize = buffer.length;
-                    while (newSize < required) {
-                        newSize += configuredBufferSize;
-                    }
+                if (required > buffer.length) {
+                    int newSize = (int) Math.min(Integer.MAX_VALUE,
+                                                Math.max((long) required, (long) buffer.length * 2));
                     byte[] newBuffer = new byte[newSize];
                     System.arraycopy(buffer, 0, newBuffer, 0, kept);
                     buffer = newBuffer;
@@ -173,6 +172,47 @@ final class JsonParserStream extends JsonParserBase {
             throw createException("There are no more data to fetch. Incomplete JSON");
         }
         readMoreData();
+    }
+
+    @Override
+    public boolean readString(JsonKey expected) {
+        Objects.requireNonNull(expected);
+        byte[] quoted = expected.quotedUtf8();
+        if (expected.unescaped() && quoted.length <= bufferLength - currentIndex
+                && Arrays.equals(buffer, currentIndex, currentIndex + quoted.length, quoted, 0, quoted.length)) {
+            currentIndex += quoted.length - 1;
+            return true;
+        }
+        if (currentByte() != '"') {
+            throw createException("Expected start of string", currentByte());
+        }
+        boolean ownMark = !replayMarked;
+        if (ownMark) {
+            mark();
+        }
+        int offset = currentIndex - mark;
+        try {
+            while (true) {
+                byte value = readNextByte();
+                if (value == '"') {
+                    int start = mark + offset;
+                    return currentIndex - start + 1 == quoted.length
+                            && Arrays.equals(buffer, start, currentIndex + 1, quoted, 0, quoted.length);
+                }
+                if (value == '\\' || value < 0) {
+                    // The enclosing mark retains the string even across buffer compaction and growth.
+                    currentIndex = mark + offset;
+                    return expected.value().equals(readString());
+                }
+                if (value < 0x20) {
+                    throw createException("Unescaped control character not allowed in string", value);
+                }
+            }
+        } finally {
+            if (ownMark) {
+                clearMark();
+            }
+        }
     }
 
     @Override
@@ -2539,10 +2579,8 @@ final class JsonParserStream extends JsonParserBase {
         } else {
             // Short reads can leave room in the buffer; expand only when it is full.
             if (bufferLength == buffer.length) {
-                int newCap = buffer.length + configuredBufferSize;
-                byte[] tmp = new byte[newCap];
-                System.arraycopy(buffer, 0, tmp, 0, bufferLength);
-                buffer = tmp;
+                int newCap = Math.addExact(buffer.length, Math.max(configuredBufferSize, buffer.length));
+                buffer = Arrays.copyOf(buffer, newCap);
             }
             int lastRead = inputStream.read(buffer, bufferLength, buffer.length - bufferLength);
             if (lastRead == -1) {

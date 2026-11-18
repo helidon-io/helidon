@@ -18,6 +18,7 @@ package io.helidon.json;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Objects;
 
 import io.helidon.common.Api;
 
@@ -26,7 +27,7 @@ import io.helidon.common.Api;
  * Delegates all other calls to the provided JsonParser.
  */
 @Api.Preview
-public final class ObjectStartParser implements JsonParser {
+public final class ObjectStartParser extends JsonParserBase {
 
     private static final JsonParser OBJECT_START_PARSER = new ForcedObjectStartParser();
 
@@ -53,6 +54,28 @@ public final class ObjectStartParser implements JsonParser {
         return new ObjectStartParser(parser);
     }
 
+    /**
+     * Replays a marked object, omitting one of its properties.
+     * The underlying parser must have a mark at the object start. The mark is consumed by this operation.
+     * Values are read from the underlying parser without materializing or copying the object.
+     *
+     * @param parser marked parser
+     * @param propertyIndex zero-based index of the property to omit
+     * @return parser at the object start, hiding the selected property
+     * @throws IllegalArgumentException if the property index is negative
+     */
+    public static JsonParser replay(JsonParser parser, int propertyIndex) {
+        Objects.requireNonNull(parser);
+        if (propertyIndex < 0) {
+            throw new IllegalArgumentException("Property index must not be negative");
+        }
+        parser.resetToMark();
+        if (parser.currentByte() != '{') {
+            throw parser.createException("Expected an object at the mark", parser.currentByte());
+        }
+        return new ObjectPropertyParser(parser, propertyIndex);
+    }
+
     @Override
     public boolean hasNext() {
         return parser.hasNext();
@@ -75,17 +98,32 @@ public final class ObjectStartParser implements JsonParser {
 
     @Override
     public JsonValue readJsonValue() {
-        return parser.readJsonValue();
+        return switch (currentByte()) {
+        case '{' -> readJsonObject();
+        case '[' -> readJsonArray();
+        default -> parser.readJsonValue();
+        };
     }
 
     @Override
     public JsonObject readJsonObject() {
-        return parser.readJsonObject();
+        if (!switched) {
+            return super.readJsonObject();
+        }
+        JsonObject value = parser.readJsonObject();
+        if (parser.currentByte() == '{') {
+            parser.skip();
+        }
+        return value;
     }
 
     @Override
     public JsonArray readJsonArray() {
-        return parser.readJsonArray();
+        JsonArray value = parser.readJsonArray();
+        if (parser.currentByte() == '[') {
+            parser.skip();
+        }
+        return value;
     }
 
     @Override
@@ -101,6 +139,11 @@ public final class ObjectStartParser implements JsonParser {
     @Override
     public String readString() {
         return parser.readString();
+    }
+
+    @Override
+    public boolean readString(JsonKey expected) {
+        return parser.readString(expected);
     }
 
     @Override
@@ -200,10 +243,8 @@ public final class ObjectStartParser implements JsonParser {
 
     @Override
     public void clearMark() {
+        realParser.clearMark();
         marked = false;
-        if (switched) {
-            parser.clearMark();
-        }
     }
 
     @Override
@@ -212,6 +253,7 @@ public final class ObjectStartParser implements JsonParser {
             parser = OBJECT_START_PARSER;
             realParser.resetToMark();
             switched = false;
+            marked = false;
         } else {
             parser.resetToMark();
         }
