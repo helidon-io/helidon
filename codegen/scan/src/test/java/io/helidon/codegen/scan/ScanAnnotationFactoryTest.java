@@ -47,13 +47,19 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class ScanAnnotationFactoryTest {
     @Test
     void preservesClassfileValueProvenance() {
-        try (ScanResult scan = new ClassGraph().enableAllInfo()
+        try (ScanResult scan = new ClassGraph()
+                .enableClassLoaders(ScanAnnotationFactoryTest.class.getClassLoader())
+                .enableClassInfo()
+                .enableMethodInfo()
+                .enableAnnotationInfo()
+                .ignoreClassVisibility()
+                .ignoreMethodVisibility()
                 .acceptPackages(ScanAnnotationFactoryTest.class.getPackageName()).scan()) {
             ScanContext context = new TestContext(scan);
             Annotation implicit = ScanAnnotationFactory.createAnnotation(context,
-                    scan.getClassInfo(Implicit.class.getName()).getAnnotationInfo(Choice.class.getName()));
+                    scan.getClassInfo(Implicit.class.getName()).getDirectAnnotationInfo().get(Choice.class.getName()));
             Annotation explicit = ScanAnnotationFactory.createAnnotation(context,
-                    scan.getClassInfo(Explicit.class.getName()).getAnnotationInfo(Choice.class.getName()));
+                    scan.getClassInfo(Explicit.class.getName()).getDirectAnnotationInfo().get(Choice.class.getName()));
             assertThat(implicit, is(explicit));
             assertThat(implicit.hashCode(), is(explicit.hashCode()));
             assertThat(implicit.toString(), is(explicit.toString()));
