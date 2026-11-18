@@ -1353,7 +1353,7 @@ public abstract class AbstractJdbcCallableContract {
     @Test
     protected void materializedRowsRespectParentLifetime() {
         Tx.transaction(Tx.Type.REQUIRED, () -> {
-            consumeCallRows(2, result -> {
+            Consumer<JdbcClient.CallResult> action = result -> {
                 Objects.requireNonNull(result, "The callable result must not be null.");
                 JdbcClient.Rows<Integer> rows = callRows(result, row -> {
                     Objects.requireNonNull(row, "The current row must not be null.");
@@ -1365,7 +1365,20 @@ public abstract class AbstractJdbcCallableContract {
                              () -> client.create("SELECT 1").map(Integer.class).one());
                 assertThrows(IllegalStateException.class, () -> Tx.transaction(Tx.Type.NEW, () -> 1));
                 result.skipRemainingResults();
-            });
+            };
+            if (generated()) {
+                CallableRoutineRepository repository = manager.registry().get(CallableRoutineRepository.class);
+                if (vendor().equals("mysql")) {
+                    repository.configuredDirect(action);
+                } else {
+                    repository.configuredCursorCallback(2, action);
+                }
+            } else if (vendor().equals("mysql")) {
+                client.prepare("{call sp_direct()}").get().call().consume(action);
+            } else {
+                client.prepare("{? = call sp_cursor(:input)}").get().bind("input", 2).call()
+                        .returns(JDBCType.REF_CURSOR).consume(action);
+            }
             if (vendor().equals("oracle")) {
                 Consumer<JdbcClient.CallResult> pair = result -> {
                     Objects.requireNonNull(result, "The callable result must not be null.");
@@ -1657,22 +1670,6 @@ public abstract class AbstractJdbcCallableContract {
             readers.forEach(reader -> reader.cancel(true));
         }
         System.out.println("Callable snapshot supported: " + description);
-    }
-
-    private void consumeCallRows(int input, Consumer<JdbcClient.CallResult> action) {
-        if (generated()) {
-            CallableRoutineRepository repository = manager.registry().get(CallableRoutineRepository.class);
-            if (vendor().equals("mysql")) {
-                repository.configuredDirect(action);
-            } else {
-                repository.configuredCursorCallback(input, action);
-            }
-        } else if (vendor().equals("mysql")) {
-            client.prepare("{call sp_direct()}").get().call().consume(action);
-        } else {
-            client.prepare("{? = call sp_cursor(:input)}").get().bind("input", input).call()
-                    .returns(JDBCType.REF_CURSOR).consume(action);
-        }
     }
 
     private JdbcClient.Rows<Integer> callRows(JdbcClient.CallResult result, JdbcClient.RowMapper<Integer> mapper) {
