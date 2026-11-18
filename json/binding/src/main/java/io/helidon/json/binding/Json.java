@@ -244,6 +244,8 @@ public final class Json {
 
         /**
          * Key used for keeping the alias information. This key is used as a JSON property name.
+         * The property can occur anywhere in the object. It is consumed as type metadata and is not passed
+         * to the selected subtype deserializer. Serialization writes this property before the object's data properties.
          * Default value is {@code @type}.
          *
          * @return JSON property name

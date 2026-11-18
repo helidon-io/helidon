@@ -366,12 +366,9 @@ final class SmileInputStreamParser extends JsonParserBase {
 
             // 2. Grow the backing array if it still cannot hold currentIndex + count + 1 bytes.
             int required = currentIndex + count + 1;
-            if (required > bufferLength) {
-                // Round up to the nearest configuredBufferSize multiple to avoid many small grows.
-                int newSize = buffer.length;
-                while (newSize < required) {
-                    newSize += configuredBufferSize;
-                }
+            if (required > buffer.length) {
+                int newSize = (int) Math.min(Integer.MAX_VALUE,
+                                            Math.max((long) required, (long) buffer.length * 2));
                 byte[] newBuffer = new byte[newSize];
                 System.arraycopy(buffer, 0, newBuffer, 0, kept);
                 buffer = newBuffer;
@@ -436,7 +433,7 @@ final class SmileInputStreamParser extends JsonParserBase {
 
             // Expand the backing array if there is no room to read into.
             if (kept >= buffer.length) {
-                byte[] newBuffer = new byte[buffer.length + configuredBufferSize];
+                byte[] newBuffer = new byte[Math.addExact(buffer.length, Math.max(configuredBufferSize, buffer.length))];
                 System.arraycopy(buffer, 0, newBuffer, 0, kept);
                 buffer = newBuffer;
             }
@@ -1167,6 +1164,9 @@ final class SmileInputStreamParser extends JsonParserBase {
         case '1':
             skipNumber();
             break;
+        case 'B':
+            skipBinary();
+            break;
         case 't':
         case 'n':
         case 'f':
@@ -1310,6 +1310,29 @@ final class SmileInputStreamParser extends JsonParserBase {
             }
             checkNextAfterValue();
         }
+    }
+
+    private void skipBinary() {
+        boolean raw = currentByte == (SmileConstants.TOKEN_BINARY_RAW & 0xFF);
+        if (raw && !rawBinaryEnabled) {
+            throw createException("Raw binary not enabled in Smile header");
+        }
+        long length = readUnsignedVInt();
+        if (length < 0 || length > Integer.MAX_VALUE) {
+            throw createException("Invalid binary value length");
+        }
+        if (!raw) {
+            length = (length * 8 + 6) / 7;
+        }
+        while (length > 0) {
+            if (!hasNext()) {
+                throw createException("Unexpected end of binary value");
+            }
+            int count = (int) Math.min(length, bufferLength - currentIndex - 1);
+            currentIndex += count;
+            length -= count;
+        }
+        checkNextAfterValue();
     }
 
     /**
@@ -1640,21 +1663,21 @@ final class SmileInputStreamParser extends JsonParserBase {
             if (finished) {
                 throw createException("Could not find END_OF_STRING terminator: stream ended prematurely");
             }
-            // Compact the buffer, keeping everything from startIndex onward.
-            int shift = startIndex;
-            int kept = bufferLength - startIndex;
+            // An enclosing object mark also owns the prefix before this string.
+            int shift = replayMarked ? Math.min(mark, startIndex) : startIndex;
+            int kept = bufferLength - shift;
             if (shift > 0 && kept > 0) {
-                System.arraycopy(buffer, startIndex, buffer, 0, kept);
+                System.arraycopy(buffer, shift, buffer, 0, kept);
             }
             this.currentIndex -= shift;
             if (mark >= 0) {
                 mark = Math.max(0, mark - shift);
             }
             i -= shift;
-            startIndex = 0;
+            startIndex -= shift;
 
             if (kept >= buffer.length) {
-                byte[] newBuffer = new byte[buffer.length + configuredBufferSize];
+                byte[] newBuffer = new byte[Math.addExact(buffer.length, Math.max(configuredBufferSize, buffer.length))];
                 System.arraycopy(buffer, 0, newBuffer, 0, kept);
                 buffer = newBuffer;
             }

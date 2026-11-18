@@ -234,8 +234,6 @@ class JsonValueParser extends JsonParserBase {
             current = JsonControlValue.ARRAY_END;
         } else if (depth == 0) {
             current = JsonNoopValue.INSTANCE;
-        } else {
-            nextToken();
         }
     }
 

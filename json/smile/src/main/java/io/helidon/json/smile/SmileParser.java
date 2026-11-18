@@ -892,6 +892,9 @@ public final class SmileParser extends JsonParserBase {
         case '1':
             skipNumber();
             break;
+        case 'B':
+            skipBinary();
+            break;
         case 't':
         case 'n':
         case 'f':
@@ -1705,6 +1708,25 @@ public final class SmileParser extends JsonParserBase {
             throw createException("Unknown number type: " + b);
         }
         return number.toString().toCharArray();
+    }
+
+    private void skipBinary() {
+        boolean raw = currentByte == (SmileConstants.TOKEN_BINARY_RAW & 0xFF);
+        if (raw && !rawBinaryEnabled) {
+            throw createException("Raw binary not enabled in header");
+        }
+        long length = readUnsignedVInt();
+        if (length < 0 || length > Integer.MAX_VALUE) {
+            throw createException("Invalid binary value length");
+        }
+        if (!raw) {
+            length = (length * 8 + 6) / 7;
+        }
+        if (length > bufferLength - currentIndex - 1) {
+            throw createException("Unexpected end of binary value");
+        }
+        currentIndex += (int) length;
+        checkNextAfterValue();
     }
 
     private void skipNumber() {
