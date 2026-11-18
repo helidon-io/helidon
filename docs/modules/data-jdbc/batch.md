@@ -4,9 +4,9 @@ description: "Execute prepared DML batches and inspect individual outcomes"
 # Batch Processing
 
 Use a batch when several items supply values for the same `INSERT`, `UPDATE`, or
-`DELETE` statement. Helidon captures a complete parameter set for each item, then
-executes one prepared JDBC batch. Generated repositories and imperative applications
-use the same execution path. `BatchResult` provides immutable outcomes in input order.
+`DELETE` statement. Helidon captures a complete parameter set for each item before
+JDBC execution. Generated repositories and imperative applications use the same
+execution path. `BatchResult` provides immutable outcomes in input order.
 
 Batching reuses one prepared statement. It creates no transaction and does not
 guarantee one network exchange. When the work fits one set-based SQL statement,
@@ -261,9 +261,9 @@ transaction still follows its own lifecycle.
 contain generated identifiers or mapped result rows.
 
 `BatchResult.entries()` is an immutable list with one entry per captured item in
-encounter order. Each zero-based `itemIndex()` identifies an input position, not a
-database identifier. Results retain neither the original items nor JDBC resources
-and can be retained after execution.
+encounter order. Each zero-based `itemIndex()` identifies an input position across
+all submissions, not a database identifier. Results retain neither the original items
+nor JDBC resources and can be retained after execution.
 
 | Status | `updateCount()` | Meaning |
 | --- | --- | --- |
@@ -299,8 +299,11 @@ try {
 Runtime failures during JDBC acquisition, preparation, binding, execution, or cleanup,
 and invalid driver counts, produce a sanitized `JdbcBatchException`, a subtype of
 `DataException`. Its result has an entry for every captured item, with missing evidence
-represented by `NOT_REPORTED`. Drivers can stop at a failure or report later successes.
-A setup failure has no item-level evidence. A cleanup failure after successful
+represented by `NOT_REPORTED`. Drivers can stop at a failure or report later successes
+within the failing submission. A failure stops further submissions. Earlier outcomes
+and attributable counts from the failing submission remain available, while items
+from later, unsubmitted groups have status `NOT_REPORTED`. A setup failure before the
+first submission has no item-level evidence. A cleanup failure after successful
 execution can carry only successful entries.
 
 The exception preserves supported SQLSTATE and vendor-code diagnostics while excluding
@@ -315,8 +318,11 @@ outcomes never establish commit or rollback.
 
 ## Transactions and Cleanup
 
-A nonempty batch uses one connection lease and one prepared statement, adds one complete
-parameter set per item, and calls JDBC `executeBatch()` once. Helidon closes the
+A captured, nonempty batch uses one connection lease and one prepared statement and
+adds one complete parameter set per item. Without an explicit submission size,
+successful execution calls JDBC `executeBatch()` once. An
+[explicit submission size](#batch-size-and-limits) can require several calls through
+the same lease and prepared statement. Helidon closes the
 statement and releases the lease before returning or throwing, attempting later releases
 even if an earlier cleanup action fails. Operation-owned connections are closed.
 The transaction owner remains responsible for committing, rolling back, and releasing
@@ -342,16 +348,62 @@ and [Resource Management](imperative.md#resource-management) for shared ownershi
 
 ## Batch Size and Limits
 
+An explicit submission size limits the number of parameter sets in each JDBC
+`executeBatch()` call. It counts parameter sets rather than affected rows or bytes.
+
+For declarative repositories, add `@Jdbc.BatchSize` to the method. For example, this
+declaration replaces `updateStatus` in the repository above and uses the same imports:
+
+```java
+@Jdbc.Statement("UPDATE CONTACT SET STATUS = ? WHERE ID = ?")
+@Jdbc.Execution(Jdbc.ExecutionType.BATCH)
+@Jdbc.BatchSize(2)
+void updateStatus(String status, long... identifiers);
+```
+
+The annotation applies to literal and configured SQL. The method must resolve to
+`BATCH` through the usual execution selection rules. The annotation does not select
+`BATCH` itself. A missing or nonpositive value, or use on a method that does not
+resolve to `BATCH`, fails compilation.
+
+Imperative applications pass the size to `executeBatch(items, batchSize, binder)`.
+Here, `jdbcClient` is an existing client:
+
+```java
+import java.util.List;
+import java.util.Objects;
+
+import io.helidon.data.jdbc.JdbcClient;
+
+JdbcClient.BatchResult result = jdbcClient.create("UPDATE CONTACT SET STATUS = ? WHERE ID = ?")
+        .executeBatch(List.of(201L, 202L, 203L, 204L, 205L), 2, (bindings, id) -> {
+            Objects.requireNonNull(bindings, "The batch bindings must not be null.");
+            Objects.requireNonNull(id, "The batch item must not be null.");
+            bindings.bind(1, "ACTIVE").bind(2, id);
+        });
+```
+
+The imperative size must also be positive. A nonpositive size throws
+`IllegalArgumentException` before traversal or JDBC work and leaves an otherwise
+usable statement available for execution.
+
+With five items and size two, successful execution makes two submissions of two
+parameter sets and a final submission of one. The result contains five entries with
+indices zero through four. Submission boundaries do not create transaction boundaries
+or change transaction completion ownership. Empty input still performs no batch JDBC
+work.
+
 Inputs must be finite and bounded by the application. An iterator does not make JDBC
-execution lazy: Helidon retains all complete bindings and copied payloads before
-execution. The driver can retain additional batch storage, and detached outcomes
-require space proportional to the number of items.
+execution lazy: Helidon captures and validates all bindings before acquiring JDBC
+resources and retains them, along with copied mutable values, for the invocation.
+An explicit size does not bound capture memory. The driver can retain additional
+batch storage, and detached outcomes require space proportional to the number of items.
 
 Partition large inputs explicitly and use a fresh statement for each partition. Each
 invocation has its own result indices and failure boundary. Earlier partitions may
 already be committed when a later one fails outside a transaction. An explicit
-surrounding transaction can group their effects. There is no automatic batch-size
-setting, hidden chunking, or retry policy.
+surrounding transaction can group their effects. Helidon does not choose a submission
+size automatically or retry failed submissions.
 
 Batching uses prepared DML under the existing [SQL guidelines](data-jdbc.md#sql-guidelines).
 It does not map query rows, return generated keys, derive SQL, or perform entity
