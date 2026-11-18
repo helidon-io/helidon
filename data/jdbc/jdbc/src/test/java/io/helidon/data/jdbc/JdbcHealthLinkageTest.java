@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -41,8 +42,17 @@ class JdbcHealthLinkageTest {
      */
     @Test
     void linksOnClasspathAndModulePath() throws Exception {
-        link(false);
-        link(true);
+        link(false, false);
+        link(true, false);
+    }
+
+    /**
+     * Executes datasource APIs and registry discovery with the JDBC runtime absent from both paths.
+     */
+    @Test
+    void datasourceLinksWithoutClientRuntime() throws Exception {
+        link(false, true);
+        link(true, true);
     }
 
     /**
@@ -64,11 +74,12 @@ class JdbcHealthLinkageTest {
                                       root + "/.m2/repository/unrelated-28.jar");
         List<Path> expected = List.of(Path.of(source), Path.of(lexical), Path.of(health), Path.of(runtime), Path.of(runtimeJar));
         for (List<String> paths : List.of(entries, entries.stream().map(value -> value.replace('/', '\\')).toList())) {
-            assertThat(libraries(paths), is(expected));
+            assertThat(libraries(paths, false), is(expected));
+            assertThat(libraries(paths, true), is(expected.subList(0, 3)));
         }
     }
 
-    private static List<Path> libraries(List<String> entries) {
+    private static List<Path> libraries(List<String> entries, boolean datasourceOnly) {
         return entries.stream()
                 .map(value -> Path.of(value.replace('\\', '/')).normalize())
                 .filter(path -> !path.endsWith(Path.of("target", "test-classes")))
@@ -76,18 +87,27 @@ class JdbcHealthLinkageTest {
                         || path.endsWith(Path.of("target", "classes")))
                 .filter(path -> !path.endsWith(Path.of("data", "jdbc", "health", "target", "classes"))
                         && !path.getFileName().toString().startsWith("helidon-data-jdbc-health-"))
+                .filter(path -> !datasourceOnly
+                        || !path.endsWith(Path.of("data", "jdbc", "jdbc", "target", "classes"))
+                        && !path.getFileName().toString().matches("helidon-data-jdbc-[0-9].*\\.jar"))
                 .toList();
     }
 
-    private void link(boolean modular) throws Exception {
+    private void link(boolean modular, boolean datasourceOnly) throws Exception {
         String classPath = System.getProperty("surefire.test.class.path");
-        String libraries = libraries(Arrays.asList(classPath.split(File.pathSeparator))).stream()
+        String libraries = libraries(Arrays.asList(classPath.split(File.pathSeparator)), datasourceOnly).stream()
                 .map(Path::toString)
                 .collect(Collectors.joining(File.pathSeparator));
-        Path directory = Files.createDirectory(temporary.resolve(modular ? "module" : "class"));
+        Path directory = Files.createDirectory(temporary.resolve((datasourceOnly ? "datasource-" : "client-")
+                + (modular ? "module" : "class")));
         Path source = directory.resolve("sample/Main.java");
         Files.createDirectories(source.getParent());
-        Files.writeString(source, """
+        if (datasourceOnly) {
+            try (var input = JdbcHealthLinkageTest.class.getResourceAsStream("/datasource-health-linkage/Main.java")) {
+                Files.copy(Objects.requireNonNull(input), source);
+            }
+        } else {
+            Files.writeString(source, """
                 package sample;
                 import io.helidon.data.jdbc.JdbcClientHealthCheck;
                 import io.helidon.data.jdbc.JdbcClientHealthCheckConfig;
@@ -124,11 +144,14 @@ class JdbcHealthLinkageTest {
                     }
                 }
                 """);
+        }
         List<String> options = new ArrayList<>(List.of("--release", "27", "-proc:none", "-d", directory.toString(),
                 modular ? "--module-path" : "--class-path", libraries, source.toString()));
         if (modular) {
             Path descriptor = directory.resolve("module-info.java");
-            Files.writeString(descriptor, "module sample { requires io.helidon.data.jdbc; }");
+            Files.writeString(descriptor, datasourceOnly
+                    ? "module sample { requires io.helidon.data.sql.datasource; requires io.helidon.service.registry; }"
+                    : "module sample { requires io.helidon.data.jdbc; }");
             options.add(descriptor.toString());
         }
         assertThat(ToolProvider.getSystemJavaCompiler().run(null, null, null, options.toArray(String[]::new)), is(0));

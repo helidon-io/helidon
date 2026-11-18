@@ -80,7 +80,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -507,16 +509,16 @@ public abstract class AbstractJdbcHealthContract {
             try (Http1ClientResponse response = http.get("/observe/health/check/broken").request()) {
                 assertThat(response.status().code(), is(503));
                 String body = response.as(String.class);
-                assertThat(body.contains("JDBC_HEALTH_TABLE_MISSING"), is(false));
-                assertThat(body.contains("DOWN"), is(true));
-                assertThat(body.contains("ERROR"), is(false));
+                assertThat(body, not(containsString("JDBC_HEALTH_TABLE_MISSING")));
+                assertThat(body, containsString("DOWN"));
+                assertThat(body, not(containsString("ERROR")));
             }
             try (Http1ClientResponse response = http.get("/observe/health/check/unexpected").request()) {
                 assertThat(response.status().code(), is(500));
                 String body = response.as(String.class);
-                assertThat(body.contains("ERROR"), is(true));
-                assertThat(body.contains("Observer application failure."), is(false));
-                assertThat(body.contains("IllegalStateException"), is(false));
+                assertThat(body, containsString("ERROR"));
+                assertThat(body, not(containsString("Observer application failure.")));
+                assertThat(body, not(containsString("IllegalStateException")));
             }
         } finally {
             server.stop();
