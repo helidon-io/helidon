@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -83,7 +84,7 @@ class Http2ClientTransportIntegrationTest {
     }
 
     @Test
-    void realExchangesReportClientHttp2AndKeepHttpErrorsCompleted() {
+    void realExchangesReportClientHttp2AndKeepHttpErrorsCompleted() throws InterruptedException {
         var recorder = new RecordingService(true);
         Http2Client client = client(recorder, false);
         try {
@@ -104,7 +105,7 @@ class Http2ClientTransportIntegrationTest {
         assertThat(recorder.connections.get(), is(1));
         assertThat(recorder.protocols, is(List.of(HttpTransportObserver.PROTOCOL_HTTP_2)));
         assertThat(recorder.streams, is(List.of(StreamOutcome.COMPLETED, StreamOutcome.COMPLETED, StreamOutcome.COMPLETED)));
-        assertThat(recorder.closes, is(List.of(ConnectionOutcome.LOCAL_CLOSE)));
+        assertThat(recorder.awaitCloses(), is(List.of(ConnectionOutcome.LOCAL_CLOSE)));
         assertThat(recorder.stops.get(), is(1));
         assertThat(recorder.requestCalls.get(), is(0));
     }
@@ -135,7 +136,7 @@ class Http2ClientTransportIntegrationTest {
     }
 
     @Test
-    void h2cUpgradeRetainsPhysicalObservationAcrossProtocols() {
+    void h2cUpgradeRetainsPhysicalObservationAcrossProtocols() throws InterruptedException {
         var recorder = new RecordingService(true);
         Http2Client client = Http2Client.builder()
                 .baseUri(baseUri)
@@ -153,11 +154,11 @@ class Http2ClientTransportIntegrationTest {
         assertThat(recorder.protocols,
                    is(List.of(HttpTransportObserver.PROTOCOL_HTTP_1_1, HttpTransportObserver.PROTOCOL_HTTP_2)));
         assertThat(recorder.streams, is(List.of(StreamOutcome.COMPLETED, StreamOutcome.COMPLETED)));
-        assertThat(recorder.closes, is(List.of(ConnectionOutcome.LOCAL_CLOSE)));
+        assertThat(recorder.awaitCloses(), is(List.of(ConnectionOutcome.LOCAL_CLOSE)));
     }
 
     @Test
-    void http1FallbackRetainsTransportObservation() {
+    void http1FallbackRetainsTransportObservation() throws InterruptedException {
         var recorder = new RecordingService(true);
         Http2Client client = Http2Client.builder()
                 .baseUri(http1BaseUri)
@@ -174,7 +175,7 @@ class Http2ClientTransportIntegrationTest {
         assertThat(recorder.connections.get(), is(1));
         assertThat(recorder.protocols, is(List.of(HttpTransportObserver.PROTOCOL_HTTP_1_1)));
         assertThat(recorder.streams, is(List.of(StreamOutcome.COMPLETED)));
-        assertThat(recorder.closes, is(List.of(ConnectionOutcome.LOCAL_CLOSE)));
+        assertThat(recorder.awaitCloses(), is(List.of(ConnectionOutcome.LOCAL_CLOSE)));
     }
 
     @Test
@@ -203,7 +204,7 @@ class Http2ClientTransportIntegrationTest {
 
         first.closeResourceAsync().toCompletableFuture().get(10, TimeUnit.SECONDS);
         second.closeResourceAsync().toCompletableFuture().get(10, TimeUnit.SECONDS);
-        assertThat(recorder.closes, is(List.of(ConnectionOutcome.LOCAL_CLOSE)));
+        assertThat(recorder.awaitCloses(), is(List.of(ConnectionOutcome.LOCAL_CLOSE)));
         assertThat(recorder.stops.get(), is(1));
     }
 
@@ -221,7 +222,7 @@ class Http2ClientTransportIntegrationTest {
             request(client);
             CompletionStage<Void> completion = client.closeResourceAsync();
 
-            assertThat(recorder.closes, is(List.of(ConnectionOutcome.LOCAL_CLOSE)));
+            assertThat(recorder.awaitCloses(), is(List.of(ConnectionOutcome.LOCAL_CLOSE)));
             assertThat(completion.toCompletableFuture().isDone(), is(false));
             stopCompletion.complete(null);
             completion.toCompletableFuture().get(10, TimeUnit.SECONDS);
@@ -304,6 +305,7 @@ class Http2ClientTransportIntegrationTest {
         private final List<String> protocols = new CopyOnWriteArrayList<>();
         private final List<StreamOutcome> streams = new CopyOnWriteArrayList<>();
         private final List<ConnectionOutcome> closes = new CopyOnWriteArrayList<>();
+        private final CountDownLatch closeCompleted = new CountDownLatch(1);
 
         private RecordingService(boolean enabled) {
             this(enabled, CompletableFuture.completedStage(null));
@@ -353,6 +355,12 @@ class Http2ClientTransportIntegrationTest {
             return chain.proceed(request);
         }
 
+        private List<ConnectionOutcome> awaitCloses() throws InterruptedException {
+            // Another closing thread may still be delivering the physical connection's observer callback.
+            assertThat("Connection close callback completed", closeCompleted.await(10, TimeUnit.SECONDS), is(true));
+            return List.copyOf(closes);
+        }
+
         private ConnectionObservation connectionOpened(Role role, String transport, Handshake handshake) {
             assertThat(role, is(Role.CLIENT));
             assertThat(transport, is(HttpTransportObserver.TRANSPORT_TCP));
@@ -391,6 +399,7 @@ class Http2ClientTransportIntegrationTest {
                     enter();
                     closes.add(outcome);
                     active.decrementAndGet();
+                    closeCompleted.countDown();
                 }
 
                 private void enter() {
