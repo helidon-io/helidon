@@ -29,8 +29,12 @@ import io.helidon.messaging.MessageBatch;
  * underlying cause when one is available.
  * <p>
  * Generic outbound mapping uses the message entity and {@link Message#headers() portable headers}. A connector must
- * never serialize or map {@link Message#localMetadata() local metadata}. A connector-specific message subtype may
- * expose separately documented native fields which its owning connector recognizes explicitly.
+ * not automatically copy or serialize {@link Message#localMetadata() local metadata} entries into message payloads,
+ * headers, or properties. It may interpret explicitly documented entries as per-message delivery options, including
+ * through provider APIs or provider-defined message control properties. Document the recognized names, value types,
+ * validation, and behavior when messages are reused, forwarded, or wrapped for dead-letter routing. Unrecognized entries
+ * and failure diagnostics remain local. A connector-specific message subtype may expose separately documented native
+ * fields which its owning connector recognizes explicitly.
  * <p>
  * Runtime-invoked sends execute with the current delivery's Helidon context bound to the calling thread.
  */

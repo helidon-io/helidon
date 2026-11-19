@@ -23,9 +23,12 @@ import io.helidon.common.Api;
 /**
  * Immutable message routed to a logical dead-letter channel.
  * <p>
- * The failure type and message are local diagnostic data in {@link #localMetadata()}. Connectors must never map local
- * metadata to a transport. Applications that intentionally publish failure diagnostics must first redact and bound
+ * The failure type and message are local diagnostic data in {@link #localMetadata()}. Connectors must not copy or
+ * serialize these diagnostics into transport payloads, headers, or properties, or interpret them as delivery options.
+ * Applications that intentionally publish failure diagnostics must first redact and bound
  * them, then explicitly promote them to {@link #headers() portable headers}.
+ * Other local metadata follows the {@link Message#localMetadata()} contract; each connector documents whether its
+ * delivery options apply when the original metadata is retained in a dead-letter envelope.
  * <p>
  * Every implementation must provide text values under {@link #FAILURE_TYPE_METADATA} and
  * {@link #FAILURE_MESSAGE_METADATA} in its local metadata.
@@ -47,14 +50,14 @@ public interface DeadLetterMessage<T> extends Message<T> {
     /**
      * Required reserved local metadata containing the processing failure class.
      * <p>
-     * Local metadata is never transported implicitly by a connector.
+     * This diagnostic value is never transported implicitly by a connector.
      */
     String FAILURE_TYPE_METADATA = "helidon.messaging.dead-letter.failure.type";
 
     /**
      * Required reserved local metadata containing the processing failure message.
      * <p>
-     * Local metadata is never transported implicitly by a connector.
+     * This diagnostic value is never transported implicitly by a connector.
      */
     String FAILURE_MESSAGE_METADATA = "helidon.messaging.dead-letter.failure.message";
 
