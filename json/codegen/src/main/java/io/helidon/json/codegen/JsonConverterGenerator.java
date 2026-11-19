@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -1277,12 +1278,18 @@ class JsonConverterGenerator {
     }
 
     private static String ensureUpperStart(TypeName typeName) {
-        String className = typeName.toString();
-        int index = className.lastIndexOf(".");
-        if (index > -1) {
-            className = className.substring(index + 1);
+        int dimensions = 0;
+        TypeName componentType = typeName;
+        while (componentType.array()) {
+            dimensions++;
+            Optional<TypeName> component = componentType.componentType();
+            if (component.isEmpty()) {
+                break;
+            }
+            componentType = component.orElseThrow();
         }
-        return capitalize(className.replaceAll("\\[]", "Array"));
+        String className = componentType.wildcard() ? TypeNames.OBJECT.className() : componentType.className();
+        return capitalize(className) + "Array".repeat(dimensions);
     }
 
     private static int calculateNameHash(String name) {
