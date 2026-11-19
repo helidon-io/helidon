@@ -36,6 +36,15 @@ final class RegistryTestSupport implements AutoCloseable {
         return new TestConnectorProviderConfig(name);
     }
 
+    ChannelRegistry registry(MessagingConfig config) {
+        var manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                .discoverServices(false)
+                .discoverServicesFromServiceLoader(false)
+                .build());
+        managers.add(manager);
+        return new ChannelRegistry(config, new MessagingLifecycleGuard(), manager.registry());
+    }
+
     ChannelRegistry registry(List<ConsumerRegistration> consumers,
                              List<EmitterRegistration> emitters,
                              Config config,
@@ -70,7 +79,7 @@ final class RegistryTestSupport implements AutoCloseable {
                 .consumerRegistrations(consumers)
                 .emitterRegistrations(emitters)
                 .buildPrototype();
-        return new ChannelRegistry(messagingConfig, new MessagingLifecycleGuard());
+        return new ChannelRegistry(messagingConfig, new MessagingLifecycleGuard(), manager.registry());
     }
 
     @Override

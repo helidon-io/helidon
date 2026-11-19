@@ -45,6 +45,10 @@
             <artifactId>helidon-metrics-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.health</groupId>
+            <artifactId>helidon-health</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.service</groupId>
             <artifactId>helidon-service-registry</artifactId>
         </dependency>
@@ -55,6 +59,16 @@
         <dependency>
             <groupId>io.helidon.config</groupId>
             <artifactId>helidon-config</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.metrics.providers</groupId>
+            <artifactId>helidon-metrics-providers-helidon</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.testing</groupId>
+            <artifactId>helidon-testing-junit5</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

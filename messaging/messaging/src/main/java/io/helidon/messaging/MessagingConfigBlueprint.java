@@ -43,6 +43,24 @@ import io.helidon.messaging.spi.MessagingOutgoingConfig;
 @Api.Preview
 interface MessagingConfigBlueprint extends Prototype.Factory<MessagingGraph> {
     /**
+     * Channel processing metrics configuration.
+     *
+     * @return metrics configuration
+     */
+    @Option.Configured
+    @Option.DefaultMethod("create")
+    MessagingMetricsConfig metrics();
+
+    /**
+     * Graph readiness and liveness configuration.
+     *
+     * @return health configuration
+     */
+    @Option.Configured
+    @Option.DefaultMethod("create")
+    MessagingHealthConfig health();
+
+    /**
      * Maximum number of admitted deliveries waiting for execution. Zero disables buffering.
      *
      * @return queue capacity

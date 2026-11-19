@@ -656,6 +656,87 @@ An imperative emission has the same at-least-once behavior as a declarative emis
 sequentially, the first failure prevents later outputs from running, and earlier outputs are not rolled back. Retrying
 an unsuccessful or indeterminate delivery can therefore produce duplicates.
 
+## Metrics and health
+
+Core messaging provides channel metrics and graph health checks for both imperative and declarative applications.
+Both features are enabled by default and can be disabled independently:
+
+```yaml
+messaging:
+  metrics:
+    enabled: false
+  health:
+    enabled: false
+```
+
+The equivalent builder options are `metrics(metrics -> metrics.enabled(false))` and
+`health(health -> health.enabled(false))`. Declarative messaging uses the Service Registry that constructs the runtime,
+including when the application supplies its own messaging configuration. Imperative construction uses the application
+registry; configure a custom application registry with `Services.registry(registry)` at application startup if needed.
+The configuration builder's `serviceRegistry(registry)` selects providers during configuration and is not retained in
+the immutable configuration.
+
+### Channel metrics
+
+Messaging uses the existing Helidon metrics API and the selected registry's metrics provider. Without a metrics
+provider, the metrics API supplies its no-op implementation. Global and per-meter metrics configuration still applies.
+
+| Metric | Type | Meaning |
+| --- | --- | --- |
+| `messaging.processing.duration` | Timer | Duration of completed channel processing attempts; the timer's count is the processing count. |
+| `messaging.processing.failures` | Counter | Processing attempts that threw an exception or error. |
+
+Both metrics have a `channel` tag. A batch is one attempt regardless of its size. A failed attempt followed by a
+successful retry produces two timer samples and one failure. Each retried or deferred subset contributes another
+attempt when it runs. Partial or indeterminate batch failure counts as one failed attempt, not a count of failed
+messages. Several outputs on one channel are still one attempt; routing to another channel records an attempt there too.
+
+Duration covers synchronous dispatch, including validation and all downstream outputs. It excludes admission waiting,
+incoming retry backoff, polling, and broker settlement. Nested channel durations overlap. Pre-dispatch admission,
+payload conversion, and connector mapping failures reported through `startFailed` do not update the source channel's
+processing metrics. Dead-letter processing records an attempt on its destination channel. Cancellation of a caller
+does not complete a sample before its running callback ends.
+
+Graphs using the same `MeterRegistry` share meters with matching final names and tags, including when a customizer
+makes different channels share one identity. These series belong to the registry: closing a graph stops its recording
+and releases graph-local state without removing meters or closing the shared registry. Creating another graph with the
+same channel tags continues the cumulative measurements, including any measurements already recorded by application
+code. A force-closed graph's late callbacks do not add samples; recording already in progress is allowed to complete.
+
+Meter registration runs synchronously during graph construction. A meter-added listener must not wait for another
+thread to construct a messaging graph using the same registry: the listener may hold a registry lock that the graph needs
+to register its meters. This can deadlock, including when application code initiated the outer registration. Schedule such
+work and return from the listener; wait only outside the callback.
+
+An ordinary metrics provider failure disables the affected recording and is logged once per graph without changing
+delivery or retry behavior. If a listener invoked during messaging meter registration creates another graph on the same
+thread using the same registry, the nested registration uses no-op metrics and logs a warning to avoid sharing partially
+registered meters. A nested graph using an independent registry registers its metrics normally.
+
+### Graph health
+
+Readiness reflects connector startup and the graph lifecycle. Liveness reflects terminal graph failure. Neither check
+depends on recent traffic, so an idle running graph remains healthy.
+
+| State | Readiness | Liveness |
+| --- | --- | --- |
+| Created, prepared, or starting | DOWN | UP |
+| Running, including idle | UP | UP |
+| Draining or forced shutdown in progress | DOWN | UP |
+| Terminal failure | DOWN | DOWN |
+| Cleanly closed | DOWN | UP |
+
+An ordinary delivery exception, retry, drop, or dead-letter disposition does not make the graph unhealthy unless it
+causes a terminal graph failure. A terminal failure remains visible after automatic rollback until the graph is
+explicitly closed. Closing a failed graph removes it from aggregate health even when close reports the original failure.
+
+Service Registry discovery supplies stable aggregate messaging checks that observe graphs as they are created and
+closed. An empty aggregate is UP; a registered graph remains unready until startup completes. Application startup is
+still governed by the messaging run level. For explicit registration or direct queries, `graph.healthChecks()` returns
+an immutable list of readiness and liveness checks, or an empty list when health is disabled. Choose aggregate discovery
+or explicit graph checks to avoid duplicate reporting. An explicitly obtained check remains bound to its original graph
+after close and does not keep its connectors or source tasks alive.
+
 ## Create a connector
 
 A connector module contains a stateless `MessagingConnectorProvider`, a configured `MessagingConnector`, and one new

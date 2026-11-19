@@ -1484,7 +1484,7 @@ class ChannelRegistryFailurePolicyTest {
                 .buildPrototype();
         assertThat(channel.config().isEmpty(), is(true));
 
-        ChannelRegistry registry = new ChannelRegistry(config, new MessagingLifecycleGuard());
+        ChannelRegistry registry = registrySupport.registry(config);
         start(registry);
         try (ConnectorDeliveryReservation reservation = incoming.context("orders").reserveDelivery();
              ConnectorDelivery delivery = reservation.start(MessageBatch.create(Message.create("order-1")))) {
@@ -1515,7 +1515,7 @@ class ChannelRegistryFailurePolicyTest {
                     }
                 }))
                 .buildPrototype();
-        ChannelRegistry registry = new ChannelRegistry(config, new MessagingLifecycleGuard());
+        ChannelRegistry registry = registrySupport.registry(config);
         start(registry);
 
         deliver(incoming.context("orders"), MessageBatch.create(Message.create("order-1")));
