@@ -211,6 +211,90 @@ abstract class SmileParserTestBase {
     }
 
     @Test
+    void testFloatingPointBigIntegerUsesJsonNumberConversion() throws Exception {
+        for (double value : new double[] {1.9, -1.9, 0.0, -0.0, 0x1.0p63, -0x1.0p64, 1e20,
+                                          Double.MIN_VALUE, Double.MAX_VALUE}) {
+            byte[][] encodings = {
+                    generateSmileBytes(gen -> gen.write(value)),
+                    generateSmileBytes(gen -> gen.write(BigDecimal.valueOf(value)))
+            };
+            BigInteger expected = JsonNumber.create(value).bigIntegerValue();
+            for (byte[] encoding : encodings) {
+                JsonParser parser = createParser(encoding);
+                assertThat("Value " + value, parser.readBigInteger(), is(expected));
+                assertThat(parser.hasNext(), is(false));
+                assertThat(createParser(encoding).readJsonNumber().bigIntegerValue(), is(expected));
+            }
+        }
+        for (float value : new float[] {1.9f, -1.9f, 0.0f, -0.0f, 0x1.0p63f, -0x1.0p64f,
+                                        Float.MIN_VALUE, Float.MAX_VALUE}) {
+            byte[] encoding = generateSmileBytes(gen -> gen.write(value));
+            JsonParser parser = createParser(encoding);
+            BigInteger expected = JsonNumber.create(value).bigIntegerValue();
+            assertThat("Value " + value, parser.readBigInteger(), is(expected));
+            assertThat(parser.hasNext(), is(false));
+            assertThat(createParser(encoding).readJsonNumber().bigIntegerValue(), is(expected));
+        }
+    }
+
+    @Test
+    void testFloatingPointBigIntegerDoesNotNarrowToLong() throws Exception {
+        byte[] encoding = generateSmileBytes(gen -> {
+            gen.writeArrayStart();
+            gen.write(1e20);
+            gen.write(-1e20);
+            gen.write(7);
+            gen.writeArrayEnd();
+        });
+        JsonParser parser = createParser(encoding);
+        List<BigInteger> expected = List.of(BigInteger.TEN.pow(20), BigInteger.TEN.pow(20).negate(), BigInteger.valueOf(7));
+        for (int i = 0; i < expected.size(); i++) {
+            assertThat(parser.nextToken(), is((byte) '1'));
+            assertThat(parser.readBigInteger(), is(expected.get(i)));
+            assertThat(parser.nextToken(), is(i + 1 == expected.size() ? (byte) ']' : (byte) ','));
+        }
+        assertThat(parser.hasNext(), is(false));
+    }
+
+    @Test
+    void testNonFiniteBigIntegerConversionFails() throws Exception {
+        for (double value : new double[] {Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY}) {
+            byte[][] encodings = {
+                    generateSmileBytes(gen -> gen.write(value)),
+                    generateSmileBytes(gen -> gen.write((float) value))
+            };
+            for (byte[] encoding : encodings) {
+                JsonParser parser = createParser(encoding);
+                assertThrows(JsonException.class, parser::readBigInteger);
+            }
+        }
+    }
+
+    @Test
+    void testFloatingPointBigIntegerRetainsAggregateExpansionBudget() throws Exception {
+        double value = Double.MAX_VALUE;
+        BigDecimal decimal = BigDecimal.valueOf(value);
+        int permittedConversions = 65_536 / -decimal.scale();
+        byte[] encoding = generateSmileBytes(gen -> {
+            gen.writeArrayStart();
+            for (int i = 0; i <= permittedConversions; i++) {
+                gen.write(value);
+            }
+            gen.writeArrayEnd();
+        });
+        JsonParser parser = createParser(encoding);
+        BigInteger expected = decimal.toBigInteger();
+        for (int i = 0; i < permittedConversions; i++) {
+            assertThat(parser.nextToken(), is((byte) '1'));
+            assertThat(parser.readBigInteger(), is(expected));
+            assertThat(parser.nextToken(), is((byte) ','));
+        }
+        assertThat(parser.nextToken(), is((byte) '1'));
+        JsonException exception = assertThrows(JsonException.class, parser::readBigInteger);
+        assertThat(exception.getMessage(), containsString("65536"));
+    }
+
+    @Test
     public void testParseBigIntegerAtExpansionLimit() throws Exception {
         BigInteger magnitude = BigInteger.TEN.pow(4_096);
         for (String literal : new String[] {"1E+4096", "-1E+4096"}) {

@@ -19,6 +19,8 @@ package io.helidon.json;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -448,13 +450,13 @@ class NumericValueTest {
     @ParameterizedTest
     @EnumSource(ParserMethod.class)
     public void testReadBigIntegerPreservesNumberFormatCause(ParserMethod parserMethod) {
-        JsonParser parser = parserMethod.createParser("1.0");
+        JsonParser parser = parserMethod.createParser("1e2147483649");
 
         JsonException exception = assertThrows(JsonException.class, parser::readBigInteger);
 
-        assertThat(exception.getCause() instanceof NumberFormatException, is(true));
-        assertThat(exception.getMessage().contains("Invalid number"), is(true));
-        assertThat(exception.getMessage().contains("Error at JSON index"), is(true));
+        assertThat(exception.getCause(), instanceOf(NumberFormatException.class));
+        assertThat(exception.getMessage(), containsString("Invalid number"));
+        assertThat(exception.getMessage(), containsString("Error at JSON index"));
     }
 
     @ParameterizedTest

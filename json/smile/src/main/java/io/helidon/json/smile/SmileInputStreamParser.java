@@ -1071,10 +1071,12 @@ final class SmileInputStreamParser extends JsonParserBase {
             toReturn = BigInteger.valueOf(zigzagDecodeInt(b & 0x1F));
         } else if (b == (SmileConstants.TOKEN_BIG_DEC & 0xFF)) {
             toReturn = toBigInteger(this, decodeBigDecimal());
-        } else if (b == (SmileConstants.TOKEN_FLOAT64 & 0xFF)) {
-            toReturn = BigInteger.valueOf((long) decodeDouble());
-        } else if (b == (SmileConstants.TOKEN_FLOAT32 & 0xFF)) {
-            toReturn = BigInteger.valueOf((long) decodeFloat());
+        } else if (b == (SmileConstants.TOKEN_FLOAT64 & 0xFF) || b == (SmileConstants.TOKEN_FLOAT32 & 0xFF)) {
+            double value = b == (SmileConstants.TOKEN_FLOAT64 & 0xFF) ? decodeDouble() : decodeFloat();
+            if (!Double.isFinite(value)) {
+                throw createException("Cannot convert a non-finite value to BigInteger");
+            }
+            toReturn = toBigInteger(this, BigDecimal.valueOf(value));
         } else {
             throw createException("Unsupported numeric value");
         }

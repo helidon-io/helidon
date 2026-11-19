@@ -806,10 +806,12 @@ public final class SmileParser extends JsonParserBase {
             toReturn = BigInteger.valueOf(zigzagDecodeInt(b & 0x1F));
         } else if (b == SmileConstants.TOKEN_BIG_DEC) {
             toReturn = toBigInteger(this, decodeBigDecimal());
-        } else if (b == SmileConstants.TOKEN_FLOAT64) {
-            toReturn = BigInteger.valueOf((long) decodeDouble());
-        } else if (b == SmileConstants.TOKEN_FLOAT32) {
-            toReturn = BigInteger.valueOf((long) decodeFloat());
+        } else if (b == SmileConstants.TOKEN_FLOAT64 || b == SmileConstants.TOKEN_FLOAT32) {
+            double value = b == SmileConstants.TOKEN_FLOAT64 ? decodeDouble() : decodeFloat();
+            if (!Double.isFinite(value)) {
+                throw createException("Cannot convert a non-finite value to BigInteger");
+            }
+            toReturn = toBigInteger(this, BigDecimal.valueOf(value));
         } else {
             throw createException("Unsupported numeric value");
         }
