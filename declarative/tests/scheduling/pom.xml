@@ -83,12 +83,10 @@
                         <path>
                             <groupId>io.helidon.bundles</groupId>
                             <artifactId>helidon-bundles-apt</artifactId>
-                            <version>${helidon.version}</version>
                         </path>
                         <path>
                             <groupId>io.helidon.codegen</groupId>
                             <artifactId>helidon-codegen-helidon-copyright</artifactId>
-                            <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
