@@ -25,6 +25,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -83,8 +84,8 @@ final class MetaConfigFinder {
     private static final String CONFIG_PREFIX = "application.";
     // set of files/classpath resources that were found yet we have no parser configured for them
     // limit logging to once per file
-    private static final Set<String> FILES_LOGGED = new HashSet<>();
-    private static final Set<String> CLASSPATH_LOGGED = new HashSet<>();
+    private static final Set<String> FILES_LOGGED = ConcurrentHashMap.newKeySet();
+    private static final Set<String> CLASSPATH_LOGGED = ConcurrentHashMap.newKeySet();
 
     private MetaConfigFinder() {
     }
