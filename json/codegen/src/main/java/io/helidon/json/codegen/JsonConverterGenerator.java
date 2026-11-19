@@ -293,16 +293,17 @@ class JsonConverterGenerator {
                 .addContentLine("throw parser.createException(\"Expected ',' or '}' as the next bytes\", lastByte);")
                 .addContentLine("}");
 
-        processAliasValues(classBuilder,
-                           method,
-                           toConfigure,
-                           aliases,
-                           createdDeserializers,
-                           fieldNames);
+        List<String> aliasConstants = processAliasValues(classBuilder,
+                                                         method,
+                                                         toConfigure,
+                                                         aliases,
+                                                         createdDeserializers,
+                                                         fieldNames);
         classBuilder.addMethod(unordered -> generateUnorderedPolyDeserializeMethod(unordered,
                                                                                    converterInfo,
                                                                                    polymorphicInfo,
                                                                                    aliases,
+                                                                                   aliasConstants,
                                                                                    fieldNames));
     }
 
@@ -310,6 +311,7 @@ class JsonConverterGenerator {
                                                                ConvertedTypeInfo converterInfo,
                                                                PolymorphicInfo polymorphicInfo,
                                                                List<Map.Entry<String, TypeName>> aliases,
+                                                               List<String> aliasConstants,
                                                                GeneratedNames fieldNames) {
         method.name("deserializeUnordered")
                 .accessModifier(AccessModifier.PRIVATE)
@@ -364,10 +366,11 @@ class JsonConverterGenerator {
         }
         method.addContentLine("return switch (alias) {");
         for (int i = 0; i < aliases.size(); i++) {
+            String alias = aliases.get(i).getKey();
             TypeName type = aliases.get(i).getValue();
             String fieldName = fieldNames.deserializer(type, "deserializer" + ensureUpperStart(type));
-            method.addContentLine("case " + i + " -> {")
-                    .addContentLine("parser.resetToMark();")
+            addLookupCase(method, alias, !GeneratedNames.normalize(alias).equals(alias), aliasConstants.get(i));
+            method.addContentLine("parser.resetToMark();")
                     .addContent("yield " + fieldName + ".deserialize(")
                     .addContent(JsonTypes.OBJECT_START_PARSER)
                     .addContentLine(".create(parser, propertyIndex));")
@@ -378,15 +381,22 @@ class JsonConverterGenerator {
                 .addContentLine(";");
     }
 
-    private static void processAliasValues(ClassBase.Builder<?, ?> classBuilder,
-                                           Method.Builder method,
-                                           Map<String, TypeToConfigure> toConfigure,
-                                           List<Map.Entry<String, TypeName>> aliases,
-                                           Set<String> createdDeserializers,
-                                           GeneratedNames fieldNames) {
+    private static List<String> processAliasValues(ClassBase.Builder<?, ?> classBuilder,
+                                                   Method.Builder method,
+                                                   Map<String, TypeToConfigure> toConfigure,
+                                                   List<Map.Entry<String, TypeName>> aliases,
+                                                   Set<String> createdDeserializers,
+                                                   GeneratedNames fieldNames) {
+        List<String> aliasConstants = new ArrayList<>();
         method.addContentLine("switch (alias) {");
         for (int i = 0; i < aliases.size(); i++) {
-            method.addContentLine("case " + i + " -> {");
+            String alias = aliases.get(i).getKey();
+            aliasConstants.add(addLookupCase(classBuilder,
+                                             method,
+                                             fieldNames,
+                                             alias,
+                                             !GeneratedNames.normalize(alias).equals(alias),
+                                             i));
             addPolyDeserializerInvocation(classBuilder,
                                           method,
                                           toConfigure,
@@ -398,6 +408,7 @@ class JsonConverterGenerator {
         }
         method.addContentLine("default -> throw parser.createException(\"Unknown alias value\");");
         method.addContentLine("}");
+        return aliasConstants;
     }
 
     private static void addStringLookup(ClassBase.Builder<?, ?> classBuilder, String fieldName, List<String> names) {
@@ -910,7 +921,7 @@ class JsonConverterGenerator {
             for (int i = 0; i < jsonProperties.size(); i++) {
                 JsonProperty property = jsonProperties.get(i);
                 String propertyName = property.deserializationName().orElseThrow();
-                addPropertyCase(classBuilder, method, fieldNames, propertyName, !property.identifier().equals(propertyName), i);
+                addLookupCase(classBuilder, method, fieldNames, propertyName, !property.identifier().equals(propertyName), i);
                 addTypeHandling(property,
                                 method,
                                 classBuilder,
@@ -923,12 +934,12 @@ class JsonConverterGenerator {
             }
             for (int i = 0; i < discriminatorNames.size(); i++) {
                 String propertyName = discriminatorNames.get(i);
-                addPropertyCase(classBuilder,
-                                method,
-                                fieldNames,
-                                propertyName,
-                                !GeneratedNames.normalize(propertyName).equals(propertyName),
-                                jsonProperties.size() + i);
+                addLookupCase(classBuilder,
+                              method,
+                              fieldNames,
+                              propertyName,
+                              !GeneratedNames.normalize(propertyName).equals(propertyName),
+                              jsonProperties.size() + i);
                 method.addContentLine("parser.skip();")
                         .addContentLine("}");
             }
@@ -965,24 +976,28 @@ class JsonConverterGenerator {
         method.addContentLine("}");
     }
 
-    private static void addPropertyCase(ClassBase.Builder<?, ?> classBuilder,
+    private static String addLookupCase(ClassBase.Builder<?, ?> classBuilder,
                                         Method.Builder method,
                                         GeneratedNames fieldNames,
-                                        String propertyName,
+                                        String value,
                                         boolean normalized,
                                         int index) {
-        String preferredName = constantName(propertyName);
-        String constantName = fieldNames.unique(preferredName);
+        String constantName = fieldNames.unique(constantName(value));
         classBuilder.addField(field -> field.name(constantName)
                 .accessModifier(AccessModifier.PRIVATE)
                 .type(int.class)
                 .isStatic(true)
                 .isFinal(true)
                 .defaultValue(Integer.toString(index)));
+        addLookupCase(method, value, normalized, constantName);
+        return constantName;
+    }
+
+    private static void addLookupCase(Method.Builder method, String value, boolean normalized, String constantName) {
         // The brace-ending chunk preserves case-body indentation when a comment follows.
         method.addContent("case " + constantName + " -> {");
-        if (normalized || !constantName.equals(preferredName)) {
-            method.addContent(" // ").addContentLiteral(propertyName);
+        if (normalized || !constantName.equals(constantName(value))) {
+            method.addContent(" // ").addContentLiteral(value);
         }
         method.addContentLine();
     }

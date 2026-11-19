@@ -321,7 +321,9 @@ public interface JsonParser {
      *
      * @return the hash of the string value
      * @throws JsonException if the next token is not a string or parsing fails
+     * @deprecated use {@link #readString(JsonStringLookup)} to match complete string values
      */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     int readStringAsHash();
 
     /**

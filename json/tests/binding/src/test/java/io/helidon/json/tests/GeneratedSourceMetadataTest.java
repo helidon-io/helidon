@@ -121,9 +121,9 @@ class GeneratedSourceMetadataTest {
 
         assertCompilationSuccess(result);
         String content = Files.readString(generatedSource(result, "NamedProperties__GeneratedConverter.java"));
-        assertPropertyCases(content,
-                            List.of("PROJECT", "WIRE_NAME"),
-                            List.of("case PROJECT -> {", "case WIRE_NAME -> {"));
+        assertLookupCases(content,
+                          List.of("PROJECT", "WIRE_NAME"),
+                          List.of("case PROJECT -> {", "case WIRE_NAME -> {"));
         assertThat(content, containsString("JsonStringLookup.create(\"project\", \"wireName\")"));
         assertThat(content.replace("\r\n", "\n"),
                    containsString("                case PROJECT -> {\n                    project_ ="));
@@ -170,12 +170,12 @@ class GeneratedSourceMetadataTest {
 
         assertCompilationSuccess(result);
         String content = Files.readString(generatedSource(result, "UnusualNames__GeneratedConverter.java"));
-        assertPropertyCases(content,
-                            List.of("LINE__BREAK", "UNICODE_U000A", "COMMENT__TAIL__SUFFIX", "QUOTE__SLASH"),
-                            List.of("case LINE__BREAK -> { // \"line\\r\\nbreak\"",
-                                    "case UNICODE_U000A -> { // \"unicode\\\\u000a\"",
-                                    "case COMMENT__TAIL__SUFFIX -> { // \"comment*/tail//suffix\"",
-                                    "case QUOTE__SLASH -> { // \"quote\\\"\\\\slash\""));
+        assertLookupCases(content,
+                          List.of("LINE__BREAK", "UNICODE_U000A", "COMMENT__TAIL__SUFFIX", "QUOTE__SLASH"),
+                          List.of("case LINE__BREAK -> { // \"line\\r\\nbreak\"",
+                                  "case UNICODE_U000A -> { // \"unicode\\\\u000a\"",
+                                  "case COMMENT__TAIL__SUFFIX -> { // \"comment*/tail//suffix\"",
+                                  "case QUOTE__SLASH -> { // \"quote\\\"\\\\slash\""));
     }
 
     @Test
@@ -197,13 +197,13 @@ class GeneratedSourceMetadataTest {
 
         assertCompilationSuccess(result);
         String content = Files.readString(generatedSource(result, "NormalizedProperties__GeneratedConverter.java"));
-        assertPropertyCases(content,
-                            List.of("MY_KEY", "MY_KEY_1", "NAME", "NAME_1", "NAME_2"),
-                            List.of("case MY_KEY -> { // \"my-key\"",
-                                    "case MY_KEY_1 -> { // \"my_key\"",
-                                    "case NAME -> { // \"\"",
-                                    "case NAME_1 -> { // \"_\"",
-                                    "case NAME_2 -> { // \"name\""));
+        assertLookupCases(content,
+                          List.of("MY_KEY", "MY_KEY_1", "NAME", "NAME_1", "NAME_2"),
+                          List.of("case MY_KEY -> { // \"my-key\"",
+                                  "case MY_KEY_1 -> { // \"my_key\"",
+                                  "case NAME -> { // \"\"",
+                                  "case NAME_1 -> { // \"_\"",
+                                  "case NAME_2 -> { // \"name\""));
         assertThat(content, containsString("JsonStringLookup.create(\"my-key\", \"my_key\", \"\", \"_\", \"name\")"));
         assertThat(content.replace("\r\n", "\n"),
                    containsString("                case MY_KEY -> { // \"my-key\"\n                    my_key_ ="));
@@ -241,12 +241,12 @@ class GeneratedSourceMetadataTest {
 
         assertCompilationSuccess(result);
         String content = Files.readString(generatedSource(result, "ReservedProperties__GeneratedConverter.java"));
-        assertPropertyCases(content,
-                            List.of("PROPERTY_NAMES_1", "FIRST_DESERIALIZER", "FIRST", "FIRST_KEY_1"),
-                            List.of("case PROPERTY_NAMES_1 -> { // \"propertyNames\"",
-                                    "case FIRST_DESERIALIZER -> {",
-                                    "case FIRST -> {",
-                                    "case FIRST_KEY_1 -> { // \"firstKey\""));
+        assertLookupCases(content,
+                          List.of("PROPERTY_NAMES_1", "FIRST_DESERIALIZER", "FIRST", "FIRST_KEY_1"),
+                          List.of("case PROPERTY_NAMES_1 -> { // \"propertyNames\"",
+                                  "case FIRST_DESERIALIZER -> {",
+                                  "case FIRST -> {",
+                                  "case FIRST_KEY_1 -> { // \"firstKey\""));
         assertThat(content, containsString("JsonStringLookup PROPERTY_NAMES ="));
         assertThat(content, containsString("JsonKey FIRST_KEY = JsonKey.create(\"first\")"));
         assertThat(content, containsString("CustomDeserializer FIRST_DESERIALIZER_1 ="));
@@ -301,8 +301,88 @@ class GeneratedSourceMetadataTest {
         assertCompilationSuccess(result);
         for (String file : List.of("URL__GeneratedConverter.java", "URL_Data__GeneratedConverter.java")) {
             String content = Files.readString(generatedSource(result, file));
-            assertPropertyCases(content, List.of("URL_1"), List.of("case URL_1 -> { // \"url\""));
+            assertLookupCases(content, List.of("URL_1"), List.of("case URL_1 -> { // \"url\""));
         }
+    }
+
+    @Test
+    void sharesNamedAliasCasesBetweenDiscriminatorPositions() throws IOException {
+        var result = compile("NamedAliases.java", """
+                package io.helidon.json.tests.generated;
+
+                import io.helidon.json.binding.Json;
+
+                @SuppressWarnings("helidon:api:preview")
+                public class NamedAliases {
+                    @Json.Entity
+                    @Json.Subtype(value = Sample.class, alias = "sample")
+                    public interface Parent {
+                    }
+
+                    @Json.Entity
+                    public record Sample(String value) implements Parent {
+                    }
+                }
+                """);
+
+        assertCompilationSuccess(result);
+        String content = Files.readString(generatedSource(result, "NamedAliases_Parent__GeneratedPolyConverter.java"));
+        assertLookupCases(content,
+                          List.of("SAMPLE"),
+                          List.of("case SAMPLE -> {", "case SAMPLE -> {"));
+        assertThat(content, containsString("JsonStringLookup.create(\"sample\")"));
+    }
+
+    @Test
+    void disambiguatesAliasConstantsAndCommentsOriginalNames() throws IOException {
+        var result = compile("NormalizedAliases.java", """
+                package io.helidon.json.tests.generated;
+
+                import io.helidon.json.binding.Json;
+
+                @SuppressWarnings("helidon:api:preview")
+                public class NormalizedAliases {
+                    @Json.Entity
+                    @Json.Subtype(value = Dashed.class, alias = "my-key")
+                    @Json.Subtype(value = Underscored.class, alias = "my_key")
+                    @Json.Subtype(value = Reserved.class, alias = "polymorphicAliases")
+                    @Json.Subtype(value = Markers.class, alias = "comment*/tail//suffix")
+                    public interface Parent {
+                    }
+
+                    @Json.Entity
+                    public record Dashed(String value) implements Parent {
+                    }
+
+                    @Json.Entity
+                    public record Underscored(String value) implements Parent {
+                    }
+
+                    @Json.Entity
+                    public record Reserved(String value) implements Parent {
+                    }
+
+                    @Json.Entity
+                    public record Markers(String value) implements Parent {
+                    }
+                }
+                """);
+
+        assertCompilationSuccess(result);
+        String content = Files.readString(generatedSource(result, "NormalizedAliases_Parent__GeneratedPolyConverter.java"));
+        assertLookupCases(content,
+                          List.of("MY_KEY", "MY_KEY_1", "POLYMORPHIC_ALIASES_1", "COMMENT__TAIL__SUFFIX"),
+                          List.of("case MY_KEY -> { // \"my-key\"",
+                                  "case MY_KEY_1 -> { // \"my_key\"",
+                                  "case POLYMORPHIC_ALIASES_1 -> { // \"polymorphicAliases\"",
+                                  "case COMMENT__TAIL__SUFFIX -> { // \"comment*/tail//suffix\"",
+                                  "case MY_KEY -> { // \"my-key\"",
+                                  "case MY_KEY_1 -> { // \"my_key\"",
+                                  "case POLYMORPHIC_ALIASES_1 -> { // \"polymorphicAliases\"",
+                                  "case COMMENT__TAIL__SUFFIX -> { // \"comment*/tail//suffix\""));
+        assertThat(content, containsString("JsonStringLookup POLYMORPHIC_ALIASES ="));
+        assertThat(content, containsString("JsonStringLookup.create(\"my-key\", \"my_key\", \"polymorphicAliases\","
+                                                  + " \"comment*/tail//suffix\")"));
     }
 
     @Test
@@ -327,9 +407,9 @@ class GeneratedSourceMetadataTest {
 
         assertCompilationSuccess(result);
         String content = Files.readString(generatedSource(result, "MetadataProperties__GeneratedConverter.java"));
-        assertPropertyCases(content,
-                            List.of("MY_KEY", "COUNT", "MY_KEY_1"),
-                            List.of("case MY_KEY -> {", "case COUNT -> {", "case MY_KEY_1 -> { // \"my-key\""));
+        assertLookupCases(content,
+                          List.of("MY_KEY", "COUNT", "MY_KEY_1"),
+                          List.of("case MY_KEY -> {", "case COUNT -> {", "case MY_KEY_1 -> { // \"my-key\""));
         assertThat(content, containsString("JsonStringLookup.create(\"my_key\", \"count\", \"my-key\")"));
         assertThat(content.replace("\r\n", "\n"),
                    containsString("case MY_KEY_1 -> { // \"my-key\"\n                    parser.skip();\n"));
@@ -532,7 +612,7 @@ class GeneratedSourceMetadataTest {
         assertThat(content.lines().filter(line -> line.contains("generator.write(\"kind\", \"leaf\")")).count(), is(1L));
     }
 
-    private static void assertPropertyCases(String content, List<String> names, List<String> cases) {
+    private static void assertLookupCases(String content, List<String> names, List<String> cases) {
         assertThat(content.lines().map(String::strip).filter(line -> line.startsWith("case ")).toList(),
                    is(cases));
         for (int index = 0; index < names.size(); index++) {
