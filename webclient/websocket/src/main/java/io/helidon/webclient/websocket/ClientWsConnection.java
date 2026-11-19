@@ -359,11 +359,11 @@ public class ClientWsConnection implements WsSession, Runnable {
             }
         }
         case TEXT -> {
-            recvContinuation = ContinuationType.TEXT;
+            recvContinuation = frame.fin() ? ContinuationType.NONE : ContinuationType.TEXT;
             listener.onMessage(this, payload.readString(payload.available(), StandardCharsets.UTF_8), frame.fin());
         }
         case BINARY -> {
-            recvContinuation = ContinuationType.BINARY;
+            recvContinuation = frame.fin() ? ContinuationType.NONE : ContinuationType.BINARY;
             listener.onMessage(this, payload, frame.fin());
         }
         case CLOSE -> {
