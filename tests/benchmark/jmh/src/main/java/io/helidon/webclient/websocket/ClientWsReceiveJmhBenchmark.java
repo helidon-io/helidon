@@ -165,6 +165,11 @@ public class ClientWsReceiveJmhBenchmark {
         }
 
         @Override
+        public int read(BufferData buffer) {
+            throw new IllegalStateException("Unexpected socket read");
+        }
+
+        @Override
         public PeerInfo remotePeer() {
             throw new UnsupportedOperationException();
         }
