@@ -295,23 +295,6 @@ public interface JsonParser {
     String readString();
 
     /**
-     * Reads a JSON string and compares its decoded value with a precomputed key.
-     * Native JSON parsers compare unescaped byte representations without allocating a string.
-     * The parser consumes the complete string whether or not it matches, preserving any active mark.
-     *
-     * @param expected expected string value
-     * @return whether the decoded string equals the expected value
-     * @throws JsonException if the current value is not a string or parsing fails
-     */
-    default boolean readString(JsonKey expected) {
-        Objects.requireNonNull(expected);
-        if (currentByte() != '"') {
-            throw createException("Expected start of string", currentByte());
-        }
-        return expected.value().equals(readString());
-    }
-
-    /**
      * Reads a string value and returns its FNV-1a hash.
      * <p>
      * This method is optimized for performance when only string comparison

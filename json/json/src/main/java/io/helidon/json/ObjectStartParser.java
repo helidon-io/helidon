@@ -55,23 +55,24 @@ public final class ObjectStartParser extends JsonParserBase {
     }
 
     /**
-     * Replays a marked object, omitting one of its properties.
-     * The underlying parser must have a mark at the object start. The mark is consumed by this operation.
+     * Creates a parser that omits one property from an object.
+     * The underlying parser must already be positioned at the object start.
+     * On successful creation, the parser position and any active mark remain unchanged.
      * Values are read from the underlying parser without materializing or copying the object.
      *
-     * @param parser marked parser
+     * @param parser parser positioned at the object start
      * @param propertyIndex zero-based index of the property to omit
      * @return parser at the object start, hiding the selected property
      * @throws IllegalArgumentException if the property index is negative
+     * @throws JsonException if the parser is not positioned at an object start
      */
-    public static JsonParser replay(JsonParser parser, int propertyIndex) {
+    public static JsonParser create(JsonParser parser, int propertyIndex) {
         Objects.requireNonNull(parser);
         if (propertyIndex < 0) {
             throw new IllegalArgumentException("Property index must not be negative");
         }
-        parser.resetToMark();
         if (parser.currentByte() != '{') {
-            throw parser.createException("Expected an object at the mark", parser.currentByte());
+            throw parser.createException("Expected an object start", parser.currentByte());
         }
         return new ObjectPropertyParser(parser, propertyIndex);
     }
@@ -139,11 +140,6 @@ public final class ObjectStartParser extends JsonParserBase {
     @Override
     public String readString() {
         return parser.readString();
-    }
-
-    @Override
-    public boolean readString(JsonKey expected) {
-        return parser.readString(expected);
     }
 
     @Override

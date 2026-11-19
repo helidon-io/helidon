@@ -21,7 +21,6 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Objects;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
@@ -221,37 +220,6 @@ class JsonParserArray extends JsonParserBase {
             }
             if (stringBuffIndex == stringBufferLength) {
                 increaseStringBuffer();
-            }
-        }
-        throw createException("End of the string expected. Incomplete JSON");
-    }
-
-    @Override
-    public boolean readString(JsonKey expected) {
-        Objects.requireNonNull(expected);
-        byte[] quoted = expected.quotedUtf8();
-        int start = currentIndex;
-        if (expected.unescaped() && quoted.length <= bufferLength - start
-                && Arrays.equals(buffer, start, start + quoted.length, quoted, 0, quoted.length)) {
-            currentIndex += quoted.length - 1;
-            return true;
-        }
-        if (buffer[start] != '"') {
-            throw createException("Expected start of string", buffer[start]);
-        }
-        // The complete encoded key did not match. ASCII needs only validation, without decoding or hashing.
-        for (int index = start + 1; index < bufferLength; index++) {
-            byte value = buffer[index];
-            if (value == '"') {
-                currentIndex = index;
-                return false;
-            }
-            if (value == '\\' || value < 0) {
-                return expected.value().equals(readString());
-            }
-            if (value < 0x20) {
-                currentIndex = index;
-                throw createException("Unescaped control character not allowed in string", value);
             }
         }
         throw createException("End of the string expected. Incomplete JSON");

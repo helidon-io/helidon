@@ -36,14 +36,12 @@ public final class JsonKey {
     private final String value;
     private final byte[] quotedUtf8;
     private final char[] quotedChars;
-    private final boolean unescaped;
 
     private JsonKey(String value) {
         this.value = Objects.requireNonNull(value);
         String quoted = quotedValue(value);
         this.quotedChars = quoted.toCharArray();
         this.quotedUtf8 = quoted.getBytes(StandardCharsets.UTF_8);
-        this.unescaped = quoted.length() == value.length() + 2;
     }
 
     /**
@@ -92,10 +90,6 @@ public final class JsonKey {
 
     char[] quotedChars() {
         return quotedChars;
-    }
-
-    boolean unescaped() {
-        return unescaped;
     }
 
     private static String quotedValue(String value) {

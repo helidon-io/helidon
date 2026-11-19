@@ -31,52 +31,6 @@ class JsonParserReplayTest {
 
     @ParameterizedTest
     @EnumSource(Input.class)
-    void matchesDecodedKeysWithoutLosingMark(Input input) {
-        for (String name : List.of("kind", "k\\u0069nd", "costarring", "liquid", "a".repeat(2048), "žluťoučký")) {
-            JsonParser parser = input.parser("{\"" + name + "\":1}");
-            parser.mark();
-            assertThat(parser.nextToken(), is((byte) '"'));
-            assertThat(parser.readString(JsonKey.create("kind")), is(name.equals("kind") || name.equals("k\\u0069nd")));
-            assertThat(parser.nextToken(), is((byte) ':'));
-            parser.resetToMark();
-            assertThat(parser.currentByte(), is((byte) '{'));
-            parser.nextToken();
-            assertThat(parser.readString(JsonKey.create("liquid")), is(name.equals("liquid")));
-            assertThat(parser.nextToken(), is((byte) ':'));
-        }
-    }
-
-    @ParameterizedTest
-    @EnumSource(Input.class)
-    void matchesStandaloneStringsAndRejectsNonStrings(Input input) {
-        JsonParser parser = input.parser("\"k\\u0069nd\"");
-        assertThat(parser.readString(JsonKey.create("kind")), is(true));
-        assertThrows(JsonException.class, () -> input.parser("null").readString(JsonKey.create("kind")));
-        assertThrows(NullPointerException.class, () -> input.parser("\"kind\"").readString((JsonKey) null));
-    }
-
-    @ParameterizedTest
-    @EnumSource(ParserMethod.class)
-    void keyComparisonRejectsMalformedStrings(ParserMethod method) {
-        for (int control : List.of(0, 10, 31)) {
-            JsonParser parser = method.createParser("\"bad" + (char) control + "key\"");
-            assertThrows(JsonException.class, () -> parser.readString(JsonKey.create("kind")));
-        }
-        JsonKey high = JsonKey.create(String.valueOf((char) 0xd800));
-        JsonKey low = JsonKey.create(String.valueOf((char) 0xdc00));
-        assertThrows(JsonException.class, () -> method.createParser("\"\\uD800\"").readString(high));
-        assertThrows(JsonException.class, () -> method.createParser("\"\\uDC00\"").readString(low));
-    }
-
-    @ParameterizedTest
-    @EnumSource(ParserMethod.class)
-    void keyComparisonAcceptsEscapedSupplementaryCharacters(ParserMethod method) {
-        JsonKey key = JsonKey.create("a" + new String(Character.toChars(0x1f680)));
-        assertThat(method.createParser("\"a\\uD83D\\uDE80\"").readString(key), is(true));
-    }
-
-    @ParameterizedTest
-    @EnumSource(Input.class)
     void replaysWithoutFirstMiddleOrLastProperty(Input input) {
         String nested = "\"data\":{\"kind\":\"nested\",\"array\":[1,{\"x\":2}]}";
         List<String> properties = List.of("\"name\":\"sample\"", nested, "\"kind\":\"sample\"");
@@ -90,7 +44,8 @@ class JsonParserReplayTest {
             parser.nextToken();
             parser.mark();
             parser.skip();
-            JsonParser replay = ObjectStartParser.replay(parser, index);
+            parser.resetToMark();
+            JsonParser replay = ObjectStartParser.create(parser, index);
             JsonObject result = replay.readJsonObject();
             JsonObject expected = JsonParser.create("{" + properties.get(0) + "," + properties.get(1) + "}")
                     .readJsonObject();
@@ -106,8 +61,7 @@ class JsonParserReplayTest {
     @EnumSource(Input.class)
     void replayMarkRestoresOmittedPropertyState(Input input) {
         JsonParser parser = input.parser("{\"name\":\"sample\",\"kind\":\"sample\",\"tail\":7}");
-        parser.mark();
-        JsonParser replay = ObjectStartParser.replay(parser, 1);
+        JsonParser replay = ObjectStartParser.create(parser, 1);
         replay.mark();
         JsonObject first = replay.readJsonObject();
         replay.resetToMark();
@@ -119,8 +73,7 @@ class JsonParserReplayTest {
     @EnumSource(Input.class)
     void skipNestedPrefixPreservesFollowingProperties(Input input) {
         JsonParser parser = input.parser("{\"ignored\":[{\"kind\":\"nested\"}],\"kind\":\"sample\",\"value\":7}");
-        parser.mark();
-        JsonParser replay = ObjectStartParser.replay(parser, 1);
+        JsonParser replay = ObjectStartParser.create(parser, 1);
         replay.nextToken();
         replay.readString();
         replay.nextToken();
@@ -133,6 +86,35 @@ class JsonParserReplayTest {
         replay.nextToken();
         assertThat(replay.readInt(), is(7));
         assertThat(replay.nextToken(), is((byte) '}'));
+    }
+
+    @ParameterizedTest
+    @EnumSource(Input.class)
+    void propertyOmissionPreservesTheCallersMark(Input input) {
+        JsonParser parser = input.parser("[{\"name\":\"sample\",\"kind\":\"sample\"},42]");
+        parser.mark();
+        assertThat(parser.nextToken(), is((byte) '{'));
+
+        JsonParser replay = ObjectStartParser.create(parser, 1);
+
+        assertThat(parser.currentByte(), is((byte) '{'));
+        assertThat(replay.readJsonObject(), is(JsonParser.create("{\"name\":\"sample\"}").readJsonObject()));
+        parser.resetToMark();
+        assertThat(parser.currentByte(), is((byte) '['));
+    }
+
+    @ParameterizedTest
+    @EnumSource(Input.class)
+    void propertyOmissionRequiresAPreparedParser(Input input) {
+        JsonParser parser = input.parser("{\"kind\":\"sample\"}");
+        parser.mark();
+        parser.skip();
+
+        assertThrows(JsonException.class, () -> ObjectStartParser.create(parser, 0));
+
+        assertThat(parser.currentByte(), is((byte) '}'));
+        JsonParser prepared = input.parser("{\"kind\":\"sample\"}");
+        assertThat(ObjectStartParser.create(prepared, 0).readJsonObject(), is(JsonObject.empty()));
     }
 
     @ParameterizedTest
