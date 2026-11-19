@@ -145,17 +145,14 @@
                         <path>
                             <groupId>io.helidon.bundles</groupId>
                             <artifactId>helidon-bundles-apt</artifactId>
-                            <version>${helidon.version}</version>
                         </path>
                         <path>
                             <groupId>io.helidon.data.jakarta.persistence</groupId>
                             <artifactId>helidon-data-jakarta-persistence-codegen</artifactId>
-                            <version>${helidon.version}</version>
                         </path>
                         <path>
                             <groupId>io.helidon.data.jdbc</groupId>
                             <artifactId>helidon-data-jdbc-codegen</artifactId>
-                            <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>

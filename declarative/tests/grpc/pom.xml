@@ -236,7 +236,6 @@
                         <path>
                             <groupId>io.helidon.bundles</groupId>
                             <artifactId>helidon-bundles-apt</artifactId>
-                            <version>${helidon.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>
@@ -248,7 +247,6 @@
                                 <path>
                                     <groupId>org.openjdk.jmh</groupId>
                                     <artifactId>jmh-generator-annprocess</artifactId>
-                                    <version>${version.lib.jmh}</version>
                                 </path>
                             </annotationProcessorPaths>
                         </configuration>
