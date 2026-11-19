@@ -227,15 +227,7 @@ class JsonConverterGenerator {
         Set<String> createdDeserializers = new HashSet<>();
         boolean hasDefault = polymorphicInfo.defaultSubtype().isPresent();
 
-        String keyFieldName = fieldNames.unique("POLYMORPHIC_KEY");
-        classBuilder.addField(field -> field.name(keyFieldName)
-                .type(JsonTypes.JSON_KEY)
-                .isStatic(true)
-                .isFinal(true)
-                .addContent(JsonTypes.JSON_KEY)
-                .addContent(".create(")
-                .addContentLiteral(polymorphicInfo.property())
-                .addContent(")"));
+        int propertyHash = calculateNameHash(polymorphicInfo.property());
 
         method.name("deserialize")
                 .returnType(converterInfo.wildcardsGenerics())
@@ -271,7 +263,8 @@ class JsonConverterGenerator {
                 .addContentLine("throw parser.createException(\"Expected '\\\"' as a key start\", lastByte);")
                 .addContentLine("}");
 
-        method.addContentLine("if (!parser.readString(" + keyFieldName + ")) {")
+        method.addContentLine("int hash = parser.readStringAsHash();")
+                .addContentLine("if (hash != " + propertyHash + ") {")
                 .addContentLine("return deserializeUnordered(parser);")
                 .addContentLine("}");
         method.addContentLine("lastByte = parser.nextToken();")
@@ -292,8 +285,11 @@ class JsonConverterGenerator {
                 .stream()
                 .map(it -> new AliasInfo(it.getKey(), it.getValue()))
                 .collect(Collectors.groupingBy(it -> calculateNameHash(it.alias())));
-        method.addContentLine("parser.mark();")
-                .addContentLine("int hash = parser.readStringAsHash();")
+        boolean collisionsDetected = aliasHashes.size() != polymorphicInfo.aliases().size();
+        if (collisionsDetected) {
+            method.addContentLine("parser.mark();");
+        }
+        method.addContentLine("hash = parser.readStringAsHash();")
                 .addContentLine("lastByte = parser.nextToken();")
                 .addContent("if (lastByte == ")
                 .addContent(BYTES)
@@ -317,7 +313,7 @@ class JsonConverterGenerator {
                                                                                    unordered,
                                                                                    converterInfo,
                                                                                    polymorphicInfo,
-                                                                                   keyFieldName,
+                                                                                   propertyHash,
                                                                                    toConfigure,
                                                                                    createdDeserializers,
                                                                                    fieldNames));
@@ -328,7 +324,7 @@ class JsonConverterGenerator {
                                                                Method.Builder method,
                                                                ConvertedTypeInfo converterInfo,
                                                                PolymorphicInfo polymorphicInfo,
-                                                               String keyFieldName,
+                                                               int propertyHash,
                                                                Map<String, TypeToConfigure> toConfigure,
                                                                Set<String> createdDeserializers,
                                                                GeneratedNames fieldNames) {
@@ -367,7 +363,7 @@ class JsonConverterGenerator {
                 .addContentLine("throw parser.createException(\"Expected a property name\");")
                 .addContentLine("}")
                 .addContentLine("propertyIndex++;")
-                .addContentLine("if (parser.readString(" + keyFieldName + ")) {")
+                .addContentLine("if (parser.readStringAsHash() == " + propertyHash + ") {")
                 .addContentLine("break;")
                 .addContentLine("}")
                 .addContentLine("}")
@@ -391,9 +387,12 @@ class JsonConverterGenerator {
             String fieldName = fieldNames.deserializer(entry.getValue(), "deserializer" + ensureUpperStart(entry.getValue()));
             method.addContent("case ")
                     .addContentLiteral(entry.getKey())
-                    .addContent(" -> " + fieldName + ".deserialize(")
+                    .addContentLine(" -> {")
+                    .addContentLine("parser.resetToMark();")
+                    .addContent("yield " + fieldName + ".deserialize(")
                     .addContent(JsonTypes.OBJECT_START_PARSER)
-                    .addContentLine(".replay(parser, propertyIndex));");
+                    .addContentLine(".create(parser, propertyIndex));")
+                    .addContentLine("}");
         }
         method.addContentLine("default -> throw parser.createException(\"Unknown alias value: \" + alias);")
                 .addContent("}")
@@ -408,6 +407,7 @@ class JsonConverterGenerator {
                                            Set<String> createdDeserializers,
                                            GeneratedNames fieldNames) {
         boolean switchUsed = polymorphicInfo.aliases().size() > 9;
+        boolean collisionsDetected = aliasHashes.size() != polymorphicInfo.aliases().size();
         if (switchUsed) {
             method.addContentLine("switch (hash) { ");
         }
@@ -453,23 +453,9 @@ class JsonConverterGenerator {
                 method.addContentLine("throw parser.createException(\"Unknown alias value: \" + name);");
                 method.addContentLine("}");
             } else {
-                String aliasKeyFieldName = fieldNames.unique(constantName + "_KEY");
-                classBuilder.addField(field -> field.name(aliasKeyFieldName)
-                        .type(JsonTypes.JSON_KEY)
-                        .isStatic(true)
-                        .isFinal(true)
-                        .addContent(JsonTypes.JSON_KEY)
-                        .addContent(".create(")
-                        .addContentLiteral(alias)
-                        .addContent(")"));
-                method.addContentLine("parser.resetToMark();")
-                        .addContentLine("if (!parser.readString(" + aliasKeyFieldName + ")) {")
-                        .addContentLine("throw parser.createException(\"Unknown alias value\");")
-                        .addContentLine("}")
-                        .addContentLine("parser.nextToken();")
-                        .addContentLine("if (lastByte == ',') {")
-                        .addContentLine("parser.nextToken();")
-                        .addContentLine("}");
+                if (collisionsDetected) {
+                    method.addContentLine("parser.clearMark();");
+                }
                 addPolyDeserializerInvocation(classBuilder,
                                               method,
                                               toConfigure,
@@ -489,8 +475,10 @@ class JsonConverterGenerator {
         } else if (!first) {
             method.addContentLine();
         }
-        method.addContentLine("parser.clearMark();")
-                .addContentLine("throw parser.createException(\"Unknown alias value\");");
+        if (collisionsDetected) {
+            method.addContentLine("parser.clearMark();");
+        }
+        method.addContentLine("throw parser.createException(\"Unknown alias value\");");
         if (switchUsed) {
             method.addContentLine("}");
         }

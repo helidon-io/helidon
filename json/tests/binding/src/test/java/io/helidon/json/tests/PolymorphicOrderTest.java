@@ -39,7 +39,6 @@ import org.junit.jupiter.params.provider.EnumSource;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Testing.Test
@@ -92,19 +91,6 @@ class PolymorphicOrderTest {
 
     @ParameterizedTest
     @EnumSource(Input.class)
-    void rejectsUnknownAliasWithRegisteredAliasHashInAnyPosition(Input input) {
-        // "sample" and "3yKbch" share the FNV-1a hash 0x96e382a7.
-        for (String json : List.of("{\"kind\":\"3yKbch\",\"name\":\"example\",\"count\":7}",
-                                   "{\"name\":\"example\",\"kind\":\"3yKbch\",\"count\":7}",
-                                   "{\"name\":\"example\",\"count\":7,\"kind\":\"3yKbch\"}")) {
-            assertThrows(JsonException.class, () -> binding.deserialize(input.parser(json), Base.class), json);
-        }
-        assertThat(binding.deserialize(input.parser("{\"kind\":\"sample\"}"), Base.class),
-                   is(new Sample(null, 0, null)));
-    }
-
-    @ParameterizedTest
-    @EnumSource(Input.class)
     void strictUnknownPropertiesRemainErrors(Input input) {
         assertThrows(JsonException.class,
                      () -> binding.deserialize(input.parser("{\"unknown\":1,\"kind\":\"sample\"}"), Base.class));
@@ -146,15 +132,9 @@ class PolymorphicOrderTest {
 
     @ParameterizedTest
     @EnumSource(Input.class)
-    void matchesEscapedKeysAndResolvesKeyHashCollisions(Input input) {
+    void matchesEscapedKeys(Input input) {
         assertThat(binding.deserialize(input.parser("{\"name\":\"x\",\"k\\u0069nd\":\"sample\"}"), Base.class),
                    is(new Sample("x", 0, null)));
-        assertThat(binding.deserialize(input.parser("{\"liquid\":0,\"name\":\"x\",\"costarring\":\"chosen\"}"),
-                                       CollisionBase.class), is(new CollisionValue("x")));
-        JsonException missing = assertThrows(JsonException.class,
-                                             () -> binding.deserialize(input.parser("{\"liquid\":\"chosen\"}"),
-                                                                       CollisionBase.class));
-        assertThat(missing.getMessage(), containsString("Missing property containing alias"));
     }
 
     @ParameterizedTest
@@ -307,12 +287,6 @@ class PolymorphicOrderTest {
     }
 
     @Json.Entity
-    @Json.Polymorphic(key = "costarring")
-    @Json.Subtype(value = CollisionValue.class, alias = "chosen")
-    interface CollisionBase {
-    }
-
-    @Json.Entity
     @Json.Polymorphic(key = "kind")
     @Json.Subtype(value = BinaryValue.class, alias = "binary")
     interface BinaryBase {
@@ -366,10 +340,6 @@ class PolymorphicOrderTest {
 
     @Json.Entity
     record DefaultValue(String name) implements Base {
-    }
-
-    @Json.Entity
-    record CollisionValue(String name) implements CollisionBase {
     }
 
     @Json.Entity

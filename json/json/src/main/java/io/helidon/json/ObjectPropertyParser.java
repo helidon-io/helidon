@@ -109,11 +109,6 @@ final class ObjectPropertyParser extends JsonParserBase {
     }
 
     @Override
-    public boolean readString(JsonKey expected) {
-        return parser.readString(expected);
-    }
-
-    @Override
     public int readStringAsHash() {
         return parser.readStringAsHash();
     }

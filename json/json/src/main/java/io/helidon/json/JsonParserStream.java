@@ -24,7 +24,6 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.Objects;
 
 import io.helidon.common.buffers.BufferData;
 
@@ -172,47 +171,6 @@ final class JsonParserStream extends JsonParserBase {
             throw createException("There are no more data to fetch. Incomplete JSON");
         }
         readMoreData();
-    }
-
-    @Override
-    public boolean readString(JsonKey expected) {
-        Objects.requireNonNull(expected);
-        byte[] quoted = expected.quotedUtf8();
-        if (expected.unescaped() && quoted.length <= bufferLength - currentIndex
-                && Arrays.equals(buffer, currentIndex, currentIndex + quoted.length, quoted, 0, quoted.length)) {
-            currentIndex += quoted.length - 1;
-            return true;
-        }
-        if (currentByte() != '"') {
-            throw createException("Expected start of string", currentByte());
-        }
-        boolean ownMark = !replayMarked;
-        if (ownMark) {
-            mark();
-        }
-        int offset = currentIndex - mark;
-        try {
-            while (true) {
-                byte value = readNextByte();
-                if (value == '"') {
-                    int start = mark + offset;
-                    return currentIndex - start + 1 == quoted.length
-                            && Arrays.equals(buffer, start, currentIndex + 1, quoted, 0, quoted.length);
-                }
-                if (value == '\\' || value < 0) {
-                    // The enclosing mark retains the string even across buffer compaction and growth.
-                    currentIndex = mark + offset;
-                    return expected.value().equals(readString());
-                }
-                if (value < 0x20) {
-                    throw createException("Unescaped control character not allowed in string", value);
-                }
-            }
-        } finally {
-            if (ownMark) {
-                clearMark();
-            }
-        }
     }
 
     @Override
