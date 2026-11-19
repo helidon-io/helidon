@@ -43,6 +43,7 @@ public class JsonMediaSupportProvider implements MediaSupportProvider {
     @Override
     public MediaSupport create(Config config, String name) {
         return JsonSupportConfig.builder()
+                .config(config)
                 .name(name)
                 .build();
     }

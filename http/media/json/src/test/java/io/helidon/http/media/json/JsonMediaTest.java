@@ -23,11 +23,14 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.OptionalLong;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.testing.http.junit5.HttpHeaderMatcher;
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpException;
 import io.helidon.http.HttpMediaType;
@@ -68,6 +71,31 @@ class JsonMediaTest {
     JsonMediaTest() {
         this.provider = JsonSupport.create();
         provider.init(MediaContext.create());
+    }
+
+    @Test
+    void testConfiguredProvider() {
+        Config config = Config.create(ConfigSources.create(Map.of(
+                "name", "configured-name",
+                "accepted-media-types.0", "application/custom-json",
+                "content-type", "application/custom-json")));
+        MediaSupport support = new JsonMediaSupportProvider().create(config, "custom-json");
+        support.init(MediaContext.create());
+
+        assertThat(support.name(), is("custom-json"));
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.contentType(HttpMediaType.create("application/custom-json"));
+        assertThat(support.reader(JSON_OBJECT_TYPE, headers).support(), is(MediaSupport.SupportLevel.SUPPORTED));
+        headers.contentType(HttpMediaTypes.JSON);
+        assertThat(support.reader(JSON_OBJECT_TYPE, headers).support(), is(MediaSupport.SupportLevel.NOT_SUPPORTED));
+
+        WritableHeaders<?> outputHeaders = WritableHeaders.create();
+        var response = support.writer(JSON_OBJECT_TYPE, outputHeaders);
+        assertThat(response.support(), is(MediaSupport.SupportLevel.SUPPORTED));
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        response.supplier().get().write(JSON_OBJECT_TYPE, createObject("configured"), output, outputHeaders);
+        assertThat(outputHeaders, HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "application/custom-json"));
+        assertThat(output.toString(StandardCharsets.UTF_8), containsString("\"configured\""));
     }
 
     @Test
