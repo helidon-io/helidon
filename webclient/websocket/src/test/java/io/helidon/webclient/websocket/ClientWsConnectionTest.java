@@ -19,6 +19,8 @@ package io.helidon.webclient.websocket;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -47,6 +49,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -58,6 +61,34 @@ import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 
 class ClientWsConnectionTest {
     private static final long TEST_TIMEOUT_SECONDS = 5;
+
+    @TestFactory
+    Stream<DynamicTest> rejectsContinuationAfterCompleteMessage() {
+        return Stream.of(0x01, 0x02).flatMap(opCode -> Stream.of(0x00, 0x80)
+                .map(continuation -> dynamicTest("opcode " + opCode + ", continuation " + continuation,
+                                                () -> checkFrameSequence(opCode,
+                                                                         new int[] {opCode | 0x80, continuation},
+                                                                         List.of("message-0:true"), true))));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> acceptsFragmentedMessages() {
+        return Stream.of(0x01, 0x02)
+                .map(opCode -> dynamicTest("opcode " + opCode,
+                                          () -> checkFrameSequence(opCode,
+                                                                   new int[] {opCode, 0x00, 0x80, opCode | 0x80},
+                                                                   List.of("message-0:false", "message-1:false",
+                                                                           "message-2:true", "message-3:true"), false)));
+    }
+
+    @TestFactory
+    Stream<DynamicTest> rejectsContinuationAfterFinalFragment() {
+        return Stream.of(0x01, 0x02).flatMap(opCode -> Stream.of(0x00, 0x80)
+                .map(continuation -> dynamicTest("opcode " + opCode + ", continuation " + continuation,
+                                                () -> checkFrameSequence(opCode,
+                                                                         new int[] {opCode, 0x80, continuation},
+                                                                         List.of("message-0:false", "message-1:true"), true))));
+    }
 
     @Test
     void clientProtocolConfigHasBufferedMessageSizeDefaultAndOverride() {
@@ -491,6 +522,60 @@ class ClientWsConnectionTest {
             TimeUnit.MILLISECONDS.sleep(10);
         }
         return closeSent.get();
+    }
+
+    private static void checkFrameSequence(int opCode, int[] headers, List<String> expected, boolean protocolError) {
+        BufferData frames = BufferData.growing(128);
+        for (int i = 0; i < headers.length; i++) {
+            byte[] payload = ("message-" + i).getBytes(StandardCharsets.UTF_8);
+            frames.write(headers[i]);
+            frames.write(payload.length);
+            frames.write(payload);
+        }
+        AtomicReference<byte[]> inbound = new AtomicReference<>(frames.readBytes());
+        List<String> textMessages = new ArrayList<>();
+        List<String> binaryMessages = new ArrayList<>();
+        AtomicReference<Throwable> error = new AtomicReference<>();
+        CapturingDataWriter writer = new CapturingDataWriter();
+        WsListener listener = new WsListener() {
+            @Override
+            public void onMessage(WsSession session, String text, boolean last) {
+                textMessages.add(text + ":" + last);
+            }
+
+            @Override
+            public void onMessage(WsSession session, BufferData buffer, boolean last) {
+                binaryMessages.add(buffer.readString(buffer.available(), StandardCharsets.UTF_8) + ":" + last);
+            }
+
+            @Override
+            public void onError(WsSession session, Throwable throwable) {
+                error.set(throwable);
+            }
+        };
+        ClientWsConnection connection = ClientWsConnection.create(
+                new TestClientConnection(DataReader.create(() -> inbound.getAndSet(null)), writer), listener);
+
+        connection.run();
+
+        assertAll(
+                () -> assertThat("text callbacks", textMessages, is(opCode == 0x01 ? expected : List.of())),
+                () -> assertThat("binary callbacks", binaryMessages, is(opCode == 0x02 ? expected : List.of()))
+        );
+        if (protocolError) {
+            assertThat(error.get(), instanceOf(WsClientException.class));
+            byte[] closeFrame = writer.data.get();
+            assertThat("protocol close frame", closeFrame, notNullValue());
+            assertAll(
+                    () -> assertThat(closeFrame[0] & 0x0F, is(0x08)),
+                    () -> assertThat(maskedCloseCode(closeFrame), is(WsCloseCodes.PROTOCOL_ERROR))
+            );
+        } else {
+            assertAll(
+                    () -> assertThat("listener error", error.get(), nullValue()),
+                    () -> assertThat("unexpected close frame", writer.data.get(), nullValue())
+            );
+        }
     }
 
     private static DataReader oversizedFrameReader() {
