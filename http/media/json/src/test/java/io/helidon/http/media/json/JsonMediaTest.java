@@ -75,10 +75,14 @@ class JsonMediaTest {
 
     @Test
     void testConfiguredProvider() {
-        Config config = Config.create(ConfigSources.create(Map.of(
-                "name", "configured-name",
-                "accepted-media-types.0", "application/custom-json",
-                "content-type", "application/custom-json")));
+        Config config = Config.builder()
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .sources(ConfigSources.create(Map.of(
+                        "name", "configured-name",
+                        "accepted-media-types.0", "application/custom-json",
+                        "content-type", "application/custom-json")))
+                .build();
         MediaSupport support = new JsonMediaSupportProvider().create(config, "custom-json");
         support.init(MediaContext.create());
 
