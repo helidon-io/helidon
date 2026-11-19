@@ -16,18 +16,18 @@
 
 package io.helidon.json.binding.factories;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Arrays;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
+import io.helidon.json.JsonStringLookup;
 import io.helidon.json.binding.JsonBindingFactory;
 import io.helidon.json.binding.JsonConverter;
 import io.helidon.json.binding.JsonDeserializer;
@@ -37,6 +37,14 @@ import io.helidon.service.registry.Service;
 @Service.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 class EnumBindingFactory implements JsonBindingFactory<Enum<?>> {
+
+    // Bootstrap-loaded holders avoid retaining our loader through a parent-loaded enum class.
+    private static final ClassValue<AtomicReference<WeakReference<EnumInfo>>> ENUM_INFO = new ClassValue<>() {
+        @Override
+        protected AtomicReference<WeakReference<EnumInfo>> computeValue(Class<?> type) {
+            return new AtomicReference<>(new WeakReference<>(new EnumInfo(type)));
+        }
+    };
 
     @Override
     public JsonDeserializer<Enum<?>> createDeserializer(Class<? extends Enum<?>> type) {
@@ -65,41 +73,35 @@ class EnumBindingFactory implements JsonBindingFactory<Enum<?>> {
 
     private static final class EnumConverter implements JsonConverter<Enum<?>> {
 
-        private static final int FNV_OFFSET_BASIS = 0x811c9dc5;
-        private static final int FNV_PRIME = 0x01000193;
-
         private final Type type;
-        private final Map<Integer, Enum<?>> enumConstants;
-        private final Map<String, Integer> names;
+        private final Enum<?>[] enumConstants;
+        // Keep the shared metadata alive while this converter is in use.
+        private final EnumInfo info;
+        private final JsonStringLookup lookup;
 
         private EnumConverter(Class<?> type) {
             this.type = type;
             if (!type.isEnum()) {
                 throw new IllegalStateException("Type \"" + type + "\" is not an enum");
             }
-            HashMap<Integer, Enum<?>> map = new HashMap<>();
-            Map<String, Integer> names = new HashMap<>();
-            Object[] constants = type.getEnumConstants();
-            for (Object o : constants) {
-                Enum<?> constant = (Enum<?>) o;
-                String costName = constant.name();
-                int nameHash = calculateNameHash(costName);
-                names.put(costName, nameHash);
-                map.put(nameHash, constant);
+            AtomicReference<WeakReference<EnumInfo>> cached = ENUM_INFO.get(type);
+            EnumInfo info = cached.get().get();
+            if (info == null) {
+                info = new EnumInfo(type);
+                cached.set(new WeakReference<>(info));
             }
-            this.enumConstants = Collections.unmodifiableMap(map);
-            this.names = Collections.unmodifiableMap(names);
+            this.info = info;
+            this.enumConstants = info.enumConstants;
+            this.lookup = info.lookup;
         }
 
         @Override
         public Enum<?> deserialize(JsonParser parser) {
-            int enumNameHash = parser.readStringAsHash();
-            Enum<?> enumValue = enumConstants.get(enumNameHash);
-            if (enumValue == null) {
-                throw parser.createException("Invalid enum name hash \"" + enumNameHash + "\". Valid names and hashes are: "
-                                                     + names);
+            int index = parser.readString(lookup);
+            if (index < 0) {
+                throw parser.createException("Invalid enum name. Valid names are: " + Arrays.toString(info.names));
             }
-            return enumValue;
+            return enumConstants[index];
         }
 
         @Override
@@ -112,14 +114,20 @@ class EnumBindingFactory implements JsonBindingFactory<Enum<?>> {
             return GenericType.create(type);
         }
 
-        private static int calculateNameHash(String name) {
-            int fnvHash = FNV_OFFSET_BASIS;
-            for (byte b : name.getBytes(StandardCharsets.UTF_8)) {
-                fnvHash ^= (b & 0xFF);
-                fnvHash *= FNV_PRIME;
-            }
-            return fnvHash;
-        }
+    }
 
+    private static final class EnumInfo {
+        private final Enum<?>[] enumConstants;
+        private final String[] names;
+        private final JsonStringLookup lookup;
+
+        private EnumInfo(Class<?> type) {
+            this.enumConstants = (Enum<?>[]) type.getEnumConstants();
+            this.names = new String[enumConstants.length];
+            for (int i = 0; i < enumConstants.length; i++) {
+                names[i] = enumConstants[i].name();
+            }
+            this.lookup = JsonStringLookup.create(names);
+        }
     }
 }

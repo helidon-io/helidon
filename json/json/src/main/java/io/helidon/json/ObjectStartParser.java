@@ -143,6 +143,11 @@ public final class ObjectStartParser extends JsonParserBase {
     }
 
     @Override
+    public int readString(JsonStringLookup lookup) {
+        return parser.readString(lookup);
+    }
+
+    @Override
     public int readStringAsHash() {
         return parser.readStringAsHash();
     }

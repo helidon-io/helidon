@@ -38,6 +38,7 @@ final class JsonTypes {
     static final TypeName JSON_FAIL_ON_UNKNOWN = TypeName.create("io.helidon.json.binding.Json.FailOnUnknown");
 
     //Types
+    static final TypeName JSON_STRING_LOOKUP = TypeName.create("io.helidon.json.JsonStringLookup");
     static final TypeName JSON_DESERIALIZER_TYPE = TypeName.create("io.helidon.json.binding.JsonDeserializer");
     static final TypeName JSON_SERIALIZER_TYPE = TypeName.create("io.helidon.json.binding.JsonSerializer");
     static final TypeName JSON_CONVERTER_TYPE = TypeName.create("io.helidon.json.binding.JsonConverter");

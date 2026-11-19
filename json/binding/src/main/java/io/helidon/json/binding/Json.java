@@ -246,6 +246,11 @@ public final class Json {
          * Key used for keeping the alias information. This key is used as a JSON property name.
          * The property can occur anywhere in the object. It is consumed as type metadata and is not passed
          * to the selected subtype deserializer. Serialization writes this property before the object's data properties.
+         * Generated concrete subtype deserializers skip this optional metadata without validating its alias,
+         * because the target type has already been selected. An ordinary deserializable property mapped to the same name
+         * retains its normal binding behavior.
+         * Successive polymorphic levels in a type hierarchy must use distinct keys. A hierarchy must not assign
+         * different aliases to the same emitted discriminator property.
          * Default value is {@code @type}.
          *
          * @return JSON property name
@@ -255,8 +260,9 @@ public final class Json {
         /**
          * The default implementation/extending class to be used when alias is not provided.
          * The default value {@link java.lang.Object} is intended as a "not specified"
-         * marker. In that case, no default implementation/extending class will be used and an exception
-         * will be thrown instead.
+         * marker. Without an explicit default, a concrete polymorphic type is deserialized as itself when the
+         * discriminator is absent, including for an empty object. Its normal required-property checks still apply.
+         * An abstract polymorphic type requires a discriminator when no default is configured.
          *
          * @return the default implementation/extending class of the annotated type.
          */

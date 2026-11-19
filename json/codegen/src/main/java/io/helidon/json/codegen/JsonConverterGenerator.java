@@ -17,7 +17,6 @@
 package io.helidon.json.codegen;
 
 import java.lang.reflect.ParameterizedType;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -46,8 +45,6 @@ import static java.util.function.Predicate.not;
 class JsonConverterGenerator {
 
     static final String CONFIGURE_PARAM = "jsonBindingConfigurator";
-    private static final int FNV_OFFSET_BASIS = 0x811c9dc5;
-    private static final int FNV_PRIME = 0x01000193;
     private static final String PROPERTY_NAME_SUFFIX = "_";
     private static final String MISSING_SUFFIX = "_missing";
     private static final Supplier<?> DEFAULT_TYPE_VALUE = () -> null;
@@ -76,14 +73,16 @@ class JsonConverterGenerator {
     }
 
     static void generateConverter(ClassBase.Builder<?, ?> classBuilder, ConvertedTypeInfo converterInfo, boolean factory) {
-        Set<String> localNames = new HashSet<>();
+        Set<String> reservedNames = new HashSet<>(Set.of("PROPERTY_NAMES", "POLYMORPHIC_PROPERTY", "POLYMORPHIC_ALIASES"));
+        reservedNames.add(converterInfo.originalType().className());
+        reservedNames.addAll(converterInfo.originalType().enclosingNames());
         for (JsonProperty property : converterInfo.jsonProperties().values()) {
-            localNames.add(property.identifier() + PROPERTY_NAME_SUFFIX);
+            reservedNames.add(property.identifier() + PROPERTY_NAME_SUFFIX);
             if (property.required()) {
-                localNames.add(convertToMissingName(property));
+                reservedNames.add(convertToMissingName(property));
             }
         }
-        GeneratedNames fieldNames = new GeneratedNames(localNames);
+        GeneratedNames fieldNames = new GeneratedNames(reservedNames);
         TypeName converterInterfaceType = TypeName.builder()
                 .from(JsonTypes.JSON_CONVERTER_TYPE)
                 .addTypeArgument(converterInfo.wildcardsGenerics())
@@ -150,9 +149,8 @@ class JsonConverterGenerator {
                 .addAnnotation(Annotation.create(Override.class));
 
         Set<String> createdSerializers = new HashSet<>();
-        Map<String, TypeName> aliases = polymorphicInfo.aliases();
         boolean first = true;
-        for (TypeName typeName : aliases.values()) {
+        for (TypeName typeName : polymorphicInfo.serializationTypes()) {
             TypeName resolved = typeName.boxed();
             String fieldName = fieldNames.serializer(typeName, "serializer" + ensureUpperStart(typeName));
             if (!createdSerializers.contains(fieldName)) {
@@ -226,8 +224,6 @@ class JsonConverterGenerator {
         Set<String> createdDeserializers = new HashSet<>();
         boolean hasDefault = polymorphicInfo.defaultSubtype().isPresent();
 
-        int propertyHash = calculateNameHash(polymorphicInfo.property());
-
         method.name("deserialize")
                 .returnType(converterInfo.wildcardsGenerics())
                 .addParameter(JsonTypes.JSON_PARSER, "parser")
@@ -252,6 +248,9 @@ class JsonConverterGenerator {
                                           createdDeserializers,
                                           true,
                                           fieldNames);
+        } else if (polymorphicInfo.classConverterMethods()) {
+            method.addContentLine("parser.resetToMark();")
+                    .addContentLine("return deserializeSelf(parser);");
         } else {
             method.addContentLine("throw parser.createException(\"Missing property containing alias\", lastByte);");
         }
@@ -262,8 +261,8 @@ class JsonConverterGenerator {
                 .addContentLine("throw parser.createException(\"Expected '\\\"' as a key start\", lastByte);")
                 .addContentLine("}");
 
-        method.addContentLine("int hash = parser.readStringAsHash();")
-                .addContentLine("if (hash != " + propertyHash + ") {")
+        addStringLookup(classBuilder, "POLYMORPHIC_PROPERTY", List.of(polymorphicInfo.property()));
+        method.addContentLine("if (parser.readString(POLYMORPHIC_PROPERTY) != 0) {")
                 .addContentLine("return deserializeUnordered(parser);")
                 .addContentLine("}");
         method.addContentLine("lastByte = parser.nextToken();")
@@ -279,16 +278,9 @@ class JsonConverterGenerator {
                 .addContentLine("throw parser.createException(\"Expected '\\\"' as an alias value\", lastByte);")
                 .addContentLine("}")
                 .addContentLine("parser.clearMark();");
-        Map<Integer, List<AliasInfo>> aliasHashes = polymorphicInfo.aliases()
-                .entrySet()
-                .stream()
-                .map(it -> new AliasInfo(it.getKey(), it.getValue()))
-                .collect(Collectors.groupingBy(it -> calculateNameHash(it.alias())));
-        boolean collisionsDetected = aliasHashes.size() != polymorphicInfo.aliases().size();
-        if (collisionsDetected) {
-            method.addContentLine("parser.mark();");
-        }
-        method.addContentLine("hash = parser.readStringAsHash();")
+        List<Map.Entry<String, TypeName>> aliases = new ArrayList<>(polymorphicInfo.aliases().entrySet());
+        addStringLookup(classBuilder, "POLYMORPHIC_ALIASES", aliases.stream().map(Map.Entry::getKey).toList());
+        method.addContentLine("int alias = parser.readString(POLYMORPHIC_ALIASES);")
                 .addContentLine("lastByte = parser.nextToken();")
                 .addContent("if (lastByte == ")
                 .addContent(BYTES)
@@ -303,29 +295,21 @@ class JsonConverterGenerator {
 
         processAliasValues(classBuilder,
                            method,
-                           polymorphicInfo,
                            toConfigure,
-                           aliasHashes,
+                           aliases,
                            createdDeserializers,
                            fieldNames);
-        classBuilder.addMethod(unordered -> generateUnorderedPolyDeserializeMethod(classBuilder,
-                                                                                   unordered,
+        classBuilder.addMethod(unordered -> generateUnorderedPolyDeserializeMethod(unordered,
                                                                                    converterInfo,
                                                                                    polymorphicInfo,
-                                                                                   propertyHash,
-                                                                                   toConfigure,
-                                                                                   createdDeserializers,
+                                                                                   aliases,
                                                                                    fieldNames));
     }
 
-    @SuppressWarnings("checkstyle:ParameterNumber")
-    private static void generateUnorderedPolyDeserializeMethod(ClassBase.Builder<?, ?> classBuilder,
-                                                               Method.Builder method,
+    private static void generateUnorderedPolyDeserializeMethod(Method.Builder method,
                                                                ConvertedTypeInfo converterInfo,
                                                                PolymorphicInfo polymorphicInfo,
-                                                               int propertyHash,
-                                                               Map<String, TypeToConfigure> toConfigure,
-                                                               Set<String> createdDeserializers,
+                                                               List<Map.Entry<String, TypeName>> aliases,
                                                                GeneratedNames fieldNames) {
         method.name("deserializeUnordered")
                 .accessModifier(AccessModifier.PRIVATE)
@@ -341,13 +325,10 @@ class JsonConverterGenerator {
                 .addContentLine("byte token = parser.nextToken();")
                 .addContentLine("if (token == '}') {");
         if (polymorphicInfo.defaultSubtype().isPresent()) {
-            addPolyDeserializerInvocation(classBuilder,
-                                          method,
-                                          toConfigure,
-                                          polymorphicInfo.defaultSubtype().get(),
-                                          createdDeserializers,
-                                          true,
-                                          fieldNames);
+            TypeName type = polymorphicInfo.defaultSubtype().get();
+            String fieldName = fieldNames.deserializer(type, "deserializer" + ensureUpperStart(type));
+            method.addContentLine("parser.resetToMark();")
+                    .addContentLine("return " + fieldName + ".deserialize(parser);");
         } else if (polymorphicInfo.classConverterMethods()) {
             method.addContentLine("parser.resetToMark();")
                     .addContentLine("return deserializeSelf(parser);");
@@ -362,7 +343,7 @@ class JsonConverterGenerator {
                 .addContentLine("throw parser.createException(\"Expected a property name\");")
                 .addContentLine("}")
                 .addContentLine("propertyIndex++;")
-                .addContentLine("if (parser.readStringAsHash() == " + propertyHash + ") {")
+                .addContentLine("if (parser.readString(POLYMORPHIC_PROPERTY) == 0) {")
                 .addContentLine("break;")
                 .addContentLine("}")
                 .addContentLine("}")
@@ -372,115 +353,71 @@ class JsonConverterGenerator {
                 .addContentLine("if (parser.nextToken() != '\"') {")
                 .addContentLine("throw parser.createException(\"Expected a string alias value\");")
                 .addContentLine("}")
-                .addContentLine("String alias = parser.readString();")
+                .addContentLine("int alias = parser.readString(POLYMORPHIC_ALIASES);")
                 .addContentLine("byte token = parser.nextToken();")
                 .addContentLine("if (token != ',' && token != '}') {")
                 .addContentLine("throw parser.createException(\"Expected ',' or '}' after alias value\", token);")
                 .addContentLine("}");
-        if (polymorphicInfo.aliases().isEmpty()) {
-            method.addContentLine("throw parser.createException(\"Unknown alias value: \" + alias);");
+        if (aliases.isEmpty()) {
+            method.addContentLine("throw parser.createException(\"Unknown alias value\");");
             return;
         }
         method.addContentLine("return switch (alias) {");
-        for (Map.Entry<String, TypeName> entry : polymorphicInfo.aliases().entrySet()) {
-            String fieldName = fieldNames.deserializer(entry.getValue(), "deserializer" + ensureUpperStart(entry.getValue()));
-            method.addContent("case ")
-                    .addContentLiteral(entry.getKey())
-                    .addContentLine(" -> {")
+        for (int i = 0; i < aliases.size(); i++) {
+            TypeName type = aliases.get(i).getValue();
+            String fieldName = fieldNames.deserializer(type, "deserializer" + ensureUpperStart(type));
+            method.addContentLine("case " + i + " -> {")
                     .addContentLine("parser.resetToMark();")
                     .addContent("yield " + fieldName + ".deserialize(")
                     .addContent(JsonTypes.OBJECT_START_PARSER)
                     .addContentLine(".create(parser, propertyIndex));")
                     .addContentLine("}");
         }
-        method.addContentLine("default -> throw parser.createException(\"Unknown alias value: \" + alias);")
+        method.addContentLine("default -> throw parser.createException(\"Unknown alias value\");")
                 .addContent("}")
                 .addContentLine(";");
     }
 
     private static void processAliasValues(ClassBase.Builder<?, ?> classBuilder,
                                            Method.Builder method,
-                                           PolymorphicInfo polymorphicInfo,
                                            Map<String, TypeToConfigure> toConfigure,
-                                           Map<Integer, List<AliasInfo>> aliasHashes,
+                                           List<Map.Entry<String, TypeName>> aliases,
                                            Set<String> createdDeserializers,
                                            GeneratedNames fieldNames) {
-        boolean switchUsed = polymorphicInfo.aliases().size() > 9;
-        boolean collisionsDetected = aliasHashes.size() != polymorphicInfo.aliases().size();
-        if (switchUsed) {
-            method.addContentLine("switch (hash) { ");
-        }
-        boolean first = true;
-        for (Map.Entry<Integer, List<AliasInfo>> entry : aliasHashes.entrySet()) {
-            int aliasHash = entry.getKey();
-            String alias = entry.getValue().getFirst().alias();
-            String constantName = fieldNames.unique(constantName("alias_" + alias));
-            classBuilder.addField(builder -> builder.isFinal(true)
-                    .isStatic(true)
-                    .type(int.class)
-                    .name(constantName)
-                    .defaultValue(String.valueOf(aliasHash)));
-            if (switchUsed) {
-                method.addContentLine("case " + constantName + ":");
-                method.increaseContentPadding();
-            } else if (first) {
-                method.addContentLine("if (hash == " + constantName + ") {");
-                first = false;
-            } else {
-                method.addContentLine(" else if (hash == " + constantName + ") {");
-            }
-            if (entry.getValue().size() > 1) {
-                method.addContentLine("parser.resetToMark();");
-                method.addContentLine("String name = parser.readString();");
-                method.addContentLine("parser.nextToken(); // Separator was already checked before")
-                        .addContentLine("if (lastByte == ',') {")
-                        .addContentLine("parser.nextToken();")
-                        .addContentLine("}");
-                method.addContentLine("switch(name) {");
-                for (AliasInfo aliasInfo : entry.getValue()) {
-                    String deserializationName = aliasInfo.alias();
-                    method.addContentLine("case \"" + deserializationName + "\":").padContent();
-                    addPolyDeserializerInvocation(classBuilder,
-                                                  method,
-                                                  toConfigure,
-                                                  aliasInfo.boundType(),
-                                                  createdDeserializers,
-                                                  false,
-                                                  fieldNames);
-                }
-                method.addContentLine("default:").padContent();
-                method.addContentLine("throw parser.createException(\"Unknown alias value: \" + name);");
-                method.addContentLine("}");
-            } else {
-                if (collisionsDetected) {
-                    method.addContentLine("parser.clearMark();");
-                }
-                addPolyDeserializerInvocation(classBuilder,
-                                              method,
-                                              toConfigure,
-                                              entry.getValue().getFirst().boundType(),
-                                              createdDeserializers,
-                                              false,
-                                              fieldNames);
-            }
-            if (!switchUsed) {
-                method.addContent("}");
-            } else {
-                method.decreaseContentPadding();
-            }
-        }
-        if (switchUsed) {
-            method.addContentLine("default:").padContent();
-        } else if (!first) {
-            method.addContentLine();
-        }
-        if (collisionsDetected) {
-            method.addContentLine("parser.clearMark();");
-        }
-        method.addContentLine("throw parser.createException(\"Unknown alias value\");");
-        if (switchUsed) {
+        method.addContentLine("switch (alias) {");
+        for (int i = 0; i < aliases.size(); i++) {
+            method.addContentLine("case " + i + " -> {");
+            addPolyDeserializerInvocation(classBuilder,
+                                          method,
+                                          toConfigure,
+                                          aliases.get(i).getValue(),
+                                          createdDeserializers,
+                                          false,
+                                          fieldNames);
             method.addContentLine("}");
         }
+        method.addContentLine("default -> throw parser.createException(\"Unknown alias value\");");
+        method.addContentLine("}");
+    }
+
+    private static void addStringLookup(ClassBase.Builder<?, ?> classBuilder, String fieldName, List<String> names) {
+        classBuilder.addField(field -> {
+            field.name(fieldName)
+                    .type(JsonTypes.JSON_STRING_LOOKUP)
+                    .isStatic(true)
+                    .isFinal(true)
+                    .addContent(JsonTypes.JSON_STRING_LOOKUP)
+                    .addContent(".create(");
+            boolean first = true;
+            for (String name : names) {
+                if (!first) {
+                    field.addContent(", ");
+                }
+                first = false;
+                field.addContentLiteral(name);
+            }
+            field.addContent(")");
+        });
     }
 
     private static void addPolyDeserializerInvocation(ClassBase.Builder<?, ?> classBuilder,
@@ -938,7 +875,15 @@ class JsonConverterGenerator {
                                            boolean hasCreator,
                                            boolean hasBuilder,
                                            GeneratedNames fieldNames) {
-        boolean hasProperties = !jsonProperties.isEmpty();
+        List<String> propertyNames = new ArrayList<>(jsonProperties.stream()
+                .map(property -> property.deserializationName().orElseThrow())
+                .toList());
+        List<String> discriminatorNames = converterInfo.extraProperties().keySet()
+                .stream()
+                .filter(name -> !propertyNames.contains(name))
+                .toList();
+        propertyNames.addAll(discriminatorNames);
+        boolean hasProperties = !propertyNames.isEmpty();
 
         method.addContentLine("while(true) {")
                 .addContent("if (lastByte != ")
@@ -946,15 +891,9 @@ class JsonConverterGenerator {
                 .addContentLine(".DOUBLE_QUOTE_BYTE) {")
                 .addContentLine("throw parser.createException(\"Expected '\\\"' as a key start\", lastByte);")
                 .addContentLine("}");
-        Map<Integer, List<JsonProperty>> hashes = jsonProperties.stream()
-                .collect(Collectors.groupingBy(jsonProperty ->
-                                                       calculateNameHash(jsonProperty.deserializationName().orElseThrow())));
-        boolean collisionsDetected = hashes.size() != jsonProperties.size(); //Hash collisions detected
-        if (collisionsDetected) {
-            method.addContentLine("parser.mark();");
-        }
         if (hasProperties) {
-            method.addContent(int.class).addContentLine(" hash = parser.readStringAsHash();");
+            addStringLookup(classBuilder, "PROPERTY_NAMES", propertyNames);
+            method.addContentLine("int property = parser.readString(PROPERTY_NAMES);");
         } else {
             method.addContentLine("parser.skip();");
         }
@@ -966,93 +905,41 @@ class JsonConverterGenerator {
                 .addContentLine("}")
                 .addContentLine("parser.nextToken();");
         if (hasProperties) {
-            boolean switchUsed = jsonProperties.size() > 9;
-            if (switchUsed) {
-                method.addContentLine("switch(hash) {");
+            method.addContentLine("switch (property) {");
+            Set<String> processedTypes = new HashSet<>();
+            for (int i = 0; i < jsonProperties.size(); i++) {
+                JsonProperty property = jsonProperties.get(i);
+                String propertyName = property.deserializationName().orElseThrow();
+                addPropertyCase(classBuilder, method, fieldNames, propertyName, !property.identifier().equals(propertyName), i);
+                addTypeHandling(property,
+                                method,
+                                classBuilder,
+                                hasCreator,
+                                hasBuilder,
+                                processedTypes,
+                                toConfigure,
+                                fieldNames);
+                method.addContentLine("}");
             }
-            Set<String> processedTypes = new HashSet<>(); //Used to identify already configured type deserializers
-            boolean first = true;
-            for (Map.Entry<Integer, List<JsonProperty>> entry : hashes.entrySet()) {
-                    JsonProperty jsonProperty = entry.getValue().getFirst();
-                    String constantName = fieldNames.unique(constantName(jsonProperty.deserializationName().orElseThrow()));
-                    classBuilder.addField(builder -> builder.isFinal(true)
-                            .isStatic(true)
-                            .type(int.class)
-                            .name(constantName)
-                            .defaultValue(String.valueOf(entry.getKey())));
-                    if (switchUsed) {
-                        method.addContentLine("case " + constantName + ":");
-                        method.increaseContentPadding();
-                    } else if (first) {
-                        method.addContentLine("if (hash == " + constantName + ") {");
-                        first = false;
-                    } else {
-                        method.addContentLine(" else if (hash == " + constantName + ") {");
-                    }
-                    if (entry.getValue().size() > 1) {
-                        method.addContentLine("parser.resetToMark();");
-                        method.addContentLine("String name = parser.readString();");
-                        method.addContentLine("parser.nextToken(); // Token : was already checked before");
-                        method.addContentLine("parser.nextToken();");
-                        method.addContentLine("switch(name) {");
-                        for (JsonProperty property : entry.getValue()) {
-                            String deserializationName = property.deserializationName().orElseThrow();
-                            method.addContentLine("case \"" + deserializationName + "\":");
-                            method.increaseContentPadding();
-                            addTypeHandling(property,
-                                            method,
-                                            classBuilder,
-                                            hasCreator,
-                                            hasBuilder,
-                                            processedTypes,
-                                            toConfigure,
-                                            fieldNames);
-                            method.addContentLine("break;");
-                            method.decreaseContentPadding();
-                        }
-                        method.addContentLine("default:").padContent();
-                        if (converterInfo.failOnUnknown()) {
-                            method.addContent("throw parser.createException("
-                                                      + "\"Unknown properties are not allowed for this type: \" + ")
-                                    .addContent(converterInfo.converterType()).addContentLine(".class.getName());");
-                        } else {
-                            method.addContentLine("parser.skip();");
-                        }
-                        method.addContentLine("}");
-                    } else {
-                        if (collisionsDetected) {
-                            method.addContentLine("parser.clearMark();");
-                        }
-                        addTypeHandling(jsonProperty,
-                                        method,
-                                        classBuilder,
-                                        hasCreator,
-                                        hasBuilder,
-                                        processedTypes,
-                                        toConfigure,
-                                        fieldNames);
-                    }
-                    if (!switchUsed) {
-                        method.addContent("}");
-                    } else {
-                        method.addContentLine("break;");
-                        method.decreaseContentPadding();
-                    }
-                }
-            if (switchUsed) {
-                method.addContentLine("default:").increaseContentPadding();
-            } else {
-                method.addContentLine(" else {");
+            for (int i = 0; i < discriminatorNames.size(); i++) {
+                String propertyName = discriminatorNames.get(i);
+                addPropertyCase(classBuilder,
+                                method,
+                                fieldNames,
+                                propertyName,
+                                !GeneratedNames.normalize(propertyName).equals(propertyName),
+                                jsonProperties.size() + i);
+                method.addContentLine("parser.skip();")
+                        .addContentLine("}");
             }
-            if (collisionsDetected) {
-                method.addContentLine("parser.clearMark();");
-            }
+            method.addContentLine("default -> {");
             if (converterInfo.failOnUnknown()) {
                 method.addContent("throw parser.createException(\"Unknown properties are not allowed for this type: \" + ")
                         .addContent(converterInfo.converterType()).addContentLine(".class.getName());");
             } else {
                 method.addContentLine("parser.skip();");
             }
+            method.addContentLine("}");
             method.addContentLine("}");
         } else if (converterInfo.failOnUnknown()) {
             method.addContent("throw parser.createException(\"Unknown properties are not allowed for this type: \" + ")
@@ -1076,6 +963,28 @@ class JsonConverterGenerator {
                 .addContentLine("throw parser.createException(\"Expected ',' or '}'\", lastByte);")
                 .addContentLine("}");
         method.addContentLine("}");
+    }
+
+    private static void addPropertyCase(ClassBase.Builder<?, ?> classBuilder,
+                                        Method.Builder method,
+                                        GeneratedNames fieldNames,
+                                        String propertyName,
+                                        boolean normalized,
+                                        int index) {
+        String preferredName = constantName(propertyName);
+        String constantName = fieldNames.unique(preferredName);
+        classBuilder.addField(field -> field.name(constantName)
+                .accessModifier(AccessModifier.PRIVATE)
+                .type(int.class)
+                .isStatic(true)
+                .isFinal(true)
+                .defaultValue(Integer.toString(index)));
+        // The brace-ending chunk preserves case-body indentation when a comment follows.
+        method.addContent("case " + constantName + " -> {");
+        if (normalized || !constantName.equals(preferredName)) {
+            method.addContent(" // ").addContentLiteral(propertyName);
+        }
+        method.addContentLine();
     }
 
     private static void earlyReturnForEmptyObjects(Method.Builder method,
@@ -1359,15 +1268,6 @@ class JsonConverterGenerator {
         return capitalize(className.replaceAll("\\[]", "Array"));
     }
 
-    private static int calculateNameHash(String name) {
-        int fnvHash = FNV_OFFSET_BASIS;
-        for (byte b : name.getBytes(StandardCharsets.UTF_8)) {
-            fnvHash ^= (b & 0xFF);
-            fnvHash *= FNV_PRIME;
-        }
-        return fnvHash;
-    }
-
     private enum TypeConfigMode {
         SERIALIZATION("serializer"),
         DESERIALIZATION("deserializer");
@@ -1390,9 +1290,6 @@ class JsonConverterGenerator {
 
         private int count = 0;
 
-    }
-
-    private record AliasInfo(String alias, TypeName boundType) {
     }
 
 }

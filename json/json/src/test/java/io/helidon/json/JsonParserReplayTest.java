@@ -17,6 +17,8 @@
 package io.helidon.json;
 
 import java.io.ByteArrayInputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -28,6 +30,86 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JsonParserReplayTest {
+
+    @ParameterizedTest
+    @EnumSource(Input.class)
+    void matchesDecodedKeysWithoutLosingMark(Input input) {
+        for (String name : List.of("kind", "k\\u0069nd", "costarring", "liquid", "a".repeat(2048), "žluťoučký")) {
+            JsonParser parser = input.parser("{\"" + name + "\":1}");
+            parser.mark();
+            assertThat(parser.nextToken(), is((byte) '"'));
+            int expected = name.equals("kind") || name.equals("k\\u0069nd") ? 0 : -1;
+            assertThat(parser.readString(JsonStringLookup.create("kind")), is(expected));
+            assertThat(parser.nextToken(), is((byte) ':'));
+            parser.resetToMark();
+            assertThat(parser.currentByte(), is((byte) '{'));
+            parser.nextToken();
+            assertThat(parser.readString(JsonStringLookup.create("liquid")), is(name.equals("liquid") ? 0 : -1));
+            assertThat(parser.nextToken(), is((byte) ':'));
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(Input.class)
+    void matchesStandaloneStringsAndRejectsNonStrings(Input input) {
+        JsonParser parser = input.parser("\"k\\u0069nd\"");
+        assertThat(parser.readString(JsonStringLookup.create("kind")), is(0));
+        assertThrows(JsonException.class, () -> input.parser("null").readString(JsonStringLookup.create("kind")));
+        assertThrows(NullPointerException.class, () -> input.parser("\"kind\"").readString((JsonStringLookup) null));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    void keyComparisonRejectsMalformedStrings(ParserMethod method) {
+        for (int control : List.of(0, 10, 31)) {
+            JsonParser parser = method.createParser("\"bad" + (char) control + "key\"");
+            assertThrows(JsonException.class, () -> parser.readString(JsonStringLookup.create("kind")));
+        }
+        JsonStringLookup high = JsonStringLookup.create(String.valueOf((char) 0xd800));
+        JsonStringLookup low = JsonStringLookup.create(String.valueOf((char) 0xdc00));
+        assertThrows(JsonException.class, () -> method.createParser("\"\\uD800\"").readString(high));
+        assertThrows(JsonException.class, () -> method.createParser("\"\\uDC00\"").readString(low));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    void keyComparisonAcceptsEscapedSupplementaryCharacters(ParserMethod method) {
+        JsonStringLookup key = JsonStringLookup.create("a" + new String(Character.toChars(0x1f680)));
+        assertThat(method.createParser("\"a\\uD83D\\uDE80\"").readString(key), is(0));
+    }
+
+    @ParameterizedTest
+    @EnumSource(Input.class)
+    void replayPreservesLookupReadsBeforeAndAfterOmittedProperty(Input input) {
+        JsonParser delegate = input.parser("{\"name\":\"sample\",\"kind\":\"sample\",\"tail\":\"done\"}");
+        JsonParser parser = (JsonParser) Proxy.newProxyInstance(JsonParser.class.getClassLoader(),
+                                                                new Class<?>[] {JsonParser.class},
+                                                                (_, method, arguments) -> {
+                                                                    if (method.getName().equals("readString")
+                                                                            && method.getParameterCount() == 0) {
+                                                                        throw new AssertionError("Lookup reads must be delegated");
+                                                                    }
+                                                                    try {
+                                                                        return method.invoke(delegate, arguments);
+                                                                    } catch (InvocationTargetException e) {
+                                                                        throw e.getCause();
+                                                                    }
+                                                                });
+        parser.mark();
+        parser.skip();
+        parser.resetToMark();
+        JsonParser replay = ObjectStartParser.create(parser, 1);
+        JsonStringLookup names = JsonStringLookup.create("name", "tail");
+        JsonStringLookup values = JsonStringLookup.create("sample", "done");
+        for (int index = 0; index < 2; index++) {
+            assertThat(replay.nextToken(), is((byte) '"'));
+            assertThat(replay.readString(names), is(index));
+            assertThat(replay.nextToken(), is((byte) ':'));
+            assertThat(replay.nextToken(), is((byte) '"'));
+            assertThat(replay.readString(values), is(index));
+            assertThat(replay.nextToken(), is(index == 0 ? (byte) ',' : (byte) '}'));
+        }
+    }
 
     @ParameterizedTest
     @EnumSource(Input.class)
@@ -61,6 +143,8 @@ class JsonParserReplayTest {
     @EnumSource(Input.class)
     void replayMarkRestoresOmittedPropertyState(Input input) {
         JsonParser parser = input.parser("{\"name\":\"sample\",\"kind\":\"sample\",\"tail\":7}");
+        parser.mark();
+        parser.resetToMark();
         JsonParser replay = ObjectStartParser.create(parser, 1);
         replay.mark();
         JsonObject first = replay.readJsonObject();
@@ -73,6 +157,8 @@ class JsonParserReplayTest {
     @EnumSource(Input.class)
     void skipNestedPrefixPreservesFollowingProperties(Input input) {
         JsonParser parser = input.parser("{\"ignored\":[{\"kind\":\"nested\"}],\"kind\":\"sample\",\"value\":7}");
+        parser.mark();
+        parser.resetToMark();
         JsonParser replay = ObjectStartParser.create(parser, 1);
         replay.nextToken();
         replay.readString();

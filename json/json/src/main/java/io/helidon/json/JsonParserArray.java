@@ -21,6 +21,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Objects;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
@@ -655,6 +656,20 @@ class JsonParserArray extends JsonParserBase {
     }
 
     @Override
+    public int readString(JsonStringLookup lookup) {
+        Objects.requireNonNull(lookup);
+        if (buffer[currentIndex] != '"') {
+            throw createException("Start of a string expected", currentByte());
+        }
+        long match = lookup.match(buffer, currentIndex + 1, bufferLength);
+        if (match >= 0) {
+            currentIndex = (int) (match >>> 32);
+            return (int) match;
+        }
+        return readStringForLookup(lookup);
+    }
+
+    @Override
     @SuppressWarnings("checkstyle:MethodLength") // unrolled on purpose for the hot ASCII-key path
     public int readStringAsHash() {
         if (buffer[currentIndex] != '"') {
@@ -1220,6 +1235,81 @@ class JsonParserArray extends JsonParserBase {
 
     void increaseStringBuffer() {
         increaseStringBuffer(stringBufferLength * 2);
+    }
+
+    private int readStringForLookup(JsonStringLookup lookup) {
+        JsonStringLookup.DecodedTrie trie = lookup.decodedTrie();
+        expectLowSurrogate = false;
+        int state = 0;
+        long node = trie.node(state);
+        while (true) {
+            ensure(1);
+            byte b = buffer[++currentIndex];
+            int codePoint;
+            if (b == '\\') {
+                int transition = (int) node;
+                if (!expectLowSurrogate && transition > 0 && transition <= 0x80
+                        && bufferLength - currentIndex >= 6
+                        && JsonStringLookup.matchesEscapedAscii(transition - 1, buffer, currentIndex)) {
+                    currentIndex += 5;
+                    node = trie.node(++state);
+                    continue;
+                }
+                codePoint = processEscapedSequence();
+            } else if (expectLowSurrogate) {
+                throw createException("Low surrogate must follow the high surrogate.", b);
+            } else if (b == '"') {
+                return trie.match(state);
+            } else if (b >= 0) {
+                if (b < 0x20) {
+                    throw createException("Unescaped control character not allowed in string", b);
+                }
+                int word = (int) (node >>> 32);
+                if (word != 0 && bufferLength - currentIndex >= Integer.BYTES
+                        && JsonStringLookup.matchesAscii(word, buffer, currentIndex)) {
+                    state += Integer.BYTES;
+                    node = trie.node(state);
+                    currentIndex += Integer.BYTES - 1;
+                    continue;
+                }
+                codePoint = b;
+            } else {
+                codePoint = readUtf8CodePoint(b);
+            }
+            if (codePoint >= 0x10000) {
+                state = trie.advance(state, (int) node, Character.highSurrogate(codePoint));
+                if (state >= 0) {
+                    node = trie.node(state);
+                    state = trie.advance(state, (int) node, Character.lowSurrogate(codePoint));
+                }
+            } else {
+                state = trie.advance(state, (int) node, (char) codePoint);
+            }
+            if (state < 0) {
+                validateStringTail();
+                return -1;
+            }
+            node = trie.node(state);
+        }
+    }
+
+    // Continue after the validated prefix without resetting pending-surrogate state.
+    private void validateStringTail() {
+        while (true) {
+            ensure(1);
+            byte b = buffer[++currentIndex];
+            if (b == '\\') {
+                processEscapedSequence();
+            } else if (expectLowSurrogate) {
+                throw createException("Low surrogate must follow the high surrogate.", b);
+            } else if (b == '"') {
+                return;
+            } else if (b < 0) {
+                readUtf8CodePoint(b);
+            } else if (b < 0x20) {
+                throw createException("Unescaped control character not allowed in string", b);
+            }
+        }
     }
 
     private char[] readNumberAsCharArray() {
