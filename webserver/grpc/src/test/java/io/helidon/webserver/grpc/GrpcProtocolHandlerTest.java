@@ -1720,6 +1720,26 @@ class GrpcProtocolHandlerTest {
     }
 
     @Test
+    void testAcceptedResponseEncodingDoesNotEnableRequestDecompression() throws IOException {
+        assertRequestEncoding(false, true, true);
+    }
+
+    @Test
+    void testCompressedRequestRequiresEncodingWithoutResponseNegotiation() throws IOException {
+        assertRequestEncoding(false, false, true);
+    }
+
+    @Test
+    void testUncompressedRequestAcceptsCompressedResponse() throws IOException {
+        assertRequestEncoding(false, true, false);
+    }
+
+    @Test
+    void testExplicitRequestEncodingEnablesDecompression() throws IOException {
+        assertRequestEncoding(true, true, true);
+    }
+
+    @Test
     void testCancelReleasesMessageWaitingForDemand() throws Exception {
         AtomicInteger messageCount = new AtomicInteger();
         AtomicInteger cancelCount = new AtomicInteger();
@@ -2176,6 +2196,65 @@ class GrpcProtocolHandlerTest {
             gzip.write(content.getBytes(StandardCharsets.UTF_8));
         }
         return output.toByteArray();
+    }
+
+    private void assertRequestEncoding(boolean requestEncoding, boolean acceptEncoding, boolean compressed) throws IOException {
+        List<String> messages = new ArrayList<>();
+        AtomicReference<Http2Headers> trailers = new AtomicReference<>();
+        ServerCallHandler<String, String> callHandler = (call, _) -> {
+            call.request(1);
+            return new ServerCall.Listener<>() {
+                @Override
+                public void onMessage(String message) {
+                    messages.add(message);
+                }
+
+                @Override
+                public void onHalfClose() {
+                    call.close(Status.OK, new Metadata());
+                }
+            };
+        };
+        WritableHeaders<?> headers = WritableHeaders.create();
+        if (requestEncoding) {
+            headers.add(GRPC_ENCODING, "gzip");
+        }
+        if (acceptEncoding) {
+            headers.add(GRPC_ACCEPT_ENCODING, "gzip");
+        }
+        var handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                Http2Headers.create(headers),
+                                                headersCapturingWriter(trailers),
+                                                1,
+                                                null,
+                                                Http2StreamState.OPEN,
+                                                route(callHandler),
+                                                GrpcConfig.builder().enableCompression(true).build(),
+                                                metrics);
+        handler.init();
+        byte[] bytes = compressed ? gzip("request") : "request".getBytes(StandardCharsets.UTF_8);
+        BufferData data = BufferData.create(5 + bytes.length);
+        data.write(compressed ? 1 : 0);
+        data.writeUnsignedInt32(bytes.length);
+        data.write(bytes);
+        try {
+            handler.data(Http2FrameHeader.create(data.available(),
+                                                 Http2FrameTypes.DATA,
+                                                 Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
+                                                 1),
+                         data);
+            boolean rejected = compressed && !requestEncoding;
+            assertAll(
+                    () -> assertThat("application messages", messages, is(rejected ? List.of() : List.of("request"))),
+                    () -> assertThat("terminal status", trailers.get().httpHeaders().first(GrpcStatus.STATUS_NAME),
+                                     is(Optional.of(rejected ? "13" : "0"))),
+                    () -> assertThat("completed stream", handler.streamState(), is(Http2StreamState.CLOSED)),
+                    () -> assertThat("response compression remains negotiated", handler.identityCompressor(),
+                                     is(!requestEncoding && !acceptEncoding))
+            );
+        } finally {
+            handler.close();
+        }
     }
 
     private static MethodDescriptor<String, String> stringMethodDescriptor() {

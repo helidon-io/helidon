@@ -456,7 +456,8 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 if (entityBytesLeft == 0) {
                     // fail if compressed and no decompressor
                     if (entityCompressed && decompressor == null) {
-                        throw new IllegalStateException("Unable to codec for compressed data");
+                        throw Status.INTERNAL.withDescription("Compressed gRPC message without a request decompressor")
+                                .asRuntimeException();
                     }
 
                     // read and possibly decompress data
@@ -570,11 +571,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                 for (String encoding : acceptEncoding.allValues()) {
                     compressor = COMPRESSOR_REGISTRY.lookupCompressor(encoding);
                     if (compressor != null) {
-                        decompressor = DECOMPRESSOR_REGISTRY.lookupDecompressor(encoding);
-                        if (decompressor != null) {
-                            break;      // found match
-                        }
-                        compressor = null;
+                        break;      // response encoding does not select the request decompressor
                     }
                 }
             }
