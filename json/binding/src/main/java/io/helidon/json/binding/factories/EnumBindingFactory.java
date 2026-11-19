@@ -16,11 +16,9 @@
 
 package io.helidon.json.binding.factories;
 
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.Weight;
@@ -37,14 +35,6 @@ import io.helidon.service.registry.Service;
 @Service.Singleton
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 class EnumBindingFactory implements JsonBindingFactory<Enum<?>> {
-
-    // Bootstrap-loaded holders avoid retaining our loader through a parent-loaded enum class.
-    private static final ClassValue<AtomicReference<WeakReference<EnumInfo>>> ENUM_INFO = new ClassValue<>() {
-        @Override
-        protected AtomicReference<WeakReference<EnumInfo>> computeValue(Class<?> type) {
-            return new AtomicReference<>(new WeakReference<>(new EnumInfo(type)));
-        }
-    };
 
     @Override
     public JsonDeserializer<Enum<?>> createDeserializer(Class<? extends Enum<?>> type) {
@@ -75,8 +65,7 @@ class EnumBindingFactory implements JsonBindingFactory<Enum<?>> {
 
         private final Type type;
         private final Enum<?>[] enumConstants;
-        // Keep the shared metadata alive while this converter is in use.
-        private final EnumInfo info;
+        private final String[] names;
         private final JsonStringLookup lookup;
 
         private EnumConverter(Class<?> type) {
@@ -84,22 +73,19 @@ class EnumBindingFactory implements JsonBindingFactory<Enum<?>> {
             if (!type.isEnum()) {
                 throw new IllegalStateException("Type \"" + type + "\" is not an enum");
             }
-            AtomicReference<WeakReference<EnumInfo>> cached = ENUM_INFO.get(type);
-            EnumInfo info = cached.get().get();
-            if (info == null) {
-                info = new EnumInfo(type);
-                cached.set(new WeakReference<>(info));
+            this.enumConstants = (Enum<?>[]) type.getEnumConstants();
+            this.names = new String[enumConstants.length];
+            for (int i = 0; i < enumConstants.length; i++) {
+                names[i] = enumConstants[i].name();
             }
-            this.info = info;
-            this.enumConstants = info.enumConstants;
-            this.lookup = info.lookup;
+            this.lookup = JsonStringLookup.create(names);
         }
 
         @Override
         public Enum<?> deserialize(JsonParser parser) {
             int index = parser.readString(lookup);
             if (index < 0) {
-                throw parser.createException("Invalid enum name. Valid names are: " + Arrays.toString(info.names));
+                throw parser.createException("Invalid enum name. Valid names are: " + Arrays.toString(names));
             }
             return enumConstants[index];
         }
@@ -116,18 +102,4 @@ class EnumBindingFactory implements JsonBindingFactory<Enum<?>> {
 
     }
 
-    private static final class EnumInfo {
-        private final Enum<?>[] enumConstants;
-        private final String[] names;
-        private final JsonStringLookup lookup;
-
-        private EnumInfo(Class<?> type) {
-            this.enumConstants = (Enum<?>[]) type.getEnumConstants();
-            this.names = new String[enumConstants.length];
-            for (int i = 0; i < enumConstants.length; i++) {
-                names[i] = enumConstants[i].name();
-            }
-            this.lookup = JsonStringLookup.create(names);
-        }
-    }
 }
