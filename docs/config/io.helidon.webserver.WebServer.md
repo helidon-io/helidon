@@ -333,7 +333,7 @@ WebServer configuration bean
 </td>
 <td>
 </td>
-<td>Maximum duration of a single socket write, in ISO 8601 duration format</td>
+<td>Maximum time to write one buffer to the socket before closing the connection</td>
 </tr>
 <tr>
 <td>

@@ -55,7 +55,7 @@ import io.helidon.webserver.spi.TransportBindingFactoryProvider;
 @Prototype.Configured
 @Prototype.Blueprint(decorator = WebServerConfigSupport.ListenerConfigDecorator.class)
 @Prototype.CustomMethods(WebServerConfigSupport.ListenerCustomMethods.class)
-@Prototype.IncludeDefaultMethods({"bindings", "proxyProtocol"})
+@Prototype.IncludeDefaultMethods({"bindings", "proxyProtocol", "writeTimeout"})
 @Api.Stable
 interface ListenerConfigBlueprint {
     /**
@@ -203,18 +203,14 @@ interface ListenerConfigBlueprint {
     int writeQueueLength();
 
     /**
-     * Maximum duration of a single socket write, in ISO 8601 duration format.
-     * The duration covers writing the entire buffer supplied to the socket, including partial writes and TLS records.
-     * Each socket write has its own deadline, starting when the write is invoked, including for asynchronous writers.
-     * Expiry aborts the connection and fails the write. For HTTP/2, all streams on the connection are affected.
-     * JVM scheduling and operating system wake-up latency can delay the write's return beyond its deadline.
-     * The duration must be positive and representable in nanoseconds.
-     * By default, socket writes have no timeout.
+     * Maximum time to write one buffer to the socket before closing the connection.
      *
-     * @return maximum duration of each socket write
+     * @return the write timeout, or empty for no timeout
      */
     @Option.Configured
-    Optional<Duration> writeTimeout();
+    default Optional<Duration> writeTimeout() {
+        return Optional.empty();
+    }
 
     /**
      * If enabled and {@link #writeQueueLength()} is greater than 1, then
