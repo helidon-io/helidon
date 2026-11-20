@@ -127,8 +127,6 @@ public sealed class PacketSpaceManager implements PacketSpace
     private final TimeLine instantSource;
     private final QuicRttEstimator rttEstimator;
     private final PathRecoveryState pathRecoveryState;
-    private boolean recoveryRegistered;
-    private boolean publishedLossDetection;
     // A priority queue containing a record for each unacknowledged PingRequest.
     // PingRequest are removed from this queue when they are acknowledged, that
     // is when any packet whose number is greater than the request packet
@@ -180,6 +178,8 @@ public sealed class PacketSpaceManager implements PacketSpace
     // max ACK delay; zero on initial and handshake, configured policy on application
     private final long maxAckDelay; // ms
     private long acknowledgementScanEpoch;
+    private boolean recoveryRegistered;
+    private boolean publishedLossDetection;
     private volatile boolean closed;
     private volatile boolean blockedByCC;
     private volatile boolean blockedByPacer;
@@ -683,6 +683,7 @@ public sealed class PacketSpaceManager implements PacketSpace
             try {
                 ackProcessingState.clearAcknowledged();
             } finally {
+                publishLossDetection();
                 transferLock.unlock();
             }
         }
@@ -876,6 +877,7 @@ public sealed class PacketSpaceManager implements PacketSpace
                 }
             }
         } finally {
+            publishLossDetection();
             transferLock.unlock();
         }
         if (!discarded.isEmpty() || !discardedPathControl.isEmpty()) {
@@ -1331,37 +1333,38 @@ public sealed class PacketSpaceManager implements PacketSpace
             }
             lostPackets.clear();
         } finally {
+            publishLossDetection();
             transferLock.unlock();
         }
         refreshRecoveryTimers();
     }
 
     private void refreshRecoveryTimers() {
-        // The outer operation publishes recovery state after releasing its locks.
-        if (transferLock.isHeldByCurrentThread() || transmitLock.isHeldByCurrentThread()) {
+        if (!pathRecoveryState.timersNeedRefresh.get()
+                || transferLock.isHeldByCurrentThread() || transmitLock.isHeldByCurrentThread()) {
             return;
         }
-        boolean suppressionChanged;
-        transferLock.lock();
-        try {
-            if (!recoveryRegistered) {
-                pathRecoveryState.packetSpaces.add(this);
-                recoveryRegistered = true;
-            }
-            int bit = 1 << packetNumberSpace.ordinal();
-            boolean pending = !closed && lossTimer() != null;
-            if (pending == publishedLossDetection) {
-                return;
-            }
+        if (pathRecoveryState.timersNeedRefresh.getAndSet(false)) {
+            pathRecoveryState.rescheduleSpaces();
+        }
+    }
+
+    // Called with transferLock held at recovery-state updates.
+    private void publishLossDetection() {
+        if (!recoveryRegistered) {
+            pathRecoveryState.packetSpaces.add(this);
+            recoveryRegistered = true;
+        }
+        PendingAcknowledgement head = pendingAcknowledgements.peek();
+        boolean pending = !closed && head != null && head.packetNumber < largestReceivedAckedPN;
+        if (pending != publishedLossDetection) {
             publishedLossDetection = pending;
+            int bit = 1 << packetNumberSpace.ordinal();
             int previous = pathRecoveryState.lossSpaces.getAndUpdate(value -> pending ? value | bit : value & ~bit);
             int current = pending ? previous | bit : previous & ~bit;
-            suppressionChanged = (previous == 0) != (current == 0);
-        } finally {
-            transferLock.unlock();
-        }
-        if (suppressionChanged) {
-            pathRecoveryState.rescheduleSpaces();
+            if ((previous == 0) != (current == 0)) {
+                pathRecoveryState.timersNeedRefresh.set(true);
+            }
         }
     }
 
@@ -1398,6 +1401,7 @@ public sealed class PacketSpaceManager implements PacketSpace
                 pendingRetransmission.add(pending);
             }
         } finally {
+            publishLossDetection();
             transferLock.unlock();
         }
         if (pending != null) {
@@ -1619,6 +1623,7 @@ public sealed class PacketSpaceManager implements PacketSpace
         lastAckElicitingSent(ack.sent);
         lastAckElicitingSent(ack.packetNumber);
         pendingAcknowledgements.add(ack);
+        publishLossDetection();
         pathRecoveryState.runIfCurrent(ack.pathGeneration,
                                        () -> congestionController.packetSent(ack.packet().size()));
     }
@@ -2291,6 +2296,7 @@ public sealed class PacketSpaceManager implements PacketSpace
         private final ReentrantLock lock = new ReentrantLock();
         private final CopyOnWriteArrayList<PacketSpaceManager> packetSpaces = new CopyOnWriteArrayList<>();
         private final AtomicInteger lossSpaces = new AtomicInteger();
+        private final AtomicBoolean timersNeedRefresh = new AtomicBoolean();
         private volatile long generation;
 
         PathRecoveryState(long generation) {
@@ -2881,6 +2887,9 @@ public sealed class PacketSpaceManager implements PacketSpace
         void reschedule() {
             refreshRecoveryTimers();
             Deadline deadline = computeNextDeadline();
+            if (Deadline.MAX.equals(deadline)) {
+                return;
+            }
             packetEmitter.reschedule(this, deadline);
             log(System.Logger.Level.DEBUG, "retransmission task: rescheduled");
         }
@@ -2937,6 +2946,7 @@ public sealed class PacketSpaceManager implements PacketSpace
                 try {
                     pathRecoveryState.runWithCurrent(generation ->
                             ackProcessingState.lostCount = detectAndAccountLostPackets(lossDetectionTime, generation));
+                    publishLossDetection();
                     lost = ackProcessingState.lostCount;
                 } finally {
                     transferLock.unlock();
