@@ -75,9 +75,12 @@ final class ConfigSourceUpdates {
                 }
                 if (!absent) {
                     previous = data;
+                    failed = false;
+                } else if (failedCheck) {
+                    // Loading reached the source, but absence cannot clear a previous load or parse failure.
+                    failed = false;
                 }
                 initialized = true;
-                failed = false;
                 unavailable = absent;
                 commit(event, outcome, null);
             } finally {

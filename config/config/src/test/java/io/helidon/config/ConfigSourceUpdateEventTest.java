@@ -269,6 +269,33 @@ class ConfigSourceUpdateEventTest {
     }
 
     @Test
+    void mandatoryAbsenceAfterFailedLoadRequiresSuccessfulReload() throws Exception {
+        var source = new TestSource(false);
+        var runtime = runtime(source);
+        try (var recording = new Recording()) {
+            recording.enable(EVENT_NAME);
+            recording.start();
+            runtime.load();
+            runtime.onChange((_, _) -> { });
+            source.modified = true;
+            source.failure = new ConfigException(SECRET);
+            assertThrows(ConfigException.class, source::poll);
+            source.failure = null;
+            source.data = Optional.empty();
+            assertThat(source.poll(), is(ChangeEventType.DELETED));
+            source.modified = false;
+            assertThat(source.poll(), is(ChangeEventType.UNCHANGED));
+            source.modified = true;
+            source.data = data("repaired");
+            assertThat(source.poll(), is(ChangeEventType.CHANGED));
+            assertThat(events(recording).stream().map(it -> it.getString("outcome")).toList(),
+                       contains("INITIAL", "FAILED", "UNAVAILABLE", "RECOVERED"));
+        } finally {
+            runtime.stopChangeSupport();
+        }
+    }
+
+    @Test
     void observesFailedInitialLoadAndMandatoryMissingInitialLoad() throws Exception {
         var source = new TestSource(false);
         source.failure = new ConfigException(SECRET);
