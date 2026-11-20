@@ -15,10 +15,13 @@
  */
 package io.helidon.data.jdbc;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Repeatable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.sql.JDBCType;
 
 import io.helidon.common.Api;
 
@@ -61,7 +64,12 @@ public final class Jdbc {
         /**
          * Executes the statement as an update.
          */
-        UPDATE
+        UPDATE,
+
+        /**
+         * Executes a callable statement with registered outputs or direct results.
+         */
+        CALL
     }
 
     /**
@@ -95,6 +103,7 @@ public final class Jdbc {
      * {@link io.helidon.data.Data.Param} aliases or reliable Java parameter names.
      * A method with any explicit or inherited alias requires named SQL. Positional
      * markers bind arguments in declaration order with an exact marker count.
+     * A leading callable return is handled separately and may precede named IN markers.
      * <p>
      * A repository invocation supplies the SQL, after rewriting any named bind
      * markers, to the driver as one {@link java.sql.PreparedStatement}. Helidon
@@ -102,7 +111,7 @@ public final class Jdbc {
      * database grammar, split scripts, or validate statement boundaries
      * specific to a database. The literal or configured SQL must therefore describe
      * exactly one SQL statement. SQL scripts, batches, compound or multiple statement
-     * strings specific to a JDBC driver, stored procedure calls, SQL that
+     * strings specific to a JDBC driver, SQL that
      * controls transactions, and commands that change connection or session
      * state, including auto-commit mode, are not supported.
      * <p>
@@ -132,8 +141,13 @@ public final class Jdbc {
          * Returns literal SQL or one complete configuration reference with an optional default.
          * A reference uses the owning registry's root configuration at repository activation.
          * Resolved SQL remains fixed until a new repository is created. Named or positional
-         * markers are supported, but they must not be mixed. Positional markers bind method
-         * arguments in declaration order. Methods with effective {@link io.helidon.data.Data.Param}
+         * markers are supported. Only CALL permits a leading return followed by named arguments.
+         * Positional arguments without a leading return follow declaration order and cannot accompany output declarations.
+         * A leading callable return requires one unnamed output declaration. Its inputs
+         * may be named or positional, with positional inputs starting at JDBC position two.
+         * Either escape form may invoke a procedure or function when the driver supports it.
+         * The application supplies the SQL and driver connection settings.
+         * Methods with effective {@link io.helidon.data.Data.Param}
          * aliases require named markers. SQL and inline defaults are trusted application input.
          * Inline defaults remain visible in source, classfiles, and generated literals.
          *
@@ -184,6 +198,79 @@ public final class Jdbc {
     }
 
     /**
+     * Registers an output on a repository method. A nonempty value selects a named SQL marker.
+     * An empty value declares the leading callable return, whose logical name is return.
+     * The leading return must be the only output declaration. Other output declarations
+     * require named SQL markers, while the leading return may precede named or positional inputs.
+     * A leading return requires registration even when its value is discarded.
+     * Multiple named method outputs map to unannotated record components with matching names.
+     * Omitted types are inferred from automatically mapped Java outputs as described by {@link #type()}.
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.METHOD)
+    @Repeatable(OutParameterDeclarations.class)
+    public @interface OutParameter {
+        /**
+         * Returns the marker name, or an empty string for the contextual default.
+         *
+         * @return The output marker name.
+         */
+        String value() default "";
+
+        /**
+         * Returns the JDBC registration type. An explicitly supplied value always wins,
+         * including {@link JDBCType#NULL}. When omitted, generation infers the type from
+         * a single automatically mapped method output or a matched aggregate record component.
+         * <p>
+         * Standard mappings are Boolean to BOOLEAN, Byte to TINYINT, Short to SMALLINT,
+         * Integer to INTEGER, Long to BIGINT, Float to REAL, Double to DOUBLE,
+         * BigDecimal to DECIMAL, String to VARCHAR, byte[] to VARBINARY, LocalDate to DATE,
+         * LocalTime to TIME, and LocalDateTime to TIMESTAMP. Primitive equivalents,
+         * Optional scalar wrappers, and the corresponding java.sql temporal types use
+         * the same registrations. Supported non-scalar materialized cursor shapes
+         * infer REF_CURSOR. A singular scalar cursor requires an explicit REF_CURSOR.
+         * <p>
+         * Callbacks, snapshots, void methods, outputs without an automatic mapping, and nonempty
+         * {@link #typeName()} require explicit types. Inference uses resolved output
+         * types at compile time and does not inspect routine metadata or input types.
+         * The default NULL permits omission in Java source and is never an inferred registration.
+         *
+         * @return The JDBC registration type.
+         */
+        JDBCType type() default JDBCType.NULL;
+
+        /**
+         * Returns the database type name when named registration is required.
+         *
+         * @return The type name, or an empty string when unspecified.
+         */
+        String typeName() default "";
+
+        /**
+         * Returns the fractional scale for NUMERIC or DECIMAL registration.
+         *
+         * @return A nonnegative scale, or minus one when unspecified.
+         */
+        int scale() default -1;
+    }
+
+    /**
+     * Holds repeated callable output declarations.
+     */
+    @Documented
+    @Retention(RetentionPolicy.CLASS)
+    @Target(ElementType.METHOD)
+    public @interface OutParameterDeclarations {
+        /**
+         * Returns the output declarations in source order.
+         *
+         * @return The output declarations.
+         */
+        OutParameter[] value();
+    }
+
+    /**
      * Selects an application row mapper for query or generated key rows.
      * <p>
      * With a mapper class, generated code injects that exact service type.
@@ -197,7 +284,7 @@ public final class Jdbc {
      * concurrent use. The mapper receives a scoped {@link JdbcClient.Row} and
      * never owns JDBC resources.
      */
-    @Target(ElementType.METHOD)
+    @Target({ElementType.METHOD, ElementType.RECORD_COMPONENT})
     @Retention(RetentionPolicy.CLASS)
     public @interface RowMapper {
 

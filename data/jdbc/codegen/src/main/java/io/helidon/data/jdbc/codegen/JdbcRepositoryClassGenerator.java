@@ -185,23 +185,36 @@ final class JdbcRepositoryClassGenerator {
                         .addContentLine("}")
                         .addContent("this.").addContent(plan.sqlFieldName()).addContent(" = ");
                 // Any parameter alias requires named SQL for the whole method input contract.
-                if (plan.method().parameterArguments().stream()
-                        .anyMatch(parameter -> parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM))) {
+                if (plan.callable() != null) {
+                    constructor.addContent(JdbcCodegenTypes.GENERATED_JDBC_DATA).addContent(".prepareCall(")
+                            .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME).addContent(", ");
+                } else if (plan.method().parameterArguments().stream()
+                                .anyMatch(parameter -> parameter.hasAnnotation(JdbcCodegenTypes.DATA_PARAM))) {
                     constructor.addContent(JdbcCodegenTypes.GENERATED_JDBC_DATA).addContent(".prepareNamed(")
                             .addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME).addContent(", ");
                 } else {
                     constructor.addContent(JdbcCodegenConstants.JDBC_CLIENT_NAME).addContent(".prepare(");
                 }
                 constructor.addContent(sqlName).addContent(", ").addContent(List.class).addContent(".of(");
+                List<String> parameterNames = plan.callable() == null
+                        ? plan.parameterPlan().binds().stream()
+                                .map(bind -> JdbcSqlParameterPlan.effectiveName(bind.parameter())).toList()
+                        : plan.callable().names();
                 boolean first = true;
-                for (JdbcSqlParameterPlan.Bind bind : plan.parameterPlan().binds()) {
+                for (String parameterName : parameterNames) {
                     if (!first) {
                         constructor.addContent(", ");
                     }
-                    constructor.addContentLiteral(JdbcSqlParameterPlan.effectiveName(bind.parameter()));
+                    constructor.addContentLiteral(parameterName);
                     first = false;
                 }
-                constructor.addContentLine("));").addContentLine("}");
+                constructor.addContent(")");
+                if (plan.callable() != null) {
+                    constructor.addContent(", ").addContent(String.valueOf(plan.callable().namedOnly()))
+                            .addContent(", ").addContent(String.valueOf(plan.callable().outputs().stream()
+                                    .anyMatch(output -> output.marker().isEmpty())));
+                }
+                constructor.addContentLine(");").addContentLine("}");
             }
         }
         classModel.addConstructor(constructor);

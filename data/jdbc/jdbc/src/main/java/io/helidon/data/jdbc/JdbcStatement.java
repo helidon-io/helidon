@@ -19,6 +19,7 @@ import java.sql.JDBCType;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
  * In-memory description of one JDBC statement assembled by an application or
@@ -29,6 +30,8 @@ import java.util.Optional;
  */
 final class JdbcStatement implements JdbcClient.Statement {
 
+    private static final Pattern CALL_RETURN = Pattern.compile("\\s*\\{\\s*\\?\\s*=\\s*call\\b", Pattern.CASE_INSENSITIVE);
+
     private final JdbcRunner runner;
     private final String sql;
     private final JdbcOperation.Bind[] binds;
@@ -36,6 +39,8 @@ final class JdbcStatement implements JdbcClient.Statement {
 
     // A terminal operation freezes the statement and places it in its terminal state.
     private boolean terminalState;
+    private boolean leadingReturnResolved;
+    private boolean leadingReturn;
 
     /**
      * Creates an empty statement description.
@@ -145,6 +150,73 @@ final class JdbcStatement implements JdbcClient.Statement {
         return new JdbcGeneratedKeys(this);
     }
 
+    @Override
+    public JdbcClient.Call call() {
+        ensureMutable();
+        return new JdbcCall(this, runner, binds.length);
+    }
+
+    boolean leadingReturn() {
+        if (configured != null) {
+            return configured.leadingReturn();
+        }
+        // Resolve immutable SQL lazily so binding and callable validation share one classification.
+        // The prefix check avoids matcher allocation when the first character rules out a return escape.
+        if (!leadingReturnResolved) {
+            leadingReturn = !sql.isEmpty()
+                    && (sql.charAt(0) == '{' || Character.isWhitespace(sql.charAt(0)))
+                    && CALL_RETURN.matcher(sql).lookingAt();
+            leadingReturnResolved = true;
+        }
+        return leadingReturn;
+    }
+
+    int outputPosition(String name) {
+        ensureMutable();
+        if (configured == null) {
+            throw new IllegalStateException("Logical output registration requires a reusable statement definition.");
+        }
+        List<Integer> slots = configured.positions(name);
+        if (slots.size() != 1) {
+            throw new IllegalArgumentException("An OUT or INOUT marker must occur exactly once.");
+        }
+        int index = slots.getFirst();
+        if (index == 1 && leadingReturn()) {
+            throw new IllegalArgumentException("Use returns to register the leading callable return.");
+        }
+        return index;
+    }
+
+    int returnPosition() {
+        ensureMutable();
+        if (!leadingReturn()) {
+            throw new IllegalArgumentException("The SQL must contain a leading callable return slot.");
+        }
+        return 1;
+    }
+
+    void validateOutputPosition(int index) {
+        if (configured != null) {
+            configured.validateOutputPosition(index);
+        }
+    }
+
+    JdbcOperation callOperation(List<JdbcCallOutput> outputs) {
+        ensureMutable();
+        if (leadingReturn()
+                && (binds[0] != null || outputs.stream().noneMatch(output -> output.index() == 1))) {
+            throw new IllegalStateException("A leading callable return must be registered as an output and cannot be an input.");
+        }
+        for (int index = 0; index < binds.length; index++) {
+            int position = index + 1;
+            if (binds[index] == null && outputs.stream().noneMatch(output -> output.index() == position)) {
+                throw new IllegalStateException("A bind or output is missing at JDBC position " + position + ".");
+            }
+        }
+        terminalState = true;
+        return new JdbcOperation(sql, binds.clone(), JdbcPreparationPlan.call());
+    }
+
     /**
      * Stores an explicitly typed SQL null for generated repository code.
      *
@@ -238,6 +310,9 @@ final class JdbcStatement implements JdbcClient.Statement {
         }
         List<Integer> slots = configured.positions(name);
         for (int slot : slots) {
+            if (slot == 1 && leadingReturn()) {
+                throw new IllegalArgumentException("A leading callable return cannot be bound as an input.");
+            }
             if (binds[slot - 1] != null) {
                 throw new IllegalArgumentException("A bind position has already been assigned.");
             }
@@ -261,6 +336,10 @@ final class JdbcStatement implements JdbcClient.Statement {
             throw new IllegalArgumentException("The bind index must be between 1 and " + binds.length
                                                        + ". The requested index was " + index + ".");
         }
+        // Only JDBC position one can be a leading return, so other inputs need no SQL classification.
+        if (index == 1 && leadingReturn()) {
+            throw new IllegalArgumentException("A leading callable return cannot be bound as an input.");
+        }
         if (binds[index - 1] != null) {
             throw new IllegalArgumentException("Bind position " + index + " has already been assigned.");
         }
@@ -276,6 +355,9 @@ final class JdbcStatement implements JdbcClient.Statement {
      */
     private JdbcOperation operation(JdbcPreparationPlan plan) {
         ensureMutable();
+        if (configured != null && configured.leadingReturn() && configured.namedMarkers()) {
+            throw new IllegalStateException("A leading return with named arguments requires CALL execution.");
+        }
         for (int index = 0; index < binds.length; index++) {
             if (binds[index] == null) {
                 throw new IllegalStateException("A bind value is missing at JDBC position " + (index + 1) + ".");

@@ -163,7 +163,7 @@ public final class AnnotationParameter extends CommonComponent {
             case Enum<?> e -> imports.add(TypeName.create(e.getClass()));
             case ConstantValue cv -> imports.add(cv.type());
             case TypeName tn -> imports.add(tn);
-            case io.helidon.codegen.classmodel.Annotation an -> {
+            case Annotation an -> {
                 imports.add(an.typeName());
                 for (var e : an.parameters()) {
                     resolveImports(imports, e);
@@ -207,6 +207,9 @@ public final class AnnotationParameter extends CommonComponent {
     private static Annotation annotation(io.helidon.common.types.Annotation a) {
         var builder = Annotation.builder().from(a);
         for (var entry : a.properties().entrySet()) {
+            if (!entry.getValue().explicit()) {
+                continue;
+            }
             var name = entry.getKey();
             var value = value(entry.getValue().value());
             builder.addParameter(AnnotationParameter.builder()
@@ -220,12 +223,12 @@ public final class AnnotationParameter extends CommonComponent {
 
     private static boolean isValueType(Object o) {
         return switch (o) {
-            case TypeName ignored -> true;
-            case Class<?> ignored -> true;
-            case EnumValue ignored -> true;
-            case Character ignored -> true;
-            case String ignored -> true;
-            case Number ignored -> true;
+            case TypeName _ -> true;
+            case Class<?> _ -> true;
+            case EnumValue _ -> true;
+            case Character _ -> true;
+            case String _ -> true;
+            case Number _ -> true;
             default -> false;
         };
     }
