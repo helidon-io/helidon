@@ -208,7 +208,7 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
 
     @Override
     public boolean contains(String name) {
-        return rawQueryParams.containsKey(name);
+        return decodedQueryParams.containsKey(name) || rawQueryParams.containsKey(name);
     }
 
     @Override
@@ -274,7 +274,7 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
 
     @Override
     public UriQueryWriteable setIfAbsent(String name, String... value) {
-        if (rawQueryParams.containsKey(name)) {
+        if (contains(name)) {
             return this;
         }
         return set(name, value);
@@ -283,8 +283,11 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
     @Override
     public UriQueryWriteable remove(String name) {
         rawQueryParams.remove(name);
-        decodedQueryParams.remove(name);
+        List<String> removed = decodedQueryParams.remove(name);
         unindexRawName(name);
+        if (removed != null) {
+            removeRawAliases(name);
+        }
         return this;
     }
 
@@ -294,6 +297,7 @@ final class UriQueryWriteableImpl implements UriQueryWriteable {
         List<String> removed = decodedQueryParams.remove(name);
         unindexRawName(name);
         if (removed != null) {
+            removeRawAliases(name);
             removedConsumer.accept(removed);
         }
         return this;
