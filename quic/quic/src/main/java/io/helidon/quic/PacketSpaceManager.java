@@ -682,8 +682,8 @@ public sealed class PacketSpaceManager implements PacketSpace
         } finally {
             try {
                 ackProcessingState.clearAcknowledged();
-            } finally {
                 publishLossDetection();
+            } finally {
                 transferLock.unlock();
             }
         }
@@ -877,8 +877,11 @@ public sealed class PacketSpaceManager implements PacketSpace
                 }
             }
         } finally {
-            publishLossDetection();
-            transferLock.unlock();
+            try {
+                publishLossDetection();
+            } finally {
+                transferLock.unlock();
+            }
         }
         if (!discarded.isEmpty() || !discardedPathControl.isEmpty()) {
             if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
@@ -1333,8 +1336,11 @@ public sealed class PacketSpaceManager implements PacketSpace
             }
             lostPackets.clear();
         } finally {
-            publishLossDetection();
-            transferLock.unlock();
+            try {
+                publishLossDetection();
+            } finally {
+                transferLock.unlock();
+            }
         }
         refreshRecoveryTimers();
     }
@@ -1401,8 +1407,11 @@ public sealed class PacketSpaceManager implements PacketSpace
                 pendingRetransmission.add(pending);
             }
         } finally {
-            publishLossDetection();
-            transferLock.unlock();
+            try {
+                publishLossDetection();
+            } finally {
+                transferLock.unlock();
+            }
         }
         if (pending != null) {
             emitRetransmission(pending);
