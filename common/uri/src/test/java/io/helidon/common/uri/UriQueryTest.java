@@ -18,6 +18,7 @@ package io.helidon.common.uri;
 
 import java.net.URI;
 import java.net.URLEncoder;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -309,6 +310,35 @@ class UriQueryTest {
         assertThat(query.getAllRaw("b"), is(List.of("request")));
         assertThat(query.getAllRaw("c"), is(List.of("request")));
         assertThat(query.rawValue(), not(containsString("%")));
+    }
+
+    @Test
+    void encodedNameLookupsUseDecodedName() {
+        UriQueryWriteable query = UriQueryWriteable.create();
+        query.set("page size", "10");
+        query.set("x", "1");
+
+        assertThat(query.contains("page size"), is(true));
+
+        query.setIfAbsent("page size", "20");
+        assertThat(query.all("page size"), is(List.of("10")));
+
+        query.remove("page size");
+        assertThat(query.contains("page size"), is(false));
+        assertThat(query.names(), is(Set.of("x")));
+        assertThat(query.rawValue(), is("x=1"));
+    }
+
+    @Test
+    void removeDropsEquivalentEncodedNames() {
+        UriQueryWriteable query = writeableQuery("%61=encoded&a=literal&b=2");
+        List<String> removed = new ArrayList<>();
+
+        query.remove("a", removed::addAll);
+
+        assertThat(removed, is(List.of("encoded", "literal")));
+        assertThat(query.names(), is(Set.of("b")));
+        assertThat(query.rawValue(), is("b=2"));
     }
 
     private static UriQueryWriteable writeableQuery(String queryString) {
