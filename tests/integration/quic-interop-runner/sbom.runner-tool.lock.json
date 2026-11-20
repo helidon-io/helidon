@@ -110,9 +110,9 @@
     {
       "name": "brotli-libs",
       "purls": [
-        "pkg:apk/alpine/brotli-libs@1.1.0-r2?distro=alpine-3.21.3&upstream=brotli"
+        "pkg:apk/alpine/brotli-libs@1.1.1-r0?distro=alpine-3.21.3&upstream=brotli"
       ],
-      "version": "1.1.0-r2"
+      "version": "1.1.1-r0"
     },
     {
       "name": "btrfs-progs",
@@ -145,9 +145,9 @@
     {
       "name": "c-ares",
       "purls": [
-        "pkg:apk/alpine/c-ares@1.34.8-r0?distro=alpine-3.21.3"
+        "pkg:apk/alpine/c-ares@1.34.9-r0?distro=alpine-3.21.3"
       ],
-      "version": "1.34.8-r0"
+      "version": "1.34.9-r0"
     },
     {
       "name": "ca-certificates",
@@ -159,9 +159,9 @@
     {
       "name": "ca-certificates-bundle",
       "purls": [
-        "pkg:apk/alpine/ca-certificates-bundle@20260909-r0?distro=alpine-3.21.3&upstream=ca-certificates"
+        "pkg:apk/alpine/ca-certificates-bundle@20261020-r0?distro=alpine-3.21.3&upstream=ca-certificates"
       ],
-      "version": "20260909-r0"
+      "version": "20261020-r0"
     },
     {
       "name": "cloud.google.com/go/compute/metadata",
@@ -194,9 +194,9 @@
     {
       "name": "curl",
       "purls": [
-        "pkg:apk/alpine/curl@8.14.1-r2?distro=alpine-3.21.3"
+        "pkg:apk/alpine/curl@8.14.1-r3?distro=alpine-3.21.3"
       ],
-      "version": "8.14.1-r2"
+      "version": "8.14.1-r3"
     },
     {
       "name": "dario.cat/mergo",
@@ -2084,9 +2084,9 @@
     {
       "name": "gnutls",
       "purls": [
-        "pkg:apk/alpine/gnutls@3.8.13-r0?distro=alpine-3.21.3"
+        "pkg:apk/alpine/gnutls@3.8.14-r0?distro=alpine-3.21.3"
       ],
-      "version": "3.8.13-r0"
+      "version": "3.8.14-r0"
     },
     {
       "name": "go.etcd.io/bbolt",
@@ -2994,9 +2994,9 @@
     {
       "name": "libcurl",
       "purls": [
-        "pkg:apk/alpine/libcurl@8.14.1-r2?distro=alpine-3.21.3&upstream=curl"
+        "pkg:apk/alpine/libcurl@8.14.1-r3?distro=alpine-3.21.3&upstream=curl"
       ],
-      "version": "8.14.1-r2"
+      "version": "8.14.1-r3"
     },
     {
       "name": "libeconf",
@@ -3015,9 +3015,9 @@
     {
       "name": "libexpat",
       "purls": [
-        "pkg:apk/alpine/libexpat@2.8.4-r0?distro=alpine-3.21.3&upstream=expat"
+        "pkg:apk/alpine/libexpat@2.10.0-r0?distro=alpine-3.21.3&upstream=expat"
       ],
-      "version": "2.8.4-r0"
+      "version": "2.10.0-r0"
     },
     {
       "name": "libffi",
@@ -3281,9 +3281,9 @@
     {
       "name": "musl",
       "purls": [
-        "pkg:apk/alpine/musl@1.2.5-r11?distro=alpine-3.21.3"
+        "pkg:apk/alpine/musl@1.2.5-r12?distro=alpine-3.21.3"
       ],
-      "version": "1.2.5-r11"
+      "version": "1.2.5-r12"
     },
     {
       "name": "musl-utils",
@@ -3358,9 +3358,9 @@
     {
       "name": "pcre2",
       "purls": [
-        "pkg:apk/alpine/pcre2@10.43-r0?distro=alpine-3.21.3"
+        "pkg:apk/alpine/pcre2@10.43-r1?distro=alpine-3.21.3"
       ],
-      "version": "10.43-r0"
+      "version": "10.43-r1"
     },
     {
       "name": "pigz",
@@ -3442,9 +3442,9 @@
     {
       "name": "pyc",
       "purls": [
-        "pkg:apk/alpine/pyc@3.12.15-r0?distro=alpine-3.21.3&upstream=python3"
+        "pkg:apk/alpine/pyc@3.12.16-r0?distro=alpine-3.21.3&upstream=python3"
       ],
-      "version": "3.12.15-r0"
+      "version": "3.12.16-r0"
     },
     {
       "name": "pycryptodome",
@@ -3470,23 +3470,23 @@
     {
       "name": "python3",
       "purls": [
-        "pkg:apk/alpine/python3@3.12.15-r0?distro=alpine-3.21.3"
+        "pkg:apk/alpine/python3@3.12.16-r0?distro=alpine-3.21.3"
       ],
-      "version": "3.12.15-r0"
+      "version": "3.12.16-r0"
     },
     {
       "name": "python3-pyc",
       "purls": [
-        "pkg:apk/alpine/python3-pyc@3.12.15-r0?distro=alpine-3.21.3&upstream=python3"
+        "pkg:apk/alpine/python3-pyc@3.12.16-r0?distro=alpine-3.21.3&upstream=python3"
       ],
-      "version": "3.12.15-r0"
+      "version": "3.12.16-r0"
     },
     {
       "name": "python3-pycache-pyc0",
       "purls": [
-        "pkg:apk/alpine/python3-pycache-pyc0@3.12.15-r0?distro=alpine-3.21.3&upstream=python3"
+        "pkg:apk/alpine/python3-pycache-pyc0@3.12.16-r0?distro=alpine-3.21.3&upstream=python3"
       ],
-      "version": "3.12.15-r0"
+      "version": "3.12.16-r0"
     },
     {
       "name": "random-slugs",
@@ -3708,9 +3708,9 @@
     {
       "name": "zlib",
       "purls": [
-        "pkg:apk/alpine/zlib@1.3.2-r1?distro=alpine-3.21.3"
+        "pkg:apk/alpine/zlib@1.4-r0?distro=alpine-3.21.3"
       ],
-      "version": "1.3.2-r1"
+      "version": "1.4-r0"
     },
     {
       "name": "zstd-libs",
