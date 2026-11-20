@@ -326,6 +326,17 @@ WebServer configuration bean
 </tr>
 <tr>
 <td>
+<code>write-<wbr>timeout</code>
+</td>
+<td>
+<code>Duration</code>
+</td>
+<td>
+</td>
+<td>Maximum duration of a single socket write, in ISO 8601 duration format</td>
+</tr>
+<tr>
+<td>
 <a id="error-handling"></a>
 <a href="io.helidon.webserver.ErrorHandling.md">
 <code>error-<wbr>handling</code>

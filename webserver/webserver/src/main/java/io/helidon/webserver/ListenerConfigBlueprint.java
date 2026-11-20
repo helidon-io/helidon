@@ -203,6 +203,20 @@ interface ListenerConfigBlueprint {
     int writeQueueLength();
 
     /**
+     * Maximum duration of a single socket write, in ISO 8601 duration format.
+     * The duration covers writing the entire buffer supplied to the socket, including partial writes and TLS records.
+     * Each socket write has its own deadline, starting when the write is invoked, including for asynchronous writers.
+     * Expiry aborts the connection and fails the write. For HTTP/2, all streams on the connection are affected.
+     * JVM scheduling and operating system wake-up latency can delay the write's return beyond its deadline.
+     * The duration must be positive and representable in nanoseconds.
+     * By default, socket writes have no timeout.
+     *
+     * @return maximum duration of each socket write
+     */
+    @Option.Configured
+    Optional<Duration> writeTimeout();
+
+    /**
      * If enabled and {@link #writeQueueLength()} is greater than 1, then
      * start with async writes but possibly switch to sync writes if
      * async queue size is always below a certain threshold.

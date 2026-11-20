@@ -40,6 +40,7 @@ import java.util.Timer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -88,6 +89,7 @@ abstract class SocketTransportBinding implements TransportBinding {
     private final Lock idleTimeoutLock = new ReentrantLock();
 
     private volatile HelidonTaskExecutor readerExecutor;
+    private ScheduledThreadPoolExecutor writeTimeoutExecutor;
     private volatile IdleTimeoutHandler idleTimeoutHandler;
     private volatile boolean running;
     private volatile boolean inCheckpoint;
@@ -201,6 +203,14 @@ abstract class SocketTransportBinding implements TransportBinding {
 
             String serverChannelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(serverSocket));
 
+            if (listenerConfig.writeTimeout().isPresent()) {
+                writeTimeoutExecutor = new ScheduledThreadPoolExecutor(1, Thread.ofPlatform()
+                        .daemon(true)
+                        .inheritInheritableThreadLocals(false)
+                        .name("helidon-" + socketName + "-" + type + "-write-timeout")
+                        .factory());
+                writeTimeoutExecutor.setRemoveOnCancelPolicy(true);
+            }
             running = true;
             startIdleTimeoutHandler();
             logStarted(serverChannelId);
@@ -250,6 +260,7 @@ abstract class SocketTransportBinding implements TransportBinding {
         } catch (RuntimeException | Error e) {
             failure = LifecycleFailures.add(failure, e);
         }
+        shutdownWriteTimeoutExecutor();
         LifecycleFailures.throwIfFailed(failure, "Failed to stop " + type + " transport binding");
         return result;
     }
@@ -271,6 +282,7 @@ abstract class SocketTransportBinding implements TransportBinding {
         failure = LifecycleFailures.add(failure, purgeCancelledIdleTimeoutHandler(cancelledIdleTimeoutHandler));
         failure = LifecycleFailures.add(failure, awaitIdleTimeoutHandler(cancelledIdleTimeoutHandler));
         clearAfterSuspend();
+        shutdownWriteTimeoutExecutor();
         throwIfCheckpointSuspendFailed(failure);
     }
 
@@ -288,6 +300,14 @@ abstract class SocketTransportBinding implements TransportBinding {
     private void clearAfterSuspend() {
         serverThread = null;
         closeFuture = null;
+    }
+
+    private void shutdownWriteTimeoutExecutor() {
+        if (writeTimeoutExecutor != null) {
+            // A writer still unwinding after forced shutdown must keep its outstanding deadline.
+            writeTimeoutExecutor.shutdown();
+            writeTimeoutExecutor = null;
+        }
     }
 
     private Throwable closeServerSocketForStop() {
@@ -635,7 +655,8 @@ abstract class SocketTransportBinding implements TransportBinding {
                                                         tls,
                                                         listenerTls,
                                                         connectionObservation,
-                                                        connectionHandlers::remove);
+                                                        connectionHandlers::remove,
+                                                        writeTimeoutExecutor);
                     } catch (RuntimeException failure) {
                         closeAcceptedSocket(socket, failure);
                         acceptToken.ignore();

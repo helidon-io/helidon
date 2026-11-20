@@ -19,8 +19,10 @@ package io.helidon.webserver;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.net.UnixDomainSocketAddress;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
@@ -82,6 +84,61 @@ public class ListenerConfigTest {
         ListenerConfig listenerConfig2 = webServerConfig.sockets().get("other");
         assertThat(listenerConfig2.writeQueueLength(), is(64));
         assertThat(listenerConfig2.writeBufferSize(), is(1024));
+    }
+
+    @Test
+    void testWriteTimeoutDefaultsToAbsent() {
+        assertThat(ListenerConfig.builder().buildPrototype().writeTimeout(), is(Optional.empty()));
+        assertThat(WebServer.builder().buildPrototype().writeTimeout(), is(Optional.empty()));
+    }
+
+    @Test
+    void testWriteTimeoutBuilder() {
+        ListenerConfig config = ListenerConfig.builder()
+                .writeTimeout(Duration.ofNanos(1))
+                .buildPrototype();
+
+        assertThat(config.writeTimeout(), is(Optional.of(Duration.ofNanos(1))));
+    }
+
+    @Test
+    void testWriteTimeoutConfiguredPerListener() {
+        Config config = Config.just("""
+                server:
+                  write-timeout: PT30S
+                  sockets:
+                    admin:
+                      write-timeout: PT5S
+                    metrics:
+                      port: 8082
+                """, MediaTypes.APPLICATION_YAML);
+        WebServerConfig server = WebServer.builder().config(config.get("server")).buildPrototype();
+
+        assertThat(server.writeTimeout(), is(Optional.of(Duration.ofSeconds(30))));
+        assertThat(server.sockets().get("admin").writeTimeout(), is(Optional.of(Duration.ofSeconds(5))));
+        assertThat(server.sockets().get("metrics").writeTimeout(), is(Optional.empty()));
+    }
+
+    @Test
+    void testWriteTimeoutRejectsInvalidBuilderValues() {
+        for (Duration timeout : List.of(Duration.ZERO, Duration.ofNanos(-1), Duration.ofSeconds(Long.MAX_VALUE))) {
+            IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                                                           () -> ListenerConfig.builder()
+                                                                   .writeTimeout(timeout)
+                                                                   .buildPrototype());
+            assertThat(failure.getMessage(), containsString("write-timeout"));
+        }
+    }
+
+    @Test
+    void testWriteTimeoutRejectsInvalidConfiguration() {
+        for (String timeout : List.of("PT0S", "PT-1S", "PT9223372036854775807S")) {
+            IllegalArgumentException failure = assertThrows(IllegalArgumentException.class, () -> listenerConfig("""
+                    server:
+                      write-timeout: %s
+                    """.formatted(timeout)));
+            assertThat(failure.getMessage(), containsString("write-timeout"));
+        }
     }
 
     @Test

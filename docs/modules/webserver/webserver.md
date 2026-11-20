@@ -126,6 +126,39 @@ Binding runtime, factory, provider, planning, context, TLS-selection, and
 protocol-handoff contracts are internal Helidon integration APIs, not a
 supported third-party transport SPI.
 
+### Socket Write Timeout
+
+Configure `write-timeout` on a listener to limit the duration of each socket
+write. This helps release connections whose peer stops receiving data after
+the socket's send buffer fills.
+
+```yaml
+server:
+  port: 8080
+  write-timeout: PT30S
+  sockets:
+    admin:
+      port: 8081
+      write-timeout: PT5S
+```
+
+The value is a positive ISO 8601 duration representable in nanoseconds.
+Each listener has its own setting. By default, socket writes have no timeout.
+
+The deadline starts when a buffer is passed to the socket and covers writing
+that entire buffer, including partial writes and TLS records. Each subsequent
+write gets a new deadline, so a response can run longer than `write-timeout`.
+For asynchronous writers, the deadline starts when the writer takes the buffer
+to the socket. A quiet connection has no write deadline running.
+
+On expiry, WebServer aborts the connection and the write fails. This affects
+all HTTP/2 streams sharing the connection. JVM scheduling and operating system
+wake-up latency can delay the write's return beyond its deadline.
+
+Programmatic configuration uses `WebServer.builder().writeTimeout(Duration)`
+for the default listener and `ListenerConfig.builder().writeTimeout(Duration)`
+for a named listener.
+
 ### Configuring TLS
 
 Configure TLS either programmatically, or by the Helidon configuration
