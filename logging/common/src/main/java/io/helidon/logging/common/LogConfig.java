@@ -70,6 +70,16 @@ public final class LogConfig {
         // Invoking this method triggers class initialization.
     }
 
+    /**
+     * Logging provider selected during class initialization. Later changes to the thread context class
+     * loader do not select a different provider or repeat initialization.
+     *
+     * @return selected provider, or a no-op provider when none is installed
+     */
+    public static LoggingProvider provider() {
+        return PROVIDER;
+    }
+
     private static final class NoOpProvider implements LoggingProvider {
         @Override
         public void initialization() {
