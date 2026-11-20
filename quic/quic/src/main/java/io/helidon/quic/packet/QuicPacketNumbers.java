@@ -54,12 +54,7 @@ public class QuicPacketNumbers {
             numUnAcked = fullPN - largestAcked;
         }
 
-        /*
-         * log(n, 2) + 1; ceil(minBits / 8);
-         *
-         * value will never be non-positive, so don't need to worry about the
-         * special cases.
-         */
+        // RFC 9000 section 17.1 requires the encoding range to be strictly greater than twice the gap.
         int minBits = 64 - Long.numberOfLeadingZeros(numUnAcked) + 1;
         int numBytes = (minBits + 7) / 8;
 

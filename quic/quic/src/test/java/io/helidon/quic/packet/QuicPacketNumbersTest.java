@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -29,6 +30,13 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class QuicPacketNumbersTest {
+    @ParameterizedTest
+    @CsvSource({"127, 1", "128, 2", "32767, 2", "32768, 3", "8388607, 3", "8388608, 4"})
+    void usesShortestPacketNumberEncodingWithMoreThanTwiceTheGap(long gap, int expectedBytes) {
+        long largestAcked = 10;
+        assertThat(QuicPacketNumbers.encodePacketNumber(largestAcked + gap, largestAcked).length, is(expectedBytes));
+    }
+
     @ParameterizedTest
     @MethodSource("packetNumbers")
     void shouldRoundTripEncodedPacketNumbers(long fullPacketNumber, long largestAcked) {

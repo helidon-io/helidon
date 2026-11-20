@@ -33,8 +33,10 @@ import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -125,6 +127,8 @@ public sealed class PacketSpaceManager implements PacketSpace
     private final TimeLine instantSource;
     private final QuicRttEstimator rttEstimator;
     private final PathRecoveryState pathRecoveryState;
+    private boolean recoveryRegistered;
+    private boolean publishedLossDetection;
     // A priority queue containing a record for each unacknowledged PingRequest.
     // PingRequest are removed from this queue when they are acknowledged, that
     // is when any packet whose number is greater than the request packet
@@ -442,6 +446,7 @@ public sealed class PacketSpaceManager implements PacketSpace
             }
         } finally {
             pendingPingRequests.clear();
+            refreshRecoveryTimers();
         }
     }
 
@@ -490,6 +495,7 @@ public sealed class PacketSpaceManager implements PacketSpace
     @Override
     public void packetSent(QuicPacket packet, long previousPacketNumber, long packetNumber) {
         packetSent0(packet, previousPacketNumber, packetNumber, pathRecoveryState.generation());
+        refreshRecoveryTimers();
     }
 
     @Override
@@ -498,6 +504,7 @@ public sealed class PacketSpaceManager implements PacketSpace
                            long packetNumber,
                            long pathGeneration) {
         packetSent0(packet, previousPacketNumber, packetNumber, pathGeneration);
+        refreshRecoveryTimers();
     }
 
     /**
@@ -681,6 +688,7 @@ public sealed class PacketSpaceManager implements PacketSpace
         }
 
         long largestAckAcked = emittedAckTracker.largestAckAcked();
+        refreshRecoveryTimers();
         if (largestAckAcked > largestAckAckedBefore) {
             if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
                 log(System.Logger.Level.DEBUG, "largestAckAcked=%d - cleaning up AckFrame",
@@ -1325,6 +1333,36 @@ public sealed class PacketSpaceManager implements PacketSpace
         } finally {
             transferLock.unlock();
         }
+        refreshRecoveryTimers();
+    }
+
+    private void refreshRecoveryTimers() {
+        // The outer operation publishes recovery state after releasing its locks.
+        if (transferLock.isHeldByCurrentThread() || transmitLock.isHeldByCurrentThread()) {
+            return;
+        }
+        boolean suppressionChanged;
+        transferLock.lock();
+        try {
+            if (!recoveryRegistered) {
+                pathRecoveryState.packetSpaces.add(this);
+                recoveryRegistered = true;
+            }
+            int bit = 1 << packetNumberSpace.ordinal();
+            boolean pending = !closed && lossTimer() != null;
+            if (pending == publishedLossDetection) {
+                return;
+            }
+            publishedLossDetection = pending;
+            int previous = pathRecoveryState.lossSpaces.getAndUpdate(value -> pending ? value | bit : value & ~bit);
+            int current = pending ? previous | bit : previous & ~bit;
+            suppressionChanged = (previous == 0) != (current == 0);
+        } finally {
+            transferLock.unlock();
+        }
+        if (suppressionChanged) {
+            pathRecoveryState.rescheduleSpaces();
+        }
     }
 
     private void retransmitPTO() throws QuicKeyUnavailableException, QuicTransportException {
@@ -1748,6 +1786,10 @@ public sealed class PacketSpaceManager implements PacketSpace
     }
 
     private Deadline ptoDeadline() {
+        // RFC 9002 section 6.2.1 gives loss detection priority across all packet-number spaces.
+        if (pathRecoveryState.lossSpaces.get() != 0) {
+            return null;
+        }
         if (packetNumberSpace == PacketNumberSpace.INITIAL && lastAckElicitingTime != null) {
             if (!quicTLSEngine.keysAvailable(QuicTLSEngine.KeySpace.HANDSHAKE)) {
                 // if handshake keys are not available, initial PTO must be set
@@ -2247,6 +2289,8 @@ public sealed class PacketSpaceManager implements PacketSpace
 
     static final class PathRecoveryState {
         private final ReentrantLock lock = new ReentrantLock();
+        private final CopyOnWriteArrayList<PacketSpaceManager> packetSpaces = new CopyOnWriteArrayList<>();
+        private final AtomicInteger lossSpaces = new AtomicInteger();
         private volatile long generation;
 
         PathRecoveryState(long generation) {
@@ -2255,6 +2299,14 @@ public sealed class PacketSpaceManager implements PacketSpace
 
         long generation() {
             return generation;
+        }
+
+        void rescheduleSpaces() {
+            for (PacketSpaceManager space : packetSpaces) {
+                if (!space.closed) {
+                    space.packetEmitter.reschedule(space.packetTransmissionTask);
+                }
+            }
         }
 
         boolean runIfCurrent(long expectedGeneration, Runnable action) {
@@ -2827,11 +2879,8 @@ public sealed class PacketSpaceManager implements PacketSpace
 
         // reschedule this task
         void reschedule() {
+            refreshRecoveryTimers();
             Deadline deadline = computeNextDeadline();
-            if (Deadline.MAX.equals(deadline)) {
-                log(System.Logger.Level.DEBUG, "no deadline, don't reschedule");
-                return;
-            }
             packetEmitter.reschedule(this, deadline);
             log(System.Logger.Level.DEBUG, "retransmission task: rescheduled");
         }
@@ -2850,6 +2899,7 @@ public sealed class PacketSpaceManager implements PacketSpace
                 log(System.Logger.Level.ERROR, "handleLoop failed", t);
             } finally {
                 transmitLock.unlock();
+                refreshRecoveryTimers();
             }
         }
 

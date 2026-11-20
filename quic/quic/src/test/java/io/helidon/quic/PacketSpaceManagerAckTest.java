@@ -60,6 +60,61 @@ import static org.mockito.Mockito.when;
 
 class PacketSpaceManagerAckTest {
 
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void suppressesHandshakePtoWhileInitialLossIsPending(boolean pendingLoss) throws Exception {
+        TestContext initial = recoveryContext(PacketNumberSpace.INITIAL, false);
+        initial.rttEstimator.consumeRttSample(100_000, 0, initial.timeLine.instant());
+        TestContext handshake = initial.shareRecovery(PacketNumberSpace.HANDSHAKE, false);
+        long handshakePacket = sendRecoveryPacket(handshake, true);
+        initial.timeLine.advance(Duration.ofMillis(250));
+        long firstInitialPacket = sendRecoveryPacket(initial, true);
+        long secondInitialPacket = sendRecoveryPacket(initial, true);
+        initial.timeLine.advance(Duration.ofMillis(10));
+        if (pendingLoss) {
+            initial.manager.processAckFrame(acknowledging(secondInitialPacket));
+        }
+        Deadline handshakePto = Deadline.of(Instant.EPOCH).plus(handshake.manager.ptoDuration());
+        Deadline initialDeadline = initial.manager.computeNextDeadline();
+        if (pendingLoss) {
+            assertThat(initialDeadline, is(Deadline.of(Instant.EPOCH).plus(Duration.ofNanos(349_843_000))));
+            assertThat(handshake.manager.computeNextDeadline(), is(Deadline.MAX));
+        } else {
+            assertThat(handshake.manager.computeNextDeadline(), is(handshakePto));
+        }
+        assertThat(handshakePto.isBefore(initialDeadline), is(true));
+        initial.manager.runTransmitter();
+        initial.emitter.runDelayedTasks();
+        handshake.manager.runTransmitter();
+        handshake.emitter.runDelayedTasks();
+        QuicTimerQueue queue = new QuicTimerQueue(() -> { }, () -> "recovery-test");
+        try {
+            initial.emitter.timerQueue = queue;
+            handshake.emitter.timerQueue = queue;
+            queue.offer(initial.emitter.scheduled);
+            queue.offer(handshake.emitter.scheduled);
+            assertThat(queue.processEventsAndReturnNextDeadline(initial.timeLine.instant(), Runnable::run),
+                       is(pendingLoss ? initialDeadline : handshakePto));
+            assertThat(handshake.emitter.retransmissionAttempts, is(0));
+            initial.timeLine.advance(Deadline.between(initial.timeLine.instant(), handshakePto));
+            queue.processEventsAndReturnNextDeadline(initial.timeLine.instant(), Runnable::run);
+            handshake.emitter.runDelayedTasks();
+            assertThat(handshake.emitter.retransmissionAttempts, is(pendingLoss ? 0 : 1));
+            assertThat(initial.rttEstimator.ptoBackoff(), is(pendingLoss ? 1L : 2L));
+            if (pendingLoss) {
+                initial.manager.processAckFrame(acknowledging(firstInitialPacket));
+                assertThat(handshake.manager.computeNextDeadline(), is(handshakePto));
+                queue.processEventsAndReturnNextDeadline(initial.timeLine.instant(), Runnable::run);
+                handshake.emitter.runDelayedTasks();
+                assertThat(handshake.emitter.retransmissionAttempts, is(1));
+                assertThat(handshake.emitter.retransmitted.getFirst().packetNumber(), is(handshakePacket));
+                assertThat(initial.rttEstimator.ptoBackoff(), is(2L));
+            }
+        } finally {
+            queue.stop();
+        }
+    }
+
     @Test
     void doesNotArmHandshakePtoBeforeKeysAreAvailable() {
         QuicTLSEngine tlsEngine = mock(QuicTLSEngine.class);
@@ -1064,6 +1119,7 @@ class PacketSpaceManagerAckTest {
         private final List<QuicPacket> retransmitted = new ArrayList<>();
         private PacketSpaceManager manager;
         private QuicTimedEvent scheduled;
+        private QuicTimerQueue timerQueue;
         private boolean failRetransmission;
         private int failedRetransmissionsRemaining;
         private boolean closeOnFailedRetransmission;
@@ -1078,7 +1134,7 @@ class PacketSpaceManagerAckTest {
 
         @Override
         public QuicTimerQueue timer() {
-            return null;
+            return timerQueue;
         }
 
         @Override
@@ -1134,12 +1190,18 @@ class PacketSpaceManagerAckTest {
         public void reschedule(QuicTimedEvent event) {
             scheduled = event;
             event.refreshDeadline();
+            if (timerQueue != null) {
+                timerQueue.reschedule(event);
+            }
         }
 
         @Override
         public void reschedule(QuicTimedEvent event, Deadline deadline) {
             scheduled = event;
             event.refreshDeadline();
+            if (timerQueue != null) {
+                timerQueue.reschedule(event, deadline);
+            }
         }
 
         @Override
