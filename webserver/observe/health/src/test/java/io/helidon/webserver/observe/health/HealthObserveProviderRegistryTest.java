@@ -26,15 +26,66 @@ import io.helidon.health.HealthCheckResponse;
 import io.helidon.health.spi.HealthCheckProvider;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 
+@Testing.Test(perMethod = true)
+@Execution(ExecutionMode.SAME_THREAD)
 class HealthObserveProviderRegistryTest {
+    @Test
+    void injectedProviderUsesItsOwnerWithAnIndependentApplicationRegistry() {
+        Services.set(HealthCheckProvider.class, _ -> List.of(healthCheck("global")));
+        Config ownerConfig = Config.just(ConfigSources.create(Map.of("check-name", "owner-provider")));
+        HealthCheckProvider ownerProvider = config -> List.of(healthCheck(config.get("check-name").asString().orElseThrow()));
+        ServiceRegistryManager owner = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                .discoverServices(false)
+                .discoverServicesFromServiceLoader(false)
+                .addServiceDescriptor(HealthObserveProvider__ServiceDescriptor.INSTANCE)
+                .putContractInstance(Config.class, ownerConfig)
+                .putContractInstance(HealthCheck.class, healthCheck("owner-check"))
+                .putContractInstance(HealthCheckProvider.class, ownerProvider)
+                .build());
+        try {
+            var provider = owner.registry().get(HealthObserveProvider.class);
+            HealthObserver observer = (HealthObserver) provider.create(Config.empty(), "owned");
+            assertThat(observer.all().stream().map(HealthCheck::name).toList(), contains("owner-provider", "owner-check"));
+        } finally {
+            owner.shutdown();
+        }
+    }
+
+    @Test
+    void directObserverFindsLegacyChecksOnce() {
+        var names = HealthObserver.builder().build().all().stream().map(HealthCheck::name).toList();
+        assertThat(names.stream().filter("heapMemory"::equals).toList(), contains("heapMemory"));
+    }
+
+    @Test
+    void directObserverHonorsDisabledServiceLoaderBridge() {
+        HealthCheckProvider applicationProvider = _ -> List.of(healthCheck("application-provider"));
+        var manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                .discoverServices(false)
+                .discoverServicesFromServiceLoader(false)
+                .putContractInstance(HealthCheckProvider.class, applicationProvider)
+                .build());
+        try {
+            Services.registry(manager.registry());
+            var names = HealthObserver.builder().build().all().stream().map(HealthCheck::name).toList();
+            assertThat(names, contains("application-provider"));
+        } finally {
+            manager.shutdown();
+        }
+    }
+
     @Test
     void providerUsesServicesFromOwningRegistryWhenDiscoveryIsDisabled() {
         Config rootConfig = Config.just(ConfigSources.create(Map.of("health-check-name", "provider-check")));

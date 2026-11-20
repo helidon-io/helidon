@@ -21,7 +21,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.ServiceLoader;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
@@ -29,7 +28,6 @@ import java.util.stream.Collectors;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Api;
-import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.Config;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.spi.HealthCheckProvider;
@@ -51,7 +49,7 @@ public class HealthObserver implements Observer, RuntimeType.Api<HealthObserverC
     private HealthObserver(HealthObserverConfig config) {
         this(config,
              () -> config.config().orElseGet(Config::empty),
-             HealthObserver::loadHealthCheckProviders,
+             () -> Services.all(HealthCheckProvider.class),
              () -> Services.all(HealthCheck.class));
     }
 
@@ -79,8 +77,7 @@ public class HealthObserver implements Observer, RuntimeType.Api<HealthObserverC
     }
 
     /**
-     * Create a health observer, adding the provided checks to the checks discovered via {@link java.util.ServiceLoader}
-     * and {@link io.helidon.health.spi.HealthCheckProvider}.
+     * Create a health observer using only the provided checks.
      *
      * @param healthChecks health checks to add
      * @return a new observer to register with {@link io.helidon.webserver.observe.ObserveFeature}
@@ -154,10 +151,6 @@ public class HealthObserver implements Observer, RuntimeType.Api<HealthObserverC
     // primarily for testing
     List<HealthCheck> all() {
         return Collections.unmodifiableList(all);
-    }
-
-    private static List<HealthCheckProvider> loadHealthCheckProviders() {
-        return HelidonServiceLoader.create(ServiceLoader.load(HealthCheckProvider.class)).asList();
     }
 
     private static class HealthHttpFeature implements HttpFeature {
