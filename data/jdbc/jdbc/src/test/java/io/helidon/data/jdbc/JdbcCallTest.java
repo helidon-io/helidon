@@ -686,7 +686,16 @@ class JdbcCallTest {
 
     @Test
     void rejectsInputInLeadingReturnSlotWithoutAcquisition() throws Exception {
-        assertThrows(IllegalArgumentException.class, () -> client.create("{? = call routine()}").bind(1, 1));
+        for (String sql : List.of("{?=call routine(?)}", " \n { \t ? = CaLl routine(?) }")) {
+            for (JdbcClient.Statement stage : List.of(client.create(sql),
+                    GeneratedJdbcData.createGenerated(client, sql, 2), client.prepare(sql).get())) {
+                assertThrows(IllegalArgumentException.class, () -> stage.bind(1, 1));
+                assertThrows(IllegalArgumentException.class, () -> GeneratedJdbcData.bindNull(stage, 1, JDBCType.INTEGER));
+                assertThat(stage.bind(2, 7), sameInstance(stage));
+                assertThrows(IllegalArgumentException.class, () -> stage.bind(2, 8));
+                stage.call().returns(JDBCType.INTEGER);
+            }
+        }
         verify(source, never()).getConnection();
     }
 

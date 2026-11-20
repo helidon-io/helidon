@@ -43,6 +43,15 @@ interface CallableRepository extends CallableParent<Integer> {
     @Jdbc.OutParameter(value = "value", type = JDBCType.REF_CURSOR)
     Optional<List<String>> cursor(String statement);
 
+    @Jdbc.Statement("{call routine(:value)}")
+    @Jdbc.OutParameter(value = "value", type = JDBCType.REF_CURSOR)
+    Optional<Integer> scalarCursor();
+
+    @Jdbc.Statement("{call routine(:value, :rows)}")
+    @Jdbc.OutParameter(value = "value", type = JDBCType.INTEGER)
+    @Jdbc.OutParameter(value = "rows", type = JDBCType.REF_CURSOR)
+    NullableOutputs nullableAggregate();
+
     @Jdbc.Statement("{call routine(:result)}")
     @Jdbc.Execution(Jdbc.ExecutionType.CALL)
     void consume(String result, Consumer<JdbcClient.CallResult> rows);
@@ -66,6 +75,9 @@ interface CallableRepository extends CallableParent<Integer> {
                     Optional<String> result) {
     }
 
+    record NullableOutputs(int value, Optional<Integer> rows) {
+    }
+
     record Projection(int id) {
     }
 }
@@ -74,4 +86,8 @@ interface CallableParent<T> {
     @Jdbc.Statement("{call routine(:value)}")
     @Jdbc.OutParameter(value = "value", type = JDBCType.INTEGER)
     T inherited(T value);
+
+    @Jdbc.Statement("{call routine(:value)}")
+    @Jdbc.OutParameter(value = "value", type = JDBCType.REF_CURSOR)
+    Optional<T> inheritedCursor();
 }
