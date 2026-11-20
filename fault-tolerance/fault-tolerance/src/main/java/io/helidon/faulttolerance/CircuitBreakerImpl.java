@@ -21,6 +21,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 import io.helidon.metrics.api.Counter;
@@ -31,6 +32,8 @@ import io.helidon.service.registry.ServiceRegistry;
 
 @Service.PerInstance(CircuitBreakerConfigBlueprint.class)
 class CircuitBreakerImpl implements CircuitBreaker {
+    private static final int MAX_NAME_LENGTH = 256;
+
     /*
      Configuration options
      */
@@ -43,7 +46,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
     /*
     Runtime
      */
-    private final AtomicReference<State> state = new AtomicReference<>(State.CLOSED);
+    private final ReentrantLock transitionLock = new ReentrantLock();
     // rolling window for counting errors to (maybe) open the breaker
     private final ResultWindow results;
     // to close from half-open
@@ -53,9 +56,11 @@ class CircuitBreakerImpl implements CircuitBreaker {
     private final ErrorChecker errorChecker;
     private final boolean applyOnConfigured;
     private final String name;
+    private final String eventName;
     private final CircuitBreakerConfig config;
     private final boolean metricsEnabled;
 
+    private volatile State state = State.CLOSED;
     private Counter callsCounterMetric;
     private Counter openedCounterMetric;
 
@@ -81,6 +86,9 @@ class CircuitBreakerImpl implements CircuitBreaker {
         this.errorChecker = ErrorChecker.create(config.skipOn(), config.applyOn());
         this.applyOnConfigured = !config.applyOn().isEmpty();
         this.name = config.name().orElseGet(() -> "circuit-breaker-" + System.identityHashCode(config));
+        String configuredName = config.name().orElse(null);
+        this.eventName = configuredName == null || configuredName.length() <= MAX_NAME_LENGTH
+                ? configuredName : configuredName.substring(0, MAX_NAME_LENGTH);
         this.config = config;
 
         this.metricsEnabled = config.enableMetrics() || metricsDefaultEnabled;
@@ -108,7 +116,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
         if (metricsEnabled) {
             callsCounterMetric.increment();
         }
-        return switch (state.get()) {
+        return switch (state) {
             case CLOSED -> executeTask(supplier);
             case HALF_OPEN -> halfOpenTask(supplier);
             case OPEN -> throw new CircuitBreakerOpenException("CircuitBreaker is open");
@@ -117,13 +125,13 @@ class CircuitBreakerImpl implements CircuitBreaker {
 
     @Override
     public State state() {
-        return state.get();
+        return state;
     }
 
     @Override
     public void state(State newState) {
         if (newState == State.CLOSED) {
-            if (state.get() == State.CLOSED) {
+            if (state == State.CLOSED) {
                 // fine
                 resetCounters();
                 return;
@@ -134,9 +142,9 @@ class CircuitBreakerImpl implements CircuitBreaker {
                 future.cancel(false);
             }
             resetCounters();
-            state.set(State.CLOSED);
+            changeState(State.CLOSED, "MANUAL");
         } else if (newState == State.OPEN) {
-            state.set(State.OPEN);
+            changeState(State.OPEN, "MANUAL");
             Future<Boolean> future = schedule.getAndSet(null);
             if (future != null) {
                 future.cancel(false);
@@ -176,7 +184,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
             }
             throw SupplierHelper.toRuntimeException(throwable);
         } finally {
-            if (results.shouldOpen() && state.compareAndSet(State.CLOSED, State.OPEN)) {
+            if (results.shouldOpen() && changeState(State.CLOSED, State.OPEN, "FAILURE_THRESHOLD")) {
                 results.reset();
                 // if we successfully switch to open, we need to schedule switch to half-open
                 scheduleHalf();
@@ -198,7 +206,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
                 if (successes >= successThreshold) {
                     // transition to closed
                     successCounter.set(0);
-                    state.compareAndSet(State.HALF_OPEN, State.CLOSED);
+                    changeState(State.HALF_OPEN, State.CLOSED, "SUCCESS_THRESHOLD");
                 }
                 return result;
             } catch (Throwable t) {
@@ -213,12 +221,12 @@ class CircuitBreakerImpl implements CircuitBreaker {
                     if (successes >= successThreshold) {
                         // transition to closed
                         successCounter.set(0);
-                        state.compareAndSet(State.HALF_OPEN, State.CLOSED);
+                        changeState(State.HALF_OPEN, State.CLOSED, "SUCCESS_THRESHOLD");
                     }
                 } else {
                     // failure
                     successCounter.set(0);
-                    state.set(State.OPEN);
+                    changeState(State.OPEN, "HALF_OPEN_FAILURE");
                     // if we successfully switch to open, we need to schedule switch to half-open
                     scheduleHalf();
                 }
@@ -234,10 +242,44 @@ class CircuitBreakerImpl implements CircuitBreaker {
     private void scheduleHalf() {
         schedule.set(executor.submit(
                 FaultTolerance.delayedCallable(() -> {
-                    state.compareAndSet(State.OPEN, State.HALF_OPEN);
+                    changeState(State.OPEN, State.HALF_OPEN, "DELAY_ELAPSED");
                     schedule.set(null);
                     return true;
                 }, delayMillis)));
+    }
+
+    private boolean changeState(State expected, State next, String reason) {
+        transitionLock.lock();
+        try {
+            if (state == expected) {
+                state = next;
+                stateChanged(expected, next, reason);
+                return true;
+            }
+            return false;
+        } finally {
+            transitionLock.unlock();
+        }
+    }
+
+    private void changeState(State next, String reason) {
+        transitionLock.lock();
+        try {
+            State previous = state;
+            if (previous != next) {
+                state = next;
+                stateChanged(previous, next, reason);
+            }
+        } finally {
+            transitionLock.unlock();
+        }
+    }
+
+    private void stateChanged(State previous, State next, String reason) {
+        var event = CircuitBreakerStateChangeEvent.create();
+        if (event != null) {
+            event.record(eventName, previous, next, reason);
+        }
     }
 
     private void resetCounters() {

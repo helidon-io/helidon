@@ -37,6 +37,7 @@ class FixedRateTask implements FixedRate {
     private final Future<?> future;
     private final FixedRateConfig config;
     private final String taskId;
+    private final String eventTaskId;
 
     FixedRateTask(FixedRateConfig config) {
         this.config = config;
@@ -46,6 +47,7 @@ class FixedRateTask implements FixedRate {
         this.actualTask = config.task();
         this.executorService = config.executor();
         this.taskId = config.id().orElseGet(() -> UUID.randomUUID().toString());
+        this.eventTaskId = ScheduledTaskEvents.taskId(config.id().orElse(null));
 
         if (config.enabled()) {
             this.future = switch (config.delayType()) {
@@ -111,7 +113,7 @@ class FixedRateTask implements FixedRate {
     void run() {
         try {
             long it = iteration.incrementAndGet();
-            actualTask.run(new FixedRateInvocation() {
+            ScheduledTaskEvents.run(actualTask, new FixedRateInvocation() {
                 @Override
                 public Duration delayBy() {
                     return initialDelay;
@@ -131,7 +133,7 @@ class FixedRateTask implements FixedRate {
                 public String description() {
                     return FixedRateTask.this.description();
                 }
-            });
+            }, eventTaskId, "FIXED_RATE");
         } catch (Throwable e) {
             LOGGER.log(Level.ERROR, () -> "Error when invoking scheduled method.", e);
         }

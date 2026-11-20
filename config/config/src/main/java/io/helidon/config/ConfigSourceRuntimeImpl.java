@@ -60,6 +60,7 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
     private final ChangeSupport changeSupport;
     private final Function<String, Optional<ConfigNode>> singleNodeFunction;
     private final boolean isLazy;
+    private final ConfigSourceUpdates updates;
 
     // we only want to start change support if somebody listens for changes
     private boolean changesWanted = false;
@@ -76,6 +77,7 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
     ConfigSourceRuntimeImpl(BuilderImpl.ConfigContextImpl configContext, ConfigSource source) {
         this.configContext = configContext;
         this.configSource = source;
+        this.updates = new ConfigSourceUpdates(source);
 
         Supplier<Optional<ObjectNode>> reloader = null;
         Function<String, Optional<ConfigNode>> singleNodeFunction = null;
@@ -111,6 +113,7 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
         this.isLazy = lazy;
         this.reloader = reloader;
         this.singleNodeFunction = singleNodeFunction;
+        Supplier<Optional<ObjectNode>> observedReloader = () -> updates.load(this.reloader);
 
         // change support
         boolean changesSupported = false;
@@ -124,7 +127,7 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
                 changesSupported = true;
                 changeSupport = new WatchableChangesStarter(configContext,
                                                             listeners,
-                                                            reloader,
+                                                            observedReloader,
                                                             source,
                                                             watchable,
                                                             changeWatcher.get());
@@ -139,11 +142,12 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
                 changesSupported = true;
                 changeSupport = new PollingStrategyStarter(configContext,
                                                            listeners,
-                                                           reloader,
+                                                           observedReloader,
                                                            source,
                                                            pollable,
                                                            pollingStrategy.get(),
-                                                           lastStamp);
+                                                           lastStamp,
+                                                           updates);
             }
         }
 
@@ -152,7 +156,10 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
             changeSupport = new ChangeSupport() {
                 @Override
                 public void start() {
-                    event.onChange((key, config) -> listeners.forEach(it -> it.accept(key, config)));
+                    event.onChange((key, config) -> {
+                        updates.changed();
+                        listeners.forEach(it -> it.accept(key, config));
+                    });
                 }
 
                 @Override
@@ -233,22 +240,24 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
             return;
         }
 
-        configSource.init(configContext);
-
-        Optional<ObjectNode> loadedData = configSource.retryPolicy()
-                .map(policy -> policy.execute(reloader))
-                .orElseGet(reloader);
+        Optional<ObjectNode> loadedData = updates.load(() -> {
+            configSource.init(configContext);
+            return configSource.retryPolicy()
+                    .map(policy -> policy.execute(reloader))
+                    .orElseGet(reloader);
+        }, data -> {
+            // we may have media type mapping per node configured as well
+            if (configSource instanceof AbstractConfigSource abstractConfigSource) {
+                return data.map(it -> abstractConfigSource
+                        .processNodeMapping(configContext::findParser, ConfigKeyImpl.of(), it));
+            }
+            return data;
+        });
 
         if (loadedData.isEmpty() && !configSource.optional() && !isLazy) {
             // only fail if the data is empty and the config source is not optional
             // never fail for lazy config sources, as these may provide values through single properties
             throw new ConfigException("Cannot load data from mandatory source: " + configSource);
-        }
-
-        // we may have media type mapping per node configured as well
-        if (configSource instanceof AbstractConfigSource abstractConfigSource) {
-            loadedData = loadedData.map(it -> abstractConfigSource
-                    .processNodeMapping(configContext::findParser, ConfigKeyImpl.of(), it));
         }
 
         this.initialData = loadedData;
@@ -335,10 +344,11 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
                                        ConfigSource source,
                                        PollableSource<Object> pollable,
                                        PollingStrategy pollingStrategy,
-                                       AtomicReference<Object> lastStamp) {
+                                       AtomicReference<Object> lastStamp,
+                                       ConfigSourceUpdates updates) {
 
             this.pollingStrategy = pollingStrategy;
-            this.listener = new PollingStrategyListener(configContext, listeners, reloader, source, pollable, lastStamp);
+            this.listener = new PollingStrategyListener(configContext, listeners, reloader, source, pollable, lastStamp, updates);
         }
 
         @Override
@@ -360,13 +370,15 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
         private final ConfigSource source;
         private final PollableSource<Object> pollable;
         private final AtomicReference<Object> lastStamp;
+        private final ConfigSourceUpdates updates;
 
         private PollingStrategyListener(BuilderImpl.ConfigContextImpl configContext,
                                         List<BiConsumer<String, ConfigNode>> listeners,
                                         Supplier<Optional<ObjectNode>> reloader,
                                         ConfigSource source,
                                         PollableSource<Object> pollable,
-                                        AtomicReference<Object> lastStamp) {
+                                        AtomicReference<Object> lastStamp,
+                                        ConfigSourceUpdates updates) {
 
             this.configContext = configContext;
             this.listeners = listeners;
@@ -374,12 +386,13 @@ class ConfigSourceRuntimeImpl implements ConfigSourceRuntime {
             this.source = source;
             this.pollable = pollable;
             this.lastStamp = lastStamp;
+            this.updates = updates;
         }
 
         @Override
         public ChangeEventType poll(Instant when) {
             Object lastStampValue = lastStamp.get();
-            if ((null == lastStampValue) || pollable.isModified(lastStampValue)) {
+            if ((null == lastStampValue) || updates.modified(() -> pollable.isModified(lastStampValue))) {
                 Optional<ObjectNode> objectNode = reloader.get();
                 if (objectNode.isEmpty()) {
                     if (source.optional()) {
