@@ -18,8 +18,10 @@ package io.helidon.faulttolerance;
 
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -37,6 +39,8 @@ import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -217,6 +221,48 @@ class CircuitBreakerEventsTest {
             executor.shutdownNow();
             assertThat("owned callers terminated", callers.awaitTermination(10, TimeUnit.SECONDS), is(true));
             assertThat("owned transition executor terminated", executor.awaitTermination(10, TimeUnit.SECONDS), is(true));
+        }
+    }
+
+    @Test
+    void opposingManualTransitionsAreRecordedInOrder() throws Exception {
+        String name = UUID.randomUUID().toString();
+        var breaker = CircuitBreaker.builder().name(name).build();
+        var start = new CountDownLatch(1);
+        try (var recording = new Recording(); var callers = Executors.newFixedThreadPool(4)) {
+            recording.enable(EVENT);
+            recording.start();
+            List<Future<?>> calls = new ArrayList<>();
+            for (int i = 0; i < 4; i++) {
+                calls.add(callers.submit(() -> {
+                    start.await();
+                    for (int j = 0; j < 500; j++) {
+                        breaker.state(CircuitBreaker.State.OPEN);
+                        breaker.state(CircuitBreaker.State.CLOSED);
+                    }
+                    return null;
+                }));
+            }
+            start.countDown();
+            for (var call : calls) {
+                call.get(10, TimeUnit.SECONDS);
+            }
+            var events = read(recording, name);
+            assertThat(events.size(), greaterThan(1));
+            // JFR can give several transitions the same timestamp. Only compare distinct instants.
+            var changes = new TreeMap<Instant, Integer>();
+            for (var event : events) {
+                boolean opened = event.getString("state").equals("OPEN");
+                assertThat(event.getString("previousState"), is(opened ? "CLOSED" : "OPEN"));
+                changes.merge(event.getStartTime(), opened ? 1 : -1, Integer::sum);
+            }
+            int open = 0;
+            for (var change : changes.entrySet()) {
+                open += change.getValue();
+                assertThat("unmatched opens at " + change.getKey(), open, anyOf(is(0), is(1)));
+            }
+            assertThat(open, is(0));
+            assertThat(breaker.state(), is(CircuitBreaker.State.CLOSED));
         }
     }
 

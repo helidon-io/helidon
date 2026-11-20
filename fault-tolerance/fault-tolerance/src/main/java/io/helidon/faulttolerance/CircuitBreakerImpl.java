@@ -21,6 +21,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 import io.helidon.metrics.api.Counter;
@@ -45,7 +46,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
     /*
     Runtime
      */
-    private final AtomicReference<State> state = new AtomicReference<>(State.CLOSED);
+    private final ReentrantLock transitionLock = new ReentrantLock();
     // rolling window for counting errors to (maybe) open the breaker
     private final ResultWindow results;
     // to close from half-open
@@ -59,6 +60,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
     private final CircuitBreakerConfig config;
     private final boolean metricsEnabled;
 
+    private volatile State state = State.CLOSED;
     private Counter callsCounterMetric;
     private Counter openedCounterMetric;
 
@@ -114,7 +116,7 @@ class CircuitBreakerImpl implements CircuitBreaker {
         if (metricsEnabled) {
             callsCounterMetric.increment();
         }
-        return switch (state.get()) {
+        return switch (state) {
             case CLOSED -> executeTask(supplier);
             case HALF_OPEN -> halfOpenTask(supplier);
             case OPEN -> throw new CircuitBreakerOpenException("CircuitBreaker is open");
@@ -123,13 +125,13 @@ class CircuitBreakerImpl implements CircuitBreaker {
 
     @Override
     public State state() {
-        return state.get();
+        return state;
     }
 
     @Override
     public void state(State newState) {
         if (newState == State.CLOSED) {
-            if (state.get() == State.CLOSED) {
+            if (state == State.CLOSED) {
                 // fine
                 resetCounters();
                 return;
@@ -247,17 +249,29 @@ class CircuitBreakerImpl implements CircuitBreaker {
     }
 
     private boolean changeState(State expected, State next, String reason) {
-        if (state.compareAndSet(expected, next)) {
-            stateChanged(expected, next, reason);
-            return true;
+        transitionLock.lock();
+        try {
+            if (state == expected) {
+                state = next;
+                stateChanged(expected, next, reason);
+                return true;
+            }
+            return false;
+        } finally {
+            transitionLock.unlock();
         }
-        return false;
     }
 
     private void changeState(State next, String reason) {
-        State previous = state.getAndSet(next);
-        if (previous != next) {
-            stateChanged(previous, next, reason);
+        transitionLock.lock();
+        try {
+            State previous = state;
+            if (previous != next) {
+                state = next;
+                stateChanged(previous, next, reason);
+            }
+        } finally {
+            transitionLock.unlock();
         }
     }
 
