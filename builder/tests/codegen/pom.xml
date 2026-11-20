@@ -33,6 +33,11 @@
     <dependencies>
         <dependency>
             <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-mapper</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.common</groupId>
             <artifactId>helidon-common-types</artifactId>
             <scope>test</scope>
         </dependency>

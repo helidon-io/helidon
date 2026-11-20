@@ -11,3 +11,4 @@ index:
 - [Declarative Programming Model](declarative.md)
 - [Imperative Programming Model](imperative.md)
 - [SQL In Configuration](configured-statements.md)
+- [Data Source and JDBC Client Health Checks](health-checks.md)

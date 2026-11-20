@@ -399,9 +399,12 @@ class TypeHandlerBasic implements TypeHandler {
             it.addContentLine("return self();");
         };
 
+        Javadoc javadoc = typeName.unboxed().primitive()
+                ? setterJavadoc(getterJavadoc, name, "")
+                : nonNullSetterJavadoc(getterJavadoc, name, "");
         return GeneratedMethod.builder()
                 .method(method.build())
-                .javadoc(setterJavadoc(getterJavadoc, name, ""))
+                .javadoc(javadoc)
                 .contentBuilder(contentConsumer)
                 .build();
     }
@@ -452,7 +455,7 @@ class TypeHandlerBasic implements TypeHandler {
         }
 
         String optionName = option().name();
-        Javadoc javadoc = setterJavadoc(getterJavadoc, optionName, "prototype of ");
+        Javadoc javadoc = nonNullSetterJavadoc(getterJavadoc, optionName, "prototype of ");
 
         TypeName parameterType;
         String methodName;
@@ -557,7 +560,7 @@ class TypeHandlerBasic implements TypeHandler {
             RuntimeTypeInfo rti = option().runtimeType().get();
             var optionBuilder = rti.optionBuilder();
             var factoryMethod = rti.factoryMethod();
-            Javadoc javadoc = setterJavadoc(getterJavadoc, "consumer", "consumer of builder of ");
+            Javadoc javadoc = nonNullSetterJavadoc(getterJavadoc, "consumer", "consumer of builder of ");
 
             var method = setterMethodBuilder(TypeName.builder()
                                                      .type(Consumer.class)
@@ -606,7 +609,7 @@ class TypeHandlerBasic implements TypeHandler {
 
         if (option().builderInfo().isPresent()) {
             var optionBuilder = option().builderInfo().get();
-            Javadoc javadoc = setterJavadoc(getterJavadoc, "consumer", "consumer of builder of ");
+            Javadoc javadoc = nonNullSetterJavadoc(getterJavadoc, "consumer", "consumer of builder of ");
 
             var method = setterMethodBuilder(TypeName.builder()
                                                      .type(Consumer.class)
@@ -641,7 +644,7 @@ class TypeHandlerBasic implements TypeHandler {
                                        .build());
         }
         // we have a builder field
-        Javadoc javadoc = Javadoc.builder(setterJavadoc(getterJavadoc, "consumer", "consumer of "))
+        Javadoc javadoc = Javadoc.builder(nonNullSetterJavadoc(getterJavadoc, "consumer", "consumer of "))
                 .parameters(Map.of())
                 .build();
 
@@ -677,46 +680,12 @@ class TypeHandlerBasic implements TypeHandler {
                                    .build());
     }
 
-    private Optional<GeneratedMethod> prepareSetterConsumerPrototypedBy(Javadoc getterJavadoc, TypeName typeName) {
-        TypeName prototype = option().prototypedBy().get();
-        Javadoc javadoc = setterJavadoc(getterJavadoc, "consumer", "consumer of builder of ");
-
-        TypeName builderType = fixPackage(TypeName.builder()
-                                                  .className("Builder")
-                                                  .addEnclosingName(prototype.className())
-                                                  .packageName(prototype.packageName())
-                                                  .build());
-
-        var method = setterMethodBuilder(TypeName.builder()
-                                                 .type(Consumer.class)
-                                                 .addTypeArgument(builderType)
-                                                 .build(),
-                                         "consumer");
-
-        Consumer<ContentBuilder<?>> contentConsumer = it -> {
-            it.addContent(Objects.class)
-                    .addContentLine(".requireNonNull(consumer);")
-                    .addContent("var builder = ")
-                    .addContent(prototype)
-                    .addContentLine(".builder();")
-                    .addContentLine("consumer.accept(builder);")
-                    .addContentLine("this." + option().setterName() + "(builder.build());")
-                    .addContentLine("return self();");
-        };
-
-        return Optional.of(GeneratedMethod.builder()
-                                   .method(method.build())
-                                   .javadoc(javadoc)
-                                   .contentBuilder(contentConsumer)
-                                   .build());
-    }
-
     Optional<GeneratedMethod> prepareSetterSupplier(Javadoc getterJavadoc) {
         if (option().builderInfo().isEmpty()) {
             return Optional.empty();
         }
 
-        Javadoc javadoc = setterJavadoc(getterJavadoc, "supplier", "supplier of ");
+        Javadoc javadoc = nonNullSetterJavadoc(getterJavadoc, "supplier", "supplier of ");
 
         var method = setterMethodBuilder(asTypeArgument(TypeNames.SUPPLIER), "supplier");
 
@@ -901,8 +870,48 @@ class TypeHandlerBasic implements TypeHandler {
 
         return GeneratedMethod.builder()
                 .method(method.build())
-                .javadoc(setterJavadoc(getterJavadoc, name, ""))
+                .javadoc(nonNullSetterJavadoc(getterJavadoc, name, ""))
                 .contentBuilder(contentConsumer)
+                .build();
+    }
+
+    private Optional<GeneratedMethod> prepareSetterConsumerPrototypedBy(Javadoc getterJavadoc, TypeName typeName) {
+        TypeName prototype = option().prototypedBy().get();
+        Javadoc javadoc = nonNullSetterJavadoc(getterJavadoc, "consumer", "consumer of builder of ");
+
+        TypeName builderType = fixPackage(TypeName.builder()
+                                                  .className("Builder")
+                                                  .addEnclosingName(prototype.className())
+                                                  .packageName(prototype.packageName())
+                                                  .build());
+
+        var method = setterMethodBuilder(TypeName.builder()
+                                                 .type(Consumer.class)
+                                                 .addTypeArgument(builderType)
+                                                 .build(),
+                                         "consumer");
+
+        Consumer<ContentBuilder<?>> contentConsumer = it -> {
+            it.addContent(Objects.class)
+                    .addContentLine(".requireNonNull(consumer);")
+                    .addContent("var builder = ")
+                    .addContent(prototype)
+                    .addContentLine(".builder();")
+                    .addContentLine("consumer.accept(builder);")
+                    .addContentLine("this." + option().setterName() + "(builder.build());")
+                    .addContentLine("return self();");
+        };
+
+        return Optional.of(GeneratedMethod.builder()
+                                   .method(method.build())
+                                   .javadoc(javadoc)
+                                   .contentBuilder(contentConsumer)
+                                   .build());
+    }
+
+    private Javadoc nonNullSetterJavadoc(Javadoc getterJavadoc, String parameterName, String paramDescriptionPrefix) {
+        return Javadoc.builder(setterJavadoc(getterJavadoc, parameterName, paramDescriptionPrefix))
+                .addThrows("java.lang.NullPointerException", List.of("The supplied " + parameterName + " is null."))
                 .build();
     }
 
