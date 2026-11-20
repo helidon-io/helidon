@@ -32,6 +32,11 @@
     <modules>
         <module>opentelemetry</module>
         <module>opentelemetry-config</module>
+        <module>logging</module>
+        <module>logging-sdk</module>
+        <module>logging-jul</module>
+        <module>logging-log4j2</module>
+        <module>logging-logback</module>
         <module>testing</module>
     </modules>
 

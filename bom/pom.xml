@@ -622,6 +622,31 @@
             <!-- telemetry -->
             <dependency>
                 <groupId>io.helidon.telemetry</groupId>
+                <artifactId>helidon-telemetry-logging-sdk</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.telemetry</groupId>
+                <artifactId>helidon-telemetry-logging</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.telemetry</groupId>
+                <artifactId>helidon-telemetry-logging-jul</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.telemetry</groupId>
+                <artifactId>helidon-telemetry-logging-log4j2</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.telemetry</groupId>
+                <artifactId>helidon-telemetry-logging-logback</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.telemetry</groupId>
                 <artifactId>helidon-telemetry-opentelemetry</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
