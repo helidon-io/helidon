@@ -38,7 +38,7 @@ final class ConfigSourceUpdates {
     private boolean initialized;
     private volatile boolean failed;
     private boolean failedCheck;
-    private boolean unavailable;
+    private volatile boolean unavailable;
 
     ConfigSourceUpdates(ConfigSource source) {
         this.source = source;
@@ -73,7 +73,9 @@ final class ConfigSourceUpdates {
                 } else {
                     outcome = null;
                 }
-                previous = data;
+                if (!absent) {
+                    previous = data;
+                }
                 initialized = true;
                 failed = false;
                 unavailable = absent;
@@ -158,14 +160,15 @@ final class ConfigSourceUpdates {
         if (event != null) {
             event.end();
         }
-        if (!failed) {
+        if (!failed && !unavailable) {
             return;
         }
         lock.lock();
         try {
             // A successful stamp check cannot establish recovery from an unsuccessful load or parse.
-            if (failed && failedCheck) {
+            if (failed ? failedCheck : unavailable) {
                 failed = false;
+                unavailable = false;
                 commit(event, "RECOVERED", null);
             }
         } finally {

@@ -240,6 +240,35 @@ class ConfigSourceUpdateEventTest {
     }
 
     @Test
+    void observesMandatorySourceRestoredWithOriginalStamp() throws Exception {
+        var source = new TestSource(false);
+        var runtime = runtime(source);
+        try (var recording = new Recording()) {
+            recording.enable(EVENT_NAME);
+            recording.start();
+            runtime.load();
+            var notifications = new ArrayList<ObjectNode>();
+            runtime.onChange((_, node) -> notifications.add((ObjectNode) node));
+            source.modified = true;
+            source.data = Optional.empty();
+            assertThat(source.poll(), is(ChangeEventType.DELETED));
+            source.data = data("initial");
+            source.modified = false;
+            assertThat(source.poll(), is(ChangeEventType.UNCHANGED));
+            assertThat(source.poll(), is(ChangeEventType.UNCHANGED));
+            assertThat(notifications, empty());
+            source.modified = true;
+            source.poll(); // Reload equal content before a real edit.
+            source.data = data("edited");
+            source.poll();
+            assertThat(events(recording).stream().map(it -> it.getString("outcome")).toList(),
+                       contains("INITIAL", "UNAVAILABLE", "RECOVERED", "CHANGED"));
+        } finally {
+            runtime.stopChangeSupport();
+        }
+    }
+
+    @Test
     void observesFailedInitialLoadAndMandatoryMissingInitialLoad() throws Exception {
         var source = new TestSource(false);
         source.failure = new ConfigException(SECRET);
