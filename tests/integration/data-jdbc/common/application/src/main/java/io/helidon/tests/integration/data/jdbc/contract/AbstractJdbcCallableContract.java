@@ -146,8 +146,9 @@ public abstract class AbstractJdbcCallableContract {
                                   + "other IN OUT VARCHAR2) AS BEGIN value := p_input + 1; other := 'done'; END;").execute();
             client.create("CREATE OR REPLACE FUNCTION sp_cursor(p_input IN INTEGER) RETURN SYS_REFCURSOR AS "
                                   + "c SYS_REFCURSOR; BEGIN IF p_input < 0 THEN RETURN NULL; END IF; "
-                                  + "OPEN c FOR SELECT 42 AS ID FROM dual WHERE p_input > 0 UNION ALL SELECT 43 FROM dual WHERE p_input > 1 "
-                                  + "ORDER BY 1; RETURN c; END;").execute();
+                                  + "OPEN c FOR SELECT CASE WHEN p_input >= 3 THEN NULL ELSE 42 END AS ID FROM dual "
+                                  + "WHERE p_input > 0 UNION ALL SELECT 43 FROM dual WHERE p_input > 1 AND p_input <> 3 "
+                                  + "ORDER BY 1 NULLS FIRST; RETURN c; END;").execute();
         }
         case "pgsql" -> {
             client.create("CREATE OR REPLACE FUNCTION sp_decimal(p_input INTEGER) RETURNS NUMERIC "
@@ -159,8 +160,9 @@ public abstract class AbstractJdbcCallableContract {
                                   + "other := 'done'; END $$").execute();
             client.create("CREATE OR REPLACE FUNCTION sp_cursor(p_input INTEGER) RETURNS refcursor "
                                   + "LANGUAGE plpgsql AS $$ DECLARE c refcursor; BEGIN IF p_input < 0 THEN RETURN NULL; "
-                                  + "END IF; OPEN c FOR SELECT 42 AS ID WHERE p_input > 0 UNION ALL SELECT 43 WHERE p_input > 1 "
-                                  + "ORDER BY 1; RETURN c; END $$").execute();
+                                  + "END IF; OPEN c FOR SELECT CASE WHEN p_input >= 3 THEN NULL ELSE 42 END AS ID "
+                                  + "WHERE p_input > 0 UNION ALL SELECT 43 WHERE p_input > 1 AND p_input <> 3 "
+                                  + "ORDER BY 1 NULLS FIRST; RETURN c; END $$").execute();
         }
         case "mysql" -> {
             client.create("DROP FUNCTION IF EXISTS sp_decimal").execute();
@@ -187,7 +189,8 @@ public abstract class AbstractJdbcCallableContract {
                                   + "RETURN TIMESTAMP '2026-10-28 12:13:14.123456'; END;").execute();
             client.create("CREATE OR REPLACE PROCEDURE sp_bundle(p_input IN INTEGER, value OUT INTEGER, "
                                   + "p_rows OUT SYS_REFCURSOR) AS BEGIN value := p_input + 1; "
-                                  + "IF p_input < 0 THEN p_rows := NULL; ELSE OPEN p_rows FOR SELECT 42 AS ID FROM dual "
+                                  + "IF p_input < 0 THEN p_rows := NULL; ELSE OPEN p_rows FOR "
+                                  + "SELECT CASE WHEN p_input = 3 THEN NULL ELSE 42 END AS ID FROM dual "
                                   + "WHERE p_input > 0; END IF; END;").execute();
             client.create("CREATE OR REPLACE PROCEDURE sp_inout(p_input IN INTEGER, p_value IN OUT INTEGER) "
                                   + "AS BEGIN p_value := p_value + p_input; END;").execute();
@@ -1157,6 +1160,83 @@ public abstract class AbstractJdbcCallableContract {
             }
             return null;
         });
+    }
+
+    /**
+     * An optional scalar accepts SQL NULL without retaining a failure or preventing commit.
+     */
+    @Test
+    protected void nullableScalarCursorCommitsAndPreservesFailureBoundaries() {
+        if (vendor().equals("mysql")) {
+            assertThrows(DataException.class, () -> client.create("{? = call sp_add(?)}").bind(2, 3).call()
+                    .returns(JDBCType.REF_CURSOR).consume(result -> {
+                        result.skipRemainingResults();
+                        result.cursor("return", row -> row.optional(1, Integer.class)).optional();
+                    }));
+            return;
+        }
+        Tx.transaction(Tx.Type.REQUIRED, () -> {
+            client.create("INSERT INTO TX_MATRIX (DATA_VALUE) VALUES (?)").bind(1, "nullable-cursor").execute();
+            for (int input : new int[] {0, 1, 3}) {
+                Optional<Integer> expected = input == 1 ? Optional.of(42) : Optional.empty();
+                if (generated()) {
+                    CallableRoutineRepository repository = manager.registry().get(CallableRoutineRepository.class);
+                    assertThat(repository.cursorOptional(input), is(expected));
+                    assertThat(repository.configuredCursorOptional(input), is(expected));
+                    if (vendor().equals("oracle")) {
+                        assertThat(repository.aggregateNullableCursor(input),
+                                   is(new CallableRoutineRepository.NullableBundle(expected, input + 1)));
+                    }
+                } else {
+                    Optional<Integer> value = client.create("{? = call sp_cursor(?)}").bind(2, input).call()
+                            .returns(JDBCType.REF_CURSOR).map(result -> {
+                                result.skipRemainingResults();
+                                return result.cursor("return", row -> row.optional(1, Integer.class))
+                                        .optional().flatMap(row -> row);
+                            });
+                    assertThat(value, is(expected));
+                }
+            }
+            return null;
+        });
+        assertThat(client.create("SELECT COUNT(*) FROM TX_MATRIX WHERE DATA_VALUE = ?").bind(1, "nullable-cursor")
+                           .map(Integer.class).one(), is(1));
+
+        for (int input : new int[] {-1, 3, 4}) {
+            Class<? extends RuntimeException> failureType = switch (input) {
+            case -1 -> IllegalArgumentException.class;
+            case 4 -> NonUniqueResultException.class;
+            default -> DataException.class;
+            };
+            assertThrows(TxException.class, () -> Tx.transaction(Tx.Type.REQUIRED, () -> {
+                client.create("INSERT INTO TX_MATRIX (DATA_VALUE) VALUES (?)").bind(1, "rejected-cursor").execute();
+                if (generated()) {
+                    CallableRoutineRepository repository = manager.registry().get(CallableRoutineRepository.class);
+                    if (input == 3) {
+                        assertThrows(DataException.class, () -> repository.cursorOne(input));
+                        assertThrows(DataException.class, () -> repository.customCursorOptional(input));
+                    } else {
+                        assertThrows(failureType, () -> repository.cursorOptional(input));
+                        assertThrows(failureType, () -> repository.configuredCursorOptional(input));
+                    }
+                } else {
+                    assertThrows(failureType, () -> client.create("{? = call sp_cursor(?)}").bind(2, input).call()
+                            .returns(JDBCType.REF_CURSOR).consume(result -> {
+                                result.skipRemainingResults();
+                                if (input == 3) {
+                                    result.cursor("return", row -> row.get(1, Integer.class)).optional();
+                                } else {
+                                    result.cursor("return", row -> row.optional(1, Integer.class)).optional();
+                                }
+                            }));
+                }
+                assertThat(client.create("SELECT COUNT(*) FROM TX_MATRIX WHERE DATA_VALUE = ?").bind(1, "rejected-cursor")
+                                   .map(Integer.class).one(), is(1));
+                return null;
+            }));
+            assertThat(client.create("SELECT COUNT(*) FROM TX_MATRIX WHERE DATA_VALUE = ?").bind(1, "rejected-cursor")
+                               .map(Integer.class).one(), is(0));
+        }
     }
 
     /**

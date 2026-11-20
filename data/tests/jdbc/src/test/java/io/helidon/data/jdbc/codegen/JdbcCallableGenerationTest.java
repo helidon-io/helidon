@@ -48,6 +48,28 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 class JdbcCallableGenerationTest {
     @Test
+    void compilesOptionalScalarCursorAndCursorPresenceMappings() {
+        TestCompiler.Result result = compile("""
+                @Jdbc.Statement("{? = call routine(:input)}")
+                @Jdbc.OutParameter(type = JDBCType.REF_CURSOR)
+                Optional<Integer> scalar(int input);
+
+                @Jdbc.Statement("${application.cursor:{? = call routine(?)}}")
+                @Jdbc.OutParameter(type = JDBCType.REF_CURSOR)
+                Optional<Integer> configured(int input);
+
+                @Jdbc.Statement("{call routine(:scalar, :rows)}")
+                @Jdbc.OutParameter(value = "scalar", type = JDBCType.REF_CURSOR)
+                @Jdbc.OutParameter(value = "rows", type = JDBCType.REF_CURSOR)
+                Outputs aggregate();
+
+                record Outputs(Optional<Integer> scalar, Optional<List<Integer>> rows) {
+                }
+                """);
+        assertThat(result.diagnostics().toString(), result.success(), is(true));
+    }
+
+    @Test
     void rejectsMissingExplicitRegistrationType() {
         TestCompiler.Result result = compile("""
                 @Jdbc.Statement("{call routine(:value)}")
@@ -625,6 +647,7 @@ import javax.lang.model.element.TypeElement;
                 import io.helidon.data.jdbc.Jdbc;
                 import java.sql.JDBCType;
                 import java.util.List;
+                import java.util.Optional;
                 import java.util.function.Consumer;
                 import java.util.stream.Stream;
                 import io.helidon.data.jdbc.JdbcClient;

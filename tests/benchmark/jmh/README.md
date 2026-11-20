@@ -39,12 +39,14 @@ the repository root:
 mvn -ntp clean install -DskipTests
 ```
 
-The JDBC client creation benchmark isolates the statement-stage path before
-connection acquisition. It compares the cached imperative path with the
-compile-time marker-count path used by generated repositories for one repeated
-SQL string and 32 pre-warmed SQL strings. By default its runner executes at 1,
-8, 32, and 128 threads and writes one JSON result per thread count. A short
-smoke run can use:
+## JDBC statement creation and binding
+
+The JDBC benchmarks measure statement creation and parameter binding before connection acquisition and do not require a
+database. Creation cases compare cached imperative and generated paths with one repeated SQL string and 32 warmed SQL
+strings. Binding cases cover SELECT and UPDATE statements with 1, 2, 8, and 32 inputs through cached imperative,
+generated, and prepared paths.
+
+Run this smoke test from the repository root after installing the prerequisite artifacts:
 
 ```shell
 mvn test -Ptests,jmh -pl :helidon-data-jdbc,:helidon-tests-benchmark-jmh -am \
@@ -53,6 +55,19 @@ mvn test -Ptests,jmh -pl :helidon-data-jdbc,:helidon-tests-benchmark-jmh -am \
     -Djdbc.client.creation.jmh.warmupIterations=1 -Djdbc.client.creation.jmh.warmupMillis=100 \
     -Djdbc.client.creation.jmh.measurementIterations=1 -Djdbc.client.creation.jmh.measurementMillis=100 -ntp
 ```
+
+For performance comparisons, omit the smoke timing overrides to use three 500 ms warmup iterations and five 1,000 ms
+measurement iterations. Optionally add `-Djdbc.client.creation.jmh.forks=3` for three forks or use
+`jdbc.client.creation.jmh.include` to filter methods by regular expression. Keep benchmark sources, JDKs, JVM options,
+parameter sets, and thread counts consistent between revisions.
+
+By default, the runner uses 1, 8, 32, and 128 threads and writes one JSON file per thread count to
+`target/jdbc-client-creation-jmh-result-t<N>.json` under the benchmark module. Save these files before another run
+because their names are reused. The runner does not automatically compare results against a baseline or fail the build
+for a performance regression.
+
+The runner measures throughput and sampled execution time without GC profiling. Allocation measurements require a
+separate JMH invocation with `-prof gc`.
 
 ## Messaging runtime
 

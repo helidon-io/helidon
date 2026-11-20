@@ -133,15 +133,22 @@ final class JdbcCallableGenerator {
                     .addContentLiteral(output.name()).addContent(", ").addContent(scalar.boxed()).addContent(".class)");
             return;
         }
+        // Optional<List<T>> describes cursor presence. Optional scalar mapping permits a SQL NULL column.
         boolean optionalList = type.isOptional() && type.typeArguments().getFirst().isList();
+        boolean nullable = type.isOptional() && !optionalList
+                && output.mapping().mappingKind() == JdbcMethodPlan.MappingKind.SCALAR;
         method.addContent(result).addContent(optionalList ? ".optionalCursor(" : ".cursor(")
                 .addContentLiteral(output.name()).addContent(", ");
-        mapper(method, output.mapping(), row, false);
+        mapper(method, output.mapping(), row, nullable);
         method.addContent(")");
         if (optionalList) {
             method.addContent(".map(").addContent(row).addContent(" -> ").addContent(row).addContent(".list())");
         } else {
             cardinality(method, type);
+            if (nullable) {
+                // Flatten after checking cardinality so a SQL NULL value cannot hide extra rows.
+                method.addContent(".flatMap(").addContent(row).addContent(" -> ").addContent(row).addContent(")");
+            }
         }
     }
 

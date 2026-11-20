@@ -39,6 +39,8 @@ final class JdbcStatement implements JdbcClient.Statement {
 
     // A terminal operation freezes the statement and places it in its terminal state.
     private boolean terminalState;
+    private boolean leadingReturnResolved;
+    private boolean leadingReturn;
 
     /**
      * Creates an empty statement description.
@@ -155,7 +157,18 @@ final class JdbcStatement implements JdbcClient.Statement {
     }
 
     boolean leadingReturn() {
-        return configured == null ? CALL_RETURN.matcher(sql).lookingAt() : configured.leadingReturn();
+        if (configured != null) {
+            return configured.leadingReturn();
+        }
+        // Resolve immutable SQL lazily so binding and callable validation share one classification.
+        // The prefix check avoids matcher allocation when the first character rules out a return escape.
+        if (!leadingReturnResolved) {
+            leadingReturn = !sql.isEmpty()
+                    && (sql.charAt(0) == '{' || Character.isWhitespace(sql.charAt(0)))
+                    && CALL_RETURN.matcher(sql).lookingAt();
+            leadingReturnResolved = true;
+        }
+        return leadingReturn;
     }
 
     int outputPosition(String name) {
@@ -168,7 +181,7 @@ final class JdbcStatement implements JdbcClient.Statement {
             throw new IllegalArgumentException("An OUT or INOUT marker must occur exactly once.");
         }
         int index = slots.getFirst();
-        if (leadingReturn() && index == 1) {
+        if (index == 1 && leadingReturn()) {
             throw new IllegalArgumentException("Use returns to register the leading callable return.");
         }
         return index;
@@ -297,7 +310,7 @@ final class JdbcStatement implements JdbcClient.Statement {
         }
         List<Integer> slots = configured.positions(name);
         for (int slot : slots) {
-            if (leadingReturn() && slot == 1) {
+            if (slot == 1 && leadingReturn()) {
                 throw new IllegalArgumentException("A leading callable return cannot be bound as an input.");
             }
             if (binds[slot - 1] != null) {
@@ -323,7 +336,8 @@ final class JdbcStatement implements JdbcClient.Statement {
             throw new IllegalArgumentException("The bind index must be between 1 and " + binds.length
                                                        + ". The requested index was " + index + ".");
         }
-        if (leadingReturn() && index == 1) {
+        // Only JDBC position one can be a leading return, so other inputs need no SQL classification.
+        if (index == 1 && leadingReturn()) {
             throw new IllegalArgumentException("A leading callable return cannot be bound as an input.");
         }
         if (binds[index - 1] != null) {

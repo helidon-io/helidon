@@ -105,6 +105,16 @@ public interface CallableRoutineRepository extends InferredCallableParent<Intege
     @Jdbc.OutParameter(type = JDBCType.REF_CURSOR)
     Optional<Integer> cursorOptional(int input);
 
+    @Jdbc.Statement("{? = call sp_cursor(:input)}")
+    @Jdbc.OutParameter(type = JDBCType.REF_CURSOR)
+    @Jdbc.RowMapper(IntegerMapper.class)
+    Optional<Integer> customCursorOptional(int input);
+
+    @Jdbc.Statement("{call sp_bundle(:input, :value, :rows)}")
+    @Jdbc.OutParameter(value = "rows", type = JDBCType.REF_CURSOR)
+    @Jdbc.OutParameter(value = "value", type = JDBCType.INTEGER)
+    NullableBundle aggregateNullableCursor(int input);
+
     @Jdbc.Statement("{? = call sp_add(:input)}")
     @Jdbc.OutParameter(type = JDBCType.INTEGER)
     String mapped(Integer input, JdbcClient.CallMapper<String> mapper);
@@ -265,6 +275,10 @@ public interface CallableRoutineRepository extends InferredCallableParent<Intege
 
     @Jdbc.Statement("${application.calls.cursor:{? = call sp_cursor(?)}}")
     @Jdbc.OutParameter(type = JDBCType.REF_CURSOR)
+    Optional<Integer> configuredCursorOptional(int input);
+
+    @Jdbc.Statement("${application.calls.cursor:{? = call sp_cursor(?)}}")
+    @Jdbc.OutParameter(type = JDBCType.REF_CURSOR)
     void configuredCursorCallback(int input, Consumer<JdbcClient.CallResult> action);
 
     @Jdbc.Statement("${application.calls.direct:{call sp_direct()}}")
@@ -406,6 +420,9 @@ public interface CallableRoutineRepository extends InferredCallableParent<Intege
     }
 
     record OptionalBundle(Optional<List<Integer>> rows, int value) {
+    }
+
+    record NullableBundle(Optional<Integer> rows, int value) {
     }
 
     record Bundle(List<Integer> rows, int value) {

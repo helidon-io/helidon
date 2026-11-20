@@ -15,6 +15,10 @@
  */
 package io.helidon.data.jdbc.tests;
 
+import java.util.List;
+import java.util.Optional;
+
+import io.helidon.data.DataException;
 import io.helidon.data.jdbc.JdbcClient;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +31,10 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class GeneratedCallableNullBoundaryTest {
@@ -96,6 +103,30 @@ class GeneratedCallableNullBoundaryTest {
         NullPointerException failure = assertThrows(NullPointerException.class, () -> repository.cursor("input"));
 
         assertThat(failure.getMessage(), is("The current row must not be null."));
+    }
+
+    @Test
+    void mapsNullableScalarCursorsInSingleInheritedAndAggregateOutputs() {
+        JdbcClient.Row row = mock(JdbcClient.Row.class);
+        JdbcClient.Rows<?> rows = mock(JdbcClient.Rows.class);
+        when(row.get(1, Integer.class)).thenThrow(new DataException("The result column contains SQL NULL."));
+        when(result.get("value", Integer.class)).thenReturn(7);
+        when(result.cursor(anyString(), any())).thenAnswer(invocation -> {
+            JdbcClient.RowMapper<?> mapper = invocation.getArgument(1);
+            doReturn(Optional.of(mapper.map(row))).when(rows).optional();
+            return rows;
+        });
+
+        for (Optional<Integer> value : List.of(Optional.<Integer>empty(), Optional.of(42))) {
+            when(row.optional(1, Integer.class)).thenReturn(value);
+            assertThat(repository.scalarCursor(), is(value));
+            assertThat(repository.inheritedCursor(), is(value));
+            assertThat(repository.nullableAggregate(), is(new CallableRepository.NullableOutputs(7, value)));
+        }
+        doReturn(Optional.empty()).when(rows).optional();
+        doReturn(rows).when(result).cursor(anyString(), any());
+        assertThat(repository.scalarCursor(), is(Optional.empty()));
+        verify(row, never()).get(1, Integer.class);
     }
 
     /**
