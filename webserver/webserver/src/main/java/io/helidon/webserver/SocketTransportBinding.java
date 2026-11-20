@@ -89,7 +89,7 @@ abstract class SocketTransportBinding implements TransportBinding {
     private final Lock idleTimeoutLock = new ReentrantLock();
 
     private volatile HelidonTaskExecutor readerExecutor;
-    private ScheduledThreadPoolExecutor writeTimeoutExecutor;
+    private volatile ScheduledThreadPoolExecutor writeTimeoutExecutor;
     private volatile IdleTimeoutHandler idleTimeoutHandler;
     private volatile boolean running;
     private volatile boolean inCheckpoint;
@@ -204,12 +204,13 @@ abstract class SocketTransportBinding implements TransportBinding {
             String serverChannelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(serverSocket));
 
             if (listenerConfig.writeTimeout().isPresent()) {
-                writeTimeoutExecutor = new ScheduledThreadPoolExecutor(1, Thread.ofPlatform()
+                var executor = new ScheduledThreadPoolExecutor(1, Thread.ofPlatform()
                         .daemon(true)
                         .inheritInheritableThreadLocals(false)
                         .name("helidon-" + socketName + "-" + type + "-write-timeout")
                         .factory());
-                writeTimeoutExecutor.setRemoveOnCancelPolicy(true);
+                executor.setRemoveOnCancelPolicy(true);
+                writeTimeoutExecutor = executor;
             }
             running = true;
             startIdleTimeoutHandler();
@@ -303,9 +304,10 @@ abstract class SocketTransportBinding implements TransportBinding {
     }
 
     private void shutdownWriteTimeoutExecutor() {
-        if (writeTimeoutExecutor != null) {
+        var executor = writeTimeoutExecutor;
+        if (executor != null) {
             // A writer still unwinding after forced shutdown must keep its outstanding deadline.
-            writeTimeoutExecutor.shutdown();
+            executor.shutdown();
             writeTimeoutExecutor = null;
         }
     }
