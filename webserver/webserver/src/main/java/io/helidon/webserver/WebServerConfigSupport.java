@@ -159,6 +159,16 @@ class WebServerConfigSupport {
         @Override
         @SuppressWarnings("removal")
         public void decorate(ListenerConfig.BuilderBase<?, ?> target) {
+            target.writeTimeout().ifPresent(timeout -> {
+                if (timeout.isZero() || timeout.isNegative()) {
+                    throw new IllegalArgumentException("Listener write-timeout must be positive");
+                }
+                try {
+                    timeout.toNanos();
+                } catch (ArithmeticException e) {
+                    throw new IllegalArgumentException("Listener write-timeout must be representable in nanoseconds", e);
+                }
+            });
             target.maxTcpConnections(target.maxConnections());
             if (target.bindAddress().isPresent()) {
                 if (target.address().isEmpty()) {

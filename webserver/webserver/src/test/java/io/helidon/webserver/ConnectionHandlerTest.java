@@ -114,7 +114,8 @@ class ConnectionHandlerTest {
                                                           mock(Tls.class),
                                                           virtualHosts,
                                                           transportObservation,
-                                                          removed::set);
+                                                          removed::set,
+                                                          null);
 
         try (TestLogHandler logHandler = TestLogHandler.install()) {
             AssertionError observerFailure = assertThrows(AssertionError.class, handler::run);
@@ -259,7 +260,8 @@ class ConnectionHandlerTest {
                                                           mock(Tls.class),
                                                           virtualHosts,
                                                           transportObservation,
-                                                          it -> { });
+                                                          it -> { },
+                                                          null);
 
         handler.httpTransportOutcome(ConnectionOutcome.REMOTE_CLOSE);
         handler.httpTransportOutcome(ConnectionOutcome.ERROR);
@@ -299,7 +301,8 @@ class ConnectionHandlerTest {
                                                                   tls,
                                                                   virtualHosts,
                                                                   observation,
-                                                                  removed::set);
+                                                                  removed::set,
+                                                                  null);
                 // A platform thread also exercises the legacy socket path without relying on interruption.
                 Thread thread = Thread.ofPlatform().start(handler::run);
                 try {
@@ -352,7 +355,8 @@ class ConnectionHandlerTest {
                                                           tls,
                                                           virtualHosts,
                                                           transportObservation,
-                                                          _ -> { });
+                                                          _ -> { },
+                                                          null);
 
         try (TestLogHandler logHandler = TestLogHandler.install(failure)) {
             Thread thread = Thread.ofVirtual().start(handler::run);
@@ -418,7 +422,8 @@ class ConnectionHandlerTest {
                                                           tls,
                                                           VirtualHostRegistry.create("server", virtualHostConfig, tls),
                                                           observation,
-                                                          removed::set);
+                                                          removed::set,
+                                                          null);
         Thread thread = Thread.ofVirtual().start(handler::run);
         try {
             thread.join(TimeUnit.SECONDS.toMillis(5));

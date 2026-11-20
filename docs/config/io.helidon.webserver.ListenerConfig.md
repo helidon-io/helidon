@@ -260,6 +260,17 @@ Configuration of a server listener (server socket)
 </tr>
 <tr>
 <td>
+<code>write-<wbr>timeout</code>
+</td>
+<td>
+<code>Duration</code>
+</td>
+<td>
+</td>
+<td>Maximum time to write one buffer to the socket before closing the connection</td>
+</tr>
+<tr>
+<td>
 <a id="error-handling"></a>
 <a href="io.helidon.webserver.ErrorHandling.md">
 <code>error-<wbr>handling</code>

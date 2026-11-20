@@ -55,7 +55,7 @@ import io.helidon.webserver.spi.TransportBindingFactoryProvider;
 @Prototype.Configured
 @Prototype.Blueprint(decorator = WebServerConfigSupport.ListenerConfigDecorator.class)
 @Prototype.CustomMethods(WebServerConfigSupport.ListenerCustomMethods.class)
-@Prototype.IncludeDefaultMethods({"bindings", "proxyProtocol"})
+@Prototype.IncludeDefaultMethods({"bindings", "proxyProtocol", "writeTimeout"})
 @Api.Stable
 interface ListenerConfigBlueprint {
     /**
@@ -201,6 +201,16 @@ interface ListenerConfigBlueprint {
     @Option.Configured
     @Option.DefaultInt(0)
     int writeQueueLength();
+
+    /**
+     * Maximum time to write one buffer to the socket before closing the connection.
+     *
+     * @return the write timeout, or empty for no timeout
+     */
+    @Option.Configured
+    default Optional<Duration> writeTimeout() {
+        return Optional.empty();
+    }
 
     /**
      * If enabled and {@link #writeQueueLength()} is greater than 1, then

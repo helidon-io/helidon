@@ -122,6 +122,9 @@ worst-case immediately usable capacity `L - N + 1`. The shared limit does not
 provide per-binding quotas or strict fairness, and configuration fails when
 `L < N`.
 
+If a socket write exceeds the listener’s `write-timeout`, WebServer closes the
+connection, including any HTTP/2 streams sharing it.
+
 Binding runtime, factory, provider, planning, context, TLS-selection, and
 protocol-handoff contracts are internal Helidon integration APIs, not a
 supported third-party transport SPI.
