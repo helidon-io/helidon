@@ -1548,11 +1548,13 @@ class GrpcProtocolHandlerTest {
     @Test
     void testInboundFloodWaitsForDemand() throws Exception {
         AtomicInteger messageCount = new AtomicInteger();
+        CountDownLatch firstMessageDelivered = new CountDownLatch(1);
         AtomicReference<ServerCall<String, String>> callRef = new AtomicReference<>();
         ServerCall.Listener<String> listener = new ServerCall.Listener<>() {
             @Override
             public void onMessage(String message) {
                 messageCount.incrementAndGet();
+                firstMessageDelivered.countDown();
             }
         };
         ServerCallHandler<String, String> callHandler = (call, _) -> {
@@ -1594,8 +1596,9 @@ class GrpcProtocolHandlerTest {
         assertThat("flood must pause without demand", dataFinished.await(200, TimeUnit.MILLISECONDS), is(false));
         assertThat(messageCount.get(), is(0));
         callRef.get().request(1);
-        assertThat(messageCount.get(), is(1));
+        assertThat("first requested message delivered", firstMessageDelivered.await(10, TimeUnit.SECONDS), is(true));
         assertThat("flood must pause after consuming demand", dataFinished.await(200, TimeUnit.MILLISECONDS), is(false));
+        assertThat(messageCount.get(), is(1));
 
         callRef.get().request(messageCountInFrame - 1);
         assertThat("flood completed after demand", dataFinished.await(10, TimeUnit.SECONDS), is(true));
