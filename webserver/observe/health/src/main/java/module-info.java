@@ -40,8 +40,6 @@ module io.helidon.webserver.observe.health {
 
     exports io.helidon.webserver.observe.health;
 
-    uses io.helidon.health.spi.HealthCheckProvider;
-
     provides io.helidon.webserver.observe.spi.ObserveProvider
             with io.helidon.webserver.observe.health.HealthObserveProvider;
 
