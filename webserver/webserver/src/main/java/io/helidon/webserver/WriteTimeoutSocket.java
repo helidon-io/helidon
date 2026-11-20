@@ -17,8 +17,13 @@
 package io.helidon.webserver;
 
 import java.net.SocketTimeoutException;
+import java.nio.channels.ClosedChannelException;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.LongSupplier;
 
@@ -36,7 +41,15 @@ final class WriteTimeoutSocket implements HelidonSocket {
     private final ScheduledExecutorService scheduler;
     private final Runnable timeoutAction;
     private final LongSupplier nanoTime;
-    private volatile boolean timedOut;
+    private final Write primaryWrite = new Write();
+    private final Runnable timeoutTask = this::checkTimeout;
+    private List<Write> overlappingWrites;
+    private ScheduledFuture<?> timeoutFuture;
+    private Thread fallbackTimer;
+    private boolean primaryWriteActive;
+    private boolean timedOut;
+    private boolean closing;
+    private boolean closed;
 
     WriteTimeoutSocket(HelidonSocket delegate,
                        Duration timeout,
@@ -59,12 +72,7 @@ final class WriteTimeoutSocket implements HelidonSocket {
 
     @Override
     public void write(BufferData buffer) {
-        if (timedOut) {
-            throw timeoutException(null);
-        }
-        var write = new Write(nanoTime.getAsLong());
-        long remaining = Math.max(0, timeoutNanos - (nanoTime.getAsLong() - write.started));
-        var future = scheduler.schedule(write::expire, remaining, TimeUnit.NANOSECONDS);
+        Write write = beginWrite();
         RuntimeException failure = null;
         boolean expired;
         try {
@@ -72,8 +80,7 @@ final class WriteTimeoutSocket implements HelidonSocket {
         } catch (RuntimeException e) {
             failure = e;
         } finally {
-            expired = write.complete();
-            future.cancel(false);
+            expired = completeWrite(write);
         }
         if (expired) {
             throw timeoutException(failure);
@@ -85,7 +92,30 @@ final class WriteTimeoutSocket implements HelidonSocket {
 
     @Override
     public void close() {
-        delegate.close();
+        synchronized (this) {
+            closing = true;
+        }
+        boolean closeCompleted = false;
+        try {
+            // Keep the active write's deadline armed while graceful TLS closure waits for its writer.
+            delegate.close();
+            closeCompleted = true;
+        } finally {
+            synchronized (this) {
+                if (closeCompleted || (!primaryWriteActive
+                        && (overlappingWrites == null || overlappingWrites.isEmpty()))) {
+                    closed = true;
+                    if (timeoutFuture != null) {
+                        timeoutFuture.cancel(false);
+                        timeoutFuture = null;
+                    }
+                    if (fallbackTimer != null) {
+                        fallbackTimer.interrupt();
+                        fallbackTimer = null;
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -146,44 +176,141 @@ final class WriteTimeoutSocket implements HelidonSocket {
         return new SocketWriterException(exception);
     }
 
-    private final class Write {
-        private final long started;
-        private boolean complete;
-        private boolean expired;
-
-        private Write(long started) {
-            this.started = started;
+    private Write beginWrite() {
+        long started = nanoTime.getAsLong();
+        synchronized (this) {
+            if (timedOut) {
+                throw timeoutException(null);
+            }
+            if (closing) {
+                throw new SocketWriterException(new ClosedChannelException());
+            }
+            if (timeoutFuture == null && fallbackTimer == null) {
+                scheduleTimeout(timeoutNanos - (nanoTime.getAsLong() - started));
+            }
+            Write write;
+            if (!primaryWriteActive) {
+                write = primaryWrite;
+                primaryWriteActive = true;
+            } else {
+                write = new Write();
+                if (overlappingWrites == null) {
+                    overlappingWrites = new ArrayList<>();
+                }
+                overlappingWrites.add(write);
+            }
+            write.started = started;
+            return write;
         }
+    }
 
-        private void expire() {
-            synchronized (this) {
-                if (complete || expired) {
+    private boolean completeWrite(Write write) {
+        boolean abort = false;
+        boolean expired;
+        synchronized (this) {
+            if (write == primaryWrite) {
+                primaryWriteActive = false;
+            } else {
+                overlappingWrites.remove(write);
+            }
+            expired = timedOut || nanoTime.getAsLong() - write.started >= timeoutNanos;
+            if (expired && !timedOut) {
+                timedOut = true;
+                abort = true;
+                if (timeoutFuture != null) {
+                    timeoutFuture.cancel(false);
+                    timeoutFuture = null;
+                }
+            }
+        }
+        if (abort) {
+            timeoutAction.run();
+        }
+        return expired;
+    }
+
+    private void checkTimeout() {
+        synchronized (this) {
+            timeoutFuture = null;
+            if (closed || timedOut) {
+                return;
+            }
+            if (!primaryWriteActive && (overlappingWrites == null || overlappingWrites.isEmpty())) {
+                return;
+            }
+            long remaining = remainingWriteTime();
+            if (remaining > 0) {
+                try {
+                    scheduleTimeout(remaining);
+                    return;
+                } catch (RejectedExecutionException ignored) {
+                    // Preserve the active write's deadline while the transport scheduler shuts down.
+                    fallbackTimer = Thread.ofVirtual()
+                            .name("helidon-write-timeout-fallback")
+                            .inheritInheritableThreadLocals(false)
+                            .start(this::runFallbackTimer);
                     return;
                 }
-                expired = true;
+            } else {
                 timedOut = true;
             }
-            // Closing a channel can linger. Keep the shared deadline scheduler available to other sockets.
-            Thread.ofVirtual()
-                    .name("helidon-write-timeout-abort")
-                    .inheritInheritableThreadLocals(false)
-                    .start(timeoutAction);
         }
+        // Closing a channel can linger. Keep the shared deadline scheduler available to other sockets.
+        Thread.ofVirtual()
+                .name("helidon-write-timeout-abort")
+                .inheritInheritableThreadLocals(false)
+                .start(timeoutAction);
+    }
 
-        private boolean complete() {
-            synchronized (this) {
-                complete = true;
-                if (expired) {
-                    return true;
+    private void scheduleTimeout(long remaining) {
+        timeoutFuture = scheduler.schedule(timeoutTask, Math.max(0, remaining), TimeUnit.NANOSECONDS);
+    }
+
+    private long remainingWriteTime() {
+        long remaining = Long.MAX_VALUE;
+        long now = nanoTime.getAsLong();
+        if (primaryWriteActive) {
+            remaining = timeoutNanos - (now - primaryWrite.started);
+        }
+        if (overlappingWrites != null) {
+            for (Write write : overlappingWrites) {
+                remaining = Math.min(remaining, timeoutNanos - (now - write.started));
+            }
+        }
+        return remaining;
+    }
+
+    private void runFallbackTimer() {
+        try {
+            while (true) {
+                long remaining;
+                synchronized (this) {
+                    if (closed || timedOut || (!primaryWriteActive
+                            && (overlappingWrites == null || overlappingWrites.isEmpty()))) {
+                        fallbackTimer = null;
+                        return;
+                    }
+                    remaining = remainingWriteTime();
+                    if (remaining <= 0) {
+                        timedOut = true;
+                        break;
+                    }
                 }
-                if (nanoTime.getAsLong() - started < timeoutNanos) {
-                    return false;
-                }
-                expired = true;
-                timedOut = true;
+                TimeUnit.NANOSECONDS.sleep(remaining);
             }
             timeoutAction.run();
-            return true;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            synchronized (this) {
+                if (fallbackTimer == Thread.currentThread()) {
+                    fallbackTimer = null;
+                }
+            }
         }
+    }
+
+    private static final class Write {
+        private long started;
     }
 }

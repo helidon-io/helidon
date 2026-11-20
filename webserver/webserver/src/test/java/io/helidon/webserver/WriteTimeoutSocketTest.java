@@ -20,9 +20,14 @@ import java.net.SocketTimeoutException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import io.helidon.common.buffers.BufferData;
@@ -43,7 +48,6 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -62,14 +66,17 @@ class WriteTimeoutSocketTest {
 
         assertThat(fixture.clock.get(), is(18L));
         verify(fixture.abort, never()).run();
-        verify(fixture.future, times(2)).cancel(false);
+        assertThat(fixture.tasks.size(), is(1));
+        verify(fixture.future, never()).cancel(false);
     }
 
     @Test
     void lateTimerCannotAbortSubsequentWrite() {
         var fixture = new Fixture();
         fixture.socket.write(BufferData.create("first"));
+        fixture.clock.set(9);
         doAnswer(invocation -> {
+            fixture.clock.set(10);
             fixture.tasks.getFirst().run();
             return null;
         }).when(fixture.delegate).write(any());
@@ -77,6 +84,8 @@ class WriteTimeoutSocketTest {
         fixture.socket.write(BufferData.create("second"));
 
         verify(fixture.abort, never()).run();
+        assertThat(fixture.tasks.size(), is(2));
+        assertThat(fixture.tasks.get(1), sameInstance(fixture.tasks.getFirst()));
     }
 
     @Test
@@ -124,16 +133,185 @@ class WriteTimeoutSocketTest {
         verify(fixture.abort, never()).run();
     }
 
+    @Test
+    void idleTimerStopsUntilTheNextWrite() {
+        var fixture = new Fixture();
+        fixture.socket.write(BufferData.create("first"));
+        fixture.clock.set(10);
+
+        fixture.tasks.getFirst().run();
+
+        assertThat(fixture.tasks.size(), is(1));
+        fixture.socket.write(BufferData.create("second"));
+        assertThat(fixture.tasks.size(), is(2));
+        verify(fixture.abort, never()).run();
+    }
+
+    @Test
+    void closeCancelsTimerAndStaleCallbackCannotAbort() {
+        var fixture = new Fixture();
+        fixture.socket.write(BufferData.create("data"));
+
+        fixture.socket.close();
+        fixture.clock.set(100);
+        fixture.tasks.getFirst().run();
+
+        verify(fixture.future).cancel(false);
+        verify(fixture.delegate).close();
+        verify(fixture.abort, never()).run();
+        assertThat(fixture.tasks.size(), is(1));
+    }
+
+    @Test
+    void closeKeepsActiveWriteDeadlineUntilDelegateCloseReturns() {
+        var fixture = new Fixture();
+        doAnswer(invocation -> {
+            fixture.socket.close();
+            return null;
+        }).when(fixture.delegate).write(any());
+        doAnswer(invocation -> {
+            fixture.clock.set(10);
+            fixture.tasks.getFirst().run();
+            return null;
+        }).when(fixture.delegate).close();
+
+        assertThrows(SocketWriterException.class, () -> fixture.socket.write(BufferData.create("data")));
+
+        verify(fixture.abort, timeout(5000)).run();
+    }
+
+    @Test
+    void failedCloseKeepsActiveWriteDeadline() {
+        var fixture = new Fixture();
+        doThrow(new IllegalStateException("close failed")).when(fixture.delegate).close();
+        doAnswer(invocation -> {
+            assertThrows(IllegalStateException.class, fixture.socket::close);
+            fixture.clock.set(10);
+            fixture.tasks.getFirst().run();
+            return null;
+        }).when(fixture.delegate).write(any());
+
+        assertThrows(SocketWriterException.class, () -> fixture.socket.write(BufferData.create("data")));
+
+        verify(fixture.abort, timeout(5000)).run();
+    }
+
+    @Test
+    void oldestOverlappingWriteKeepsItsDeadline() {
+        var fixture = new Fixture();
+        doAnswer(invocation -> {
+            if (fixture.clock.get() == 0) {
+                fixture.clock.set(1);
+                assertThrows(SocketWriterException.class,
+                             () -> fixture.socket.write(BufferData.create("second")));
+            } else {
+                fixture.clock.set(10);
+                fixture.tasks.getFirst().run();
+            }
+            return null;
+        }).when(fixture.delegate).write(any());
+
+        assertThrows(SocketWriterException.class, () -> fixture.socket.write(BufferData.create("first")));
+
+        verify(fixture.abort, timeout(5000)).run();
+        assertThat(fixture.tasks.size(), is(1));
+    }
+
+    @Test
+    void overlappingWriteRetainsDeadlineAfterFirstWriteCompletes() throws Exception {
+        var fixture = new Fixture();
+        var secondStarted = new CountDownLatch(1);
+        var finishSecond = new CountDownLatch(1);
+        var writes = new AtomicInteger();
+        var secondWrite = new FutureTask<Void>(() -> {
+            fixture.socket.write(BufferData.create("second"));
+            return null;
+        });
+        var secondThread = Thread.ofVirtual().unstarted(secondWrite);
+        doAnswer(invocation -> {
+            if (writes.incrementAndGet() == 1) {
+                fixture.clock.set(1);
+                secondThread.start();
+                assertThat("Second write started", secondStarted.await(5, TimeUnit.SECONDS), is(true));
+            } else {
+                secondStarted.countDown();
+                assertThat("Second write released", finishSecond.await(5, TimeUnit.SECONDS), is(true));
+            }
+            return null;
+        }).when(fixture.delegate).write(any());
+        try {
+            fixture.socket.write(BufferData.create("first"));
+            fixture.clock.set(10);
+            fixture.tasks.getFirst().run();
+            assertThat(fixture.tasks.size(), is(2));
+            verify(fixture.abort, never()).run();
+
+            fixture.clock.set(11);
+            fixture.tasks.get(1).run();
+            finishSecond.countDown();
+
+            ExecutionException failure = assertThrows(ExecutionException.class,
+                                                      () -> secondWrite.get(5, TimeUnit.SECONDS));
+            assertThat(failure.getCause(), instanceOf(SocketWriterException.class));
+            verify(fixture.abort, timeout(5000)).run();
+        } finally {
+            finishSecond.countDown();
+            secondThread.join(Duration.ofSeconds(5));
+            assertThat("Second writer terminated", secondThread.isAlive(), is(false));
+        }
+    }
+
+    @Test
+    void rejectedRearmPreservesActiveWriteDeadline() {
+        var fixture = new Fixture();
+        var aborted = new CountDownLatch(1);
+        doAnswer(invocation -> {
+            aborted.countDown();
+            return null;
+        }).when(fixture.abort).run();
+        fixture.socket.write(BufferData.create("first"));
+        fixture.clock.set(9);
+        when(fixture.scheduler.schedule(any(Runnable.class), anyLong(), eq(TimeUnit.NANOSECONDS)))
+                .thenAnswer(invocation -> {
+                    fixture.clock.set(19);
+                    throw new RejectedExecutionException("stopped");
+                });
+        doAnswer(invocation -> {
+            fixture.clock.set(10);
+            fixture.tasks.getFirst().run();
+            assertThat("Fallback timer aborted active write", aborted.await(5, TimeUnit.SECONDS), is(true));
+            return null;
+        }).when(fixture.delegate).write(any());
+
+        var failure = assertThrows(SocketWriterException.class,
+                                   () -> fixture.socket.write(BufferData.create("second")));
+
+        assertThat(failure.getCause(), instanceOf(SocketTimeoutException.class));
+        verify(fixture.abort, timeout(5000)).run();
+    }
+
+    @Test
+    void rejectedInitialScheduleDoesNotWriteOrAbort() {
+        var fixture = new Fixture();
+        when(fixture.scheduler.schedule(any(Runnable.class), anyLong(), eq(TimeUnit.NANOSECONDS)))
+                .thenThrow(new RejectedExecutionException("stopped"));
+
+        assertThrows(RejectedExecutionException.class, () -> fixture.socket.write(BufferData.create("data")));
+
+        verify(fixture.delegate, never()).write(any());
+        verify(fixture.abort, never()).run();
+    }
+
     private static final class Fixture {
         private final HelidonSocket delegate = mock(HelidonSocket.class);
         private final Runnable abort = mock(Runnable.class);
         private final AtomicLong clock = new AtomicLong();
         private final List<Runnable> tasks = new ArrayList<>();
         private final ScheduledFuture<?> future = mock(ScheduledFuture.class);
+        private final ScheduledExecutorService scheduler = mock(ScheduledExecutorService.class);
         private final WriteTimeoutSocket socket;
 
         private Fixture() {
-            var scheduler = mock(ScheduledExecutorService.class);
             when(scheduler.schedule(any(Runnable.class), anyLong(), eq(TimeUnit.NANOSECONDS))).thenAnswer(invocation -> {
                 tasks.add(invocation.getArgument(0));
                 return future;
