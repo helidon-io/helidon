@@ -29,6 +29,8 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.http.encoding.ContentEncodingContext;
+import io.helidon.http.media.MediaContext;
 import io.helidon.webserver.WebServer;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -85,6 +87,8 @@ public class ListenerWriteTimeoutJmhBenchmark {
                 .host("127.0.0.1")
                 .port(0)
                 .featuresDiscoverServices(false)
+                .mediaContext(MediaContext.builder().mediaSupportsDiscoverServices(false).build())
+                .contentEncoding(ContentEncodingContext.builder().contentEncodingsDiscoverServices(false).build())
                 .writeQueueLength(queued ? 16 : 0)
                 .smartAsyncWrites(writerMode.equals("smart"))
                 .writeBufferSize(0)
