@@ -45,7 +45,7 @@ This class is having mostly the same method implementations as ArrayJsonParser d
 I will need to think carefully about how to do the abstraction right, but for the first version,
 I have decided to leave it like this and with a duplicit code.
  */
-final class JsonParserStream extends JsonParserBase {
+final class JsonParserStream extends JsonTextParser {
 
     private static final int DEFAULT_BUFFER_SIZE = 512;
 
@@ -57,7 +57,6 @@ final class JsonParserStream extends JsonParserBase {
 
     private int stringBufferLength = 64;
     private char[] stringBuffer = new char[stringBufferLength];
-    private boolean expectLowSurrogate = false;
 
     private byte[] buffer;
     private int currentIndex = 0;
@@ -93,6 +92,48 @@ final class JsonParserStream extends JsonParserBase {
     }
 
     @Override
+    public int readString(JsonStringLexer lexer) {
+        if (lexer instanceof AsciiStringLexer ascii && buffer[currentIndex] == '"') {
+            int start = currentIndex + 1;
+            long hit = ascii.recognize(buffer, start, bufferLength);
+            if (hit >= 0) {
+                currentIndex = start + (int) (hit >>> Integer.SIZE);
+                return (int) hit;
+            }
+            lexer = ascii.decoded();
+        }
+        return readString(lexer, buffer, currentIndex, bufferLength);
+    }
+
+    @Override
+    void stringPosition(int position) {
+        currentIndex = position;
+    }
+
+    @Override
+    int readUtf8CodePoint(byte currentByte) {
+        int value = currentByte & 0xFF;
+        if ((value & 0xE0) == 0xC0) {
+            ensure(1);
+            return Parsers.decodeUtf8TwoByte(currentByte, readNextByte(), this);
+        }
+        if ((value & 0xF0) == 0xE0) {
+            ensure(2);
+            byte second = buffer[++currentIndex];
+            byte third = buffer[++currentIndex];
+            return Parsers.decodeUtf8ThreeByte(currentByte, second, third, this);
+        }
+        if ((value & 0xF8) == 0xF0) {
+            ensure(3);
+            byte second = buffer[++currentIndex];
+            byte third = buffer[++currentIndex];
+            byte fourth = buffer[++currentIndex];
+            return Parsers.decodeUtf8FourByte(currentByte, second, third, fourth, this);
+        }
+        throw createException("Invalid UTF-8 byte", currentByte);
+    }
+
+    @Override
     public boolean hasNext() {
         if (!finished && currentIndex + 1 >= bufferLength) {
             fetchData();
@@ -100,6 +141,7 @@ final class JsonParserStream extends JsonParserBase {
         return currentIndex + 1 < bufferLength;
     }
 
+    @Override
     byte readNextByte() {
         if (currentIndex + 1 >= bufferLength) {
             if (finished) {
@@ -178,7 +220,7 @@ final class JsonParserStream extends JsonParserBase {
         if (currentByte() != '\"') {
             throw createException("Start of a string expected", currentByte());
         }
-        expectLowSurrogate = false;
+        expectLowSurrogate(false);
         ensure(1);
         byte b = this.buffer[++currentIndex];
         char c;
@@ -192,7 +234,7 @@ final class JsonParserStream extends JsonParserBase {
         } else {
             c = decodeUtf8ToChar(b);
         }
-        if (expectLowSurrogate) {
+        if (expectsLowSurrogate()) {
             throw createException("Low surrogate must follow the high surrogate.");
         }
         if (nextToken() != '\"') {
@@ -378,12 +420,13 @@ final class JsonParserStream extends JsonParserBase {
         }
     }
 
+    @Override
     char processEscapedSequence() {
         if (!hasNext()) {
             throw createException("Error while processing an escaped string sequence. Incomplete JSON");
         }
         byte b = buffer[++currentIndex];
-        if (expectLowSurrogate && b != 'u') {
+        if (expectsLowSurrogate() && b != 'u') {
             throw createException("Low surrogate must follow the high surrogate.", b);
         }
         switch (b) {
@@ -411,19 +454,19 @@ final class JsonParserStream extends JsonParserBase {
             // Handle JSON's UTF-16 surrogate pair encoding (\\uXXXX\\uYYYY for code points > U+FFFF)
             if (Character.isHighSurrogate(tmp)) {
                 // High surrogate: must be followed by a low surrogate
-                if (expectLowSurrogate) {
+                if (expectsLowSurrogate()) {
                     throw createException("A high surrogate must always be followed by a low surrogate");
                 } else {
-                    expectLowSurrogate = true; // Expect low surrogate next
+                    expectLowSurrogate(true); // Expect low surrogate next
                 }
             } else if (Character.isLowSurrogate(tmp)) {
                 // Low surrogate: must follow a high surrogate
-                if (expectLowSurrogate) {
-                    expectLowSurrogate = false; // Pair complete
+                if (expectsLowSurrogate()) {
+                    expectLowSurrogate(false); // Pair complete
                 } else {
                     throw createException("A low surrogate must always follow a high surrogate");
                 }
-            } else if (expectLowSurrogate) {
+            } else if (expectsLowSurrogate()) {
                 // Expected low surrogate but got neither high nor low
                 throw createException("Low surrogate was expected to follow the high surrogate, "
                                               + "but found " + Parsers.toPrintableForm(tmp));
@@ -468,28 +511,6 @@ final class JsonParserStream extends JsonParserBase {
             stringBuffer[position++] = (char) codePoint;
         }
         return position;
-    }
-
-    private int readUtf8CodePoint(byte currentByte) {
-        int value = currentByte & 0xFF;
-        if ((value & 0xE0) == 0xC0) {
-            ensure(1);
-            return Parsers.decodeUtf8TwoByte(currentByte, readNextByte(), this);
-        }
-        if ((value & 0xF0) == 0xE0) {
-            ensure(2);
-            byte second = buffer[++currentIndex];
-            byte third = buffer[++currentIndex];
-            return Parsers.decodeUtf8ThreeByte(currentByte, second, third, this);
-        }
-        if ((value & 0xF8) == 0xF0) {
-            ensure(3);
-            byte second = buffer[++currentIndex];
-            byte third = buffer[++currentIndex];
-            byte fourth = buffer[++currentIndex];
-            return Parsers.decodeUtf8FourByte(currentByte, second, third, fourth, this);
-        }
-        throw createException("Invalid UTF-8 byte", currentByte);
     }
 
     void increaseStringBuffer() {
@@ -1268,7 +1289,7 @@ final class JsonParserStream extends JsonParserBase {
         } else if (currentByte() != '"') {
             throw createException("Expected start of string", currentByte());
         }
-        expectLowSurrogate = false;
+        expectLowSurrogate(false);
         int index = ++currentIndex;
         int readableBytes = bufferLength - currentIndex;
         int firstRun = Math.min(stringBufferLength, readableBytes);
@@ -1314,7 +1335,7 @@ final class JsonParserStream extends JsonParserBase {
                 b = buffer[currentIndex];
                 if (b == '\\') {
                     stringBuffer[stringBuffIndex++] = processEscapedSequence();
-                } else if (expectLowSurrogate) {
+                } else if (expectsLowSurrogate()) {
                     throw createException("Low surrogate must follow the high surrogate.", b);
                 } else if (b == '"') {
                     return new String(stringBuffer, 0, stringBuffIndex);

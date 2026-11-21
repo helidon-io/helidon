@@ -143,6 +143,11 @@ public final class ObjectStartParser extends JsonParserBase {
     }
 
     @Override
+    public int readString(JsonStringLexer lexer) {
+        return parser.readString(lexer);
+    }
+
+    @Override
     public int readStringAsHash() {
         return parser.readStringAsHash();
     }

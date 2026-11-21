@@ -117,7 +117,7 @@ record ConvertedTypeInfo(TypeName converterType,
         Optional<PolymorphicInfo> polymorphismInfo = typeInfo.findAnnotation(JsonTypes.JSON_POLYMORPHIC)
                 .or(() -> typeInfo.findAnnotation(JsonTypes.JSON_SUBTYPES))
                 .or(() -> typeInfo.findAnnotation(JsonTypes.JSON_SUBTYPE))
-                .flatMap(it -> processPolymorphismInfo(typeInfo));
+                .flatMap(_ -> processPolymorphismInfo(typeInfo, ctx));
 
         String suffix = polymorphismInfo.isPresent() ? "__GeneratedPolyConverter" : "__GeneratedConverter";
         TypeName converterTypeName = TypeName.builder()
@@ -125,7 +125,13 @@ record ConvertedTypeInfo(TypeName converterType,
                 .className(typeName.classNameWithEnclosingNames().replace('.', '_') + suffix)
                 .build();
         LinkedHashMap<String, String> extraProperties = new LinkedHashMap<>();
-        discoverExtraProperties(extraProperties, typeInfo, typeName);
+        discoverExtraProperties(extraProperties, new HashSet<>(), typeInfo, typeName);
+        polymorphismInfo.ifPresent(info -> {
+            if (extraProperties.containsKey(info.property())) {
+                throw new CodegenException("Conflicting polymorphic discriminator key \"" + info.property()
+                                                   + "\": use a distinct key at each polymorphic level", typeInfo);
+            }
+        });
         CreatorInfo creatorInfo = discoverCreator(properties, typeInfo, resolvedGenerics);
         Map<String, JsonProperty> jsonProperties = finalizeJsonProperties(properties);
         Comparator<String> orderComparator = PROPERTY_ORDER.getOrDefault(orderStrategy, (o1, o2) -> 0);
@@ -154,6 +160,7 @@ record ConvertedTypeInfo(TypeName converterType,
     }
 
     private static void discoverExtraProperties(SequencedMap<String, String> extraProperties,
+                                                Set<String> discriminatorKeys,
                                                 TypeInfo typeInfo,
                                                 TypeName targetType) {
         Optional<Annotation> typeInfoAnnotation = typeInfo.findAnnotation(JsonTypes.JSON_POLYMORPHIC);
@@ -161,22 +168,36 @@ record ConvertedTypeInfo(TypeName converterType,
                 .flatMap(Annotation::annotationValues)
                 .orElseGet(() -> typeInfo.findAnnotation(JsonTypes.JSON_SUBTYPE).stream().toList());
         TypeName newTargetType = targetType;
+        String discriminatorKey = null;
 
         for (Annotation annotation : subtypes) {
-            if (annotation.typeValue().orElseThrow().equals(targetType)) {
+            if (annotation.typeValue().orElseThrow().genericTypeName().equals(targetType.genericTypeName())) {
                 String key = typeInfoAnnotation.flatMap(it -> it.stringValue("key")).orElse("@type");
                 String alias = resolveAliasValue(annotation);
+                if (!discriminatorKeys.add(key)) {
+                    throw new CodegenException("Conflicting polymorphic discriminator key \"" + key
+                                                       + "\": use a distinct key at each polymorphic level", typeInfo);
+                }
+                String previousAlias = extraProperties.get(key);
+                if (previousAlias != null && !previousAlias.equals(alias)) {
+                    throw new CodegenException("Conflicting polymorphic discriminator key \"" + key
+                                                       + "\": aliases \"" + previousAlias + "\" and \"" + alias + "\"", typeInfo);
+                }
                 extraProperties.putFirst(key, alias);
+                discriminatorKey = key;
                 newTargetType = typeInfo.typeName();
                 break;
             }
         }
 
         for (TypeInfo interfaceInfo : typeInfo.interfaceTypeInfo()) {
-            discoverExtraProperties(extraProperties, interfaceInfo, newTargetType);
+            discoverExtraProperties(extraProperties, discriminatorKeys, interfaceInfo, newTargetType);
         }
         if (typeInfo.superTypeInfo().isPresent()) {
-            discoverExtraProperties(extraProperties, typeInfo.superTypeInfo().get(), newTargetType);
+            discoverExtraProperties(extraProperties, discriminatorKeys, typeInfo.superTypeInfo().get(), newTargetType);
+        }
+        if (discriminatorKey != null) {
+            discriminatorKeys.remove(discriminatorKey);
         }
     }
 
@@ -190,7 +211,7 @@ record ConvertedTypeInfo(TypeName converterType,
     }
 
     @SuppressWarnings("OptionalGetWithoutIsPresent")
-    private static Optional<PolymorphicInfo> processPolymorphismInfo(TypeInfo typeInfo) {
+    private static Optional<PolymorphicInfo> processPolymorphismInfo(TypeInfo typeInfo, CodegenContext ctx) {
         Optional<Annotation> polymorphic = typeInfo.findAnnotation(JsonTypes.JSON_POLYMORPHIC);
         String key = "@type";
         Optional<TypeName> defaultSubtype = Optional.empty();
@@ -217,7 +238,58 @@ record ConvertedTypeInfo(TypeName converterType,
         }
 
         boolean classConverterMethods = !typeInfo.elementModifiers().contains(Modifier.ABSTRACT) && defaultSubtype.isEmpty();
-        return Optional.of(new PolymorphicInfo(key, defaultSubtype, aliases, classConverterMethods));
+        return Optional.of(new PolymorphicInfo(key,
+                                              defaultSubtype,
+                                              aliases,
+                                              serializationTypes(aliases, ctx, typeInfo),
+                                              classConverterMethods));
+    }
+
+    private static List<TypeName> serializationTypes(Map<String, TypeName> aliases, CodegenContext ctx, TypeInfo owner) {
+        List<TypeName> types = aliases.values().stream().distinct().toList();
+        if (types.size() < 2) {
+            return types;
+        }
+        Map<TypeName, Set<TypeName>> ancestors = new LinkedHashMap<>();
+        for (TypeName type : types) {
+            TypeInfo typeInfo = ctx.typeInfo(type)
+                    .orElseThrow(() -> new CodegenException("Could not resolve polymorphic subtype " + type, owner));
+            List<TypeInfo> hierarchy = new ArrayList<>();
+            typeInfo.superTypeInfo().ifPresent(hierarchy::add);
+            hierarchy.addAll(typeInfo.interfaceTypeInfo());
+            Set<TypeName> supertypes = new HashSet<>();
+            for (int i = 0; i < hierarchy.size(); i++) {
+                TypeInfo ancestor = hierarchy.get(i);
+                // Serialization uses instanceof, so generic supertype arguments do not affect specificity.
+                if (supertypes.add(ancestor.rawType())) {
+                    ancestor.superTypeInfo().ifPresent(hierarchy::add);
+                    hierarchy.addAll(ancestor.interfaceTypeInfo());
+                }
+            }
+            ancestors.put(type, supertypes);
+        }
+        List<TypeName> ordered = new ArrayList<>(types.size());
+        Set<TypeName> visited = new HashSet<>();
+        for (TypeName type : types) {
+            addSerializationType(type, ancestors, visited, ordered);
+        }
+        return List.copyOf(ordered);
+    }
+
+    private static void addSerializationType(TypeName type,
+                                             Map<TypeName, Set<TypeName>> ancestors,
+                                             Set<TypeName> visited,
+                                             List<TypeName> ordered) {
+        if (!visited.add(type)) {
+            return;
+        }
+        // Process each registered ancestor after its descendants, starting with the declared registration order.
+        for (Map.Entry<TypeName, Set<TypeName>> candidate : ancestors.entrySet()) {
+            if (candidate.getValue().contains(type.genericTypeName())) {
+                addSerializationType(candidate.getKey(), ancestors, visited, ordered);
+            }
+        }
+        ordered.add(type);
     }
 
     private static Map<TypeName, Integer> obtainGenericParamsWithIndexes(TypeInfo typeInfo) {

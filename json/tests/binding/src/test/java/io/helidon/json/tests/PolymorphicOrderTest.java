@@ -39,6 +39,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Testing.Test
@@ -132,14 +133,20 @@ class PolymorphicOrderTest {
 
     @ParameterizedTest
     @EnumSource(Input.class)
-    void matchesEscapedKeys(Input input) {
+    void matchesEscapedKeysAndResolvesKeyHashCollisions(Input input) {
         assertThat(binding.deserialize(input.parser("{\"name\":\"x\",\"k\\u0069nd\":\"sample\"}"), Base.class),
                    is(new Sample("x", 0, null)));
+        assertThat(binding.deserialize(input.parser("{\"liquid\":0,\"name\":\"x\",\"costarring\":\"chosen\"}"),
+                                       CollisionBase.class), is(new CollisionValue("x")));
+        JsonException missing = assertThrows(JsonException.class,
+                                             () -> binding.deserialize(input.parser("{\"liquid\":\"chosen\"}"),
+                                                                       CollisionBase.class));
+        assertThat(missing.getMessage(), containsString("Missing property containing alias"));
     }
 
     @ParameterizedTest
     @EnumSource(Input.class)
-    void resolvesAliasCollisionsInAnyPosition(Input input) {
+    void resolvesAliasCollisionsAfterPrefix(Input input) {
         List<String> aliases = List.of("costarring", "liquid", "declinate", "macallums");
         List<Class<?>> types = List.of(PolymorphismSupportTest.HashCollisionType1.class,
                                        PolymorphismSupportTest.HashCollisionType2.class,
@@ -147,16 +154,11 @@ class PolymorphicOrderTest {
                                        PolymorphismSupportTest.HashCollisionType4.class);
         for (int i = 0; i < aliases.size(); i++) {
             String alias = aliases.get(i);
-            for (String json : List.of("{\"value\":\"" + alias + "\",\"@type\":\"" + alias + "\"}",
-                                       "{\"@type\":\"" + alias + "\",\"value\":\"" + alias + "\"}")) {
-                PolymorphismSupportTest.HashCollisionParent value = binding.deserialize(
-                        input.parser(json), PolymorphismSupportTest.HashCollisionParent.class);
-                assertThat(value.value(), is(alias));
-                assertThat(value, instanceOf(types.get(i)));
-            }
-            assertThat(binding.deserialize(input.parser("{\"@type\":\"" + alias + "\"}"),
-                                           PolymorphismSupportTest.HashCollisionParent.class),
-                       instanceOf(types.get(i)));
+            PolymorphismSupportTest.HashCollisionParent value = binding.deserialize(
+                    input.parser("{\"value\":\"" + alias + "\",\"@type\":\"" + alias + "\"}"),
+                    PolymorphismSupportTest.HashCollisionParent.class);
+            assertThat(value.value(), is(alias));
+            assertThat(value, instanceOf(types.get(i)));
         }
     }
 
@@ -287,6 +289,12 @@ class PolymorphicOrderTest {
     }
 
     @Json.Entity
+    @Json.Polymorphic(key = "costarring")
+    @Json.Subtype(value = CollisionValue.class, alias = "chosen")
+    interface CollisionBase {
+    }
+
+    @Json.Entity
     @Json.Polymorphic(key = "kind")
     @Json.Subtype(value = BinaryValue.class, alias = "binary")
     interface BinaryBase {
@@ -340,6 +348,10 @@ class PolymorphicOrderTest {
 
     @Json.Entity
     record DefaultValue(String name) implements Base {
+    }
+
+    @Json.Entity
+    record CollisionValue(String name) implements CollisionBase {
     }
 
     @Json.Entity

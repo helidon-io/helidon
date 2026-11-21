@@ -1,0 +1,477 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.json.codegen;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
+import io.helidon.codegen.classmodel.ClassBase;
+import io.helidon.codegen.classmodel.Method;
+import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
+
+final class StringLexerGenerator {
+    private static final int MAX_GENERATED_UNITS = 32768;
+    private static final int MAX_GENERATED_STATES = 512;
+    private static final int MAX_STATE_EDGES = 128;
+    private static final int MAX_ASCII_BRANCHES = 256;
+    private static final int STATES_PER_METHOD = 32;
+
+    private StringLexerGenerator() {
+    }
+
+    static void generate(ClassBase.Builder<?, ?> owner, TypeName type, String fieldName, List<String> names) {
+        List<Map<String, Integer>> states = names.stream().mapToLong(String::length).sum() <= MAX_GENERATED_UNITS
+                ? states(names) : List.of();
+        boolean generate = !states.isEmpty() && states.size() <= MAX_GENERATED_STATES
+                && states.stream().allMatch(state -> state.size() <= MAX_STATE_EDGES);
+        String entry = switch (fieldName) {
+        case "PROPERTY_NAMES" -> "lexPropertyName";
+        case "POLYMORPHIC_PROPERTY" -> "lexDiscriminator";
+        case "POLYMORPHIC_ALIASES" -> "lexAlias";
+        default -> throw new IllegalArgumentException("Unknown lexer field: " + fieldName);
+        };
+        List<AsciiEdge> ascii = new ArrayList<>();
+        if (generate) {
+            for (int i = 0; i < names.size(); i++) {
+                String name = names.get(i);
+                if (name.length() < 3 * Long.BYTES
+                        && name.chars().allMatch(c -> c >= 0x20 && c < 0x80 && c != '"' && c != '\\')) {
+                    ascii.add(new AsciiEdge(name, i));
+                }
+            }
+        }
+        String positional = ascii.size() >= STATES_PER_METHOD ? positionalOrdinal(ascii) : "";
+        boolean raw = !ascii.isEmpty() && ascii.size() * 2 >= names.size()
+                && (ascii.size() <= MAX_ASCII_BRANCHES || !positional.isEmpty());
+        owner.addField(field -> {
+            field.name(fieldName).type(JsonTypes.JSON_STRING_LEXER).isStatic(true).isFinal(true)
+                    .accessModifier(AccessModifier.PRIVATE);
+            if (generate && !raw) {
+                field.addContent(type).addContent("::" + entry);
+            } else {
+                field.addContent(JsonTypes.JSON_STRING_LEXER);
+                if (raw) {
+                    field.addContent(".withAscii(").addContent(type).addContent("::" + entry + ", ")
+                            .addContent(type).addContent("::" + entry + "Ascii, ");
+                } else {
+                    field.addContent(".create(");
+                }
+                for (int i = 0; i < names.size(); i++) {
+                    if (i > 0) {
+                        field.addContent(", ");
+                    }
+                    field.addContentLiteral(names.get(i));
+                }
+                field.addContent(")");
+            }
+        });
+        if (!generate) {
+            return;
+        }
+        if (raw) {
+            owner.addMethod(method -> {
+                method.name(entry + "Ascii").accessModifier(AccessModifier.PRIVATE).isStatic(true)
+                        .returnType(TypeNames.PRIMITIVE_INT)
+                        .addParameter(TypeNames.PRIMITIVE_LONG, "first")
+                        .addParameter(TypeNames.PRIMITIVE_LONG, "second");
+                if (positional.isEmpty()) {
+                    emitAscii(method, ascii, owner, fieldName + "_TRANSITIONS");
+                } else {
+                    method.addContentLine("return " + positional + ";");
+                }
+            });
+        }
+        generateDecoded(owner, entry, DecodedPlan.compact(states, names.size()));
+    }
+
+    private static void generateDecoded(ClassBase.Builder<?, ?> owner, String entry, DecodedPlan plan) {
+        List<Map<String, Integer>> states = plan.states;
+        owner.addMethod(method -> {
+            method.name(entry).accessModifier(AccessModifier.PRIVATE).isStatic(true)
+                    .returnType(TypeNames.PRIMITIVE_INT)
+                    .addParameter(TypeNames.PRIMITIVE_INT, "state")
+                    .addParameter(TypeNames.PRIMITIVE_LONG, "low")
+                    .addParameter(TypeNames.PRIMITIVE_LONG, "high")
+                    .addParameter(TypeNames.PRIMITIVE_INT, "length");
+            plan.emitSuffixes(method);
+            if (states.size() > 1) {
+                method.addContentLine("if (state != 0) {");
+                if (states.size() <= STATES_PER_METHOD) {
+                    emitStateDispatch(method, entry, 1, states.size());
+                } else {
+                    method.addContentLine("return switch (state / " + STATES_PER_METHOD + ") {");
+                    for (int i = 0; i < states.size(); i += STATES_PER_METHOD) {
+                        int group = i / STATES_PER_METHOD;
+                        method.addContentLine("case " + group + " -> " + entry + "Group" + group + "(state, low, high, length);");
+                    }
+                    method.addContentLine("default -> -1;").addContent("}").addContentLine(";");
+                }
+                method.addContentLine("}");
+            }
+            emitState(method, states.getFirst());
+        });
+        if (states.size() > STATES_PER_METHOD) {
+            for (int i = 0; i < states.size(); i += STATES_PER_METHOD) {
+                int from = Math.max(1, i);
+                int to = Math.min(states.size(), i + STATES_PER_METHOD);
+                String group = entry + "Group" + (i / STATES_PER_METHOD);
+                owner.addMethod(method -> {
+                    method.name(group).accessModifier(AccessModifier.PRIVATE).isStatic(true).returnType(TypeNames.PRIMITIVE_INT)
+                            .addParameter(TypeNames.PRIMITIVE_INT, "state").addParameter(TypeNames.PRIMITIVE_LONG, "low")
+                            .addParameter(TypeNames.PRIMITIVE_LONG, "high").addParameter(TypeNames.PRIMITIVE_INT, "length");
+                    emitStateDispatch(method, entry, from, to);
+                });
+            }
+        }
+        for (int i = 1; i < states.size(); i++) {
+            var transitions = states.get(i);
+            String methodName = entry + i;
+            owner.addMethod(method -> {
+                method.name(methodName).accessModifier(AccessModifier.PRIVATE).isStatic(true)
+                        .returnType(TypeNames.PRIMITIVE_INT)
+                        .addParameter(TypeNames.PRIMITIVE_LONG, "low")
+                        .addParameter(TypeNames.PRIMITIVE_LONG, "high")
+                        .addParameter(TypeNames.PRIMITIVE_INT, "length");
+                emitState(method, transitions);
+            });
+        }
+    }
+
+    private static void emitAscii(Method.Builder method,
+                                  List<AsciiEdge> edges,
+                                  ClassBase.Builder<?, ?> owner,
+                                  String tableName) {
+        if (edges.size() == 1) {
+            method.addContentLine("return " + edges.getFirst().ordinal + ";");
+            return;
+        }
+        // Only positions defined for every remaining spelling can select a branch. The closing quote
+        // distinguishes a short name from a longer name that shares its complete prefix.
+        int shortest = edges.stream().mapToInt(edge -> edge.name.length()).min().orElseThrow();
+        int position = 0;
+        long lowestCost = Long.MAX_VALUE;
+        for (int i = 0; i <= Math.min(shortest, 2 * Long.BYTES - 1); i++) {
+            int[] counts = new int[128];
+            long cost = 0;
+            for (AsciiEdge edge : edges) {
+                cost += 2L * ++counts[edge.at(i)] - 1;
+            }
+            if (cost < lowestCost) {
+                lowestCost = cost;
+                position = i;
+                if (cost == edges.size()) {
+                    break;
+                }
+            }
+        }
+        if (lowestCost == (long) edges.size() * edges.size()) {
+            // The first two words are identical. Continue in the decoded block automaton.
+            method.addContentLine("return -1;");
+            return;
+        }
+        String word = position < Long.BYTES ? "first" : "second";
+        String digit = "((int) (" + word + " >>> " + ((position % Long.BYTES) * Byte.SIZE) + ") & 0xff)";
+        if (edges.size() == 2) {
+            AsciiEdge first = edges.getFirst();
+            method.addContentLine("return " + digit + " == " + first.at(position) + " ? " + first.ordinal
+                                          + " : " + edges.getLast().ordinal + ";");
+            return;
+        }
+        Map<Integer, List<AsciiEdge>> groups = new TreeMap<>();
+        for (AsciiEdge edge : edges) {
+            groups.computeIfAbsent(edge.at(position), _ -> new ArrayList<>()).add(edge);
+        }
+        boolean direct = !tableName.isEmpty() && groups.size() >= 4
+                && groups.values().stream().filter(group -> group.size() == 1).count() * 2 >= groups.size();
+        if (direct) {
+            int[] routes = new int[128];
+            Arrays.fill(routes, -1);
+            groups.forEach((value, group) -> routes[value] = group.size() == 1 ? group.getFirst().ordinal : -2 - value);
+            String constants = Arrays.toString(routes);
+            owner.addField(field -> field.name(tableName).type(int[].class).accessModifier(AccessModifier.PRIVATE)
+                    .isStatic(true).isFinal(true).addContent("{" + constants.substring(1, constants.length() - 1) + "}"));
+            String access = tableName + "[" + digit + " & 0x7f]";
+            if (groups.size() == edges.size()) {
+                method.addContentLine("return " + access + ";");
+                return;
+            }
+            method.addContentLine("int route = " + access + ";")
+                    .addContentLine("if (route >= -1) {").addContentLine("return route;").addContentLine("}")
+                    .addContentLine("switch (route) {");
+        } else {
+            method.addContentLine("switch (" + digit + ") {");
+        }
+        groups.forEach((value, group) -> {
+            if (!direct || group.size() > 1) {
+                method.addContentLine("case " + (direct ? -2 - value : value) + " -> {");
+                emitAscii(method, group, owner, "");
+                method.addContentLine("}");
+            }
+        });
+        method.addContentLine("default -> {").addContentLine("return -1;").addContentLine("}").addContentLine("}");
+    }
+
+    // Recognize an ordinal whose digits come directly from input positions. Verify every registered
+    // spelling when generating the expression. The native parser still checks the complete chosen literal.
+    private static String positionalOrdinal(List<AsciiEdge> edges) {
+        int maxOrdinal = edges.stream().mapToInt(AsciiEdge::ordinal).max().orElseThrow();
+        int width = Math.min(2 * Long.BYTES, edges.stream().mapToInt(edge -> edge.name.length()).min().orElseThrow());
+        List<String> terms = new ArrayList<>();
+        int bias = 0;
+        int place = 1;
+        while (place <= maxOrdinal) {
+            int next = 0;
+            for (int position = 0; position < width; position++) {
+                int lane = position;
+                var values = edges.stream().mapToInt(edge -> edge.at(lane)).summaryStatistics();
+                int min = values.getMin();
+                int max = values.getMax();
+                int radix = max - min + 1;
+                int scale = place;
+                if (radix == 1 || !edges.stream().allMatch(edge -> edge.at(lane) - min == edge.ordinal / scale % radix)) {
+                    continue;
+                }
+                int mask = (Integer.highestOneBit(radix - 1) << 1) - 1;
+                if ((min & ~mask) != (max & ~mask)) {
+                    mask = 0xff;
+                }
+                String word = position < Long.BYTES ? "first" : "second";
+                int shift = position % Long.BYTES * Byte.SIZE;
+                String digit = "((int) (" + word + " >>> " + shift + ") & " + mask + ")";
+                terms.add(place == 1 ? digit : place + " * " + digit);
+                bias += place * (min & mask);
+                next = place * radix;
+                break;
+            }
+            if (next == 0) {
+                return "";
+            }
+            place = next;
+        }
+        return String.join(" + ", terms) + (bias == 0 ? "" : " - " + bias);
+    }
+
+    private static void emitStateDispatch(Method.Builder method, String entry, int from, int to) {
+        method.addContentLine("return switch (state) {");
+        for (int i = from; i < to; i++) {
+            method.addContentLine("case " + i + " -> " + entry + i + "(low, high, length);");
+        }
+        method.addContentLine("default -> -1;").addContent("}").addContentLine(";");
+    }
+
+    private static List<Map<String, Integer>> states(List<String> names) {
+        List<Map<String, Integer>> states = new ArrayList<>();
+        states.add(new LinkedHashMap<>());
+        for (int ordinal = 0; ordinal < names.size(); ordinal++) {
+            String name = names.get(ordinal);
+            int state = 0;
+            int position = 0;
+            while (name.length() - position >= Long.BYTES) {
+                String block = name.substring(position, position + Long.BYTES);
+                Map<String, Integer> transitions = states.get(state);
+                Integer next = transitions.get(block);
+                if (next == null) {
+                    next = states.size();
+                    transitions.put(block, next);
+                    states.add(new LinkedHashMap<>());
+                }
+                state = next;
+                position += Long.BYTES;
+            }
+            if (states.get(state).putIfAbsent(name.substring(position), ordinal) != null) {
+                throw new IllegalArgumentException("Duplicate string in generated lexer: " + name);
+            }
+        }
+        return states;
+    }
+
+    private static void emitState(Method.Builder method, Map<String, Integer> transitions) {
+        if (transitions.isEmpty()) {
+            method.addContentLine("return -1;");
+            return;
+        }
+        Map<Integer, List<Edge>> lengths = new TreeMap<>();
+        transitions.forEach((key, index) -> lengths.computeIfAbsent(key.length(), _ -> new ArrayList<>())
+                .add(Edge.create(key, index)));
+        boolean latin = lengths.values().stream().flatMap(List::stream).allMatch(edge -> edge.high == 0);
+        if (latin) {
+            method.addContentLine("if (high != 0) {").addContentLine("return -1;").addContentLine("}");
+        }
+        if (lengths.size() == 1) {
+            var only = lengths.entrySet().iterator().next();
+            method.addContentLine("if (length != " + only.getKey() + ") {").addContentLine("return -1;").addContentLine("}");
+            emitEdges(method, only.getValue(), latin);
+            return;
+        }
+        method.addContentLine("switch (length) {");
+        lengths.forEach((length, edges) -> {
+            method.addContentLine("case " + length + " -> {");
+            emitEdges(method, edges, latin);
+            method.addContentLine("}");
+        });
+        method.addContentLine("default -> {").addContentLine("return -1;").addContentLine("}").addContentLine("}");
+    }
+
+    private static void emitEdges(Method.Builder method, List<Edge> edges, boolean latin) {
+        if (edges.size() == 1) {
+            Edge edge = edges.getFirst();
+            String condition = "low == " + literal(edge.low);
+            if (!latin) {
+                condition += " && high == " + literal(edge.high);
+            }
+            method.addContentLine("return " + condition + " ? " + edge.target + " : -1;");
+            return;
+        }
+        // Partition by a byte that distinguishes the most remaining transitions. Every leaf checks the complete block.
+        int best = 0;
+        int most = 0;
+        for (int lane = 0; lane < (latin ? Long.BYTES : 2 * Long.BYTES); lane++) {
+            int position = lane;
+            int distinct = (int) edges.stream().mapToInt(edge -> edge.digit(position)).distinct().count();
+            if (distinct > most) {
+                most = distinct;
+                best = position;
+            }
+        }
+        Map<Integer, List<Edge>> groups = new TreeMap<>();
+        for (Edge edge : edges) {
+            groups.computeIfAbsent(edge.digit(best), _ -> new ArrayList<>()).add(edge);
+        }
+        String word = best < Long.BYTES ? "low" : "high";
+        int shift = (best % Long.BYTES) * Byte.SIZE;
+        method.addContentLine("switch ((int) (" + word + " >>> " + shift + ") & 0xff) {");
+        groups.forEach((digit, matches) -> {
+            method.addContentLine("case " + digit + " -> {");
+            emitEdges(method, matches, latin);
+            method.addContentLine("}");
+        });
+        method.addContentLine("default -> {").addContentLine("return -1;").addContentLine("}").addContentLine("}");
+    }
+
+    private static String literal(long word) {
+        return "0x" + Long.toHexString(word) + "L";
+    }
+
+    // Several prefixes can finish with the same literal but different ordinals. Put the ordinal in
+    // the transition to the shared suffix so one comparison handles all those accepting states.
+    private record DecodedPlan(List<Map<String, Integer>> states, List<String> suffixes, int stride) {
+        private static DecodedPlan compact(List<Map<String, Integer>> states, int nameCount) {
+            if (states.size() <= STATES_PER_METHOD) {
+                return new DecodedPlan(states, List.of(), 0);
+            }
+            Map<String, Integer> counts = new LinkedHashMap<>();
+            for (int i = 1; i < states.size(); i++) {
+                var edges = states.get(i);
+                if (edges.size() == 1) {
+                    String suffix = edges.keySet().iterator().next();
+                    if (suffix.length() < Long.BYTES) {
+                        counts.merge(suffix, 1, Integer::sum);
+                    }
+                }
+            }
+            Map<String, Integer> groups = new LinkedHashMap<>();
+            counts.forEach((suffix, count) -> {
+                if (count > 1) {
+                    groups.put(suffix, groups.size() + 1);
+                }
+            });
+            if (groups.isEmpty()) {
+                return new DecodedPlan(states, List.of(), 0);
+            }
+            int stride = Integer.highestOneBit(Math.max(nameCount, states.size()) - 1) << 1;
+            int[] ids = new int[states.size()];
+            List<Map<String, Integer>> compact = new ArrayList<>();
+            for (int i = 0; i < states.size(); i++) {
+                var edges = states.get(i);
+                if (i > 0 && edges.size() == 1) {
+                    var edge = edges.entrySet().iterator().next();
+                    Integer group = groups.get(edge.getKey());
+                    if (group != null) {
+                        ids[i] = group * stride + edge.getValue();
+                        continue;
+                    }
+                }
+                ids[i] = compact.size();
+                compact.add(new LinkedHashMap<>());
+            }
+            for (int i = 0; i < states.size(); i++) {
+                if (ids[i] < stride) {
+                    var target = compact.get(ids[i]);
+                    states.get(i).forEach((word, index) -> {
+                        if (word.length() == Long.BYTES) {
+                            target.put(word, ids[index]);
+                        } else {
+                            target.put(word, index);
+                        }
+                    });
+                }
+            }
+            return new DecodedPlan(compact, List.copyOf(groups.keySet()), stride);
+        }
+
+        private void emitSuffixes(Method.Builder method) {
+            if (suffixes.isEmpty()) {
+                return;
+            }
+            method.addContentLine("if (state >= " + stride + ") {");
+            if (suffixes.size() > 1) {
+                method.addContentLine("return switch (state / " + stride + ") {");
+            }
+            for (int i = 0; i < suffixes.size(); i++) {
+                String suffix = suffixes.get(i);
+                Edge word = Edge.create(suffix, 0);
+                String start = suffixes.size() == 1 ? "return " : "case " + (i + 1) + " -> ";
+                method.addContentLine(start + "length == " + suffix.length() + " && low == " + literal(word.low)
+                                              + " && high == " + literal(word.high) + " ? state & " + (stride - 1) + " : -1;");
+            }
+            if (suffixes.size() > 1) {
+                method.addContentLine("default -> -1;").addContent("}").addContentLine(";");
+            }
+            method.addContentLine("}");
+        }
+    }
+
+    private record AsciiEdge(String name, int ordinal) {
+        private int at(int position) {
+            return position == name.length() ? '"' : name.charAt(position);
+        }
+    }
+
+    private record Edge(long low, long high, int target) {
+        static Edge create(String key, int target) {
+            long low = 0;
+            long high = 0;
+            for (int i = 0; i < key.length(); i++) {
+                char unit = key.charAt(i);
+                low |= (unit & 0xffL) << (i * Byte.SIZE);
+                high |= (long) (unit >>> Byte.SIZE) << (i * Byte.SIZE);
+            }
+            return new Edge(low, high, target);
+        }
+
+        int digit(int lane) {
+            long word = lane < Long.BYTES ? low : high;
+            return (int) (word >>> ((lane % Long.BYTES) * Byte.SIZE)) & 0xff;
+        }
+    }
+}
