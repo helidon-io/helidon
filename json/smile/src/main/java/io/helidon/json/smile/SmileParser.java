@@ -38,6 +38,7 @@ import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
 import io.helidon.json.JsonParserBase;
 import io.helidon.json.JsonString;
+import io.helidon.json.JsonStringLookup;
 import io.helidon.json.JsonValue;
 import io.helidon.json.Parsers;
 
@@ -436,6 +437,35 @@ public final class SmileParser extends JsonParserBase {
             checkNextAfterValue();
         }
         return result;
+    }
+
+    @Override
+    public int readString(JsonStringLookup lookup) {
+        Objects.requireNonNull(lookup);
+        if (currentToken != '"') {
+            throw createException("Start of a string expected", currentByte());
+        }
+        if (!keyExpected && !sharedValuesEnabled
+                && currentByte >= SmileConstants.VALUE_TINY_ASCII_MIN
+                && currentByte <= SmileConstants.VALUE_SHORT_UNICODE_MAX) {
+            int length = analyzeStringAndObtainLength();
+            if (length >= bufferLength - currentIndex) {
+                throw createException("Unexpected end of the JSON. Needed " + length
+                                              + " bytes but only " + (bufferLength - currentIndex - 1) + " remain");
+            }
+            int start = currentIndex + 1;
+            if (stringAscii) {
+                validateSmileString(buffer, start, length, true);
+            }
+            int index = lookup.matchUtf8(buffer, start, length);
+            if (index < 0 && !stringAscii) {
+                validateSmileString(buffer, start, length, false);
+            }
+            currentIndex += length;
+            checkNextAfterValue();
+            return index;
+        }
+        return lookup.match(readString());
     }
 
     @Override
@@ -891,6 +921,9 @@ public final class SmileParser extends JsonParserBase {
             break;
         case '1':
             skipNumber();
+            break;
+        case 'B':
+            skipBinary();
             break;
         case 't':
         case 'n':
@@ -1705,6 +1738,25 @@ public final class SmileParser extends JsonParserBase {
             throw createException("Unknown number type: " + b);
         }
         return number.toString().toCharArray();
+    }
+
+    private void skipBinary() {
+        boolean raw = currentByte == (SmileConstants.TOKEN_BINARY_RAW & 0xFF);
+        if (raw && !rawBinaryEnabled) {
+            throw createException("Raw binary not enabled in header");
+        }
+        long length = readUnsignedVInt();
+        if (length < 0 || length > Integer.MAX_VALUE) {
+            throw createException("Invalid binary value length");
+        }
+        if (!raw) {
+            length = (length * 8 + 6) / 7;
+        }
+        if (length > bufferLength - currentIndex - 1) {
+            throw createException("Unexpected end of binary value");
+        }
+        currentIndex += (int) length;
+        checkNextAfterValue();
     }
 
     private void skipNumber() {

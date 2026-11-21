@@ -22,7 +22,9 @@ import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.Objects;
 
 import io.helidon.common.buffers.BufferData;
 
@@ -142,12 +144,9 @@ final class JsonParserStream extends JsonParserBase {
 
                 // 2. Grow the backing array if it still cannot hold currentIndex + amount + 1 bytes.
                 int required = currentIndex + amount + 1;
-                if (required > bufferLength) {
-                    // Round up to the nearest configuredBufferSize multiple to avoid many small grows.
-                    int newSize = buffer.length;
-                    while (newSize < required) {
-                        newSize += configuredBufferSize;
-                    }
+                if (required > buffer.length) {
+                    int newSize = (int) Math.min(Integer.MAX_VALUE,
+                                                Math.max((long) required, (long) buffer.length * 2));
                     byte[] newBuffer = new byte[newSize];
                     System.arraycopy(buffer, 0, newBuffer, 0, kept);
                     buffer = newBuffer;
@@ -496,6 +495,20 @@ final class JsonParserStream extends JsonParserBase {
 
     void increaseStringBuffer() {
         increaseStringBuffer(stringBufferLength * 2);
+    }
+
+    @Override
+    public int readString(JsonStringLookup lookup) {
+        Objects.requireNonNull(lookup);
+        if (buffer[currentIndex] != '"') {
+            throw createException("Start of a string expected", currentByte());
+        }
+        long match = lookup.match(buffer, currentIndex + 1, bufferLength);
+        if (match >= 0) {
+            currentIndex = (int) (match >>> 32);
+            return (int) match;
+        }
+        return readStringForLookup(lookup);
     }
 
     @Override
@@ -1361,6 +1374,70 @@ final class JsonParserStream extends JsonParserBase {
             currentIndex = bufferLength - 1;
             readMoreData();
             index = currentIndex + 1;
+        }
+    }
+
+    private int readStringForLookup(JsonStringLookup lookup) {
+        JsonStringLookup.DecodedTrie trie = lookup.decodedTrie();
+        expectLowSurrogate = false;
+        int state = 0;
+        long node = trie.node(state);
+        while (true) {
+            byte b = readNextByte();
+            int codePoint;
+            if (b == '\\') {
+                codePoint = processEscapedSequence();
+            } else if (expectLowSurrogate) {
+                throw createException("Low surrogate must follow the high surrogate.", b);
+            } else if (b == '"') {
+                return trie.match(state);
+            } else if (b >= 0) {
+                if (b < 0x20) {
+                    throw createException("Unescaped control character not allowed in string", b);
+                }
+                int word = (int) (node >>> 32);
+                if (word != 0 && bufferLength - currentIndex >= Integer.BYTES
+                        && JsonStringLookup.matchesAscii(word, buffer, currentIndex)) {
+                    state += Integer.BYTES;
+                    node = trie.node(state);
+                    currentIndex += Integer.BYTES - 1;
+                    continue;
+                }
+                codePoint = b;
+            } else {
+                codePoint = readUtf8CodePoint(b);
+            }
+            if (codePoint >= 0x10000) {
+                state = trie.advance(state, (int) node, Character.highSurrogate(codePoint));
+                if (state >= 0) {
+                    node = trie.node(state);
+                    state = trie.advance(state, (int) node, Character.lowSurrogate(codePoint));
+                }
+            } else {
+                state = trie.advance(state, (int) node, (char) codePoint);
+            }
+            if (state < 0) {
+                validateStringTail();
+                return -1;
+            }
+            node = trie.node(state);
+        }
+    }
+
+    private void validateStringTail() {
+        while (true) {
+            byte b = readNextByte();
+            if (b == '\\') {
+                processEscapedSequence();
+            } else if (expectLowSurrogate) {
+                throw createException("Low surrogate must follow the high surrogate.", b);
+            } else if (b == '"') {
+                return;
+            } else if (b < 0) {
+                readUtf8CodePoint(b);
+            } else if (b < 0x20) {
+                throw createException("Unescaped control character not allowed in string", b);
+            }
         }
     }
 
@@ -2539,10 +2616,8 @@ final class JsonParserStream extends JsonParserBase {
         } else {
             // Short reads can leave room in the buffer; expand only when it is full.
             if (bufferLength == buffer.length) {
-                int newCap = buffer.length + configuredBufferSize;
-                byte[] tmp = new byte[newCap];
-                System.arraycopy(buffer, 0, tmp, 0, bufferLength);
-                buffer = tmp;
+                int newCap = Math.addExact(buffer.length, Math.max(configuredBufferSize, buffer.length));
+                buffer = Arrays.copyOf(buffer, newCap);
             }
             int lastRead = inputStream.read(buffer, bufferLength, buffer.length - bufferLength);
             if (lastRead == -1) {

@@ -295,15 +295,35 @@ public interface JsonParser {
     String readString();
 
     /**
+     * Read a string and find its complete decoded value in a precomputed lookup.
+     * Implementations may match directly against input bytes without allocating a string.
+     * The parser advances exactly as for {@link #readString()}, including for an unknown value.
+     *
+     * @param lookup strings to match
+     * @return zero-based position in the lookup, or {@code -1} if the string is absent
+     * @throws JsonException if the current token is not a string or parsing fails
+     */
+    default int readString(JsonStringLookup lookup) {
+        Objects.requireNonNull(lookup);
+        if (currentByte() != '"') {
+            throw createException("Start of a string expected", currentByte());
+        }
+        return lookup.match(readString());
+    }
+
+    /**
      * Reads a string value and returns its FNV-1a hash.
      * <p>
-     * This method is optimized for performance when only string comparison
-     * is needed, avoiding string object allocation.
+     * This method avoids string object allocation. Hashes are not unique and must not be used alone
+     * to identify a string. Use {@link #readString(JsonStringLookup)} to match complete decoded names
+     * against a precomputed lookup.
      * </p>
      *
      * @return the hash of the string value
      * @throws JsonException if the next token is not a string or parsing fails
+     * @deprecated use {@link #readString(JsonStringLookup)} to match complete string values
      */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     int readStringAsHash();
 
     /**
