@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 
 import io.helidon.json.JsonException;
 import io.helidon.json.JsonParser;
+import io.helidon.json.JsonStringLexer;
 import io.helidon.json.JsonValue;
 import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
@@ -186,6 +187,42 @@ class HashCollisionDispatchTest {
         String json = "{\"costar\\u0072ing\":\"pro\\u006aect\",\"value\":\"payments\"}";
         assertThat(jsonBinding.deserialize(input.parser(json, jsonBinding), PolymorphicRequest.class),
                    is(new ProjectRequest("payments")));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserInput.class)
+    void readsNestedPropertyHeadersWithAlternateParsers(ParserInput input) {
+        JsonParser parser = input.parser("{\"child\":{\"value\":1},\"extra\":[1],\"value\":2}", jsonBinding);
+        JsonStringLexer names = JsonStringLexer.create("child", "value");
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(parser.readProperty(names), is(0));
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(parser.readProperty(names), is(1));
+        assertThat(parser.readInt(), is(1));
+        assertThat(parser.nextProperty(names), is(JsonParser.END_OBJECT));
+        assertThat(parser.nextProperty(names), is(-1));
+        parser.skip();
+        assertThat(parser.nextProperty(names), is(1));
+        assertThat(parser.readInt(), is(2));
+        assertThat(parser.nextProperty(names), is(JsonParser.END_OBJECT));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserInput.class)
+    void advancesAfterReadingACompleteContainer(ParserInput input) {
+        String document = "{\"child\":{\"value\":7},\"list\":[3],\"node\":{\"value\":9},\"value\":2}";
+        JsonParser parser = input.parser(document, jsonBinding);
+        JsonStringLexer names = JsonStringLexer.create("child", "list", "node", "value");
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(parser.readProperty(names), is(0));
+        assertThat(parser.readJsonObject(), is(JsonParser.create("{\"value\":7}").readJsonObject()));
+        assertThat(parser.nextProperty(names), is(1));
+        assertThat(parser.readJsonArray(), is(JsonParser.create("[3]").readJsonArray()));
+        assertThat(parser.nextProperty(names), is(2));
+        assertThat(parser.readJsonValue(), is(JsonParser.create("{\"value\":9}").readJsonValue()));
+        assertThat(parser.nextProperty(names), is(3));
+        assertThat(parser.readInt(), is(2));
+        assertThat(parser.nextProperty(names), is(JsonParser.END_OBJECT));
     }
 
     @ParameterizedTest

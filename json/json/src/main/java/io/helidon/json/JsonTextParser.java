@@ -81,6 +81,44 @@ abstract class JsonTextParser extends JsonParserBase {
         return readDecoded(lexer, state, 0, 0, 0);
     }
 
+    final int nextProperty(JsonStringLexer lexer, byte[] input, int position, int limit) {
+        Objects.requireNonNull(lexer);
+        int remaining = limit - position;
+        if (remaining > 1 && input[position + 1] == '}') {
+            stringPosition(position + 1);
+            return END_OBJECT;
+        }
+        if (remaining > 2 && input[position + 1] == ',' && input[position + 2] == '"') {
+            return readProperty(lexer, input, position + 2, limit);
+        }
+        return Parsers.nextProperty(this, lexer);
+    }
+
+    final int readProperty(JsonStringLexer lexer, byte[] input, int quote, int limit) {
+        Objects.requireNonNull(lexer);
+        if (input[quote] != '"') {
+            throw createException("Expected a quoted property name", input[quote]);
+        }
+        if (lexer instanceof AsciiStringLexer raw) {
+            int start = quote + 1;
+            long hit = raw.recognize(input, start, limit);
+            if (hit >= 0) {
+                int end = start + (int) (hit >>> Integer.SIZE);
+                if (limit - end > 2 && input[end + 1] == ':' && !JsonParserArray.WHITESPACE_CHARS[input[end + 2] & 0xff]) {
+                    stringPosition(end + 2);
+                } else {
+                    stringPosition(end);
+                    Parsers.propertyValue(this);
+                }
+                return (int) hit;
+            }
+            lexer = raw.decoded();
+        }
+        int ordinal = readString(lexer, input, quote, limit);
+        Parsers.propertyValue(this);
+        return Math.max(-1, ordinal);
+    }
+
     abstract void stringPosition(int position);
 
     abstract byte readNextByte();

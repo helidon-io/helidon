@@ -24,6 +24,7 @@ import java.util.Base64;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 class JsonValueParser extends JsonParserBase {
 
@@ -98,6 +99,16 @@ class JsonValueParser extends JsonParserBase {
     @Override
     public byte currentByte() {
         return current.jsonStartChar();
+    }
+
+    @Override
+    public int nextProperty(JsonStringLexer lexer) {
+        Objects.requireNonNull(lexer);
+        // Tree-valued readers return the complete node while the cursor still points at its start.
+        if (current instanceof JsonObject || current instanceof JsonArray) {
+            skip();
+        }
+        return Parsers.nextProperty(this, lexer);
     }
 
     @Override

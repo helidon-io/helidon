@@ -103,6 +103,26 @@ public final class Parsers {
         return val;
     }
 
+    static int nextProperty(JsonParser parser, JsonStringLexer lexer) {
+        byte token = parser.nextToken();
+        if (token == '}') {
+            return JsonParser.END_OBJECT;
+        }
+        if (token != ',') {
+            throw parser.createException("Expected ',' or '}'", token);
+        }
+        parser.nextToken();
+        return parser.readProperty(lexer);
+    }
+
+    static void propertyValue(JsonParser parser) {
+        byte token = parser.nextToken();
+        if (token != ':') {
+            throw parser.createException("Expected ':' to separate key and value", token);
+        }
+        parser.nextToken();
+    }
+
     static int hexPair(byte high, byte low) {
         return (HEX_DIGITS[high & 0xff] << 4) | HEX_DIGITS[low & 0xff];
     }

@@ -106,6 +106,16 @@ final class JsonParserStream extends JsonTextParser {
     }
 
     @Override
+    public int readProperty(JsonStringLexer lexer) {
+        return readProperty(lexer, buffer, currentIndex, bufferLength);
+    }
+
+    @Override
+    public int nextProperty(JsonStringLexer lexer) {
+        return nextProperty(lexer, buffer, currentIndex, bufferLength);
+    }
+
+    @Override
     void stringPosition(int position) {
         currentIndex = position;
     }

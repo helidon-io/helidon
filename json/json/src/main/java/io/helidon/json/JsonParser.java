@@ -43,6 +43,11 @@ public interface JsonParser {
     int MAX_NESTING_DEPTH = 1_000;
 
     /**
+     * Result of {@link #nextProperty(JsonStringLexer)} at the closing brace of an object.
+     */
+    int END_OBJECT = -2;
+
+    /**
      * Create a new JSON parser from a JSON string.
      * <p>
      * This method creates an in-memory parser that processes the entire JSON string
@@ -309,6 +314,37 @@ public interface JsonParser {
             throw createException("Start of a string expected", currentByte());
         }
         return lexer.match(readString());
+    }
+
+    /**
+     * Read a property name and advance past its colon to the next token.
+     * The parser must be on the opening quote of the name.
+     *
+     * @param lexer recognizer for the expected decoded property names
+     * @return the matching ordinal, or {@code -1} for an unknown name
+     * @throws JsonException if the name or colon is malformed, or the input ends before the value token
+     */
+    default int readProperty(JsonStringLexer lexer) {
+        Objects.requireNonNull(lexer);
+        byte token = currentByte();
+        if (token != '"') {
+            throw createException("Expected a quoted property name", token);
+        }
+        int ordinal = readString(lexer);
+        Parsers.propertyValue(this);
+        return Math.max(-1, ordinal);
+    }
+
+    /**
+     * Advance from a completed property value to the next property or the closing brace.
+     * A comma must be followed by a quoted name and a colon. At the end of the object the cursor stays on its closing brace.
+     *
+     * @param lexer recognizer for the expected decoded property names
+     * @return the matching ordinal, {@code -1} for an unknown property, or {@link #END_OBJECT} at the end of the object
+     * @throws JsonException if the name or its surrounding delimiters are malformed, or the input ends prematurely
+     */
+    default int nextProperty(JsonStringLexer lexer) {
+        return Parsers.nextProperty(this, Objects.requireNonNull(lexer));
     }
 
     /**

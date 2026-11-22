@@ -277,6 +277,39 @@ class GeneratedSourceMetadataTest {
     }
 
     @Test
+    void propertyLoopVariableDoesNotShadowTheCreatorType() throws IOException {
+        var result = compile("property.java", """
+                package io.helidon.json.tests.generated;
+
+                import io.helidon.json.binding.Json;
+
+                @SuppressWarnings("helidon:api:preview")
+                @Json.Entity
+                public class property {
+                    private final int id;
+
+                    private property(int id) {
+                        this.id = id;
+                    }
+
+                    @Json.Creator
+                    public static property create(int id) {
+                        return new property(id);
+                    }
+
+                    public int getId() {
+                        return id;
+                    }
+                }
+                """);
+
+        assertCompilationSuccess(result);
+        String content = Files.readString(generatedSource(result, "property__GeneratedConverter.java"));
+        assertThat(content, containsString("for (int property = parser.readProperty(PROPERTY_NAMES);"));
+        assertThat(content, containsString("property.create("));
+    }
+
+    @Test
     void propertyConstantsDoNotShadowCreatorTypes() throws IOException {
         var result = compile("URL.java", """
                 package io.helidon.json.tests.generated;

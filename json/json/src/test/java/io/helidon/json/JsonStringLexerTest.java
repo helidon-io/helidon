@@ -285,6 +285,107 @@ class JsonStringLexerTest {
         }
     }
 
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    void readsPropertyNamesAndTheirDelimitersAcrossRefills(ParserMethod method) {
+        String[] names = {"id", "label", "東京"};
+        JsonStringLexer lexer = JsonStringLexer.withUtf8(JsonStringLexer.create(names), (_, _) -> 0, 0, names);
+        for (int size : List.of(6, 9, 23, 64)) {
+            String document = "{\"id\":1, \n \"unknown\\u0078\" \t: [1,2],\"東京\":{\"label\":3},\"id\":4 \n}";
+            JsonParser parser = method.createParser(document, size);
+            parser.mark();
+            for (int pass = 0; pass < 2; pass++) {
+                if (pass > 0) {
+                    parser.resetToMark();
+                }
+                assertThat(parser.nextToken(), is((byte) '"'));
+                assertThat(parser.readProperty(lexer), is(0));
+                assertThat(parser.readInt(), is(1));
+                assertThat(parser.nextProperty(lexer), is(-1));
+                assertThat(parser.currentByte(), is((byte) '['));
+                parser.skip();
+                assertThat(parser.nextProperty(lexer), is(2));
+                assertThat(parser.currentByte(), is((byte) '{'));
+                assertThat(parser.nextToken(), is((byte) '"'));
+                assertThat(parser.readProperty(lexer), is(1));
+                assertThat(parser.readInt(), is(3));
+                assertThat(parser.nextProperty(lexer), is(JsonParser.END_OBJECT));
+                assertThat(parser.nextProperty(lexer), is(0));
+                assertThat(parser.readInt(), is(4));
+                assertThat(parser.nextProperty(lexer), is(JsonParser.END_OBJECT));
+                assertThat(parser.currentByte(), is((byte) '}'));
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    void rejectsMalformedPropertyHeaders(ParserMethod method) {
+        JsonStringLexer lexer = JsonStringLexer.create("a", "b");
+        for (String document : List.of("{,}", "{,\"a\":1}", "{a:1}", "{\"a\" 1}", "{\"a\":", "{\"a\\u00Q1\":1}")) {
+            JsonParser parser = method.createParser(document, 6);
+            parser.nextToken();
+            assertThrows(JsonException.class, () -> parser.readProperty(lexer));
+        }
+        for (String tail : List.of(",}", " \"b\":2}", ",1:2}", ",\"b\" 2}", ",\"b\":", ",")) {
+            JsonParser parser = method.createParser("{\"a\":1" + tail, 6);
+            assertThat(parser.nextToken(), is((byte) '"'));
+            assertThat(parser.readProperty(lexer), is(0));
+            assertThat(parser.readInt(), is(1));
+            assertThrows(JsonException.class, () -> parser.nextProperty(lexer));
+        }
+        JsonParser malformed = method.createParser("{\"other\":tru{\"a\":2}", 32);
+        malformed.nextToken();
+        assertThat(malformed.readProperty(lexer), is(-1));
+        assertThrows(JsonException.class, () -> {
+            malformed.skip();
+            malformed.nextProperty(lexer);
+        });
+        assertThrows(NullPointerException.class, () -> method.createParser("\"a\":0").readProperty(null));
+        assertThrows(NullPointerException.class, () -> method.createParser("0}").nextProperty(null));
+    }
+
+    @Test
+    void propertyHeaderHonorsTheLogicalArraySlice() {
+        byte[] bytes = "xx{\"abcdefgh\":7}xx".getBytes(StandardCharsets.UTF_8);
+        JsonStringLexer lexer = JsonStringLexer.withAscii(JsonStringLexer.create("abcdefgh"), (_, _) -> 0, "abcdefgh");
+        for (int length = 2; length < 13; length++) {
+            JsonParser parser = JsonParser.create(bytes, 2, length);
+            parser.nextToken();
+            assertThrows(JsonException.class, () -> parser.readProperty(lexer));
+        }
+        JsonParser parser = JsonParser.create(bytes, 2, 13);
+        parser.nextToken();
+        assertThat(parser.readProperty(lexer), is(0));
+        assertThat(parser.readInt(), is(7));
+        assertThrows(JsonException.class, () -> parser.nextProperty(lexer));
+        JsonParser complete = JsonParser.create(bytes, 2, 14);
+        complete.nextToken();
+        assertThat(complete.readProperty(lexer), is(0));
+        assertThat(complete.readInt(), is(7));
+        assertThat(complete.nextProperty(lexer), is(JsonParser.END_OBJECT));
+    }
+
+    @Test
+    void subsequentPropertyHonorsTheLogicalArraySlice() {
+        byte[] bytes = "xx{\"a\":1,\"a\":2}xx".getBytes(StandardCharsets.UTF_8);
+        JsonStringLexer lexer = JsonStringLexer.create("a");
+        for (int length = 6; length < 12; length++) {
+            JsonParser parser = JsonParser.create(bytes, 2, length);
+            parser.nextToken();
+            assertThat(parser.readProperty(lexer), is(0));
+            assertThat(parser.readInt(), is(1));
+            assertThrows(JsonException.class, () -> parser.nextProperty(lexer));
+        }
+        JsonParser complete = JsonParser.create(bytes, 2, 13);
+        complete.nextToken();
+        assertThat(complete.readProperty(lexer), is(0));
+        assertThat(complete.readInt(), is(1));
+        assertThat(complete.nextProperty(lexer), is(0));
+        assertThat(complete.readInt(), is(2));
+        assertThat(complete.nextProperty(lexer), is(JsonParser.END_OBJECT));
+    }
+
     private static String escapedAt(String value, int first, int second) {
         StringBuilder wire = new StringBuilder();
         for (int i = 0; i < value.length(); i++) {

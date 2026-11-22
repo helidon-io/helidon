@@ -885,25 +885,23 @@ class JsonConverterGenerator {
         propertyNames.addAll(discriminatorNames);
         boolean hasProperties = !propertyNames.isEmpty();
 
-        method.addContentLine("while(true) {")
-                .addContent("if (lastByte != ")
-                .addContent(BYTES)
-                .addContentLine(".DOUBLE_QUOTE_BYTE) {")
-                .addContentLine("throw parser.createException(\"Expected '\\\"' as a key start\", lastByte);")
-                .addContentLine("}");
         if (hasProperties) {
             StringLexerGenerator.generate(classBuilder, converterInfo.converterType(), "PROPERTY_NAMES", propertyNames);
-            method.addContentLine("int property = parser.readString(PROPERTY_NAMES);");
+            method.addContent("for (int property = parser.readProperty(PROPERTY_NAMES); property != ")
+                    .addContent(JsonTypes.JSON_PARSER)
+                    .addContentLine(".END_OBJECT; property = parser.nextProperty(PROPERTY_NAMES)) {");
         } else {
-            method.addContentLine("parser.skip();");
+            method.addContentLine("while (true) {")
+                    .addContent("if (lastByte != ").addContent(BYTES).addContentLine(".DOUBLE_QUOTE_BYTE) {")
+                    .addContentLine("throw parser.createException(\"Expected '\\\"' as a key start\", lastByte);")
+                    .addContentLine("}")
+                    .addContentLine("parser.skip();")
+                    .addContentLine("lastByte = parser.nextToken();")
+                    .addContent("if (lastByte != ").addContent(BYTES).addContentLine(".COLON_BYTE) {")
+                    .addContentLine("throw parser.createException(\"Expected ':' to separate key and value\", lastByte);")
+                    .addContentLine("}")
+                    .addContentLine("parser.nextToken();");
         }
-        method.addContentLine("lastByte = parser.nextToken();")
-                .addContent("if (lastByte != ")
-                .addContent(BYTES)
-                .addContentLine(".COLON_BYTE) {")
-                .addContentLine("throw parser.createException(\"Expected ':' to separate key and value\", lastByte);")
-                .addContentLine("}")
-                .addContentLine("parser.nextToken();");
         if (hasProperties) {
             method.addContentLine("switch (property) {");
             Set<String> processedTypes = new HashSet<>();
@@ -946,6 +944,10 @@ class JsonConverterGenerator {
                     .addContent(converterInfo.converterType()).addContentLine(".class.getName());");
         } else {
             method.addContentLine("parser.skip();");
+        }
+        if (hasProperties) {
+            method.addContentLine("}");
+            return;
         }
         method.addContentLine("lastByte = parser.nextToken();")
                 .addContent("if (lastByte == ")
