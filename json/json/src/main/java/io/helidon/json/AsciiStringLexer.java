@@ -21,6 +21,8 @@ import java.util.Arrays;
 import java.util.Objects;
 
 abstract class AsciiStringLexer implements JsonStringLexer {
+    private static final int MAX_SINGLE_WORD_NAMES = 12;
+
     private final JsonStringLexer decoded;
 
     private AsciiStringLexer(JsonStringLexer decoded) {
@@ -37,7 +39,14 @@ abstract class AsciiStringLexer implements JsonStringLexer {
                 return new Single(decoded, literal);
             }
         }
-        return new Multiple(decoded, selector, names);
+        Literal[] literals = new Literal[names.length];
+        boolean singleWord = names.length >= 2 && names.length <= MAX_SINGLE_WORD_NAMES;
+        for (int i = 0; i < names.length; i++) {
+            Literal literal = Literal.create(Objects.requireNonNull(names[i]));
+            literals[i] = literal;
+            singleWord = singleWord && literal != null && literal.length < Long.BYTES;
+        }
+        return singleWord ? new SingleWord(decoded, selector, literals) : new Multiple(decoded, selector, literals);
     }
 
     static JsonStringLexer withUtf8(JsonStringLexer decoded, Utf8Selector selector, int offset, String[] names) {
@@ -83,17 +92,45 @@ abstract class AsciiStringLexer implements JsonStringLexer {
         }
     }
 
+    // The first word includes the entire literal and its closing quote. The selector can inspect both input words.
+    private static final class SingleWord extends AsciiStringLexer {
+        private final AsciiSelector selector;
+        private final Literal[] literals;
+
+        private SingleWord(JsonStringLexer decoded, AsciiSelector selector, Literal[] literals) {
+            super(decoded);
+            this.selector = selector;
+            this.literals = literals;
+        }
+
+        @Override
+        long recognize(byte[] input, int start, int limit) {
+            int available = limit - start;
+            if (available < Long.BYTES) {
+                return -1;
+            }
+            long first = JsonTextParser.word(input, start);
+            long second = available >= 2 * Long.BYTES ? JsonTextParser.word(input, start + Long.BYTES)
+                    : partialSecond(input, limit, available);
+            int ordinal = selector.select(first, second);
+            if (ordinal >= 0 && ordinal < literals.length) {
+                Literal literal = literals[ordinal];
+                if ((first & literal.firstMask) == literal.first) {
+                    return ((long) literal.length << Integer.SIZE) | ordinal;
+                }
+            }
+            return -1;
+        }
+    }
+
     private static final class Multiple extends AsciiStringLexer {
         private final AsciiSelector selector;
         private final Literal[] literals;
 
-        private Multiple(JsonStringLexer decoded, AsciiSelector selector, String[] names) {
+        private Multiple(JsonStringLexer decoded, AsciiSelector selector, Literal[] literals) {
             super(decoded);
             this.selector = selector;
-            literals = new Literal[names.length];
-            for (int i = 0; i < names.length; i++) {
-                literals[i] = Literal.create(Objects.requireNonNull(names[i]));
-            }
+            this.literals = literals;
         }
 
         @Override

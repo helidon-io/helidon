@@ -540,6 +540,77 @@ class JsonStringLexerTest {
         }
     }
 
+    @Test
+    void shortAsciiNamesStillPassThePhysicalSecondWordToTheSelector() {
+        String[] names = {"a", "ab", "abcdefg"};
+        JsonStringLexer decoded = JsonStringLexer.create(names);
+        byte[] data = "pre\"a\":1234567890abcdef-extra".getBytes(StandardCharsets.UTF_8);
+        for (int available = Long.BYTES; available <= 2 * Long.BYTES; available++) {
+            long second = 0;
+            for (int i = Long.BYTES; i < available; i++) {
+                second |= (data[4 + i] & 0xffL) << ((i - Long.BYTES) * Byte.SIZE);
+            }
+            long[] supplied = {-1, -1};
+            JsonStringLexer lexer = JsonStringLexer.withAscii(decoded, (first, following) -> {
+                supplied[0] = first;
+                supplied[1] = following;
+                return 0;
+            }, names);
+            JsonParser parser = JsonParser.create(data, 3, available + 1);
+            assertThat(parser.readString(lexer), is(0));
+            assertThat(supplied[0], is(0x35343332313a2261L));
+            assertThat(supplied[1], is(second));
+            assertThat(parser.currentByte(), is((byte) '"'));
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    void verifiesShortCandidatesThroughTheirClosingQuote(ParserMethod method) {
+        String[] names = {"", "a", "ab", "abcd", "abcde", "abcdef", "abcdefg"};
+        JsonStringLexer decoded = JsonStringLexer.create(names);
+        for (int i = 0; i < names.length; i++) {
+            int guess = i;
+            JsonStringLexer lexer = JsonStringLexer.withAscii(decoded, (_, _) -> guess, names);
+            for (int size : List.of(6, 32)) {
+                String wire = "\"" + names[i] + "\":123456789";
+                JsonParser parser = method.createParser(wire, size);
+                assertThat(parser.readString(lexer), is(i));
+                assertThat(parser.nextToken(), is((byte) ':'));
+                String near = "\"" + names[i] + "~\":123456789";
+                assertThat(method.createParser(near, size).readProperty(lexer), is(-1));
+                int other = (i + 1) % names.length;
+                assertThat(method.createParser("\"" + names[other] + "\":123456789", size).readProperty(lexer), is(other));
+            }
+        }
+        String longest = names[names.length - 1];
+        JsonStringLexer predicted = JsonStringLexer.withAscii(decoded, (_, _) -> names.length - 1, names);
+        for (int i = 0; i < longest.length(); i++) {
+            char[] changed = longest.toCharArray();
+            changed[i] = '~';
+            JsonParser parser = method.createParser("\"" + new String(changed) + "\":123456789", 32);
+            assertThat(parser.readProperty(predicted), is(-1));
+        }
+        JsonStringLexer invalid = JsonStringLexer.withAscii(decoded, (_, _) -> Integer.MAX_VALUE, names);
+        assertThat(method.createParser("\"a\\u0062\":0", 32).readProperty(invalid), is(2));
+    }
+
+    @Test
+    void shortVocabulariesOwnTheirNamesAtTheStrategyBoundary() {
+        for (int count : List.of(2, 12, 13)) {
+            String[] names = new String[count];
+            for (int i = 0; i < count; i++) {
+                names[i] = "key" + i;
+            }
+            int last = count - 1;
+            String expected = names[last];
+            JsonStringLexer lexer = JsonStringLexer.withAscii(JsonStringLexer.create(names), (_, _) -> last, names);
+            names[last] = "changed";
+            assertThat(JsonParser.create("\"" + expected + "\":123456789").readProperty(lexer), is(last));
+            assertThat(JsonParser.create("\"changed\":123456789").readProperty(lexer), is(-1));
+        }
+    }
+
     private static String escapedAt(String value, int first, int second) {
         StringBuilder wire = new StringBuilder();
         for (int i = 0; i < value.length(); i++) {
