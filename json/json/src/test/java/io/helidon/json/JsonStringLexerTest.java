@@ -207,4 +207,93 @@ class JsonStringLexerTest {
         assertThrows(IllegalArgumentException.class, () -> JsonStringLexer.withUtf8(decoded, (_, _) -> 0, -1, names));
         assertThrows(IllegalArgumentException.class, () -> JsonStringLexer.withUtf8(decoded, (_, _) -> 0, 9, names));
     }
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    void compactEscapesCrossEachWordBoundary(ParserMethod method) {
+        String name = "abcdefghijklmnopqrstuvw";
+        String[] names = {name, "other"};
+        JsonStringLexer lexer = JsonStringLexer.withUtf8(JsonStringLexer.create(names), (_, _) -> 0, 0, names);
+        for (int a : List.of(0, 6, 7, 8, 14, 15, 16, 21)) {
+            for (int b : List.of(a + 1, 22)) {
+                String wire = escapedAt(name, a, b);
+                for (int buffer : List.of(7, 64)) {
+                    for (String value : List.of(wire, "x" + wire)) {
+                        JsonParser p = method.createParser("\"" + value + "\",12345678901234567890", buffer);
+                        int ordinal = value.equals(wire) ? 0 : -1;
+                        p.mark();
+                        assertThat(p.readString(lexer), is(ordinal));
+                        assertThat(p.currentByte(), is((byte) '"'));
+                        assertThat(p.nextToken(), is((byte) ','));
+                        p.resetToMark();
+                        assertThat(p.readString(lexer), is(ordinal));
+                    }
+                }
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    void resumesEscapesWithHighBytesAndSurrogatesAcrossRefills(ParserMethod method) {
+        String[] names = {"abcdefg東京xyz", "abcdefg😀xyz", "abcdefg東😀xyz", "a東éabcdefghijkl", "a東\"abcdefghijkl"};
+        JsonStringLexer lexer = JsonStringLexer.create(names);
+        List<String> spellings = List.of("abcdefg\\u6771\\u4EACxyz", "abcdefg\\uD83D\\uDE00xyz",
+                                         "abcdefg\\u6771\\uD83D\\uDE00xyz", "a\\u6771éabcdefghijkl", "a\\u6771\\\"abcdefghijkl");
+        for (int i = 0; i < spellings.size(); i++) {
+            for (int buffer = 6; buffer <= 24; buffer++) {
+                JsonParser parser = method.createParser("\"" + spellings.get(i) + "\",1", buffer);
+                assertThat(parser.readString(lexer), is(i));
+                assertThat(parser.nextToken(), is((byte) ','));
+            }
+        }
+        for (String invalid : List.of("abcdefg\\u6771\\uD800!", "abcdefg\\u6771\\uDX00", "abcdefg\\u6771\\uDC00")) {
+            JsonParser parser = method.createParser("\"" + invalid + "\"", 7);
+            assertThrows(JsonException.class, () -> parser.readString(lexer));
+        }
+    }
+
+    @Test
+    void escapedBlocksHonorTheLogicalSlice() {
+        String wire = "\"abc\\u6771defgh\\u00e9xyz\"";
+        byte[] bytes = ("prefix" + wire + ",valid bytes beyond the slice").getBytes(StandardCharsets.UTF_8);
+        JsonStringLexer lexer = JsonStringLexer.create("abc東defghéxyz");
+        for (int length = 1; length < wire.length(); length++) {
+            JsonParser parser = JsonParser.create(bytes, 6, length);
+            assertThrows(JsonException.class, () -> parser.readString(lexer));
+        }
+        assertThat(JsonParser.create(bytes, 6, wire.length()).readString(lexer), is(0));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    void consumesUnknownsOnlyAfterValidatingTheName(ParserMethod method) {
+        String[] names = {"abcde", "axcye", "abcdefgh", "abcdefgh12345678", "", "é"};
+        JsonStringLexer lexer = JsonStringLexer.withUtf8(JsonStringLexer.create(names), (_, _) -> 0, 0, names);
+        for (int i = 0; i < names.length; i++) {
+            JsonParser p = method.createParser("\"" + names[i] + "\",12345678901234567890", 64);
+            assertThat(p.readString(lexer), is(i));
+            assertThat(p.nextToken(), is((byte) ','));
+        }
+        for (String miss : List.of("azcze", "xxxxxxxx", "xxxxxxxxxxxxxxxx", "abcdefghijklmnopqrstuvw")) {
+            JsonParser p = method.createParser("\"" + miss + "\",7", 64);
+            assertThat(p.readString(lexer), is(-1));
+            assertThat(p.nextToken(), is((byte) ','));
+        }
+        for (String invalid : List.of("unknown\\u00FG", "unknown\\u00a", "unknown\\uD800!",
+                                      "unknown\\u0078xxxxxxxx\t", "unknown\\u00e9\\uDC00")) {
+            assertThrows(JsonException.class, () -> method.createParser("\"" + invalid + "\",12345678", 64).readString(lexer));
+        }
+    }
+
+    private static String escapedAt(String value, int first, int second) {
+        StringBuilder wire = new StringBuilder();
+        for (int i = 0; i < value.length(); i++) {
+            if (i == first || i == second) {
+                wire.append("\\u00").append(Integer.toHexString(value.charAt(i)));
+            } else {
+                wire.append(value.charAt(i));
+            }
+        }
+        return wire.toString();
+    }
 }

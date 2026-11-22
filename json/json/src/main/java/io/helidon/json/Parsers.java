@@ -103,6 +103,10 @@ public final class Parsers {
         return val;
     }
 
+    static int hexPair(byte high, byte low) {
+        return (HEX_DIGITS[high & 0xff] << 4) | HEX_DIGITS[low & 0xff];
+    }
+
     static boolean isControlCharacter(byte b) {
         return b >= 0 && b < 0x20;
     }

@@ -35,6 +35,13 @@ abstract class JsonTextParser extends JsonParserBase {
         return (long) WORD.get(input, position);
     }
 
+    static long events(long word) {
+        // Only the first marked byte matters. A borrow may also mark a later byte.
+        return (word | (word - 0x2020202020202020L)
+                | ((word ^ 0x2222222222222222L) - ONES)
+                | ((word ^ 0x5c5c5c5c5c5c5c5cL) - ONES)) & HIGH_BITS;
+    }
+
     final boolean expectsLowSurrogate() {
         return expectLowSurrogate;
     }
@@ -52,16 +59,16 @@ abstract class JsonTextParser extends JsonParserBase {
         int state = 0;
         while (limit - position >= Long.BYTES) {
             long word = (long) WORD.get(input, position);
-            // Only the first marked byte matters. A borrow may also mark a later byte.
-            long events = (word | (word - 0x2020202020202020L)
-                    | ((word ^ 0x2222222222222222L) - ONES)
-                    | ((word ^ 0x5c5c5c5c5c5c5c5cL) - ONES)) & HIGH_BITS;
+            long events = events(word);
             if (events != 0) {
                 int shift = Long.numberOfTrailingZeros(events) & -Byte.SIZE;
                 int end = position + shift / Byte.SIZE;
                 if (input[end] == '"') {
                     stringPosition(end);
                     return state < 0 ? -1 : lexer.advance(state, word & ((1L << shift) - 1), 0, shift / Byte.SIZE);
+                }
+                if (input[end] == '\\') {
+                    return readEscaped(lexer, input, end, limit, state, word & ((1L << shift) - 1), shift);
                 }
                 break;
             }
@@ -71,7 +78,7 @@ abstract class JsonTextParser extends JsonParserBase {
             position += Long.BYTES;
         }
         stringPosition(position - 1);
-        return readDecoded(lexer, state);
+        return readDecoded(lexer, state, 0, 0, 0);
     }
 
     abstract void stringPosition(int position);
@@ -82,11 +89,59 @@ abstract class JsonTextParser extends JsonParserBase {
 
     abstract int readUtf8CodePoint(byte first);
 
-    private int readDecoded(JsonStringLexer lexer, int state) {
-        expectLowSurrogate = false;
-        long low = 0;
+    private int readEscaped(JsonStringLexer lexer, byte[] input, int position, int limit, int state, long low, int shift) {
         long high = 0;
-        int shift = 0;
+        while (position < limit) {
+            byte b = input[position];
+            if (b == '"') {
+                stringPosition(position);
+                return state < 0 ? -1 : lexer.advance(state, low, high, shift / Byte.SIZE);
+            }
+            if (b == '\\') {
+                if (limit - position < 6 || input[position + 1] != 'u') {
+                    break;
+                }
+                int unit = Parsers.hexPair(input[position + 4], input[position + 5]);
+                int upper = input[position + 2] == '0' && input[position + 3] == '0'
+                        ? 0 : Parsers.hexPair(input[position + 2], input[position + 3]);
+                // The existing decoder validates surrogate pairs, including pairs crossing a refill.
+                if ((unit | upper) < 0 || (upper & 0xf8) == 0xd8) {
+                    break;
+                }
+                low |= (long) unit << shift;
+                high |= (long) upper << shift;
+                shift += Byte.SIZE;
+                position += 6;
+            } else if (b < 0x20) {
+                break;
+            } else if (limit - position >= Long.BYTES) {
+                long word = word(input, position);
+                int run = Long.numberOfTrailingZeros(events(word)) / Byte.SIZE;
+                int take = Math.min(Long.BYTES - shift / Byte.SIZE, run);
+                long mask = -1L >>> ((Long.BYTES - take) * Byte.SIZE);
+                low |= (word & mask) << shift;
+                shift += take * Byte.SIZE;
+                position += take;
+            } else {
+                low |= (long) b << shift;
+                shift += Byte.SIZE;
+                position++;
+            }
+            if (shift == Long.SIZE) {
+                if (state >= 0) {
+                    state = lexer.advance(state, low, high, Long.BYTES);
+                }
+                low = 0;
+                high = 0;
+                shift = 0;
+            }
+        }
+        stringPosition(position - 1);
+        return readDecoded(lexer, state, low, high, shift);
+    }
+
+    private int readDecoded(JsonStringLexer lexer, int state, long low, long high, int shift) {
+        expectLowSurrogate = false;
         int remainingUnit = -1;
         while (true) {
             int unit;
