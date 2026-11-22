@@ -57,14 +57,15 @@ public interface JsonStringLexer {
     }
 
     /**
-     * Add a decision tree for short, unescaped UTF-8 spellings. The parser verifies the entire encoded
+     * Add a decision tree for unescaped UTF-8 spellings. The parser verifies the entire encoded
      * name and its closing quote before accepting the selection. Other spellings use the decoded transitions.
      *
      * @param decoded lexer for decoded input
      * @param selector possible ordinal for a bounded two-word window
-     * @param offset first byte of the window relative to the name, from zero to eight
+     * @param offset non-negative byte offset of the selector window relative to the beginning of the name
      * @param names registered names in ordinal order
      * @return lexer with a raw UTF-8 fast path
+     * @throws IllegalArgumentException if the offset is negative
      */
     static JsonStringLexer withUtf8(JsonStringLexer decoded, Utf8Selector selector, int offset, String... names) {
         return AsciiStringLexer.withUtf8(decoded, selector, offset, names);

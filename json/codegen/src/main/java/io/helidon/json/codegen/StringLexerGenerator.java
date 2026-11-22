@@ -56,22 +56,22 @@ final class StringLexerGenerator {
         };
         List<RawEdge> encoded = new ArrayList<>();
         boolean nonAscii = false;
+        boolean longNames = false;
         if (generate) {
             for (int i = 0; i < names.size(); i++) {
                 String name = names.get(i);
-                if (name.length() < 3 * Long.BYTES && name.codePoints().noneMatch(c -> c < 0x20 || c == '"' || c == '\\'
+                if (name.codePoints().noneMatch(c -> c < 0x20 || c == '"' || c == '\\'
                         || c >= Character.MIN_SURROGATE && c <= Character.MAX_SURROGATE)) {
                     byte[] spelling = name.getBytes(StandardCharsets.UTF_8);
-                    if (spelling.length < 3 * Long.BYTES) {
-                        encoded.add(new RawEdge(spelling, i));
-                        nonAscii |= spelling.length != name.length();
-                    }
+                    encoded.add(new RawEdge(spelling, i));
+                    nonAscii |= spelling.length != name.length();
+                    longNames |= spelling.length >= 3 * Long.BYTES;
                 }
             }
         }
-        boolean utf8 = nonAscii;
+        boolean utf8 = nonAscii || longNames;
         String rawMethod = entry + (utf8 ? "Utf8" : "Ascii");
-        int offset = utf8 ? commonPrefix(encoded) : 0;
+        int offset = utf8 ? commonPrefix(encoded, longNames) : 0;
         List<RawEdge> ascii = offset == 0 ? encoded : encoded.stream()
                 .map(edge -> new RawEdge(Arrays.copyOfRange(edge.bytes, offset, edge.bytes.length), edge.ordinal)).toList();
         String positional = ascii.size() >= STATES_PER_METHOD ? positionalOrdinal(ascii) : "";
@@ -121,10 +121,15 @@ final class StringLexerGenerator {
         generateDecoded(owner, entry, DecodedPlan.compact(states, names.size()));
     }
 
-    private static int commonPrefix(List<RawEdge> edges) {
+    private static int commonPrefix(List<RawEdge> edges, boolean longNames) {
         byte[] first = edges.getFirst().bytes;
-        int common = Math.min(Long.BYTES, first.length);
+        if (edges.size() == 1 && longNames) {
+            return 0;
+        }
+        int shortest = first.length;
+        int common = longNames ? shortest : Math.min(Long.BYTES, shortest);
         for (RawEdge edge : edges) {
+            shortest = Math.min(shortest, edge.bytes.length);
             common = Math.min(common, edge.bytes.length);
             for (int i = 0; i < common; i++) {
                 if (first[i] != edge.bytes[i]) {
@@ -133,7 +138,8 @@ final class StringLexerGenerator {
                 }
             }
         }
-        return common;
+        // A complete short spelling and its quote must still contain the first selector word.
+        return longNames ? Math.min(common, Math.max(0, shortest - Long.BYTES + 1)) : common;
     }
 
     private static void generateDecoded(ClassBase.Builder<?, ?> owner, String entry, DecodedPlan plan) {

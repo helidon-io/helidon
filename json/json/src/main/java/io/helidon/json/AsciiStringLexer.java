@@ -17,6 +17,7 @@
 package io.helidon.json;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Objects;
 
 abstract class AsciiStringLexer implements JsonStringLexer {
@@ -43,8 +44,8 @@ abstract class AsciiStringLexer implements JsonStringLexer {
         Objects.requireNonNull(decoded);
         Objects.requireNonNull(selector);
         Objects.requireNonNull(names);
-        if (offset < 0 || offset > Long.BYTES) {
-            throw new IllegalArgumentException("UTF-8 selector offset outside the supported window: " + offset);
+        if (offset < 0) {
+            throw new IllegalArgumentException("Negative UTF-8 selector offset: " + offset);
         }
         return new Utf8(decoded, selector, offset, names);
     }
@@ -122,21 +123,37 @@ abstract class AsciiStringLexer implements JsonStringLexer {
         private final Utf8Selector selector;
         private final int offset;
         private final Literal[] literals;
+        private final byte[][] longNames;
 
         private Utf8(JsonStringLexer decoded, Utf8Selector selector, int offset, String[] names) {
             super(decoded);
             this.selector = selector;
             this.offset = offset;
             this.literals = new Literal[names.length];
+            byte[][] extended = null;
             for (int i = 0; i < names.length; i++) {
-                literals[i] = Literal.create(Objects.requireNonNull(names[i]), true);
+                String name = Objects.requireNonNull(names[i]);
+                if (name.codePoints().anyMatch(c -> c < 0x20 || c == '"' || c == '\\'
+                        || c >= Character.MIN_SURROGATE && c <= Character.MAX_SURROGATE)) {
+                    continue;
+                }
+                byte[] spelling = name.getBytes(StandardCharsets.UTF_8);
+                if (spelling.length < 3 * Long.BYTES) {
+                    literals[i] = Literal.create(name, spelling);
+                } else {
+                    if (extended == null) {
+                        extended = new byte[names.length][];
+                    }
+                    extended[i] = spelling;
+                }
             }
+            longNames = extended;
         }
 
         @Override
         long recognize(byte[] input, int start, int limit) {
             int available = limit - start;
-            if (available < offset + Long.BYTES) {
+            if (offset > available - Long.BYTES) {
                 return -1;
             }
             int window = start + offset;
@@ -149,6 +166,13 @@ abstract class AsciiStringLexer implements JsonStringLexer {
                 if (literal != null && literal.matchesSingle(input, start, available)) {
                     return ((long) literal.length << Integer.SIZE) | ordinal;
                 }
+                if (literal == null && longNames != null) {
+                    byte[] spelling = longNames[ordinal];
+                    if (spelling != null && spelling.length < available && input[start + spelling.length] == '"'
+                            && Arrays.equals(spelling, 0, spelling.length, input, start, start + spelling.length)) {
+                        return ((long) spelling.length << Integer.SIZE) | ordinal;
+                    }
+                }
             }
             return -1;
         }
@@ -157,21 +181,10 @@ abstract class AsciiStringLexer implements JsonStringLexer {
     // Each successful comparison establishes both valid JSON spelling and its exact boundary.
     private record Literal(long first, long firstMask, long second, long secondMask, long tail, int length) {
         private static Literal create(String name) {
-            return create(name, false);
+            return create(name, null);
         }
 
-        private static Literal create(String name, boolean utf8) {
-            if (name.length() >= 3 * Long.BYTES) {
-                return null;
-            }
-            byte[] bytes = null;
-            if (utf8) {
-                if (name.codePoints().anyMatch(c -> c < 0x20 || c == '"' || c == '\\'
-                        || c >= Character.MIN_SURROGATE && c <= Character.MAX_SURROGATE)) {
-                    return null;
-                }
-                bytes = name.getBytes(StandardCharsets.UTF_8);
-            }
+        private static Literal create(String name, byte[] bytes) {
             int length = bytes == null ? name.length() : bytes.length;
             if (length >= 3 * Long.BYTES) {
                 return null;
@@ -183,7 +196,7 @@ abstract class AsciiStringLexer implements JsonStringLexer {
                 int c = '"';
                 if (i < length) {
                     c = bytes == null ? name.charAt(i) : bytes[i] & 0xff;
-                    if (!utf8 && (c < 0x20 || c >= 0x80 || c == '"' || c == '\\')) {
+                    if (bytes == null && (c < 0x20 || c >= 0x80 || c == '"' || c == '\\')) {
                         return null;
                     }
                 }

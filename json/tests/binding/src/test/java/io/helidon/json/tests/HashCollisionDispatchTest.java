@@ -272,6 +272,14 @@ class HashCollisionDispatchTest {
 
     @ParameterizedTest
     @EnumSource(BindingMethod.class)
+    void distinguishesKnownAndUnknownLongWireNames(BindingMethod method) {
+        String json = "{\"shipping.destination.address.postalCode\":1,\"shipping.destination.address.postalMode\":90,"
+                + "\"shipping.destination.address.street\\u0041ddress\":2,\"shipping.destination.address.postalCodes\":91}";
+        assertThat(method.deserialize(jsonBinding, json, LongFields.class), is(new LongFields(1, 2)));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
     void recognizesNumberedFieldsAndTheirExactSuffixes(BindingMethod method) {
         String json = "{\"region35Total\":5,\"r\\u0065gion00Hits\":7,\"region00Total\":88,"
                 + "\"region00\\u0148its\":89,\"region35Hits\":90,\"region36Hits\":91,\"region17Tot\\u0061l\":9}";
@@ -362,6 +370,11 @@ class HashCollisionDispatchTest {
     record LetterLevels(int leading, int levelA, int levelB, int levelC, int levelD, int levelE, int levelF, int levelG,
                         int levelH,
                         int zone00x, int zone01x, int zone02x, int zone04x, int zone05x, int zone06x, int zone07x, int zone08x) {
+    }
+
+    @Json.Entity
+    record LongFields(@Json.Property("shipping.destination.address.postalCode") int postal,
+                      @Json.Property("shipping.destination.address.streetAddress") int street) {
     }
 
     @Json.Entity

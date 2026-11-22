@@ -205,8 +205,88 @@ class JsonStringLexerTest {
         assertThat(words[0], is(0x37363534333231a9L));
         assertThat(words[1], is(0x223938L));
         assertThrows(IllegalArgumentException.class, () -> JsonStringLexer.withUtf8(decoded, (_, _) -> 0, -1, names));
-        assertThrows(IllegalArgumentException.class, () -> JsonStringLexer.withUtf8(decoded, (_, _) -> 0, 9, names));
+        JsonStringLexer distant = JsonStringLexer.withUtf8(decoded, (_, _) -> {
+            throw new AssertionError("Window is outside the logical slice");
+        }, Integer.MAX_VALUE, names);
+        assertThat(JsonParser.create(data, 7, length).readString(distant), is(1));
     }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    void verifiesEveryByteOfLongWireNames(ParserMethod method) {
+        String prefix = "配送設定".repeat(3) + ".";
+        int offset = prefix.getBytes(StandardCharsets.UTF_8).length;
+        String first = prefix + "postalCode";
+        String second = prefix + "postalMode";
+        String[] names = {first, second, "short", prefix + "\"", prefix + "\uD800"};
+        JsonStringLexer lexer = JsonStringLexer.withUtf8(JsonStringLexer.create(names), (_, _) -> 0, offset, names);
+        names[0] = "replaced";
+        List<String> keys = List.of(first, second, prefix + "postalNode", first + "s", "short",
+                                    prefix + "postal\\u0043ode", prefix + "\\\"", prefix + "?");
+        List<Integer> ordinals = List.of(0, 1, -1, -1, 2, 0, 3, -1);
+        for (int i = 0; i < keys.size(); i++) {
+            for (int size : List.of(7, 128)) {
+                JsonParser parser = method.createParser("\"" + keys.get(i) + "\":7", size);
+                parser.mark();
+                assertThat(parser.readString(lexer), is(ordinals.get(i)));
+                assertThat(parser.currentByte(), is((byte) '"'));
+                parser.resetToMark();
+                assertThat(parser.readProperty(lexer), is(ordinals.get(i)));
+                assertThat(parser.readInt(), is(7));
+            }
+        }
+    }
+
+    @Test
+    void longLiteralsRespectTheLogicalEndAndValidateRawUtf8() {
+        String name = "情報".repeat(10) + "abcdefgh";
+        JsonStringLexer lexer = JsonStringLexer.withUtf8(JsonStringLexer.create(name, "short"), (_, _) -> 0, 29, name, "short");
+        byte[] bytes = ("xx\"" + name + "\",bytes outside the boundary").getBytes(StandardCharsets.UTF_8);
+        int length = name.getBytes(StandardCharsets.UTF_8).length + 2;
+        for (int size = 1; size < length; size++) {
+            JsonParser parser = JsonParser.create(bytes, 2, size);
+            assertThrows(JsonException.class, () -> parser.readString(lexer));
+        }
+        assertThat(JsonParser.create(bytes, 2, length).readString(lexer), is(0));
+        bytes[22] = (byte) 0xff;
+        assertThrows(JsonException.class, () -> JsonParser.create(bytes, 2, length).readString(lexer));
+    }
+
+    @Test
+    void verifiesNamesAroundThePackedUtf8Limit() {
+        for (int bytes : List.of(23, 24, 25, 1024)) {
+            String name = "x".repeat(bytes - 4) + "😀";
+            JsonStringLexer lexer = JsonStringLexer.withUtf8(JsonStringLexer.create(name, "other"), (_, _) -> 0, 0, name, "other");
+            JsonParser parser = JsonParser.create("\"" + name + "\":7");
+            assertThat(parser.readProperty(lexer), is(0));
+            assertThat(parser.readInt(), is(7));
+            String middle = name.substring(0, 16) + "y" + name.substring(17);
+            JsonParser miss = JsonParser.create("\"" + middle + "\":7");
+            assertThat(miss.readProperty(lexer), is(-1));
+        }
+    }
+
+    @Test
+    void longSelectorChecksMiddleBytesAndUsesThePhysicalWindow() {
+        String prefix = "abcdefghijklmnopqrst";
+        String name = prefix + "postalCode" + "t".repeat(12);
+        long[] words = new long[2];
+        JsonStringLexer lexer = JsonStringLexer.withUtf8(JsonStringLexer.create(name, "other"), (first, second) -> {
+            words[0] = first;
+            words[1] = second;
+            return 0;
+        }, prefix.length(), name, "other");
+        assertThat(JsonParser.create("\"" + name + "\"").readString(lexer), is(0));
+        assertThat((int) words[0] & 0xff, is((int) 'p'));
+        assertThat((int) words[1] & 0xff, is((int) 'd'));
+        String miss = prefix + "postalMode" + "t".repeat(12);
+        assertThat(JsonParser.create("\"" + miss + "\"").readString(lexer), is(-1));
+        String invalid = name + "\uD800";
+        JsonStringLexer surrogate = JsonStringLexer.withUtf8(JsonStringLexer.create(invalid), (_, _) -> 0, 0, invalid);
+        assertThat(JsonParser.create("\"" + name + "?\"").readString(surrogate), is(-1));
+        assertThat(surrogate.match(invalid), is(0));
+    }
+
     @ParameterizedTest
     @EnumSource(ParserMethod.class)
     void compactEscapesCrossEachWordBoundary(ParserMethod method) {

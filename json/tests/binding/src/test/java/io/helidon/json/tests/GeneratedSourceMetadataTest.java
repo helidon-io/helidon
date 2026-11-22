@@ -331,6 +331,25 @@ class GeneratedSourceMetadataTest {
     }
 
     @Test
+    void selectsPastALongSharedWirePrefix() throws IOException {
+        var result = compile("LongFields.java", """
+                package io.helidon.json.tests.generated;
+
+                import io.helidon.json.binding.Json;
+
+                @SuppressWarnings("helidon:api:preview")
+                @Json.Entity
+                public record LongFields(@Json.Property("shipping.destination.address.postalCode") int code,
+                                         @Json.Property("shipping.destination.address.streetAddress") int street) {
+                }
+                """);
+
+        assertCompilationSuccess(result);
+        String content = Files.readString(generatedSource(result, "LongFields__GeneratedConverter.java"));
+        assertThat(content, containsString("::lexPropertyNameUtf8, 29,"));
+    }
+
+    @Test
     void propertyConstantsDoNotShadowCreatorTypes() throws IOException {
         var result = compile("URL.java", """
                 package io.helidon.json.tests.generated;
