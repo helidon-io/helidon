@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.http2;
 
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.Set;
@@ -100,6 +101,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     // streamId and buffer can only be created when we are locked in the stream id sequence
     private int streamId;
     private StreamBuffer buffer;
+    private InputStream responseInputStream;
     private volatile StreamObservation transportObservation;
     private boolean transportLocalEnd;
     private boolean transportRemoteEnd;
@@ -521,6 +523,18 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         } finally {
             inboundStateLock.unlock();
         }
+    }
+
+    boolean entityFullyRead() {
+        return readState == ReadState.END;
+    }
+
+    InputStream responseInputStream() {
+        return responseInputStream;
+    }
+
+    void responseInputStream(InputStream responseInputStream) {
+        this.responseInputStream = responseInputStream;
     }
 
     /**

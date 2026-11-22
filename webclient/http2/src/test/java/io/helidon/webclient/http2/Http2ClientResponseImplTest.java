@@ -235,7 +235,7 @@ class Http2ClientResponseImplTest {
         var owner = mock(HttpClientResponse.class);
         when(owner.entity()).thenReturn(entity);
         when(owner.inputStream()).thenReturn(entity.inputStream());
-        var resource = new Http2CallChainBase.Http1ResponseResource(owner);
+        var resource = new Http2CallChainBase.Http1ResponseResource(owner, entity);
         var completed = new CompletableFuture<Void>();
         var responseCompletions = new AtomicInteger();
         completed.thenRun(responseCompletions::incrementAndGet);

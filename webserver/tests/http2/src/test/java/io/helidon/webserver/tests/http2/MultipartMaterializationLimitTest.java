@@ -17,17 +17,23 @@
 package io.helidon.webserver.tests.http2;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.GZIPOutputStream;
 
 import io.helidon.common.GenericType;
 import io.helidon.common.Size;
 import io.helidon.config.Config;
+import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
 import io.helidon.http.Status;
@@ -37,24 +43,26 @@ import io.helidon.http.encoding.gzip.GzipEncoding;
 import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.MediaSupport;
+import io.helidon.http.media.ReadableEntity;
 import io.helidon.http.media.jackson.JacksonSupport;
 import io.helidon.http.media.jsonb.JsonbSupport;
 import io.helidon.http.media.multipart.MultiPart;
 import io.helidon.http.media.multipart.MultiPartSupport;
 import io.helidon.http.media.multipart.ReadablePart;
+import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webclient.http2.Http2ClientProtocolConfig;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.http1.Http1Config;
+import io.helidon.webserver.http1.Http1ConnectionSelector;
 import io.helidon.webserver.http2.Http2Config;
-import io.helidon.webserver.http2.Http2Route;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static io.helidon.http.Method.GET;
-import static io.helidon.http.Method.POST;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -64,6 +72,7 @@ class MultipartMaterializationLimitTest {
     private static final int PART_LIMIT = 1024;
     private static final String BOUNDARY = "materialization-boundary";
     private static final String CONTENT_TYPE = "multipart/form-data; boundary=" + BOUNDARY;
+    private static final HeaderName CONNECTION_ID = HeaderNames.create("X-Connection-Id");
 
     @ParameterizedTest
     @EnumSource(value = Kind.class, names = {"STRING", "JSON_B", "JACKSON", "CUSTOM"})
@@ -104,6 +113,146 @@ class MultipartMaterializationLimitTest {
                 assertThat(response.status(), is(Status.OK_200));
                 assertThat(readParts(response.as(MultiPart.class), Kind.STRING), is(2L * PART_LIMIT));
             }
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false, false", "false, true", "true, false", "true, true"})
+    void multipartCleanupCompletesClientResponse(boolean decorated, boolean readerFailure) throws IOException {
+        try (var connection = new Connection(Kind.STRING, decorated)) {
+            MultiPart parts = connection.client.get("/streamed").requestEntity(MultiPart.class);
+            CompletableFuture<?> completed = connection.completed.get();
+            try (parts) {
+                ReadablePart first = parts.next();
+                assertThat("Lazy reader retains the response", completed.isDone(), is(false));
+                if (readerFailure) {
+                    IllegalStateException failure = assertThrows(IllegalStateException.class,
+                                                                () -> first.as(String.class));
+                    assertThat(failure.getMessage(), containsString("Maximum materialized entity size exceeded"));
+                } else {
+                    assertThat(first.inputStream().read(), is((int) 'A'));
+                }
+            }
+            assertThat("Multipart cleanup completes a response obtained through requestEntity",
+                       completed.isDone(), is(true));
+            try (var next = connection.client.get("/accepted").request()) {
+                assertThat(next.status(), is(Status.OK_200));
+                assertThat(readParts(next.as(MultiPart.class), Kind.STRING), is((long) PART_LIMIT));
+            }
+        }
+    }
+
+    @Test
+    void fullMultipartIterationCompletesClientResponseBeforeHttpEpilogue() {
+        try (var connection = new Connection(Kind.STRING);
+             MultiPart parts = connection.client.get("/epilogue").requestEntity(MultiPart.class)) {
+            CompletableFuture<?> completed = connection.completed.get();
+            assertThat("Lazy reader retains the response", completed.isDone(), is(false));
+            assertThat(readParts(parts, Kind.STRING), is((long) PART_LIMIT));
+            assertThat("MIME completion releases the response with unread HTTP epilogue",
+                       completed.isDone(), is(true));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void fullyConsumedMultipartCompletesRetainedEntityAndCopyOnce(boolean decorated) {
+        try (var connection = new Connection(Kind.STRING, decorated);
+             var response = connection.client.get("/accepted").request()) {
+            ReadableEntity original = response.entity();
+            var completions = new AtomicInteger();
+            ReadableEntity copy = original.copy(completions::incrementAndGet);
+            try (MultiPart parts = copy.as(MultiPart.class)) {
+                assertThat(original.consumed(), is(false));
+                assertThat(copy.consumed(), is(false));
+                assertThat(readParts(parts, Kind.STRING), is((long) PART_LIMIT));
+                assertThat("Full multipart iteration completes the retained entity", original.consumed(), is(true));
+                assertThat("Full multipart iteration completes its copy", copy.consumed(), is(true));
+                assertThat(completions.get(), is(1));
+                original.consume();
+                copy.consume();
+                assertThat("Repeated consumption preserves single completion", completions.get(), is(1));
+            }
+            assertThat("Closing the completed multipart preserves single completion", completions.get(), is(1));
+        }
+    }
+
+    @Test
+    void http1FallbackMultipartCompletesCopiesAndPreservesConnectionReuse() {
+        try (var connection = new Connection(Kind.STRING, false, true)) {
+            String firstConnection = null;
+            for (int request = 0; request < 2; request++) {
+                try (var response = connection.client.get("/accepted").request()) {
+                    assertThat("H1-only server selects the HTTP/1.1 fallback", response.protocolId(), is("http/1.1"));
+                    String socket = response.headers().get(CONNECTION_ID).get();
+                    if (request == 0) {
+                        firstConnection = socket;
+                    } else {
+                        assertThat("Full fallback consumption preserves H1 keep-alive", socket, is(firstConnection));
+                    }
+                    ReadableEntity original = response.entity();
+                    var completions = new AtomicInteger();
+                    ReadableEntity copy = original.copy(completions::incrementAndGet);
+                    try (MultiPart parts = copy.as(MultiPart.class)) {
+                        assertThat(readParts(parts, Kind.STRING), is((long) PART_LIMIT));
+                        assertThat(original.consumed(), is(true));
+                        assertThat(copy.consumed(), is(true));
+                        assertThat(completions.get(), is(1));
+                        original.consume();
+                        copy.consume();
+                        assertThat(completions.get(), is(1));
+                    }
+                    assertThat("Closing completed fallback multipart preserves single completion", completions.get(), is(1));
+                }
+            }
+        }
+    }
+
+    @Test
+    void http1FallbackPartialMultipartCloseCompletesResponse() throws IOException {
+        try (var connection = new Connection(Kind.STRING, false, true)) {
+            try (var response = connection.client.get("/streamed").request()) {
+                assertThat(response.protocolId(), is("http/1.1"));
+                CompletableFuture<?> completed = connection.completed.get();
+                try (MultiPart parts = response.as(MultiPart.class)) {
+                    assertThat(parts.next().inputStream().read(), is((int) 'A'));
+                    assertThat(completed.isDone(), is(false));
+                }
+                assertThat("Partial multipart cleanup completes the fallback response", completed.isDone(), is(true));
+            }
+            try (var response = connection.client.get("/accepted").request()) {
+                assertThat(response.protocolId(), is("http/1.1"));
+                assertThat(readParts(response.as(MultiPart.class), Kind.STRING), is((long) PART_LIMIT));
+            }
+        }
+    }
+
+    @Test
+    void redirectAfterOutputStreamUploadCompletesMultipartCopiesOnce() {
+        try (var connection = new Connection(Kind.STRING);
+             var response = connection.client.post("/multipart-redirect")
+                     .followRedirects(true)
+                     .outputStream(output -> {
+                         output.write("upload".getBytes(StandardCharsets.US_ASCII));
+                         output.close();
+                     })) {
+            assertThat(response.protocolId(), is("h2"));
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.headers().contentLength().orElseThrow(),
+                       is((long) multipart(Kind.STRING, PART_LIMIT).length));
+            ReadableEntity original = response.entity();
+            var completions = new AtomicInteger();
+            ReadableEntity copy = original.copy(completions::incrementAndGet);
+            try (MultiPart parts = copy.as(MultiPart.class)) {
+                assertThat(readParts(parts, Kind.STRING), is((long) PART_LIMIT));
+                assertThat(original.consumed(), is(true));
+                assertThat(copy.consumed(), is(true));
+                assertThat(completions.get(), is(1));
+                original.consume();
+                copy.consume();
+                assertThat(completions.get(), is(1));
+            }
+            assertThat("Closing redirected multipart preserves single completion", completions.get(), is(1));
         }
     }
 
@@ -222,44 +371,82 @@ class MultipartMaterializationLimitTest {
     private static final class Connection implements AutoCloseable {
         private final WebServer server;
         private final Http2Client client;
+        private final AtomicReference<CompletableFuture<?>> completed = new AtomicReference<>();
 
         private Connection(Kind kind) {
+            this(kind, false);
+        }
+
+        private Connection(Kind kind, boolean decorated) {
+            this(kind, decorated, false);
+        }
+
+        private Connection(Kind kind, boolean decorated, boolean http1Fallback) {
             MediaContext context = mediaContext(kind);
-            server = WebServer.builder()
+            var builder = WebServer.builder()
                     .host("127.0.0.1")
                     .port(0)
                     .mediaContext(context)
                     .contentEncoding(ContentEncodingContext.builder()
                             .addContentEncoding(GzipEncoding.create())
                             .addContentEncoding(DeflateEncoding.create())
-                            .build())
-                    .addProtocol(Http2Config.builder().maxBufferedEntitySize(Size.create(PART_LIMIT)).build())
-                    .routing(rules -> rules
-                            .route(Http2Route.route(POST, "/parts",
-                                    (req, res) -> res.send(Long.toString(readParts(req.content().as(MultiPart.class), kind)))))
-                            .route(Http2Route.route(GET, "/accepted", (_, res) -> {
+                            .build());
+            if (http1Fallback) {
+                builder.protocolsDiscoverServices(false)
+                        .addConnectionSelector(Http1ConnectionSelector.builder()
+                                .config(Http1Config.create())
+                                .build());
+            } else {
+                builder.addProtocol(Http2Config.builder().maxBufferedEntitySize(Size.create(PART_LIMIT)).build());
+            }
+            server = builder.routing(rules -> rules
+                            .post("/multipart-redirect", (req, res) -> {
+                                req.content().consume();
+                                res.status(Status.SEE_OTHER_303).header(HeaderNames.LOCATION, "/accepted").send();
+                            })
+                            .post("/parts",
+                                  (req, res) -> res.send(Long.toString(readParts(req.content().as(MultiPart.class), kind))))
+                            .get("/accepted", (req, res) -> {
                                 res.headers().set(HeaderNames.CONTENT_TYPE, CONTENT_TYPE);
+                                res.headers().set(CONNECTION_ID, req.socketId());
                                 res.send(multipart(kind, PART_LIMIT));
-                            }))
-                            .route(Http2Route.route(GET, "/rejected", (_, res) -> {
+                            })
+                            .get("/rejected", (_, res) -> {
                                 res.headers().set(HeaderNames.CONTENT_TYPE, CONTENT_TYPE);
                                 res.send(multipart(kind, PART_LIMIT + 1));
-                            }))
-                            .route(Http2Route.route(GET, "/multiple", (_, res) -> {
+                            })
+                            .get("/multiple", (_, res) -> {
                                 res.headers().set(HeaderNames.CONTENT_TYPE, CONTENT_TYPE);
                                 res.send(multipart(kind, PART_LIMIT, PART_LIMIT));
-                            }))
-                            .route(Http2Route.route(GET, "/streamed", (_, res) -> {
+                            })
+                            .get("/streamed", (_, res) -> {
                                 res.headers().set(HeaderNames.CONTENT_TYPE, CONTENT_TYPE);
                                 res.send(multipart(kind, 3 * PART_LIMIT, 31));
-                            })))
+                            })
+                            .get("/epilogue", (_, res) -> {
+                                res.headers().set(HeaderNames.CONTENT_TYPE, CONTENT_TYPE);
+                                byte[] parts = multipart(kind, PART_LIMIT);
+                                byte[] body = Arrays.copyOf(parts, parts.length + 3 * PART_LIMIT);
+                                Arrays.fill(body, parts.length, body.length, (byte) 'E');
+                                res.send(body);
+                            }))
                     .build()
                     .start();
             client = Http2Client.builder()
                     .baseUri("http://127.0.0.1:" + server.port())
                     .mediaContext(context)
+                    .addService((chain, request) -> {
+                        completed.set(request.whenComplete().toCompletableFuture());
+                        var response = chain.proceed(request);
+                        if (decorated) {
+                            return WebClientServiceResponse.builder(response)
+                                    .inputStream(new FilterInputStream(response.inputStream().orElseThrow()) { })
+                                    .build();
+                        }
+                        return response;
+                    })
                     .protocolConfig(Http2ClientProtocolConfig.builder()
-                            .priorKnowledge(true)
+                            .priorKnowledge(!http1Fallback)
                             .maxBufferedEntitySize(Size.create(PART_LIMIT))
                             .build())
                     .shareConnectionCache(false)

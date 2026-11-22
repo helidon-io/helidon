@@ -47,6 +47,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.InflaterInputStream;
 
+import io.helidon.common.GenericType;
 import io.helidon.common.Size;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -58,11 +59,14 @@ import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
+import io.helidon.http.Headers;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http1.Http1ConnectionListener;
+import io.helidon.http.media.EntityReader;
 import io.helidon.http.media.MediaContext;
+import io.helidon.http.media.MediaSupport;
 import io.helidon.http.media.ReadableEntity;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientUri;
@@ -272,6 +276,46 @@ class Http1ClientResponseImplTest {
         assertThat(connection.reader().available(), is(0));
         assertThat(connection.releaseCount(), is(1));
         assertThat(connection.closeCount(), is(0));
+    }
+
+    @Test
+    void lazyReaderCloseCompletesBufferedChunkedTrailersAndReleasesConnection() throws IOException {
+        var connection = new TestConnection(bufferedReaderWithoutFurtherReads("2\r\nOK\r\n0\r\nX-Test: value\r\n\r\n"));
+        var context = MediaContext.builder()
+                .mediaSupportsDiscoverServices(false)
+                .addMediaSupport(new LazyStreamSupport())
+                .build();
+        try (var response = chunkedResponse(connection, true, Http1ClientProtocolConfig.create(), context)) {
+            try (FilterInputStream lazy = response.as(FilterInputStream.class)) {
+                assertThat(lazy.readNBytes(2), is("OK".getBytes(StandardCharsets.US_ASCII)));
+                assertThat("Response remains owned before the lazy result closes", connection.releaseCount(), is(0));
+            }
+            assertThat(response.trailers(), hasHeader(HeaderNames.create("X-Test"), "value"));
+            assertThat(connection.reader().available(), is(0));
+            assertThat("Buffered terminal framing permits reuse", connection.releaseCount(), is(1));
+            assertThat(connection.closeCount(), is(0));
+        }
+        assertThat(connection.releaseCount(), is(1));
+    }
+
+    @Test
+    void lazyReaderCloseRetiresChunkedResponseWhenNextChunkIsUnavailable() throws IOException {
+        var connection = new TestConnection(bufferedReaderWithoutFurtherReads("2\r\nOK\r\n"));
+        var context = MediaContext.builder()
+                .mediaSupportsDiscoverServices(false)
+                .addMediaSupport(new LazyStreamSupport())
+                .build();
+        try (var response = chunkedResponse(connection, true, Http1ClientProtocolConfig.create(), context)) {
+            try (FilterInputStream lazy = response.as(FilterInputStream.class)) {
+                assertThat(lazy.readNBytes(2), is("OK".getBytes(StandardCharsets.US_ASCII)));
+                assertThat(connection.releaseCount(), is(0));
+                assertThat(connection.closeCount(), is(0));
+            }
+            assertThat("Pending chunk framing prevents reuse", connection.releaseCount(), is(0));
+            assertThat("Lazy cleanup retires the connection without reading the next chunk",
+                       connection.closeCount(), is(1));
+        }
+        assertThat(connection.closeCount(), is(1));
     }
 
     @Test
@@ -1147,6 +1191,13 @@ class Http1ClientResponseImplTest {
     private static Http1ClientResponseImpl chunkedResponse(TestConnection connection,
                                                           boolean advertised,
                                                           Http1ClientProtocolConfig protocolConfig) {
+        return chunkedResponse(connection, advertised, protocolConfig, MediaContext.create());
+    }
+
+    private static Http1ClientResponseImpl chunkedResponse(TestConnection connection,
+                                                          boolean advertised,
+                                                          Http1ClientProtocolConfig protocolConfig,
+                                                          MediaContext context) {
         WritableHeaders<?> headers = WritableHeaders.create();
         headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
         if (advertised) {
@@ -1170,7 +1221,7 @@ class Http1ClientResponseImplTest {
                                            responseHeaders,
                                            (ClientConnection) serviceResponse.connection(),
                                            serviceResponse.inputStream().orElseThrow(),
-                                           MediaContext.create(),
+                                           context,
                                            ClientUri.create(URI.create("http://localhost/test")),
                                            new CompletableFuture<>(),
                                            serviceResponse,
@@ -1267,6 +1318,41 @@ class Http1ClientResponseImplTest {
         WritableHeaders<?> headers = WritableHeaders.create();
         headers.add(HeaderNames.CONTENT_LENGTH, Integer.toString(length));
         return ClientResponseHeaders.create(headers);
+    }
+
+    private static final class LazyStreamSupport implements MediaSupport {
+        @Override
+        public String name() {
+            return "lazy-stream";
+        }
+
+        @Override
+        public String type() {
+            return "lazy-stream";
+        }
+
+        @Override
+        public <T> ReaderResponse<T> reader(GenericType<T> type, Headers requestHeaders, Headers responseHeaders) {
+            if (type.rawType() != FilterInputStream.class) {
+                return ReaderResponse.unsupported();
+            }
+            return new ReaderResponse<>(SupportLevel.SUPPORTED, () -> new EntityReader<>() {
+                @Override
+                public boolean streaming() {
+                    return true;
+                }
+
+                @Override
+                public T read(GenericType<T> type, InputStream stream, Headers headers) {
+                    return type.cast(new FilterInputStream(stream) { });
+                }
+
+                @Override
+                public T read(GenericType<T> type, InputStream stream, Headers requestHeaders, Headers responseHeaders) {
+                    return read(type, stream, responseHeaders);
+                }
+            });
+        }
     }
 
     private static final class ReadBufferTrackingInputStream extends FilterInputStream {
