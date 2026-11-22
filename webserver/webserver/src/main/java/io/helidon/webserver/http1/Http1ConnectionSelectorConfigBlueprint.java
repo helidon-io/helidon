@@ -71,7 +71,7 @@ interface Http1ConnectionSelectorConfigBlueprint extends Prototype.Factory<Http1
          */
         @Prototype.BuilderMethod
         static void addUpgrader(Http1ConnectionSelectorConfig.BuilderBase<?, ?> builder, Http1Upgrader upgrader) {
-            Http1ConnectionSelectorConfigSupport.addUpgrader(builder, upgrader);
+            builder.putUpgrader(upgrader.supportedProtocol(), upgrader);
         }
     }
 }

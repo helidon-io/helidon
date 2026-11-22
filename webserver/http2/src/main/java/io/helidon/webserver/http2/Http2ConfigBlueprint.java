@@ -202,6 +202,18 @@ interface Http2ConfigBlueprint extends ProtocolConfig, HttpConfig {
      */
     @Deprecated(since = "28.0.0", forRemoval = true)
     @Api.Internal
-    class Http2ConfigDecorator extends Http2ConfigBuilderDecorator {
+    class Http2ConfigDecorator implements Prototype.BuilderDecorator<Http2Config.BuilderBase<?, ?>> {
+        @Override
+        public void decorate(Http2Config.BuilderBase<?, ?> target) {
+            if (target.name().isEmpty()) {
+                target.name("@default");
+            }
+
+            if (target.requestedUriDiscovery().isEmpty()) {
+                target.requestedUriDiscovery(RequestedUriDiscoveryContext.builder()
+                                                     .socketId(target.name().orElse("@default"))
+                                                     .build());
+            }
+        }
     }
 }
