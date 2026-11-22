@@ -27,7 +27,7 @@ import io.helidon.webserver.http1.spi.Http1Upgrader;
  * Configuration of an {@link Http1ConnectionSelector}.
  */
 @Prototype.Blueprint
-@Prototype.CustomMethods(Http1ConnectionSelectorConfigBlueprint.CustomMethods.class)
+@Prototype.CustomMethods(Http1ConnectionSelectorConfigSupport.class)
 @Api.Stable
 interface Http1ConnectionSelectorConfigBlueprint extends Prototype.Factory<Http1ConnectionSelector> {
     /**
@@ -49,6 +49,12 @@ interface Http1ConnectionSelectorConfigBlueprint extends Prototype.Factory<Http1
      */
     Http1Config config();
 
+    /**
+     * HTTP/1 connection selector builder custom methods.
+     *
+     * @deprecated this implementation detail will be removed
+     */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     @Api.Internal
     final class CustomMethods {
         private CustomMethods() {
@@ -65,7 +71,7 @@ interface Http1ConnectionSelectorConfigBlueprint extends Prototype.Factory<Http1
          */
         @Prototype.BuilderMethod
         static void addUpgrader(Http1ConnectionSelectorConfig.BuilderBase<?, ?> builder, Http1Upgrader upgrader) {
-            builder.putUpgrader(upgrader.supportedProtocol(), upgrader);
+            Http1ConnectionSelectorConfigSupport.addUpgrader(builder, upgrader);
         }
     }
 }

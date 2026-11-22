@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.Socket;
 import java.net.SocketOption;
-import java.net.StandardSocketOptions;
 import java.nio.channels.SocketChannel;
 import java.time.Duration;
 import java.util.Map;
@@ -34,7 +33,7 @@ import io.helidon.common.Api;
  * Socket options.
  */
 @Prototype.Configured
-@Prototype.Blueprint(decorator = SocketOptionsBlueprint.BuilderDecorator.class)
+@Prototype.Blueprint(decorator = SocketOptionsBuilderDecorator.class)
 @Api.Preview
 interface SocketOptionsBlueprint {
     /**
@@ -158,14 +157,12 @@ interface SocketOptionsBlueprint {
         }
     }
 
-    class BuilderDecorator implements Prototype.BuilderDecorator<SocketOptions.BuilderBase<?, ?>> {
-        @Override
-        public void decorate(SocketOptions.BuilderBase<?, ?> target) {
-            target.socketReceiveBufferSize().ifPresent(i -> target.putSocketOption(StandardSocketOptions.SO_RCVBUF, i));
-            target.socketSendBufferSize().ifPresent(i -> target.putSocketOption(StandardSocketOptions.SO_SNDBUF, i));
-            target.putSocketOption(StandardSocketOptions.SO_REUSEADDR, target.socketReuseAddress());
-            target.putSocketOption(StandardSocketOptions.SO_KEEPALIVE, target.socketKeepAlive());
-            target.putSocketOption(StandardSocketOptions.TCP_NODELAY, target.tcpNoDelay());
-        }
+    /**
+     * Socket options builder decorator.
+     *
+     * @deprecated this implementation detail will be removed
+     */
+    @Deprecated(since = "28.0.0", forRemoval = true)
+    class BuilderDecorator extends SocketOptionsBuilderDecorator {
     }
 }
