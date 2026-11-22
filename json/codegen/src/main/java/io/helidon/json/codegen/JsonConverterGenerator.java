@@ -49,6 +49,8 @@ class JsonConverterGenerator {
     static final String CONFIGURE_PARAM = "jsonBindingConfigurator";
     // Bound the amount of additional value-reading code generated for small objects.
     private static final int MAX_ORDERED_PROPERTIES = 12;
+    // Wide integer creators otherwise repeat the same value read at every case of a large switch.
+    private static final int MIN_INDEXED_INTEGER_PROPERTIES = 64;
     private static final String PROPERTY_NAME_SUFFIX = "_";
     private static final String MISSING_SUFFIX = "_missing";
     private static final Supplier<?> DEFAULT_TYPE_VALUE = () -> null;
@@ -993,6 +995,10 @@ class JsonConverterGenerator {
                                      boolean hasCreator,
                                      boolean hasBuilder,
                                      String firstProperty) {
+        if (hasCreator && ignored.isEmpty() && readers.size() >= MIN_INDEXED_INTEGER_PROPERTIES
+                && tryGenerateIndexedIntegerLoop(method, converterInfo, readers, firstProperty)) {
+            return;
+        }
         method.addContent("for (int property = " + firstProperty + "; property != ").addContent(JsonTypes.JSON_PARSER)
                 .addContentLine(".END_OBJECT; property = parser.nextProperty(PROPERTY_NAMES)) {")
                 .addContentLine("switch (property) {");
@@ -1010,6 +1016,42 @@ class JsonConverterGenerator {
         method.addContentLine("default -> {");
         unknownProperty(method, converterInfo);
         method.addContentLine("}").addContentLine("}").addContentLine("}");
+    }
+
+    private static boolean tryGenerateIndexedIntegerLoop(Method.Builder method,
+                                                         ConvertedTypeInfo converterInfo,
+                                                         List<PropertyReader> readers,
+                                                         String firstProperty) {
+        String deserializer = readers.getFirst().deserializer();
+        boolean eligible = readers.stream().allMatch(reader -> reader.property().usedInCreator() && !reader.property().required()
+                && reader.property().deserializationType().filter(TypeNames.PRIMITIVE_INT::equals).isPresent()
+                && deserializer.equals(reader.deserializer()));
+        if (!eligible) {
+            return false;
+        }
+
+        // Keep the constructor arguments out of the hot loop. The surrounding block also scopes the temporary array.
+        method.addContentLine("{")
+                .addContentLine("int[] fieldValues = null;")
+                .addContent("for (int property = " + firstProperty + "; property != ").addContent(JsonTypes.JSON_PARSER)
+                .addContentLine(".END_OBJECT; property = parser.nextProperty(PROPERTY_NAMES)) {")
+                .addContentLine("if (property >= 0 && property < " + readers.size() + ") {")
+                .addContentLine("if (fieldValues == null) {")
+                .addContentLine("fieldValues = new int[" + readers.size() + "];")
+                .addContentLine("}")
+                .addContentLine("fieldValues[property] = parser.checkNull() ? " + deserializer + ".deserializeNull() : "
+                                        + deserializer + ".deserialize(parser);")
+                .decreaseContentPadding().addContentLine("} else {");
+        unknownProperty(method, converterInfo);
+        method.addContentLine("}").addContentLine("}");
+        method.addContentLine("if (fieldValues != null) {");
+        for (int i = 0; i < readers.size(); i++) {
+            String variable = readers.get(i).property().identifier() + PROPERTY_NAME_SUFFIX;
+            method.addContentLine(variable + " = fieldValues[" + i + "];");
+        }
+        method.addContentLine("}");
+        method.addContentLine("}");
+        return true;
     }
 
     private static void unknownProperty(Method.Builder method, ConvertedTypeInfo converterInfo) {

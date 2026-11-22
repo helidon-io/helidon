@@ -399,6 +399,43 @@ class GeneratedSourceMetadataTest {
     }
 
     @Test
+    void wideIntegerCreatorsReadKnownValuesAtOneSite() throws IOException {
+        List<String> components = new ArrayList<>();
+        for (int i = 0; i < 63; i++) {
+            components.add("int p" + i);
+        }
+        var result = compile("WideCounters.java", """
+                package io.helidon.json.tests.generated;
+
+                import io.helidon.json.binding.Json;
+
+                @SuppressWarnings("helidon:api:preview")
+                @Json.Entity
+                public record WideCounters(%1$s, int last) {
+                }
+
+                @SuppressWarnings("helidon:api:preview")
+                @Json.Entity
+                record SmallerCounters(%1$s) {
+                }
+
+                @SuppressWarnings("helidon:api:preview")
+                @Json.Entity
+                record MixedCounters(%1$s, long last) {
+                }
+                """.formatted(String.join(", ", components)));
+
+        assertCompilationSuccess(result);
+        String wide = Files.readString(generatedSource(result, "WideCounters__GeneratedConverter.java"));
+        assertThat(wide.lines().filter(line -> line.contains("deserializerInt.deserialize(parser)")).count(), is(1L));
+        for (String type : List.of("SmallerCounters", "MixedCounters")) {
+            String general = Files.readString(generatedSource(result, type + "__GeneratedConverter.java"));
+            long reads = general.lines().filter(line -> line.contains("deserializerInt.deserialize(parser)")).count();
+            assertThat(type, reads, is(63L));
+        }
+    }
+
+    @Test
     void orderedBeanReusesItsInstanceAndKeepsAGeneralReader() throws IOException {
         var result = compile("OrderedBean.java", """
                 package io.helidon.json.tests.generated;
