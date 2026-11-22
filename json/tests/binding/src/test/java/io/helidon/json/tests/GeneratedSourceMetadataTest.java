@@ -310,6 +310,27 @@ class GeneratedSourceMetadataTest {
     }
 
     @Test
+    void emitsBoundsForPartiallyFilledDecodedRanges() throws IOException {
+        var result = compile("Counters.java", """
+                package io.helidon.json.tests.generated;
+
+                import io.helidon.json.binding.Json;
+
+                @SuppressWarnings("helidon:api:preview")
+                @Json.Entity
+                public record Counters(int id, int stat00k, int stat01k, int stat02k, int stat03k, int stat04k, int stat05k,
+                                       int stat06k, int stat07k, int stat08k, int stat09k, int stat10k, int stat11k,
+                                       int stat12k, int stat13k, int stat14k, int stat15k, int stat16k) {
+                }
+                """);
+
+        assertCompilationSuccess(result);
+        String content = Files.readString(generatedSource(result, "Counters__GeneratedConverter.java"));
+        assertThat(content, containsString("digit0 + 10 * digit1"));
+        assertThat(content, containsString("index < 17 ? 1 + index : -1"));
+    }
+
+    @Test
     void propertyConstantsDoNotShadowCreatorTypes() throws IOException {
         var result = compile("URL.java", """
                 package io.helidon.json.tests.generated;

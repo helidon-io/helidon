@@ -253,6 +253,25 @@ class HashCollisionDispatchTest {
 
     @ParameterizedTest
     @EnumSource(BindingMethod.class)
+    void verifiesNumberedNamesAtTheEndOfAPartialRange(BindingMethod method) {
+        String json = "{\"trailingCounter\":42,\"stat0\\u0030k\":10,\"stat0\\u0039k\":19,\"stat1\\u0036k\":26,"
+                + "\"stat1\\u0037k\":89,\"stat1\\u0039k\":90,\"stat0\\u003ak\":91,\"stAt09k\":92,\"stat0\\u0139k\":93,"
+                + "\"stat0\\u0040k\":94,\"stat09x\":95,\"id\":7}";
+        RangeCounters expected = new RangeCounters(7, 10, 0, 0, 0, 0, 0, 0, 0, 0, 19, 0, 0, 0, 0, 0, 0, 26, 42);
+        assertThat(method.deserialize(jsonBinding, json, RangeCounters.class), is(expected));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    void checksNonzeroDigitOffsetsAndRejectsInternalGaps(BindingMethod method) {
+        String json = "{\"leading\":42,\"level\\u0041\":1,\"level\\u0048\":8,\"level\\u0040\":90,\"level\\u0049\":91,"
+                + "\"zone0\\u0034x\":4,\"zone0\\u0033x\":93,\"zone0\\u0039x\":94}";
+        LetterLevels expected = new LetterLevels(42, 1, 0, 0, 0, 0, 0, 0, 8, 0, 0, 0, 4, 0, 0, 0, 0);
+        assertThat(method.deserialize(jsonBinding, json, LetterLevels.class), is(expected));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
     void recognizesNumberedFieldsAndTheirExactSuffixes(BindingMethod method) {
         String json = "{\"region35Total\":5,\"r\\u0065gion00Hits\":7,\"region00Total\":88,"
                 + "\"region00\\u0148its\":89,\"region35Hits\":90,\"region36Hits\":91,\"region17Tot\\u0061l\":9}";
@@ -331,6 +350,18 @@ class HashCollisionDispatchTest {
     @Json.Entity
     record ProjectedNames(int a, int ab, int prefix00aa, int prefix00ab, int prefix01aa, int prefix01ab,
                           int prefix02aa, int prefix02ab, int prefix03aa, int prefix03ab, int prefix04aa, int prefix04ab) {
+    }
+
+    @Json.Entity
+    record RangeCounters(int id, int stat00k, int stat01k, int stat02k, int stat03k, int stat04k, int stat05k,
+                         int stat06k, int stat07k, int stat08k, int stat09k, int stat10k, int stat11k, int stat12k,
+                         int stat13k, int stat14k, int stat15k, int stat16k, int trailingCounter) {
+    }
+
+    @Json.Entity
+    record LetterLevels(int leading, int levelA, int levelB, int levelC, int levelD, int levelE, int levelF, int levelG,
+                        int levelH,
+                        int zone00x, int zone01x, int zone02x, int zone04x, int zone05x, int zone06x, int zone07x, int zone08x) {
     }
 
     @Json.Entity

@@ -38,6 +38,7 @@ final class StringLexerGenerator {
     private static final int MAX_ASCII_BRANCHES = 256;
     private static final int STATES_PER_METHOD = 32;
     private static final int MIN_PROJECTED_NAMES = 12;
+    private static final int MIN_RANGE_EDGES = 8;
 
     private StringLexerGenerator() {
     }
@@ -379,6 +380,13 @@ final class StringLexerGenerator {
     }
 
     private static void emitEdges(Method.Builder method, List<Edge> edges, boolean latin) {
+        if (latin && edges.size() >= MIN_RANGE_EDGES) {
+            TransitionRange range = TransitionRange.create(edges);
+            if (range != null) {
+                range.emit(method);
+                return;
+            }
+        }
         if (edges.size() == 1) {
             Edge edge = edges.getFirst();
             String condition = "low == " + literal(edge.low);
@@ -592,6 +600,97 @@ final class StringLexerGenerator {
                 method.addContent("((int) compress(second, " + literal(secondMask) + ") << " + Long.bitCount(firstMask) + ")");
             }
             method.addContentLine("];");
+        }
+    }
+
+    // Use arithmetic when every target is in a contiguous range and only one or two bytes vary.
+    private record TransitionRange(long mask, long fixed, int base, int count, int capacity, List<TransitionRange.Digit> digits) {
+        private static TransitionRange create(List<Edge> edges) {
+            var targets = edges.stream().mapToInt(Edge::target).summaryStatistics();
+            if (targets.getMax() - targets.getMin() != edges.size() - 1) {
+                return null;
+            }
+            int base = targets.getMin();
+            long first = edges.getFirst().low;
+            long changes = 0;
+            for (Edge edge : edges) {
+                changes |= first ^ edge.low;
+            }
+            List<Digit> digits = new ArrayList<>(2);
+            for (int position = 0; position < Long.BYTES; position++) {
+                int shift = position * Byte.SIZE;
+                if (((changes >>> shift) & 0xff) != 0) {
+                    if (digits.size() == 2) {
+                        return null;
+                    }
+                    int lane = position;
+                    var values = edges.stream().mapToInt(edge -> edge.digit(lane)).summaryStatistics();
+                    int min = values.getMin();
+                    int radix = values.getMax() - min + 1;
+                    int stride = edges.stream().filter(edge -> edge.digit(lane) != min)
+                            .mapToInt(edge -> edge.target - base).min().orElseThrow();
+                    int mask = (Integer.highestOneBit(min ^ values.getMax()) << 1) - 1;
+                    digits.add(new Digit(shift, mask, min & mask, radix, stride));
+                }
+            }
+            digits.sort((left, right) -> Integer.compare(left.stride, right.stride));
+            int capacity = 1;
+            for (Digit digit : digits) {
+                if (digit.stride != capacity) {
+                    return null;
+                }
+                capacity *= digit.radix;
+            }
+            // The invariant bits and digits must identify every complete word and its exact target.
+            for (Edge edge : edges) {
+                int index = 0;
+                for (Digit digit : digits) {
+                    index += digit.value(edge.low) * digit.stride;
+                }
+                if (index != edge.target - base) {
+                    return null;
+                }
+            }
+            return new TransitionRange(~changes, first & ~changes, base, edges.size(), capacity, List.copyOf(digits));
+        }
+
+        private void emit(Method.Builder method) {
+            method.addContentLine("if ((low & " + literal(mask) + ") != " + literal(fixed) + ") {")
+                    .addContentLine("return -1;").addContentLine("}");
+            List<String> conditions = new ArrayList<>();
+            List<String> terms = new ArrayList<>();
+            for (int i = 0; i < digits.size(); i++) {
+                Digit digit = digits.get(i);
+                String name = "digit" + i;
+                String offset = digit.offset == 0 ? "" : " - " + digit.offset;
+                method.addContentLine("int " + name + " = ((int) (low >>> " + digit.shift + ") & " + digit.mask + ")"
+                                              + offset + ";");
+                if (digit.offset > 0) {
+                    conditions.add(name + " < 0");
+                }
+                if (digit.mask - digit.offset >= digit.radix) {
+                    conditions.add(name + " >= " + digit.radix);
+                }
+                terms.add(digit.stride == 1 ? name : digit.stride + " * " + name);
+            }
+            if (!conditions.isEmpty()) {
+                method.addContentLine("if (" + String.join(" || ", conditions) + ") {")
+                        .addContentLine("return -1;").addContentLine("}");
+            }
+            String index = String.join(" + ", terms);
+            String offset = base == 0 ? "" : base + " + ";
+            if (capacity == count) {
+                method.addContentLine("return " + offset + index + ";");
+            } else {
+                method.addContentLine("int index = " + index + ";");
+                method.addContentLine("return index < " + count + " ? " + offset + "index : -1;");
+            }
+        }
+
+        private record Digit(int shift, int mask, int offset, int radix, int stride) {
+            private int value(long word) {
+                return ((int) (word >>> shift) & mask) - offset;
+            }
         }
     }
 
