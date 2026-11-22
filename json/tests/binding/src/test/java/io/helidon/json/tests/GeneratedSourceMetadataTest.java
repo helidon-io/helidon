@@ -430,6 +430,57 @@ class GeneratedSourceMetadataTest {
     }
 
     @Test
+    void selectsDistinctPrefixesAndHandlesOverlappingSmallSchemas() throws IOException {
+        var result = compile("Prefixes.java", """
+                package io.helidon.json.tests.generated;
+
+                import io.helidon.json.binding.Json;
+
+                @SuppressWarnings("helidon:api:preview")
+                public class Prefixes {
+                    @Json.Entity
+                    public record Different(int id, int idExtra, int name, int status, int userId, int revision, int requestId,
+                                            int displayName) {
+                    }
+
+                    @Json.Entity
+                    public record Shared(int id, int user, int userId, int unit, int unitId, int qty, int cost, int total) {
+                    }
+
+                    @Json.Entity
+                    public record FourBytes(int abc, int abcExtra, int other) {
+                    }
+
+                    @Json.Entity
+                    public record EmptyFirst(@Json.Property("") int empty, int alpha, int beta) {
+                    }
+
+                    @Json.Entity
+                    public record OneCharacter(int a, int aExtra, int beta) {
+                    }
+                }
+                """);
+
+        assertCompilationSuccess(result);
+        String different = Files.readString(generatedSource(result, "Prefixes_Different__GeneratedConverter.java"));
+        String shared = Files.readString(generatedSource(result, "Prefixes_Shared__GeneratedConverter.java"));
+        String fourBytes = Files.readString(generatedSource(result, "Prefixes_FourBytes__GeneratedConverter.java"));
+        String empty = Files.readString(generatedSource(result, "Prefixes_EmptyFirst__GeneratedConverter.java"));
+        String one = Files.readString(generatedSource(result, "Prefixes_OneCharacter__GeneratedConverter.java"));
+        assertThat(different, containsString("switch ((int) first & 16777215)"));
+        assertThat(different, containsString("case 0x226469 -> 0;"));
+        assertThat(shared, not(containsString("switch ((int) first & 16777215)")));
+        assertThat(shared, containsString("int route = PROPERTY_NAMES_TRANSITIONS["));
+        assertThat(shared, containsString("switch (route)"));
+        assertThat(fourBytes, containsString("switch ((int) first)"));
+        assertThat(fourBytes, containsString("case 0x22636261 -> 0;"));
+        assertThat(empty, containsString("switch ((int) first & 255)"));
+        assertThat(empty, containsString("case 0x22 -> 0;"));
+        assertThat(one, containsString("switch ((int) first & 65535)"));
+        assertThat(one, containsString("case 0x2261 -> 0;"));
+    }
+
+    @Test
     void propertyConstantsDoNotShadowCreatorTypes() throws IOException {
         var result = compile("URL.java", """
                 package io.helidon.json.tests.generated;

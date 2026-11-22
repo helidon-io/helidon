@@ -112,7 +112,9 @@ final class StringLexerGenerator {
                         .addParameter(TypeNames.PRIMITIVE_LONG, "first")
                         .addParameter(TypeNames.PRIMITIVE_LONG, "second");
                 if (positional.isEmpty()) {
-                    emitAscii(method, ascii, owner, fieldName + "_TRANSITIONS");
+                    if (utf8 || ascii.size() < 3 || ascii.size() >= MIN_PROJECTED_NAMES || !emitPrefixSwitch(method, ascii)) {
+                        emitAscii(method, ascii, owner, fieldName + "_TRANSITIONS");
+                    }
                 } else {
                     method.addContentLine("return " + positional + ";");
                 }
@@ -276,6 +278,26 @@ final class StringLexerGenerator {
             }
         });
         method.addContentLine("default -> {").addContentLine("return -1;").addContentLine("}").addContentLine("}");
+    }
+
+    // Every compared byte is part of the name or its closing quote for every registered spelling.
+    private static boolean emitPrefixSwitch(Method.Builder method, List<RawEdge> edges) {
+        int bytes = Math.min(Integer.BYTES, edges.stream().mapToInt(edge -> edge.bytes.length).min().orElseThrow() + 1);
+        Map<Integer, Integer> values = new TreeMap<>();
+        for (RawEdge edge : edges) {
+            int prefix = 0;
+            for (int i = 0; i < bytes; i++) {
+                prefix |= edge.at(i) << (i * Byte.SIZE);
+            }
+            if (values.putIfAbsent(prefix, edge.ordinal) != null) {
+                return false;
+            }
+        }
+        String prefix = bytes == Integer.BYTES ? "(int) first" : "(int) first & " + ((1 << (bytes * Byte.SIZE)) - 1);
+        method.addContentLine("return switch (" + prefix + ") {");
+        values.forEach((word, target) -> method.addContentLine("case 0x" + Integer.toHexString(word) + " -> " + target + ";"));
+        method.addContentLine("default -> -1;").addContent("}").addContentLine(";");
+        return true;
     }
 
     private static void addTable(ClassBase.Builder<?, ?> owner, String name, int[] routes) {

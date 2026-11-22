@@ -303,6 +303,14 @@ class HashCollisionDispatchTest {
 
     @ParameterizedTest
     @EnumSource(BindingMethod.class)
+    void verifiesTheRestOfANameAfterItsPrefixSelectsAField(BindingMethod method) {
+        String doc = "{\"idExtra\":2,\"id\" \t:1,\"name\":3,\"status\":4,\"userId\":5,\"revision\":6,"
+                + "\"re\\u0071uestId\":7,\"displayName\":8,\"requestIx\":90,\"nam\":91,\"revista\":92,\"idExtraX\":93}";
+        assertThat(method.deserialize(jsonBinding, doc, PrefixFields.class), is(new PrefixFields(1, 2, 3, 4, 5, 6, 7, 8)));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
     void recognizesNumberedFieldsAndTheirExactSuffixes(BindingMethod method) {
         String json = "{\"region35Total\":5,\"r\\u0065gion00Hits\":7,\"region00Total\":88,"
                 + "\"region00\\u0148its\":89,\"region35Hits\":90,\"region36Hits\":91,\"region17Tot\\u0061l\":9}";
@@ -441,6 +449,10 @@ class HashCollisionDispatchTest {
         String writes() {
             return writes;
         }
+    }
+
+    @Json.Entity
+    record PrefixFields(int id, int idExtra, int name, int status, int userId, int revision, int requestId, int displayName) {
     }
 
     @Json.Entity
