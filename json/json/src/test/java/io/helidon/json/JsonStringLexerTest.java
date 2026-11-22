@@ -24,6 +24,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -264,6 +265,44 @@ class JsonStringLexerTest {
             String middle = name.substring(0, 16) + "y" + name.substring(17);
             JsonParser miss = JsonParser.create("\"" + middle + "\":7");
             assertThat(miss.readProperty(lexer), is(-1));
+        }
+    }
+
+    @Test
+    void unshiftedUtf8VerifiesTheInputAfterSelectingACandidate() {
+        for (int length : List.of(3, 11, 19, 23)) {
+            String name = "a".repeat(length - 2) + "é";
+            for (int position : List.of(0, 7, 8, 15, 16, 20)) {
+                if (position < length - 2) {
+                    String changed = name.substring(0, position) + 'b' + name.substring(position + 1);
+                    String[] names = {name, changed};
+                    byte[] input = ("\"" + name + "\":7,\"next\":0").getBytes(StandardCharsets.UTF_8);
+                    JsonStringLexer lexer = JsonStringLexer.withUtf8(JsonStringLexer.create(names), (_, _) -> {
+                        input[1 + position] = 'b';
+                        return 0;
+                    }, 0, names);
+                    JsonParser parser = JsonParser.create(input);
+                    assertThat(parser.readProperty(lexer), is(1));
+                    assertThat(parser.readInt(), is(7));
+                }
+            }
+        }
+    }
+
+    @Test
+    void unshiftedUtf8NamesAndTheirQuotesStayInsideTheSlice() {
+        for (int length : List.of(7, 8, 15, 16, 23)) {
+            String name = "x".repeat(length - 2) + "é";
+            JsonStringLexer lexer = JsonStringLexer.withUtf8(JsonStringLexer.create(name, "other"), (_, _) -> 0, 0,
+                                                              name, "other");
+            byte[] input = ("xx\"" + name + "\",0123456789").getBytes(StandardCharsets.UTF_8);
+            for (int cut = 1; cut <= length + 1; cut++) {
+                JsonParser truncated = JsonParser.create(input, 2, cut);
+                assertThrows(JsonException.class, () -> truncated.readString(lexer));
+            }
+            JsonParser complete = JsonParser.create(input, 2, length + 2);
+            assertThat(complete.readString(lexer), is(0));
+            assertThat(complete.currentByte(), is((byte) '"'));
         }
     }
 
@@ -540,25 +579,29 @@ class JsonStringLexerTest {
         }
     }
 
-    @Test
-    void shortAsciiNamesStillPassThePhysicalSecondWordToTheSelector() {
-        String[] names = {"a", "ab", "abcdefg"};
+    @ParameterizedTest
+    @ValueSource(strings = {"a", "é"})
+    void shortNamesPassBothPhysicalWordsToTheSelector(String key) {
+        boolean ascii = key.equals("a");
+        String[] names = {key, "ab", "abcdefg"};
         JsonStringLexer decoded = JsonStringLexer.create(names);
-        byte[] data = "pre\"a\":1234567890abcdef-extra".getBytes(StandardCharsets.UTF_8);
+        byte[] data = ("pre\"" + key + "\":1234567890abcdef-extra").getBytes(StandardCharsets.UTF_8);
         for (int available = Long.BYTES; available <= 2 * Long.BYTES; available++) {
             long second = 0;
             for (int i = Long.BYTES; i < available; i++) {
                 second |= (data[4 + i] & 0xffL) << ((i - Long.BYTES) * Byte.SIZE);
             }
             long[] supplied = {-1, -1};
-            JsonStringLexer lexer = JsonStringLexer.withAscii(decoded, (first, following) -> {
+            JsonStringLexer.AsciiSelector selector = (first, following) -> {
                 supplied[0] = first;
                 supplied[1] = following;
                 return 0;
-            }, names);
+            };
+            JsonStringLexer lexer = ascii ? JsonStringLexer.withAscii(decoded, selector, names)
+                    : JsonStringLexer.withUtf8(decoded, selector, 0, names);
             JsonParser parser = JsonParser.create(data, 3, available + 1);
             assertThat(parser.readString(lexer), is(0));
-            assertThat(supplied[0], is(0x35343332313a2261L));
+            assertThat(supplied[0], is(ascii ? 0x35343332313a2261L : 0x343332313a22a9c3L));
             assertThat(supplied[1], is(second));
             assertThat(parser.currentByte(), is((byte) '"'));
         }

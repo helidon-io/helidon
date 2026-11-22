@@ -54,7 +54,28 @@ abstract class AsciiStringLexer implements JsonStringLexer {
         if (offset < 0) {
             throw new IllegalArgumentException("Negative UTF-8 selector offset: " + offset);
         }
-        return new Utf8(decoded, selector, offset, names);
+        Literal[] literals = new Literal[names.length];
+        byte[][] extended = null;
+        for (int i = 0; i < names.length; i++) {
+            String name = Objects.requireNonNull(names[i]);
+            if (name.codePoints().anyMatch(c -> c < 0x20 || c == '"' || c == '\\'
+                    || c >= Character.MIN_SURROGATE && c <= Character.MAX_SURROGATE)) {
+                continue;
+            }
+            byte[] spelling = name.getBytes(StandardCharsets.UTF_8);
+            if (spelling.length < 3 * Long.BYTES) {
+                literals[i] = Literal.create(name, spelling);
+            } else {
+                if (extended == null) {
+                    extended = new byte[names.length][];
+                }
+                extended[i] = spelling;
+            }
+        }
+        if (offset == 0 && extended == null) {
+            return new UnshiftedUtf8(decoded, selector, literals);
+        }
+        return new Utf8(decoded, selector, offset, literals, extended);
     }
 
     @Override
@@ -154,35 +175,49 @@ abstract class AsciiStringLexer implements JsonStringLexer {
         }
     }
 
+    // The selector starts at the name, and every eligible spelling fits the packed literal representation.
+    private static final class UnshiftedUtf8 extends AsciiStringLexer {
+        private final Utf8Selector selector;
+        private final Literal[] literals;
+
+        private UnshiftedUtf8(JsonStringLexer decoded, Utf8Selector selector, Literal[] literals) {
+            super(decoded);
+            this.selector = selector;
+            this.literals = literals;
+        }
+
+        @Override
+        long recognize(byte[] input, int start, int limit) {
+            int available = limit - start;
+            if (available < Long.BYTES) {
+                return -1;
+            }
+            long first = JsonTextParser.word(input, start);
+            long second = available >= 2 * Long.BYTES ? JsonTextParser.word(input, start + Long.BYTES)
+                    : partialSecond(input, limit, available);
+            int ordinal = selector.select(first, second);
+            if (ordinal >= 0 && ordinal < literals.length) {
+                Literal literal = literals[ordinal];
+                if (literal != null && literal.matchesSingle(input, start, available)) {
+                    return ((long) literal.length << Integer.SIZE) | ordinal;
+                }
+            }
+            return -1;
+        }
+    }
+
     private static final class Utf8 extends AsciiStringLexer {
         private final Utf8Selector selector;
         private final int offset;
         private final Literal[] literals;
         private final byte[][] longNames;
 
-        private Utf8(JsonStringLexer decoded, Utf8Selector selector, int offset, String[] names) {
+        private Utf8(JsonStringLexer decoded, Utf8Selector selector, int offset, Literal[] literals, byte[][] longNames) {
             super(decoded);
             this.selector = selector;
             this.offset = offset;
-            this.literals = new Literal[names.length];
-            byte[][] extended = null;
-            for (int i = 0; i < names.length; i++) {
-                String name = Objects.requireNonNull(names[i]);
-                if (name.codePoints().anyMatch(c -> c < 0x20 || c == '"' || c == '\\'
-                        || c >= Character.MIN_SURROGATE && c <= Character.MAX_SURROGATE)) {
-                    continue;
-                }
-                byte[] spelling = name.getBytes(StandardCharsets.UTF_8);
-                if (spelling.length < 3 * Long.BYTES) {
-                    literals[i] = Literal.create(name, spelling);
-                } else {
-                    if (extended == null) {
-                        extended = new byte[names.length][];
-                    }
-                    extended[i] = spelling;
-                }
-            }
-            longNames = extended;
+            this.literals = literals;
+            this.longNames = longNames;
         }
 
         @Override
