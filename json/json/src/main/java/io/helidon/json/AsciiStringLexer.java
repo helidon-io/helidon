@@ -21,8 +21,6 @@ import java.util.Arrays;
 import java.util.Objects;
 
 abstract class AsciiStringLexer implements JsonStringLexer {
-    private static final int MAX_SINGLE_WORD_NAMES = 12;
-
     private final JsonStringLexer decoded;
 
     private AsciiStringLexer(JsonStringLexer decoded) {
@@ -40,7 +38,7 @@ abstract class AsciiStringLexer implements JsonStringLexer {
             }
         }
         Literal[] literals = new Literal[names.length];
-        boolean singleWord = names.length >= 2 && names.length <= MAX_SINGLE_WORD_NAMES;
+        boolean singleWord = names.length >= 2;
         for (int i = 0; i < names.length; i++) {
             Literal literal = Literal.create(Objects.requireNonNull(names[i]));
             literals[i] = literal;

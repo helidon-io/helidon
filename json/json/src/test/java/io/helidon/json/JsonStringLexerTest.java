@@ -596,17 +596,23 @@ class JsonStringLexerTest {
     }
 
     @Test
-    void shortVocabulariesOwnTheirNamesAtTheStrategyBoundary() {
-        for (int count : List.of(2, 12, 13)) {
+    void shortVocabulariesOwnTheirNamesAcrossDifferentSchemaSizes() {
+        for (int count : List.of(2, 12, 13, 32, 128, 256, 257)) {
             String[] names = new String[count];
             for (int i = 0; i < count; i++) {
                 names[i] = "key" + i;
             }
             int last = count - 1;
             String expected = names[last];
-            JsonStringLexer lexer = JsonStringLexer.withAscii(JsonStringLexer.create(names), (_, _) -> last, names);
+            JsonStringLexer decoded = JsonStringLexer.create(names);
+            int[] calls = {0};
+            JsonStringLexer lexer = JsonStringLexer.withAscii((state, low, high, length) -> {
+                calls[0]++;
+                return decoded.advance(state, low, high, length);
+            }, (_, _) -> last, names);
             names[last] = "changed";
             assertThat(JsonParser.create("\"" + expected + "\":123456789").readProperty(lexer), is(last));
+            assertThat(calls[0], is(0));
             assertThat(JsonParser.create("\"changed\":123456789").readProperty(lexer), is(-1));
         }
     }
