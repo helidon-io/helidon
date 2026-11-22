@@ -19,6 +19,7 @@ package io.helidon.json.codegen;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,7 @@ final class StringLexerGenerator {
     private static final int MAX_STATE_EDGES = 128;
     private static final int MAX_ASCII_BRANCHES = 256;
     private static final int STATES_PER_METHOD = 32;
+    private static final int MIN_PROJECTED_NAMES = 12;
 
     private StringLexerGenerator() {
     }
@@ -218,6 +220,16 @@ final class StringLexerGenerator {
             method.addContentLine("return -1;");
             return;
         }
+        if (!tableName.isEmpty() && edges.size() >= MIN_PROJECTED_NAMES && lowestCost > edges.size()) {
+            Projection projection = Projection.create(edges, Long.BYTES);
+            if (projection == null) {
+                projection = Projection.create(edges, 2 * Long.BYTES);
+            }
+            if (projection != null) {
+                projection.emit(method, owner, tableName);
+                return;
+            }
+        }
         String word = position < Long.BYTES ? "first" : "second";
         String digit = "((int) (" + word + " >>> " + ((position % Long.BYTES) * Byte.SIZE) + ") & 0xff)";
         if (edges.size() == 2) {
@@ -237,9 +249,7 @@ final class StringLexerGenerator {
             int[] routes = new int[size];
             Arrays.fill(routes, -1);
             groups.forEach((value, group) -> routes[value] = group.size() == 1 ? group.getFirst().ordinal : -2 - value);
-            String constants = Arrays.toString(routes);
-            owner.addField(field -> field.name(tableName).type(int[].class).accessModifier(AccessModifier.PRIVATE)
-                    .isStatic(true).isFinal(true).addContent("{" + constants.substring(1, constants.length() - 1) + "}"));
+            addTable(owner, tableName, routes);
             String access = tableName + "[" + digit + " & " + (size - 1) + "]";
             if (groups.size() == edges.size()) {
                 method.addContentLine("return " + access + ";");
@@ -259,6 +269,12 @@ final class StringLexerGenerator {
             }
         });
         method.addContentLine("default -> {").addContentLine("return -1;").addContentLine("}").addContentLine("}");
+    }
+
+    private static void addTable(ClassBase.Builder<?, ?> owner, String name, int[] routes) {
+        String constants = Arrays.toString(routes);
+        owner.addField(field -> field.name(name).type(int[].class).accessModifier(AccessModifier.PRIVATE)
+                .isStatic(true).isFinal(true).addContent("{" + constants.substring(1, constants.length() - 1) + "}"));
     }
 
     // Recognize an ordinal whose digits come directly from input positions. Verify every registered
@@ -478,6 +494,104 @@ final class StringLexerGenerator {
                 method.addContentLine("default -> -1;").addContent("}").addContentLine(";");
             }
             method.addContentLine("}");
+        }
+    }
+
+    // Select bits that distinguish every pair before either name ends. The parser verifies the entire candidate.
+    private record Projection(long firstMask, long secondMask, int[] routes) {
+        private static Projection create(List<RawEdge> edges, int width) {
+            BitSet[] columns = new BitSet[width * Byte.SIZE];
+            Arrays.setAll(columns, _ -> new BitSet());
+            int pairs = 0;
+            for (int i = 0; i < edges.size(); i++) {
+                RawEdge first = edges.get(i);
+                for (int j = 0; j < i; j++) {
+                    RawEdge second = edges.get(j);
+                    int length = Math.min(width, Math.min(first.bytes.length, second.bytes.length) + 1);
+                    boolean distinct = false;
+                    for (int k = 0; k < length; k++) {
+                        int bits = first.at(k) ^ second.at(k);
+                        while (bits != 0) {
+                            columns[k * Byte.SIZE + Integer.numberOfTrailingZeros(bits)].set(pairs);
+                            bits &= bits - 1;
+                            distinct = true;
+                        }
+                    }
+                    if (!distinct) {
+                        return null;
+                    }
+                    pairs++;
+                }
+            }
+            BitSet selected = new BitSet();
+            int size = 1;
+            while (pairs > 0) {
+                size *= 2;
+                if (size > 8 * edges.size()) {
+                    return null;
+                }
+                int best = 0;
+                int gain = 0;
+                for (int bit = 0; bit < columns.length; bit++) {
+                    int count = columns[bit].cardinality();
+                    if (count > gain) {
+                        gain = count;
+                        best = bit;
+                    }
+                }
+                selected.set(best);
+                pairs -= gain;
+                BitSet covered = columns[best];
+                for (BitSet column : columns) {
+                    if (column != covered) {
+                        column.andNot(covered);
+                    }
+                }
+                covered.clear();
+            }
+            int[] routes = new int[size];
+            Arrays.fill(routes, -1);
+            for (RawEdge edge : edges) {
+                int index = 0;
+                int free = 0;
+                int weight = 1;
+                for (int bit = selected.nextSetBit(0); bit >= 0; bit = selected.nextSetBit(bit + 1)) {
+                    int position = bit / Byte.SIZE;
+                    if (position > edge.bytes.length) {
+                        free |= weight;
+                    } else if ((edge.at(position) & (1 << (bit % Byte.SIZE))) != 0) {
+                        index |= weight;
+                    }
+                    weight <<= 1;
+                }
+                // Bytes following the closing quote can have any value.
+                int subset = free;
+                while (true) {
+                    routes[index | subset] = edge.ordinal;
+                    if (subset == 0) {
+                        break;
+                    }
+                    subset = (subset - 1) & free;
+                }
+            }
+            long[] masks = selected.toLongArray();
+            return new Projection(masks[0], masks.length > 1 ? masks[1] : 0, routes);
+        }
+
+        private void emit(Method.Builder method, ClassBase.Builder<?, ?> owner, String name) {
+            addTable(owner, name, routes);
+            owner.addStaticImport("java.lang.Long.compress");
+            method.addContent("return " + name + "[");
+            if (firstMask != 0) {
+                method.addContent("(int) compress(first, " + literal(firstMask) + ")");
+            }
+            if (secondMask != 0) {
+                if (firstMask != 0) {
+                    method.addContent(" | ");
+                }
+                method.addContent("((int) compress(second, " + literal(secondMask) + ") << " + Long.bitCount(firstMask) + ")");
+            }
+            method.addContentLine("];");
         }
     }
 

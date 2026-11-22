@@ -253,6 +253,30 @@ class GeneratedSourceMetadataTest {
     }
 
     @Test
+    void projectedNamesCanShareAPackageWithATypeNamedLong() throws IOException {
+        var result = compile("Projected.java", """
+                package io.helidon.json.tests.generated;
+
+                import io.helidon.json.binding.Json;
+
+                @SuppressWarnings("helidon:api:preview")
+                @Json.Entity
+                public record Projected(int a, int ab, int prefix00aa, int prefix00ab, int prefix01aa, int prefix01ab,
+                                        int prefix02aa, int prefix02ab, int prefix03aa, int prefix03ab, int prefix04aa,
+                                        int prefix04ab) {
+                }
+
+                class Long {
+                }
+                """);
+
+        assertCompilationSuccess(result);
+        String content = Files.readString(generatedSource(result, "Projected__GeneratedConverter.java"));
+        assertThat(content, containsString("import static java.lang.Long.compress;"));
+        assertThat(content, containsString("compress(second,"));
+    }
+
+    @Test
     void propertyConstantsDoNotShadowCreatorTypes() throws IOException {
         var result = compile("URL.java", """
                 package io.helidon.json.tests.generated;

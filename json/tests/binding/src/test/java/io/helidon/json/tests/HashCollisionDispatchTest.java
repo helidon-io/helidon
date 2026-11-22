@@ -206,6 +206,16 @@ class HashCollisionDispatchTest {
 
     @ParameterizedTest
     @EnumSource(BindingMethod.class)
+    void matchesShortAndLongNamesUsingBothInputWords(BindingMethod method) {
+        String json = "{\"prefix04ab\":12,\"prefix04abx\":98,\"ab\"      :2,\"prefix01aa\":5,"
+                + "\"prefix03aa\":9,\"prefix00ab\":4,\"prefix02ab\":8,\"a\" :1,\"prefix03ab\":10,"
+                + "\"prefix01ab\":6,\"prefix04aa\":11,\"prefix02aa\":7,\"prefix00a\\u0061\":3,\"ax\":99,\"prefix05aa\":97}";
+        assertThat(method.deserialize(jsonBinding, json, ProjectedNames.class),
+                   is(new ProjectedNames(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
     void recognizesNumberedFieldsAndTheirExactSuffixes(BindingMethod method) {
         String json = "{\"region35Total\":5,\"r\\u0065gion00Hits\":7,\"region00Total\":88,"
                 + "\"region00\\u0148its\":89,\"region35Hits\":90,\"region36Hits\":91,\"region17Tot\\u0061l\":9}";
@@ -279,6 +289,11 @@ class HashCollisionDispatchTest {
                               @Json.Property("cafe\u0301") int decomposed,
                               @Json.Property("設定前置甲") int first,
                               @Json.Property("設定前置乙") int second) {
+    }
+
+    @Json.Entity
+    record ProjectedNames(int a, int ab, int prefix00aa, int prefix00ab, int prefix01aa, int prefix01ab,
+                          int prefix02aa, int prefix02ab, int prefix03aa, int prefix03ab, int prefix04aa, int prefix04ab) {
     }
 
     @Json.Entity
