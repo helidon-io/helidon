@@ -198,6 +198,14 @@ class HashCollisionDispatchTest {
 
     @ParameterizedTest
     @EnumSource(BindingMethod.class)
+    void distinguishesRawAndEscapedInternationalNames(BindingMethod method) {
+        String json = "{\"cafe\\u0301\":2,\"設定前置\\u4e59\":4,\"café\":1,\"設定前置甲\":3,"
+                + "\"設定前置丙\":90,\"caféx\":91}";
+        assertThat(method.deserialize(jsonBinding, json, InternationalNames.class), is(new InternationalNames(1, 2, 3, 4)));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
     void recognizesNumberedFieldsAndTheirExactSuffixes(BindingMethod method) {
         String json = "{\"region35Total\":5,\"r\\u0065gion00Hits\":7,\"region00Total\":88,"
                 + "\"region00\\u0148its\":89,\"region35Hits\":90,\"region36Hits\":91,\"region17Tot\\u0061l\":9}";
@@ -264,6 +272,13 @@ class HashCollisionDispatchTest {
 
     @Json.Entity
     record SharedNames(@Json.Property("abcdefg😀") int first, @Json.Property("abcdefg😁") int second, int abcdefgh) {
+    }
+
+    @Json.Entity
+    record InternationalNames(@Json.Property("café") int composed,
+                              @Json.Property("cafe\u0301") int decomposed,
+                              @Json.Property("設定前置甲") int first,
+                              @Json.Property("設定前置乙") int second) {
     }
 
     @Json.Entity

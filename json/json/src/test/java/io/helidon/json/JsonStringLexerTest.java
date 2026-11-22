@@ -17,6 +17,7 @@
 package io.helidon.json;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -142,5 +143,68 @@ class JsonStringLexerTest {
             assertThat(parser.readString(lexer), is(expected));
             assertThat(parser.nextToken(), is(expected < 0 ? (byte) ']' : (byte) ','));
         }
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    void matchesCanonicalUtf8AndEquivalentEscapes(ParserMethod method) {
+        String[] names = {"設定前置甲", "設定前置乙", "abcdefg😀", "\uD800"};
+        JsonStringLexer decoded = JsonStringLexer.create(names);
+        for (int ordinal = 0; ordinal < 3; ordinal++) {
+            int selected = ordinal;
+            JsonStringLexer lexer = JsonStringLexer.withUtf8(decoded, (_, _) -> selected, 8, names);
+            String spelling = List.of("設定前置\\u7532", "設定前置\\u4e59", "abcdefg\\uD83D\\uDE00").get(ordinal);
+            for (String wire : List.of(names[ordinal], spelling)) {
+                for (int buffer : List.of(7, 64)) {
+                    JsonParser parser = method.createParser("\"" + wire + "\",12345678901234567890", buffer);
+                    parser.mark();
+                    assertThat(parser.readString(lexer), is(ordinal));
+                    assertThat(parser.nextToken(), is((byte) ','));
+                    parser.resetToMark();
+                    assertThat(parser.readString(lexer), is(ordinal));
+                }
+            }
+        }
+        JsonStringLexer surrogate = JsonStringLexer.withUtf8(decoded, (_, _) -> 3, 0, names);
+        assertThat(method.createParser("\"?\",1234567890", 32).readString(surrogate), is(-1));
+        assertThat(surrogate.match("\uD800"), is(3));
+    }
+
+    @Test
+    void checksUtf8ThroughTheQuoteAndWithinTheLogicalSlice() {
+        String name = "設".repeat(6) + "😀";
+        JsonStringLexer lexer = JsonStringLexer.withUtf8(JsonStringLexer.create("other", name), (_, _) -> 1, 8,
+                                                          "other", name);
+        byte[] text = ("padding\"" + name + "\",bytes beyond the logical input").getBytes(StandardCharsets.UTF_8);
+        int complete = name.getBytes(StandardCharsets.UTF_8).length + 2;
+        for (int size = 1; size < complete; size++) {
+            JsonParser parser = JsonParser.create(text, 7, size);
+            assertThrows(JsonException.class, () -> parser.readString(lexer));
+        }
+        assertThat(JsonParser.create(text, 7, complete).readString(lexer), is(1));
+        byte[] bad = Arrays.copyOf(text, text.length);
+        bad[7 + complete - 2] = (byte) 0xff;
+        assertThrows(JsonException.class, () -> JsonParser.create(bad, 7, complete).readString(lexer));
+    }
+
+    @Test
+    void passesOnlyTheShiftedLogicalWindowToTheSelector() {
+        String name = "abé123456789";
+        String[] names = {"other", name};
+        JsonStringLexer decoded = JsonStringLexer.create(names);
+        long[] words = new long[2];
+        JsonStringLexer lexer = JsonStringLexer.withUtf8(decoded, (first, second) -> {
+            words[0] = first;
+            words[1] = second;
+            return 1;
+        }, 3, names);
+        byte[] data = ("padding\"" + name + "\",outside the slice").getBytes(StandardCharsets.UTF_8);
+        int length = name.getBytes(StandardCharsets.UTF_8).length + 2;
+        JsonParser parser = JsonParser.create(data, 7, length);
+        assertThat(parser.readString(lexer), is(1));
+        assertThat(words[0], is(0x37363534333231a9L));
+        assertThat(words[1], is(0x223938L));
+        assertThrows(IllegalArgumentException.class, () -> JsonStringLexer.withUtf8(decoded, (_, _) -> 0, -1, names));
+        assertThrows(IllegalArgumentException.class, () -> JsonStringLexer.withUtf8(decoded, (_, _) -> 0, 9, names));
     }
 }

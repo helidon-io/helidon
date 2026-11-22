@@ -57,6 +57,20 @@ public interface JsonStringLexer {
     }
 
     /**
+     * Add a decision tree for short, unescaped UTF-8 spellings. The parser verifies the entire encoded
+     * name and its closing quote before accepting the selection. Other spellings use the decoded transitions.
+     *
+     * @param decoded lexer for decoded input
+     * @param selector possible ordinal for a bounded two-word window
+     * @param offset first byte of the window relative to the name, from zero to eight
+     * @param names registered names in ordinal order
+     * @return lexer with a raw UTF-8 fast path
+     */
+    static JsonStringLexer withUtf8(JsonStringLexer decoded, Utf8Selector selector, int offset, String... names) {
+        return AsciiStringLexer.withUtf8(decoded, selector, offset, names);
+    }
+
+    /**
      * Advance over a block of decoded UTF-16 code units. Byte {@code i} of each word contains the low
      * or high byte of code unit {@code i}, starting with the least significant byte. Unused bytes are zero.
      * A block of eight units continues the string. A shorter block ends it, including an empty block
@@ -102,7 +116,16 @@ public interface JsonStringLexer {
      * quote, can contain subsequent tokens, and is padded with zeroes at the input limit.
      */
     @FunctionalInterface
-    interface AsciiSelector {
+    interface AsciiSelector extends Utf8Selector {
+        @Override
+        int select(long first, long second);
+    }
+
+    /**
+     * Select a possible literal using a raw UTF-8 window. Bytes following the logical input are zero.
+     */
+    @FunctionalInterface
+    interface Utf8Selector {
         /**
          * Select a possible name using the two little-endian words in the window.
          *

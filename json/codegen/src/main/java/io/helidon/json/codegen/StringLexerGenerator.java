@@ -16,6 +16,7 @@
 
 package io.helidon.json.codegen;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -50,16 +51,26 @@ final class StringLexerGenerator {
         case "POLYMORPHIC_ALIASES" -> "lexAlias";
         default -> throw new IllegalArgumentException("Unknown lexer field: " + fieldName);
         };
-        List<AsciiEdge> ascii = new ArrayList<>();
+        List<RawEdge> encoded = new ArrayList<>();
+        boolean nonAscii = false;
         if (generate) {
             for (int i = 0; i < names.size(); i++) {
                 String name = names.get(i);
-                if (name.length() < 3 * Long.BYTES
-                        && name.chars().allMatch(c -> c >= 0x20 && c < 0x80 && c != '"' && c != '\\')) {
-                    ascii.add(new AsciiEdge(name, i));
+                if (name.length() < 3 * Long.BYTES && name.codePoints().noneMatch(c -> c < 0x20 || c == '"' || c == '\\'
+                        || c >= Character.MIN_SURROGATE && c <= Character.MAX_SURROGATE)) {
+                    byte[] spelling = name.getBytes(StandardCharsets.UTF_8);
+                    if (spelling.length < 3 * Long.BYTES) {
+                        encoded.add(new RawEdge(spelling, i));
+                        nonAscii |= spelling.length != name.length();
+                    }
                 }
             }
         }
+        boolean utf8 = nonAscii;
+        String rawMethod = entry + (utf8 ? "Utf8" : "Ascii");
+        int offset = utf8 ? commonPrefix(encoded) : 0;
+        List<RawEdge> ascii = offset == 0 ? encoded : encoded.stream()
+                .map(edge -> new RawEdge(Arrays.copyOfRange(edge.bytes, offset, edge.bytes.length), edge.ordinal)).toList();
         String positional = ascii.size() >= STATES_PER_METHOD ? positionalOrdinal(ascii) : "";
         boolean raw = !ascii.isEmpty() && ascii.size() * 2 >= names.size()
                 && (ascii.size() <= MAX_ASCII_BRANCHES || !positional.isEmpty());
@@ -71,8 +82,11 @@ final class StringLexerGenerator {
             } else {
                 field.addContent(JsonTypes.JSON_STRING_LEXER);
                 if (raw) {
-                    field.addContent(".withAscii(").addContent(type).addContent("::" + entry + ", ")
-                            .addContent(type).addContent("::" + entry + "Ascii, ");
+                    field.addContent(utf8 ? ".withUtf8(" : ".withAscii(").addContent(type).addContent("::" + entry + ", ")
+                            .addContent(type).addContent("::" + rawMethod + ", ");
+                    if (utf8) {
+                        field.addContent(offset + ", ");
+                    }
                 } else {
                     field.addContent(".create(");
                 }
@@ -90,7 +104,7 @@ final class StringLexerGenerator {
         }
         if (raw) {
             owner.addMethod(method -> {
-                method.name(entry + "Ascii").accessModifier(AccessModifier.PRIVATE).isStatic(true)
+                method.name(rawMethod).accessModifier(AccessModifier.PRIVATE).isStatic(true)
                         .returnType(TypeNames.PRIMITIVE_INT)
                         .addParameter(TypeNames.PRIMITIVE_LONG, "first")
                         .addParameter(TypeNames.PRIMITIVE_LONG, "second");
@@ -102,6 +116,21 @@ final class StringLexerGenerator {
             });
         }
         generateDecoded(owner, entry, DecodedPlan.compact(states, names.size()));
+    }
+
+    private static int commonPrefix(List<RawEdge> edges) {
+        byte[] first = edges.getFirst().bytes;
+        int common = Math.min(Long.BYTES, first.length);
+        for (RawEdge edge : edges) {
+            common = Math.min(common, edge.bytes.length);
+            for (int i = 0; i < common; i++) {
+                if (first[i] != edge.bytes[i]) {
+                    common = i;
+                    break;
+                }
+            }
+        }
+        return common;
     }
 
     private static void generateDecoded(ClassBase.Builder<?, ?> owner, String entry, DecodedPlan plan) {
@@ -158,7 +187,7 @@ final class StringLexerGenerator {
     }
 
     private static void emitAscii(Method.Builder method,
-                                  List<AsciiEdge> edges,
+                                  List<RawEdge> edges,
                                   ClassBase.Builder<?, ?> owner,
                                   String tableName) {
         if (edges.size() == 1) {
@@ -167,13 +196,13 @@ final class StringLexerGenerator {
         }
         // Only positions defined for every remaining spelling can select a branch. The closing quote
         // distinguishes a short name from a longer name that shares its complete prefix.
-        int shortest = edges.stream().mapToInt(edge -> edge.name.length()).min().orElseThrow();
+        int shortest = edges.stream().mapToInt(edge -> edge.bytes.length).min().orElseThrow();
         int position = 0;
         long lowestCost = Long.MAX_VALUE;
         for (int i = 0; i <= Math.min(shortest, 2 * Long.BYTES - 1); i++) {
-            int[] counts = new int[128];
+            int[] counts = new int[256];
             long cost = 0;
-            for (AsciiEdge edge : edges) {
+            for (RawEdge edge : edges) {
                 cost += 2L * ++counts[edge.at(i)] - 1;
             }
             if (cost < lowestCost) {
@@ -192,25 +221,26 @@ final class StringLexerGenerator {
         String word = position < Long.BYTES ? "first" : "second";
         String digit = "((int) (" + word + " >>> " + ((position % Long.BYTES) * Byte.SIZE) + ") & 0xff)";
         if (edges.size() == 2) {
-            AsciiEdge first = edges.getFirst();
+            RawEdge first = edges.getFirst();
             method.addContentLine("return " + digit + " == " + first.at(position) + " ? " + first.ordinal
                                           + " : " + edges.getLast().ordinal + ";");
             return;
         }
-        Map<Integer, List<AsciiEdge>> groups = new TreeMap<>();
-        for (AsciiEdge edge : edges) {
+        Map<Integer, List<RawEdge>> groups = new TreeMap<>();
+        for (RawEdge edge : edges) {
             groups.computeIfAbsent(edge.at(position), _ -> new ArrayList<>()).add(edge);
         }
         boolean direct = !tableName.isEmpty() && groups.size() >= 4
                 && groups.values().stream().filter(group -> group.size() == 1).count() * 2 >= groups.size();
         if (direct) {
-            int[] routes = new int[128];
+            int size = groups.keySet().stream().anyMatch(value -> value >= 128) ? 256 : 128;
+            int[] routes = new int[size];
             Arrays.fill(routes, -1);
             groups.forEach((value, group) -> routes[value] = group.size() == 1 ? group.getFirst().ordinal : -2 - value);
             String constants = Arrays.toString(routes);
             owner.addField(field -> field.name(tableName).type(int[].class).accessModifier(AccessModifier.PRIVATE)
                     .isStatic(true).isFinal(true).addContent("{" + constants.substring(1, constants.length() - 1) + "}"));
-            String access = tableName + "[" + digit + " & 0x7f]";
+            String access = tableName + "[" + digit + " & " + (size - 1) + "]";
             if (groups.size() == edges.size()) {
                 method.addContentLine("return " + access + ";");
                 return;
@@ -233,9 +263,9 @@ final class StringLexerGenerator {
 
     // Recognize an ordinal whose digits come directly from input positions. Verify every registered
     // spelling when generating the expression. The native parser still checks the complete chosen literal.
-    private static String positionalOrdinal(List<AsciiEdge> edges) {
-        int maxOrdinal = edges.stream().mapToInt(AsciiEdge::ordinal).max().orElseThrow();
-        int width = Math.min(2 * Long.BYTES, edges.stream().mapToInt(edge -> edge.name.length()).min().orElseThrow());
+    private static String positionalOrdinal(List<RawEdge> edges) {
+        int maxOrdinal = edges.stream().mapToInt(RawEdge::ordinal).max().orElseThrow();
+        int width = Math.min(2 * Long.BYTES, edges.stream().mapToInt(edge -> edge.bytes.length).min().orElseThrow());
         List<String> terms = new ArrayList<>();
         int bias = 0;
         int place = 1;
@@ -451,9 +481,9 @@ final class StringLexerGenerator {
         }
     }
 
-    private record AsciiEdge(String name, int ordinal) {
+    private record RawEdge(byte[] bytes, int ordinal) {
         private int at(int position) {
-            return position == name.length() ? '"' : name.charAt(position);
+            return position == bytes.length ? '"' : bytes[position] & 0xff;
         }
     }
 

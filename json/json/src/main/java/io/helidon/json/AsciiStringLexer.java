@@ -16,6 +16,7 @@
 
 package io.helidon.json;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 abstract class AsciiStringLexer implements JsonStringLexer {
@@ -36,6 +37,16 @@ abstract class AsciiStringLexer implements JsonStringLexer {
             }
         }
         return new Multiple(decoded, selector, names);
+    }
+
+    static JsonStringLexer withUtf8(JsonStringLexer decoded, Utf8Selector selector, int offset, String[] names) {
+        Objects.requireNonNull(decoded);
+        Objects.requireNonNull(selector);
+        Objects.requireNonNull(names);
+        if (offset < 0 || offset > Long.BYTES) {
+            throw new IllegalArgumentException("UTF-8 selector offset outside the supported window: " + offset);
+        }
+        return new Utf8(decoded, selector, offset, names);
     }
 
     @Override
@@ -107,10 +118,61 @@ abstract class AsciiStringLexer implements JsonStringLexer {
         }
     }
 
+    private static final class Utf8 extends AsciiStringLexer {
+        private final Utf8Selector selector;
+        private final int offset;
+        private final Literal[] literals;
+
+        private Utf8(JsonStringLexer decoded, Utf8Selector selector, int offset, String[] names) {
+            super(decoded);
+            this.selector = selector;
+            this.offset = offset;
+            this.literals = new Literal[names.length];
+            for (int i = 0; i < names.length; i++) {
+                literals[i] = Literal.create(Objects.requireNonNull(names[i]), true);
+            }
+        }
+
+        @Override
+        long recognize(byte[] input, int start, int limit) {
+            int available = limit - start;
+            if (available < offset + Long.BYTES) {
+                return -1;
+            }
+            int window = start + offset;
+            long first = JsonTextParser.word(input, window);
+            long second = limit - window >= 2 * Long.BYTES ? JsonTextParser.word(input, window + Long.BYTES)
+                    : partialSecond(input, limit, limit - window);
+            int ordinal = selector.select(first, second);
+            if (ordinal >= 0 && ordinal < literals.length) {
+                Literal literal = literals[ordinal];
+                if (literal != null && literal.matchesSingle(input, start, available)) {
+                    return ((long) literal.length << Integer.SIZE) | ordinal;
+                }
+            }
+            return -1;
+        }
+    }
+
     // Each successful comparison establishes both valid JSON spelling and its exact boundary.
     private record Literal(long first, long firstMask, long second, long secondMask, long tail, int length) {
         private static Literal create(String name) {
-            int length = name.length();
+            return create(name, false);
+        }
+
+        private static Literal create(String name, boolean utf8) {
+            if (name.length() >= 3 * Long.BYTES) {
+                return null;
+            }
+            byte[] bytes = null;
+            if (utf8) {
+                if (name.codePoints().anyMatch(c -> c < 0x20 || c == '"' || c == '\\'
+                        || c >= Character.MIN_SURROGATE && c <= Character.MAX_SURROGATE)) {
+                    return null;
+                }
+                bytes = name.getBytes(StandardCharsets.UTF_8);
+            }
+            int length = bytes == null ? name.length() : bytes.length;
             if (length >= 3 * Long.BYTES) {
                 return null;
             }
@@ -118,9 +180,12 @@ abstract class AsciiStringLexer implements JsonStringLexer {
             long second = 0;
             long tail = 0;
             for (int i = 0; i <= length; i++) {
-                char c = i == length ? '"' : name.charAt(i);
-                if (i < length && (c < 0x20 || c >= 0x80 || c == '"' || c == '\\')) {
-                    return null;
+                int c = '"';
+                if (i < length) {
+                    c = bytes == null ? name.charAt(i) : bytes[i] & 0xff;
+                    if (!utf8 && (c < 0x20 || c >= 0x80 || c == '"' || c == '\\')) {
+                        return null;
+                    }
                 }
                 if (i < Long.BYTES) {
                     first |= (long) c << (i * Byte.SIZE);
