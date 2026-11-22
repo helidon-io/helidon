@@ -16,6 +16,7 @@
 
 package io.helidon.json;
 
+import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -464,6 +465,79 @@ class JsonStringLexerTest {
         assertThat(complete.nextProperty(lexer), is(0));
         assertThat(complete.readInt(), is(2));
         assertThat(complete.nextProperty(lexer), is(JsonParser.END_OBJECT));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    void readsBufferedUtf8AcrossDecodedWordAndStreamBoundaries(ParserMethod method) {
+        String units = "\u0080\u07ff\u0800€\ud7ff\ue000\uffff😀東京";
+        for (int prefix = 0; prefix < Long.BYTES; prefix++) {
+            String name = "x".repeat(prefix) + units + "tail";
+            JsonStringLexer lexer = JsonStringLexer.create(name, name + "s");
+            for (int size : List.of(6, 7, 8, 13, 128)) {
+                JsonParser parser = method.createParser("\"" + name + "\":7", size);
+                parser.mark();
+                assertThat(parser.readString(lexer), is(0));
+                assertThat(parser.currentByte(), is((byte) '"'));
+                parser.resetToMark();
+                assertThat(parser.readProperty(lexer), is(0));
+                assertThat(parser.readInt(), is(7));
+            }
+        }
+    }
+
+    @Test
+    void validatesBufferedUtf8AfterTheDecodedStateRejectsAPrefix() {
+        JsonStringLexer lexer = JsonStringLexer.create("different");
+        byte[] prefix = "xx\"abcdefgh東".getBytes(StandardCharsets.UTF_8);
+        byte[] tail = "本語abcdefghijkl\"".getBytes(StandardCharsets.UTF_8);
+        List<byte[]> invalid = List.of(new byte[] {(byte) 0xc0, (byte) 0x80},
+                                      new byte[] {(byte) 0xc2, 0x7f},
+                                      new byte[] {(byte) 0xe0, (byte) 0x9f, (byte) 0x80},
+                                      new byte[] {(byte) 0xed, (byte) 0xa0, (byte) 0x80},
+                                      new byte[] {(byte) 0xe3, 0x41, (byte) 0x80},
+                                      new byte[] {(byte) 0xe3, (byte) 0x81, 0x41},
+                                      new byte[] {(byte) 0xf4, (byte) 0x90, (byte) 0x80, (byte) 0x80},
+                                      new byte[] {(byte) 0x80});
+        for (byte[] sequence : invalid) {
+            byte[] bytes = Arrays.copyOf(prefix, prefix.length + sequence.length + tail.length);
+            System.arraycopy(sequence, 0, bytes, prefix.length, sequence.length);
+            System.arraycopy(tail, 0, bytes, prefix.length + sequence.length, tail.length);
+            for (JsonParser parser : List.of(JsonParser.create(bytes, 2, bytes.length - 2),
+                                              JsonParser.create(new ByteArrayInputStream(bytes, 2, bytes.length - 2), 7),
+                                              JsonParser.create(new ByteArrayInputStream(bytes, 2, bytes.length - 2), 128))) {
+                assertThrows(JsonException.class, () -> parser.readString(lexer));
+                assertThat(parser.currentByte(), is(sequence[sequence.length - 1]));
+            }
+        }
+    }
+
+    @Test
+    void bufferedUtf8HonorsTheLogicalEndOfEveryCodePoint() {
+        String name = "é東京é😀予約";
+        byte[] known = ("\"" + name + "\"").getBytes(StandardCharsets.UTF_8);
+        byte[] storage = ("pre\"" + name + "\",complete trailing bytes").getBytes(StandardCharsets.UTF_8);
+        JsonStringLexer lexer = JsonStringLexer.create(name);
+        for (int length = 1; length < known.length; length++) {
+            JsonParser parser = JsonParser.create(storage, 3, length);
+            assertThrows(JsonException.class, () -> parser.readString(lexer));
+        }
+        assertThat(JsonParser.create(storage, 3, known.length).readString(lexer), is(0));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    void preservesBothUtf16PlanesAcrossRawAndEscapedNames(ParserMethod method) {
+        JsonStringLexer lexer = JsonStringLexer.create("東京é京都😀Ā終");
+        for (int size : List.of(7, 16, 128)) {
+            for (String wire : List.of("東京\\u00e9京都\\uD83D\\uDE00Ā終", "\\u6771京é京都😀\\u0100終")) {
+                JsonParser parser = method.createParser("\"" + wire + "\",7", size);
+                assertThat(parser.readString(lexer), is(0));
+                assertThat(parser.nextToken(), is((byte) ','));
+            }
+            JsonParser malformed = method.createParser("\"東京\\uD800é京都\"", size);
+            assertThrows(JsonException.class, () -> malformed.readString(lexer));
+        }
     }
 
     private static String escapedAt(String value, int first, int second) {

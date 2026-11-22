@@ -63,12 +63,13 @@ abstract class JsonTextParser extends JsonParserBase {
             if (events != 0) {
                 int shift = Long.numberOfTrailingZeros(events) & -Byte.SIZE;
                 int end = position + shift / Byte.SIZE;
-                if (input[end] == '"') {
+                byte event = input[end];
+                if (event == '"') {
                     stringPosition(end);
                     return state < 0 ? -1 : lexer.advance(state, word & ((1L << shift) - 1), 0, shift / Byte.SIZE);
                 }
-                if (input[end] == '\\') {
-                    return readEscaped(lexer, input, end, limit, state, word & ((1L << shift) - 1), shift);
+                if (event == '\\' || event < 0) {
+                    return readBuffered(lexer, input, end, limit, state, word & ((1L << shift) - 1), shift);
                 }
                 break;
             }
@@ -127,7 +128,22 @@ abstract class JsonTextParser extends JsonParserBase {
 
     abstract int readUtf8CodePoint(byte first);
 
-    private int readEscaped(JsonStringLexer lexer, byte[] input, int position, int limit, int state, long low, int shift) {
+    // Each successive group of three little-endian bytes must contain a UTF-8 lead and two continuations.
+    // E0 and ED have additional second-byte bounds and stay with the single-code-point decoder.
+    private static long threeBytePair(long word) {
+        if ((word & 0x0000c0c0f0c0c0f0L) != 0x00008080e08080e0L) {
+            return -1;
+        }
+        int first = (int) word & 0xff;
+        int second = (int) (word >>> 24) & 0xff;
+        if (first == 0xe0 || first == 0xed || second == 0xe0 || second == 0xed) {
+            return -1;
+        }
+        // Keep the two decoded UTF-16 code units 24 bits apart, as in the input word.
+        return ((word & 0x0f00000fL) << 12) | (((word >>> 8) & 0x3f00003fL) << 6) | ((word >>> 16) & 0x3f00003fL);
+    }
+
+    private int readBuffered(JsonStringLexer lexer, byte[] input, int position, int limit, int state, long low, int shift) {
         long high = 0;
         while (position < limit) {
             byte b = input[position];
@@ -150,6 +166,32 @@ abstract class JsonTextParser extends JsonParserBase {
                 high |= (long) upper << shift;
                 shift += Byte.SIZE;
                 position += 6;
+            } else if (b < 0) {
+                long pair = shift <= Long.SIZE - 2 * Byte.SIZE && (b & 0xf0) == 0xe0 && limit - position >= Long.BYTES
+                        ? threeBytePair(word(input, position)) : -1;
+                if (pair >= 0) {
+                    // Append the low and high bytes of both UTF-16 units to their respective lexer words.
+                    low |= ((pair & 0xff) | ((pair >>> 16) & 0xff00)) << shift;
+                    high |= (((pair >>> 8) & 0xff) | ((pair >>> 24) & 0xff00)) << shift;
+                    shift += 2 * Byte.SIZE;
+                    position += 6;
+                } else {
+                    int unit;
+                    if ((b & 0xe0) == 0xc0 && limit - position >= 2) {
+                        stringPosition(position + 1);
+                        unit = Parsers.decodeUtf8TwoByte(b, input[position + 1], this);
+                        position += 2;
+                    } else if ((b & 0xf0) == 0xe0 && limit - position >= 3) {
+                        stringPosition(position + 2);
+                        unit = Parsers.decodeUtf8ThreeByte(b, input[position + 1], input[position + 2], this);
+                        position += 3;
+                    } else {
+                        break;
+                    }
+                    low |= (unit & 0xffL) << shift;
+                    high |= (long) (unit >>> Byte.SIZE) << shift;
+                    shift += Byte.SIZE;
+                }
             } else if (b < 0x20) {
                 break;
             } else if (limit - position >= Long.BYTES) {
