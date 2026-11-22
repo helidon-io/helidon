@@ -17,6 +17,7 @@
 package io.helidon.json;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Objects;
 
 import io.helidon.common.Api;
@@ -24,8 +25,8 @@ import io.helidon.common.Api;
 /**
  * A precomputed JSON object key.
  * <p>
- * The key keeps pre-escaped character and UTF-8 representations so repeated object-field writes can avoid
- * re-encoding the property name on each serialization call.
+ * The generator can write the pre-escaped name directly. A text parser can use the same name
+ * to recognize a following object property without decoding it again.
  * </p>
  */
 @Api.Preview
@@ -33,6 +34,10 @@ public final class JsonKey {
 
     private static final char[] HEX_DIGITS = "0123456789ABCDEF".toCharArray();
 
+    private final int frameBytes;
+    private final long head;
+    // A mask for a short frame or the last eight bytes of a longer one.
+    private final long tail;
     private final String value;
     private final byte[] quotedUtf8;
     private final char[] quotedChars;
@@ -42,6 +47,21 @@ public final class JsonKey {
         String quoted = quotedValue(value);
         this.quotedChars = quoted.toCharArray();
         this.quotedUtf8 = quoted.getBytes(StandardCharsets.UTF_8);
+        int length = quotedUtf8.length;
+        // An unpaired surrogate can be written as an escape but cannot occur in a valid decoded name.
+        frameBytes = length - 2 == value.length() || hasValidSurrogates(value)
+                ? Math.min(length, 2 * Long.BYTES) + 2
+                : -1;
+        if (frameBytes < 0 || frameBytes > 2 * Long.BYTES) {
+            head = 0;
+            tail = 0;
+        } else if (frameBytes <= Long.BYTES) {
+            head = frameWord(0, frameBytes);
+            tail = -1L >>> ((Long.BYTES - frameBytes) * Byte.SIZE);
+        } else {
+            head = frameWord(0, Long.BYTES);
+            tail = frameWord(frameBytes - Long.BYTES, frameBytes);
+        }
     }
 
     /**
@@ -90,6 +110,67 @@ public final class JsonKey {
 
     char[] quotedChars() {
         return quotedChars;
+    }
+
+    int firstPropertyValue(byte[] buffer, int start, int limit) {
+        int available = limit - start;
+        if (frameBytes < 0 || available - 1 <= quotedUtf8.length) {
+            return -1;
+        }
+        int value = start + quotedUtf8.length + 1;
+        if (frameBytes <= Long.BYTES && available >= Long.BYTES) {
+            if ((JsonTextParser.word(buffer, start) & (tail >>> Byte.SIZE)) != (head >>> Byte.SIZE)) {
+                return -1;
+            }
+        } else if (frameBytes > Long.BYTES && frameBytes <= 2 * Long.BYTES) {
+            if (((JsonTextParser.word(buffer, start) << Byte.SIZE) | ',') != head
+                    || JsonTextParser.word(buffer, value - Long.BYTES) != tail) {
+                return -1;
+            }
+        } else if (buffer[value - 1] != ':' || !Arrays.equals(buffer, start, value - 1, quotedUtf8, 0, quotedUtf8.length)) {
+            return -1;
+        }
+        return valueStart(buffer[value]) ? value : -1;
+    }
+
+    int nextPropertyValue(byte[] buffer, int start, int limit) {
+        int available = limit - start;
+        if (frameBytes < 0 || available - 2 <= quotedUtf8.length) {
+            return -1;
+        }
+        int end = start + 2 + quotedUtf8.length;
+        if (frameBytes <= Long.BYTES && available >= Long.BYTES) {
+            if ((JsonTextParser.word(buffer, start) & tail) != head) {
+                return -1;
+            }
+        } else if (frameBytes > Long.BYTES && frameBytes <= 2 * Long.BYTES) {
+            if (JsonTextParser.word(buffer, start) != head || JsonTextParser.word(buffer, end - Long.BYTES) != tail) {
+                return -1;
+            }
+        } else if (buffer[start] != ',' || buffer[end - 1] != ':'
+                || !Arrays.equals(buffer, start + 1, end - 1, quotedUtf8, 0, quotedUtf8.length)) {
+            return -1;
+        }
+        return valueStart(buffer[end]) ? end : -1;
+    }
+
+    private static boolean valueStart(byte next) {
+        return (next >= '0' && next <= '9') || next == '"' || next == '-' || next == '{' || next == '['
+                || next == 't' || next == 'f' || next == 'n';
+    }
+
+    private static boolean hasValidSurrogates(String name) {
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
+            if (Character.isHighSurrogate(c)) {
+                if (++i == name.length() || !Character.isLowSurrogate(name.charAt(i))) {
+                    return false;
+                }
+            } else if (Character.isLowSurrogate(c)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static String quotedValue(String value) {
@@ -141,5 +222,14 @@ public final class JsonKey {
         builder.append(HEX_DIGITS[(c >> 8) & 0xF]);
         builder.append(HEX_DIGITS[(c >> 4) & 0xF]);
         builder.append(HEX_DIGITS[c & 0xF]);
+    }
+
+    private long frameWord(int start, int end) {
+        long word = 0;
+        for (int i = start; i < end; i++) {
+            int b = i == 0 ? ',' : i == frameBytes - 1 ? ':' : quotedUtf8[i - 1] & 0xff;
+            word |= (long) b << ((i - start) * Byte.SIZE);
+        }
+        return word;
     }
 }

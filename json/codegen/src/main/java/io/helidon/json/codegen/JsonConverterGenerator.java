@@ -20,6 +20,7 @@ import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -46,6 +47,8 @@ import static java.util.function.Predicate.not;
 class JsonConverterGenerator {
 
     static final String CONFIGURE_PARAM = "jsonBindingConfigurator";
+    // Bound the amount of additional value-reading code generated for small objects.
+    private static final int MAX_ORDERED_PROPERTIES = 12;
     private static final String PROPERTY_NAME_SUFFIX = "_";
     private static final String MISSING_SUFFIX = "_missing";
     private static final Supplier<?> DEFAULT_TYPE_VALUE = () -> null;
@@ -668,6 +671,7 @@ class JsonConverterGenerator {
         for (JsonProperty jsonProperty : jsonProperties) {
             String key = jsonProperty.serializationName().orElseThrow();
             String keyFieldName = fieldNames.unique(constantName(key) + "_KEY");
+            fieldNames.registerJsonKey(key, keyFieldName);
             classBuilder.addField(field -> field.name(keyFieldName)
                     .type(JsonTypes.JSON_KEY)
                     .isStatic(true)
@@ -883,72 +887,52 @@ class JsonConverterGenerator {
                 .filter(name -> !propertyNames.contains(name))
                 .toList();
         propertyNames.addAll(discriminatorNames);
-        boolean hasProperties = !propertyNames.isEmpty();
-
-        if (hasProperties) {
-            StringLexerGenerator.generate(classBuilder, converterInfo.converterType(), "PROPERTY_NAMES", propertyNames);
-            method.addContent("for (int property = parser.readProperty(PROPERTY_NAMES); property != ")
-                    .addContent(JsonTypes.JSON_PARSER)
-                    .addContentLine(".END_OBJECT; property = parser.nextProperty(PROPERTY_NAMES)) {");
-        } else {
-            method.addContentLine("while (true) {")
-                    .addContent("if (lastByte != ").addContent(BYTES).addContentLine(".DOUBLE_QUOTE_BYTE) {")
-                    .addContentLine("throw parser.createException(\"Expected '\\\"' as a key start\", lastByte);")
-                    .addContentLine("}")
-                    .addContentLine("parser.skip();")
-                    .addContentLine("lastByte = parser.nextToken();")
-                    .addContent("if (lastByte != ").addContent(BYTES).addContentLine(".COLON_BYTE) {")
-                    .addContentLine("throw parser.createException(\"Expected ':' to separate key and value\", lastByte);")
-                    .addContentLine("}")
-                    .addContentLine("parser.nextToken();");
-        }
-        if (hasProperties) {
-            method.addContentLine("switch (property) {");
-            Set<String> processedTypes = new HashSet<>();
-            for (int i = 0; i < jsonProperties.size(); i++) {
-                JsonProperty property = jsonProperties.get(i);
-                String propertyName = property.deserializationName().orElseThrow();
-                addOrdinalCase(classBuilder, method, fieldNames, propertyName, !property.identifier().equals(propertyName), i);
-                addTypeHandling(property,
-                                method,
-                                classBuilder,
-                                hasCreator,
-                                hasBuilder,
-                                processedTypes,
-                                toConfigure,
-                                fieldNames);
-                method.addContentLine("}");
-            }
-            for (int i = 0; i < discriminatorNames.size(); i++) {
-                String propertyName = discriminatorNames.get(i);
-                addOrdinalCase(classBuilder,
-                              method,
-                              fieldNames,
-                              propertyName,
-                              !GeneratedNames.normalize(propertyName).equals(propertyName),
-                              jsonProperties.size() + i);
-                method.addContentLine("parser.skip();")
-                        .addContentLine("}");
-            }
-            method.addContentLine("default -> {");
-            if (converterInfo.failOnUnknown()) {
-                method.addContent("throw parser.createException(\"Unknown properties are not allowed for this type: \" + ")
-                        .addContent(converterInfo.converterType()).addContentLine(".class.getName());");
-            } else {
-                method.addContentLine("parser.skip();");
-            }
-            method.addContentLine("}");
-            method.addContentLine("}");
-        } else if (converterInfo.failOnUnknown()) {
-            method.addContent("throw parser.createException(\"Unknown properties are not allowed for this type: \" + ")
-                    .addContent(converterInfo.converterType()).addContentLine(".class.getName());");
-        } else {
-            method.addContentLine("parser.skip();");
-        }
-        if (hasProperties) {
-            method.addContentLine("}");
+        if (propertyNames.isEmpty()) {
+            readUnknownProperties(method, converterInfo);
             return;
         }
+        StringLexerGenerator.generate(classBuilder, converterInfo.converterType(), "PROPERTY_NAMES", propertyNames);
+        List<PropertyReader> readers = new ArrayList<>(jsonProperties.size());
+        Set<String> processedTypes = new HashSet<>();
+        for (int i = 0; i < jsonProperties.size(); i++) {
+            JsonProperty property = jsonProperties.get(i);
+            String constant = addOrdinalConstant(classBuilder, fieldNames, propertyNames.get(i), i);
+            String deserializer = deserializerField(property, classBuilder, processedTypes, toConfigure, fieldNames);
+            readers.add(new PropertyReader(property, constant, deserializer));
+        }
+        Map<String, String> ignored = new LinkedHashMap<>();
+        for (int i = 0; i < discriminatorNames.size(); i++) {
+            String name = discriminatorNames.get(i);
+            ignored.put(name, addOrdinalConstant(classBuilder, fieldNames, name, readers.size() + i));
+        }
+        boolean ordered = readers.size() >= 2 && readers.size() <= MAX_ORDERED_PROPERTIES && discriminatorNames.isEmpty()
+                && propertyNames.stream().allMatch(name -> fieldNames.jsonKey(name) != null);
+        if (ordered) {
+            method.addContentLine("if (parser.tryReadProperty(" + fieldNames.jsonKey(propertyNames.getFirst()) + ")) {");
+            String target = "";
+            if (!hasCreator) {
+                boolean takesBuilder = hasBuilder && converterInfo.creatorInfo().creatorKind() != ElementKind.METHOD;
+                target = takesBuilder ? ", builder" : ", instance";
+            }
+            method.addContentLine("return readDeclaredFields(parser" + target + ");").addContentLine("}");
+            generateDeclaredReader(classBuilder, converterInfo, jsonProperties, readers, hasCreator, hasBuilder, fieldNames);
+        }
+        propertyLoop(method, converterInfo, readers, ignored, hasCreator, hasBuilder, "parser.readProperty(PROPERTY_NAMES)");
+    }
+
+    private static void readUnknownProperties(Method.Builder method, ConvertedTypeInfo converterInfo) {
+        method.addContentLine("while (true) {")
+                .addContent("if (lastByte != ").addContent(BYTES).addContentLine(".DOUBLE_QUOTE_BYTE) {")
+                .addContentLine("throw parser.createException(\"Expected '\\\"' as a key start\", lastByte);")
+                .addContentLine("}")
+                .addContentLine("parser.skip();")
+                .addContentLine("lastByte = parser.nextToken();")
+                .addContent("if (lastByte != ").addContent(BYTES).addContentLine(".COLON_BYTE) {")
+                .addContentLine("throw parser.createException(\"Expected ':' to separate key and value\", lastByte);")
+                .addContentLine("}")
+                .addContentLine("parser.nextToken();");
+
+        unknownProperty(method, converterInfo);
         method.addContentLine("lastByte = parser.nextToken();")
                 .addContent("if (lastByte == ")
                 .addContent(BYTES)
@@ -967,12 +951,109 @@ class JsonConverterGenerator {
         method.addContentLine("}");
     }
 
+    private static void generateDeclaredReader(ClassBase.Builder<?, ?> classBuilder,
+                                               ConvertedTypeInfo converterInfo,
+                                               List<JsonProperty> properties,
+                                               List<PropertyReader> readers,
+                                               boolean hasCreator,
+                                               boolean hasBuilder,
+                                               GeneratedNames fieldNames) {
+        CreatorInfo creator = converterInfo.creatorInfo();
+        classBuilder.addMethod(method -> {
+            method.name("readDeclaredFields").accessModifier(AccessModifier.PRIVATE)
+                    .returnType(converterInfo.wildcardsGenerics()).addParameter(JsonTypes.JSON_PARSER, "parser");
+            if (hasCreator) {
+                createPreProcessingVariables(method, converterInfo, properties, true, creator.creatorKind(), creator, hasBuilder);
+            } else {
+                boolean takesBuilder = hasBuilder && creator.creatorKind() != ElementKind.METHOD;
+                if (takesBuilder) {
+                    method.addParameter(converterInfo.builderInfo().orElseThrow().builderType(), "builder");
+                } else {
+                    method.addParameter(converterInfo.objectsGenerics(), "instance");
+                }
+                requiredFlags(method, properties);
+                if (takesBuilder) {
+                    properties.stream().filter(not(JsonProperty::usedInBuilder)).forEach(p -> addPropertyVariable(method, p));
+                }
+            }
+            PropertyReader first = readers.getFirst();
+            valueWritingMethod(first.property(), method, hasCreator, hasBuilder, first.deserializer());
+            readConsecutiveProperties(method, readers, hasCreator, hasBuilder, fieldNames);
+            propertyLoop(method, converterInfo, readers, Map.of(), hasCreator, hasBuilder,
+                         "parser.nextProperty(PROPERTY_NAMES)");
+            createFinalInstanceCreation(method, converterInfo, properties, hasCreator, creator.creatorKind(),
+                                        creator, hasBuilder);
+        });
+    }
+
+    private static void propertyLoop(Method.Builder method,
+                                     ConvertedTypeInfo converterInfo,
+                                     List<PropertyReader> readers,
+                                     Map<String, String> ignored,
+                                     boolean hasCreator,
+                                     boolean hasBuilder,
+                                     String firstProperty) {
+        method.addContent("for (int property = " + firstProperty + "; property != ").addContent(JsonTypes.JSON_PARSER)
+                .addContentLine(".END_OBJECT; property = parser.nextProperty(PROPERTY_NAMES)) {")
+                .addContentLine("switch (property) {");
+        for (PropertyReader reader : readers) {
+            JsonProperty property = reader.property();
+            String name = property.deserializationName().orElseThrow();
+            addOrdinalCase(method, name, !property.identifier().equals(name), reader.constantName());
+            valueWritingMethod(property, method, hasCreator, hasBuilder, reader.deserializer());
+            method.addContentLine("}");
+        }
+        ignored.forEach((name, constant) -> {
+            addOrdinalCase(method, name, !GeneratedNames.normalize(name).equals(name), constant);
+            method.addContentLine("parser.skip();").addContentLine("}");
+        });
+        method.addContentLine("default -> {");
+        unknownProperty(method, converterInfo);
+        method.addContentLine("}").addContentLine("}").addContentLine("}");
+    }
+
+    private static void unknownProperty(Method.Builder method, ConvertedTypeInfo converterInfo) {
+        if (converterInfo.failOnUnknown()) {
+            method.addContent("throw parser.createException(\"Unknown properties are not allowed for this type: \" + ")
+                    .addContent(converterInfo.converterType()).addContentLine(".class.getName());");
+        } else {
+            method.addContentLine("parser.skip();");
+        }
+    }
+
+    private static void readConsecutiveProperties(Method.Builder method,
+                                                  List<PropertyReader> readers,
+                                                  boolean hasCreator,
+                                                  boolean hasBuilder,
+                                                  GeneratedNames fieldNames) {
+        method.addContentLine("orderedProperties: {");
+        for (int j = 1; j < readers.size(); j++) {
+            PropertyReader reader = readers.get(j);
+            JsonProperty next = reader.property();
+            String key = fieldNames.jsonKey(next.deserializationName().orElseThrow());
+            method.addContentLine("if (!parser.tryNextProperty(" + key + ")) {")
+                    .addContentLine("break orderedProperties;")
+                    .addContentLine("}");
+            valueWritingMethod(next, method, hasCreator, hasBuilder, reader.deserializer());
+        }
+        method.addContentLine("}");
+    }
+
     private static String addOrdinalCase(ClassBase.Builder<?, ?> classBuilder,
                                         Method.Builder method,
                                         GeneratedNames fieldNames,
                                         String value,
                                         boolean normalized,
                                         int index) {
+        String constantName = addOrdinalConstant(classBuilder, fieldNames, value, index);
+        addOrdinalCase(method, value, normalized, constantName);
+        return constantName;
+    }
+
+    private static String addOrdinalConstant(ClassBase.Builder<?, ?> classBuilder,
+                                            GeneratedNames fieldNames,
+                                            String value,
+                                            int index) {
         String constantName = fieldNames.unique(constantName(value));
         classBuilder.addField(field -> field.name(constantName)
                 .accessModifier(AccessModifier.PRIVATE)
@@ -980,7 +1061,6 @@ class JsonConverterGenerator {
                 .isStatic(true)
                 .isFinal(true)
                 .defaultValue(Integer.toString(index)));
-        addOrdinalCase(method, value, normalized, constantName);
         return constantName;
     }
 
@@ -1036,10 +1116,7 @@ class JsonConverterGenerator {
                                                      ElementKind creatorKind,
                                                      CreatorInfo creatorInfo,
                                                      boolean hasBuilder) {
-        jsonProperties.stream()
-                .filter(JsonProperty::required)
-                .map(JsonConverterGenerator::convertToMissingName)
-                .forEach(name -> method.addContent(boolean.class).addContentLine(" " + name + " = true;"));
+        requiredFlags(method, jsonProperties);
         if (hasCreator) {
             creatorInfo.parameters()
                     .stream()
@@ -1074,6 +1151,13 @@ class JsonConverterGenerator {
             method.addContent(originalType).addContent(" instance = new ")
                     .addContent(originalType).addContentLine("();");
         }
+    }
+
+    private static void requiredFlags(Method.Builder method, List<JsonProperty> properties) {
+        properties.stream()
+                .filter(JsonProperty::required)
+                .map(JsonConverterGenerator::convertToMissingName)
+                .forEach(name -> method.addContent(boolean.class).addContentLine(" " + name + " = true;"));
     }
 
     private static String convertToMissingName(JsonProperty jsonProperty) {
@@ -1141,47 +1225,24 @@ class JsonConverterGenerator {
                 .addContentLine(".class);");
     }
 
-    @SuppressWarnings("checkstyle:ParameterNumber")
-    private static void addTypeHandling(JsonProperty jsonProperty,
-                                        Method.Builder method,
-                                        ClassBase.Builder<?, ?> classBuilder,
-                                        boolean hasCreator,
-                                        boolean hasBuilder,
-                                        Set<String> processedTypes,
-                                        Map<String, TypeToConfigure> toConfigure,
-                                        GeneratedNames fieldNames) {
-        jsonProperty.deserializer()
-                .ifPresentOrElse(deserializer -> addUserDeserializer(jsonProperty,
-                                                                     deserializer,
-                                                                     method,
-                                                                     classBuilder,
-                                                                     hasCreator,
-                                                                     hasBuilder,
-                                                                     fieldNames),
-                                 () -> {
-                                     TypeName type = jsonProperty.deserializationType().orElseThrow();
-                                     createTypeDeserializer(jsonProperty,
-                                                            type,
-                                                            method,
-                                                            classBuilder,
-                                                            hasCreator,
-                                                            hasBuilder,
-                                                            processedTypes,
-                                                            toConfigure,
-                                                            fieldNames);
-                                 });
+    private static String deserializerField(JsonProperty property,
+                                            ClassBase.Builder<?, ?> classBuilder,
+                                            Set<String> processedTypes,
+                                            Map<String, TypeToConfigure> toConfigure,
+                                            GeneratedNames fieldNames) {
+        if (property.deserializer().isPresent()) {
+            return addUserDeserializer(property, property.deserializer().orElseThrow(), classBuilder, fieldNames);
+        }
+        return createTypeDeserializer(property, property.deserializationType().orElseThrow(), classBuilder, processedTypes,
+                                      toConfigure, fieldNames);
     }
 
-    @SuppressWarnings("checkstyle:ParameterNumber")
-    private static void createTypeDeserializer(JsonProperty jsonProperty,
-                                               TypeName type,
-                                               Method.Builder method,
-                                               ClassBase.Builder<?, ?> classBuilder,
-                                               boolean hasCreator,
-                                               boolean hasBuilder,
-                                               Set<String> processedTypes,
-                                               Map<String, TypeToConfigure> toConfigure,
-                                               GeneratedNames fieldNames) {
+    private static String createTypeDeserializer(JsonProperty jsonProperty,
+                                                 TypeName type,
+                                                 ClassBase.Builder<?, ?> classBuilder,
+                                                 Set<String> processedTypes,
+                                                 Map<String, TypeToConfigure> toConfigure,
+                                                 GeneratedNames fieldNames) {
         TypeName resolvedType = type.boxed();
         if (type.typeArguments().isEmpty()) {
             String converterFieldName = fieldNames.deserializer(type, "deserializer" + ensureUpperStart(type));
@@ -1201,7 +1262,7 @@ class JsonConverterGenerator {
                                                                                 type,
                                                                                 fieldType));
             }
-            valueWritingMethod(jsonProperty, method, hasCreator, hasBuilder, converterFieldName);
+            return converterFieldName;
         } else {
             //Type contains generics
             String fieldName = fieldNames.unique("deserializer" + capitalize(jsonProperty.deserializationName().orElseThrow()));
@@ -1214,17 +1275,14 @@ class JsonConverterGenerator {
                                                                    resolvedType,
                                                                    type,
                                                                    fieldType));
-            valueWritingMethod(jsonProperty, method, hasCreator, hasBuilder, fieldName);
+            return fieldName;
         }
     }
 
-    private static void addUserDeserializer(JsonProperty property,
-                                            TypeName deserializer,
-                                            Method.Builder method,
-                                            ClassBase.Builder<?, ?> classBuilder,
-                                            boolean hasCreator,
-                                            boolean builderInfo,
-                                            GeneratedNames fieldNames) {
+    private static String addUserDeserializer(JsonProperty property,
+                                              TypeName deserializer,
+                                              ClassBase.Builder<?, ?> classBuilder,
+                                              GeneratedNames fieldNames) {
         String constantName = fieldNames.unique(constantName(property.deserializationName().orElseThrow()) + "_DESERIALIZER");
         classBuilder.addField(field -> field.name(constantName)
                 .type(deserializer)
@@ -1232,7 +1290,7 @@ class JsonConverterGenerator {
                 .isFinal(true)
                 .addContent("new ").addContent(deserializer).addContent("()"));
 
-        valueWritingMethod(property, method, hasCreator, builderInfo, constantName);
+        return constantName;
     }
 
     private static void valueWritingMethod(JsonProperty property,
@@ -1304,4 +1362,6 @@ class JsonConverterGenerator {
 
     }
 
+    private record PropertyReader(JsonProperty property, String constantName, String deserializer) {
+    }
 }

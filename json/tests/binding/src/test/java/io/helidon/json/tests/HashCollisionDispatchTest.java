@@ -280,6 +280,29 @@ class HashCollisionDispatchTest {
 
     @ParameterizedTest
     @EnumSource(BindingMethod.class)
+    void resumesAfterAnOrderedPrefixWithoutReplayingSetters(BindingMethod method) {
+        String doc = "{\"id\":1,\"label\":\"first\",\"unknown\":{\"label\":\"ignored\"},\"count\":5,\"label\":\"last\"}";
+        SetterSequence result = method.deserialize(jsonBinding, doc, SetterSequence.class);
+        assertThat(result.id(), is(1));
+        assertThat(result.label(), is("last"));
+        assertThat(result.count(), is(5));
+        assertThat(result.writes(), is("ilcl"));
+        String shuffled = "{\"count\":5,\"id\":1,\"label\":\"last\"}";
+        assertThat(method.deserialize(jsonBinding, shuffled, SetterSequence.class).writes(), is("cil"));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserInput.class)
+    void keepsRequiredFieldsAcrossPartialOrderAndAlternateParsers(ParserInput input) {
+        String doc = "{\"id\":8,\"label\":\"first\",\"extra\":[1,2],\"count\":3,\"la\\u0062el\":\"last\"}";
+        assertThat(jsonBinding.deserialize(input.parser(doc, jsonBinding), RequiredOrder.class),
+                   is(new RequiredOrder(8, "last", 3)));
+        JsonParser missing = input.parser("{\"label\":\"only\",\"count\":2}", jsonBinding);
+        assertThrows(JsonException.class, () -> jsonBinding.deserialize(missing, RequiredOrder.class));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
     void recognizesNumberedFieldsAndTheirExactSuffixes(BindingMethod method) {
         String json = "{\"region35Total\":5,\"r\\u0065gion00Hits\":7,\"region00Total\":88,"
                 + "\"region00\\u0148its\":89,\"region35Hits\":90,\"region36Hits\":91,\"region17Tot\\u0061l\":9}";
@@ -375,6 +398,49 @@ class HashCollisionDispatchTest {
     @Json.Entity
     record LongFields(@Json.Property("shipping.destination.address.postalCode") int postal,
                       @Json.Property("shipping.destination.address.streetAddress") int street) {
+    }
+
+    @Json.Entity
+    record RequiredOrder(@Json.Required int id, String label, int count) {
+    }
+
+    @Json.Entity
+    static class SetterSequence {
+        private int id;
+        private String label;
+        private int count;
+        private String writes = "";
+
+        public int id() {
+            return id;
+        }
+
+        public void id(int id) {
+            this.id = id;
+            writes += "i";
+        }
+
+        public String label() {
+            return label;
+        }
+
+        public void label(String label) {
+            this.label = label;
+            writes += "l";
+        }
+
+        public int count() {
+            return count;
+        }
+
+        public void count(int count) {
+            this.count = count;
+            writes += "c";
+        }
+
+        String writes() {
+            return writes;
+        }
     }
 
     @Json.Entity

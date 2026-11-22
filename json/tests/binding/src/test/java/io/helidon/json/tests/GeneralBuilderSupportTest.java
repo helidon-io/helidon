@@ -77,6 +77,15 @@ public class GeneralBuilderSupportTest {
         assertThat(deserialized.value2(), is("test2"));
     }
 
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    void retainsBuilderAndPostBuildSetterWhenPropertyOrderChanges(BindingMethod method) {
+        String json = "{\"value\":\"first\",\"extra\":[1],\"value2\":\"assigned\",\"value\":\"last\"}";
+        var result = method.deserialize(jsonBinding, json, TestPojoWithSetterAndBuilder.class);
+        assertThat(result.value(), is("last"));
+        assertThat(result.value2(), is("assigned"));
+    }
+
     @Json.Entity
     @Json.BuilderInfo(TestPojoWithBuilder.Builder.class)
     public static class TestPojoWithBuilder {

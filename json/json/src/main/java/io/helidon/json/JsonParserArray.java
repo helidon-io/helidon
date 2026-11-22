@@ -21,6 +21,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Objects;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.Bytes;
@@ -150,6 +151,26 @@ class JsonParserArray extends JsonTextParser {
             lexer = ascii.decoded();
         }
         return readString(lexer, buffer, currentIndex, bufferLength);
+    }
+
+    @Override
+    public boolean tryReadProperty(JsonKey key) {
+        int value = Objects.requireNonNull(key).firstPropertyValue(buffer, currentIndex, bufferLength);
+        if (value < 0) {
+            return false;
+        }
+        currentIndex = value;
+        return true;
+    }
+
+    @Override
+    public boolean tryNextProperty(JsonKey key) {
+        int value = Objects.requireNonNull(key).nextPropertyValue(buffer, currentIndex + 1, bufferLength);
+        if (value < 0) {
+            return false;
+        }
+        currentIndex = value;
+        return true;
     }
 
     @Override

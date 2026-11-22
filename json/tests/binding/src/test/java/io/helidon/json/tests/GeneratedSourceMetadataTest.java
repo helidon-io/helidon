@@ -122,7 +122,7 @@ class GeneratedSourceMetadataTest {
 
         assertCompilationSuccess(result);
         String content = Files.readString(generatedSource(result, "NamedProperties__GeneratedConverter.java"));
-        assertOrdinalCases(content,
+        assertOrdinalCases(content, 2,
                           List.of("PROJECT", "WIRE_NAME"),
                           List.of("case PROJECT -> {", "case WIRE_NAME -> {"));
         assertThat(content.replace("\r\n", "\n"),
@@ -170,7 +170,7 @@ class GeneratedSourceMetadataTest {
 
         assertCompilationSuccess(result);
         String content = Files.readString(generatedSource(result, "UnusualNames__GeneratedConverter.java"));
-        assertOrdinalCases(content,
+        assertOrdinalCases(content, 1,
                           List.of("LINE__BREAK", "UNICODE_U000A", "COMMENT__TAIL__SUFFIX", "QUOTE__SLASH"),
                           List.of("case LINE__BREAK -> { // \"line\\r\\nbreak\"",
                                   "case UNICODE_U000A -> { // \"unicode\\\\u000a\"",
@@ -197,7 +197,7 @@ class GeneratedSourceMetadataTest {
 
         assertCompilationSuccess(result);
         String content = Files.readString(generatedSource(result, "NormalizedProperties__GeneratedConverter.java"));
-        assertOrdinalCases(content,
+        assertOrdinalCases(content, 2,
                           List.of("MY_KEY", "MY_KEY_1", "NAME", "NAME_1", "NAME_2"),
                           List.of("case MY_KEY -> { // \"my-key\"",
                                   "case MY_KEY_1 -> { // \"my_key\"",
@@ -240,7 +240,7 @@ class GeneratedSourceMetadataTest {
 
         assertCompilationSuccess(result);
         String content = Files.readString(generatedSource(result, "ReservedProperties__GeneratedConverter.java"));
-        assertOrdinalCases(content,
+        assertOrdinalCases(content, 2,
                           List.of("PROPERTY_NAMES_1", "FIRST_DESERIALIZER", "FIRST", "FIRST_KEY_1"),
                           List.of("case PROPERTY_NAMES_1 -> { // \"propertyNames\"",
                                   "case FIRST_DESERIALIZER -> {",
@@ -350,6 +350,86 @@ class GeneratedSourceMetadataTest {
     }
 
     @Test
+    void orderedBeanReusesItsInstanceAndKeepsAGeneralReader() throws IOException {
+        var result = compile("OrderedBean.java", """
+                package io.helidon.json.tests.generated;
+
+                import io.helidon.json.binding.Json;
+
+                @SuppressWarnings("helidon:api:preview")
+                @Json.Entity
+                public class OrderedBean {
+                    public int id;
+                    public String label;
+                    public int count;
+                }
+                """);
+
+        assertCompilationSuccess(result);
+        String content = Files.readString(generatedSource(result, "OrderedBean__GeneratedConverter.java"));
+        assertThat(content, containsString("parser.tryReadProperty(ID_KEY)"));
+        assertThat(content, containsString("return readDeclaredFields(parser, instance)"));
+        assertThat(content, containsString("private OrderedBean readDeclaredFields(JsonParser parser, OrderedBean instance)"));
+        assertThat(content, containsString("parser.tryNextProperty(LABEL_KEY)"));
+        assertThat(content, containsString("new OrderedBean()"));
+        assertThat(content.indexOf("new OrderedBean()"), is(content.lastIndexOf("new OrderedBean()")));
+    }
+
+    @Test
+    void orderedReaderReceivesTheBuilderCreatedAtObjectStart() throws IOException {
+        var result = compile("BuilderBacked.java", """
+                package io.helidon.json.tests.generated;
+
+                import io.helidon.json.binding.Json;
+
+                @SuppressWarnings("helidon:api:preview")
+                @Json.Entity
+                @Json.BuilderInfo(BuilderBacked.Builder.class)
+                public class BuilderBacked {
+                    private final int id;
+                    private final String label;
+
+                    private BuilderBacked(Builder builder) {
+                        id = builder.id;
+                        label = builder.label;
+                    }
+
+                    public int id() {
+                        return id;
+                    }
+
+                    public String label() {
+                        return label;
+                    }
+
+                    public static class Builder {
+                        private int id;
+                        private String label;
+
+                        public Builder id(int value) {
+                            id = value;
+                            return this;
+                        }
+
+                        public Builder label(String value) {
+                            label = value;
+                            return this;
+                        }
+
+                        public BuilderBacked build() {
+                            return new BuilderBacked(this);
+                        }
+                    }
+                }
+                """);
+
+        assertCompilationSuccess(result);
+        String content = Files.readString(generatedSource(result, "BuilderBacked__GeneratedConverter.java"));
+        assertThat(content, containsString("return readDeclaredFields(parser, builder)"));
+        assertThat(content.lines().filter(line -> line.contains(" builder = ")).count(), is(1L));
+    }
+
+    @Test
     void propertyConstantsDoNotShadowCreatorTypes() throws IOException {
         var result = compile("URL.java", """
                 package io.helidon.json.tests.generated;
@@ -397,7 +477,7 @@ class GeneratedSourceMetadataTest {
         assertCompilationSuccess(result);
         for (String file : List.of("URL__GeneratedConverter.java", "URL_Data__GeneratedConverter.java")) {
             String content = Files.readString(generatedSource(result, file));
-            assertOrdinalCases(content, List.of("URL_1"), List.of("case URL_1 -> { // \"url\""));
+            assertOrdinalCases(content, 1, List.of("URL_1"), List.of("case URL_1 -> { // \"url\""));
         }
     }
 
@@ -423,9 +503,9 @@ class GeneratedSourceMetadataTest {
 
         assertCompilationSuccess(result);
         String content = Files.readString(generatedSource(result, "NamedAliases_Parent__GeneratedPolyConverter.java"));
-        assertOrdinalCases(content,
+        assertOrdinalCases(content, 2,
                           List.of("SAMPLE"),
-                          List.of("case SAMPLE -> {", "case SAMPLE -> {"));
+                          List.of("case SAMPLE -> {"));
     }
 
     @Test
@@ -465,13 +545,9 @@ class GeneratedSourceMetadataTest {
 
         assertCompilationSuccess(result);
         String content = Files.readString(generatedSource(result, "NormalizedAliases_Parent__GeneratedPolyConverter.java"));
-        assertOrdinalCases(content,
+        assertOrdinalCases(content, 2,
                           List.of("MY_KEY", "MY_KEY_1", "POLYMORPHIC_ALIASES_1", "COMMENT__TAIL__SUFFIX"),
                           List.of("case MY_KEY -> { // \"my-key\"",
-                                  "case MY_KEY_1 -> { // \"my_key\"",
-                                  "case POLYMORPHIC_ALIASES_1 -> { // \"polymorphicAliases\"",
-                                  "case COMMENT__TAIL__SUFFIX -> { // \"comment*/tail//suffix\"",
-                                  "case MY_KEY -> { // \"my-key\"",
                                   "case MY_KEY_1 -> { // \"my_key\"",
                                   "case POLYMORPHIC_ALIASES_1 -> { // \"polymorphicAliases\"",
                                   "case COMMENT__TAIL__SUFFIX -> { // \"comment*/tail//suffix\""));
@@ -500,7 +576,7 @@ class GeneratedSourceMetadataTest {
 
         assertCompilationSuccess(result);
         String content = Files.readString(generatedSource(result, "MetadataProperties__GeneratedConverter.java"));
-        assertOrdinalCases(content,
+        assertOrdinalCases(content, 1,
                           List.of("MY_KEY", "COUNT", "MY_KEY_1"),
                           List.of("case MY_KEY -> {", "case COUNT -> {", "case MY_KEY_1 -> { // \"my-key\""));
         assertThat(content.replace("\r\n", "\n"),
@@ -704,21 +780,25 @@ class GeneratedSourceMetadataTest {
         assertThat(content.lines().filter(line -> line.contains("generator.write(\"kind\", \"leaf\")")).count(), is(1L));
     }
 
-    private static void assertOrdinalCases(String content, List<String> names, List<String> cases) {
+    private static void assertOrdinalCases(String content, int expectedSwitches, List<String> names, List<String> cases) {
         List<String> dispatchCases = new ArrayList<>();
         int switchIndent = -1;
+        int checked = 0;
         for (String line : content.lines().toList()) {
             String text = line.strip();
             int indent = line.length() - line.stripLeading().length();
             if (text.endsWith("switch (property) {") || text.endsWith("switch (alias) {")) {
+                dispatchCases.clear();
                 switchIndent = indent;
             } else if (indent == switchIndent && text.startsWith("}")) {
+                assertThat(dispatchCases, is(cases));
+                checked++;
                 switchIndent = -1;
             } else if (switchIndent >= 0 && text.startsWith("case ")) {
                 dispatchCases.add(text);
             }
         }
-        assertThat(dispatchCases, is(cases));
+        assertThat(checked, is(expectedSwitches));
         for (int index = 0; index < names.size(); index++) {
             assertThat(content, containsString("private static final int " + names.get(index) + " = " + index + ";"));
         }
