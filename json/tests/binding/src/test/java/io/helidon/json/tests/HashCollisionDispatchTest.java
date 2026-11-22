@@ -253,6 +253,25 @@ class HashCollisionDispatchTest {
 
     @ParameterizedTest
     @EnumSource(BindingMethod.class)
+    void matchesAbbreviatedFieldsWithDifferentLengths(BindingMethod method) {
+        String doc = "{\"minMs\":7,\"offPeak\":14,\"min\" \t:11,\"max\":1,\"inMs\":8,\"minId\":5,\"in\":4,\"\":13,"
+                + "\"countA\":6,\"cpu\\u004dax\":10,\"idMax\":2,\"valMs\":9,\"unitA\":12,\"count\":3,\"off\":15,"
+                + "\"minId123456789\":90,\"offPeal\":91,\"min\\\"Ms\":92,\"mínMs\":93,\"q\":94}";
+        assertThat(method.deserialize(jsonBinding, doc, ShortMetrics.class),
+                   is(new ShortMetrics(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    void verifiesThePrefixOfUtf8FieldsSelectedBySuffixLength(BindingMethod method) {
+        String doc = "{\"東京offPeak\":14,\"東京minMs\":7,\"東京\" \t:13,\"東京min\":11,\"京都offPeak\":90,"
+                + "\"東京offPeax\":91,\"東京minId123456789\":92,\"東京\\u0069nMs\":8}";
+        assertThat(method.deserialize(jsonBinding, doc, PrefixedMetrics.class),
+                   is(new PrefixedMetrics(0, 0, 0, 0, 0, 0, 7, 8, 0, 0, 11, 0, 13, 14, 0)));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
     void verifiesNumberedNamesAtTheEndOfAPartialRange(BindingMethod method) {
         String json = "{\"trailingCounter\":42,\"stat0\\u0030k\":10,\"stat0\\u0039k\":19,\"stat1\\u0036k\":26,"
                 + "\"stat1\\u0037k\":89,\"stat1\\u0039k\":90,\"stat0\\u003ak\":91,\"stAt09k\":92,\"stat0\\u0139k\":93,"
@@ -453,6 +472,22 @@ class HashCollisionDispatchTest {
 
     @Json.Entity
     record PrefixFields(int id, int idExtra, int name, int status, int userId, int revision, int requestId, int displayName) {
+    }
+
+    @Json.Entity
+    record ShortMetrics(int max, int idMax, int count, int in, int minId, int countA, int minMs, int inMs,
+                        int valMs, int cpuMax, int min, int unitA, @Json.Property("") int empty, int offPeak, int off) {
+    }
+
+    @Json.Entity
+    record PrefixedMetrics(@Json.Property("東京max") int max, @Json.Property("東京idMax") int idMax,
+                           @Json.Property("東京count") int count, @Json.Property("東京in") int in,
+                           @Json.Property("東京minId") int minId, @Json.Property("東京countA") int countA,
+                           @Json.Property("東京minMs") int minMs, @Json.Property("東京inMs") int inMs,
+                           @Json.Property("東京valMs") int valMs, @Json.Property("東京cpuMax") int cpuMax,
+                           @Json.Property("東京min") int min, @Json.Property("東京unitA") int unitA,
+                           @Json.Property("東京") int empty, @Json.Property("東京offPeak") int offPeak,
+                           @Json.Property("東京off") int off) {
     }
 
     @Json.Entity

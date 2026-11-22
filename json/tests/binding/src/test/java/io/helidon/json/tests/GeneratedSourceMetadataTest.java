@@ -277,6 +277,55 @@ class GeneratedSourceMetadataTest {
     }
 
     @Test
+    void selectsOverlappingShortFieldsByTheirEncodedLength() throws IOException {
+        var result = compile("ShortMetrics.java", """
+                package io.helidon.json.tests.generated;
+
+                import io.helidon.json.binding.Json;
+
+                @SuppressWarnings("helidon:api:preview")
+                @Json.Entity
+                public record ShortMetrics(int max, int idMax, int count, int in, int minId, int countA, int minMs, int inMs,
+                                           int valMs, int cpuMax, int min, int unitA, @Json.Property("") int empty,
+                                           int offPeak, int off) {
+                }
+
+                @SuppressWarnings("helidon:api:preview")
+                @Json.Entity
+                record TooManyBits(@Json.Property("") int empty, int px0, int px1, int px2, int px3, int px4, int px5, int px6,
+                                   int paaaaaa, int pcaaaaa, int peaaaaa, int piaaaaa, int pqaaaaa,
+                                   @Json.Property("pAaaaaa") int upper, int pacaaaa, int paeaaaa) {
+                }
+
+                @SuppressWarnings("helidon:api:preview")
+                @Json.Entity
+                record Direct(int max, int idMax, int count, int in, int minId, int countA, int minMs, int inMs,
+                              int valMs, int cpuMax, int min, int unitA) {
+                }
+
+                class Long {
+                }
+                """);
+
+        assertCompilationSuccess(result);
+        String content = Files.readString(generatedSource(result, "ShortMetrics__GeneratedConverter.java"));
+        assertThat(content, containsString("import static java.lang.Long.numberOfTrailingZeros;"));
+        assertThat(content, containsString("long quotes = first ^ 0x2222222222222222L;"));
+        assertThat(content, containsString("numberOfTrailingZeros((quotes - 0x0101010101010101L) & ~quotes"
+                                                 + " & 0x8080808080808080L) / 8;"));
+        assertThat(content, containsString("case 0 -> 12;"));
+        assertThat(content, containsString("case 7 -> 13;"));
+        assertThat(content, containsString("case 5 -> PROPERTY_NAMES_TRANSITIONS[4 + (int) compress(first,"));
+        assertThat(content, containsString("case 6 -> PROPERTY_NAMES_TRANSITIONS[12 + (int) compress(first,"));
+        String fallback = Files.readString(generatedSource(result, "TooManyBits__GeneratedConverter.java"));
+        assertThat(fallback, containsString("::lexPropertyNameAscii"));
+        assertThat(fallback, not(containsString("numberOfTrailingZeros(")));
+        String direct = Files.readString(generatedSource(result, "Direct__GeneratedConverter.java"));
+        assertThat(direct, containsString("int route = PROPERTY_NAMES_TRANSITIONS["));
+        assertThat(direct, not(containsString("numberOfTrailingZeros(")));
+    }
+
+    @Test
     void propertyLoopVariableDoesNotShadowTheCreatorType() throws IOException {
         var result = compile("property.java", """
                 package io.helidon.json.tests.generated;

@@ -38,6 +38,7 @@ final class StringLexerGenerator {
     private static final int MAX_ASCII_BRANCHES = 256;
     private static final int STATES_PER_METHOD = 32;
     private static final int MIN_PROJECTED_NAMES = 12;
+    private static final int MAX_ROUTES_PER_NAME = 8;
     private static final int MIN_RANGE_EDGES = 8;
 
     private StringLexerGenerator() {
@@ -229,9 +230,11 @@ final class StringLexerGenerator {
             method.addContentLine("return -1;");
             return;
         }
+        boolean singleWord = false;
         if (!tableName.isEmpty() && edges.size() >= MIN_PROJECTED_NAMES && lowestCost > edges.size()) {
+            singleWord = edges.stream().allMatch(edge -> edge.bytes.length < Long.BYTES);
             Projection projection = Projection.create(edges, Long.BYTES);
-            if (projection == null) {
+            if (projection == null && !singleWord) {
                 projection = Projection.create(edges, 2 * Long.BYTES);
             }
             if (projection != null) {
@@ -253,6 +256,9 @@ final class StringLexerGenerator {
         }
         boolean direct = !tableName.isEmpty() && groups.size() >= 4
                 && groups.values().stream().filter(group -> group.size() == 1).count() * 2 >= groups.size();
+        if (!direct && singleWord && emitLengthProjection(method, edges, owner, tableName)) {
+            return;
+        }
         if (direct) {
             int size = groups.keySet().stream().anyMatch(value -> value >= 128) ? 256 : 128;
             int[] routes = new int[size];
@@ -278,6 +284,52 @@ final class StringLexerGenerator {
             }
         });
         method.addContentLine("default -> {").addContentLine("return -1;").addContentLine("}").addContentLine("}");
+    }
+
+    // Once the closing quote is located, keys of each length can use their own constant bit mask.
+    // All groups share the original table budget and the parser verifies every selected literal.
+    private static boolean emitLengthProjection(Method.Builder method,
+                                                List<RawEdge> edges,
+                                                ClassBase.Builder<?, ?> owner,
+                                                String tableName) {
+        Map<Integer, List<RawEdge>> lengths = new TreeMap<>();
+        edges.forEach(edge -> lengths.computeIfAbsent(edge.bytes.length, _ -> new ArrayList<>()).add(edge));
+        if (lengths.size() == 1) {
+            return false;
+        }
+        int budget = MAX_ROUTES_PER_NAME * edges.size();
+        List<Integer> routes = new ArrayList<>();
+        List<String> cases = new ArrayList<>();
+        for (var group : lengths.entrySet()) {
+            List<RawEdge> sameLength = group.getValue();
+            String value;
+            if (sameLength.size() == 1) {
+                value = Integer.toString(sameLength.getFirst().ordinal);
+            } else {
+                Projection projection = Projection.create(sameLength, Long.BYTES, budget - routes.size());
+                if (projection == null) {
+                    return false;
+                }
+                String base = routes.isEmpty() ? "" : routes.size() + " + ";
+                value = tableName + "[" + base + "(int) compress(first, " + literal(projection.firstMask) + ")]";
+                for (int route : projection.routes) {
+                    routes.add(route);
+                }
+            }
+            cases.add("case " + group.getKey() + " -> " + value + ";");
+        }
+        if (!routes.isEmpty()) {
+            addTable(owner, tableName, routes.stream().mapToInt(Integer::intValue).toArray());
+            owner.addStaticImport("java.lang.Long.compress");
+        }
+        owner.addStaticImport("java.lang.Long.numberOfTrailingZeros");
+        method.addContentLine("long quotes = first ^ 0x2222222222222222L;")
+                .addContentLine("int length = numberOfTrailingZeros((quotes - 0x0101010101010101L) & ~quotes"
+                                        + " & 0x8080808080808080L) / 8;")
+                .addContentLine("return switch (length) {");
+        cases.forEach(method::addContentLine);
+        method.addContentLine("default -> -1;").addContent("}").addContentLine(";");
+        return true;
     }
 
     // Every compared byte is part of the name or its closing quote for every registered spelling.
@@ -536,6 +588,10 @@ final class StringLexerGenerator {
     // Select bits that distinguish every pair before either name ends. The parser verifies the entire candidate.
     private record Projection(long firstMask, long secondMask, int[] routes) {
         private static Projection create(List<RawEdge> edges, int width) {
+            return create(edges, width, MAX_ROUTES_PER_NAME * edges.size());
+        }
+
+        private static Projection create(List<RawEdge> edges, int width, int maximumRoutes) {
             BitSet[] columns = new BitSet[width * Byte.SIZE];
             Arrays.setAll(columns, _ -> new BitSet());
             int pairs = 0;
@@ -563,7 +619,7 @@ final class StringLexerGenerator {
             int size = 1;
             while (pairs > 0) {
                 size *= 2;
-                if (size > 8 * edges.size()) {
+                if (size > maximumRoutes) {
                     return null;
                 }
                 int best = 0;
