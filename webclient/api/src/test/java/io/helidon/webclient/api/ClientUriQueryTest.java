@@ -1163,4 +1163,17 @@ class ClientUriQueryTest {
     private static Arguments mutation(String description, Consumer<UriQueryWriteable> mutation) {
         return Arguments.of(description, mutation);
     }
+
+    @Test
+    void encodedNameCanBeRemovedFromRequestTarget() {
+        ClientUri client = ClientUri.create(URI.create("http://upstream.example/path"));
+        client.writeableQuery().set("page size", "10");
+        client.writeableQuery().set("x", "1");
+
+        client.writeableQuery().setIfAbsent("page size", "20");
+        assertThat(client.query().all("page size"), is(List.of("10")));
+
+        client.writeableQuery().remove("page size");
+        assertThat(client.pathWithQueryAndFragment(), is("/path?x=1"));
+    }
 }
