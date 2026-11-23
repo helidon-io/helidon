@@ -749,9 +749,11 @@ final class FactoryOption {
                                             OptionConfigured.Builder configured) {
 
         TypeName actualType = Utils.realType(optionType);
+        TypeName valueType = realType(optionType);
         // first check config factories
         for (FactoryMethod configFactory : prototypeInfo.configFactories()) {
-            if (typesEqual(configFactory.returnType(), actualType)) {
+            if (typesEqual(configFactory.returnType(), actualType)
+                    || typesEqual(configFactory.returnType(), valueType)) {
                 if (configFactory.optionName().orElse(optionName).equals(optionName)) {
                     configured.factoryMethod(configFactory);
                     return;
@@ -833,8 +835,13 @@ final class FactoryOption {
         }
 
         // check if a runtime type prototype is a configured prototype
-        if (option.runtimeType().isPresent()) {
-            var rt = option.runtimeType().get();
+        // Whole-option runtime factories are applied by a generated prototype setter and still need this config factory.
+        var runtimeType = option.runtimeType();
+        if (runtimeType.isPresent()
+                && runtimeType.get().factoryMethod()
+                        .map(it -> resolvedTypesEqual(it.returnType(), optionType))
+                        .orElse(true)) {
+            var rt = runtimeType.get();
             var expectedPrototypeType = rt.optionBuilder()
                     .builderMethodType();
             var builderType = TypeName.builder(expectedPrototypeType)
