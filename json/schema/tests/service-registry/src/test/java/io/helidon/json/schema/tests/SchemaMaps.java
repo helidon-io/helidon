@@ -16,8 +16,9 @@
 
 package io.helidon.json.schema.tests;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import io.helidon.json.schema.JsonSchema;
 
@@ -29,5 +30,10 @@ record SchemaMaps(Map<String, String> values,
                   @JsonSchema.Object.MinProperties(1)
                   @JsonSchema.Object.MaxProperties(5)
                   @JsonSchema.Object.AdditionalProperties(true) Map<String, Integer> counts,
-                  HashMap<String, String> concreteValues) {
+                  SortedMap<String, String> sortedValues,
+                  NamedValues namedValues) {
+
+    static class NamedValues extends TreeMap<String, String> {
+        public String label;
+    }
 }

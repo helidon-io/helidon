@@ -34,9 +34,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.ElementInfoPredicates;
+import io.helidon.codegen.RoundContext;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotated;
 import io.helidon.common.types.ElementKind;
@@ -87,7 +87,7 @@ record SchemaInfo(TypeName generatedSchema, JsonObject schema) {
             TypeName.create(Period.class), ""
     );
 
-    static SchemaInfo create(TypeInfo annotatedType, CodegenContext ctx) {
+    static SchemaInfo create(TypeInfo annotatedType, RoundContext ctx) {
         TypeName annotatedTypeName = annotatedType.typeName();
         TypeName generatedTypeName = TypeName.builder()
                 .from(annotatedTypeName)
@@ -166,7 +166,7 @@ record SchemaInfo(TypeName generatedSchema, JsonObject schema) {
 
     private static void processObject(JsonObject.Builder builder,
                                       TypeInfo annotatedType,
-                                      CodegenContext ctx,
+                                      RoundContext ctx,
                                       AtomicBoolean required) {
         builder.set("type", "object");
         processObjectAnnotations(builder, annotatedType, required);
@@ -297,7 +297,7 @@ record SchemaInfo(TypeName generatedSchema, JsonObject schema) {
     }
 
     private static void processObjectElement(JsonObject.Builder builder,
-                                             CodegenContext ctx,
+                                             RoundContext ctx,
                                              List<SchemaObjectProperty> properties,
                                              String name,
                                              AtomicBoolean required) {
@@ -327,8 +327,9 @@ record SchemaInfo(TypeName generatedSchema, JsonObject schema) {
                 || parameterTypeName.isList()
                 || parameterTypeName.isSet()) {
             properties.forEach(it -> processArray(newStructBuilder, ctx, it.annotated(), parameterTypeName, required));
-        } else if (parameterTypeName.isMap()
-                || parameterTypeName.genericTypeName().equals(TypeName.create(HashMap.class))) {
+        } else if (ctx.typeHierarchyResolver()
+                .resolveSupertype(parameterTypeName.genericTypeName(), TypeNames.MAP)
+                .isPresent()) {
             newStructBuilder.set("type", "object");
             properties.forEach(it -> processObjectAnnotations(newStructBuilder, it.annotated(), required));
         } else {
@@ -394,7 +395,7 @@ record SchemaInfo(TypeName generatedSchema, JsonObject schema) {
     }
 
     private static void processArray(JsonObject.Builder builder,
-                                     CodegenContext ctx,
+                                     RoundContext ctx,
                                      Annotated element,
                                      TypeName elementTypeName,
                                      AtomicBoolean required) {

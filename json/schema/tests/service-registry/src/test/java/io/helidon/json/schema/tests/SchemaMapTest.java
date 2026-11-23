@@ -34,16 +34,16 @@ class SchemaMapTest {
                 .readJsonObject()
                 .objectValue("properties").orElseThrow();
 
-        for (String name : List.of("values", "counts", "concreteValues")) {
-            assertThat(name, properties.objectValue(name).orElseThrow().stringValue("type").orElseThrow(), is("object"));
+        var mapSchema = JsonObject.builder().set("type", "object").build();
+        for (String name : List.of("values", "sortedValues", "namedValues")) {
+            assertThat(name, properties.objectValue(name).orElseThrow(), is(mapSchema));
         }
-        assertThat(properties.objectValue("values").orElseThrow(), is(JsonObject.builder().set("type", "object").build()));
     }
 
     @Test
     void testMapAnnotations() {
         var root = new SchemaMaps__JsonSchema().schema().rootObject().orElseThrow();
-        assertThat(root.objectProperties().keySet(), containsInAnyOrder("values", "counts", "concreteValues"));
+        assertThat(root.objectProperties().keySet(), containsInAnyOrder("values", "counts", "sortedValues", "namedValues"));
 
         var counts = root.objectProperties().get("counts");
         assertThat(counts.required(), is(true));

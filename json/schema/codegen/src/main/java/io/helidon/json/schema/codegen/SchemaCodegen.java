@@ -22,7 +22,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.RoundContext;
@@ -42,12 +41,6 @@ import io.helidon.json.JsonObject;
 class SchemaCodegen implements CodegenExtension {
     private static final TypeName GENERATOR = TypeName.create(SchemaCodegen.class);
 
-    private final CodegenContext ctx;
-
-    SchemaCodegen(CodegenContext ctx) {
-        this.ctx = ctx;
-    }
-
     @Override
     public void process(RoundContext roundContext) {
         Collection<TypeInfo> schemas = roundContext.annotatedTypes(SchemaTypes.JSON_SCHEMA_SCHEMA);
@@ -63,7 +56,7 @@ class SchemaCodegen implements CodegenExtension {
 
     private void generateSchema(RoundContext roundContext, TypeInfo schema) {
         TypeName annotatedTypeName = schema.typeName();
-        SchemaInfo schemaInfo = SchemaInfo.create(schema, ctx);
+        SchemaInfo schemaInfo = SchemaInfo.create(schema, roundContext);
         TypeName typeName = schemaInfo.generatedSchema();
         JsonObject helidonSchema = schemaInfo.schema();
         TypeName returnType = TypeName.builder()
