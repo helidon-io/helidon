@@ -14,25 +14,26 @@
  * limitations under the License.
  */
 
-package io.helidon.messaging;
+package io.helidon.messaging.metrics;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.common.Api;
+import io.helidon.messaging.spi.MessagingServiceProvider;
 
 /**
- * Messaging metrics configuration.
+ * Configuration of the messaging metrics service.
  */
 @Prototype.Blueprint
 @Prototype.Sealed
-@Prototype.Configured
+@Prototype.Configured(value = "metrics", root = false)
+@Prototype.Provides(MessagingServiceProvider.class)
 @Api.Preview
-interface MessagingMetricsConfigBlueprint {
+interface MessagingMetricsConfigBlueprint extends Prototype.Factory<MessagingMetrics> {
     /**
-     * Whether to record channel processing counts, failures, and duration.
-     * A missing metrics provider uses the no-op metrics implementation. Registry-level metric filters still apply.
+     * Whether to record channel processing metrics when this service is selected.
      *
-     * @return whether messaging metrics are enabled
+     * @return whether the service is enabled
      */
     @Option.Configured
     @Option.DefaultBoolean(true)

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.messaging;
+package io.helidon.messaging.metrics;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -33,6 +33,21 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.faulttolerance.Retry;
 import io.helidon.health.HealthCheckResponse;
+import io.helidon.messaging.BatchDeliveryException;
+import io.helidon.messaging.BatchItemOutcome;
+import io.helidon.messaging.ConnectorDelivery;
+import io.helidon.messaging.ConnectorDeliveryReservation;
+import io.helidon.messaging.ConsumerRegistration;
+import io.helidon.messaging.Emitter;
+import io.helidon.messaging.FailureDisposition;
+import io.helidon.messaging.IncomingConnectorContext;
+import io.helidon.messaging.Message;
+import io.helidon.messaging.MessageBatch;
+import io.helidon.messaging.MessagingChannel;
+import io.helidon.messaging.MessagingConfig;
+import io.helidon.messaging.MessagingFailureConfig;
+import io.helidon.messaging.MessagingGraph;
+import io.helidon.messaging.MessagingRejectedException;
 import io.helidon.messaging.spi.IncomingChannel;
 import io.helidon.messaging.spi.MessagingConnector;
 import io.helidon.messaging.spi.MessagingConnectorProviderConfig;
@@ -44,9 +59,13 @@ import io.helidon.metrics.api.Timer;
 import io.helidon.metrics.providers.helidon.HelidonMetricsFactory;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
@@ -56,6 +75,8 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@Testing.Test(perMethod = true)
+@Execution(ExecutionMode.SAME_THREAD)
 @Timeout(15)
 class MessagingObservabilityTest {
     private static final String DURATION = "messaging.processing.duration";
@@ -390,7 +411,8 @@ class MessagingObservabilityTest {
             MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
             List<String> received = new ArrayList<>();
             IllegalStateException expected = new IllegalStateException("rejected");
-            try (MessagingGraph graph = fixture.graph(fixture.builder().metrics(m -> m.enabled(false)).channel(channel)
+            try (MessagingGraph graph = fixture.graph(MessagingGraph.builder()
+                    .addService(MessagingMetrics.builder().enabled(false).build()).channel(channel)
                     .payloadSink(channel, message -> {
                         received.add(message);
                         if (message.equals("fail")) {
@@ -427,11 +449,13 @@ class MessagingObservabilityTest {
     @Test
     void configurationCanDisableBothObservers() {
         // The nested configuration keys must disable observation while retaining normal payload delivery.
-        Config config = Config.just(ConfigSources.create(Map.of("metrics.enabled", "false", "health.enabled", "false")));
+        Config config = Config.just(ConfigSources.create(Map.of("services.metrics.enabled", "false", "health.enabled", "false")));
         try (Fixture fixture = new Fixture()) {
             MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
             AtomicInteger deliveries = new AtomicInteger();
-            try (MessagingGraph graph = fixture.graph(fixture.builder().config(config).channel(channel)
+            try (MessagingGraph graph = fixture.graph(MessagingGraph.builder()
+                    .serviceRegistry(fixture.services.registry())
+                    .config(config).channel(channel)
                     .payloadSink(channel, _ -> deliveries.incrementAndGet())).start()) {
                 graph.emitter(channel).emit("first");
 
@@ -462,6 +486,7 @@ class MessagingObservabilityTest {
             meters = factory.createMeterRegistry(clock.orElseGet(factory::clockSystem), MetricsConfig.create());
             services = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
                     .putContractInstance(MeterRegistry.class, meters).build());
+            Services.registry(services.registry());
         }
 
         @Override
@@ -475,11 +500,11 @@ class MessagingObservabilityTest {
 
         private MessagingGraph graph(MessagingConfig.Builder config) {
             // The fixture owns this registry; graph close releases only this graph's observers.
-            return new MessagingGraphAssembler(config.buildPrototype(), services.registry()).graph();
+            return config.build();
         }
 
         private MessagingConfig.Builder builder() {
-            return MessagingGraph.builder().serviceRegistry(services.registry());
+            return MessagingGraph.builder().serviceRegistry(services.registry()).addService(MessagingMetrics.create());
         }
 
         private MessagingConfig.Builder incomingBuilder(TestIncoming incoming, int calls) {
@@ -521,7 +546,7 @@ class MessagingObservabilityTest {
 
         @Override
         public MessagingConnectorProviderConfig prototype() {
-            return RegistryTestSupport.prototype("test");
+            return new ConnectorConfig("test");
         }
 
         @Override
@@ -561,6 +586,13 @@ class MessagingObservabilityTest {
                  ConnectorDelivery delivery = reservation.start(batch)) {
                 delivery.await();
             }
+        }
+    }
+
+    private record ConnectorConfig(String name) implements MessagingConnectorProviderConfig {
+        @Override
+        public Optional<Config> config() {
+            return Optional.empty();
         }
     }
 

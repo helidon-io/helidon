@@ -35,10 +35,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 
 import io.helidon.health.HealthCheck;
 import io.helidon.messaging.spi.ChannelConnection;
 import io.helidon.messaging.spi.IncomingChannel;
+import io.helidon.messaging.spi.MessagingService;
 import io.helidon.messaging.spi.OutgoingChannel;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.ServiceRegistry;
@@ -54,7 +56,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
     private final ThreadLocal<Boolean> lifecycleCallback = new ThreadLocal<>();
     private final DeliveryEngine deliveryEngine;
     private final MessagingConfig config;
-    private final MessagingMetrics metrics;
+    private final List<MessagingService.Instance> services = new ArrayList<>();
     private final MessagingHealth health;
     private final Map<String, MessagingChannel<?>> channels = new LinkedHashMap<>();
     private final Map<MessagingChannel<?>, Emitter<?>> emitters = new IdentityHashMap<>();
@@ -84,9 +86,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
     DefaultMessagingGraph(DeliveryEngine deliveryEngine, ServiceRegistry registry) {
         this.deliveryEngine = Objects.requireNonNull(deliveryEngine);
         this.config = deliveryEngine.configuration();
-        Objects.requireNonNull(registry);
-        this.metrics = MessagingMetrics.create(config, registry);
-        this.health = MessagingHealth.create(config, registry);
+        this.health = MessagingHealth.create(config, Objects.requireNonNull(registry));
     }
 
     @Override
@@ -99,8 +99,17 @@ final class DefaultMessagingGraph implements MessagingGraph {
         return health.checks();
     }
 
-    MessagingMetrics.Recorder recorder(String channel) {
-        return metrics.channel(channel);
+    void openServices(ServiceRegistry registry) {
+        for (MessagingService service : config.services()) {
+            services.add(Objects.requireNonNull(service.create(registry)));
+        }
+    }
+
+    Consumer<MessageBatch<?>> observe(String channel, Consumer<MessageBatch<?>> dispatch) {
+        for (MessagingService.Instance service : services.reversed()) {
+            dispatch = Objects.requireNonNull(service.observe(channel, dispatch));
+        }
+        return dispatch;
     }
 
     DeliveryEngine deliveryEngine() {
@@ -1183,8 +1192,33 @@ final class DefaultMessagingGraph implements MessagingGraph {
         }
     }
 
+    private void closeServices() {
+        Error failure = null;
+        for (MessagingService.Instance service : services.reversed()) {
+            try {
+                invokeLifecycleCallback(service::close);
+            } catch (RuntimeException e) {
+                LOGGER.log(System.Logger.Level.WARNING, "Cannot close messaging service", e);
+            } catch (Error e) {
+                if (failure == null) {
+                    failure = e;
+                } else if (failure != e) {
+                    failure.addSuppressed(e);
+                }
+            }
+        }
+        if (failure != null) {
+            throw failure;
+        }
+    }
+
     private void publishShutdownCompletion(Throwable shutdownFailure) {
-        metrics.close();
+        try {
+            closeServices();
+        } catch (Error e) {
+            shutdownCompletion.completeExceptionally(e);
+            throw e;
+        }
         if (closeRequested.get()) {
             health.close();
         }

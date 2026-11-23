@@ -23,6 +23,7 @@ index:
 - [Injection](injection/README.md)
 - [JSON](json/README.md)
 - [JSON-RPC](jsonrpc/README.md)
+- [Messaging](messaging.md)
 - [Metrics](metrics/README.md)
 - [Observability](observability.md)
 - [OpenAPI](openapi/README.md)

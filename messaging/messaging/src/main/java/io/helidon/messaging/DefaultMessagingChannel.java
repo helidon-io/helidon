@@ -47,7 +47,7 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
     private final DeliveryEngine deliveryEngine;
     private final String channelName;
     private final DefaultMessagingGraph graph;
-    private final MessagingMetrics.Recorder recorder;
+    private final Consumer<MessageBatch<?>> dispatch;
 
     private DefaultMessagingChannel(GenericType<T> payloadType,
                                     List<Consumer<MessageBatch<?>>> validators,
@@ -61,7 +61,7 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
         this.deliveryEngine = deliveryEngine;
         this.channelName = channelName;
         this.graph = graph;
-        this.recorder = graph.recorder(channelName);
+        this.dispatch = graph.observe(channelName, this::dispatchBatch);
     }
 
     static Runnable streamSource(Stream<?> stream, Consumer<Object> consumer) {
@@ -111,7 +111,7 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
         Objects.requireNonNull(messages);
         graph.ensureRunning();
         MessageBatch<?> batch = toBatch(messages);
-        deliveryEngine.dispatch(channelName, batch, () -> dispatchBatch(batch));
+        deliveryEngine.dispatch(channelName, batch, () -> dispatch.accept(batch));
     }
 
     void emitRoutedBatchObject(MessageBatch<?> messages) {
@@ -140,20 +140,13 @@ final class DefaultMessagingChannel<T> implements MessagingChannel<T>, Emitter<T
     }
 
     private void dispatchBatch(MessageBatch<?> batch) {
-        var started = recorder.start();
-        boolean failed = true;
-        try {
-            validators.forEach(validator -> validator.accept(batch));
-            for (int i = 0; i < outputs.size(); i++) {
-                try {
-                    outputs.get(i).accept(batch);
-                } catch (RuntimeException e) {
-                    throw normalizeFailure(batch, i, e);
-                }
+        validators.forEach(validator -> validator.accept(batch));
+        for (int i = 0; i < outputs.size(); i++) {
+            try {
+                outputs.get(i).accept(batch);
+            } catch (RuntimeException e) {
+                throw normalizeFailure(batch, i, e);
             }
-            failed = false;
-        } finally {
-            recorder.finish(started, failed);
         }
     }
 

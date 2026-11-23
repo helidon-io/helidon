@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.messaging;
+package io.helidon.messaging.metrics;
 
 import java.time.Duration;
 import java.util.Optional;

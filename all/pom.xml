@@ -827,6 +827,10 @@
             <artifactId>helidon-messaging</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.messaging</groupId>
+            <artifactId>helidon-messaging-metrics</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.metadata</groupId>
             <artifactId>helidon-metadata</artifactId>
         </dependency>

@@ -65,6 +65,7 @@ final class MessagingGraphAssembler {
         List<EmitterRegistration> emitters = config.emitterRegistrations();
         try {
             ownProgrammaticResources();
+            graph.openServices(registry);
             validateSourceChannels();
             validateRegistrationIdentities(consumers, emitters);
             validateRegistrationTypeMetadata(consumers, emitters);

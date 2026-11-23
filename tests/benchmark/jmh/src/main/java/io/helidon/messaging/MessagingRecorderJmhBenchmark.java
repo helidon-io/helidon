@@ -17,6 +17,9 @@
 package io.helidon.messaging;
 
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+
+import io.helidon.messaging.spi.MessagingService;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -43,9 +46,7 @@ import org.openjdk.jmh.annotations.Warmup;
 public class MessagingRecorderJmhBenchmark {
     @Benchmark
     public String record(RecorderState state) {
-        var started = state.recorder.start();
-        state.consumed = "payload";
-        state.recorder.finish(started, false);
+        state.dispatch.accept(state.batch);
         return state.consumed;
     }
 
@@ -55,15 +56,17 @@ public class MessagingRecorderJmhBenchmark {
         public String metrics;
 
         private MessagingObservabilityJmhBenchmark.Environment environment;
-        private MessagingMetrics observation;
-        private MessagingMetrics.Recorder recorder;
+        private MessagingService.Instance observation;
+        private MessageBatch<String> batch;
+        private Consumer<MessageBatch<?>> dispatch;
         private volatile String consumed;
 
         @Setup(Level.Trial)
         public void setUp() {
             environment = new MessagingObservabilityJmhBenchmark.Environment(metrics, 0);
             observation = environment.observation();
-            recorder = observation.channel("dispatch");
+            batch = MessageBatch.create(Message.create("payload"));
+            dispatch = observation.observe("dispatch", _ -> consumed = "payload");
             environment.verifyMeters(1);
         }
 

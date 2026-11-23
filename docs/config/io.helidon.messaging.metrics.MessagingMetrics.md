@@ -1,8 +1,8 @@
-# io.<wbr>helidon.<wbr>messaging.<wbr>Messaging<wbr>Metrics<wbr>Config
+# io.<wbr>helidon.<wbr>messaging.<wbr>metrics.<wbr>Messaging<wbr>Metrics
 
 ## Description
 
-Messaging metrics configuration
+Configuration of the messaging metrics service
 
 ## Configuration options
 
@@ -27,7 +27,7 @@ Messaging metrics configuration
 <td>
 <code>true</code>
 </td>
-<td>Whether to record channel processing counts, failures, and duration</td>
+<td>Whether to record channel processing metrics when this service is selected</td>
 </tr>
 </tbody>
 </table>
@@ -36,7 +36,7 @@ Messaging metrics configuration
 
 ## Usages
 
-- <a href="io.helidon.messaging.MessagingGraph.md#metrics"><code>messaging.<wbr>metrics</code></a>
+- <a href="io.helidon.messaging.spi.MessagingService.md#metrics"><code>messaging.<wbr>services.<wbr>metrics</code></a>
 
 ---
 

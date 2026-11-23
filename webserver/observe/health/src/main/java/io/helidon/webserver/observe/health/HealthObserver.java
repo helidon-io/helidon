@@ -157,9 +157,7 @@ public class HealthObserver implements Observer, RuntimeType.Api<HealthObserverC
     }
 
     private static List<HealthCheckProvider> loadHealthCheckProviders() {
-        var loader = HelidonServiceLoader.builder(ServiceLoader.load(HealthCheckProvider.class));
-        Services.all(HealthCheckProvider.class).forEach(loader::addService);
-        return loader.build().asList();
+        return HelidonServiceLoader.create(ServiceLoader.load(HealthCheckProvider.class)).asList();
     }
 
     private static class HealthHttpFeature implements HttpFeature {

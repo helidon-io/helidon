@@ -725,7 +725,7 @@ Applications publish through an injected `@Service.Named("channel") Emitter<T>`.
 Generated consumer registrations and emitter factories connect application code to the runtime graph. The Service Registry
 starts and stops the graph. Configuration under `messaging.connector`, `messaging.incoming`, and `messaging.outgoing`
 connects logical channels to transport connectors. `@Messaging.OnFailure` supplies default incoming connector delivery
-failure policy; it does not retry local emitter calls. See the [Messaging README](../messaging/README.md) for supported
+failure policy; it does not retry local emitter calls. See the [Messaging documentation](../docs/modules/messaging.md) for supported
 signatures, configuration, delivery semantics, and the connector SPI.
 
 ## Health Checks

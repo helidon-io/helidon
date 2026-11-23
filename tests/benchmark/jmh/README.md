@@ -102,7 +102,7 @@ still allowing both runner methods to complete:
     '-Dmessaging.jmh.saturationInclude=.*MessagingSaturationJmhBenchmark\.messagingEmit'
 ```
 
-The observability benchmarks compare enabled native Helidon metrics, disabled messaging metrics, and an absent
+The dispatch benchmark compares an unselected messaging service, enabled native Helidon metrics, disabled messaging metrics, and an absent
 `MeterRegistry` service. The absent mode disables service discovery; it does not measure a discovered no-op metrics registry.
 `dispatch` delivers a prebuilt batch of 1 or 32 messages to a short payload handler; its time and allocation are
 per batch. Construction benchmarks use 1 or 64 channels and 0 or 4,096 unrelated meters, with metrics enabled or disabled:
@@ -128,8 +128,8 @@ Results include the GC profiler and are written to `target/messaging-observabili
 `messaging.jmh.observabilityResult` to change the output path; the common `messaging.jmh` timing, fork, heap, and smoke
 settings also apply. Graphs, service registries, and metrics factories are closed after each trial.
 
-`MessagingJmhRunnerTest#recorder` isolates the steady-state recorder's start/finish operations from admission and
-virtual-thread scheduling, using the same three metrics modes and a short handler. It writes
+`MessagingJmhRunnerTest#recorder` isolates a channel dispatch operation decorated by the metrics service from admission and
+virtual-thread scheduling, using enabled, disabled, and absent-registry modes and a short handler. It writes
 `target/messaging-recorder-jmh-result.json`; `messaging.jmh.recorderInclude` and `messaging.jmh.recorderResult` select
 methods and output path. Use this together with the public dispatch benchmark: recorder timings alone do not represent
 end-to-end delivery latency.

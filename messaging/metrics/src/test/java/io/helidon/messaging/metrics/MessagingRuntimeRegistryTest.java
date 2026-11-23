@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.messaging;
+package io.helidon.messaging.metrics;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +26,12 @@ import io.helidon.config.Config;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.health.HealthCheckType;
+import io.helidon.health.spi.HealthCheckProvider;
+import io.helidon.messaging.IncomingConnectorContext;
+import io.helidon.messaging.Message;
+import io.helidon.messaging.MessagingChannel;
+import io.helidon.messaging.MessagingConfig;
+import io.helidon.messaging.MessagingRuntime;
 import io.helidon.messaging.spi.IncomingChannel;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
@@ -129,7 +135,7 @@ class MessagingRuntimeRegistryTest {
         private Fixture(boolean metricsEnabled, boolean healthEnabled, boolean blockStartup) {
             MessagingChannel<String> channel = MessagingChannel.create(CHANNEL, String.class);
             var builder = MessagingConfig.builder()
-                    .metrics(metrics -> metrics.enabled(metricsEnabled))
+                    .addService(MessagingMetrics.builder().enabled(metricsEnabled).build())
                     .health(health -> health.enabled(healthEnabled))
                     .channel(channel)
                     .payloadSink(channel, received::add);
@@ -141,16 +147,14 @@ class MessagingRuntimeRegistryTest {
             // resolve both observations from its constructing service registry.
             MessagingConfig supplied = builder.buildPrototype();
             manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
-                    .discoverServices(false)
-                    .discoverServicesFromServiceLoader(false)
-                    .addServiceDescriptor(ChannelRegistry__ServiceDescriptor.INSTANCE)
-                    .addServiceDescriptor(MessagingLifecycleGuard__ServiceDescriptor.INSTANCE)
-                    .addServiceDescriptor(MessagingHealthProvider__ServiceDescriptor.INSTANCE)
                     .putContractInstance(MessagingConfig.class, supplied)
                     .putContractInstance(MeterRegistry.class, meters)
                     .build());
             registry = manager.registry();
-            healthChecks = registry.get(MessagingHealthProvider.class).healthChecks(Config.empty());
+            healthChecks = registry.all(HealthCheckProvider.class).stream()
+                    .flatMap(provider -> provider.healthChecks(Config.empty()).stream())
+                    .filter(check -> check.name().startsWith("messaging-"))
+                    .toList();
         }
 
         @Override

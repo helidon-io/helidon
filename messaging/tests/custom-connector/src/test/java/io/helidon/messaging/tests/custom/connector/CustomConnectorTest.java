@@ -35,7 +35,6 @@ import io.helidon.messaging.MessagingGraph;
 import io.helidon.messaging.MessagingRuntime;
 import io.helidon.messaging.spi.MessagingIncomingConfig;
 import io.helidon.messaging.spi.MessagingOutgoingConfig;
-import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
@@ -51,7 +50,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
-import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItems;
 
 @Timeout(10)
@@ -62,14 +60,12 @@ class CustomConnectorTest {
     private static final Duration WAIT = Duration.ofSeconds(5);
 
     @Test
-    void observabilityWithoutMetricsProviderPreservesProcessingAndHealth() {
-        // This module intentionally has no metrics provider; optional observation must leave processing and health usable.
+    void coreOnlyGraphPreservesProcessingAndHealth() {
+        // The application uses core messaging without the optional metrics module.
         ServiceRegistryManager manager = ServiceRegistryManager.create();
         try {
             // Application startup selects the registry once; the testing extension isolates this test's global lookup.
             Services.registry(manager.registry());
-            MeterRegistry meters = manager.registry().get(MeterRegistry.class);
-            assertThat(meters.isMeterEnabled("messaging.processing.duration"), is(false));
             AtomicInteger deliveries = new AtomicInteger();
             MessagingChannel<String> channel = MessagingChannel.create("without-provider", String.class);
             try (MessagingGraph graph = MessagingGraph.builder()
@@ -79,7 +75,6 @@ class CustomConnectorTest {
                 assertThat(deliveries.get(), is(1));
                 assertThat(graph.healthChecks().stream().map(check -> check.call().status()).toList(),
                            is(List.of(HealthCheckResponse.Status.UP, HealthCheckResponse.Status.UP)));
-                assertThat(meters.meters(), empty());
             }
         } finally {
             manager.shutdown();
@@ -96,7 +91,6 @@ class CustomConnectorTest {
         try {
             // Select a discovery-free application registry, rather than overriding the registry on an individual graph.
             Services.registry(manager.registry());
-            assertThat(manager.registry().first(MeterRegistry.class).isEmpty(), is(true));
             AtomicInteger deliveries = new AtomicInteger();
             MessagingChannel<String> channel = MessagingChannel.create("without-discovery", String.class);
             try (MessagingGraph graph = MessagingGraph.builder()

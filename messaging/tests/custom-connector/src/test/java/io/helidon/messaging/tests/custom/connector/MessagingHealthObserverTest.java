@@ -34,7 +34,7 @@ import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.Testing;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.observe.ObserveFeature;
-import io.helidon.webserver.observe.health.HealthObserver;
+import io.helidon.webserver.observe.health.HealthObserveProvider;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,7 +64,7 @@ class MessagingHealthObserverTest {
                 .build());
         Services.registry(manager.registry());
         // Construct the observer before any graph to verify that discovered aggregate checks remain live.
-        HealthObserver observer = HealthObserver.builder().useSystemServices(true).build();
+        var observer = manager.registry().get(HealthObserveProvider.class).create(Config.empty(), "health", manager.registry());
         server = WebServer.builder().port(0).addFeature(ObserveFeature.just(observer)).build();
         server.start();
     }
@@ -83,9 +83,9 @@ class MessagingHealthObserverTest {
     }
 
     @Test
-    void directObserverTracksGraphsCreatedAfterIt() throws Exception {
+    void managedObserverTracksGraphsCreatedAfterIt() throws Exception {
         assertThat(status(server, "ready"), is(204));
-        try (MessagingGraph graph = MessagingGraph.builder().metrics(metrics -> metrics.enabled(false)).build()) {
+        try (MessagingGraph graph = MessagingGraph.builder().build()) {
             assertThat(status(server, "ready"), is(503));
             assertThat(status(server, "live"), is(204));
 
@@ -98,11 +98,10 @@ class MessagingHealthObserverTest {
     }
 
     @Test
-    void directObserverRetainsTerminalFailureUntilExplicitClose() throws Exception {
+    void managedObserverRetainsTerminalFailureUntilExplicitClose() throws Exception {
         FailingIncoming source = new FailingIncoming();
         MessagingChannel<String> channel = MessagingChannel.create("events", String.class);
         MessagingGraph graph = MessagingGraph.builder()
-                .metrics(metrics -> metrics.enabled(false))
                 .shutdownTimeout(WAIT)
                 .channel(channel)
                 .incomingChannel(channel, source)

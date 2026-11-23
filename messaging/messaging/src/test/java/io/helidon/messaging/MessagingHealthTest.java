@@ -325,7 +325,6 @@ class MessagingHealthTest {
 
     private static MessagingConfig.Builder builder() {
         return MessagingGraph.builder()
-                .metrics(m -> m.enabled(false))
                 .shutdownTimeout(Duration.ofSeconds(1));
     }
 

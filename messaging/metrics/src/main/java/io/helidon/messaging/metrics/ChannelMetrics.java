@@ -14,18 +14,23 @@
  * limitations under the License.
  */
 
-package io.helidon.messaging;
+package io.helidon.messaging.metrics;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 
+import io.helidon.messaging.MessageBatch;
+import io.helidon.messaging.MessagingGraph;
+import io.helidon.messaging.spi.MessagingService;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
@@ -36,15 +41,15 @@ import io.helidon.service.registry.ServiceRegistry;
 
 import static java.lang.System.Logger.Level.WARNING;
 
-final class MessagingMetrics {
+final class ChannelMetrics implements MessagingService.Instance {
     private static final String DURATION = "messaging.processing.duration";
     private static final String FAILURES = "messaging.processing.failures";
     private static final String ORIGIN = MessagingGraph.class.getName();
-    private static final System.Logger LOGGER = System.getLogger(MessagingMetrics.class.getName());
+    private static final System.Logger LOGGER = System.getLogger(ChannelMetrics.class.getName());
     private static final ThreadLocal<Set<MeterRegistry>> REGISTERING =
             ThreadLocal.withInitial(() -> Collections.newSetFromMap(new IdentityHashMap<>()));
     private static final Recorder NOOP_RECORDER = new Recorder(null, null);
-    private static final MessagingMetrics NOOP = new MessagingMetrics(null, null);
+    private static final ChannelMetrics NOOP = new ChannelMetrics(null, null);
 
     private final MeterRegistry registry;
     private final FailureReporter failures;
@@ -52,24 +57,43 @@ final class MessagingMetrics {
     private final List<Recorder> recorders = new ArrayList<>();
     private volatile boolean closed;
 
-    private MessagingMetrics(MeterRegistry registry, FailureReporter failures) {
+    private ChannelMetrics(MeterRegistry registry, FailureReporter failures) {
         this.registry = registry;
         this.failures = failures;
     }
 
-    static MessagingMetrics create(MessagingConfig config, ServiceRegistry registry) {
-        if (!config.metrics().enabled()) {
+    static ChannelMetrics create(MessagingMetricsConfig config, ServiceRegistry registry) {
+        if (!config.enabled()) {
             return NOOP;
         }
         FailureReporter failures = new FailureReporter();
         try {
             return registry.first(MeterRegistry.class)
-                    .map(meterRegistry -> new MessagingMetrics(meterRegistry, failures))
+                    .map(meterRegistry -> new ChannelMetrics(meterRegistry, failures))
                     .orElse(NOOP);
         } catch (RuntimeException e) {
             failures.report(e);
             return NOOP;
         }
+    }
+
+    @Override
+    public Consumer<MessageBatch<?>> observe(String channel, Consumer<MessageBatch<?>> dispatch) {
+        Objects.requireNonNull(dispatch, "dispatch");
+        Recorder recorder = channel(Objects.requireNonNull(channel, "channel"));
+        if (recorder == NOOP_RECORDER) {
+            return dispatch;
+        }
+        return batch -> {
+            long started = recorder.start();
+            boolean failed = true;
+            try {
+                dispatch.accept(batch);
+                failed = false;
+            } finally {
+                recorder.finish(started, failed);
+            }
+        };
     }
 
     Recorder channel(String channel) {
@@ -110,7 +134,8 @@ final class MessagingMetrics {
         }
     }
 
-    void close() {
+    @Override
+    public void close() {
         if (registry == null) {
             return;
         }

@@ -8,6 +8,8 @@ navigation:
 This guide describes how to create a sample Helidon project that can be used
 to run some basic examples using both built-in and custom health checks.
 
+For messaging graph readiness and liveness, see [Messaging health checks](../modules/messaging.md#graph-health).
+
 ## What You Need
 
 For this 15 minute tutorial, you will need the following:

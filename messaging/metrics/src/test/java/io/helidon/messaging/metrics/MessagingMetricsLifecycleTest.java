@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.messaging;
+package io.helidon.messaging.metrics;
 
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -23,6 +23,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import io.helidon.messaging.BatchDeliveryException;
+import io.helidon.messaging.Emitter;
+import io.helidon.messaging.MessageBatch;
+import io.helidon.messaging.MessagingChannel;
+import io.helidon.messaging.MessagingGraph;
 import io.helidon.messaging.spi.OutgoingChannel;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Meter;
@@ -98,9 +103,9 @@ class MessagingMetricsLifecycleTest {
         // Close the same observer while its timer-added callback is blocked; close must finish before registration resumes.
         CountDownLatch entered = new CountDownLatch(1);
         CountDownLatch resume = new CountDownLatch(1);
-        AtomicReference<MessagingMetrics.Recorder> created = new AtomicReference<>();
+        AtomicReference<ChannelMetrics.Recorder> created = new AtomicReference<>();
         try (MetricsTestSupport environment = new MetricsTestSupport()) {
-            MessagingMetrics metrics = environment.observe();
+            ChannelMetrics metrics = environment.observe();
             environment.meters.onMeterAdded(meter -> {
                 if (meter.id().name().equals(DURATION)) {
                     entered.countDown();
@@ -120,7 +125,7 @@ class MessagingMetricsLifecycleTest {
                 closer.join();
             }
             builder.awaitCompletion("Registration did not finish");
-            MessagingMetrics.Recorder recorder = created.get();
+            ChannelMetrics.Recorder recorder = created.get();
             recorder.finish(recorder.start(), true);
             assertThat(environment.timer("orders").count(), is(0L));
             assertThat(environment.counter("orders").count(), is(0L));

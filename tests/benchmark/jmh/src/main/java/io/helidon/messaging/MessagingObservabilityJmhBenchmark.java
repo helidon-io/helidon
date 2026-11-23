@@ -18,12 +18,12 @@ package io.helidon.messaging;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
+import io.helidon.messaging.metrics.MessagingMetrics;
+import io.helidon.messaging.spi.MessagingService;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
@@ -99,7 +99,7 @@ public class MessagingObservabilityJmhBenchmark {
 
     @State(Scope.Thread)
     public static class DispatchState {
-        @Param({"enabled", "disabled", "absent"})
+        @Param({"enabled", "disabled", "absent", "unselected"})
         public String metrics;
 
         @Param({"1", "32"})
@@ -225,7 +225,7 @@ public class MessagingObservabilityJmhBenchmark {
         private final ServiceRegistryManager services;
         private final MetricsFactory factory;
         private final MeterRegistry registry;
-        private final Config config;
+        private final MessagingMetrics service;
         private final int unrelatedMeters;
         private final boolean enabled;
 
@@ -234,8 +234,9 @@ public class MessagingObservabilityJmhBenchmark {
         Environment(String metrics, int unrelatedMeters) {
             this.unrelatedMeters = unrelatedMeters;
             enabled = metrics.equals("enabled");
-            config = Config.just(ConfigSources.create(Map.of("metrics.enabled", Boolean.toString(!metrics.equals("disabled")),
-                                                             "health.enabled", "false")));
+            service = metrics.equals("unselected")
+                    ? null
+                    : MessagingMetrics.builder().enabled(!metrics.equals("disabled")).build();
             factoryServices = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
                                                                     .discoverServices(false)
                                                                     .discoverServicesFromServiceLoader(false)
@@ -290,15 +291,16 @@ public class MessagingObservabilityJmhBenchmark {
         }
 
         MessagingConfig.Builder builder() {
-            return MessagingGraph.builder().config(config).serviceRegistry(services.registry());
+            var builder = MessagingGraph.builder().health(health -> health.enabled(false)).serviceRegistry(services.registry());
+            return service == null ? builder : builder.addService(service);
         }
 
         MessagingGraph graph(MessagingConfig.Builder builder) {
             return new MessagingGraphAssembler(builder.buildPrototype(), services.registry()).graph();
         }
 
-        MessagingMetrics observation() {
-            return MessagingMetrics.create(builder().buildPrototype(), services.registry());
+        MessagingService.Instance observation() {
+            return service.create(services.registry());
         }
 
         void verifyMeters(int channels) {

@@ -29,6 +29,7 @@ import io.helidon.health.spi.HealthCheckProvider;
 import io.helidon.messaging.BatchDeliveryException;
 import io.helidon.messaging.MessagingChannel;
 import io.helidon.messaging.MessagingGraph;
+import io.helidon.messaging.metrics.MessagingMetrics;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.providers.helidon.HelidonMetricsFactory;
@@ -82,6 +83,7 @@ class DeclarativeObservabilityTest {
             MessagingChannel<String> channel = MessagingChannel.create(ChannelMessagingTypes.CHANNEL_TWO, String.class);
             List<String> imperative = new ArrayList<>();
             try (MessagingGraph graph = MessagingGraph.builder()
+                    .addService(MessagingMetrics.create())
                     .channel(channel).payloadSink(channel, imperative::add).build().start()) {
                 graph.emitter(channel).emit("imperative");
 
@@ -145,9 +147,19 @@ class DeclarativeObservabilityTest {
     }
 
     @Test
+    void metricsRequireExplicitSelectionEvenWhenARegistryIsPresent() {
+        try (Fixture fixture = new Fixture(Config.empty())) {
+            fixture.registry.get(ChannelMessagingTypes.Producer.class).emitChannelTwo("delivered");
+
+            assertThat(fixture.registry.get(ChannelMessagingTypes.ChannelTwoConsumer.class).messages(), hasSize(1));
+            assertThat(fixture.meters.meters(), empty());
+        }
+    }
+
+    @Test
     void declarativeConfigurationCanDisableMetricsAndHealth() {
         // Declarative bootstrap must apply the same nested observer configuration as programmatic graph creation.
-        Config config = Config.just(ConfigSources.create(Map.of("messaging.metrics.enabled", "false",
+        Config config = Config.just(ConfigSources.create(Map.of("messaging.services.metrics.enabled", "false",
                                                                 "messaging.health.enabled", "false")));
         try (Fixture fixture = new Fixture(config)) {
             List<HealthCheck> checks = fixture.checks();
@@ -167,7 +179,7 @@ class DeclarativeObservabilityTest {
         private final ServiceRegistry registry;
 
         private Fixture() {
-            this(Config.empty());
+            this(Config.just(ConfigSources.create(Map.of("messaging.services.metrics.enabled", "true"))));
         }
 
         private Fixture(Config config) {

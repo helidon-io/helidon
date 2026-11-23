@@ -29,6 +29,8 @@ import io.helidon.messaging.spi.MessagingConnector;
 import io.helidon.messaging.spi.MessagingConnectorProvider;
 import io.helidon.messaging.spi.MessagingIncomingConfig;
 import io.helidon.messaging.spi.MessagingOutgoingConfig;
+import io.helidon.messaging.spi.MessagingService;
+import io.helidon.messaging.spi.MessagingServiceProvider;
 
 /**
  * Messaging configuration.
@@ -43,13 +45,16 @@ import io.helidon.messaging.spi.MessagingOutgoingConfig;
 @Api.Preview
 interface MessagingConfigBlueprint extends Prototype.Factory<MessagingGraph> {
     /**
-     * Channel processing metrics configuration.
+     * Services applied to channel dispatch.
      *
-     * @return metrics configuration
+     * @return selected messaging services
      */
     @Option.Configured
-    @Option.DefaultMethod("create")
-    MessagingMetricsConfig metrics();
+    @Option.Provider(value = MessagingServiceProvider.class,
+                     discoverServices = false,
+                     identity = Option.Provider.Identity.TYPE_ONLY)
+    @Option.Singular
+    List<MessagingService> services();
 
     /**
      * Graph readiness and liveness configuration.

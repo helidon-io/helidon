@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.messaging;
+package io.helidon.messaging.metrics;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +23,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.UnaryOperator;
 
+import io.helidon.messaging.MessagingChannel;
+import io.helidon.messaging.MessagingConfig;
+import io.helidon.messaging.MessagingGraph;
+import io.helidon.messaging.spi.MessagingService;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
@@ -30,6 +34,7 @@ import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 import io.helidon.metrics.providers.helidon.HelidonMetricsFactory;
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 
@@ -45,7 +50,7 @@ final class MetricsTestSupport implements AutoCloseable {
     final MeterRegistry meters;
     final MeterRegistry registry;
     private final ServiceRegistryManager manager;
-    private final List<MessagingMetrics> observations = new ArrayList<>();
+    private final List<ChannelMetrics> observations = new ArrayList<>();
 
     MetricsTestSupport() {
         this(MetricsConfig.create());
@@ -83,7 +88,7 @@ final class MetricsTestSupport implements AutoCloseable {
     @Override
     public void close() {
         try {
-            observations.forEach(MessagingMetrics::close);
+            observations.forEach(ChannelMetrics::close);
         } finally {
             try {
                 manager.shutdown();
@@ -94,12 +99,14 @@ final class MetricsTestSupport implements AutoCloseable {
     }
 
     MessagingConfig.Builder builder() {
-        return MessagingGraph.builder().serviceRegistry(manager.registry()).health(h -> h.enabled(false));
+        return MessagingGraph.builder()
+                .serviceRegistry(manager.registry())
+                .addService(new FixtureMetrics(manager.registry()))
+                .health(h -> h.enabled(false));
     }
 
     MessagingGraph graph(MessagingConfig.Builder config) {
-        return new MessagingGraphAssembler(config.serviceRegistry(manager.registry()).buildPrototype(),
-                                           manager.registry()).graph();
+        return config.build();
     }
 
     MessagingGraph graph(MessagingChannel<String> channel) {
@@ -110,8 +117,8 @@ final class MetricsTestSupport implements AutoCloseable {
         })).start();
     }
 
-    MessagingMetrics observe() {
-        MessagingMetrics metrics = MessagingMetrics.create(builder().buildPrototype(), manager.registry());
+    ChannelMetrics observe() {
+        ChannelMetrics metrics = ChannelMetrics.create(MessagingMetricsConfig.create(), manager.registry());
         observations.add(metrics);
         return metrics;
     }
@@ -126,6 +133,24 @@ final class MetricsTestSupport implements AutoCloseable {
 
     Counter counter(String channel) {
         return meters.counter(FAILURES, tags(channel)).orElseThrow();
+    }
+
+    // Some tests construct two graphs recursively on the same thread with independent meter registries.
+    private record FixtureMetrics(ServiceRegistry fixtureRegistry) implements MessagingService {
+        @Override
+        public String name() {
+            return "metrics";
+        }
+
+        @Override
+        public String type() {
+            return "metrics";
+        }
+
+        @Override
+        public Instance create(ServiceRegistry registry) {
+            return MessagingMetrics.create().create(fixtureRegistry);
+        }
     }
 
     static final class TestClock implements Clock {
