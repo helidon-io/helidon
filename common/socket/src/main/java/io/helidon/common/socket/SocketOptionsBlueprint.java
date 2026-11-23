@@ -34,7 +34,7 @@ import io.helidon.common.Api;
  * Socket options.
  */
 @Prototype.Configured
-@Prototype.Blueprint(decorator = SocketOptionsBlueprint.BuilderDecorator.class)
+@Prototype.Blueprint(decorator = SocketOptionsBuilderDecorator.class)
 @Api.Preview
 interface SocketOptionsBlueprint {
     /**
@@ -158,6 +158,12 @@ interface SocketOptionsBlueprint {
         }
     }
 
+    /**
+     * Socket options builder decorator.
+     *
+     * @deprecated this implementation detail will be removed
+     */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     class BuilderDecorator implements Prototype.BuilderDecorator<SocketOptions.BuilderBase<?, ?>> {
         @Override
         public void decorate(SocketOptions.BuilderBase<?, ?> target) {

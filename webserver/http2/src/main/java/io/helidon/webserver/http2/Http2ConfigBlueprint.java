@@ -31,7 +31,7 @@ import io.helidon.webserver.spi.ProtocolConfigProvider;
 /**
  * HTTP/2 server configuration.
  */
-@Prototype.Blueprint(decorator = Http2ConfigBlueprint.Http2ConfigDecorator.class)
+@Prototype.Blueprint(decorator = Http2ConfigBuilderDecorator.class)
 @Prototype.Configured(root = false, value = Http2ConnectionProvider.CONFIG_NAME)
 @Prototype.Provides(ProtocolConfigProvider.class)
 @Prototype.IncludeDefaultMethods({"maxBufferedEntitySize", "log", "altSvc"})
@@ -195,6 +195,12 @@ interface Http2ConfigBlueprint extends ProtocolConfig, HttpConfig {
         return Http2ConnectionProvider.CONFIG_NAME;
     }
 
+    /**
+     * HTTP/2 configuration builder decorator.
+     *
+     * @deprecated this implementation detail will be removed
+     */
+    @Deprecated(since = "28.0.0", forRemoval = true)
     @Api.Internal
     class Http2ConfigDecorator implements Prototype.BuilderDecorator<Http2Config.BuilderBase<?, ?>> {
         @Override
