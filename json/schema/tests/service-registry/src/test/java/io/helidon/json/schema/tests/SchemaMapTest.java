@@ -60,4 +60,14 @@ class SchemaMapTest {
         var provider = new SchemaMaps__JsonSchema();
         assertThat(provider.schema().generateObject(), is(JsonParser.create(provider.jsonSchema()).readJsonObject()));
     }
+
+    @Test
+    void testOpaquePropertiesRemainUnconstrained() {
+        var properties = JsonParser.create(new SchemaOpaqueValues__JsonSchema().jsonSchema())
+                .readJsonObject()
+                .objectValue("properties").orElseThrow();
+
+        assertThat(properties.objectValue("id").orElseThrow(), is(JsonObject.builder().build()));
+        assertThat(properties.objectValue("value").orElseThrow(), is(JsonObject.builder().build()));
+    }
 }

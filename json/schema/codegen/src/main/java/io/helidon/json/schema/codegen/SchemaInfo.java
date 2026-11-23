@@ -168,6 +168,7 @@ record SchemaInfo(TypeName generatedSchema, JsonObject schema) {
                                       TypeInfo annotatedType,
                                       CodegenContext ctx,
                                       AtomicBoolean required) {
+        builder.set("type", "object");
         processObjectAnnotations(builder, annotatedType, required);
         Map<String, List<SchemaObjectProperty>> objectProperties = obtainObjectProperties(annotatedType);
 
@@ -326,6 +327,10 @@ record SchemaInfo(TypeName generatedSchema, JsonObject schema) {
                 || parameterTypeName.isList()
                 || parameterTypeName.isSet()) {
             properties.forEach(it -> processArray(newStructBuilder, ctx, it.annotated(), parameterTypeName, required));
+        } else if (parameterTypeName.isMap()
+                || parameterTypeName.genericTypeName().equals(TypeName.create(HashMap.class))) {
+            newStructBuilder.set("type", "object");
+            properties.forEach(it -> processObjectAnnotations(newStructBuilder, it.annotated(), required));
         } else {
             boolean doNotInspect = properties.stream()
                     .anyMatch(it -> it.annotated().hasAnnotation(SchemaTypes.JSON_SCHEMA_DO_NOT_INSPECT));
@@ -376,7 +381,6 @@ record SchemaInfo(TypeName generatedSchema, JsonObject schema) {
     }
 
     private static void processObjectAnnotations(JsonObject.Builder builder, Annotated annotated, AtomicBoolean required) {
-        builder.set("type", "object");
         processCommonAnnotations(builder, annotated, required);
         annotated.findAnnotation(SchemaTypes.JSON_SCHEMA_OBJECT_MIN_PROPERTIES)
                 .flatMap(it -> it.intValue())
