@@ -38,5 +38,6 @@
         <module>static-content</module>
         <module>se-1</module>
         <module>inject</module>
+        <module>grpc-module-path</module>
     </modules>
 </project>
