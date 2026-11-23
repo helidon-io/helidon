@@ -77,10 +77,6 @@
             <artifactId>helidon-http-encoding</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.http.encoding</groupId>
-            <artifactId>helidon-http-encoding-gzip</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.helidon.http.media</groupId>
             <artifactId>helidon-http-media-multipart</artifactId>
         </dependency>

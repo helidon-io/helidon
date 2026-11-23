@@ -20,17 +20,22 @@ import java.io.ByteArrayOutputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import io.helidon.config.Config;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.encoding.ContentDecoder;
+import io.helidon.http.encoding.ContentEncoder;
+import io.helidon.http.encoding.ContentEncoding;
 import io.helidon.http.encoding.ContentEncodingContext;
-import io.helidon.http.encoding.gzip.GzipEncoding;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.multipart.MultiPart;
 import io.helidon.http.media.multipart.MultiPartSupport;
@@ -116,7 +121,7 @@ public class MultipartResponseJmhBenchmark {
         }
         ContentEncodingContext decoding = ContentEncodingContext.builder()
                 .contentEncodingsDiscoverServices(false)
-                .addContentEncoding(GzipEncoding.create())
+                .addContentEncoding(new GzipDecoding())
                 .build();
         var serverBuilder = WebServer.builder()
                 .host("127.0.0.1")
@@ -265,6 +270,49 @@ public class MultipartResponseJmhBenchmark {
             }
         } finally {
             server.stop();
+        }
+    }
+
+    private static final class GzipDecoding implements ContentEncoding {
+        @Override
+        public Set<String> ids() {
+            return Set.of("gzip");
+        }
+
+        @Override
+        public boolean supportsEncoding() {
+            return false;
+        }
+
+        @Override
+        public boolean supportsDecoding() {
+            return true;
+        }
+
+        @Override
+        public ContentDecoder decoder() {
+            return network -> {
+                try {
+                    return new GZIPInputStream(network);
+                } catch (IOException e) {
+                    throw new UncheckedIOException(e);
+                }
+            };
+        }
+
+        @Override
+        public ContentEncoder encoder() {
+            throw new UnsupportedOperationException("Benchmark responses are compressed during setup");
+        }
+
+        @Override
+        public String name() {
+            return "gzip";
+        }
+
+        @Override
+        public String type() {
+            return "gzip";
         }
     }
 }
