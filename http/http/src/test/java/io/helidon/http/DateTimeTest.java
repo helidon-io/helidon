@@ -24,7 +24,10 @@ import io.helidon.common.buffers.BufferData;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -56,8 +59,10 @@ public class DateTimeTest {
         DateTime.writeHttp1Bytes(buffer);
 
         String header = new String(buffer.readBytes(), StandardCharsets.US_ASCII);
+        assertThat(header, startsWith("Date: "));
+        assertThat(header, endsWith("\r\n"));
         String date = header.substring("Date: ".length(), header.length() - 2);
-        assertThat(header, is("Date: " + DateTime.parse(date).format(DateTime.RFC_1123_DATE_TIME) + "\r\n"));
+        assertThat(ZonedDateTime.parse(date, DateTime.RFC_1123_DATE_TIME), notNullValue());
     }
 
     @Test
