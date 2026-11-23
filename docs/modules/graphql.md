@@ -101,6 +101,10 @@ The following is a description of each of these steps:
 - Wire up the `DataFetcher` s.
 - Generate the GraphQL schema.
 
+When a GraphQL request fails before execution, the response contains an
+`errors` array and omits `data`. If a resolver fails during execution, the response
+contains `errors` and `data`. The value of `data` can be a partial result or null.
+
 GraphQL responses are serialized with Helidon JSON binding. JSON-native values,
 maps, and iterable values are written directly. Other Java objects in the
 response, such as custom values stored in `GraphQLError.extensions`, must have a

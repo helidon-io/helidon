@@ -95,7 +95,7 @@ class InvocationHandlerObjectResultTest {
 
         List<Map<String, Object>> errors = (List<Map<String, Object>>) result.get("errors");
         assertThat(errors.getFirst().get("message").toString(), containsString("Field 'unknown'"));
-        assertThat(result.get("data"), is((Object) null));
+        assertThat(result.containsKey("data"), is(false));
     }
 
     @SuppressWarnings("unchecked")
@@ -112,7 +112,21 @@ class InvocationHandlerObjectResultTest {
 
         List<Map<String, Object>> errors = (List<Map<String, Object>>) result.get("errors");
         assertThat(errors.getFirst().get("message"), is(invalidSyntaxError.getMessage()));
-        assertThat(result.get("data"), is((Object) null));
+        assertThat(result.containsKey("data"), is(false));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void parsedDocumentContextReportsIntrospectionValidationError() {
+        InvocationHandler handler = InvocationHandler.create(schema());
+        String query = "{first: __type(name: \"Query\") {name} second: __type(name: \"Book\") {name}}";
+        Document document = Parser.parse(query);
+
+        Map<String, Object> result = handler.executeWithContext(query, Map.of(), Map.of(PARSED_DOCUMENT, document));
+
+        List<Map<String, Object>> errors = (List<Map<String, Object>>) result.get("errors");
+        assertThat(errors.getFirst().get("message").toString(), containsString("introspection in good faith"));
+        assertThat(result.containsKey("data"), is(false));
     }
 
     private static GraphQLSchema schema() {

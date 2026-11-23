@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 
+import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
@@ -31,6 +32,7 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.graphql.server.GraphQlConstants.DEFAULT_MAX_QUERY_COMPLEXITY;
 import static io.helidon.graphql.server.GraphQlConstants.DEFAULT_MAX_QUERY_DEPTH;
+import static io.helidon.graphql.server.GraphQlContextKeys.PARSED_DOCUMENT;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -158,7 +160,9 @@ class InvocationHandlerTest {
                 .schema(recursiveSchema(queryDepth, state))
                 .build();
 
-        Map<String, Object> deepQueryResult = deepQueryHandler.execute(deepQuery(queryDepth));
+        String query = deepQuery(queryDepth);
+        Map<String, Object> deepQueryResult = deepQueryHandler.executeWithContext(
+                query, Map.of(), Map.of(PARSED_DOCUMENT, Parser.parse(query)));
 
         assertThat(deepQueryResult.containsKey("errors"), is(false));
         assertThat(state.childResolverCalls(), is(queryDepth));

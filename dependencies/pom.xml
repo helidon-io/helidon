@@ -46,7 +46,7 @@
         <version.lib.google-gson>2.13.2</version.lib.google-gson>
         <version.lib.google-protobuf>4.36.2</version.lib.google-protobuf>
         <version.lib.google-j2objc-annotations>3.0.0</version.lib.google-j2objc-annotations>
-        <version.lib.graphql-java>22.4</version.lib.graphql-java>
+        <version.lib.graphql-java>26.2</version.lib.graphql-java>
         <version.lib.graphql-java.extended.scalars>22.0</version.lib.graphql-java.extended.scalars>
         <version.lib.grpc>1.82.4</version.lib.grpc>
         <version.lib.guava>33.8.0-jre</version.lib.guava>
