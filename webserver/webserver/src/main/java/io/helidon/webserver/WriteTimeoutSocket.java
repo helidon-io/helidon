@@ -251,7 +251,7 @@ final class WriteTimeoutSocket implements HelidonSocket {
                 try {
                     scheduleTimeout(remaining);
                     return;
-                } catch (RejectedExecutionException ignored) {
+                } catch (RejectedExecutionException _) {
                     // Preserve the active write's deadline while the transport scheduler shuts down.
                     fallbackTimer = Thread.ofVirtual()
                             .name("helidon-write-timeout-fallback")
@@ -312,7 +312,7 @@ final class WriteTimeoutSocket implements HelidonSocket {
                 TimeUnit.NANOSECONDS.sleep(remaining);
             }
             timeoutAction.run();
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             Thread.currentThread().interrupt();
         } finally {
             lock.lock();

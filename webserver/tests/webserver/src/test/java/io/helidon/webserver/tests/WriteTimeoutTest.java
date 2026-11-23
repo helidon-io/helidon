@@ -58,7 +58,7 @@ class WriteTimeoutTest {
                 .maxConnections(1)
                 .maxConcurrentRequests(1)
                 .routing(routing -> routing
-                        .get("/blocked", (req, res) -> {
+                        .get("/blocked", (_, res) -> {
                             try {
                                 var output = res.outputStream();
                                 // Reuse a bounded buffer while exceeding both peers' small socket buffers.
@@ -72,7 +72,7 @@ class WriteTimeoutTest {
                                 throw e;
                             }
                         })
-                        .get("/healthy", (req, res) -> res.send("ok")));
+                        .get("/healthy", (_, res) -> res.send("ok")));
         WebServer server = builder.build().start();
         try {
             try (Socket stalled = connect(server, tls)) {
@@ -99,7 +99,7 @@ class WriteTimeoutTest {
     @MethodSource("transports")
     void successiveWritesHaveIndependentDeadlines(boolean nio, boolean tls, int queueLength, boolean smart) throws Exception {
         WebServer server = serverBuilder(nio, tls, queueLength, smart)
-                .routing(routing -> routing.get("/", (req, res) -> {
+                .routing(routing -> routing.get("/", (_, res) -> {
                     res.contentLength(4);
                     var output = res.outputStream();
                     for (int i = 0; i < 4; i++) {

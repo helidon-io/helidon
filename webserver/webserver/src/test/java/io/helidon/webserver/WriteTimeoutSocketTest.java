@@ -56,7 +56,7 @@ class WriteTimeoutSocketTest {
     @Test
     void eachWriteGetsItsOwnDeadline() {
         var fixture = new Fixture();
-        doAnswer(invocation -> {
+        doAnswer(_ -> {
             fixture.clock.addAndGet(9);
             return null;
         }).when(fixture.delegate).write(any());
@@ -75,7 +75,7 @@ class WriteTimeoutSocketTest {
         var fixture = new Fixture();
         fixture.socket.write(BufferData.create("first"));
         fixture.clock.set(9);
-        doAnswer(invocation -> {
+        doAnswer(_ -> {
             fixture.clock.set(10);
             fixture.tasks.getFirst().run();
             return null;
@@ -90,7 +90,7 @@ class WriteTimeoutSocketTest {
     @Test
     void expiryAbortsAndFailsWrite() {
         var fixture = new Fixture();
-        doAnswer(invocation -> {
+        doAnswer(_ -> {
             fixture.clock.set(10);
             fixture.tasks.getFirst().run();
             return null;
@@ -108,7 +108,7 @@ class WriteTimeoutSocketTest {
     @Test
     void completedWritePastDeadlineStillFailsWhenTimerIsDelayed() {
         var fixture = new Fixture();
-        doAnswer(invocation -> {
+        doAnswer(_ -> {
             fixture.clock.set(11);
             return null;
         }).when(fixture.delegate).write(any());
@@ -164,11 +164,11 @@ class WriteTimeoutSocketTest {
     @Test
     void closeKeepsActiveWriteDeadlineUntilDelegateCloseReturns() {
         var fixture = new Fixture();
-        doAnswer(invocation -> {
+        doAnswer(_ -> {
             fixture.socket.close();
             return null;
         }).when(fixture.delegate).write(any());
-        doAnswer(invocation -> {
+        doAnswer(_ -> {
             fixture.clock.set(10);
             fixture.tasks.getFirst().run();
             return null;
@@ -183,7 +183,7 @@ class WriteTimeoutSocketTest {
     void failedCloseKeepsActiveWriteDeadline() {
         var fixture = new Fixture();
         doThrow(new IllegalStateException("close failed")).when(fixture.delegate).close();
-        doAnswer(invocation -> {
+        doAnswer(_ -> {
             assertThrows(IllegalStateException.class, fixture.socket::close);
             fixture.clock.set(10);
             fixture.tasks.getFirst().run();
@@ -198,7 +198,7 @@ class WriteTimeoutSocketTest {
     @Test
     void oldestOverlappingWriteKeepsItsDeadline() {
         var fixture = new Fixture();
-        doAnswer(invocation -> {
+        doAnswer(_ -> {
             if (fixture.clock.get() == 0) {
                 fixture.clock.set(1);
                 assertThrows(SocketWriterException.class,
@@ -227,7 +227,7 @@ class WriteTimeoutSocketTest {
             return null;
         });
         var secondThread = Thread.ofVirtual().unstarted(secondWrite);
-        doAnswer(invocation -> {
+        doAnswer(_ -> {
             if (writes.incrementAndGet() == 1) {
                 fixture.clock.set(1);
                 secondThread.start();
@@ -264,18 +264,18 @@ class WriteTimeoutSocketTest {
     void rejectedRearmPreservesActiveWriteDeadline() {
         var fixture = new Fixture();
         var aborted = new CountDownLatch(1);
-        doAnswer(invocation -> {
+        doAnswer(_ -> {
             aborted.countDown();
             return null;
         }).when(fixture.abort).run();
         fixture.socket.write(BufferData.create("first"));
         fixture.clock.set(9);
         when(fixture.scheduler.schedule(any(Runnable.class), anyLong(), eq(TimeUnit.NANOSECONDS)))
-                .thenAnswer(invocation -> {
+                .thenAnswer(_ -> {
                     fixture.clock.set(19);
                     throw new RejectedExecutionException("stopped");
                 });
-        doAnswer(invocation -> {
+        doAnswer(_ -> {
             fixture.clock.set(10);
             fixture.tasks.getFirst().run();
             assertThat("Fallback timer aborted active write", aborted.await(5, TimeUnit.SECONDS), is(true));
