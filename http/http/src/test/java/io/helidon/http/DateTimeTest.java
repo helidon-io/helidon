@@ -18,7 +18,6 @@ package io.helidon.http;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
 
 import org.junit.jupiter.api.Test;
 
@@ -36,18 +35,15 @@ public class DateTimeTest {
 
     @Test
     void http1BytesAreIsolatedFromCallerChanges() {
-        for (int attempt = 0; attempt < 3; attempt++) {
-            byte[] first = DateTime.http1Bytes();
-            byte[] second = DateTime.http1Bytes();
-            if (Arrays.equals(first, second)) {
-                first[first.length - 2] = 0;
-                first[first.length - 1] = 0;
-                assertThat(second[second.length - 2], is((byte) '\r'));
-                assertThat(second[second.length - 1], is((byte) '\n'));
-                return;
-            }
-        }
-        throw new AssertionError("HTTP Date refreshed between reads on all three attempts");
+        byte[] first = DateTime.http1Bytes();
+        byte[] second = DateTime.http1Bytes();
+        second[second.length - 2] = 0;
+        second[second.length - 1] = 0;
+        byte[] third = DateTime.http1Bytes();
+        assertThat(first[first.length - 2], is((byte) '\r'));
+        assertThat(first[first.length - 1], is((byte) '\n'));
+        assertThat(third[third.length - 2], is((byte) '\r'));
+        assertThat(third[third.length - 1], is((byte) '\n'));
     }
 
     @Test
