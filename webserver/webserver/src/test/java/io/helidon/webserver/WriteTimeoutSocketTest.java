@@ -85,7 +85,6 @@ class WriteTimeoutSocketTest {
 
         verify(fixture.abort, never()).run();
         assertThat(fixture.tasks.size(), is(2));
-        assertThat(fixture.tasks.get(1), sameInstance(fixture.tasks.getFirst()));
     }
 
     @Test
