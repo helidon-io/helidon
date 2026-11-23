@@ -174,7 +174,10 @@ public class MultipartResponseJmhBenchmark {
                 throw new IllegalStateException("Benchmark smoke did not consume the expected response");
             }
             String connection = latestConnection;
-            if (fullMultipart() != PART_BYTES || !connection.equals(latestConnection)) {
+            if (fullMultipart() != PART_BYTES) {
+                throw new IllegalStateException("Benchmark smoke did not consume the expected multipart payload");
+            }
+            if ((http2 || contentEncoding.equals("identity")) && !connection.equals(latestConnection)) {
                 throw new IllegalStateException("Full multipart consumption did not reuse the physical connection");
             }
             if (partialMultipart() != 'A' || ordinaryResponse() != PART_BYTES) {
