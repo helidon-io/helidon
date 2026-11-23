@@ -35,9 +35,11 @@ class SchemaMapTest {
                 .objectValue("properties").orElseThrow();
 
         var mapSchema = JsonObject.builder().set("type", "object").build();
-        for (String name : List.of("values", "sortedValues", "namedValues")) {
+        for (String name : List.of("values", "sortedValues")) {
             assertThat(name, properties.objectValue(name).orElseThrow(), is(mapSchema));
         }
+        assertThat(properties.objectValue("namedValues").orElseThrow(),
+                   is(JsonObject.builder().set("type", "object").set("minProperties", 1).set("title", "Labels").build()));
     }
 
     @Test

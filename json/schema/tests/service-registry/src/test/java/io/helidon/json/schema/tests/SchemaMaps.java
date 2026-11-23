@@ -31,8 +31,10 @@ record SchemaMaps(Map<String, String> values,
                   @JsonSchema.Object.MaxProperties(5)
                   @JsonSchema.Object.AdditionalProperties(true) Map<String, Integer> counts,
                   SortedMap<String, String> sortedValues,
-                  NamedValues namedValues) {
+                  @JsonSchema.Title("Labels") NamedValues namedValues) {
 
+    @JsonSchema.Title("Named values")
+    @JsonSchema.Object.MinProperties(1)
     static class NamedValues extends TreeMap<String, String> {
         public String label;
     }

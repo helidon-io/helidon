@@ -327,16 +327,15 @@ record SchemaInfo(TypeName generatedSchema, JsonObject schema) {
                 || parameterTypeName.isList()
                 || parameterTypeName.isSet()) {
             properties.forEach(it -> processArray(newStructBuilder, ctx, it.annotated(), parameterTypeName, required));
-        } else if (ctx.typeHierarchyResolver()
-                .resolveSupertype(parameterTypeName.genericTypeName(), TypeNames.MAP)
-                .isPresent()) {
-            newStructBuilder.set("type", "object");
-            properties.forEach(it -> processObjectAnnotations(newStructBuilder, it.annotated(), required));
         } else {
             boolean doNotInspect = properties.stream()
                     .anyMatch(it -> it.annotated().hasAnnotation(SchemaTypes.JSON_SCHEMA_DO_NOT_INSPECT));
             Optional<TypeInfo> maybeTypeInfo = doNotInspect ? Optional.empty() : ctx.typeInfo(parameterTypeName);
-            if (maybeTypeInfo.isPresent() && maybeTypeInfo.get().kind() == ElementKind.ENUM) {
+            if (ctx.typeHierarchyResolver().resolveSupertype(parameterTypeName.genericTypeName(), TypeNames.MAP).isPresent()) {
+                newStructBuilder.set("type", "object");
+                maybeTypeInfo.ifPresent(type -> processObjectAnnotations(newStructBuilder, type, required));
+                properties.forEach(it -> processObjectAnnotations(newStructBuilder, it.annotated(), required));
+            } else if (maybeTypeInfo.isPresent() && maybeTypeInfo.get().kind() == ElementKind.ENUM) {
                 processEnum(newStructBuilder, maybeTypeInfo.get(), required);
                 properties.forEach(it -> processStringAnnotations(newStructBuilder, it.annotated(), required));
             } else if (parameterTypeName.packageName().startsWith("java.")
