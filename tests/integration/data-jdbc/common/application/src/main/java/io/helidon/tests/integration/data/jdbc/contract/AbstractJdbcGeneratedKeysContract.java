@@ -152,6 +152,7 @@ public abstract class AbstractJdbcGeneratedKeysContract {
      * operation-owned auto-commit update and that the write is already visible
      * through an independent connection. This protects callers from treating
      * the terminal failure as evidence that retrying the insert is safe.
+     * A subsequent insert verifies that the client remains usable.
      */
     @Test
     protected void mapperFailureAfterAutoCommitLeavesWriteCommitted() {
@@ -163,6 +164,10 @@ public abstract class AbstractJdbcGeneratedKeysContract {
 
         assertThat(failure, sameInstance(expected));
         assertThat(database.committedByName(name).isPresent(), is(true));
+        String recoveredName = "generated-after-committed-mapper-failure";
+        long recoveredId = generatedKeys.insertScalar(recoveredName);
+        assertThat(database.committedByName(recoveredName),
+                   is(Optional.of(new ContactView(recoveredId, recoveredName, Optional.empty()))));
     }
 
     /**
@@ -170,6 +175,7 @@ public abstract class AbstractJdbcGeneratedKeysContract {
      * transaction to roll back when it escapes the transaction boundary. The
      * transaction exception retains the exact mapper failure as its cause and
      * an independent query observes no inserted row.
+     * The client can execute another insert after rollback.
      */
     @Test
     protected void mapperFailureEscapingTransactionRollsWriteBack() {
@@ -181,6 +187,10 @@ public abstract class AbstractJdbcGeneratedKeysContract {
 
         assertThat(failure.getCause(), sameInstance(expected));
         assertThat(database.committedByName(name), is(Optional.empty()));
+        String recoveredName = "generated-after-rolled-back-mapper-failure";
+        long recoveredId = generatedKeys.insertScalar(recoveredName);
+        assertThat(database.committedByName(recoveredName),
+                   is(Optional.of(new ContactView(recoveredId, recoveredName, Optional.empty()))));
     }
 
     /**

@@ -44,10 +44,13 @@ import io.helidon.data.DataException;
 final class JdbcRunner {
 
     // A singular terminal needs the second row as evidence of non-unique cardinality.
-    private static final ExecutionOptions SINGULAR_QUERY = new ExecutionOptions(2);
+    private static final ExecutionOptions SINGULAR_QUERY = new ExecutionOptions(2, false);
 
     // Updates, list terminals, and generated-key operations must not impose a provider-selected JDBC row limit.
-    private static final ExecutionOptions UNBOUNDED = new ExecutionOptions(0);
+    private static final ExecutionOptions UNBOUNDED = new ExecutionOptions(0, false);
+
+    // Batch execution contains only infrastructure work after application bindings have been captured.
+    private static final ExecutionOptions BATCH = new ExecutionOptions(0, true);
 
     private final DataSource dataSource;
     private final JdbcConnectionLease.Provider leaseProvider;
@@ -91,7 +94,7 @@ final class JdbcRunner {
             return evidence.result();
         }
         try {
-            return run(operation, UNBOUNDED, scope -> {
+            return run(operation, BATCH, scope -> {
                 for (int offset = 0; offset < items.size();) {
                     int size = Math.min(batchSize, items.size() - offset);
                     int end = offset + size;
@@ -337,13 +340,15 @@ final class JdbcRunner {
      * @param statement statement to close second
      * @param lease connection lease to close last
      * @param previousFailure earlier operation or cleanup failure
+     * @param fatalCleanup A true value gives fatal cleanup errors precedence over earlier infrastructure failures.
      * @return first failure, or {@code null}
      */
     private static Throwable closeAll(JdbcOperation operation,
                                       ResultSet resultSet,
                                       PreparedStatement statement,
                                       JdbcConnectionLease lease,
-                                      Throwable previousFailure) {
+                                      Throwable previousFailure,
+                                      boolean fatalCleanup) {
         // SQL failures must enter the bounded sanitizer before cleanup is attached. Application and mapper failures
         // keep their original identity.
         if (previousFailure instanceof SQLException) {
@@ -357,7 +362,7 @@ final class JdbcRunner {
         if (previousFailure == null) {
             return failure;
         }
-        if (failure instanceof Error && !(previousFailure instanceof Error)) {
+        if (fatalCleanup && failure instanceof Error && !(previousFailure instanceof Error)) {
             failure.addSuppressed(previousFailure);
             return failure;
         }
@@ -474,7 +479,7 @@ final class JdbcRunner {
         }
 
         ResultSet resultSet = scope == null ? null : scope.resultSet();
-        failure = closeAll(operation, resultSet, statement, lease, failure);
+        failure = closeAll(operation, resultSet, statement, lease, failure, options.fatalCleanup());
         if (failure != null) {
             rethrow(operation, failure);
         }
@@ -664,12 +669,13 @@ final class JdbcRunner {
     }
 
     /**
-     * Statement controls selected by a terminal before JDBC resources are
-     * acquired. A zero maximum leaves the driver's row limit unchanged.
+     * Execution and cleanup controls selected by a terminal before JDBC resources are acquired.
+     * A zero maximum leaves the driver row limit unchanged.
      *
-     * @param maxRows maximum rows exposed by the statement, or zero for no limit
+     * @param maxRows A positive value limits rows exposed by the statement. Zero leaves the row limit unchanged.
+     * @param fatalCleanup A true value gives fatal cleanup errors precedence over earlier infrastructure failures.
      */
-    private record ExecutionOptions(int maxRows) {
+    private record ExecutionOptions(int maxRows, boolean fatalCleanup) {
 
         ExecutionOptions {
             if (maxRows < 0) {

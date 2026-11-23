@@ -24,6 +24,7 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -615,6 +616,93 @@ class JdbcRunnerFailureTest {
         order.verify(resultSet).close();
         order.verify(statement).close();
         order.verify(connection).close();
+    }
+
+    @Test
+    void preservesMapperFailureWhenCleanupThrowsError() throws Exception {
+        for (boolean keys : List.of(false, true)) {
+            for (String terminal : List.of("one", "optional", "list")) {
+                for (String location : List.of("resultSet", "statement", "lease")) {
+                    for (boolean dataFailure : List.of(false, true)) {
+                        setUp();
+                        ResultSet resultSet = keys ? prepareSuccessfulGeneratedKeys() : prepareSuccessfulQuery();
+                        LinkageError closeFailure = new LinkageError("The cleanup failed with SECRET details.");
+                        closeFailure.initCause(new IllegalStateException("The cleanup cause contains SECRET details."));
+                        closeFailure.addSuppressed(new SQLException("The suppressed failure contains SECRET details."));
+                        switch (location) {
+                        case "resultSet" -> doThrow(closeFailure).when(resultSet).close();
+                        case "statement" -> doThrow(closeFailure).when(statement).close();
+                        case "lease" -> doThrow(closeFailure).doNothing().when(connection).close();
+                        default -> throw new IllegalArgumentException("The test cleanup location is unknown.");
+                        }
+                        RuntimeException expected = dataFailure
+                                ? new DataException("The application mapper rejected the row.")
+                                : new IllegalStateException("The application mapper rejected the row.");
+                        JdbcClient.RowMapper<Object> mapper = row -> {
+                            Objects.requireNonNull(row, "The mapper row must not be null.");
+                            throw expected;
+                        };
+                        JdbcClient.Rows<Object> rows = keys
+                                ? client.create("INSERT INTO TEST_VALUE DEFAULT VALUES").generatedKeys().map(mapper)
+                                : client.create("SELECT VALUE FROM TEST_VALUE").map(mapper);
+                        RuntimeException failure = assertThrows(expected.getClass(), () -> {
+                            switch (terminal) {
+                            case "one" -> rows.one();
+                            case "optional" -> rows.optional();
+                            case "list" -> rows.list();
+                            default -> throw new IllegalArgumentException("The test terminal is unknown.");
+                            }
+                        });
+
+                        assertThat(failure, sameInstance(expected));
+                        assertThat(failure.getSuppressed().length, is(1));
+                        Throwable cleanup = failure.getSuppressed()[0];
+                        assertThat(cleanup, not(sameInstance(closeFailure)));
+                        assertThat(cleanup.getMessage(), containsString("java.lang.LinkageError"));
+                        assertThat(cleanup.getMessage(), not(containsString("SECRET")));
+                        assertThat(cleanup.getCause(), nullValue());
+                        assertThat(cleanup.getSuppressed().length, is(0));
+                        InOrder order = inOrder(resultSet, statement, connection);
+                        order.verify(resultSet).close();
+                        order.verify(statement).close();
+                        order.verify(connection).close();
+                        verify(connection, times(location.equals("lease") ? 2 : 1)).close();
+                        if (location.equals("lease")) {
+                            verify(connection).abort(any());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    void reportsFatalCleanupAfterSuccessfulMapping() throws Exception {
+        for (boolean keys : List.of(false, true)) {
+            for (String location : keys ? List.of("resultSet", "statement", "lease") : List.of("statement", "lease")) {
+                setUp();
+                ResultSet resultSet = keys ? prepareSuccessfulGeneratedKeys() : prepareSuccessfulQuery();
+                OutOfMemoryError expected = new OutOfMemoryError("The controlled cleanup failure is fatal.");
+                switch (location) {
+                case "resultSet" -> doThrow(expected).when(resultSet).close();
+                case "statement" -> doThrow(expected).when(statement).close();
+                case "lease" -> doThrow(expected).doNothing().when(connection).close();
+                default -> throw new IllegalArgumentException("The test cleanup location is unknown.");
+                }
+                JdbcClient.Rows<?> rows = keys
+                        ? client.create("INSERT INTO TEST_VALUE DEFAULT VALUES").generatedKeys().map(row -> {
+                            Objects.requireNonNull(row, "The mapper row must not be null.");
+                            return row.get(1, Long.class);
+                        })
+                        : client.create("SELECT VALUE FROM TEST_VALUE").map(String.class);
+
+                assertThat(assertThrows(OutOfMemoryError.class, rows::one), sameInstance(expected));
+                // Query advancement owns result closure before the runner performs final cleanup.
+                verify(resultSet, times(keys ? 1 : 0)).close();
+                verify(statement).close();
+                verify(connection, times(location.equals("lease") ? 2 : 1)).close();
+            }
+        }
     }
 
     @Test

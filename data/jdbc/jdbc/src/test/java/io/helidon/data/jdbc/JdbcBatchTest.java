@@ -1053,6 +1053,41 @@ class JdbcBatchTest {
     }
 
     @Test
+    void fatalCleanupOverridesBatchRuntimeFailure() throws Exception {
+        for (boolean reusable : List.of(false, true)) {
+            for (boolean sized : List.of(false, true)) {
+                for (String location : List.of("statement", "lease")) {
+                    setup();
+                    OutOfMemoryError fatal = new OutOfMemoryError("The controlled cleanup failure is fatal.");
+                    when(prepared.executeBatch()).thenThrow(new IllegalStateException("The driver failed with SECRET details."));
+                    if (location.equals("statement")) {
+                        doThrow(fatal).when(prepared).close();
+                    } else {
+                        doThrow(fatal).doNothing().when(connection).close();
+                    }
+                    JdbcClient.Statement statement = stage(reusable, "INSERT INTO T VALUES (?)");
+
+                    assertThat(assertThrows(OutOfMemoryError.class, () -> {
+                        if (sized) {
+                            statement.executeBatch(List.of(1, 2), 1, (bindings, value) -> bindings.bind(1, value));
+                        } else {
+                            statement.executeBatch(List.of(1, 2), (bindings, value) -> bindings.bind(1, value));
+                        }
+                    }), sameInstance(fatal));
+                    assertThat(fatal.getSuppressed().length, is(1));
+                    assertSanitized(fatal);
+                    verify(prepared).executeBatch();
+                    verify(prepared).close();
+                    verify(connection, times(location.equals("lease") ? 2 : 1)).close();
+                    if (location.equals("lease")) {
+                        verify(connection).abort(any());
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
     void sharedPreparedDefinitionKeepsConcurrentSubmissionSizesIndependent() throws Exception {
         Supplier<JdbcClient.Statement> definition = client.prepare("INSERT INTO T VALUES (:value)");
         CountDownLatch entered = new CountDownLatch(2);
