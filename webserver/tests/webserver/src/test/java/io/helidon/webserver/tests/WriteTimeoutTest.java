@@ -39,10 +39,10 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 
 class WriteTimeoutTest {
     private static final int SOCKET_TIMEOUT_MILLIS = 15000;
@@ -78,8 +78,8 @@ class WriteTimeoutTest {
             try (Socket stalled = connect(server, tls)) {
                 request(stalled, "/blocked");
                 Throwable thrown = failure.get(SOCKET_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS);
-                assertInstanceOf(SocketTimeoutException.class, timeoutCause(thrown),
-                                 "the handler must observe the configured socket write deadline");
+                assertThat("the handler must observe the configured socket write deadline",
+                           timeoutCause(thrown), instanceOf(SocketTimeoutException.class));
 
                 // The stalled peer remains open, so recovery requires the server's timeout cleanup.
                 try (Socket healthy = connect(server, tls)) {
