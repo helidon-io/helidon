@@ -16,7 +16,6 @@
 package io.helidon.data.jdbc;
 
 import java.time.Duration;
-import java.util.Optional;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
@@ -67,11 +66,4 @@ interface JdbcClientHealthConfigBlueprint {
     @Option.Default("READINESS")
     HealthCheckType type();
 
-    /**
-     * Overrides the client name in responses and individual check routes.
-     *
-     * @return An empty value selects the client registration name.
-     */
-    @Option.Configured
-    Optional<String> name();
 }

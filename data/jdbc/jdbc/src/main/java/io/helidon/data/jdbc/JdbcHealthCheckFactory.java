@@ -19,65 +19,69 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.function.Supplier;
 
-import io.helidon.config.ConfigException;
 import io.helidon.data.DataException;
 import io.helidon.health.HealthCheck;
+import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceInstance;
-import io.helidon.service.registry.ServiceRegistryException;
+import io.helidon.service.registry.ServiceRegistry;
 
 /**
  * Creates enabled health checks over the clients selected by the owning registry.
  */
 @Service.Singleton
 final class JdbcHealthCheckFactory implements Service.ServicesFactory<HealthCheck> {
-    private final Supplier<List<JdbcClientConfig>> configurations;
-    private final Supplier<List<ServiceInstance<JdbcClient>>> clients;
+    private final ServiceRegistry registry;
 
     @Service.Inject
-    JdbcHealthCheckFactory(Supplier<List<JdbcClientConfig>> configurations,
-                          Supplier<List<ServiceInstance<JdbcClient>>> clients) {
-        this.configurations = configurations;
-        this.clients = clients;
+    JdbcHealthCheckFactory(ServiceRegistry registry) {
+        this.registry = registry;
     }
 
     @Override
     public List<Service.QualifiedInstance<HealthCheck>> services() {
-        List<JdbcClientConfig> definitions;
+        List<ServiceInstance<JdbcClient>> candidates;
         try {
-            definitions = configurations.get();
-        } catch (ConfigException | ServiceRegistryException _) {
-            throw new DataException("The JDBC client health check configuration could not be loaded.");
+            // Enumeration can activate client factories even when their clients disable health checks.
+            candidates = registry.lookupInstances(Lookup.create(JdbcClient.class));
+        } catch (RuntimeException _) {
+            throw new DataException("The registered JDBC clients could not be inspected for health checks.");
         }
         List<Service.QualifiedInstance<HealthCheck>> checks = new ArrayList<>();
-        Set<String> names = new HashSet<>();
-        for (JdbcClientConfig definition : definitions) {
-            // Registry order selects the preferred definition without merging independent health paths.
-            if (!names.add(definition.name())) {
-                continue;
-            }
-            JdbcClientHealthConfig health = definition.health();
-            if (!health.enabled()) {
+        Set<Set<Qualifier>> registrations = new HashSet<>();
+        for (ServiceInstance<JdbcClient> candidate : candidates) {
+            Set<Qualifier> qualifiers = candidate.qualifiers();
+            if (!registrations.add(qualifiers)) {
                 continue;
             }
             JdbcClient client;
             try {
-                Qualifier qualifier = Qualifier.createNamed(definition.name());
-                client = clients.get().stream()
-                        .filter(instance -> instance.qualifiers().contains(qualifier))
-                        .findFirst()
-                        .orElseThrow(() -> new DataException(
-                                "The JDBC client configured for an enabled health check is not registered."))
-                        .get();
-            } catch (ServiceRegistryException _) {
+                // An empty lookup also matches qualified services. Keep the first unqualified registration separate.
+                // Qualified lookup order can differ from the unrestricted candidate list order.
+                client = qualifiers.isEmpty() ? candidate.get()
+                        : registry.<JdbcClient>first(Lookup.builder().addContract(JdbcClient.class)
+                                .qualifiers(qualifiers).build()).orElse(null);
+            } catch (RuntimeException _) {
                 throw new DataException("The JDBC client for the health check could not be resolved.");
             }
+            // Custom clients expose no supported independent execution contract, including through their prototypes.
+            if (!(client instanceof JdbcClientImpl)) {
+                continue;
+            }
+            JdbcClientConfig configuration = client.prototype();
+            JdbcClientHealthConfig health = configuration.health();
+            if (!health.enabled()) {
+                continue;
+            }
+            String registrationName = qualifiers.stream()
+                    .filter(qualifier -> qualifier.typeName().equals(Service.Named.TYPE))
+                    .map(qualifier -> qualifier.value().orElse(Service.Named.DEFAULT_NAME))
+                    .findFirst().orElse(configuration.name());
             JdbcClientHealthCheck check = JdbcClientHealthCheck.builder().client(client)
                     .query(health.query()).queryTimeout(health.queryTimeout()).type(health.type())
-                    .name(health.name().orElse(definition.name())).build();
+                    .name(registrationName).build();
             checks.add(Service.QualifiedInstance.create(check));
         }
         return List.copyOf(checks);

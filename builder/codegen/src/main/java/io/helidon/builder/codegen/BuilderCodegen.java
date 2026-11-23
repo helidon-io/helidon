@@ -23,7 +23,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -43,7 +42,6 @@ import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.classmodel.ClassBase;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.ContentBuilder;
-import io.helidon.codegen.classmodel.Javadoc;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.codegen.classmodel.TypeArgument;
 import io.helidon.codegen.spi.CodegenExtension;
@@ -210,18 +208,13 @@ class BuilderCodegen implements CodegenExtension {
                 .accessModifier(configuredData.createAccessModifier())
                 .name("create")
                 .isStatic(true)
-                .javadoc(Javadoc.builder()
-                        .addLine("Create a new instance from configuration.")
-                        .addThrows("java.lang.NullPointerException", List.of("The supplied configuration is null."))
-                        .build())
+                .description("Create a new instance from configuration.")
                 .returnType(prototype, "a new instance configured from configuration")
                 .addParameter(paramBuilder -> paramBuilder.type(Types.CONFIG)
                         .name("config")
                         .description("used to configure the new instance"));
         typeArguments.forEach(method::addGenericArgument);
-        method.addContent(Objects.class)
-                .addContentLine(".requireNonNull(config);")
-                .addContent("return ")
+        method.addContent("return ")
                 .addContent(ifaceName)
                 .addContent(".")
                 .addContent(typeArgumentString)
@@ -245,17 +238,12 @@ class BuilderCodegen implements CodegenExtension {
         classModel.addMethod(builder -> {
             builder.isStatic(true)
                     .name("builder")
-                    .javadoc(Javadoc.builder()
-                            .addLine("Create a new fluent API builder from an existing instance.")
-                            .addThrows("java.lang.NullPointerException", List.of("The supplied instance is null."))
-                            .build())
+                    .description("Create a new fluent API builder from an existing instance.")
                     .returnType(builderTypeName, "a builder based on an instance")
                     .addParameter(paramBuilder -> paramBuilder.type(prototype)
                             .name("instance")
                             .description("an existing instance used as a base for the builder"));
             typeArguments.forEach(builder::addGenericArgument);
-            builder.addContent(Objects.class)
-                    .addContentLine(".requireNonNull(instance);");
             builder.addContentLine("return " + ifaceName + "." + typeArgumentString + "builder().from(instance);");
         });
     }

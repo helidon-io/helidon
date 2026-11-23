@@ -127,7 +127,8 @@ final class JdbcTransactionConnectionManager implements TxLifeCycle, JdbcConnect
     /**
      * Checks context eligibility without acquiring, enlisting, or mutating a caller transaction.
      */
-    void checkProbeContext() {
+    @Override
+    public void checkProbeContext() {
         State state = local.get();
         if (state == null) {
             return;

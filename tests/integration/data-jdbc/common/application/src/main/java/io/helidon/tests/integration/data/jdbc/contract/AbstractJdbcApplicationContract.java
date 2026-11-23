@@ -16,11 +16,19 @@
 package io.helidon.tests.integration.data.jdbc.contract;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 
+import io.helidon.data.Data;
 import io.helidon.data.DataException;
 import io.helidon.data.NoResultException;
 import io.helidon.data.NonUniqueResultException;
+import io.helidon.data.jdbc.JdbcClient;
+import io.helidon.data.jdbc.JdbcClientHealthCheck;
+import io.helidon.health.HealthCheckResponse;
+import io.helidon.service.registry.Qualifier;
+import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.tests.integration.data.jdbc.application.ContactOperations;
 import io.helidon.tests.integration.data.jdbc.application.ContactView;
@@ -35,6 +43,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -192,6 +201,53 @@ public abstract class AbstractJdbcApplicationContract {
             throw new IllegalStateException("force rollback");
         }));
         assertThat(database.committedByName("contract-rolled-back"), is(Optional.empty()));
+    }
+
+    /**
+     * Invokes health checks between application operations while preserving caller commit and rollback.
+     * The selected adapter executes either client calls or generated repository methods against the same registry.
+     */
+    @Test
+    protected final void healthChecksPreserveApplicationOperationsAndCallerCompletion() {
+        JdbcClient client = manager.registry().get(JdbcClient.class,
+                                                  Qualifier.create(Data.ProviderType.TYPE, "jdbc"),
+                                                  Qualifier.createNamed(Service.Named.DEFAULT_NAME));
+        var healthy = JdbcClientHealthCheck.builder().client(client).query(TestSql.FIND_ALL).build();
+        var failing = JdbcClientHealthCheck.builder().client(client)
+                .query("SELECT * FROM JDBC_HEALTH_TABLE_MISSING").build();
+        ContactView baseline = contacts.oneByName("alpha");
+        assertThat(baseline.id(), is(1L));
+        for (boolean rollBack : List.of(false, true)) {
+            String name = rollBack ? "health-rolled-back" : "health-committed";
+            var expectedRollback = new IllegalStateException("The application transaction must roll back.");
+            Callable<ContactView> work = () -> {
+                long id = contacts.insert(name, name + "@example.test");
+                ContactView pending = contacts.oneByName(name);
+                assertThat(pending.id(), is(id));
+                // The adapter establishes pending work before either independent health check runs.
+                var up = healthy.call();
+                assertThat(up.status(), is(HealthCheckResponse.Status.UP));
+                assertThat(up.details(), is(Map.of()));
+                var down = failing.call();
+                assertThat(down.status(), is(HealthCheckResponse.Status.DOWN));
+                assertThat(down.details(), is(Map.of()));
+                assertThat(contacts.findByName(name), is(Optional.of(pending)));
+                if (rollBack) {
+                    throw expectedRollback;
+                }
+                return pending;
+            };
+            if (rollBack) {
+                TxException failure = assertThrows(TxException.class, () -> Tx.transaction(Tx.Type.REQUIRED, work));
+                // An unrelated transaction failure must not satisfy the deliberate rollback assertion.
+                assertThat(failure.getCause(), sameInstance(expectedRollback));
+                assertThat(database.committedByName(name), is(Optional.empty()));
+            } else {
+                ContactView committed = Tx.transaction(Tx.Type.REQUIRED, work);
+                assertThat(database.committedByName(name), is(Optional.of(committed)));
+            }
+            assertThat(contacts.findByName("alpha"), is(Optional.of(baseline)));
+        }
     }
 
     @AfterEach

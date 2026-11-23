@@ -59,7 +59,7 @@ for server setup.
 
 ### Directly Configured Client
 
-This creates the `contacts` client and enables its readiness check as `contacts-db`:
+This creates the `contacts` client and enables its readiness check as `contacts`:
 
 ```yaml [application.yaml]
 data:
@@ -72,7 +72,6 @@ data:
           password: "contacts-pass"
         health:
           enabled: true
-          name: "contacts-db"
 ```
 
 The check uses the client's resolved connection source. Direct settings require no
@@ -81,7 +80,7 @@ The check uses the client's resolved connection source. Direct settings require 
 
 ### Data Source Without a Client
 
-This enables `contacts-pool` over a Hikari data source without defining a JDBC client:
+This enables `contacts-source` over a Hikari data source without defining a JDBC client:
 
 ```yaml [application.yaml]
 data:
@@ -94,7 +93,6 @@ data:
           password: "contacts-pass"
         health:
           enabled: true
-          name: "contacts-pool"
 ```
 
 The existing single-object data source configuration form also supports `health`.
@@ -114,24 +112,25 @@ data:
         data-source: "contacts-source"
         health:
           enabled: true
-          name: "contacts-db"
           query: "SELECT 1"
           query-timeout: "PT3S"
 ```
 
 Merge the two examples under one `data` key. They enable two readiness checks:
-`contacts-pool` and `contacts-db`. An aggregate request executes both independently.
+`contacts-source` and `contacts`. An aggregate request executes both independently.
 Client checks inherit no enablement, SQL, timeout, membership, or name from a data source
 check. Several clients sharing a source can each have their own check. Enable only the
 definitions that should contribute to application health.
 
-The service names `contacts` and `contacts-source` select the client and source.
-The health names `contacts-db` and `contacts-pool` identify checks and endpoint paths.
-An explicit `health.name` takes precedence. Otherwise, a discovered check uses its
-owning resource's registration name: `contacts` or `contacts-source` in these examples.
+Discovered check names come from resource registration names: `contacts` and
+`contacts-source` here. An unqualified client registration uses its logical client name.
+There is no separate discovery naming override. A `health.name` entry is ignored;
+use the resource name in readiness probes and dashboards. For a custom health name,
+construct and register the check explicitly as shown below.
+
 Names need not be unique. An aggregate executes every applicable check, while each
-named handler selects the first matching check from its own membership list. Use
-distinct names when each check needs an independently addressable route.
+named handler selects the first matching check from its own membership list. Choose
+distinct resource names or explicitly named checks for individually addressable routes.
 
 Enabling only the data source check creates no client check or alias. For example,
 with source health enabled and the client `health` node omitted, only the source's
@@ -144,7 +143,6 @@ These settings belong under either definition's `health` node:
 | Setting | Default | Meaning |
 | --- | --- | --- |
 | `enabled` | `false` | Enables registry discovery for this definition. |
-| `name` | Owning registration name | An optional, nonblank name for the check and its route. |
 | `query` | `SELECT 1` | Trusted validation SELECT, without bind parameters. |
 | `query-timeout` | `PT2S` | Positive whole seconds, up to `2,147,483,647` seconds. |
 | `type` | `readiness` | Health membership. Select `liveness` explicitly when required. |
@@ -161,7 +159,6 @@ import io.helidon.data.jdbc.JdbcClientHealthConfig;
 
 JdbcClientHealthConfig policy = JdbcClientHealthConfig.builder()
         .enabled(true)
-        .name("contacts-db")
         .query("SELECT 1")
         .build();
 
@@ -174,15 +171,18 @@ JdbcClient client = JdbcClient.builder()
 JdbcClient anotherClient = JdbcClient.builder()
         .name("another")
         .dataSource(contactsDataSource)
-        .health(health -> health.enabled(true).name("another-db"))
+        .health(health -> health.enabled(true))
         .build();
 ```
 
-Standalone client construction does not publish checks into a registry, even with an
-enabled policy. Registry discovery binds an enabled policy to the preferred effective
-resource within that registry, preserving the owning definition's policy and name
-when the resource is replaced. It publishes each check once as an unqualified
-`HealthCheck` service.
+Standalone client construction publishes no global services. A registered supported
+client supplies its own health policy through `prototype().health()`; replacing that
+client replaces enablement, SQL, timeout, and membership. A named registration still
+supplies the health name when the replacement's logical name differs. Datasource policy
+remains on its selected `DataSourceConfig` when only the source instance is replaced.
+Each enabled registration publishes one unqualified `HealthCheck` in its owning registry.
+Discovery may activate clients and pools before reading disabled client policies;
+disabled health publishes no client check and executes no health SQL.
 
 Executable check builders separately expose `name`, `query`, `queryTimeout`, and
 `type`; `config` applies configuration to a builder. `enabled` controls discovery
@@ -237,6 +237,30 @@ DataSourceHealthCheck check = DataSourceHealthCheck.builder()
         .build();
 ```
 
+Multiple application-supplied data sources need no registry registration. Given
+existing `DataSource ordersSource` and `DataSource billingSource`, give their explicit
+checks separate names:
+
+```java
+var ordersCheck = DataSourceHealthCheck.builder()
+        .dataSource(ordersSource)
+        .name("orders-db")
+        .build();
+var billingCheck = DataSourceHealthCheck.builder()
+        .dataSource(billingSource)
+        .name("billing-db")
+        .build();
+var observer = HealthObserver.builder()
+        .useSystemServices(false)
+        .addCheck(ordersCheck)
+        .addCheck(billingCheck)
+        .build();
+```
+
+Attach this observer as in the server example above. The ready and generic routes
+end in `/orders-db` and `/billing-db`. The application retains lifecycle ownership
+of both sources.
+
 Without an explicit name, an imperative client check uses the supported client's
 logical name. A standalone data source check has no registration metadata and retains
 `DataSourceHealthCheck` as its fallback name. Names supplied through either builder
@@ -252,7 +276,7 @@ separate from constructing or invoking a health check.
 ## Invoke Checks in a Declarative Application
 
 A repository using `@Jdbc.Client("contacts")` and the direct configuration above uses
-the same client whose health check is named `contacts-db`. Keep health invocation in
+the same client whose health check is named `contacts`. Keep health invocation in
 an application service. Repository methods continue to describe application SQL.
 
 The registry publishes individual, unqualified `HealthCheck` services. Inject the list
@@ -278,7 +302,7 @@ final class ContactHealth {
 
     HealthCheckResponse databaseStatus() {
         return checks.stream()
-                .filter(check -> check.name().equals("contacts-db"))
+                .filter(check -> check.name().equals("contacts"))
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("The contacts database check is not registered."))
                 .call();
@@ -333,18 +357,18 @@ application's liveness policy. Both memberships execute the same probe; the choi
 changes which aggregate and named routes include it. See [Kubernetes
 Probes](../health.md#kubernetes-probes) for the general distinction.
 
-For the readiness check named `contacts-db`, the default observer exposes:
+For the readiness check named `contacts`, the default observer exposes:
 
 | Route | What it evaluates |
 | --- | --- |
-| `/observe/health/ready/contacts-db` | The named check through a fresh probe. |
-| `/observe/health/check/contacts-db` | The same named check through another fresh probe. |
+| `/observe/health/ready/contacts` | The named check through a fresh probe. |
+| `/observe/health/check/contacts` | The same named check through another fresh probe. |
 | `/observe/health/ready` | All readiness checks. |
 | `/observe/health` | All health checks. |
 
 Aggregate readiness can be DOWN while the named database check is UP because another
 readiness check failed. For a uniquely named check with `type: liveness`, the named
-readiness route returns 404, while `/observe/health/live/contacts-db` and the generic
+readiness route returns 404, while `/observe/health/live/contacts` and the generic
 named route are available.
 There is no bare `/observe/health/check` route. These paths use the default Observe
 prefix and Health endpoint; the application name is not automatically prepended.
@@ -352,7 +376,7 @@ prefix and Health endpoint; the application name is not automatically prepended.
 Inspect the response status and headers with:
 
 ```shell [Terminal]
-curl -i http://localhost:8080/observe/health/ready/contacts-db
+curl -i http://localhost:8080/observe/health/ready/contacts
 ```
 
 By default, a healthy check returns **204 with no response body**, so a browser can

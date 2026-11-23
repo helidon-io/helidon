@@ -19,14 +19,21 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.sql.DataSource;
 
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.data.sql.datasource.DataSourceHealthCheck;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.health.HealthCheckType;
+import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.ServiceRegistryConfig;
+import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.service.registry.Services;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
@@ -114,6 +121,74 @@ class JdbcHealthRoutesTest {
             } finally {
                 server.stop();
             }
+        }
+    }
+
+    /**
+     * Publishes only the client registration route when obsolete discovery naming is supplied.
+     */
+    @Test
+    void obsoletePolicyNameCreatesNoAliasRoute() {
+        var manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                .discoverServices(false).discoverServicesFromServiceLoader(false)
+                .addServiceDescriptor(JdbcHealthCheckFactory__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(JdbcClientFactory__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(JdbcClientConfigFactory__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(JdbcTransactionConnectionManager__ServiceDescriptor.INSTANCE).build());
+        GlobalServiceRegistry.registry(manager.registry());
+        try {
+            Services.set(Config.class, Config.empty());
+            Services.set(JdbcClientConfig.class, JdbcClientConfig.builder().name("orders").dataSource(source)
+                    .config(Config.just(ConfigSources.create(Map.of("health.enabled", "true",
+                            "health.name", "legacy-db")))).buildPrototype());
+            var checks = manager.registry().all(HealthCheck.class);
+            assertThat(checks.size(), is(1));
+            assertThat(checks.getFirst().name(), is("orders"));
+            assertThat(acquisitionCount.get(), is(0));
+            WebServer server = WebServer.builder().host("127.0.0.1").port(0).featuresDiscoverServices(false)
+                    .addFeature(ObserveFeature.just(HealthObserver.builder().useSystemServices(false)
+                            .addCheck(checks.getFirst()).build())).build().start();
+            try {
+                Http1Client http = Http1Client.builder().baseUri("http://127.0.0.1:" + server.port()).build();
+                assertStatus(http, "/observe/health/ready/orders", 204);
+                assertStatus(http, "/observe/health/check/orders", 204);
+                assertStatus(http, "/observe/health/check/legacy-db", 404);
+                assertStatus(http, "/observe/health/live/orders", 404);
+                assertStatus(http, "/observe/health/ready", 204);
+                assertThat(acquisitionCount.get(), is(3));
+            } finally {
+                server.stop();
+            }
+        } finally {
+            manager.shutdown();
+        }
+    }
+
+    /**
+     * Selects explicit checks over two unregistered sources independently without transferring ownership.
+     */
+    @Test
+    void unregisteredSourcesHaveIndependentNamedRoutes() throws Exception {
+        DataSource broken = mock(DataSource.class);
+        when(broken.getConnection()).thenThrow(new SQLException("Secret provider failure."));
+        var orders = DataSourceHealthCheck.builder().dataSource(source).name("orders-db").build();
+        var billing = DataSourceHealthCheck.builder().dataSource(broken).name("billing-db").build();
+        assertThat(orders.prototype().dataSource(), is(source));
+        assertThat(billing.prototype().dataSource(), is(broken));
+        assertThat(acquisitionCount.get(), is(0));
+        WebServer server = WebServer.builder().host("127.0.0.1").port(0).featuresDiscoverServices(false)
+                .addFeature(ObserveFeature.just(HealthObserver.builder().useSystemServices(false)
+                        .addCheck(orders).addCheck(billing).build())).build().start();
+        try {
+            Http1Client http = Http1Client.builder().baseUri("http://127.0.0.1:" + server.port()).build();
+            assertStatus(http, "/observe/health/ready/orders-db", 204);
+            assertStatus(http, "/observe/health/check/orders-db", 204);
+            assertStatus(http, "/observe/health/ready/billing-db", 503);
+            assertStatus(http, "/observe/health/check/billing-db", 503);
+            assertStatus(http, "/observe/health/ready", 503);
+            assertThat(acquisitionCount.get(), is(3));
+        } finally {
+            server.stop();
         }
     }
 

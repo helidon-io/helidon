@@ -178,12 +178,10 @@ final class JdbcClientImpl implements JdbcClient {
                 .queryTimeout(timeout)
                 .build();
         return () -> {
-            if (leaseProvider instanceof JdbcTransactionConnectionManager manager) {
-                try {
-                    manager.checkProbeContext();
-                } catch (RuntimeException _) {
-                    return false;
-                }
+            try {
+                leaseProvider.checkProbeContext();
+            } catch (RuntimeException _) {
+                return false;
             }
             return check.call().status() == HealthCheckResponse.Status.UP;
         };

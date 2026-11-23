@@ -22,6 +22,7 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
@@ -45,7 +46,9 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -199,6 +202,81 @@ class JdbcClientProbeTest {
         assertThat(assertThrows(OutOfMemoryError.class, () -> probe(fixture).getAsBoolean()), sameInstance(fatal));
         verify(fixture.connection()).close();
         noTransactionControl(fixture.connection());
+    }
+
+    /**
+     * Consults the lease provider for each invocation while acquiring and releasing independent probe resources.
+     */
+    @Test
+    void validatesLeaseProviderContextBeforeEachIndependentAcquisition() throws Exception {
+        Fixture fixture = fixture();
+        JdbcConnectionLease.Provider provider = mock(JdbcConnectionLease.Provider.class);
+        JdbcClientConfig config = JdbcClientConfig.builder().dataSource(fixture.source()).buildPrototype();
+        JdbcClient client = new JdbcClientImpl(config, fixture.source(), provider, JdbcClientConfigSupport.cachePolicy(config));
+        BooleanSupplier probe = probe(client, "SELECT 1", Duration.ofSeconds(2));
+        verifyZeroInteractions(provider, fixture.source());
+
+        assertThat(probe.getAsBoolean(), is(true));
+        assertThat(probe.getAsBoolean(), is(true));
+
+        var order = inOrder(provider, fixture.source());
+        for (int invocation = 0; invocation < 2; invocation++) {
+            order.verify(provider).checkProbeContext();
+            order.verify(fixture.source()).getConnection();
+        }
+        verify(provider, never()).acquire(any());
+        verify(fixture.rows(), times(2)).close();
+        verify(fixture.statement(), times(2)).close();
+        verify(fixture.connection(), times(2)).close();
+        noTransactionControl(fixture.connection());
+    }
+
+    /**
+     * A rejected context reports no diagnostics and performs no JDBC work, but a later invocation can succeed.
+     */
+    @Test
+    void rejectedLeaseProviderContextReturnsSanitizedDownAndAllowsLaterReuse() throws Exception {
+        Fixture fixture = fixture();
+        JdbcConnectionLease.Provider provider = mock(JdbcConnectionLease.Provider.class);
+        doThrow(new IllegalStateException("Secret transaction diagnostic.")).when(provider).checkProbeContext();
+        JdbcClientConfig config = JdbcClientConfig.builder().dataSource(fixture.source()).buildPrototype();
+        JdbcClient client = new JdbcClientImpl(config, fixture.source(), provider, JdbcClientConfigSupport.cachePolicy(config));
+        JdbcClientHealthCheck check = JdbcClientHealthCheck.builder().client(client).build();
+        verifyZeroInteractions(provider, fixture.source());
+
+        HealthCheckResponse response = check.call();
+        assertThat(response.status(), is(HealthCheckResponse.Status.DOWN));
+        assertThat(response.details(), is(Map.of()));
+        verifyZeroInteractions(fixture.source(), fixture.connection(), fixture.statement(), fixture.rows());
+
+        doNothing().when(provider).checkProbeContext();
+        assertThat(check.call().status(), is(HealthCheckResponse.Status.UP));
+        verify(provider, times(2)).checkProbeContext();
+        verify(provider, never()).acquire(any());
+        verify(fixture.source()).getConnection();
+        verify(fixture.rows()).close();
+        verify(fixture.statement()).close();
+        verify(fixture.connection()).close();
+        noTransactionControl(fixture.connection());
+    }
+
+    /**
+     * A fatal context failure escapes unchanged before any probe resource is acquired.
+     */
+    @Test
+    void leaseProviderContextPreservesFatalErrorsBeforeAcquisition() throws Exception {
+        Fixture fixture = fixture();
+        JdbcConnectionLease.Provider provider = mock(JdbcConnectionLease.Provider.class);
+        OutOfMemoryError fatal = new OutOfMemoryError("The context check failed.");
+        doThrow(fatal).when(provider).checkProbeContext();
+        JdbcClientConfig config = JdbcClientConfig.builder().dataSource(fixture.source()).buildPrototype();
+        JdbcClient client = new JdbcClientImpl(config, fixture.source(), provider, JdbcClientConfigSupport.cachePolicy(config));
+        BooleanSupplier probe = probe(client, "SELECT 1", Duration.ofSeconds(2));
+
+        assertThat(assertThrows(OutOfMemoryError.class, probe::getAsBoolean), sameInstance(fatal));
+        verify(provider).checkProbeContext();
+        verify(provider, never()).acquire(any());
+        verifyZeroInteractions(fixture.source(), fixture.connection(), fixture.statement(), fixture.rows());
     }
 
     /**

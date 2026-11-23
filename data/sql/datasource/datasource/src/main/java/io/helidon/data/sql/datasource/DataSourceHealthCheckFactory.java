@@ -78,7 +78,7 @@ final class DataSourceHealthCheckFactory implements Service.ServicesFactory<Heal
             }
             DataSourceHealthCheck check = DataSourceHealthCheck.builder().dataSource(source)
                     .query(health.query()).queryTimeout(health.queryTimeout()).type(health.type())
-                    .name(health.name().orElse(definition.name())).build();
+                    .name(definition.name()).build();
             checks.add(Service.QualifiedInstance.create(check));
         }
         return List.copyOf(checks);

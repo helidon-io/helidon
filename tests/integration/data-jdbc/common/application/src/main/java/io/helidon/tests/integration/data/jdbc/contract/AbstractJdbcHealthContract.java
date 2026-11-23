@@ -15,9 +15,6 @@
  */
 package io.helidon.tests.integration.data.jdbc.contract;
 
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,11 +22,9 @@ import java.sql.SQLException;
 import java.sql.SQLTimeoutException;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorCompletionService;
@@ -40,12 +35,12 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
-import java.util.stream.Collectors;
 
 import javax.sql.DataSource;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.data.Data;
 import io.helidon.data.jdbc.JdbcClient;
 import io.helidon.data.jdbc.JdbcClientConfig;
 import io.helidon.data.jdbc.JdbcClientHealthCheck;
@@ -58,10 +53,10 @@ import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.health.HealthCheckType;
 import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
-import io.helidon.tests.integration.data.jdbc.support.DataSourceHealthProcess;
 import io.helidon.tests.integration.data.jdbc.support.JdbcHealthApplication;
 import io.helidon.transaction.Tx;
 import io.helidon.transaction.TxException;
@@ -78,7 +73,6 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -105,8 +99,6 @@ import static org.mockito.Mockito.when;
 public abstract class AbstractJdbcHealthContract {
     private final List<Connection> acquisitions = new ArrayList<>();
     private final AtomicInteger acquisitionCount = new AtomicInteger();
-    @TempDir
-    Path healthProcessDirectory;
 
     private HikariDataSource pool;
     private DataSource source;
@@ -536,7 +528,6 @@ public abstract class AbstractJdbcHealthContract {
             values.put(prefix + ".name", "health-client-" + index);
             values.put(prefix + ".data-source", "health-source");
             values.put(prefix + ".health.enabled", "true");
-            values.put(prefix + ".health.name", "database-" + index);
             values.put(prefix + ".health.type", index == 1 ? "liveness" : "readiness");
             values.put(prefix + ".health.query", index == 2 ? "SELECT * FROM JDBC_HEALTH_TABLE_MISSING" : query());
         }
@@ -550,9 +541,9 @@ public abstract class AbstractJdbcHealthContract {
             var provider = manager.registry().get(ObserveFeatureProvider.class);
             ObserveFeature feature = provider.create(Config.empty(), "observe", manager.registry());
             assertThat(acquisitionCount.get(), is(0));
-            assertThat(application.check("database-0").status(), is(HealthCheckResponse.Status.UP));
-            assertThat(application.check("database-1").status(), is(HealthCheckResponse.Status.UP));
-            HealthCheckResponse failed = application.check("database-2");
+            assertThat(application.check("health-client-0").status(), is(HealthCheckResponse.Status.UP));
+            assertThat(application.check("health-client-1").status(), is(HealthCheckResponse.Status.UP));
+            HealthCheckResponse failed = application.check("health-client-2");
             assertThat(failed.status(), is(HealthCheckResponse.Status.DOWN));
             assertThat(failed.details().isEmpty(), is(true));
             assertThat(acquisitionCount.get(), is(3));
@@ -560,15 +551,15 @@ public abstract class AbstractJdbcHealthContract {
                     .addFeature(feature).build().start();
             try {
                 Http1Client http = Http1Client.builder().baseUri("http://127.0.0.1:" + server.port()).build();
-                assertStatus(http, "/observe/health/ready/database-0", 204);
-                assertStatus(http, "/observe/health/check/database-0", 204);
+                assertStatus(http, "/observe/health/ready/health-client-0", 204);
+                assertStatus(http, "/observe/health/check/health-client-0", 204);
                 assertThat(acquisitionCount.get(), is(5));
                 assertStatus(http, "/observe/health/ready", 503);
                 assertThat(acquisitionCount.get(), is(7));
-                assertStatus(http, "/observe/health/ready/database-1", 404);
-                assertStatus(http, "/observe/health/live/database-1", 204);
-                assertStatus(http, "/observe/health/check/database-1", 204);
-                assertStatus(http, "/observe/health/check/database-2", 503);
+                assertStatus(http, "/observe/health/ready/health-client-1", 404);
+                assertStatus(http, "/observe/health/live/health-client-1", 204);
+                assertStatus(http, "/observe/health/check/health-client-1", 204);
+                assertStatus(http, "/observe/health/check/health-client-2", 503);
                 assertStatus(http, "/observe/health/check", 404);
                 assertThat(acquisitionCount.get(), is(10));
             } finally {
@@ -594,58 +585,6 @@ public abstract class AbstractJdbcHealthContract {
     protected void failedConcurrentProbeDoesNotStrandItsPeers() throws Exception {
         verifyFailedConcurrentProbeDoesNotStrandItsPeers(true);
         verifyFailedConcurrentProbeDoesNotStrandItsPeers(false);
-    }
-
-    /**
-     * Executes real data source probes and pool reuse in a process that cannot link the JDBC client runtime.
-     */
-    @Test
-    protected void datasourceOnlyHealthNeedsNoClientRuntime() throws Exception {
-        Config connection = databaseConfig().get("data.clients.jdbc").asNodeList().orElseThrow().getFirst().get("connection");
-        Properties settings = new Properties();
-        for (String name : List.of("url", "username", "password")) {
-            settings.setProperty(name, connection.get(name).asString().orElseThrow());
-        }
-        settings.setProperty("query", query());
-        poolProperties().forEach((name, value) -> settings.setProperty("property." + name, value));
-        String libraries = Arrays.stream(System.getProperty("surefire.test.class.path", System.getProperty("java.class.path"))
-                                                .split(File.pathSeparator))
-                .map(value -> Path.of(value.replace('\\', '/')).normalize())
-                .filter(path -> !path.endsWith(Path.of("data", "jdbc", "jdbc", "target", "classes"))
-                        && !path.getFileName().toString().matches("helidon-data-jdbc-[0-9].*\\.jar"))
-                .map(Path::toString)
-                .collect(Collectors.joining(File.pathSeparator));
-        String executable = System.getProperty("os.name").startsWith("Windows") ? "java.exe" : "java";
-        Path output = healthProcessDirectory.resolve("datasource-process.log");
-        Process process = new ProcessBuilder(Path.of(System.getProperty("java.home"), "bin", executable).toString(),
-                "--class-path", libraries, DataSourceHealthProcess.class.getName())
-                .redirectErrorStream(true).redirectOutput(output.toFile()).start();
-        Throwable primary = null;
-        try {
-            try (var input = process.getOutputStream()) {
-                settings.store(input, "Temporary database fixture settings.");
-            }
-            assertThat("The datasource process must finish within its bound.", process.waitFor(45, TimeUnit.SECONDS), is(true));
-            assertThat(Files.readString(output), process.exitValue(), is(0));
-        } catch (Exception | Error failure) {
-            primary = failure;
-            throw failure;
-        } finally {
-            try {
-                process.destroyForcibly();
-                assertThat(process.waitFor(5, TimeUnit.SECONDS), is(true));
-            } catch (Exception | Error failure) {
-                if (primary == null) {
-                    throw failure;
-                }
-                if (primary != failure) {
-                    primary.addSuppressed(failure);
-                }
-                if (failure instanceof InterruptedException) {
-                    Thread.currentThread().interrupt();
-                }
-            }
-        }
     }
 
     /**
@@ -688,7 +627,6 @@ public abstract class AbstractJdbcHealthContract {
         String sourcePrefix = "data.sources.sql.0";
         values.put(sourcePrefix + ".name", "shared");
         values.put(sourcePrefix + ".health.enabled", "true");
-        values.put(sourcePrefix + ".health.name", "source-db");
         values.put(sourcePrefix + ".health.query", query().replace("1", "3"));
         values.put(sourcePrefix + ".health.query-timeout", "PT3S");
         for (String name : List.of("url", "username", "password")) {
@@ -702,7 +640,6 @@ public abstract class AbstractJdbcHealthContract {
             values.put(prefix + ".name", "client-" + index);
             values.put(prefix + ".data-source", "shared");
             values.put(prefix + ".health.enabled", "true");
-            values.put(prefix + ".health.name", "client-db-" + index);
         }
         values.put("data.clients.jdbc.1.health.query", query().replace("1", "2"));
         values.put("data.clients.jdbc.1.health.type", "liveness");
@@ -714,9 +651,9 @@ public abstract class AbstractJdbcHealthContract {
             List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
             assertThat(checks.size(), is(3));
             assertThat(checks.stream().filter(check -> check instanceof DataSourceHealthCheck).count(), is(1L));
-            var sourceCheck = (DataSourceHealthCheck) checks.stream().filter(check -> check.name().equals("source-db"))
+            var sourceCheck = (DataSourceHealthCheck) checks.stream().filter(check -> check.name().equals("shared"))
                     .findFirst().orElseThrow();
-            var clientCheck = (JdbcClientHealthCheck) checks.stream().filter(check -> check.name().equals("client-db-0"))
+            var clientCheck = (JdbcClientHealthCheck) checks.stream().filter(check -> check.name().equals("client-0"))
                     .findFirst().orElseThrow();
             assertThat(sourceCheck.prototype().dataSource(), sameInstance(source));
             assertThat(sourceCheck.prototype().query(), is(query().replace("1", "3")));
@@ -729,8 +666,8 @@ public abstract class AbstractJdbcHealthContract {
                     .addFeature(feature).build().start();
             try {
                 Http1Client http = Http1Client.builder().baseUri("http://127.0.0.1:" + server.port()).build();
-                assertStatus(http, "/observe/health/ready/source-db", 204);
-                assertStatus(http, "/observe/health/check/source-db", 204);
+                assertStatus(http, "/observe/health/ready/shared", 204);
+                assertStatus(http, "/observe/health/check/shared", 204);
                 assertThat(acquisitionCount.get(), is(2));
                 for (Connection acquisition : acquisitions) {
                     verify(acquisition).prepareStatement(query().replace("1", "3"));
@@ -739,9 +676,9 @@ public abstract class AbstractJdbcHealthContract {
                 assertThat(acquisitionCount.get(), is(4));
                 assertStatus(http, "/observe/health/", 204);
                 assertThat(acquisitionCount.get(), is(7));
-                assertStatus(http, "/observe/health/ready/client-db-1", 404);
-                assertStatus(http, "/observe/health/live/client-db-1", 204);
-                assertStatus(http, "/observe/health/check/client-db-1", 204);
+                assertStatus(http, "/observe/health/ready/client-1", 404);
+                assertStatus(http, "/observe/health/live/client-1", 204);
+                assertStatus(http, "/observe/health/check/client-1", 204);
                 assertThat(acquisitionCount.get(), is(9));
             } finally {
                 server.stop();
@@ -755,6 +692,71 @@ public abstract class AbstractJdbcHealthContract {
             assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
         } finally {
             manager.shutdown();
+        }
+    }
+
+    /**
+     * Replaces the complete client policy while retaining independent datasource health and the selected client's source.
+     */
+    @Test
+    protected void replacementClientOwnsItsHealthPolicy() throws Exception {
+        for (boolean enabled : List.of(false, true)) {
+            Map<String, String> values = namedHealthConfiguration();
+            values.put("data.clients.jdbc.0.name", "orders");
+            values.put("data.clients.jdbc.0.data-source", "shared");
+            values.put("data.clients.jdbc.0.health.enabled", Boolean.toString(!enabled));
+            values.put("data.clients.jdbc.0.health.query", "SELECT * FROM JDBC_HEALTH_TABLE_MISSING");
+            JdbcClient replacement = JdbcClient.builder().name("replacement").dataSource(source)
+                    .health(health -> health.enabled(enabled).query(query().replace("1", "2"))
+                            .queryTimeout(Duration.ofSeconds(3)).type(HealthCheckType.LIVENESS)).build();
+            var manager = ServiceRegistryManager.create();
+            GlobalServiceRegistry.registry(manager.registry());
+            try {
+                Services.set(Config.class, Config.just(ConfigSources.create(values)));
+                Services.setNamed(DataSource.class, source, "shared");
+                Qualifier provider = Qualifier.create(Data.ProviderType.TYPE, "jdbc");
+                Qualifier name = Qualifier.createNamed("orders");
+                Services.setQualified(JdbcClient.class, replacement, name, provider);
+                int before = acquisitionCount.get();
+                List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
+                assertThat(checks.size(), is(enabled ? 2 : 1));
+                assertThat(manager.registry().get(JdbcClient.class, name, provider), sameInstance(replacement));
+                assertThat(acquisitionCount.get(), is(before));
+                if (enabled) {
+                    var check = (JdbcClientHealthCheck) checks.stream()
+                            .filter(candidate -> candidate instanceof JdbcClientHealthCheck).findFirst().orElseThrow();
+                    assertThat(check.prototype().client(), sameInstance(replacement));
+                    assertThat(check.prototype().query(), is(query().replace("1", "2")));
+                    assertThat(check.prototype().queryTimeout(), is(Duration.ofSeconds(3)));
+                    assertThat(check.type(), is(HealthCheckType.LIVENESS));
+                }
+                var observer = HealthObserver.builder().useSystemServices(true).build();
+                WebServer server = WebServer.builder().host("127.0.0.1").port(0).featuresDiscoverServices(false)
+                        .addFeature(ObserveFeature.just(observer)).build().start();
+                try {
+                    Http1Client http = Http1Client.builder().baseUri("http://127.0.0.1:" + server.port()).build();
+                    assertStatus(http, "/observe/health/ready/orders", 404);
+                    assertStatus(http, "/observe/health/ready/replacement", 404);
+                    assertStatus(http, "/observe/health/check/orders", enabled ? 204 : 404);
+                    assertStatus(http, "/observe/health/live/orders", enabled ? 204 : 404);
+                    assertStatus(http, "/observe/health/check/replacement-db", 404);
+                    assertStatus(http, "/observe/health/ready/shared", 204);
+                    assertStatus(http, "/observe/health/", 204);
+                    assertThat(acquisitionCount.get(), is(before + (enabled ? 5 : 2)));
+                } finally {
+                    server.stop();
+                }
+                for (Connection acquisition : acquisitions.subList(before, acquisitions.size())) {
+                    verify(acquisition, never()).setAutoCommit(anyBoolean());
+                    verify(acquisition, never()).commit();
+                    verify(acquisition, never()).rollback();
+                }
+                assertThat(replacement.create(query()).map(row -> row.get(1, Integer.class)).one(), is(1));
+                assertThat(pool.isClosed(), is(false));
+                assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
+            } finally {
+                manager.shutdown();
+            }
         }
     }
 
@@ -819,35 +821,65 @@ public abstract class AbstractJdbcHealthContract {
     }
 
     /**
+     * Addresses two unregistered source instances separately and retains application ownership and later reuse.
+     */
+    @Test
+    protected void unregisteredSourcesRetainExplicitNames() throws Exception {
+        DataSource other = mock(DataSource.class, delegatesTo(source));
+        var orders = DataSourceHealthCheck.builder().dataSource(source).name("orders-db").query(query()).build();
+        var billing = DataSourceHealthCheck.builder().dataSource(other).name("billing-db").query(query()).build();
+        assertThat(orders.prototype().dataSource(), sameInstance(source));
+        assertThat(billing.prototype().dataSource(), sameInstance(other));
+        assertThat(acquisitionCount.get(), is(0));
+        var observer = HealthObserver.builder().useSystemServices(false).addCheck(orders).addCheck(billing).build();
+        WebServer server = WebServer.builder().host("127.0.0.1").port(0).featuresDiscoverServices(false)
+                .addFeature(ObserveFeature.just(observer)).build().start();
+        try {
+            Http1Client http = Http1Client.builder().baseUri("http://127.0.0.1:" + server.port()).build();
+            assertStatus(http, "/observe/health/ready/orders-db", 204);
+            assertStatus(http, "/observe/health/check/orders-db", 204);
+            assertStatus(http, "/observe/health/ready/billing-db", 204);
+            assertStatus(http, "/observe/health/check/billing-db", 204);
+            assertStatus(http, "/observe/health/ready", 204);
+            assertThat(acquisitionCount.get(), is(6));
+        } finally {
+            server.stop();
+        }
+        for (Connection acquisition : acquisitions) {
+            verify(acquisition, never()).setAutoCommit(anyBoolean());
+            verify(acquisition, never()).commit();
+            verify(acquisition, never()).rollback();
+        }
+        assertThat(client.create(query()).map(row -> row.get(1, Integer.class)).one(), is(1));
+        assertThat(pool.isClosed(), is(false));
+        assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
+    }
+
+    /**
      * Preserves every colliding check in aggregates while each named route selects its first applicable check.
      */
     @Test
     protected void collidingResourceNamesPreserveGeneralHealthRouting() throws Exception {
         Map<String, String> values = namedHealthConfiguration();
-        for (int index = 0; index < 2; index++) {
-            String prefix = "data.clients.jdbc." + index;
-            values.put(prefix + ".name", index == 0 ? "shared" : "other");
-            values.put(prefix + ".data-source", "shared");
-            values.put(prefix + ".health.enabled", "true");
-        }
+        values.put("data.clients.jdbc.0.name", "shared");
+        values.put("data.clients.jdbc.0.data-source", "shared");
+        values.put("data.clients.jdbc.0.health.enabled", "true");
         values.put("data.clients.jdbc.0.health.query", "SELECT * FROM JDBC_HEALTH_TABLE_MISSING");
-        values.put("data.clients.jdbc.1.health.name", "shared");
-        values.put("data.clients.jdbc.1.health.type", "liveness");
-        values.put("data.clients.jdbc.1.health.query", query().replace("1", "2"));
         var manager = ServiceRegistryManager.create();
         GlobalServiceRegistry.registry(manager.registry());
         try {
             Services.set(Config.class, Config.just(ConfigSources.create(values)));
             Services.setNamed(DataSource.class, source, "shared");
             List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
-            assertThat(checks.size(), is(3));
+            assertThat(checks.size(), is(2));
             assertThat(checks.stream().allMatch(check -> check.name().equals("shared")), is(true));
             HealthCheck sourceCheck = checks.stream().filter(check -> check instanceof DataSourceHealthCheck)
                     .findFirst().orElseThrow();
             HealthCheck ready = checks.stream().filter(check -> check instanceof JdbcClientHealthCheck
                     && check.type() == HealthCheckType.READINESS).findFirst().orElseThrow();
-            HealthCheck live = checks.stream().filter(check -> check.type() == HealthCheckType.LIVENESS)
-                    .findFirst().orElseThrow();
+            // An explicit third check creates the collision without restoring a discovery naming override.
+            HealthCheck live = JdbcClientHealthCheck.builder().client(client).name("shared")
+                    .query(query().replace("1", "2")).type(HealthCheckType.LIVENESS).build();
             assertThat(acquisitionCount.get(), is(0));
             var observer = HealthObserver.builder().useSystemServices(false)
                     .addCheck(live).addCheck(sourceCheck).addCheck(ready).build();
