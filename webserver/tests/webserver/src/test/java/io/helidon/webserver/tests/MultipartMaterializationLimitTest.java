@@ -63,6 +63,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -153,8 +154,26 @@ class MultipartMaterializationLimitTest {
     }
 
     @Test
-    void fullyConsumedFixedLengthMultipartPreservesConnectionReuse() {
-        try (var connection = new Connection(Kind.STRING)) {
+    void closingUniteratedMultipartCompletesResponseWithDrainingDecorator() {
+        try (var connection = new Connection(Kind.STRING, true, true)) {
+            MultiPart parts = connection.client.get("/accepted").requestEntity(MultiPart.class);
+            CompletableFuture<?> completed = connection.completed.get();
+            parts.close();
+            assertThat("Closing multipart before iteration completes its response", completed.isDone(), is(true));
+            assertThat("Response cleanup closes the service decorator", connection.decoratorCloses.get(), is(1));
+            assertThat("The service decorator can drain its delegate during cleanup",
+                       connection.decoratorCloseFailure.get(), nullValue());
+            try (var response = connection.client.get("/accepted").request()) {
+                assertThat(response.status(), is(Status.OK_200));
+                assertThat(readParts(response.as(MultiPart.class), Kind.STRING), is((long) PART_LIMIT));
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void fullyConsumedFixedLengthMultipartPreservesConnectionReuse(boolean decorated) {
+        try (var connection = new Connection(Kind.STRING, decorated, decorated)) {
             String firstConnection;
             try (var response = connection.client.get("/accepted").request()) {
                 firstConnection = response.headers().get(CONNECTION_ID).get();
@@ -307,12 +326,18 @@ class MultipartMaterializationLimitTest {
         private final WebServer server;
         private final Http1Client client;
         private final AtomicReference<CompletableFuture<?>> completed = new AtomicReference<>();
+        private final AtomicInteger decoratorCloses = new AtomicInteger();
+        private final AtomicReference<Exception> decoratorCloseFailure = new AtomicReference<>();
 
         private Connection(Kind kind) {
             this(kind, false);
         }
 
         private Connection(Kind kind, boolean decorated) {
+            this(kind, decorated, false);
+        }
+
+        private Connection(Kind kind, boolean decorated, boolean drainOnClose) {
             MediaContext context = mediaContext(kind);
             server = WebServer.builder()
                     .host("127.0.0.1")
@@ -363,7 +388,21 @@ class MultipartMaterializationLimitTest {
                         var response = chain.proceed(request);
                         if (decorated) {
                             return WebClientServiceResponse.builder(response)
-                                    .inputStream(new FilterInputStream(response.inputStream().orElseThrow()) { })
+                                    .inputStream(new FilterInputStream(response.inputStream().orElseThrow()) {
+                                        @Override
+                                        public void close() throws IOException {
+                                            try (InputStream delegate = in) {
+                                                if (drainOnClose) {
+                                                    delegate.transferTo(OutputStream.nullOutputStream());
+                                                }
+                                            } catch (IOException | RuntimeException e) {
+                                                decoratorCloseFailure.set(e);
+                                                throw e;
+                                            } finally {
+                                                decoratorCloses.incrementAndGet();
+                                            }
+                                        }
+                                    })
                                     .build();
                         }
                         return response;

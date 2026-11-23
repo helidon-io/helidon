@@ -182,10 +182,13 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
         return serviceResponse;
     }
 
-    static boolean isChunkedEntityDiscarded(InputStream inputStream) {
-        return inputStream instanceof CloseOnceInputStream closeOnce
-                && closeOnce.wireInputStream instanceof ChunkedInputStream chunked
-                && chunked.discarded;
+    static boolean isEntityDiscarded(InputStream inputStream) {
+        InputStream wireStream = inputStream instanceof CloseOnceInputStream closeOnce ? closeOnce.wireInputStream : inputStream;
+        return switch (wireStream) {
+            case ContentLengthInputStream contentLength -> contentLength.discarded;
+            case ChunkedInputStream chunked -> chunked.discarded;
+            case null, default -> false;
+        };
     }
 
     static boolean canCompleteEntityWithoutReading(InputStream inputStream) {
@@ -203,11 +206,20 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
     }
 
     static void discardEntity(InputStream inputStream) {
-        if (inputStream instanceof CloseOnceInputStream closeOnce
-                && closeOnce.wireInputStream instanceof ChunkedInputStream chunked) {
-            chunked.finished = true;
-            chunked.discarded = true;
-            chunked.currentBuffer = null;
+        InputStream wireStream = inputStream instanceof CloseOnceInputStream closeOnce ? closeOnce.wireInputStream : inputStream;
+        switch (wireStream) {
+            case ContentLengthInputStream contentLength -> {
+                contentLength.finished = true;
+                contentLength.discarded = true;
+                contentLength.currentBuffer = null;
+            }
+            case ChunkedInputStream chunked -> {
+                chunked.finished = true;
+                chunked.discarded = true;
+                chunked.currentBuffer = null;
+            }
+            case null, default -> {
+            }
         }
     }
 
@@ -787,6 +799,7 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
 
         private BufferData currentBuffer;
         private boolean finished;
+        private boolean discarded;
         private long remainingLength;
 
         ContentLengthInputStream(HelidonSocket socket,

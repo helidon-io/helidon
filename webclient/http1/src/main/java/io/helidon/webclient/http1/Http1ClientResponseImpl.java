@@ -227,7 +227,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
             try {
                 if (closeConnectionOnClose
                         || headers().containsToken(HeaderValues.CONNECTION_CLOSE)
-                        || Http1CallChainBase.isChunkedEntityDiscarded(wireInputStream)
+                        || Http1CallChainBase.isEntityDiscarded(wireInputStream)
                         || entityLength == ENTITY_LENGTH_CLOSE_DELIMITED) {
                     closeConnection();
                 } else {
@@ -317,7 +317,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     }
 
     private Headers doReadTrailers() {
-        if (Http1CallChainBase.isChunkedEntityDiscarded(wireInputStream)) {
+        if (Http1CallChainBase.isEntityDiscarded(wireInputStream)) {
             // A service discarded the upstream body; its retired connection has no readable trailer section.
             return ClientResponseTrailers.create();
         }

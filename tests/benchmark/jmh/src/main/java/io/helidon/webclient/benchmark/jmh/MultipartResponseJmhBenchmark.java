@@ -200,6 +200,13 @@ public class MultipartResponseJmhBenchmark {
         }
     }
 
+    @Benchmark
+    public void uniteratedMultipart() {
+        try (HttpClientResponse response = request("/parts"); MultiPart _ = response.as(MultiPart.class)) {
+            // Close the multipart owner without accessing its iterator.
+        }
+    }
+
     private HttpClientResponse request(String path) {
         HttpClientResponse response = client.get(path).request();
         if (response.status().code() != 200 || !protocolId.equals(response.protocolId())) {

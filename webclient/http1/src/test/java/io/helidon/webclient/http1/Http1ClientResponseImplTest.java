@@ -318,6 +318,61 @@ class Http1ClientResponseImplTest {
         assertThat(connection.closeCount(), is(1));
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"data", "da", ""})
+    void lazyReaderCloseDiscardsFixedLengthInputBeforeDrainingDecorator(String buffered) throws IOException {
+        var connection = new TestConnection(bufferedReaderWithoutFurtherReads(buffered));
+        var serviceRequest = new TestServiceRequest(Method.GET);
+        var headers = contentLengthHeaders();
+        var serviceResponse = Http1CallChainBase.createServiceResponse(
+                new Http1ClientImpl(null, Http1ClientConfig.builder().buildPrototype()),
+                serviceRequest,
+                connection,
+                Status.OK_200,
+                headers,
+                new CompletableFuture<>(),
+                null);
+        var decoratorCloses = new AtomicInteger();
+        InputStream decorated = new FilterInputStream(serviceResponse.inputStream().orElseThrow()) {
+            @Override
+            public void close() throws IOException {
+                decoratorCloses.incrementAndGet();
+                assertThat("The connection is retired before decorator cleanup", connection.closeCount(), is(1));
+                assertThat("The decorator retains no pooled connection", connection.releaseCount(), is(0));
+                assertThat("Discarded wire input is exhausted before decorator cleanup", in.read(), is(-1));
+                super.close();
+            }
+        };
+        var context = MediaContext.builder()
+                .mediaSupportsDiscoverServices(false)
+                .addMediaSupport(new LazyStreamSupport())
+                .build();
+        var completed = new CompletableFuture<Void>();
+        try (var response = new Http1ClientResponseImpl(HttpClientConfig.builder().build(),
+                                                        Http1ClientProtocolConfig.create(),
+                                                        Status.OK_200,
+                                                        Method.GET,
+                                                        serviceRequest.headers(),
+                                                        headers,
+                                                        (ClientConnection) serviceResponse.connection(),
+                                                        decorated,
+                                                        context,
+                                                        ClientUri.create(URI.create("http://localhost/test")),
+                                                        completed,
+                                                        serviceResponse,
+                                                        null)) {
+            try (FilterInputStream _ = response.as(FilterInputStream.class)) {
+                assertThat("An untouched lazy reader retains the response", completed.isDone(), is(false));
+            }
+            assertThat(completed.isDone(), is(true));
+            assertThat("Unread fixed-length response is retired", connection.closeCount(), is(1));
+            assertThat("The connection is never returned to the pool", connection.releaseCount(), is(0));
+        }
+        assertThat(decoratorCloses.get(), is(1));
+        assertThat(connection.closeCount(), is(1));
+        assertThat(connection.releaseCount(), is(0));
+    }
+
     @Test
     void trailerFailurePreservesOutstandingStagingAndRetiresConnection() throws IOException {
         var connection = new TestConnection(dataReader("X-Result: done\r\n\r\nunexpected"));
