@@ -55,6 +55,16 @@ abstract class JsonTextParser extends JsonParserBase {
         if (input[quote] != '"') {
             throw createException("Start of a string expected", input[quote]);
         }
+        // A public selector may decline a known name. Only an owned dictionary can establish a definitive miss.
+        if (lexer instanceof PackedAsciiStringLexer complete) {
+            int start = quote + 1;
+            long hit = complete.recognize(input, start, limit);
+            if (hit >= 0) {
+                stringPosition(start + (int) (hit >>> Integer.SIZE));
+                return (int) hit;
+            }
+            lexer = complete.decoded();
+        }
         int position = quote + 1;
         int state = 0;
         while (limit - position >= Long.BYTES) {

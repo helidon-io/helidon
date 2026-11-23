@@ -23,7 +23,7 @@ import java.util.Objects;
 abstract class AsciiStringLexer implements JsonStringLexer {
     private final JsonStringLexer decoded;
 
-    private AsciiStringLexer(JsonStringLexer decoded) {
+    AsciiStringLexer(JsonStringLexer decoded) {
         this.decoded = decoded;
     }
 
@@ -78,6 +78,14 @@ abstract class AsciiStringLexer implements JsonStringLexer {
         return new Utf8(decoded, selector, offset, literals, extended);
     }
 
+    static long partialSecond(byte[] input, int limit, int available) {
+        if (available == Long.BYTES) {
+            return 0;
+        }
+        // The last bounded word overlaps the first. Discard the overlap and leave the rest zero.
+        return JsonTextParser.word(input, limit - Long.BYTES) >>> ((2 * Long.BYTES - available) * Byte.SIZE);
+    }
+
     @Override
     public final int advance(int state, long low, long high, int length) {
         return decoded.advance(state, low, high, length);
@@ -87,15 +95,9 @@ abstract class AsciiStringLexer implements JsonStringLexer {
         return decoded;
     }
 
+    // A nonnegative result packs the byte length above the ordinal, which can be -1 for a validated miss.
+    // A negative result delegates to the decoded lexer.
     abstract long recognize(byte[] input, int start, int limit);
-
-    private static long partialSecond(byte[] input, int limit, int available) {
-        if (available == Long.BYTES) {
-            return 0;
-        }
-        // The last bounded word overlaps the first. Discard the overlap and leave the rest zero.
-        return JsonTextParser.word(input, limit - Long.BYTES) >>> ((2 * Long.BYTES - available) * Byte.SIZE);
-    }
 
     private static final class Single extends AsciiStringLexer {
         private final Literal literal;
@@ -249,8 +251,8 @@ abstract class AsciiStringLexer implements JsonStringLexer {
     }
 
     // Each successful comparison establishes both valid JSON spelling and its exact boundary.
-    private record Literal(long first, long firstMask, long second, long secondMask, long tail, int length) {
-        private static Literal create(String name) {
+    record Literal(long first, long firstMask, long second, long secondMask, long tail, int length) {
+        static Literal create(String name) {
             return create(name, null);
         }
 

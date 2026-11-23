@@ -34,6 +34,42 @@ class JsonStringLexerTest {
 
     @ParameterizedTest
     @EnumSource(ParserMethod.class)
+    void validatesAndConsumesUnknownPropertiesInACompleteAsciiDictionary(ParserMethod method) {
+        String[] names = {"ts", "kind", "traceId", "durationNanos", "host", "severity", "operationName",
+                          "eventTimestamp", "bytes", "parentSpanId", "resourceId", "sequence", "elapsedMillis",
+                          "retries", "errorCode", "httpStatus", "path", "method", "route", "requestBytes",
+                          "responseBytes", "startedAt", "sampled", "serviceName", "serviceVersion", "zone", "endpoint",
+                          "protocol", "attempt", "spanId", "clientRegion", "correlationId"};
+        JsonStringLexer lexer = JsonStringLexer.create(names);
+        for (int buffer : List.of(7, 8, 15, 16, 64)) {
+            for (String miss : List.of("Ts", "traceID", "requestBytex", "durationNanoq", "absent".repeat(8),
+                                       "trac\\u0065IX", "東京", "x\\\"")) {
+                JsonParser parser = method.createParser("\"" + miss + "\":0,\"trac\\u0065Id\":1}", buffer);
+                assertThat(miss, parser.readProperty(lexer), is(-1));
+                assertThat(parser.readInt(), is(0));
+                assertThat(parser.nextProperty(lexer), is(2));
+                assertThat(parser.readInt(), is(1));
+                assertThat(parser.nextProperty(lexer), is(JsonParser.END_OBJECT));
+            }
+            for (String invalid : List.of("unregistered\\uXYZ0", "a".repeat(24) + "\t", "unregistered\\x")) {
+                JsonParser parser = method.createParser("\"" + invalid + "\":0}", buffer);
+                assertThrows(JsonException.class, () -> parser.readProperty(lexer), invalid);
+            }
+        }
+        byte[] slice = "xx\"requestBytex\":0}".getBytes(StandardCharsets.UTF_8);
+        JsonParser bounded = JsonParser.create(slice, 2, 1 + "requestBytex".length());
+        assertThrows(JsonException.class, () -> bounded.readProperty(lexer));
+        JsonStringLexer subset = JsonStringLexer.withAscii(lexer, (_, _) -> -1, "ts", "kind");
+        assertThat(method.createParser("\"host\":0}", 32).readProperty(subset), is(4));
+        names[4] = "overwritten";
+        assertThat(lexer.match("host"), is(4));
+        names[4] = "traceId";
+        var duplicate = assertThrows(IllegalArgumentException.class, () -> JsonStringLexer.create(names));
+        assertThat(duplicate.getMessage(), is("Duplicate string in lexer: traceId"));
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
     void matchesDecodedNamesAndPreservesTheDelimiter(ParserMethod method) {
         String[] names = {"", "user", "userId", "abcdefgh", "abcdefgh12345678", "abcdefg😀", "a\u0000", "a\"", "a\\"};
         JsonStringLexer lexer = JsonStringLexer.create(names);

@@ -40,6 +40,9 @@ final class StringLexerGenerator {
     private static final int MIN_PROJECTED_NAMES = 12;
     private static final int MAX_ROUTES_PER_NAME = 8;
     private static final int MIN_RANGE_EDGES = 8;
+    private static final int MIN_PACKED_NAMES = 16;
+    private static final int MAX_PACKED_NAMES = 64;
+    private static final int MAX_PREFIX_FAN_OUT = 4;
 
     private StringLexerGenerator() {
     }
@@ -78,11 +81,21 @@ final class StringLexerGenerator {
         String positional = ascii.size() >= STATES_PER_METHOD ? positionalOrdinal(ascii) : "";
         boolean raw = !ascii.isEmpty() && ascii.size() * 2 >= names.size()
                 && (ascii.size() <= MAX_ASCII_BRANCHES || !positional.isEmpty());
+        // The complete fallback can finish plain ASCII misses at the quote. Keep the generated decoder
+        // when many registered names share the first eight bytes.
+        boolean complete = fieldName.equals("PROPERTY_NAMES") && raw && !utf8 && positional.isEmpty()
+                && names.size() >= MIN_PACKED_NAMES && names.size() <= MAX_PACKED_NAMES && ascii.size() == names.size()
+                && states.size() > 1 && ascii.stream().allMatch(edge -> edge.bytes.length < 2 * Long.BYTES)
+                && states.stream().skip(1).allMatch(state -> state.size() <= MAX_PREFIX_FAN_OUT);
         owner.addField(field -> {
             field.name(fieldName).type(JsonTypes.JSON_STRING_LEXER).isStatic(true).isFinal(true)
                     .accessModifier(AccessModifier.PRIVATE);
             if (generate && !raw) {
                 field.addContent(type).addContent("::" + entry);
+                return;
+            }
+            if (complete) {
+                field.addContent("createPropertyNameLexer(new ").addContent(String.class).addContent("[] {");
             } else {
                 field.addContent(JsonTypes.JSON_STRING_LEXER);
                 if (raw) {
@@ -94,14 +107,14 @@ final class StringLexerGenerator {
                 } else {
                     field.addContent(".create(");
                 }
-                for (int i = 0; i < names.size(); i++) {
-                    if (i > 0) {
-                        field.addContent(", ");
-                    }
-                    field.addContentLiteral(names.get(i));
-                }
-                field.addContent(")");
             }
+            for (int i = 0; i < names.size(); i++) {
+                if (i > 0) {
+                    field.addContent(", ");
+                }
+                field.addContentLiteral(names.get(i));
+            }
+            field.addContent(complete ? "})" : ")");
         });
         if (!generate) {
             return;
@@ -120,6 +133,14 @@ final class StringLexerGenerator {
                     method.addContentLine("return " + positional + ";");
                 }
             });
+        }
+        if (complete) {
+            owner.addMethod(method -> method.name("createPropertyNameLexer").isStatic(true).accessModifier(AccessModifier.PRIVATE)
+                    .returnType(JsonTypes.JSON_STRING_LEXER).addParameter(TypeName.create(String[].class), "names")
+                    .addContent("return ").addContent(JsonTypes.JSON_STRING_LEXER).addContent(".withAscii(")
+                    .addContent(JsonTypes.JSON_STRING_LEXER).addContent(".create(names), ").addContent(type)
+                    .addContentLine("::" + rawMethod + ", names);"));
+            return;
         }
         generateDecoded(owner, entry, DecodedPlan.compact(states, names.size()));
     }

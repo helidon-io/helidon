@@ -39,7 +39,7 @@ public interface JsonStringLexer {
      * @throws IllegalArgumentException if a name is repeated
      */
     static JsonStringLexer create(String... names) {
-        return new RuntimeStringLexer(names);
+        return PackedAsciiStringLexer.create(names);
     }
 
     /**

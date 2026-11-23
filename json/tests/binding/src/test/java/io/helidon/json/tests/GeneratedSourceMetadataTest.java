@@ -253,6 +253,39 @@ class GeneratedSourceMetadataTest {
     }
 
     @Test
+    void usesACompleteDictionaryForMediumAsciiPropertySets() throws IOException {
+        var result = compile("Order.java", """
+                package io.helidon.json.tests.generated;
+
+                import io.helidon.json.binding.Json;
+
+                @SuppressWarnings("helidon:api:preview")
+                @Json.Entity
+                public record Order(int ts, int kind, int traceId, int durationNanos, int host, int severity,
+                                    int operationName, int eventTimestamp, int bytes, int parentSpanId, int resourceId,
+                                    int sequence, int elapsedMillis, int retries, int errorCode, int httpStatus, int path,
+                                    int method, int route, int requestBytes, int responseBytes, int startedAt,
+                                    int sampled, int serviceName, int serviceVersion, int zone, int endpoint,
+                                    int protocol, int attempt, int spanId, int clientRegion, int correlationId) {
+                }
+
+                @SuppressWarnings("helidon:api:preview")
+                @Json.Entity
+                record Shared(int shipmentId, int shipmentDate, int shipmentTotal, int shipmentTax, int shipmentRate,
+                              int shipmentCode, int lineCount, int amount, int currency, int region, int createdAt,
+                              int updatedAt, int status, int postalCode, int accountNumber, int unitPrice) {
+                }
+                """);
+
+        assertCompilationSuccess(result);
+        String ordinary = Files.readString(generatedSource(result, "Order__GeneratedConverter.java"));
+        assertThat(ordinary, containsString("JsonStringLexer PROPERTY_NAMES = createPropertyNameLexer("));
+        assertThat(ordinary, containsString("JsonStringLexer.withAscii(JsonStringLexer.create(names),"));
+        String shared = Files.readString(generatedSource(result, "Shared__GeneratedConverter.java"));
+        assertThat(shared, containsString("JsonStringLexer PROPERTY_NAMES = JsonStringLexer.withAscii("));
+    }
+
+    @Test
     void projectedNamesCanShareAPackageWithATypeNamedLong() throws IOException {
         var result = compile("Projected.java", """
                 package io.helidon.json.tests.generated;
