@@ -18,6 +18,7 @@ package io.helidon.common.media.type;
 import java.net.URI;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.Api;
@@ -278,8 +279,11 @@ public final class MediaTypes {
      * @param type    type
      * @param subtype subtype
      * @return media type for the instance
+     * @throws NullPointerException if type or subtype is null
      */
     public static MediaType create(String type, String subtype) {
+        Objects.requireNonNull(type, "type");
+        Objects.requireNonNull(subtype, "subtype");
         MediaTypeEnum mediaTypeEnum = MediaTypeEnum.find(type + "/" + subtype);
         if (mediaTypeEnum == null) {
             return new MediaTypeImpl(type,

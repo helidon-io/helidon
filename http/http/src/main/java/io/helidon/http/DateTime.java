@@ -108,10 +108,10 @@ public final class DateTime {
     /**
      * Formatted date time terminated by carriage return and new line.
      *
-     * @return date bytes for HTTP/1
+     * @return a copy of the date bytes for HTTP/1
      */
     @Api.Internal
     public static byte[] http1Bytes() {
-        return DateTimeHelper.http1Bytes();
+        return DateTimeHelper.http1Bytes().clone();
     }
 }

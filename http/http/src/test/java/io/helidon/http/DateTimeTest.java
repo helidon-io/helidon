@@ -16,7 +16,6 @@
 
 package io.helidon.http;
 
-import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
@@ -25,7 +24,6 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Tests {@link DateTime}.
@@ -34,6 +32,21 @@ public class DateTimeTest {
 
     private static final ZonedDateTime ZDT = ZonedDateTime.of(2008, 6, 3, 11, 5, 30, 0, ZoneId.of("Z"));
     private static final ZonedDateTime ZDT2 = ZonedDateTime.of(2008, 6, 17, 11, 5, 30, 0, ZoneId.of("Z"));
+
+    @Test
+    void http1BytesAreIsolatedFromCallerChanges() {
+        byte[] cached;
+        byte[] result;
+        do {
+            cached = DateTimeHelper.http1Bytes();
+            result = DateTime.http1Bytes();
+        } while (cached != DateTimeHelper.http1Bytes());
+
+        result[result.length - 1] = 0;
+        assertThat(cached[cached.length - 1], is((byte) '\n'));
+        byte[] next = DateTime.http1Bytes();
+        assertThat(next[next.length - 1], is((byte) '\n'));
+    }
 
     @Test
     public void rfc1123() {
@@ -50,16 +63,14 @@ public class DateTimeTest {
 
     @Test
     public void rfc850() {
-        assumeTrue(LocalDate.now().getYear() < 2057);
+        var referenceTime = ZonedDateTime.parse("2026-01-01T00:00:00Z");
         String text = "Tuesday, 03-Jun-08 11:05:30 GMT";
-        ZonedDateTime zdt = ZonedDateTime.parse(text, DateTime.RFC_850_DATE_TIME);
-        assertThat(zdt, is(ZDT));
-        assertThat(zdt.format(DateTime.RFC_850_DATE_TIME), is(text));
+        assertThat(DateTime.parse(text, referenceTime), is(ZDT));
+        assertThat(ZDT.format(DateTime.RFC_850_DATE_TIME), is(text));
 
         text = "Tuesday, 17-Jun-08 11:05:30 GMT";
-        zdt = ZonedDateTime.parse(text, DateTime.RFC_850_DATE_TIME);
-        assertThat(zdt, is(ZDT2));
-        assertThat(zdt.format(DateTime.RFC_850_DATE_TIME), is(text));
+        assertThat(DateTime.parse(text, referenceTime), is(ZDT2));
+        assertThat(ZDT2.format(DateTime.RFC_850_DATE_TIME), is(text));
     }
 
     @Test
@@ -78,15 +89,21 @@ public class DateTimeTest {
     @Test
     public void parse() {
         assertThat(DateTime.parse("Tue, 3 Jun 2008 11:05:30 GMT"), is(ZDT));
-        assertThat(DateTime.parse("Tuesday, 03-Jun-08 11:05:30 GMT"), is(ZDT));
+        String rfc850 = "03-Jun-08 11:05:30 GMT";
+        assertThat(DateTime.parse(rfc850), is(ZonedDateTime.parse(rfc850, DateTime.RFC_850_DATE_TIME)));
         assertThat(DateTime.parse("Tue Jun  3 11:05:30 2008"), is(ZDT));
     }
 
     @Test
-    public void parseUsesReferenceTimeForRfc850Year() {
-        ZonedDateTime referenceTime = ZonedDateTime.of(2076, 6, 8, 18, 32, 30, 0, ZoneId.of("Z"));
+    public void parseUsesReferenceTimeForRfc850YearWindow() {
+        var referenceTime = ZonedDateTime.parse("2026-01-01T00:00:00Z");
 
-        assertThat(DateTime.parse("Monday, 08-Jun-76 18:32:30 GMT", referenceTime), is(referenceTime));
+        assertThat(DateTime.parse("Tuesday, 08-Jun-76 18:32:30 GMT", referenceTime),
+                   is(ZonedDateTime.parse("1976-06-08T18:32:30Z")));
+        assertThat(DateTime.parse("Saturday, 08-Jun-75 18:32:30 GMT", referenceTime),
+                   is(ZonedDateTime.parse("2075-06-08T18:32:30Z")));
+        assertThat(DateTime.parse("Monday, 08-Jun-76 18:32:30 GMT", referenceTime.plusYears(1)),
+                   is(ZonedDateTime.parse("2076-06-08T18:32:30Z")));
     }
 
     @Test
