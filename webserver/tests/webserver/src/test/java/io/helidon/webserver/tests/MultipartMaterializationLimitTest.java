@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -153,9 +154,10 @@ class MultipartMaterializationLimitTest {
         }
     }
 
-    @Test
-    void closingUniteratedMultipartCompletesResponseWithDrainingDecorator() {
-        try (var connection = new Connection(Kind.STRING, true, true)) {
+    @ParameterizedTest
+    @ValueSource(strings = {"identity", "gzip", "deflate"})
+    void closingUniteratedMultipartCompletesResponseWithDrainingDecorator(String encoding) {
+        try (var connection = new Connection(Kind.STRING, true, true, encoding)) {
             MultiPart parts = connection.client.get("/accepted").requestEntity(MultiPart.class);
             CompletableFuture<?> completed = connection.completed.get();
             parts.close();
@@ -165,15 +167,22 @@ class MultipartMaterializationLimitTest {
                        connection.decoratorCloseFailure.get(), nullValue());
             try (var response = connection.client.get("/accepted").request()) {
                 assertThat(response.status(), is(Status.OK_200));
+                assertThat(response.headers().contains(HeaderNames.CONTENT_LENGTH), is(true));
+                if (!encoding.equals("identity")) {
+                    assertThat(response.headers().get(HeaderNames.CONTENT_ENCODING).get(), is(encoding));
+                }
                 assertThat(readParts(response.as(MultiPart.class), Kind.STRING), is((long) PART_LIMIT));
             }
+            assertThat("Both service responses close their decorators", connection.decoratorCloses.get(), is(2));
+            assertThat("Decoding and draining the follow-up response succeeds",
+                       connection.decoratorCloseFailure.get(), nullValue());
         }
     }
 
     @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    void fullyConsumedFixedLengthMultipartPreservesConnectionReuse(boolean decorated) {
-        try (var connection = new Connection(Kind.STRING, decorated, decorated)) {
+    @CsvSource({"false, identity", "true, identity", "false, gzip", "true, gzip", "false, deflate", "true, deflate"})
+    void fullyConsumedFixedLengthMultipartPreservesConnectionReuse(boolean decorated, String encoding) {
+        try (var connection = new Connection(Kind.STRING, decorated, decorated, encoding)) {
             String firstConnection;
             try (var response = connection.client.get("/accepted").request()) {
                 firstConnection = response.headers().get(CONNECTION_ID).get();
@@ -184,6 +193,8 @@ class MultipartMaterializationLimitTest {
                            response.headers().get(CONNECTION_ID).get(), is(firstConnection));
                 assertThat(readParts(response.as(MultiPart.class), Kind.STRING), is((long) PART_LIMIT));
             }
+            assertThat("Full consumption permits decorator cleanup without decoding failures",
+                       connection.decoratorCloseFailure.get(), nullValue());
         }
     }
 
@@ -296,6 +307,24 @@ class MultipartMaterializationLimitTest {
         return payload.toString().getBytes(StandardCharsets.US_ASCII);
     }
 
+    private static byte[] encodedMultipart(Kind kind, String encoding) {
+        byte[] parts = multipart(kind, PART_LIMIT);
+        if (encoding.equals("identity")) {
+            return parts;
+        }
+        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+        try (OutputStream encoder = switch (encoding) {
+            case "gzip" -> new GZIPOutputStream(bytes);
+            case "deflate" -> new DeflaterOutputStream(bytes);
+            default -> throw new IllegalArgumentException("Unexpected encoding: " + encoding);
+        }) {
+            encoder.write(parts);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return bytes.toByteArray();
+    }
+
     private static MediaContext mediaContext(Kind kind) {
         var builder = MediaContext.builder()
                 .mediaSupportsDiscoverServices(false)
@@ -338,7 +367,12 @@ class MultipartMaterializationLimitTest {
         }
 
         private Connection(Kind kind, boolean decorated, boolean drainOnClose) {
+            this(kind, decorated, drainOnClose, "identity");
+        }
+
+        private Connection(Kind kind, boolean decorated, boolean drainOnClose, String encoding) {
             MediaContext context = mediaContext(kind);
+            byte[] accepted = encodedMultipart(kind, encoding);
             server = WebServer.builder()
                     .host("127.0.0.1")
                     .port(0)
@@ -356,7 +390,11 @@ class MultipartMaterializationLimitTest {
                             .get("/accepted", (req, res) -> {
                                 res.headers().set(HeaderNames.CONTENT_TYPE, CONTENT_TYPE);
                                 res.headers().set(CONNECTION_ID, req.socketId());
-                                res.send(multipart(kind, PART_LIMIT));
+                                res.headers().set(HeaderNames.CONTENT_LENGTH, Integer.toString(accepted.length));
+                                if (!encoding.equals("identity")) {
+                                    res.headers().set(HeaderNames.CONTENT_ENCODING, encoding);
+                                }
+                                res.send(accepted);
                             })
                             .get("/rejected", (_, res) -> {
                                 res.headers().set(HeaderNames.CONTENT_TYPE, CONTENT_TYPE);
@@ -382,7 +420,12 @@ class MultipartMaterializationLimitTest {
             client = Http1Client.builder()
                     .baseUri("http://127.0.0.1:" + server.port())
                     .mediaContext(context)
+                    .contentEncoding(ContentEncodingContext.builder()
+                            .addContentEncoding(GzipEncoding.create())
+                            .addContentEncoding(DeflateEncoding.create())
+                            .build())
                     .shareConnectionCache(false)
+                    .readTimeout(Duration.ofSeconds(10))
                     .addService((chain, request) -> {
                         completed.set(request.whenComplete().toCompletableFuture());
                         var response = chain.proceed(request);

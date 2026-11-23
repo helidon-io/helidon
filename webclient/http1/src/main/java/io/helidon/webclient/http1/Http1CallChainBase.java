@@ -206,8 +206,8 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
     }
 
     static void discardEntity(InputStream inputStream) {
-        InputStream wireStream = inputStream instanceof CloseOnceInputStream closeOnce ? closeOnce.wireInputStream : inputStream;
-        switch (wireStream) {
+        switch (inputStream) {
+            case CloseOnceInputStream closeOnce -> closeOnce.discard();
             case ContentLengthInputStream contentLength -> {
                 contentLength.finished = true;
                 contentLength.discarded = true;
@@ -1216,18 +1216,26 @@ abstract class Http1CallChainBase implements WebClientService.TransportChain {
 
     private static final class CloseOnceInputStream extends FilterInputStream {
         private final AtomicBoolean closed = new AtomicBoolean();
+        private final InputStream delegate;
         private final InputStream wireInputStream;
 
         private CloseOnceInputStream(InputStream inputStream, InputStream wireInputStream) {
             super(inputStream);
+            this.delegate = inputStream;
             this.wireInputStream = wireInputStream;
         }
 
         @Override
         public void close() throws IOException {
             if (closed.compareAndSet(false, true)) {
-                super.close();
+                delegate.close();
             }
+        }
+
+        private void discard() {
+            discardEntity(wireInputStream);
+            // Cancellation exposes EOF without asking an unfinished decoder to read more compressed bytes.
+            in = InputStream.nullInputStream();
         }
     }
 
