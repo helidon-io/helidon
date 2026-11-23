@@ -210,19 +210,18 @@ class DataWriterSseSink implements SseSink {
             // start writing status line
             headersOutputStream.write(OK_200);
 
+            BufferData buffer = BufferData.growing(512);
             // serialize a date header if not included
             if (!headers.contains(HeaderNames.DATE)) {
-                headersOutputStream.write(DATE);
-                byte[] dateBytes = DateTime.http1Bytes();
-                headersOutputStream.write(dateBytes);
+                buffer.write(DATE);
+                DateTime.writeHttp1Bytes(buffer);
             }
 
             // set up and write headers
-            BufferData buffer = BufferData.growing(512);
             for (Header header : headers) {
                 header.writeHttp1Header(buffer);
             }
-            headersOutputStream.write(buffer.readBytes());
+            buffer.writeTo(headersOutputStream);
 
             // complete heading
             headersOutputStream.write('\r');        // "\r\n" - empty line after headers

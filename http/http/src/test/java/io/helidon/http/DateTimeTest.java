@@ -16,8 +16,11 @@
 
 package io.helidon.http;
 
+import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+
+import io.helidon.common.buffers.BufferData;
 
 import org.junit.jupiter.api.Test;
 
@@ -44,6 +47,17 @@ public class DateTimeTest {
         assertThat(first[first.length - 1], is((byte) '\n'));
         assertThat(third[third.length - 2], is((byte) '\r'));
         assertThat(third[third.length - 1], is((byte) '\n'));
+    }
+
+    @Test
+    void writeHttp1BytesAppendsDateAndTerminator() {
+        var buffer = BufferData.growing(32);
+        buffer.writeAscii("Date: ");
+        DateTime.writeHttp1Bytes(buffer);
+
+        String header = new String(buffer.readBytes(), StandardCharsets.US_ASCII);
+        String date = header.substring("Date: ".length(), header.length() - 2);
+        assertThat(header, is("Date: " + DateTime.parse(date).format(DateTime.RFC_1123_DATE_TIME) + "\r\n"));
     }
 
     @Test
