@@ -31,17 +31,6 @@ Configures health discovery without retaining or acquiring a JDBC client
 </tr>
 <tr>
 <td>
-<code>name</code>
-</td>
-<td>
-<code>String</code>
-</td>
-<td>
-</td>
-<td>Overrides the client name in responses and individual check routes</td>
-</tr>
-<tr>
-<td>
 <a id="type"></a>
 <a href="io.helidon.health.HealthCheckType.md">
 <code>type</code>
