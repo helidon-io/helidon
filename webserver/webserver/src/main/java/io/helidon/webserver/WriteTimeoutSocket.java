@@ -25,6 +25,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.LongSupplier;
 
 import io.helidon.common.buffers.BufferData;
@@ -41,6 +42,7 @@ final class WriteTimeoutSocket implements HelidonSocket {
     private final ScheduledExecutorService scheduler;
     private final Runnable timeoutAction;
     private final LongSupplier nanoTime;
+    private final ReentrantLock lock = new ReentrantLock();
     private final Write primaryWrite = new Write();
     private final Runnable timeoutTask = this::checkTimeout;
     private List<Write> overlappingWrites;
@@ -92,8 +94,11 @@ final class WriteTimeoutSocket implements HelidonSocket {
 
     @Override
     public void close() {
-        synchronized (this) {
+        lock.lock();
+        try {
             closing = true;
+        } finally {
+            lock.unlock();
         }
         boolean closeCompleted = false;
         try {
@@ -101,7 +106,8 @@ final class WriteTimeoutSocket implements HelidonSocket {
             delegate.close();
             closeCompleted = true;
         } finally {
-            synchronized (this) {
+            lock.lock();
+            try {
                 if (closeCompleted || (!primaryWriteActive
                         && (overlappingWrites == null || overlappingWrites.isEmpty()))) {
                     closed = true;
@@ -114,6 +120,8 @@ final class WriteTimeoutSocket implements HelidonSocket {
                         fallbackTimer = null;
                     }
                 }
+            } finally {
+                lock.unlock();
             }
         }
     }
@@ -178,7 +186,8 @@ final class WriteTimeoutSocket implements HelidonSocket {
 
     private Write beginWrite() {
         long started = nanoTime.getAsLong();
-        synchronized (this) {
+        lock.lock();
+        try {
             if (timedOut) {
                 throw timeoutException(null);
             }
@@ -201,13 +210,16 @@ final class WriteTimeoutSocket implements HelidonSocket {
             }
             write.started = started;
             return write;
+        } finally {
+            lock.unlock();
         }
     }
 
     private boolean completeWrite(Write write) {
         boolean abort = false;
         boolean expired;
-        synchronized (this) {
+        lock.lock();
+        try {
             if (write == primaryWrite) {
                 primaryWriteActive = false;
             } else {
@@ -222,6 +234,8 @@ final class WriteTimeoutSocket implements HelidonSocket {
                     timeoutFuture = null;
                 }
             }
+        } finally {
+            lock.unlock();
         }
         if (abort) {
             timeoutAction.run();
@@ -230,7 +244,8 @@ final class WriteTimeoutSocket implements HelidonSocket {
     }
 
     private void checkTimeout() {
-        synchronized (this) {
+        lock.lock();
+        try {
             timeoutFuture = null;
             if (closed || timedOut) {
                 return;
@@ -254,6 +269,8 @@ final class WriteTimeoutSocket implements HelidonSocket {
             } else {
                 timedOut = true;
             }
+        } finally {
+            lock.unlock();
         }
         // Closing a channel can linger. Keep the shared deadline scheduler available to other sockets.
         Thread.ofVirtual()
@@ -284,7 +301,8 @@ final class WriteTimeoutSocket implements HelidonSocket {
         try {
             while (true) {
                 long remaining;
-                synchronized (this) {
+                lock.lock();
+                try {
                     if (closed || timedOut || (!primaryWriteActive
                             && (overlappingWrites == null || overlappingWrites.isEmpty()))) {
                         fallbackTimer = null;
@@ -295,6 +313,8 @@ final class WriteTimeoutSocket implements HelidonSocket {
                         timedOut = true;
                         break;
                     }
+                } finally {
+                    lock.unlock();
                 }
                 TimeUnit.NANOSECONDS.sleep(remaining);
             }
@@ -302,10 +322,13 @@ final class WriteTimeoutSocket implements HelidonSocket {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {
-            synchronized (this) {
+            lock.lock();
+            try {
                 if (fallbackTimer == Thread.currentThread()) {
                     fallbackTimer = null;
                 }
+            } finally {
+                lock.unlock();
             }
         }
     }
