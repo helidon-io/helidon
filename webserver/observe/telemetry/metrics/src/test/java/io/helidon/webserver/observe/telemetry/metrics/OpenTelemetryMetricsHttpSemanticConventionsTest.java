@@ -377,7 +377,7 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
         assertThat(exception, sameInstance(failure));
         assertThat(recorded.get(), is(1));
         assertThat(recordedAttributes.get().get(AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.ERROR_TYPE)),
-                   is("IllegalArgumentException"));
+                   is("java.lang.IllegalArgumentException"));
     }
 
     @Test
