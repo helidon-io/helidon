@@ -56,13 +56,6 @@ final class WriteTimeoutSocket implements HelidonSocket {
     WriteTimeoutSocket(HelidonSocket delegate,
                        Duration timeout,
                        ScheduledExecutorService scheduler,
-                       Runnable timeoutAction) {
-        this(delegate, timeout, scheduler, timeoutAction, System::nanoTime);
-    }
-
-    WriteTimeoutSocket(HelidonSocket delegate,
-                       Duration timeout,
-                       ScheduledExecutorService scheduler,
                        Runnable timeoutAction,
                        LongSupplier nanoTime) {
         this.delegate = delegate;

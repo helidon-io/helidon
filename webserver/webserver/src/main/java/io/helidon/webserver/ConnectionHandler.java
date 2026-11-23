@@ -568,7 +568,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext, C
             } finally {
                 abortSocket();
             }
-        });
+        }, System::nanoTime);
     }
 
     private HelidonSocket createNioSocket(Tls tls, SocketChannel channel, String channelId) throws IOException {
