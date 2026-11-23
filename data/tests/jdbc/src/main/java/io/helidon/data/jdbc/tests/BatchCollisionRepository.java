@@ -29,6 +29,13 @@ import io.helidon.data.jdbc.JdbcClient;
 @Data.Repository
 @Data.Provider("jdbc")
 public interface BatchCollisionRepository extends BatchAliasContract<String> {
+    @Jdbc.Statement("INSERT INTO T VALUES (:values, :values)")
+    JdbcClient.BatchResult binary(Iterator<byte[]> values);
+
+    @Jdbc.Statement("INSERT INTO T VALUES (:values, :values)")
+    @Jdbc.BatchSize(1)
+    JdbcClient.BatchResult binarySized(Iterator<byte[]> values);
+
     @Jdbc.Statement("INSERT INTO T VALUES (:batchSize, :size, :offset, :counts)")
     @Jdbc.BatchSize(2)
     JdbcClient.BatchResult sized(Iterable<String> batchSize, String size, long[] offset, int... counts);
@@ -118,6 +125,10 @@ interface ConfiguredBatchRepository extends ConfiguredBatchParent<String> {
 
     @Jdbc.Statement("${app.binary:INSERT INTO T VALUES (:values, :values)}")
     JdbcClient.BatchResult binary(Iterator<byte[]> values);
+
+    @Jdbc.Statement("${app.binary:INSERT INTO T VALUES (:values, :values)}")
+    @Jdbc.BatchSize(1)
+    JdbcClient.BatchResult binarySized(Iterator<byte[]> values);
 
     record Change(String name, Long id) {
         static final AtomicInteger ACCESSES = new AtomicInteger();

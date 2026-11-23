@@ -17,21 +17,26 @@ package io.helidon.tests.integration.data.jdbc.contract;
 
 import java.math.BigDecimal;
 import java.sql.Date;
+import java.sql.DriverManager;
 import java.sql.JDBCType;
+import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
@@ -142,6 +147,25 @@ public abstract class AbstractJdbcBatchContract {
         return insertSource(rows);
     }
 
+    protected JdbcClient.BatchResult storeRepeatedBinary(Iterable<byte[]> values, long[] ids,
+                                                         boolean configured, boolean sized) {
+        AtomicInteger index = new AtomicInteger();
+        JdbcClient.Statement statement = configured
+                ? client.prepare("UPDATE SCALAR_VALUE SET BYTES_VALUE = :values WHERE ID = :ids AND :values IS NOT NULL").get()
+                : client.create("UPDATE SCALAR_VALUE SET BYTES_VALUE = ? WHERE ID = ? AND ? IS NOT NULL");
+        JdbcClient.BatchBinder<byte[]> binder = (bindings, value) -> {
+            Objects.requireNonNull(bindings, "The batch bindings must not be null.");
+            Objects.requireNonNull(value, "The batch value must not be null.");
+            long id = ids[index.getAndIncrement()];
+            if (configured) {
+                bindings.bind("values", value).bind("ids", id);
+            } else {
+                bindings.bind(1, value).bind(2, id).bind(3, value);
+            }
+        };
+        return sized ? statement.executeBatch(values, 1, binder) : statement.executeBatch(values, binder);
+    }
+
     protected JdbcClient.BatchResult storeScalars(Iterable<ScalarChange> rows) {
         return client.create("""
                 UPDATE SCALAR_VALUE
@@ -202,6 +226,68 @@ public abstract class AbstractJdbcBatchContract {
         assertThat(fixture.committedByName("source-prefix"), is(Optional.empty()));
         assertThat(insertSource(oneShot(List.of("source-reused"))).entries().size(), is(1));
         assertThat(fixture.committedByName("source-reused").isPresent(), is(true));
+    }
+
+    @Test
+    protected final void repeatedBinaryMarkersPreservePerItemValuesAndCallerRollback() throws SQLException {
+        for (String variant : List.of("literal", "literal-sized", "configured", "configured-sized")) {
+            boolean configured = variant.startsWith("configured");
+            boolean sized = variant.endsWith("sized");
+            for (int length : new int[] {1, 128}) {
+                byte[] value = new byte[length];
+                AtomicBoolean traversed = new AtomicBoolean();
+                Iterable<byte[]> values = () -> {
+                    assertThat("The binary source must supply only one iterator.", traversed.compareAndSet(false, true), is(true));
+                    return new Iterator<>() {
+                        private int position;
+
+                        @Override
+                        public boolean hasNext() {
+                            if (position == 2) {
+                                value[0] = 9;
+                                return false;
+                            }
+                            return true;
+                        }
+
+                        @Override
+                        public byte[] next() {
+                            if (!hasNext()) {
+                                throw new NoSuchElementException();
+                            }
+                            value[0] = (byte) ++position;
+                            return value;
+                        }
+                    };
+                };
+                try {
+                    client.create("INSERT INTO SCALAR_VALUE (ID) VALUES (2)").execute();
+                    client.create("INSERT INTO SCALAR_VALUE (ID) VALUES (3)").execute();
+                    assertThat(storeRepeatedBinary(values, new long[] {2, 3}, configured, sized).totalUpdateCount().orElseThrow(), is(2L));
+                    byte[] first = new byte[length];
+                    byte[] second = new byte[length];
+                    first[0] = 1;
+                    second[0] = 2;
+                    List<byte[]> stored = committedBinaryValues();
+                    assertThat(stored.get(0), is(first));
+                    assertThat(stored.get(1), is(second));
+
+                    // Snapshot sharing must not change who completes the caller transaction.
+                    assertThrows(TxException.class, () -> transactions.transaction(Tx.Type.REQUIRED, () -> {
+                        storeRepeatedBinary(oneShot(List.of(new byte[] {7}, new byte[] {8})), new long[] {2, 3}, configured, sized);
+                        throw new IllegalStateException("The application rejected the binary batch.");
+                    }));
+                    List<byte[]> afterRollback = committedBinaryValues();
+                    assertThat(afterRollback.get(0), is(first));
+                    assertThat(afterRollback.get(1), is(second));
+                    assertThat(storeRepeatedBinary(oneShot(List.of(new byte[] {3})), new long[] {2}, configured, sized)
+                                       .totalUpdateCount().orElseThrow(), is(1L));
+                    assertThat(committedBinaryValues().getFirst(), is(new byte[] {3}));
+                } finally {
+                    client.create("DELETE FROM SCALAR_VALUE WHERE ID IN (2, 3)").execute();
+                }
+            }
+        }
     }
 
     @Test
@@ -561,6 +647,20 @@ public abstract class AbstractJdbcBatchContract {
     protected final void stopBatch() {
         if (manager != null) {
             manager.shutdown();
+        }
+    }
+
+    private List<byte[]> committedBinaryValues() throws SQLException {
+        Config connection = service(Config.class).get("data.clients.jdbc").asNodeList().get().getFirst().get("connection");
+        try (var observer = DriverManager.getConnection(connection.get("url").asString().get(),
+                connection.get("username").asString().get(), connection.get("password").asString().get());
+             var statement = observer.prepareStatement("SELECT BYTES_VALUE FROM SCALAR_VALUE WHERE ID IN (2, 3) ORDER BY ID");
+             var results = statement.executeQuery()) {
+            List<byte[]> values = new ArrayList<>();
+            while (results.next()) {
+                values.add(results.getBytes(1));
+            }
+            return values;
         }
     }
 

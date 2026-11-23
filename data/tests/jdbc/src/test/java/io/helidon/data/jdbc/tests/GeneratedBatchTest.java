@@ -22,9 +22,11 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -48,7 +50,9 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
@@ -165,6 +169,80 @@ class GeneratedBatchTest {
         verify(statement).setNull(1, JDBCType.VARCHAR.getVendorTypeNumber());
         verify(statement).setNull(2, JDBCType.BIGINT.getVendorTypeNumber());
         verify(statement, times(2)).executeBatch();
+    }
+
+    @Test
+    void literalAndConfiguredCaptureShareBinarySnapshotsWithinEachItem() throws SQLException {
+        for (String variant : List.of("literal", "literal-sized", "configured", "configured-sized")) {
+            boolean configured = variant.startsWith("configured");
+            boolean sized = variant.endsWith("sized");
+            DataSource source = mock(DataSource.class);
+            Connection connection = mock(Connection.class);
+            PreparedStatement statement = mock(PreparedStatement.class);
+            byte[] value = new byte[65536];
+            List<byte[]> captured = new ArrayList<>();
+            when(source.getConnection()).thenAnswer(_ -> {
+                assertThat(value[0], is((byte) 9));
+                return connection;
+            });
+            when(connection.getAutoCommit()).thenReturn(true);
+            when(connection.prepareStatement(anyString())).thenReturn(statement);
+            when(statement.executeBatch()).thenReturn(sized ? new int[] {1} : new int[] {1, 1, 1});
+            doAnswer(invocation -> {
+                captured.add(invocation.getArgument(1));
+                return null;
+            }).when(statement).setBytes(anyInt(), any(byte[].class));
+            Iterator<byte[]> values = new Iterator<>() {
+                private int position;
+
+                @Override
+                public boolean hasNext() {
+                    if (position == 3) {
+                        value[0] = 9;
+                        return false;
+                    }
+                    return true;
+                }
+
+                @Override
+                public byte[] next() {
+                    if (!hasNext()) {
+                        throw new NoSuchElementException();
+                    }
+                    if (++position == 3) {
+                        return null;
+                    }
+                    value[0] = (byte) position;
+                    return value;
+                }
+            };
+            JdbcClient client = JdbcClient.builder().dataSource(source).build();
+            JdbcClient.BatchResult result;
+            if (configured) {
+                ConfiguredBatchRepository repository = new ConfiguredBatchRepository__Jdbc(client, Config.empty());
+                result = sized ? repository.binarySized(values) : repository.binary(values);
+            } else {
+                BatchCollisionRepository repository = new BatchCollisionRepository__Jdbc(client);
+                result = sized ? repository.binarySized(values) : repository.binary(values);
+            }
+
+            assertThat(variant, result.entries().stream().map(JdbcClient.BatchResult.Entry::itemIndex).toList(), is(List.of(0, 1, 2)));
+            assertThat(captured.size(), is(4));
+            assertThat(captured.get(0)[0], is((byte) 1));
+            assertThat(captured.get(2)[0], is((byte) 2));
+            assertThat(captured.get(0), not(sameInstance(value)));
+            assertThat(captured.get(2), not(sameInstance(value)));
+            assertThat(captured.get(1), sameInstance(captured.get(0)));
+            assertThat(captured.get(3), sameInstance(captured.get(2)));
+            assertThat(captured.get(2), not(sameInstance(captured.get(0))));
+            verify(statement).setNull(1, Types.VARBINARY);
+            verify(statement).setNull(2, Types.VARBINARY);
+            verify(statement, times(sized ? 3 : 1)).executeBatch();
+            verify(statement, times(sized ? 2 : 0)).clearBatch();
+            verify(source).getConnection();
+            verify(statement).close();
+            verify(connection).close();
+        }
     }
 
     /**

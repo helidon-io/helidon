@@ -16,7 +16,10 @@
 package io.helidon.data.jdbc;
 
 import java.sql.JDBCType;
+import java.util.Arrays;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -26,6 +29,7 @@ final class JdbcBatchBindings implements JdbcClient.BatchBindings {
     private final Thread owner = Thread.currentThread();
     private final JdbcOperation.Bind[] binds;
     private final JdbcConfiguredStatement configured;
+    private BinarySnapshots binarySnapshots;
     private boolean open = true;
 
     JdbcBatchBindings(int parameterCount, JdbcConfiguredStatement configured) {
@@ -40,7 +44,7 @@ final class JdbcBatchBindings implements JdbcClient.BatchBindings {
         if (!JdbcScalarAccess.supported(value.getClass())) {
             throw new IllegalArgumentException("The batch value must be a supported scalar.");
         }
-        binds[index - 1] = new JdbcOperation.Bind(value, null);
+        binds[index - 1] = snapshot(value, 1);
         return this;
     }
 
@@ -61,7 +65,7 @@ final class JdbcBatchBindings implements JdbcClient.BatchBindings {
         if (!JdbcScalarAccess.supported(value.getClass())) {
             throw new IllegalArgumentException("The batch value must be a supported scalar.");
         }
-        JdbcOperation.Bind bind = new JdbcOperation.Bind(value, null);
+        JdbcOperation.Bind bind = snapshot(value, positions.size());
         for (int index : positions) {
             binds[index - 1] = bind;
         }
@@ -83,6 +87,7 @@ final class JdbcBatchBindings implements JdbcClient.BatchBindings {
 
     void close() {
         open = false;
+        binarySnapshots = null;
     }
 
     JdbcOperation.Bind[] complete() {
@@ -110,6 +115,40 @@ final class JdbcBatchBindings implements JdbcClient.BatchBindings {
         }
     }
 
+    private JdbcOperation.Bind snapshot(Object value, int positions) {
+        if (!(value instanceof byte[] bytes)) {
+            return new JdbcOperation.Bind(value, null);
+        }
+        if (binarySnapshots == null) {
+            JdbcOperation.Bind captured = new JdbcOperation.Bind(bytes, null);
+            int unassigned = 0;
+            // A final assignment leaves no later binding that could reuse this snapshot.
+            for (JdbcOperation.Bind bind : binds) {
+                if (bind == null && ++unassigned > positions) {
+                    binarySnapshots = new BinarySnapshots(bytes, captured);
+                    break;
+                }
+            }
+            return captured;
+        }
+        boolean first = bytes == binarySnapshots.firstValue;
+        if (!first && binarySnapshots.otherSnapshots == null) {
+            binarySnapshots.otherSnapshots = new IdentityHashMap<>(1);
+        }
+        JdbcOperation.Bind previous = first ? binarySnapshots.firstSnapshot : binarySnapshots.otherSnapshots.get(bytes);
+        // A callback may mutate the same array between binds, so identity alone does not establish reuse.
+        if (previous != null && Arrays.equals((byte[]) previous.value(), bytes)) {
+            return previous;
+        }
+        JdbcOperation.Bind captured = new JdbcOperation.Bind(bytes, null);
+        if (first) {
+            binarySnapshots.firstSnapshot = captured;
+        } else {
+            binarySnapshots.otherSnapshots.put(bytes, captured);
+        }
+        return captured;
+    }
+
     private List<Integer> positions(String name) {
         validateOpen();
         if (configured == null) {
@@ -129,6 +168,20 @@ final class JdbcBatchBindings implements JdbcClient.BatchBindings {
         }
         if (binds[index - 1] != null) {
             throw new IllegalArgumentException("The batch binding position has already been assigned.");
+        }
+    }
+
+    /**
+     * Tracks one binary input without a map and allocates a map only for additional arrays.
+     */
+    private static final class BinarySnapshots {
+        private final byte[] firstValue;
+        private JdbcOperation.Bind firstSnapshot;
+        private Map<byte[], JdbcOperation.Bind> otherSnapshots;
+
+        private BinarySnapshots(byte[] firstValue, JdbcOperation.Bind firstSnapshot) {
+            this.firstValue = firstValue;
+            this.firstSnapshot = firstSnapshot;
         }
     }
 }

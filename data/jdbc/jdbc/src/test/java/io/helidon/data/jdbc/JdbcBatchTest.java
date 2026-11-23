@@ -22,6 +22,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,6 +52,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -78,6 +80,158 @@ class JdbcBatchTest {
         when(connection.getAutoCommit()).thenReturn(true);
         when(connection.prepareStatement(anyString())).thenReturn(prepared);
         client = JdbcTestClients.create(source);
+    }
+
+    @Test
+    void unchangedBinaryBindingsShareOnlyWithinOneItem() throws Exception {
+        byte[] value = {0};
+        List<byte[]> captured = new ArrayList<>();
+        AtomicInteger callbacks = new AtomicInteger();
+        doAnswer(invocation -> {
+            captured.add(invocation.getArgument(1));
+            return null;
+        }).when(prepared).setBytes(anyInt(), any(byte[].class));
+        when(source.getConnection()).thenAnswer(_ -> {
+            assertThat(callbacks.get(), is(3));
+            assertThat(value[0], is((byte) 9));
+            return connection;
+        });
+        when(prepared.executeBatch()).thenReturn(new int[] {1, 1, 1});
+
+        client.create("INSERT INTO T VALUES (?, ?, ?, ?)").executeBatch(List.of(1, 2, 2), (bindings, item) -> {
+            value[0] = item.byteValue();
+            bindings.bind(1, value).bind(2, item).bind(3, value).bind(4, value);
+            callbacks.incrementAndGet();
+            value[0] = 9;
+        });
+
+        assertThat(captured.size(), is(9));
+        for (int row = 0; row < 3; row++) {
+            byte[] snapshot = captured.get(row * 3);
+            assertThat(snapshot, is(new byte[] {(byte) (row == 0 ? 1 : 2)}));
+            assertThat(snapshot, not(sameInstance(value)));
+            assertThat(captured.get(row * 3 + 1), sameInstance(snapshot));
+            assertThat(captured.get(row * 3 + 2), sameInstance(snapshot));
+            if (row > 0) {
+                assertThat(snapshot, not(sameInstance(captured.get((row - 1) * 3))));
+            }
+        }
+        verify(source).getConnection();
+        verify(prepared).close();
+        verify(connection).close();
+    }
+
+    /**
+     * Array identity alone cannot justify sharing because an earlier bind must retain its original contents.
+     */
+    @Test
+    void binarySnapshotReuseObservesMutationsAndDistinctSources() throws Exception {
+        byte[] first = {1};
+        byte[] second = {1};
+        List<byte[]> captured = new ArrayList<>();
+        doAnswer(invocation -> {
+            captured.add(invocation.getArgument(1));
+            return null;
+        }).when(prepared).setBytes(anyInt(), any(byte[].class));
+        when(prepared.executeBatch()).thenReturn(new int[] {1});
+
+        client.create("INSERT INTO T VALUES (?, ?, ?, ?, ?)").executeBatch(List.of(1), (bindings, _) -> {
+            bindings.bind(1, first).bind(2, second);
+            first[0] = 9;
+            bindings.bind(3, first).bind(4, second).bind(5, first);
+        });
+
+        assertThat(captured.get(0), is(new byte[] {1}));
+        assertThat(captured.get(1), is(new byte[] {1}));
+        assertThat(captured.get(0), not(sameInstance(captured.get(1))));
+        assertThat(captured.get(2), is(new byte[] {9}));
+        assertThat(captured.get(2), not(sameInstance(captured.get(0))));
+        assertThat(captured.get(3), sameInstance(captured.get(1)));
+        assertThat(captured.get(4), sameInstance(captured.get(2)));
+    }
+
+    @Test
+    void restoredBinaryValuesAndEmptyArraysRetainTypedNullsAcrossSubmissions() throws Exception {
+        for (boolean reusable : List.of(false, true)) {
+            setup();
+            byte[] value = {0};
+            byte[] empty = new byte[0];
+            List<byte[]> captured = new ArrayList<>();
+            doAnswer(invocation -> {
+                captured.add(invocation.getArgument(1));
+                return null;
+            }).when(prepared).setBytes(anyInt(), any(byte[].class));
+            when(prepared.executeBatch()).thenReturn(new int[] {1});
+            stage(reusable, "INSERT INTO T VALUES (?, ?, ?, ?, ?, ?)")
+                    .executeBatch(List.of(1, 2), 1, (bindings, item) -> {
+                        value[0] = item.byteValue();
+                        bindings.bind(1, value);
+                        value[0] = 9;
+                        bindings.bind(2, value);
+                        value[0] = item.byteValue();
+                        bindings.bind(3, value).bindNull(4, JDBCType.VARBINARY)
+                                .bind(5, empty).bind(6, empty);
+                    });
+            assertThat(captured.size(), is(10));
+            for (int row = 0; row < 2; row++) {
+                int offset = row * 5;
+                assertThat(captured.get(offset), is(new byte[] {(byte) (row + 1)}));
+                assertThat(captured.get(offset + 1), is(new byte[] {9}));
+                assertThat(captured.get(offset + 2), is(new byte[] {(byte) (row + 1)}));
+                assertThat(captured.get(offset + 3), is(new byte[0]));
+                assertThat(captured.get(offset + 3), not(sameInstance(empty)));
+                assertThat(captured.get(offset + 4), sameInstance(captured.get(offset + 3)));
+            }
+            assertThat(captured.get(0), not(sameInstance(captured.get(5))));
+            assertThat(captured.get(3), not(sameInstance(captured.get(8))));
+            verify(prepared, times(2)).setNull(4, Types.VARBINARY);
+            verify(prepared, times(2)).executeBatch();
+            verify(prepared).clearBatch();
+            verify(prepared).close();
+            verify(connection).close();
+        }
+    }
+
+    @Test
+    void failedBinaryCaptureExpiresItsViewBeforeAcquisition() throws Exception {
+        for (boolean reusable : List.of(false, true)) {
+            setup();
+            JdbcClient.BatchBindings[] escaped = new JdbcClient.BatchBindings[1];
+            IllegalStateException expected = new IllegalStateException("The application rejected binary capture.");
+            JdbcClient.Statement statement = stage(reusable, "INSERT INTO T VALUES (?, ?)");
+            assertThat(assertThrows(IllegalStateException.class, () -> statement.executeBatch(List.of(new byte[] {1}),
+                    1, (bindings, value) -> {
+                        escaped[0] = bindings;
+                        bindings.bind(1, value).bind(2, value);
+                        throw expected;
+                    })), sameInstance(expected));
+            assertThrows(IllegalStateException.class, () -> escaped[0].bind(1, new byte[] {2}));
+            assertThrows(IllegalStateException.class, () -> statement.executeBatch(List.of(), 1, (_, _) -> { }));
+            verifyZeroInteractions(source, connection, prepared);
+        }
+    }
+
+    @Test
+    void namedAndIndexedBinaryBindingsShareTheSameItemSnapshot() throws Exception {
+        byte[] value = {1, 2};
+        List<byte[]> captured = new ArrayList<>();
+        doAnswer(invocation -> {
+            captured.add(invocation.getArgument(1));
+            return null;
+        }).when(prepared).setBytes(anyInt(), any(byte[].class));
+        when(prepared.executeBatch()).thenReturn(new int[] {1});
+
+        client.prepare("INSERT INTO T VALUES (:payload, :scalar, :payload, :other)").get()
+                .executeBatch(List.of(1), (bindings, item) -> {
+                    bindings.bind("payload", value).bind(2, item).bind(4, value);
+                    value[0] = 9;
+                });
+
+        assertThat(captured.size(), is(3));
+        assertThat(captured.get(0), is(new byte[] {1, 2}));
+        assertThat(captured.get(0), not(sameInstance(value)));
+        assertThat(captured.get(1), sameInstance(captured.get(0)));
+        assertThat(captured.get(2), sameInstance(captured.get(0)));
     }
 
     @Test

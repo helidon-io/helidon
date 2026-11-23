@@ -70,6 +70,16 @@ public abstract class AbstractDeclarativeBatchContract extends AbstractJdbcBatch
     }
 
     @Override
+    protected final JdbcClient.BatchResult storeRepeatedBinary(Iterable<byte[]> values, long[] ids,
+                                                              boolean configured, boolean sized) {
+        BatchRepository repository = service(BatchRepository.class);
+        if (configured) {
+            return sized ? repository.repeatedBinaryConfiguredSized(values, ids) : repository.repeatedBinaryConfigured(values, ids);
+        }
+        return sized ? repository.repeatedBinarySized(values, ids) : repository.repeatedBinary(values, ids);
+    }
+
+    @Override
     protected final JdbcClient.BatchResult storeScalars(Iterable<ScalarChange> rows) {
         return service(BatchRepository.class).scalarRecords(rows);
     }

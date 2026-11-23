@@ -139,6 +139,23 @@ public interface BatchRepository extends BatchAliasStatements<String> {
     @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
     JdbcClient.BatchResult binaryValues(Iterable<byte[]> values, long id);
 
+    @Jdbc.Statement("UPDATE SCALAR_VALUE SET BYTES_VALUE = :values WHERE ID = :ids AND :values IS NOT NULL")
+    @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
+    JdbcClient.BatchResult repeatedBinary(Iterable<byte[]> values, long[] ids);
+
+    @Jdbc.Statement("UPDATE SCALAR_VALUE SET BYTES_VALUE = :values WHERE ID = :ids AND :values IS NOT NULL")
+    @Jdbc.BatchSize(1)
+    JdbcClient.BatchResult repeatedBinarySized(Iterable<byte[]> values, long[] ids);
+
+    @Jdbc.Statement("${application.batches.repeated-binary:UPDATE SCALAR_VALUE SET BYTES_VALUE = :values "
+            + "WHERE ID = :ids AND :values IS NOT NULL}")
+    JdbcClient.BatchResult repeatedBinaryConfigured(Iterable<byte[]> values, long[] ids);
+
+    @Jdbc.Statement("${application.batches.repeated-binary:UPDATE SCALAR_VALUE SET BYTES_VALUE = :values "
+            + "WHERE ID = :ids AND :values IS NOT NULL}")
+    @Jdbc.BatchSize(1)
+    JdbcClient.BatchResult repeatedBinaryConfiguredSized(Iterable<byte[]> values, long[] ids);
+
     @Jdbc.Statement("UPDATE SCALAR_VALUE SET BYTES_VALUE = :value WHERE ID = :ids")
     @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
     JdbcClient.BatchResult binaryConstant(long[] ids, byte[] value);
