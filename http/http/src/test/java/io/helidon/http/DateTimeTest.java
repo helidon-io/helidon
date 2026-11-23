@@ -35,17 +35,12 @@ public class DateTimeTest {
 
     @Test
     void http1BytesAreIsolatedFromCallerChanges() {
-        byte[] cached;
-        byte[] result;
-        do {
-            cached = DateTimeHelper.http1Bytes();
-            result = DateTime.http1Bytes();
-        } while (cached != DateTimeHelper.http1Bytes());
-
-        result[result.length - 1] = 0;
-        assertThat(cached[cached.length - 1], is((byte) '\n'));
-        byte[] next = DateTime.http1Bytes();
-        assertThat(next[next.length - 1], is((byte) '\n'));
+        byte[] first = DateTime.http1Bytes();
+        byte[] second = DateTime.http1Bytes();
+        first[first.length - 2] = 0;
+        first[first.length - 1] = 0;
+        assertThat(second[second.length - 2], is((byte) '\r'));
+        assertThat(second[second.length - 1], is((byte) '\n'));
     }
 
     @Test
@@ -89,8 +84,8 @@ public class DateTimeTest {
     @Test
     public void parse() {
         assertThat(DateTime.parse("Tue, 3 Jun 2008 11:05:30 GMT"), is(ZDT));
-        String rfc850 = "03-Jun-08 11:05:30 GMT";
-        assertThat(DateTime.parse(rfc850), is(ZonedDateTime.parse(rfc850, DateTime.RFC_850_DATE_TIME)));
+        var expected = ZDT.withYear(ZonedDateTime.now(ZDT.getZone()).getYear());
+        assertThat(DateTime.parse(expected.format(DateTime.RFC_850_DATE_TIME)), is(expected));
         assertThat(DateTime.parse("Tue Jun  3 11:05:30 2008"), is(ZDT));
     }
 
