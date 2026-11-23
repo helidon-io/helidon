@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.benchmark.jmh;
 
+import java.io.ByteArrayOutputStream;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -23,10 +24,13 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.GZIPOutputStream;
 
 import io.helidon.config.Config;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.encoding.ContentEncodingContext;
+import io.helidon.http.encoding.gzip.GzipEncoding;
 import io.helidon.http.media.MediaContext;
 import io.helidon.http.media.multipart.MultiPart;
 import io.helidon.http.media.multipart.MultiPartSupport;
@@ -59,6 +63,7 @@ import org.openjdk.jmh.annotations.Threads;
  * same resource lifecycle. GC profiling includes the server's allocations. Use exact method includes.
  * Decorated scenarios wrap the service response stream. Fallback scenarios use the HTTP/2 client against an
  * HTTP/1-only server and verify that the exchanges use HTTP/1.1.
+ * Gzip multipart bodies are compressed during setup so measurements include client decoding without server compression.
  */
 @State(Scope.Thread)
 @Threads(1)
@@ -82,6 +87,9 @@ public class MultipartResponseJmhBenchmark {
     @Param({"http1", "http2", "http1-decorated", "http2-decorated", "fallback", "fallback-decorated"})
     private String protocol;
 
+    @Param({"identity", "gzip"})
+    private String contentEncoding;
+
     private WebServer server;
     private HttpClient<?> client;
     private String protocolId;
@@ -96,9 +104,24 @@ public class MultipartResponseJmhBenchmark {
         boolean http2 = protocol.startsWith("http2");
         boolean fallback = protocol.startsWith("fallback");
         boolean decorated = protocol.endsWith("-decorated");
+        byte[] body;
+        if (contentEncoding.equals("gzip")) {
+            ByteArrayOutputStream compressed = new ByteArrayOutputStream();
+            try (GZIPOutputStream encoder = new GZIPOutputStream(compressed)) {
+                encoder.write(MULTIPART);
+            }
+            body = compressed.toByteArray();
+        } else {
+            body = MULTIPART;
+        }
+        ContentEncodingContext decoding = ContentEncodingContext.builder()
+                .contentEncodingsDiscoverServices(false)
+                .addContentEncoding(GzipEncoding.create())
+                .build();
         var serverBuilder = WebServer.builder()
                 .host("127.0.0.1")
                 .port(0)
+                .contentEncoding(ContentEncodingContext.builder().contentEncodingsDiscoverServices(false).build())
                 .connectionOptions(options -> options.tcpNoDelay(true))
                 .routing(rules -> rules
                         .get("/text", (request, response) -> {
@@ -108,7 +131,11 @@ public class MultipartResponseJmhBenchmark {
                         .get("/parts", (request, response) -> {
                             response.headers().set(CONNECTION_ID, request.socketId());
                             response.headers().set(HeaderNames.CONTENT_TYPE, CONTENT_TYPE);
-                            response.send(MULTIPART);
+                            response.headers().set(HeaderNames.CONTENT_LENGTH, Integer.toString(body.length));
+                            if (contentEncoding.equals("gzip")) {
+                                response.headers().set(HeaderNames.CONTENT_ENCODING, "gzip");
+                            }
+                            response.send(body);
                         }));
         if (http2) {
             serverBuilder.addProtocol(Http2Config.create());
@@ -124,6 +151,7 @@ public class MultipartResponseJmhBenchmark {
                     ? Http2Client.builder()
                         .baseUri(baseUri)
                         .mediaContext(mediaContext)
+                        .contentEncoding(decoding)
                         .servicesDiscoverServices(false)
                         .services(services)
                         .shareConnectionCache(false)
@@ -134,6 +162,7 @@ public class MultipartResponseJmhBenchmark {
                     : Http1Client.builder()
                         .baseUri(baseUri)
                         .mediaContext(mediaContext)
+                        .contentEncoding(decoding)
                         .servicesDiscoverServices(false)
                         .services(services)
                         .shareConnectionCache(false)
@@ -155,10 +184,18 @@ public class MultipartResponseJmhBenchmark {
                 throw new IllegalStateException("HTTP/2 partial cleanup replaced the physical connection");
             }
             try (HttpClientResponse response = request("/parts"); MultiPart parts = response.as(MultiPart.class)) {
+                if (!contentEncoding.equals(response.headers().value(HeaderNames.CONTENT_ENCODING).orElse("identity"))
+                        || !Integer.toString(body.length).equals(response.headers().get(HeaderNames.CONTENT_LENGTH).get())) {
+                    throw new IllegalStateException("Multipart benchmark response encoding or length differs from its fixture");
+                }
                 String value = parts.next().as(String.class);
                 if (!VALUE.equals(value) || parts.hasNext()) {
                     throw new IllegalStateException("Multipart benchmark payload differs from its fixture");
                 }
+            }
+            uniteratedMultipart();
+            if (ordinaryResponse() != PART_BYTES) {
+                throw new IllegalStateException("Uniterated multipart cleanup did not permit another exchange");
             }
         } catch (IOException | RuntimeException | Error failure) {
             try {
