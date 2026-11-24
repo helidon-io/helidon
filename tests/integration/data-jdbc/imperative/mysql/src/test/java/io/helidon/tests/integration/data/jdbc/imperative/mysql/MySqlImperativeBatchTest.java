@@ -103,7 +103,8 @@ class MySqlImperativeBatchTest extends AbstractJdbcBatchContract {
             assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
             definition.get().executeBatch(List.of("pooled-sized-reused"), 2,
                     (bindings, name) -> bindings.bind("name", name).bindNull("email", JDBCType.VARCHAR));
-            assertThat(client.create("SELECT COUNT(*) FROM CONTACT WHERE NAME = 'pooled-sized-reused'").map(Long.class).one(), is(1L));
+            assertThat(client.create("SELECT COUNT(*) FROM CONTACT WHERE NAME = 'pooled-sized-reused'")
+                               .map(Long.class).one(), is(1L));
             assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
             assertThrows(IllegalArgumentException.class, () -> definition.get().executeBatch(List.of("capture"),
                     (bindings, name) -> bindings.bind("name", name).bind("name", name)));

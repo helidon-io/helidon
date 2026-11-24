@@ -49,6 +49,10 @@
             <artifactId>helidon-common-types</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.common</groupId>
+            <artifactId>helidon-common-media-type</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.data</groupId>
             <artifactId>helidon-data</artifactId>
         </dependency>
@@ -142,13 +146,15 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <configuration>
-                    <!-- Main sources need these JPMS modules through helidon-data-jdbc. -->
+                    <!-- The compiler tests reference these modules directly.
+                         Main fixtures require these modules through JPMS, so they retain compile scope. -->
                     <ignoredNonTestScopedDependencies>
                         <dependency>io.helidon.builder:helidon-builder-api</dependency>
                         <!-- Config requires this module transitively even when only compiler tests name its types. -->
                         <dependency>io.helidon.common:helidon-common-mapper</dependency>
                         <dependency>io.helidon.config:helidon-config</dependency>
                         <dependency>io.helidon.data.sql:helidon-data-sql-common</dependency>
+                        <dependency>io.helidon.common:helidon-common-media-type</dependency>
                     </ignoredNonTestScopedDependencies>
                 </configuration>
             </plugin>

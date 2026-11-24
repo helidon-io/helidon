@@ -26,11 +26,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.NoSuchElementException;
+import java.util.OptionalLong;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
+
 import javax.sql.DataSource;
 
 import io.helidon.config.Config;
@@ -39,6 +41,8 @@ import io.helidon.config.ConfigSources;
 import io.helidon.data.DataException;
 import io.helidon.data.jdbc.JdbcBatchException;
 import io.helidon.data.jdbc.JdbcClient;
+import io.helidon.data.jdbc.tests.BatchCollisionRepository.Configured;
+import io.helidon.data.jdbc.tests.BatchCollisionRepository.Literal;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
@@ -80,11 +84,11 @@ class GeneratedBatchTest {
             List<String> values = Arrays.asList("payload", null);
             JdbcClient.BatchResult result;
             if (configured) {
-                ConfiguredBatchRepository repository = new ConfiguredBatchRepository__Jdbc(client, Config.empty());
+                Configured repository = new BatchCollisionRepository_Configured__Jdbc(client, Config.empty());
                 result = original ? repository.originalAdapterNames(values, null)
                         : repository.adapterTypes(values, new int[] {7, 8}, null, "bridge", "prefix");
             } else {
-                BatchCollisionRepository repository = new BatchCollisionRepository__Jdbc(client);
+                Literal repository = new BatchCollisionRepository_Literal__Jdbc(client);
                 result = original ? repository.originalAdapterNames(values, null)
                         : repository.adapterTypes(values, new int[] {7, 8}, null, "bridge", "prefix");
             }
@@ -140,10 +144,10 @@ class GeneratedBatchTest {
         AtomicReference<String> sql = new AtomicReference<>("INSERT INTO T VALUES (:name, :email)");
         when(config.get(anyString())).thenAnswer(call -> Config.just(ConfigSources.create(Map.of("app.batch", sql.get())))
                 .get((String) call.getArgument(0)));
-        ConfiguredBatchRepository original = new ConfiguredBatchRepository__Jdbc(client, config);
+        Configured original = new BatchCollisionRepository_Configured__Jdbc(client, config);
         original.scalar(List.of("first"), null);
         sql.set("INSERT INTO T VALUES (:email, :name, :name)");
-        ConfiguredBatchRepository replacement = new ConfiguredBatchRepository__Jdbc(client, config);
+        Configured replacement = new BatchCollisionRepository_Configured__Jdbc(client, config);
         replacement.scalar(List.of("new"), null);
         original.scalar(List.of("old"), null);
         verify(config, times(2)).get("app.batch");
@@ -165,7 +169,9 @@ class GeneratedBatchTest {
     void configuredActivationRejectsInvalidLayoutsAndSanitizesConfigurationFailures() {
         DataSource source = mock(DataSource.class);
         JdbcClient client = JdbcClient.builder().dataSource(source).build();
-        Iterable<String> forbidden = () -> { throw new AssertionError("Invalid definitions must not traverse sources."); };
+        Iterable<String> forbidden = () -> {
+            throw new AssertionError("Invalid definitions must not traverse sources.");
+        };
         for (Map<String, String> values : List.of(
                 Map.of("app.batch", "INSERT INTO T VALUES (:name, ?)"),
                 Map.of("app.batch", "INSERT INTO T VALUES (?)"),
@@ -177,21 +183,22 @@ class GeneratedBatchTest {
                 Map.of("app.batch", " "))) {
             Config config = Config.just(ConfigSources.create(values));
             assertThrows(IllegalArgumentException.class,
-                    () -> new ConfiguredBatchRepository__Jdbc(client, config).scalar(forbidden, null));
+                    () -> new BatchCollisionRepository_Configured__Jdbc(client, config).scalar(forbidden, null));
             assertThrows(IllegalArgumentException.class,
-                    () -> new ConfiguredBatchRepository__Jdbc(client, config).scalar(List.of(), null));
+                    () -> new BatchCollisionRepository_Configured__Jdbc(client, config).scalar(List.of(), null));
         }
         Config object = Config.just(ConfigSources.create(Map.of("app.batch.child", "SQL_CANARY")));
-        assertThrows(DataException.class, () -> new ConfiguredBatchRepository__Jdbc(client, object));
+        assertThrows(DataException.class, () -> new BatchCollisionRepository_Configured__Jdbc(client, object));
         Config list = mock(Config.class);
         Config node = mock(Config.class);
         when(list.get(anyString())).thenReturn(node);
         when(node.exists()).thenReturn(true);
         when(node.type()).thenReturn(Config.Type.LIST);
-        assertThrows(DataException.class, () -> new ConfiguredBatchRepository__Jdbc(client, list));
+        assertThrows(DataException.class, () -> new BatchCollisionRepository_Configured__Jdbc(client, list));
         Config broken = mock(Config.class);
         when(broken.get(anyString())).thenThrow(new ConfigException("SQL_CANARY"));
-        DataException failure = assertThrows(DataException.class, () -> new ConfiguredBatchRepository__Jdbc(client, broken));
+        DataException failure = assertThrows(DataException.class,
+                                             () -> new BatchCollisionRepository_Configured__Jdbc(client, broken));
         assertConfidential(failure);
         assertThat(failure.getCause(), is((Throwable) null));
         assertThat(failure.getSuppressed().length, is(0));
@@ -206,25 +213,25 @@ class GeneratedBatchTest {
         when(source.getConnection()).thenReturn(connection);
         when(connection.getAutoCommit()).thenReturn(true);
         when(connection.prepareStatement(anyString())).thenReturn(statement);
-        ConfiguredBatchRepository repository = new ConfiguredBatchRepository__Jdbc(
+        Configured repository = new BatchCollisionRepository_Configured__Jdbc(
                 JdbcClient.builder().dataSource(source).build(), Config.empty());
         assertThat(repository.arrays(new String[0], null, new long[0]).totalUpdateCount().orElseThrow(), is(0L));
         assertThrows(IllegalArgumentException.class, () -> repository.arrays(new String[] {"prefix", "late"}, null, 1));
         NullPointerException missingRecord = assertThrows(NullPointerException.class,
-                () -> repository.records(Arrays.asList((ConfiguredBatchRepository.Change) null).iterator()));
+                () -> repository.records(Arrays.asList((Configured.Change) null).iterator()));
         assertThat(missingRecord.getMessage(), is("The batch record element must not be null."));
         assertThrows(IllegalStateException.class,
-                () -> repository.records(List.of(new ConfiguredBatchRepository.Change("fail", 1L)).iterator()));
+                () -> repository.records(List.of(new Configured.Change("fail", 1L)).iterator()));
         verifyZeroInteractions(source);
         when(statement.executeBatch()).thenReturn(new int[] {1});
-        repository.duplicates(List.of(new ConfiguredBatchRepository.Replacement("replacement")),
-                List.of(new ConfiguredBatchRepository.Expected(7, "expected")).iterator());
+        repository.duplicates(List.of(new Configured.Replacement("replacement")),
+                List.of(new Configured.Expected(7, "expected")).iterator());
         verify(statement).setString(1, "replacement");
         verify(statement).setLong(2, 7);
         verify(statement).setString(3, "expected");
-        ConfiguredBatchRepository.Change.ACCESSES.set(0);
-        repository.records(List.of(new ConfiguredBatchRepository.Change(null, null)).iterator());
-        assertThat(ConfiguredBatchRepository.Change.ACCESSES.get(), is(1));
+        Configured.Change.ACCESSES.set(0);
+        repository.records(List.of(new Configured.Change(null, null)).iterator());
+        assertThat(Configured.Change.ACCESSES.get(), is(1));
         verify(statement).setNull(1, JDBCType.VARCHAR.getVendorTypeNumber());
         verify(statement).setNull(2, JDBCType.BIGINT.getVendorTypeNumber());
         verify(statement, times(2)).executeBatch();
@@ -278,14 +285,15 @@ class GeneratedBatchTest {
             JdbcClient client = JdbcClient.builder().dataSource(source).build();
             JdbcClient.BatchResult result;
             if (configured) {
-                ConfiguredBatchRepository repository = new ConfiguredBatchRepository__Jdbc(client, Config.empty());
+                Configured repository = new BatchCollisionRepository_Configured__Jdbc(client, Config.empty());
                 result = sized ? repository.binarySized(values) : repository.binary(values);
             } else {
-                BatchCollisionRepository repository = new BatchCollisionRepository__Jdbc(client);
+                Literal repository = new BatchCollisionRepository_Literal__Jdbc(client);
                 result = sized ? repository.binarySized(values) : repository.binary(values);
             }
 
-            assertThat(variant, result.entries().stream().map(JdbcClient.BatchResult.Entry::itemIndex).toList(), is(List.of(0, 1, 2)));
+            assertThat(variant, result.entries().stream().map(JdbcClient.BatchResult.Entry::itemIndex).toList(),
+                       is(List.of(0, 1, 2)));
             assertThat(captured.size(), is(4));
             assertThat(captured.get(0)[0], is((byte) 1));
             assertThat(captured.get(2)[0], is((byte) 2));
@@ -320,7 +328,7 @@ class GeneratedBatchTest {
         when(connection.getAutoCommit()).thenReturn(true);
         when(connection.prepareStatement(anyString())).thenReturn(statement);
         when(statement.executeBatch()).thenReturn(new int[] {1, 1});
-        ConfiguredBatchRepository repository = new ConfiguredBatchRepository__Jdbc(
+        Configured repository = new BatchCollisionRepository_Configured__Jdbc(
                 JdbcClient.builder().dataSource(source).build(), Config.empty());
         repository.binary(new Iterator<>() {
             private int position;
@@ -354,14 +362,14 @@ class GeneratedBatchTest {
         when(source.getConnection()).thenReturn(connection);
         when(connection.getAutoCommit()).thenReturn(true);
         when(connection.prepareStatement(anyString())).thenReturn(statement);
-        ConfiguredBatchRepository repository = new ConfiguredBatchRepository__Jdbc(
+        Configured repository = new BatchCollisionRepository_Configured__Jdbc(
                 JdbcClient.builder().dataSource(source).build(), Config.empty());
         when(statement.executeBatch()).thenReturn(new int[] {0, Statement.SUCCESS_NO_INFO});
         JdbcClient.BatchResult success = repository.scalar(List.of("first", "second"), null);
         assertThat(success.entries().stream().map(JdbcClient.BatchResult.Entry::status).toList(),
                    is(List.of(JdbcClient.BatchResult.Status.EXACT_COUNT, JdbcClient.BatchResult.Status.SUCCESS_NO_INFO)));
         assertThat(success.entries().getFirst().updateCount().orElseThrow(), is(0L));
-        assertThat(success.totalUpdateCount().isEmpty(), is(true));
+        assertThat(success.totalUpdateCount(), is(OptionalLong.empty()));
         assertThrows(UnsupportedOperationException.class, () -> success.entries().clear());
         doThrow(new BatchUpdateException("DRIVER_CANARY", "23000", 17, new int[] {1})).when(statement).executeBatch();
         JdbcBatchException partial = assertThrows(JdbcBatchException.class,
@@ -397,10 +405,10 @@ class GeneratedBatchTest {
         when(source.getConnection()).thenReturn(connection);
         when(connection.getAutoCommit()).thenReturn(true);
         when(connection.prepareStatement("INSERT INTO T VALUES (?, ?)")).thenReturn(statement);
-        BatchCollisionRepository repository = new BatchCollisionRepository__Jdbc(
+        Literal repository = new BatchCollisionRepository_Literal__Jdbc(
                 JdbcClient.builder().dataSource(source).build());
-        for (BiFunction<int[], byte[], JdbcClient.BatchResult> execute :
-                List.<BiFunction<int[], byte[], JdbcClient.BatchResult>>of(
+        for (BiFunction<int[], byte[], JdbcClient.BatchResult> execute
+                : List.<BiFunction<int[], byte[], JdbcClient.BatchResult>>of(
                         repository::array, repository::inferredArray, repository::explicitArray)) {
             assertThat(execute.apply(new int[0], new byte[0]).totalUpdateCount().orElseThrow(), is(0L));
             assertThrows(IllegalArgumentException.class, () -> execute.apply(new int[] {1}, new byte[0]));
@@ -408,7 +416,7 @@ class GeneratedBatchTest {
             JdbcClient.BatchResult result = execute.apply(new int[] {1, 2}, new byte[] {3, 4});
             assertThat(result.entries().stream().map(JdbcClient.BatchResult.Entry::status).toList(),
                        is(List.of(JdbcClient.BatchResult.Status.EXACT_COUNT, JdbcClient.BatchResult.Status.SUCCESS_NO_INFO)));
-            assertThat(result.totalUpdateCount().isEmpty(), is(true));
+            assertThat(result.totalUpdateCount(), is(OptionalLong.empty()));
             when(statement.executeBatch()).thenReturn(new int[] {1});
             JdbcBatchException failure = assertThrows(JdbcBatchException.class,
                     () -> execute.apply(new int[] {1, 2}, new byte[] {3, 4}));
@@ -448,7 +456,7 @@ class GeneratedBatchTest {
             verifyZeroInteractions(bindings);
             return result;
         });
-        BatchCollisionRepository repository = new BatchCollisionRepository__Jdbc(client);
+        Literal repository = new BatchCollisionRepository_Literal__Jdbc(client);
         assertThat(repository.array(new int[0], new byte[0]), sameInstance(result));
     }
 
@@ -475,11 +483,11 @@ class GeneratedBatchTest {
             assertThat(count, is(2));
             return result;
         });
-        BatchCollisionRepository repository = new BatchCollisionRepository__Jdbc(client);
-        BatchCollisionRepository.Item.ACCESSES.set(0);
+        Literal repository = new BatchCollisionRepository_Literal__Jdbc(client);
+        Literal.Item.ACCESSES.set(0);
         assertThat(repository.insert(Arrays.asList("value", null), "constant",
-                List.of(new BatchCollisionRepository.Item("first", 1),
-                        new BatchCollisionRepository.Item("second", null)).iterator()), is(result));
+                List.of(new Literal.Item("first", 1),
+                        new Literal.Item("second", null)).iterator()), is(result));
         verify(client).create("INSERT INTO T VALUES (?, ?, ?, ?, ?, ?)");
         verify(bindings).bind(1, "value");
         verify(bindings).bind(3, "value");
@@ -487,28 +495,32 @@ class GeneratedBatchTest {
         verify(bindings).bindNull(3, JDBCType.VARCHAR);
         verify(bindings).bind(4, "first");
         verify(bindings).bind(6, "first");
-        assertThat(BatchCollisionRepository.Item.ACCESSES.get(), is(2));
+        assertThat(Literal.Item.ACCESSES.get(), is(2));
         verify(bindings).bindNull(5, JDBCType.INTEGER);
     }
 
     @Test
     void checksSourceNullBeforeStaging() {
         JdbcClient client = mock(JdbcClient.class);
-        BatchCollisionRepository repository = new BatchCollisionRepository__Jdbc(client);
+        Literal repository = new BatchCollisionRepository_Literal__Jdbc(client);
         assertThrows(NullPointerException.class, () -> repository.array(null, (byte[]) null));
+        assertThrows(NullPointerException.class, () -> repository.insert(List.of(), "constant", null));
         verifyZeroInteractions(client);
     }
     @Test
     void alignmentAndEmptyCapturePerformNoJdbcWork() {
         DataSource source = mock(DataSource.class);
         JdbcClient client = JdbcClient.builder().dataSource(source).build();
-        BatchCollisionRepository repository = new BatchCollisionRepository__Jdbc(client);
+        Literal repository = new BatchCollisionRepository_Literal__Jdbc(client);
         assertThat(repository.array(new int[0], new byte[0]).entries().size(), is(0));
         assertThrows(IllegalArgumentException.class, () -> repository.array(new int[] {1}, new byte[0]));
         assertThrows(IllegalArgumentException.class, () -> repository.array(new int[] {1, 2}, (byte) 3));
         verifyZeroInteractions(source);
     }
 
+    /**
+     * Primitive array elements use scalar setters and release resources without completing a transaction.
+     */
     @Test
     void executesAlignedPrimitiveArraysThroughRealCapture() throws Exception {
         DataSource source = mock(DataSource.class);
@@ -519,50 +531,63 @@ class GeneratedBatchTest {
         when(connection.prepareStatement(anyString())).thenReturn(statement);
         when(statement.executeBatch()).thenReturn(new int[] {1, 1});
         JdbcClient client = JdbcClient.builder().dataSource(source).build();
-        BatchCollisionRepository repository = new BatchCollisionRepository__Jdbc(client);
+        Literal repository = new BatchCollisionRepository_Literal__Jdbc(client);
         assertThat(repository.array(new int[] {1, 2}, (byte) 3, (byte) 4).entries().size(), is(2));
         verify(statement).setInt(1, 1);
         verify(statement).setInt(1, 2);
         verify(statement).setByte(2, (byte) 3);
         verify(statement).setByte(2, (byte) 4);
+        verify(statement, never()).setNull(anyInt(), anyInt());
         verify(statement).executeBatch();
+        verify(statement).close();
         verify(connection).close();
+        verify(connection, never()).commit();
+        verify(connection, never()).rollback();
     }
 
     @Test
     void recordAccessorAndNullRecordFailuresPrecedeAcquisition() {
         DataSource source = mock(DataSource.class);
         JdbcClient client = JdbcClient.builder().dataSource(source).build();
-        BatchCollisionRepository repository = new BatchCollisionRepository__Jdbc(client);
+        Literal repository = new BatchCollisionRepository_Literal__Jdbc(client);
         assertThrows(IllegalStateException.class, () -> repository.insert(List.of("value"), "constant",
-                List.of(new BatchCollisionRepository.Item("fail", 1)).iterator()));
+                List.of(new Literal.Item("fail", 1)).iterator()));
         assertThrows(NullPointerException.class, () -> repository.insert(List.of("value"), "constant",
-                Arrays.asList((BatchCollisionRepository.Item) null).iterator()));
+                Arrays.asList((Literal.Item) null).iterator()));
         verifyZeroInteractions(source);
     }
 
     /**
-     * An application iterator failure propagates unchanged before the generated adapter acquires JDBC resources.
+     * Iterator creation and traversal failures precede JDBC acquisition, and application failures retain their identity.
      */
     @Test
-    void iteratorFailurePreservesIdentityBeforeAcquisition() {
+    void iteratorFailuresPrecedeAcquisition() {
         DataSource source = mock(DataSource.class);
         JdbcClient client = JdbcClient.builder().dataSource(source).build();
-        BatchCollisionRepository repository = new BatchCollisionRepository__Jdbc(client);
+        Literal repository = new BatchCollisionRepository_Literal__Jdbc(client);
         IllegalStateException failure = new IllegalStateException("The application iterator failed.");
-        Iterator<BatchCollisionRepository.Item> iterator = new Iterator<>() {
+        Iterator<Literal.Item> iterator = new Iterator<>() {
             @Override
             public boolean hasNext() {
                 return true;
             }
 
             @Override
-            public BatchCollisionRepository.Item next() {
+            public Literal.Item next() {
                 throw failure;
             }
         };
         assertThat(assertThrows(IllegalStateException.class,
                 () -> repository.insert(List.of("value"), "constant", iterator)), sameInstance(failure));
+        Iterable<String> missingIterator = () -> null;
+        NullPointerException literal = assertThrows(NullPointerException.class,
+                () -> repository.originalAdapterNames(missingIterator, null));
+        assertThat(literal.getMessage(), is("The batch iterator must not be null."));
+        Configured configured = new BatchCollisionRepository_Configured__Jdbc(client, Config.empty());
+        NullPointerException prepared = assertThrows(NullPointerException.class,
+                () -> configured.scalar(missingIterator, null));
+        assertThat(prepared.getMessage(), is("The batch iterator must not be null."));
+        assertThrows(NullPointerException.class, () -> configured.aliases(null, new long[0]));
         verifyZeroInteractions(source);
     }
 
@@ -580,7 +605,7 @@ class GeneratedBatchTest {
         when(connection.prepareStatement("UPDATE T SET NAME = ?, LABEL = ?, EMAIL = ? WHERE ID = ?"))
                 .thenReturn(statement);
         when(statement.executeBatch()).thenReturn(new int[] {1, 0});
-        BatchCollisionRepository repository = new BatchCollisionRepository__Jdbc(
+        Literal repository = new BatchCollisionRepository_Literal__Jdbc(
                 JdbcClient.builder().dataSource(source).build());
         String input = "alias ' OR '1'='1";
         Iterator<String> values = Arrays.asList(input, null).stream().peek(_ -> captured.incrementAndGet()).iterator();
@@ -610,7 +635,7 @@ class GeneratedBatchTest {
     @Test
     void aliasedSourcesPreserveEmptyNullAndUnequalLengthBoundaries() {
         DataSource source = mock(DataSource.class);
-        BatchCollisionRepository repository = new BatchCollisionRepository__Jdbc(
+        Literal repository = new BatchCollisionRepository_Literal__Jdbc(
                 JdbcClient.builder().dataSource(source).build());
         assertThat(repository.aliases(new long[0], List.<String>of().iterator(), null).totalUpdateCount().orElseThrow(), is(0L));
         assertThrows(NullPointerException.class, () -> repository.aliases(null, List.<String>of().iterator(), null));
@@ -646,10 +671,10 @@ class GeneratedBatchTest {
         when(connection.prepareStatement("UPDATE T SET NAME = ?, EMAIL = ? WHERE ID = ? OR ID = ?"))
                 .thenReturn(statement);
         when(statement.executeBatch()).thenReturn(new int[] {1});
-        BatchCollisionRepository repository = new BatchCollisionRepository__Jdbc(
+        Literal repository = new BatchCollisionRepository_Literal__Jdbc(
                 JdbcClient.builder().dataSource(source).build());
 
-        assertThat(repository.aliasedRecords(null, List.of(new BatchCollisionRepository.ItemChange("record", 42)))
+        assertThat(repository.aliasedRecords(null, List.of(new Literal.ItemChange("record", 42)))
                            .totalUpdateCount().orElseThrow(), is(1L));
         verify(statement).setString(1, "record");
         verify(statement).setNull(2, Types.VARCHAR);
@@ -670,7 +695,7 @@ class GeneratedBatchTest {
         when(connection.prepareStatement(anyString())).thenReturn(statement);
         when(statement.executeBatch()).thenThrow(new BatchUpdateException(
                 "The driver supplied private details.", "23000", 17, new int[] {1, Statement.EXECUTE_FAILED}));
-        BatchCollisionRepository repository = new BatchCollisionRepository__Jdbc(
+        Literal repository = new BatchCollisionRepository_Literal__Jdbc(
                 JdbcClient.builder().dataSource(source).build());
 
         JdbcBatchException failure = assertThrows(JdbcBatchException.class, () -> repository.aliases(
@@ -680,7 +705,7 @@ class GeneratedBatchTest {
         assertThat(failure.result().entries().stream().map(JdbcClient.BatchResult.Entry::status).toList(),
                    is(List.of(JdbcClient.BatchResult.Status.EXACT_COUNT, JdbcClient.BatchResult.Status.EXECUTE_FAILED,
                               JdbcClient.BatchResult.Status.NOT_REPORTED)));
-        assertThat(failure.result().totalUpdateCount().isEmpty(), is(true));
+        assertThat(failure.result().totalUpdateCount(), is(OptionalLong.empty()));
         verify(statement, times(3)).addBatch();
         verify(statement).executeBatch();
         verify(statement).close();
@@ -699,7 +724,7 @@ class GeneratedBatchTest {
         when(connection.prepareStatement(anyString())).thenReturn(statement);
         when(statement.executeBatch()).thenReturn(new int[] {1});
         doThrow(new SQLException("The driver supplied private cleanup details.")).when(statement).close();
-        BatchCollisionRepository repository = new BatchCollisionRepository__Jdbc(
+        Literal repository = new BatchCollisionRepository_Literal__Jdbc(
                 JdbcClient.builder().dataSource(source).build());
 
         JdbcBatchException failure = assertThrows(JdbcBatchException.class, () -> repository.aliases(
@@ -726,7 +751,7 @@ class GeneratedBatchTest {
         when(connection.prepareStatement(anyString())).thenReturn(statement);
         when(statement.executeBatch()).thenReturn(new int[] {1, 1}, new int[] {1, 1}, new int[] {1});
         JdbcClient client = JdbcClient.builder().dataSource(source).build();
-        BatchCollisionRepository literal = new BatchCollisionRepository__Jdbc(client);
+        Literal literal = new BatchCollisionRepository_Literal__Jdbc(client);
         JdbcClient.BatchResult result = literal.sized(
                 () -> List.of("one", "two", "three", "four", "five").stream()
                         .peek(_ -> captured.incrementAndGet()).iterator(),
@@ -741,7 +766,7 @@ class GeneratedBatchTest {
         Config config = mock(Config.class);
         when(config.get(anyString())).thenAnswer(call -> Config.just(ConfigSources.create(Map.of(
                 "app.sized", "INSERT INTO T VALUES (:email, :name, :name)"))).get((String) call.getArgument(0)));
-        ConfiguredBatchRepository configured = new ConfiguredBatchRepository__Jdbc(client, config);
+        Configured configured = new BatchCollisionRepository_Configured__Jdbc(client, config);
         when(statement.executeBatch()).thenReturn(new int[] {1, 1}, new int[] {1, 1}, new int[] {1});
         captured.set(0);
         Iterable<String> names = () -> List.of("one", "two", "three", "four", "five").stream()
@@ -761,15 +786,16 @@ class GeneratedBatchTest {
     void sizedGeneratedSourcesAndAccessorsFailBeforeAnySubmission() throws SQLException {
         DataSource source = mock(DataSource.class);
         JdbcClient client = JdbcClient.builder().dataSource(source).build();
-        ConfiguredBatchRepository repository = new ConfiguredBatchRepository__Jdbc(client, Config.empty());
-        ConfiguredBatchRepository.Change.ACCESSES.set(0);
-        List<ConfiguredBatchRepository.Change> brokenRecords = List.of(
-                new ConfiguredBatchRepository.Change("one", 1L), new ConfiguredBatchRepository.Change("two", 2L),
-                new ConfiguredBatchRepository.Change("three", 3L), new ConfiguredBatchRepository.Change("four", 4L),
-                new ConfiguredBatchRepository.Change("fail", 5L));
-        assertThat(assertThrows(IllegalStateException.class, () -> repository.sizedRecords(brokenRecords.iterator())).getMessage(),
+        Configured repository = new BatchCollisionRepository_Configured__Jdbc(client, Config.empty());
+        Configured.Change.ACCESSES.set(0);
+        List<Configured.Change> brokenRecords = List.of(
+                new Configured.Change("one", 1L), new Configured.Change("two", 2L),
+                new Configured.Change("three", 3L), new Configured.Change("four", 4L),
+                new Configured.Change("fail", 5L));
+        assertThat(assertThrows(IllegalStateException.class,
+                                () -> repository.sizedRecords(brokenRecords.iterator())).getMessage(),
                    is("The configured record accessor failed."));
-        assertThat(ConfiguredBatchRepository.Change.ACCESSES.get(), is(5));
+        assertThat(Configured.Change.ACCESSES.get(), is(5));
         IllegalStateException application = new IllegalStateException("The fifth source item failed.");
         Iterable<String> brokenSource = () -> new Iterator<>() {
             private int position;
@@ -787,23 +813,24 @@ class GeneratedBatchTest {
                 return "value";
             }
         };
-        assertThat(assertThrows(IllegalStateException.class, () -> repository.sized(brokenSource, null)), sameInstance(application));
+        assertThat(assertThrows(IllegalStateException.class, () -> repository.sized(brokenSource, null)),
+                   sameInstance(application));
         verifyZeroInteractions(source);
-        ConfiguredBatchRepository.Change.ACCESSES.set(0);
+        Configured.Change.ACCESSES.set(0);
         Connection connection = mock(Connection.class);
         PreparedStatement statement = mock(PreparedStatement.class);
         when(source.getConnection()).thenAnswer(_ -> {
-            assertThat(ConfiguredBatchRepository.Change.ACCESSES.get(), is(5));
+            assertThat(Configured.Change.ACCESSES.get(), is(5));
             return connection;
         });
         when(connection.getAutoCommit()).thenReturn(true);
         when(connection.prepareStatement(anyString())).thenReturn(statement);
         when(statement.executeBatch()).thenReturn(new int[] {1, 1}, new int[] {1, 1}, new int[] {1});
-        assertThat(repository.sizedRecords(List.of(new ConfiguredBatchRepository.Change(null, null),
-                new ConfiguredBatchRepository.Change("two", 2L), new ConfiguredBatchRepository.Change("three", 3L),
-                new ConfiguredBatchRepository.Change("four", 4L), new ConfiguredBatchRepository.Change("five", 5L)).iterator())
+        assertThat(repository.sizedRecords(List.of(new Configured.Change(null, null),
+                new Configured.Change("two", 2L), new Configured.Change("three", 3L),
+                new Configured.Change("four", 4L), new Configured.Change("five", 5L)).iterator())
                            .totalUpdateCount().orElseThrow(), is(5L));
-        assertThat(ConfiguredBatchRepository.Change.ACCESSES.get(), is(5));
+        assertThat(Configured.Change.ACCESSES.get(), is(5));
         verify(statement).setNull(1, JDBCType.VARCHAR.getVendorTypeNumber());
         verify(statement).setNull(2, JDBCType.BIGINT.getVendorTypeNumber());
         verify(statement, times(3)).executeBatch();

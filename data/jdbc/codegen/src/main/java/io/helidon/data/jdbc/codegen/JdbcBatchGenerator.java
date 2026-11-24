@@ -76,8 +76,11 @@ final class JdbcBatchGenerator {
                 method.addContent(parameter + (source.iterable() ? ".iterator()" : ""));
             }
             method.addContentLine(";");
-            method.addContent(Objects.class).addContent(".requireNonNull(" + iterators.get(i))
-                    .addContentLine(", \"The batch iterator must not be null.\");");
+            // Direct Iterator sources were already checked at the method boundary.
+            if (source.array() || source.iterable()) {
+                method.addContent(Objects.class).addContent(".requireNonNull(" + iterators.get(i))
+                        .addContentLine(", \"The batch iterator must not be null.\");");
+            }
         }
         method.addContent("return new ").addContent(Iterator.class).addContentLine("<Object[]>() {")
                 .addContentLine("public boolean hasNext() {");
@@ -133,23 +136,28 @@ final class JdbcBatchGenerator {
         }
         for (JdbcSqlParameterPlan.Bind bind : plan.parameterPlan().binds()) {
             String value = row + "[" + slots.get(bind.parameter()) + "]";
-            method.addContentLine("if (" + value + " == null) {")
-                    .addContent(bindings + ".bindNull(");
+            if (bind.nullable()) {
+                method.addContentLine("if (" + value + " == null) {")
+                        .addContent(bindings + ".bindNull(");
+                if (plan.configured() && !batch.inputNames().isEmpty()) {
+                    method.addContentLiteral(JdbcSqlParameterPlan.effectiveName(bind.parameter()));
+                } else {
+                    method.addContent(String.valueOf(bind.position()));
+                }
+                method.addContent(", ")
+                        .addContent(JdbcCodegenTypes.JDBC_TYPE).addContentLine("." + bind.nullJdbcTypeConstant() + ");")
+                        .decreaseContentPadding().addContentLine("} else {");
+            }
+            method.addContent(bindings + ".bind(");
             if (plan.configured() && !batch.inputNames().isEmpty()) {
                 method.addContentLiteral(JdbcSqlParameterPlan.effectiveName(bind.parameter()));
             } else {
                 method.addContent(String.valueOf(bind.position()));
             }
-            method.addContent(", ")
-                    .addContent(JdbcCodegenTypes.JDBC_TYPE).addContentLine("." + bind.nullJdbcTypeConstant() + ");")
-                    .decreaseContentPadding().addContentLine("} else {")
-                    .addContent(bindings + ".bind(");
-            if (plan.configured() && !batch.inputNames().isEmpty()) {
-                method.addContentLiteral(JdbcSqlParameterPlan.effectiveName(bind.parameter()));
-            } else {
-                method.addContent(String.valueOf(bind.position()));
+            method.addContentLine(", " + value + ");");
+            if (bind.nullable()) {
+                method.addContentLine("}");
             }
-            method.addContentLine(", " + value + ");").addContentLine("}");
         }
         method.decreaseContentPadding().addContentLine("});");
     }

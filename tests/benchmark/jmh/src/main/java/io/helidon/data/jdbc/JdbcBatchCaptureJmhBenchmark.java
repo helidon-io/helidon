@@ -181,6 +181,8 @@ public class JdbcBatchCaptureJmhBenchmark {
     /**
      * Supplies finite batches with a scalar identifier as well as the repeated payload.
      */
+    // JMH parameter fields remain public so derived benchmark states can use the configured values.
+    @SuppressWarnings("checkstyle:VisibilityModifier")
     @State(Scope.Thread)
     public static class CaptureState {
         /**

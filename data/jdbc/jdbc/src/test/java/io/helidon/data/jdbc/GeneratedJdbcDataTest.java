@@ -172,7 +172,9 @@ class GeneratedJdbcDataTest {
     @Test
     void alternateProviderRetainsDefaultBatchBoundaryWithoutTraversal() {
         AlternateStatement statement = new AlternateStatement();
-        Iterable<Integer> source = () -> { throw new AssertionError("The source must not be traversed."); };
+        Iterable<Integer> source = () -> {
+            throw new AssertionError("The source must not be traversed.");
+        };
         assertThrows(NullPointerException.class, () -> statement.executeBatch(null, null));
         assertThrows(NullPointerException.class, () -> statement.executeBatch(source, null));
         assertThrows(UnsupportedOperationException.class, () -> statement.executeBatch(source, (_, _) -> { }));
@@ -275,7 +277,9 @@ class GeneratedJdbcDataTest {
     @Test
     void sizedBatchDefaultsValidateBeforeRejectingWithoutDelegation() {
         JdbcClient.Statement statement = new AlternateStatement();
-        Iterable<Integer> forbidden = () -> { throw new AssertionError("The default must not traverse the source."); };
+        Iterable<Integer> forbidden = () -> {
+            throw new AssertionError("The default must not traverse the source.");
+        };
         JdbcClient.BatchBinder<Integer> binder = (_, _) -> {
             throw new AssertionError("The default must not invoke the binder.");
         };

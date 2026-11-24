@@ -106,6 +106,8 @@ public interface BatchRepository extends BatchAliasStatements<String> {
     @Jdbc.Execution(Jdbc.ExecutionType.AUTO)
     JdbcClient.BatchResult aligned(Iterator<String> rows, String statement, long... iterator);
 
+    // The parameter deliberately matches the generated SQL field name while retaining its inherited alias.
+    @SuppressWarnings("checkstyle:ParameterName")
     @Override
     @Jdbc.Statement("INSERT INTO CONTACT (NAME, EMAIL) VALUES (:rows, :email)")
     @Jdbc.Execution(Jdbc.ExecutionType.AUTO)
@@ -206,6 +208,8 @@ public interface BatchRepository extends BatchAliasStatements<String> {
     @Jdbc.Statement("${application.batches.aligned:UPDATE CONTACT SET NAME = ?, EMAIL = ? WHERE ID = ? AND NAME <> ? AND ID = ?}")
     JdbcClient.BatchResult configuredAligned(Iterable<Change> rows, Iterator<Rename> filters);
 
+    // The aliased parameter deliberately matches the generated SQL field name.
+    @SuppressWarnings("checkstyle:ParameterName")
     @Jdbc.Statement("${application.batches.aliases:UPDATE CONTACT SET NAME = :name, EMAIL = :email WHERE ID = :id OR ID = :id}")
     JdbcClient.BatchResult configuredAliases(@Data.Param("name") Iterator<String> jdbcClient,
                                            @Data.Param("email") String SQL_CONFIGURED_ALIASES,

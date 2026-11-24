@@ -169,7 +169,7 @@ final class JdbcRepositoryClassGenerator {
                         .addContent(nodeName).addContent(".type() != ").addContent(JdbcCodegenTypes.CONFIG)
                         .addContentLine(".Type.VALUE) {")
                         .addContent("throw new ").addContent(JdbcCodegenTypes.DATA_EXCEPTION)
-                        .addContentLine("(\"The configured SQL must be a single value, not an object or list.\");")
+                        .addContentLine("(\"The configured SQL must be a scalar value.\");")
                         .addContentLine("}")
                         .addContent(sqlName).addContent(" = ").addContent(nodeName).addContent(".asString()");
                 if (reference.defaultSql() == null) {

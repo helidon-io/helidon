@@ -125,7 +125,8 @@ public abstract class AbstractDeclarativeBatchContract extends AbstractJdbcBatch
                                                               boolean configured, boolean sized) {
         BatchRepository repository = service(BatchRepository.class);
         if (configured) {
-            return sized ? repository.repeatedBinaryConfiguredSized(values, ids) : repository.repeatedBinaryConfigured(values, ids);
+            return sized ? repository.repeatedBinaryConfiguredSized(values, ids)
+                    : repository.repeatedBinaryConfigured(values, ids);
         }
         return sized ? repository.repeatedBinarySized(values, ids) : repository.repeatedBinary(values, ids);
     }
@@ -176,13 +177,15 @@ public abstract class AbstractDeclarativeBatchContract extends AbstractJdbcBatch
             assertThat(repository.sizedArrays(new String[] {"first@example.test", null, "last@example.test"}, 1, 2, 1)
                                .entries().size(), is(3));
             assertThat(repository.sizedDuplicates(oneShot(List.of(new BatchRepository.Replacement("sized-renamed-one"),
-                    new BatchRepository.Replacement("sized-renamed-two"), new BatchRepository.Replacement("sized-renamed-three"))),
+                    new BatchRepository.Replacement("sized-renamed-two"),
+                    new BatchRepository.Replacement("sized-renamed-three"))),
                     List.of(new BatchRepository.Expected(1, "sized-record-last"),
                             new BatchRepository.Expected(1, "sized-renamed-one"),
                             new BatchRepository.Expected(1, "sized-renamed-two")).iterator()).entries().size(), is(3));
             assertThat(fixture.committedByName("sized-renamed-three").orElseThrow().id(), is(1L));
-            assertThat(repository.sizedAliases(oneShot(List.of("sized-alias-one", "sized-alias-two", "sized-alias-last")).iterator(),
-                                              null, 1, 2, 1).entries().size(), is(3));
+            assertThat(repository.sizedAliases(
+                    oneShot(List.of("sized-alias-one", "sized-alias-two", "sized-alias-last")).iterator(),
+                    null, 1, 2, 1).entries().size(), is(3));
             assertThrows(IllegalArgumentException.class,
                     () -> repository.sizedArrays(new String[] {"invalid-one", "invalid-two", "invalid-three", "invalid-four"},
                                                   1, 2, 1));
@@ -210,8 +213,9 @@ public abstract class AbstractDeclarativeBatchContract extends AbstractJdbcBatch
         assertThat(fixture.committedByName("sized-config-rollback-one"), is(Optional.empty()));
         assertThat(fixture.committedByName("sized-config-rollback-three"), is(Optional.empty()));
         JdbcBatchException failure = assertThrows(JdbcBatchException.class,
-                () -> repository.sizedConfigured(oneShot(Arrays.asList("sized-config-before-one", "sized-config-before-two",
-                                                                       null, "sized-config-may-run", "sized-config-never")), null));
+                () -> repository.sizedConfigured(oneShot(Arrays.asList(
+                        "sized-config-before-one", "sized-config-before-two", null,
+                        "sized-config-may-run", "sized-config-never")), null));
         assertThat(failure.result().entries().get(4).status(), is(JdbcClient.BatchResult.Status.NOT_REPORTED));
         assertThat(fixture.committedByName("sized-config-before-one").isPresent(), is(true));
         assertThat(fixture.committedByName("sized-config-never"), is(Optional.empty()));
@@ -344,7 +348,8 @@ public abstract class AbstractDeclarativeBatchContract extends AbstractJdbcBatch
         }
         restartBatch(clean);
         assertThrows(DataException.class, () -> service(BatchRepository.Required.class).insert(forbidden));
-        assertThat(service(BatchRepository.class).configuredInsert(oneShot(List.of("after-invalid")), null).entries().size(), is(1));
+        assertThat(service(BatchRepository.class).configuredInsert(oneShot(List.of("after-invalid")), null)
+                           .entries().size(), is(1));
     }
 
     @Test
@@ -355,7 +360,8 @@ public abstract class AbstractDeclarativeBatchContract extends AbstractJdbcBatch
         restartBatch(Config.just(ConfigSources.create(values)));
         assertThat(service(Config.class).get("application.batches.insert").exists(), is(false));
         service(BatchRepository.class).configuredInsert(oneShot(List.of("configured-default")), null);
-        assertThat(service(DatabaseFixture.class).committedByName("configured-default").orElseThrow().email(), is(Optional.empty()));
+        assertThat(service(DatabaseFixture.class).committedByName("configured-default").orElseThrow().email(),
+                   is(Optional.empty()));
         for (String shape : List.of("object", "list")) {
             Config invalid = Config.just(ConfigSources.classpath("configured-batches/invalid-" + shape + "/application.yaml"),
                     ConfigSources.create(clean.asMap().get()));
@@ -401,7 +407,8 @@ public abstract class AbstractDeclarativeBatchContract extends AbstractJdbcBatch
                 return null;
             });
             assertThat(fixture.committedByName("configured-caught").isPresent(), is(!constraintFailureAbortsTransaction()));
-            for (Tx.Type type : List.of(Tx.Type.REQUIRED, Tx.Type.SUPPORTED, Tx.Type.MANDATORY, Tx.Type.NEW, Tx.Type.UNSUPPORTED)) {
+            for (Tx.Type type : List.of(Tx.Type.REQUIRED, Tx.Type.SUPPORTED, Tx.Type.MANDATORY,
+                                       Tx.Type.NEW, Tx.Type.UNSUPPORTED)) {
                 String name = "configured-" + type;
                 assertThrows(TxException.class, () -> transactions().transaction(Tx.Type.REQUIRED, () -> {
                     repository.configuredInsert(List.of(name + "-outer"), null);
@@ -432,8 +439,8 @@ public abstract class AbstractDeclarativeBatchContract extends AbstractJdbcBatch
                 .executeBatch(List.of("imperative-one", "imperative-two"),
                         (bindings, name) -> bindings.bind(1, name).bindNull(2, JDBCType.VARCHAR));
         int mode = 0;
-        for (BiFunction<List<String>, String, JdbcClient.BatchResult> execute :
-                List.<BiFunction<List<String>, String, JdbcClient.BatchResult>>of(
+        for (BiFunction<List<String>, String, JdbcClient.BatchResult> execute
+                : List.<BiFunction<List<String>, String, JdbcClient.BatchResult>>of(
                         repository::insert, repository::insertAuto, repository::insertExplicit)) {
             List<String> names = List.of("mode-" + mode + "-one", "mode-" + mode + "-two");
             JdbcClient.BatchResult result = execute.apply(names, null);
@@ -561,7 +568,7 @@ public abstract class AbstractDeclarativeBatchContract extends AbstractJdbcBatch
         BatchRepository repository = service(BatchRepository.class);
         DatabaseFixture fixture = service(DatabaseFixture.class);
         JdbcClient.BatchResult empty = repository.insertAliased(List.of(), null);
-        assertThat(empty.entries().isEmpty(), is(true));
+        assertThat(empty.entries(), is(List.of()));
         assertThat(empty.totalUpdateCount().orElseThrow(), is(0L));
         assertThrows(IllegalArgumentException.class,
                 () -> repository.alignedAliases(List.of("mismatch-one", "mismatch-two").iterator(), null, 1));

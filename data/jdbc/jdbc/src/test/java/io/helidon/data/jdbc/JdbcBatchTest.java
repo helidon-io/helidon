@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
+
 import javax.sql.DataSource;
 
 import io.helidon.transaction.Tx;
@@ -57,8 +58,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -371,7 +372,10 @@ class JdbcBatchTest {
             when(borrowed.getAutoCommit()).thenReturn(true);
             when(borrowed.prepareStatement("INSERT INTO T VALUES (?)")).thenReturn(statement);
             when(statement.executeBatch()).thenReturn(new int[] {1});
-            doAnswer(call -> { values.add(call.getArgument(1)); return null; })
+            doAnswer(call -> {
+                values.add(call.getArgument(1));
+                return null;
+            })
                     .when(statement).setString(eq(1), anyString());
             connections.add(borrowed);
             statements.add(statement);
@@ -454,7 +458,10 @@ class JdbcBatchTest {
         assertThrows(IllegalStateException.class, () -> client.create("INSERT INTO T VALUES (?)")
                 .executeBatch(List.of(1), (_, _) -> { }));
         assertThrows(IllegalArgumentException.class, () -> client.create("INSERT INTO T VALUES (?)")
-                .executeBatch(List.of(1), (b, v) -> { b.bind(1, v); b.bind(1, v); }));
+                .executeBatch(List.of(1), (b, v) -> {
+                    b.bind(1, v);
+                    b.bind(1, v);
+                }));
         assertThrows(IllegalArgumentException.class, () -> client.create("INSERT INTO T VALUES (?)").bind(1, 2)
                 .executeBatch(List.of(1), (b, v) -> b.bind(1, v)));
         assertThrows(NullPointerException.class, () -> client.create("INSERT INTO T VALUES (?)")
@@ -497,7 +504,9 @@ class JdbcBatchTest {
     @Test
     void iteratorFailureConsumesTerminalBeforeAcquisition() {
         IllegalStateException failure = new IllegalStateException("source");
-        Iterable<Integer> items = () -> { throw failure; };
+        Iterable<Integer> items = () -> {
+            throw failure;
+        };
         JdbcClient.Statement stage = client.create("INSERT INTO T VALUES (?)");
         assertThat(assertThrows(IllegalStateException.class,
                 () -> stage.executeBatch(items, (b, v) -> b.bind(1, v))), sameInstance(failure));
@@ -622,7 +631,10 @@ class JdbcBatchTest {
     void caughtDirectFailureLeavesTransactionCompletionWithItsOwner() throws Exception {
         AtomicBoolean autoCommit = new AtomicBoolean(true);
         when(connection.getAutoCommit()).thenAnswer(_ -> autoCommit.get());
-        doAnswer(call -> { autoCommit.set(call.getArgument(0)); return null; })
+        doAnswer(call -> {
+            autoCommit.set(call.getArgument(0));
+            return null;
+        })
                 .when(connection).setAutoCommit(anyBoolean());
         JdbcTransactionConnectionManager manager = new JdbcTransactionConnectionManager();
         JdbcTxSupport tx = new JdbcTxSupport(manager, List.of(manager));
@@ -650,7 +662,10 @@ class JdbcBatchTest {
     void escapingJoinedFailureRollsBackAndRetainsBatchEvidence() throws Exception {
         AtomicBoolean autoCommit = new AtomicBoolean(true);
         when(connection.getAutoCommit()).thenAnswer(_ -> autoCommit.get());
-        doAnswer(call -> { autoCommit.set(call.getArgument(0)); return null; })
+        doAnswer(call -> {
+            autoCommit.set(call.getArgument(0));
+            return null;
+        })
                 .when(connection).setAutoCommit(anyBoolean());
         JdbcTransactionConnectionManager manager = new JdbcTransactionConnectionManager();
         JdbcTxSupport tx = new JdbcTxSupport(manager, List.of(manager));
@@ -798,7 +813,10 @@ class JdbcBatchTest {
                 for (int count : new int[] {0, 1, 2, 3, 4, 6, 7}) {
                     setup();
                     AtomicInteger queued = new AtomicInteger();
-                    doAnswer(_ -> { queued.incrementAndGet(); return null; }).when(prepared).addBatch();
+                    doAnswer(_ -> {
+                        queued.incrementAndGet();
+                        return null;
+                    }).when(prepared).addBatch();
                     when(prepared.executeBatch()).thenAnswer(_ -> {
                         int[] counts = new int[queued.getAndSet(0)];
                         Arrays.fill(counts, 1);
@@ -832,7 +850,9 @@ class JdbcBatchTest {
 
     @Test
     void sizedValidationPreservesNullPrecedenceAndAnUnconsumedStage() throws Exception {
-        Iterable<Integer> forbidden = () -> { throw new AssertionError("Validation must precede traversal."); };
+        Iterable<Integer> forbidden = () -> {
+            throw new AssertionError("Validation must precede traversal.");
+        };
         JdbcClient.BatchBinder<Integer> binder = (b, v) -> b.bind(1, v);
         for (boolean reusable : List.of(false, true)) {
             JdbcClient.Statement stage = stage(reusable, "INSERT INTO T VALUES (?)");
@@ -1104,7 +1124,10 @@ class JdbcBatchTest {
             AtomicInteger queued = new AtomicInteger();
             AtomicInteger executions = new AtomicInteger();
             submissions.add(executions);
-            doAnswer(_ -> { queued.incrementAndGet(); return null; }).when(statement).addBatch();
+            doAnswer(_ -> {
+                queued.incrementAndGet();
+                return null;
+            }).when(statement).addBatch();
             when(statement.executeBatch()).thenAnswer(_ -> {
                 executions.incrementAndGet();
                 int[] counts = new int[queued.getAndSet(0)];
@@ -1120,18 +1143,20 @@ class JdbcBatchTest {
             for (int size : new int[] {1, 2}) {
                 workers.add(Thread.ofVirtual().start(() -> {
                     try {
-                        JdbcClient.BatchResult result = definition.get().executeBatch(List.of(1, 2, 3), size, (bindings, value) -> {
-                            if (value == 1) {
-                                entered.countDown();
-                                try {
-                                    assertThat("Both captures must be released.", release.await(10, TimeUnit.SECONDS), is(true));
-                                } catch (InterruptedException interrupted) {
-                                    Thread.currentThread().interrupt();
-                                    throw new AssertionError(interrupted);
-                                }
-                            }
-                            bindings.bind("value", value);
-                        });
+                        JdbcClient.BatchResult result = definition.get().executeBatch(List.of(1, 2, 3), size,
+                                (bindings, value) -> {
+                                    if (value == 1) {
+                                        entered.countDown();
+                                        try {
+                                            assertThat("Both captures must be released.",
+                                                       release.await(10, TimeUnit.SECONDS), is(true));
+                                        } catch (InterruptedException interrupted) {
+                                            Thread.currentThread().interrupt();
+                                            throw new AssertionError(interrupted);
+                                        }
+                                    }
+                                    bindings.bind("value", value);
+                                });
                         assertThat(result.totalUpdateCount(), is(OptionalLong.of(3)));
                     } catch (Throwable problem) {
                         failure.compareAndSet(null, problem);

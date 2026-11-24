@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.builder.api.RuntimeType;
@@ -30,12 +31,14 @@ import io.helidon.codegen.apt.AptProcessor;
 import io.helidon.codegen.testing.TestCompiler;
 import io.helidon.common.Generated;
 import io.helidon.common.mapper.OptionalValue;
+import io.helidon.common.media.type.MediaType;
 import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
 import io.helidon.data.Data;
 import io.helidon.data.codegen.DataGeneratorProvider;
 import io.helidon.data.codegen.common.RepositoryCodegenProvider;
 import io.helidon.data.jdbc.JdbcClient;
+import io.helidon.data.sql.common.SqlDriver;
 import io.helidon.service.registry.Service;
 import io.helidon.transaction.Tx;
 
@@ -43,9 +46,76 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class JdbcBatchGenerationTest {
+    private static final String LITERAL_BATCH_RUNNER = """
+            package example;
+            import java.sql.Connection;
+            import java.sql.PreparedStatement;
+            import java.util.ArrayList;
+            import java.util.List;
+            import java.util.Map;
+            import java.util.TreeMap;
+            import javax.sql.DataSource;
+            import io.helidon.data.jdbc.JdbcClient;
+            import static org.hamcrest.CoreMatchers.is;
+            import static org.hamcrest.MatcherAssert.assertThat;
+            import static org.mockito.ArgumentMatchers.*;
+            import static org.mockito.Mockito.*;
+            public class Runner {
+                public static void main(String[] args) throws Exception {
+                    assertThat(args.length, is(0));
+                    DataSource source = mock(DataSource.class);
+                    Connection connection = mock(Connection.class);
+                    PreparedStatement statement = mock(PreparedStatement.class);
+                    when(source.getConnection()).thenReturn(connection);
+                    when(connection.getAutoCommit()).thenReturn(true);
+                    when(connection.prepareStatement(anyString())).thenReturn(statement);
+                    when(statement.executeBatch()).thenReturn(new int[] {1});
+                    Map<Integer, String> bindings = new TreeMap<>();
+                    List<List<String>> rows = new ArrayList<>();
+                    doAnswer(call -> {
+                        bindings.put(call.getArgument(0), call.getArgument(1));
+                        return null;
+                    }).when(statement).setString(anyInt(), anyString());
+                    doAnswer(_ -> {
+                        rows.add(List.copyOf(bindings.values()));
+                        bindings.clear();
+                        return null;
+                    }).when(statement).addBatch();
+                    JdbcClient client = JdbcClient.builder().dataSource(source).build();
+                    Child repository = new Child__Jdbc(client);
+                    assertThat(repository.aliases(List.of("FIRST"), "SECOND").totalUpdateCount().orElseThrow(), is(1L));
+                    assertThat(repository.records(List.of(new Parent.Item("FIRST", "SECOND")))
+                                       .totalUpdateCount().orElseThrow(), is(1L));
+                    assertThat(repository.aliasedIterator(List.of("FIRST").iterator(), "SECOND")
+                                       .totalUpdateCount().orElseThrow(), is(1L));
+                    assertThat(repository.aliasedArrays(new String[] {"FIRST"}, "SECOND")
+                                       .totalUpdateCount().orElseThrow(), is(1L));
+                    assertThat(repository.positionalScalar(List.of("FIRST"), "SECOND")
+                                       .totalUpdateCount().orElseThrow(), is(1L));
+                    assertThat(repository.positional(List.of(new Parent.Item("FIRST", "SECOND")),
+                            List.of(new Parent.Item("THIRD", "FOURTH")).iterator())
+                                       .totalUpdateCount().orElseThrow(), is(1L));
+                    List<List<String>> expected = new ArrayList<>(List.of(
+                            List.of("SECOND", "FIRST", "SECOND"), List.of("SECOND", "FIRST", "SECOND"),
+                            List.of("SECOND", "FIRST", "SECOND"), List.of("SECOND", "FIRST", "SECOND"),
+                            List.of("FIRST", "SECOND"),
+                            List.of("FIRST", "SECOND", "THIRD", "FOURTH")));
+                    %s
+                    assertThat(rows, is(expected));
+                    verify(statement, times(expected.size())).executeBatch();
+                    verify(statement, times(expected.size())).close();
+                    verify(connection, times(expected.size())).close();
+                    verify(connection, never()).commit();
+                    verify(connection, never()).rollback();
+                    verify(connection, never()).setAutoCommit(anyBoolean());
+                }
+            }
+            """;
+
     @Test
     void rejectsUnavailableNamesInLiteralBatchContracts() throws IOException {
         for (String declaration : List.of(
@@ -74,7 +144,7 @@ class JdbcBatchGenerationTest {
                 assertThat(parent.diagnostics().toString(), parent.success(), is(true));
                 assertThat(ClassFile.of().parse(Files.readAllBytes(parent.classOutput().resolve("example/Parent.class")))
                                    .methods().stream().filter(method -> method.methodName().equalsString("insert"))
-                                   .findFirst().orElseThrow().findAttribute(Attributes.methodParameters()).isEmpty(), is(true));
+                                   .findFirst().orElseThrow().findAttribute(Attributes.methodParameters()), is(Optional.empty()));
                 TestCompiler.Result child = TestCompiler.builder().currentRelease().printDiagnostics(false)
                         .addProcessor(AptProcessor::new)
                         .addClasspathEntries(List.of(System.getProperty("java.class.path").split(File.pathSeparator)).stream()
@@ -175,71 +245,7 @@ class JdbcBatchGenerationTest {
                            is(metadata.equals("retained")));
                 child.addClasspathEntry(parentOutput);
             }
-            child.addSource("Runner.java", """
-                    package example;
-                    import java.sql.Connection;
-                    import java.sql.PreparedStatement;
-                    import java.util.ArrayList;
-                    import java.util.List;
-                    import java.util.Map;
-                    import java.util.TreeMap;
-                    import javax.sql.DataSource;
-                    import io.helidon.data.jdbc.JdbcClient;
-                    import static org.hamcrest.CoreMatchers.is;
-                    import static org.hamcrest.MatcherAssert.assertThat;
-                    import static org.mockito.ArgumentMatchers.*;
-                    import static org.mockito.Mockito.*;
-                    public class Runner {
-                        public static void main(String[] args) throws Exception {
-                            assertThat(args.length, is(0));
-                            DataSource source = mock(DataSource.class);
-                            Connection connection = mock(Connection.class);
-                            PreparedStatement statement = mock(PreparedStatement.class);
-                            when(source.getConnection()).thenReturn(connection);
-                            when(connection.getAutoCommit()).thenReturn(true);
-                            when(connection.prepareStatement(anyString())).thenReturn(statement);
-                            when(statement.executeBatch()).thenReturn(new int[] {1});
-                            Map<Integer, String> bindings = new TreeMap<>();
-                            List<List<String>> rows = new ArrayList<>();
-                            doAnswer(call -> {
-                                bindings.put(call.getArgument(0), call.getArgument(1));
-                                return null;
-                            }).when(statement).setString(anyInt(), anyString());
-                            doAnswer(_ -> {
-                                rows.add(List.copyOf(bindings.values()));
-                                bindings.clear();
-                                return null;
-                            }).when(statement).addBatch();
-                            JdbcClient client = JdbcClient.builder().dataSource(source).build();
-                            Child repository = new Child__Jdbc(client);
-                            assertThat(repository.aliases(List.of("FIRST"), "SECOND").totalUpdateCount().orElseThrow(), is(1L));
-                            assertThat(repository.records(List.of(new Parent.Item("FIRST", "SECOND")))
-                                               .totalUpdateCount().orElseThrow(), is(1L));
-                            assertThat(repository.aliasedIterator(List.of("FIRST").iterator(), "SECOND")
-                                               .totalUpdateCount().orElseThrow(), is(1L));
-                            assertThat(repository.aliasedArrays(new String[] {"FIRST"}, "SECOND")
-                                               .totalUpdateCount().orElseThrow(), is(1L));
-                            assertThat(repository.positionalScalar(List.of("FIRST"), "SECOND")
-                                               .totalUpdateCount().orElseThrow(), is(1L));
-                            assertThat(repository.positional(List.of(new Parent.Item("FIRST", "SECOND")),
-                                    List.of(new Parent.Item("THIRD", "FOURTH")).iterator())
-                                               .totalUpdateCount().orElseThrow(), is(1L));
-                            List<List<String>> expected = new ArrayList<>(List.of(
-                                    List.of("SECOND", "FIRST", "SECOND"), List.of("SECOND", "FIRST", "SECOND"),
-                                    List.of("SECOND", "FIRST", "SECOND"), List.of("SECOND", "FIRST", "SECOND"),
-                                    List.of("FIRST", "SECOND"),
-                                    List.of("FIRST", "SECOND", "THIRD", "FOURTH")));
-                            %s
-                            assertThat(rows, is(expected));
-                            verify(statement, times(expected.size())).executeBatch();
-                            verify(statement, times(expected.size())).close();
-                            verify(connection, times(expected.size())).close();
-                            verify(connection, never()).commit();
-                            verify(connection, never()).rollback();
-                            verify(connection, never()).setAutoCommit(anyBoolean());
-                        }
-                    }
-                    """.formatted(metadata.equals("unavailable") ? "" : """
+            child.addSource("Runner.java", LITERAL_BATCH_RUNNER.formatted(metadata.equals("unavailable") ? "" : """
                             assertThat(repository.sources(List.of("FIRST"), List.of("SECOND"))
                                                .totalUpdateCount().orElseThrow(), is(1L));
                             repository.constant(List.of("FIRST"), "SECOND");
@@ -338,7 +344,8 @@ class JdbcBatchGenerationTest {
                         + File.pathSeparator + legacy.classOutput(), "example.Consumer")
                 .redirectErrorStream(true).redirectOutput(output.toFile()).start();
         try {
-            assertThat("The linkage consumer must finish within its test deadline.", process.waitFor(20, TimeUnit.SECONDS), is(true));
+            assertThat("The linkage consumer must finish within its test deadline.",
+                       process.waitFor(20, TimeUnit.SECONDS), is(true));
             assertThat(Files.readString(output), process.exitValue(), is(0));
         } finally {
             if (process.isAlive()) {
@@ -432,7 +439,7 @@ class JdbcBatchGenerationTest {
                 """);
         assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
         String source = Files.readString(result.sourceOutput().resolve("example/BatchRepository__Jdbc.java"));
-        assertThat(source.contains(".executeBatch("), is(false));
+        assertThat(source, not(containsString(".executeBatch(")));
         assertThat(source, containsString(".generatedKeys()"));
         assertThat(source, containsString(".map("));
 
@@ -480,7 +487,7 @@ class JdbcBatchGenerationTest {
                 """);
         assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
         String source = Files.readString(result.sourceOutput().resolve("example/BatchRepository__Jdbc.java"));
-        assertThat(source.contains(".executeBatch("), is(false));
+        assertThat(source, not(containsString(".executeBatch(")));
         assertThat(source, containsString(".execute()"));
         for (String declaration : List.of(
                 "Optional<JdbcClient.BatchResult> run(String rows)",
@@ -505,7 +512,7 @@ class JdbcBatchGenerationTest {
                     }
                     """.formatted(declaration));
             assertThat(declaration + " " + invalid.diagnostics(), invalid.success(), is(false));
-            assertThat(String.join("\n", invalid.diagnostics()).contains("BATCH"), is(false));
+            assertThat(String.join("\n", invalid.diagnostics()), not(containsString("BATCH")));
         }
     }
 
@@ -543,9 +550,10 @@ class JdbcBatchGenerationTest {
             for (boolean binary : List.of(false, true)) {
                 TestCompiler.Builder child = TestCompiler.builder().currentRelease().printDiagnostics(false)
                         .addProcessor(AptProcessor::new)
-                        .addClasspath(List.of(RuntimeType.class, Config.class, OptionalValue.class, Data.class, JdbcClient.class, Service.class, Tx.class,
-                                Generated.class, TypeName.class, DataGeneratorProvider.class, RepositoryCodegenProvider.class,
-                                JdbcRepositoryGeneratorProvider.class))
+                        .addClasspath(List.of(RuntimeType.class, Config.class, OptionalValue.class, Data.class,
+                                              JdbcClient.class, Service.class, Tx.class, Generated.class, TypeName.class,
+                                              DataGeneratorProvider.class, RepositoryCodegenProvider.class,
+                                              JdbcRepositoryGeneratorProvider.class))
                         .addSource("Child.java", """
                                 package example;
                                 import io.helidon.data.Data;
@@ -718,9 +726,10 @@ class JdbcBatchGenerationTest {
         for (boolean binary : List.of(false, true)) {
             TestCompiler.Builder child = TestCompiler.builder().currentRelease().printDiagnostics(false)
                     .addProcessor(AptProcessor::new)
-                    .addClasspath(List.of(RuntimeType.class, Config.class, OptionalValue.class, Data.class, JdbcClient.class, Service.class, Tx.class,
-                            Generated.class, TypeName.class, DataGeneratorProvider.class, RepositoryCodegenProvider.class,
-                            JdbcRepositoryGeneratorProvider.class))
+                    .addClasspath(List.of(RuntimeType.class, Config.class, OptionalValue.class, Data.class,
+                                          JdbcClient.class, Service.class, Tx.class, Generated.class, TypeName.class,
+                                          DataGeneratorProvider.class, RepositoryCodegenProvider.class,
+                                          JdbcRepositoryGeneratorProvider.class))
                     .addSource("Child.java", """
                             package example;
                             import io.helidon.data.Data;
@@ -730,7 +739,8 @@ class JdbcBatchGenerationTest {
                             """);
             if (binary) {
                 TestCompiler.Result parent = TestCompiler.builder().currentRelease().printDiagnostics(false)
-                        .addClasspath(List.of(Data.class, JdbcClient.class)).addSource("Parent.java", contracts).build().compile();
+                        .addClasspath(List.of(Data.class, JdbcClient.class))
+                        .addSource("Parent.java", contracts).build().compile();
                 assertThat(parent.diagnostics().toString(), parent.success(), is(true));
                 child.addClasspathEntry(parent.classOutput());
             } else {
@@ -749,8 +759,10 @@ class JdbcBatchGenerationTest {
     void validatesNamedDefaultsAndAliasesAgainstActualBinaryNameMetadata() {
         for (String scenario : List.of("missing-alias-input", "missing-default-input", "retained-arg0")) {
             String declaration = scenario.equals("missing-alias-input")
-                    ? "@Jdbc.Statement(\"${app.sql}\") JdbcClient.BatchResult run(@Data.Param(\"value\") Iterable<T> rows, T constant);"
-                    : "@Jdbc.Statement(\"${app.sql:insert into T values (:arg0)}\") JdbcClient.BatchResult run(Iterable<T> arg0);";
+                    ? "@Jdbc.Statement(\"${app.sql}\") "
+                            + "JdbcClient.BatchResult run(@Data.Param(\"value\") Iterable<T> rows, T constant);"
+                    : "@Jdbc.Statement(\"${app.sql:insert into T values (:arg0)}\") "
+                            + "JdbcClient.BatchResult run(Iterable<T> arg0);";
             TestCompiler.Builder parent = TestCompiler.builder().currentRelease().printDiagnostics(false)
                     .addClasspath(List.of(Data.class, JdbcClient.class))
                     .addSource("Parent.java", """
@@ -1183,9 +1195,10 @@ class JdbcBatchGenerationTest {
         assertThat(String.join("\n", parent.diagnostics()), parent.success(), is(true));
         TestCompiler.Result child = TestCompiler.builder().currentRelease().printDiagnostics(false)
                 .addProcessor(AptProcessor::new)
-                .addClasspath(List.of(RuntimeType.class, Config.class, OptionalValue.class, Data.class, JdbcClient.class, Service.class, Tx.class,
-                        Generated.class, TypeName.class, DataGeneratorProvider.class, RepositoryCodegenProvider.class,
-                        JdbcRepositoryGeneratorProvider.class))
+                .addClasspath(List.of(RuntimeType.class, Config.class, OptionalValue.class, Data.class,
+                                      JdbcClient.class, Service.class, Tx.class, Generated.class, TypeName.class,
+                                      DataGeneratorProvider.class, RepositoryCodegenProvider.class,
+                                      JdbcRepositoryGeneratorProvider.class))
                 .addClasspathEntry(parent.classOutput())
                 .addSource("Child.java", """
                         package example;
@@ -1215,9 +1228,10 @@ class JdbcBatchGenerationTest {
         assertThat(String.join("\n", parent.diagnostics()), parent.success(), is(true));
         TestCompiler.Result child = TestCompiler.builder().currentRelease().printDiagnostics(false)
                 .addProcessor(AptProcessor::new)
-                .addClasspath(List.of(RuntimeType.class, Config.class, OptionalValue.class, Data.class, JdbcClient.class, Service.class, Tx.class,
-                        Generated.class, TypeName.class, DataGeneratorProvider.class, RepositoryCodegenProvider.class,
-                        JdbcRepositoryGeneratorProvider.class))
+                .addClasspath(List.of(RuntimeType.class, Config.class, OptionalValue.class, Data.class,
+                                      JdbcClient.class, Service.class, Tx.class, Generated.class, TypeName.class,
+                                      DataGeneratorProvider.class, RepositoryCodegenProvider.class,
+                                      JdbcRepositoryGeneratorProvider.class))
                 .addClasspathEntry(parent.classOutput())
                 .addSource("Child.java", """
                         package example;
@@ -1263,7 +1277,8 @@ class JdbcBatchGenerationTest {
     @Test
     void rejectsSizingOnOtherwiseValidNonBatchAndNonGeneratedMethods() {
         for (String declaration : List.of(
-                "@Jdbc.Statement(\"select VALUE from T where ID = ?\") @Jdbc.Execution(Jdbc.ExecutionType.QUERY) String run(long id);",
+                "@Jdbc.Statement(\"select VALUE from T where ID = ?\") "
+                        + "@Jdbc.Execution(Jdbc.ExecutionType.QUERY) String run(long id);",
                 "@Jdbc.Statement(\"update T set VALUE = ?\") @Jdbc.Execution(Jdbc.ExecutionType.UPDATE) int run(String value);",
                 "@Jdbc.Statement(\"update T set VALUE = ?\") void run(String value);",
                 "@Jdbc.Statement(\"select VALUE from T\") String run();",
@@ -1351,9 +1366,10 @@ class JdbcBatchGenerationTest {
                 for (boolean override : List.of(false, true)) {
                     TestCompiler.Builder builder = TestCompiler.builder().currentRelease().printDiagnostics(false)
                             .addProcessor(AptProcessor::new)
-                            .addClasspath(List.of(RuntimeType.class, Config.class, OptionalValue.class, Data.class, JdbcClient.class,
-                                    Service.class, Tx.class, Generated.class, TypeName.class, DataGeneratorProvider.class,
-                                    RepositoryCodegenProvider.class, JdbcRepositoryGeneratorProvider.class));
+                            .addClasspath(List.of(RuntimeType.class, Config.class, OptionalValue.class, Data.class,
+                                                  JdbcClient.class, Service.class, Tx.class, Generated.class, TypeName.class,
+                                                  DataGeneratorProvider.class, RepositoryCodegenProvider.class,
+                                                  JdbcRepositoryGeneratorProvider.class));
                     if (binary) {
                         TestCompiler.Result parent = TestCompiler.builder().currentRelease().printDiagnostics(false)
                                 .addClasspath(List.of(JdbcClient.class)).addSource("Contracts.java", contracts).build().compile();
@@ -1381,7 +1397,8 @@ class JdbcBatchGenerationTest {
                         assertThat(Files.readString(child.sourceOutput().resolve("example/Sized__Jdbc.java")),
                                    containsString(", " + (override ? 1 : 3) + ", ("));
                     } else {
-                        assertThat(String.join("\n", child.diagnostics()), containsString("conflicting JDBC or transaction annotations"));
+                        assertThat(String.join("\n", child.diagnostics()),
+                                   containsString("conflicting JDBC or transaction annotations"));
                     }
                 }
             }
@@ -1516,7 +1533,8 @@ class JdbcBatchGenerationTest {
                         + File.pathSeparator + legacy.classOutput(), "example.Consumer")
                 .redirectErrorStream(true).redirectOutput(output.toFile()).start();
         try {
-            assertThat("The linkage consumer must finish within its test deadline.", process.waitFor(20, TimeUnit.SECONDS), is(true));
+            assertThat("The linkage consumer must finish within its test deadline.",
+                       process.waitFor(20, TimeUnit.SECONDS), is(true));
             assertThat(Files.readString(output), process.exitValue(), is(0));
         } finally {
             if (process.isAlive()) {
@@ -1529,10 +1547,20 @@ class JdbcBatchGenerationTest {
 
     @Test
     void compilesSizedAndExistingPreparationApisOnTheModulePath() {
+        // Include the modules needed to compile against the JDBC API and its transitive requirements.
+        // Class references locate each module in either a JAR or a reactor output directory.
         TestCompiler.Result result = TestCompiler.builder().currentRelease().printDiagnostics(false)
-                .addModulepathEntries(List.of(System.getProperty("java.class.path").split(File.pathSeparator)).stream()
-                        .map(Path::of).filter(Files::isRegularFile).toList())
-                .addModulepath(JdbcClient.class)
+                .addModulepath(List.of(JdbcClient.class,
+                                      Data.class,
+                                      RuntimeType.class,
+                                      Generated.class,
+                                      Config.class,
+                                      OptionalValue.class,
+                                      TypeName.class,
+                                      SqlDriver.class,
+                                      Service.class,
+                                      Tx.class,
+                                      MediaType.class))
                 .addSource("module-info.java", "module example.sized { requires io.helidon.data.jdbc; }")
                 .addSource("Sized.java", """
                         package example;

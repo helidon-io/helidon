@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -43,6 +44,7 @@ import java.util.stream.IntStream;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.data.Data;
+import io.helidon.data.DataException;
 import io.helidon.data.jdbc.JdbcBatchException;
 import io.helidon.data.jdbc.JdbcClient;
 import io.helidon.service.registry.Qualifier;
@@ -59,6 +61,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -237,7 +240,8 @@ public abstract class AbstractJdbcBatchContract {
                 byte[] value = new byte[length];
                 AtomicBoolean traversed = new AtomicBoolean();
                 Iterable<byte[]> values = () -> {
-                    assertThat("The binary source must supply only one iterator.", traversed.compareAndSet(false, true), is(true));
+                    assertThat("The binary source must supply only one iterator.",
+                               traversed.compareAndSet(false, true), is(true));
                     return new Iterator<>() {
                         private int position;
 
@@ -263,7 +267,8 @@ public abstract class AbstractJdbcBatchContract {
                 try {
                     client.create("INSERT INTO SCALAR_VALUE (ID) VALUES (2)").execute();
                     client.create("INSERT INTO SCALAR_VALUE (ID) VALUES (3)").execute();
-                    assertThat(storeRepeatedBinary(values, new long[] {2, 3}, configured, sized).totalUpdateCount().orElseThrow(), is(2L));
+                    assertThat(storeRepeatedBinary(values, new long[] {2, 3}, configured, sized)
+                                       .totalUpdateCount().orElseThrow(), is(2L));
                     byte[] first = new byte[length];
                     byte[] second = new byte[length];
                     first[0] = 1;
@@ -274,7 +279,8 @@ public abstract class AbstractJdbcBatchContract {
 
                     // Snapshot sharing must not change who completes the caller transaction.
                     assertThrows(TxException.class, () -> transactions.transaction(Tx.Type.REQUIRED, () -> {
-                        storeRepeatedBinary(oneShot(List.of(new byte[] {7}, new byte[] {8})), new long[] {2, 3}, configured, sized);
+                        storeRepeatedBinary(oneShot(List.of(new byte[] {7}, new byte[] {8})),
+                                            new long[] {2, 3}, configured, sized);
                         throw new IllegalStateException("The application rejected the binary batch.");
                     }));
                     List<byte[]> afterRollback = committedBinaryValues();
@@ -324,7 +330,7 @@ public abstract class AbstractJdbcBatchContract {
                 Class<?>[] types = {byte[].class, BigDecimal.class, LocalDate.class, LocalTime.class,
                                     LocalDateTime.class, Date.class, Time.class, Timestamp.class};
                 for (int i = 0; i < types.length; i++) {
-                    assertThat(row.optional(i + 1, types[i]).isEmpty(), is(true));
+                    assertThat(row.optional(i + 1, types[i]), is(Optional.empty()));
                 }
                 return true;
             }).one();
@@ -476,11 +482,33 @@ public abstract class AbstractJdbcBatchContract {
         assertThat(fixture.committedByName("batch-partial"), is(Optional.empty()));
     }
 
+    /**
+     * Verifies that an escaping SQL failure rolls back preceding batch work in the same transaction.
+     * Committed state checks run after the transaction completes, and a later batch verifies client reuse.
+     */
+    @Test
+    protected final void ordinarySqlFailureRollsBackBatchWorkAndAllowsReuse() {
+        TxException failure = assertThrows(TxException.class, () -> transactions.transaction(Tx.Type.REQUIRED, () -> {
+            insert(List.of("batch-before-sql-failure"), null);
+            client.create("UPDATE CONTACT SET NAME = NULL WHERE ID = ?").bind(1, 1L).execute();
+            return null;
+        }));
+
+        assertThat(failure.getCause(), instanceOf(DataException.class));
+        assertThat(failure.getCause().getCause(), instanceOf(SQLException.class));
+        assertThat(fixture.committedByName("batch-before-sql-failure"), is(Optional.empty()));
+        assertThat(fixture.committedByName("alpha").orElseThrow().id(), is(1L));
+        assertThat(insert(List.of("batch-after-sql-failure"), null).totalUpdateCount().orElseThrow(), is(1L));
+        assertThat(fixture.committedByName("batch-after-sql-failure").orElseThrow().email(), is(Optional.empty()));
+    }
+
     @Test
     protected final void captureFailureCaughtInsideTransactionDoesNotPreventCommit() {
         transactions.transaction(Tx.Type.REQUIRED, () -> {
             assertThrows(IllegalStateException.class, () -> client.create("INSERT INTO CONTACT (NAME) VALUES (?)")
-                    .executeBatch(List.of("capture"), (_, _) -> { throw new IllegalStateException("Capture failed."); }));
+                    .executeBatch(List.of("capture"), (_, _) -> {
+                        throw new IllegalStateException("Capture failed.");
+                    }));
             return insert(List.of("batch-after-capture"), null);
         });
         assertThat(fixture.committedByName("batch-after-capture").isPresent(), is(true));
@@ -584,7 +612,7 @@ public abstract class AbstractJdbcBatchContract {
                                                 "sized-driver-dependent", "sized-never-submitted")));
         assertThat(failure.result().entries().size(), is(5));
         assertThat(failure.result().entries().get(4).status(), is(JdbcClient.BatchResult.Status.NOT_REPORTED));
-        assertThat(failure.result().totalUpdateCount().isEmpty(), is(true));
+        assertThat(failure.result().totalUpdateCount(), is(OptionalLong.empty()));
         assertThat(fixture.committedByName("sized-before-one").isPresent(), is(true));
         assertThat(fixture.committedByName("sized-before-two").isPresent(), is(true));
         assertThat(fixture.committedByName("sized-never-submitted"), is(Optional.empty()));
@@ -632,11 +660,12 @@ public abstract class AbstractJdbcBatchContract {
             Supplier<JdbcClient.Statement> definition = preparedDefinition(variant);
             List<String> names = List.of("sized-prepared-" + variant + "one", "sized-prepared-" + variant + "two",
                                          "sized-prepared-" + variant + "three");
-            transactions.transaction(Tx.Type.REQUIRED, () -> definition.get().executeBatch(oneShot(names), 2, (bindings, name) -> {
-                Objects.requireNonNull(bindings, "The batch bindings must not be null.");
-                Objects.requireNonNull(name, "The batch item must not be null.");
-                bindings.bind("name", name).bindNull("email", JDBCType.VARCHAR);
-            }));
+            transactions.transaction(Tx.Type.REQUIRED,
+                    () -> definition.get().executeBatch(oneShot(names), 2, (bindings, name) -> {
+                        Objects.requireNonNull(bindings, "The batch bindings must not be null.");
+                        Objects.requireNonNull(name, "The batch item must not be null.");
+                        bindings.bind("name", name).bindNull("email", JDBCType.VARCHAR);
+                    }));
             for (String name : names) {
                 assertThat(fixture.committedByName(name).orElseThrow().email(), is(Optional.empty()));
             }

@@ -352,13 +352,13 @@ final class JdbcRunner {
         // SQL failures must enter the bounded sanitizer before cleanup is attached. Application and mapper failures
         // keep their original identity.
         if (previousFailure instanceof SQLException) {
-            Throwable failure = close(resultSet, "closing a result set", previousFailure);
-            failure = close(statement, "closing a statement", failure);
-            return close(lease, "closing a connection lease", failure);
+            Throwable failure = close(resultSet, "closing a result set", previousFailure, fatalCleanup);
+            failure = close(statement, "closing a statement", failure, fatalCleanup);
+            return close(lease, "closing a connection lease", failure, fatalCleanup);
         }
-        Throwable failure = close(resultSet, "closing a result set", null);
-        failure = close(statement, "closing a statement", failure);
-        failure = close(lease, "closing a connection lease", failure);
+        Throwable failure = close(resultSet, "closing a result set", null, fatalCleanup);
+        failure = close(statement, "closing a statement", failure, fatalCleanup);
+        failure = close(lease, "closing a connection lease", failure, fatalCleanup);
         if (previousFailure == null) {
             return failure;
         }
@@ -373,21 +373,28 @@ final class JdbcRunner {
     }
 
     /**
-     * Closes one resource and preserves failures in ownership order.
+     * Closes one resource and combines failures using the terminal cleanup policy.
      *
-     * @param resource resource to close
-     * @param operation stable cleanup operation label
-     * @param previousFailure earlier cleanup failure
-     * @return first cleanup failure, or {@code null}
+     * @param resource The resource is closed when it is present.
+     * @param operation The operation identifies the cleanup step.
+     * @param previousFailure The earlier failure may be null.
+     * @param fatalCleanup If true, a fatal cleanup error can replace an earlier nonfatal failure.
+     * @return The result is the combined failure, or {@code null} when there is no failure.
      */
-    private static Throwable close(AutoCloseable resource, String operation, Throwable previousFailure) {
+    private static Throwable close(AutoCloseable resource,
+                                   String operation,
+                                   Throwable previousFailure,
+                                   boolean fatalCleanup) {
         if (resource == null) {
             return previousFailure;
         }
         try {
             resource.close();
         } catch (Throwable closeFailure) {
-            return JdbcExceptionTranslator.mergeInfrastructure(previousFailure, operation, closeFailure);
+            if (fatalCleanup || previousFailure == null) {
+                return JdbcExceptionTranslator.mergeInfrastructure(previousFailure, operation, closeFailure);
+            }
+            return JdbcExceptionTranslator.suppress(previousFailure, operation, closeFailure);
         }
         return previousFailure;
     }

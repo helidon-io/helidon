@@ -24,161 +24,177 @@ import io.helidon.data.jdbc.Jdbc;
 import io.helidon.data.jdbc.JdbcClient;
 
 /**
- * Exercises generated bindings with application names that also occur in generated code.
+ * Groups literal and configured batch fixtures while preserving their separate generic contracts.
  */
-@Data.Repository
-@Data.Provider("jdbc")
-public interface BatchCollisionRepository extends BatchAliasContract<String> {
-    // These parameter names exercise collisions with generated Java names.
-    @SuppressWarnings("checkstyle:ParameterName")
-    @Jdbc.Statement("INSERT INTO T VALUES (:Objects, :JDBCType)")
-    JdbcClient.BatchResult originalAdapterNames(Iterable<String> Objects, String JDBCType);
-
-    @Jdbc.Statement("INSERT INTO T VALUES (:values, :values)")
-    JdbcClient.BatchResult binary(Iterator<byte[]> values);
-
-    @Jdbc.Statement("INSERT INTO T VALUES (:values, :values)")
-    @Jdbc.BatchSize(1)
-    JdbcClient.BatchResult binarySized(Iterator<byte[]> values);
-
-    @Jdbc.Statement("INSERT INTO T VALUES (:batchSize, :size, :offset, :counts)")
-    @Jdbc.BatchSize(2)
-    JdbcClient.BatchResult sized(Iterable<String> batchSize, String size, long[] offset, int... counts);
-
-    @Jdbc.Statement("INSERT INTO T VALUES (:SQL_INSERT, :jdbcClient, :SQL_INSERT, :statement, :rows, :statement)")
-    JdbcClient.BatchResult insert(List<String> SQL_INSERT, String jdbcClient, Iterator<Item> iterator);
-
-    @Jdbc.Statement("INSERT INTO T VALUES (?, ?)")
-    @Jdbc.Execution(Jdbc.ExecutionType.AUTO)
-    JdbcClient.BatchResult array(int[] index, byte... element);
-
-    @Jdbc.Statement("INSERT INTO T VALUES (?, ?)")
-    JdbcClient.BatchResult inferredArray(int[] index, byte... element);
-
-    @Jdbc.Statement("INSERT INTO T VALUES (?, ?)")
-    @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
-    JdbcClient.BatchResult explicitArray(int[] index, byte... element);
-
-    @Override
-    @Jdbc.Statement("UPDATE T SET NAME = :name, LABEL = :name, EMAIL = :email WHERE ID = :id")
-    @Jdbc.Execution(Jdbc.ExecutionType.AUTO)
-    JdbcClient.BatchResult aliases(long[] rows, Iterator<String> jdbcClient, String SQL_ALIASES);
-
-    @Jdbc.Statement("UPDATE T SET NAME = :name, EMAIL = :email WHERE ID = :id OR ID = :id")
-    @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
-    JdbcClient.BatchResult aliasedRecords(@Data.Param("email") String jdbcClient, Iterable<ItemChange> bindings);
-
-    record ItemChange(String name, long id) {
+final class BatchCollisionRepository {
+    private BatchCollisionRepository() {
     }
 
-    record Item(String statement, Integer rows) {
-        static final AtomicInteger ACCESSES = new AtomicInteger();
+    /**
+     * Supplies generic aliases that remain effective when an override renames its Java parameters.
+     *
+     * @param <T> The repository supplies the concrete scalar type.
+     */
+    interface AliasContract<T> {
+        // These parameter names exercise collisions with generated Java names.
+        @SuppressWarnings("checkstyle:ParameterName")
+        @Jdbc.Statement("INSERT INTO T VALUES (:payload, :IntStream, :JDBCType, :GeneratedJdbcData, :data__Objects, :payload)")
+        JdbcClient.BatchResult adapterTypes(@Data.Param("payload") Iterable<T> Objects, int[] IntStream,
+                                           String JDBCType, String GeneratedJdbcData, String data__Objects);
 
+        @Jdbc.Statement("UPDATE T SET NAME = :name, LABEL = :name, EMAIL = :email WHERE ID = :id")
+        @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
+        JdbcClient.BatchResult aliases(@Data.Param("id") long[] original,
+                                      @Data.Param("name") Iterator<T> values,
+                                      @Data.Param("email") T constant);
+    }
+
+    /**
+     * Supplies a configured generic scalar source.
+     *
+     * @param <T> The concrete repository supplies the scalar type.
+     */
+    interface ConfiguredParent<T> {
+        // These parameter names exercise collisions with generated Java names.
+        @SuppressWarnings("checkstyle:ParameterName")
+        @Jdbc.Statement("${app.adapter-types:INSERT INTO T VALUES (:payload, :IntStream, :JDBCType, "
+                + ":GeneratedJdbcData, :data__Objects, :payload)}")
+        JdbcClient.BatchResult adapterTypes(@Data.Param("payload") Iterable<T> Objects, int[] IntStream,
+                                           String JDBCType, String GeneratedJdbcData, String data__Objects);
+
+        @Jdbc.Statement("${app.inherited:INSERT INTO T VALUES (:value, :value)}")
+        JdbcClient.BatchResult inherited(@Data.Param("value") Iterable<T> original);
+    }
+
+    /**
+     * Exercises generated bindings with application names that also occur in generated code.
+     */
+    @Data.Repository
+    @Data.Provider("jdbc")
+    interface Literal extends AliasContract<String> {
+        // These parameter names exercise collisions with generated Java names.
+        @SuppressWarnings("checkstyle:ParameterName")
+        @Jdbc.Statement("INSERT INTO T VALUES (:Objects, :JDBCType)")
+        JdbcClient.BatchResult originalAdapterNames(Iterable<String> Objects, String JDBCType);
+
+        @Jdbc.Statement("INSERT INTO T VALUES (:values, :values)")
+        JdbcClient.BatchResult binary(Iterator<byte[]> values);
+
+        @Jdbc.Statement("INSERT INTO T VALUES (:values, :values)")
+        @Jdbc.BatchSize(1)
+        JdbcClient.BatchResult binarySized(Iterator<byte[]> values);
+
+        @Jdbc.Statement("INSERT INTO T VALUES (:batchSize, :size, :offset, :counts)")
+        @Jdbc.BatchSize(2)
+        JdbcClient.BatchResult sized(Iterable<String> batchSize, String size, long[] offset, int... counts);
+
+        // The parameter deliberately matches the generated SQL field name.
+        @SuppressWarnings("checkstyle:ParameterName")
+        @Jdbc.Statement("INSERT INTO T VALUES (:SQL_INSERT, :jdbcClient, :SQL_INSERT, :statement, :rows, :statement)")
+        JdbcClient.BatchResult insert(List<String> SQL_INSERT, String jdbcClient, Iterator<Item> iterator);
+
+        @Jdbc.Statement("INSERT INTO T VALUES (?, ?)")
+        @Jdbc.Execution(Jdbc.ExecutionType.AUTO)
+        JdbcClient.BatchResult array(int[] index, byte... element);
+
+        @Jdbc.Statement("INSERT INTO T VALUES (?, ?)")
+        JdbcClient.BatchResult inferredArray(int[] index, byte... element);
+
+        @Jdbc.Statement("INSERT INTO T VALUES (?, ?)")
+        @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
+        JdbcClient.BatchResult explicitArray(int[] index, byte... element);
+
+        // The parameter deliberately matches the generated SQL field name while retaining its inherited alias.
+        @SuppressWarnings("checkstyle:ParameterName")
         @Override
-        public String statement() {
-            ACCESSES.incrementAndGet();
-            if ("fail".equals(statement)) {
-                throw new IllegalStateException("The record accessor failed.");
-            }
-            return statement;
+        @Jdbc.Statement("UPDATE T SET NAME = :name, LABEL = :name, EMAIL = :email WHERE ID = :id")
+        @Jdbc.Execution(Jdbc.ExecutionType.AUTO)
+        JdbcClient.BatchResult aliases(long[] rows, Iterator<String> jdbcClient, String SQL_ALIASES);
+
+        @Jdbc.Statement("UPDATE T SET NAME = :name, EMAIL = :email WHERE ID = :id OR ID = :id")
+        @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
+        JdbcClient.BatchResult aliasedRecords(@Data.Param("email") String jdbcClient, Iterable<ItemChange> bindings);
+
+        record ItemChange(String name, long id) {
         }
-    }
-}
 
-/**
- * Supplies generic aliases that remain effective when an override renames its Java parameters.
- *
- * @param <T> The repository supplies the concrete scalar type.
- */
-interface BatchAliasContract<T> {
-    // These parameter names exercise collisions with generated Java names.
-    @SuppressWarnings("checkstyle:ParameterName")
-    @Jdbc.Statement("INSERT INTO T VALUES (:payload, :IntStream, :JDBCType, :GeneratedJdbcData, :data__Objects, :payload)")
-    JdbcClient.BatchResult adapterTypes(@Data.Param("payload") Iterable<T> Objects, int[] IntStream,
-                                       String JDBCType, String GeneratedJdbcData, String data__Objects);
+        record Item(String statement, Integer rows) {
+            static final AtomicInteger ACCESSES = new AtomicInteger();
 
-    @Jdbc.Statement("UPDATE T SET NAME = :name, LABEL = :name, EMAIL = :email WHERE ID = :id")
-    @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
-    JdbcClient.BatchResult aliases(@Data.Param("id") long[] original,
-                                  @Data.Param("name") Iterator<T> values,
-                                  @Data.Param("email") T constant);
-}
-
-/**
- * Compiles configured batch slots separately from deployment SQL and generated Java names.
- */
-@Data.Repository
-@Data.Provider("jdbc")
-interface ConfiguredBatchRepository extends ConfiguredBatchParent<String> {
-    // These parameter names exercise collisions with generated Java names.
-    @SuppressWarnings("checkstyle:ParameterName")
-    @Jdbc.Statement("${app.original-adapter-names:INSERT INTO T VALUES (:Objects, :JDBCType)}")
-    JdbcClient.BatchResult originalAdapterNames(Iterable<String> Objects, String JDBCType);
-
-    @Jdbc.Statement("${app.sized:INSERT INTO T VALUES (:name, :email)}")
-    @Jdbc.BatchSize(2)
-    JdbcClient.BatchResult sized(Iterable<String> name, String email);
-
-    @Jdbc.Statement("${app.sized-records:UPDATE T SET NAME = :name WHERE ID = :id}")
-    @Jdbc.BatchSize(2)
-    JdbcClient.BatchResult sizedRecords(Iterator<Change> rows);
-
-    @Jdbc.Statement("${app.batch:INSERT INTO T VALUES (:name, :email)}")
-    JdbcClient.BatchResult scalar(Iterable<String> name, String email);
-
-    @Jdbc.Statement("${app.records:UPDATE T SET NAME = :name WHERE ID = :id}")
-    JdbcClient.BatchResult records(Iterator<Change> bindings);
-
-    @Jdbc.Statement("${app.duplicates:UPDATE T SET NAME = ? WHERE ID = ? AND NAME = ?}")
-    JdbcClient.BatchResult duplicates(Iterable<Replacement> statement, Iterator<Expected> rows);
-
-    @Jdbc.Statement("${app.arrays:UPDATE T SET NAME = :rows, EMAIL = :SQL_ARRAYS WHERE ID = :iterator}")
-    @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
-    JdbcClient.BatchResult arrays(String[] rows, String SQL_ARRAYS, long... iterator);
-
-    @Jdbc.Statement("${app.alias:UPDATE T SET NAME = :name WHERE ID = :id OR ID = :id}")
-    JdbcClient.BatchResult aliases(@Data.Param("name") Iterator<String> jdbcClient, @Data.Param("id") long[] SQL_ALIASES);
-
-    @Jdbc.Statement("${app.binary:INSERT INTO T VALUES (:values, :values)}")
-    JdbcClient.BatchResult binary(Iterator<byte[]> values);
-
-    @Jdbc.Statement("${app.binary:INSERT INTO T VALUES (:values, :values)}")
-    @Jdbc.BatchSize(1)
-    JdbcClient.BatchResult binarySized(Iterator<byte[]> values);
-
-    record Change(String name, Long id) {
-        static final AtomicInteger ACCESSES = new AtomicInteger();
-
-        @Override
-        public String name() {
-            ACCESSES.incrementAndGet();
-            if ("fail".equals(name)) {
-                throw new IllegalStateException("The configured record accessor failed.");
+            @Override
+            public String statement() {
+                ACCESSES.incrementAndGet();
+                if ("fail".equals(statement)) {
+                    throw new IllegalStateException("The record accessor failed.");
+                }
+                return statement;
             }
-            return name;
         }
     }
 
-    record Replacement(String name) {
+    /**
+     * Compiles configured batch slots separately from deployment SQL and generated Java names.
+     */
+    @Data.Repository
+    @Data.Provider("jdbc")
+    interface Configured extends ConfiguredParent<String> {
+        // These parameter names exercise collisions with generated Java names.
+        @SuppressWarnings("checkstyle:ParameterName")
+        @Jdbc.Statement("${app.original-adapter-names:INSERT INTO T VALUES (:Objects, :JDBCType)}")
+        JdbcClient.BatchResult originalAdapterNames(Iterable<String> Objects, String JDBCType);
+
+        @Jdbc.Statement("${app.sized:INSERT INTO T VALUES (:name, :email)}")
+        @Jdbc.BatchSize(2)
+        JdbcClient.BatchResult sized(Iterable<String> name, String email);
+
+        @Jdbc.Statement("${app.sized-records:UPDATE T SET NAME = :name WHERE ID = :id}")
+        @Jdbc.BatchSize(2)
+        JdbcClient.BatchResult sizedRecords(Iterator<Change> rows);
+
+        @Jdbc.Statement("${app.batch:INSERT INTO T VALUES (:name, :email)}")
+        JdbcClient.BatchResult scalar(Iterable<String> name, String email);
+
+        @Jdbc.Statement("${app.records:UPDATE T SET NAME = :name WHERE ID = :id}")
+        JdbcClient.BatchResult records(Iterator<Change> bindings);
+
+        @Jdbc.Statement("${app.duplicates:UPDATE T SET NAME = ? WHERE ID = ? AND NAME = ?}")
+        JdbcClient.BatchResult duplicates(Iterable<Replacement> statement, Iterator<Expected> rows);
+
+        // The parameter deliberately matches the generated SQL field name.
+        @SuppressWarnings("checkstyle:ParameterName")
+        @Jdbc.Statement("${app.arrays:UPDATE T SET NAME = :rows, EMAIL = :SQL_ARRAYS WHERE ID = :iterator}")
+        @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
+        JdbcClient.BatchResult arrays(String[] rows, String SQL_ARRAYS, long... iterator);
+
+        // The aliased parameter deliberately matches the generated SQL field name.
+        @SuppressWarnings("checkstyle:ParameterName")
+        @Jdbc.Statement("${app.alias:UPDATE T SET NAME = :name WHERE ID = :id OR ID = :id}")
+        JdbcClient.BatchResult aliases(@Data.Param("name") Iterator<String> jdbcClient, @Data.Param("id") long[] SQL_ALIASES);
+
+        @Jdbc.Statement("${app.binary:INSERT INTO T VALUES (:values, :values)}")
+        JdbcClient.BatchResult binary(Iterator<byte[]> values);
+
+        @Jdbc.Statement("${app.binary:INSERT INTO T VALUES (:values, :values)}")
+        @Jdbc.BatchSize(1)
+        JdbcClient.BatchResult binarySized(Iterator<byte[]> values);
+
+        record Change(String name, Long id) {
+            static final AtomicInteger ACCESSES = new AtomicInteger();
+
+            @Override
+            public String name() {
+                ACCESSES.incrementAndGet();
+                if ("fail".equals(name)) {
+                    throw new IllegalStateException("The configured record accessor failed.");
+                }
+                return name;
+            }
+        }
+
+        record Replacement(String name) {
+        }
+
+        record Expected(long id, String name) {
+        }
     }
-
-    record Expected(long id, String name) {
-    }
-}
-
-/**
- * Supplies a configured generic scalar source.
- *
- * @param <T> The concrete repository supplies the scalar type.
- */
-interface ConfiguredBatchParent<T> {
-    // These parameter names exercise collisions with generated Java names.
-    @SuppressWarnings("checkstyle:ParameterName")
-    @Jdbc.Statement("${app.adapter-types:INSERT INTO T VALUES (:payload, :IntStream, :JDBCType, "
-            + ":GeneratedJdbcData, :data__Objects, :payload)}")
-    JdbcClient.BatchResult adapterTypes(@Data.Param("payload") Iterable<T> Objects, int[] IntStream,
-                                       String JDBCType, String GeneratedJdbcData, String data__Objects);
-
-    @Jdbc.Statement("${app.inherited:INSERT INTO T VALUES (:value, :value)}")
-    JdbcClient.BatchResult inherited(@Data.Param("value") Iterable<T> original);
 }

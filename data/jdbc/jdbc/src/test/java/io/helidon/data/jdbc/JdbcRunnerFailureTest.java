@@ -48,7 +48,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -615,6 +614,97 @@ class JdbcRunnerFailureTest {
         InOrder order = inOrder(resultSet, statement, connection);
         order.verify(resultSet).close();
         order.verify(statement).close();
+        order.verify(connection).close();
+    }
+
+    /**
+     * Verifies that a SQL execution failure remains primary when statement or connection cleanup throws an {@code Error}.
+     * Cleanup evidence is sanitized and retained as a suppressed exception.
+     */
+    @Test
+    void preservesSqlFailureWhenCleanupThrowsError() throws Exception {
+        // These execution channels share cleanup, so exercise the same failure pair through each entry point.
+        for (String operation : List.of("update", "query", "keys")) {
+            for (String location : List.of("statement", "lease")) {
+                setUp();
+                String scenario = operation + " with " + location + " cleanup";
+                when(connection.prepareStatement("SELECT VALUE FROM TEST_VALUE")).thenReturn(statement);
+                SQLException executionFailure = new SQLException("The execution failed with EXECUTION_CANARY details.",
+                                                                "23000", 42);
+                LinkageError closeFailure = new LinkageError("The cleanup failed with CLOSE_CANARY details.");
+                closeFailure.initCause(new IllegalStateException("The cause contains CLOSE_CANARY details."));
+                closeFailure.addSuppressed(new SQLException("The suppressed failure contains CLOSE_CANARY details."));
+                when(statement.execute()).thenThrow(executionFailure);
+                if (location.equals("statement")) {
+                    doThrow(closeFailure).when(statement).close();
+                } else {
+                    doThrow(closeFailure).doNothing().when(connection).close();
+                }
+
+                DataException failure = assertThrows(DataException.class, () -> {
+                    switch (operation) {
+                    case "update" -> client.create("UPDATE TEST_VALUE SET VALUE = 1").execute();
+                    case "query" -> client.create("SELECT VALUE FROM TEST_VALUE").map(String.class).one();
+                    case "keys" -> client.create("INSERT INTO TEST_VALUE DEFAULT VALUES").generatedKeys().map(row -> {
+                        Objects.requireNonNull(row, "The mapper row must not be null.");
+                        return row.get(1, Long.class);
+                    }).one();
+                    default -> throw new IllegalArgumentException("The test operation is unknown.");
+                    }
+                }, scenario);
+
+                Throwable cause = failure.getCause();
+                assertSafeSqlCause(cause, executionFailure);
+                assertThat(scenario, cause, not(sameInstance(executionFailure)));
+                assertThat(scenario, cause.getCause(), nullValue());
+                assertThat(scenario, cause.getSuppressed().length, is(1));
+                Throwable cleanup = cause.getSuppressed()[0];
+                assertThat(scenario, cleanup, not(sameInstance(closeFailure)));
+                assertThat(scenario, cleanup.getMessage(), containsString("java.lang.LinkageError"));
+                assertThat(scenario, cleanup.getMessage(), not(containsString("CLOSE_CANARY")));
+                assertThat(scenario, cleanup.getCause(), nullValue());
+                assertThat(scenario, cleanup.getSuppressed().length, is(0));
+                assertThat(scenario, failure.getMessage(), not(containsString("EXECUTION_CANARY")));
+                InOrder order = inOrder(statement, connection);
+                order.verify(statement).execute();
+                order.verify(statement).close();
+                order.verify(connection).close();
+                verify(connection, times(location.equals("lease") ? 2 : 1)).close();
+                if (location.equals("lease")) {
+                    verify(connection).abort(any());
+                }
+            }
+        }
+    }
+
+    /**
+     * Verifies that the first cleanup failure remains primary when later connection cleanup throws an {@code Error}.
+     */
+    @Test
+    void preservesFirstCleanupFailureWhenLaterCleanupThrowsError() throws Exception {
+        prepareSuccessfulUpdate();
+        SQLException statementFailure = new SQLException("The statement close failed with CLOSE_CANARY details.",
+                                                        "08000", 43);
+        LinkageError leaseFailure = new LinkageError("The lease close failed with CLOSE_CANARY details.");
+        doThrow(statementFailure).when(statement).close();
+        doThrow(leaseFailure).doNothing().when(connection).close();
+
+        DataException failure = assertThrows(DataException.class,
+                () -> client.create("UPDATE TEST_VALUE SET VALUE = 1").execute());
+
+        Throwable cause = failure.getCause();
+        assertSafeSqlCause(cause, statementFailure);
+        assertThat(cause, not(sameInstance(statementFailure)));
+        assertThat(cause.getSuppressed().length, is(1));
+        Throwable cleanup = cause.getSuppressed()[0];
+        assertThat(cleanup, not(sameInstance(leaseFailure)));
+        assertThat(cleanup.getMessage(), containsString("java.lang.LinkageError"));
+        assertThat(cleanup.getMessage(), not(containsString("CLOSE_CANARY")));
+        assertThat(cleanup.getCause(), nullValue());
+        InOrder order = inOrder(statement, connection);
+        order.verify(statement).close();
+        order.verify(connection).close();
+        order.verify(connection).abort(any());
         order.verify(connection).close();
     }
 
