@@ -57,6 +57,30 @@ class JsonStringLexerTest {
         }
     }
 
+    @Test
+    void verifiesOverlappingPropertyNamesThroughTheClosingQuote() {
+        var lexer = JsonStringLexer.create("traceId", "traceIdentifier", "account", "owner", "age", "name", "status", "packet",
+                                           "id", "region", "durationNanos", "route", "bytes", "retries", "zone", "message");
+        for (String miss : List.of("traceIdentifieX", "traceIdentifie", "traceIdentifierX")) {
+            var parser = JsonParser.create("\"traceIdentifier\":1,\"" + miss + "\":2,\"traceId\":3}");
+            assertThat(parser.readProperty(lexer), is(1));
+            assertThat(parser.readInt(), is(1));
+            assertThat(miss, parser.nextProperty(lexer), is(-1));
+            assertThat(parser.readInt(), is(2));
+            assertThat(parser.nextProperty(lexer), is(0));
+            assertThat(parser.readInt(), is(3));
+            assertThat(parser.nextProperty(lexer), is(JsonParser.END_OBJECT));
+        }
+
+        String quoted = "\"traceIdentifier\"";
+        byte[] bytes = ("xx" + quoted + ":0}").getBytes(StandardCharsets.UTF_8);
+        for (int length = 1; length < quoted.length(); length++) {
+            JsonParser truncated = JsonParser.create(bytes, 2, length);
+            assertThrows(JsonException.class, () -> truncated.readString(lexer));
+        }
+        assertThat(JsonParser.create(bytes, 2, quoted.length()).readString(lexer), is(1));
+    }
+
     @ParameterizedTest
     @EnumSource(ParserMethod.class)
     void validatesAndConsumesUnknownPropertiesInACompleteAsciiDictionary(ParserMethod method) {

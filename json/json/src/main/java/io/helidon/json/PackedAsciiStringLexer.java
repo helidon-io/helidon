@@ -23,7 +23,8 @@ import static io.helidon.json.JsonParserArray.FNV_OFFSET_BASIS;
 import static io.helidon.json.JsonParserArray.FNV_PRIME;
 
 /**
- * Matches short ASCII names by FNV-1a hash and verifies each candidate through its closing quote.
+ * Matches short ASCII names using a prefix index or an FNV-1a hash.
+ * Both paths verify the complete spelling through its closing quote.
  * An enclosing selector can also use the dictionary indexed by the first input word.
  */
 final class PackedAsciiStringLexer extends AsciiStringLexer {
@@ -36,10 +37,12 @@ final class PackedAsciiStringLexer extends AsciiStringLexer {
     private static final int MAX_PLAIN_SCAN = 8 * Long.BYTES;
     private static final long UNKNOWN = Integer.toUnsignedLong(-1);
     private final Dictionary dictionary;
+    private final PrefixIndex prefixIndex;
 
-    private PackedAsciiStringLexer(Dictionary dictionary) {
+    private PackedAsciiStringLexer(Dictionary dictionary, PrefixIndex prefixIndex) {
         super(dictionary);
         this.dictionary = dictionary;
+        this.prefixIndex = prefixIndex;
     }
 
     static JsonStringLexer create(String[] names) {
@@ -50,6 +53,7 @@ final class PackedAsciiStringLexer extends AsciiStringLexer {
         String[] registered = names.clone();
         Literal[] literals = new Literal[registered.length];
         boolean secondWord = false;
+        int prefixWidth = Integer.BYTES;
         for (int i = 0; i < literals.length; i++) {
             String name = registered[i];
             if (name == null || name.length() >= 2 * Long.BYTES) {
@@ -60,71 +64,38 @@ final class PackedAsciiStringLexer extends AsciiStringLexer {
                 return new RuntimeStringLexer(registered);
             }
             literals[i] = literal;
+            prefixWidth = Math.min(prefixWidth, literal.length() + 1);
             secondWord |= literal.length() >= Long.BYTES;
         }
         if (!secondWord) {
             return new RuntimeStringLexer(registered);
         }
         Dictionary dictionary = Dictionary.create(registered, literals);
-        return dictionary == null ? new RuntimeStringLexer(registered) : new PackedAsciiStringLexer(dictionary);
+        return dictionary == null ? new RuntimeStringLexer(registered)
+                : new PackedAsciiStringLexer(dictionary, PrefixIndex.create(dictionary, prefixWidth, literals.length));
     }
 
     @Override
     long recognize(byte[] input, int start, int limit) {
         int available = limit - start;
-        int shortLimit = start + Math.min(available, 2 * Long.BYTES);
-        int hash = FNV_OFFSET_BASIS;
-        int position = start;
-        scan: {
-            while (shortLimit - position >= Integer.BYTES) {
-                byte value = input[position++];
-                if (value == '"') {
-                    break scan;
-                }
-                if (value < 0x20 || value == '\\') {
-                    return -1;
-                }
-                hash = (hash ^ value) * FNV_PRIME;
-                value = input[position++];
-                if (value == '"') {
-                    break scan;
-                }
-                if (value < 0x20 || value == '\\') {
-                    return -1;
-                }
-                hash = (hash ^ value) * FNV_PRIME;
-                value = input[position++];
-                if (value == '"') {
-                    break scan;
-                }
-                if (value < 0x20 || value == '\\') {
-                    return -1;
-                }
-                hash = (hash ^ value) * FNV_PRIME;
-                value = input[position++];
-                if (value == '"') {
-                    break scan;
-                }
-                if (value < 0x20 || value == '\\') {
-                    return -1;
-                }
-                hash = (hash ^ value) * FNV_PRIME;
-            }
-            while (position < shortLimit) {
-                byte value = input[position++];
-                if (value == '"') {
-                    break scan;
-                }
-                if (value < 0x20 || value == '\\') {
-                    return -1;
-                }
-                hash = (hash ^ value) * FNV_PRIME;
-            }
-            return position < limit ? plainMiss(input, start, position, limit) : -1;
+        if (prefixIndex == null || available < Long.BYTES) {
+            return recognizeHashed(input, start, limit);
         }
-        int length = position - start - 1;
-        int ordinal = dictionary.match(hash, input, start, available, length);
-        return ((long) length << Integer.SIZE) | Integer.toUnsignedLong(ordinal);
+        long first = JsonTextParser.word(input, start);
+        int slot = prefixIndex.slot(first);
+        for (Entry entry = prefixIndex.entries[slot]; entry != null; entry = prefixIndex.next[entry.ordinal]) {
+            Literal literal = entry.literal;
+            int length = literal.length();
+            // A registered name and its closing quote fit in two overlapping words.
+            if (length < available && (first & literal.firstMask()) == literal.first()
+                    && (length < Long.BYTES
+                            || JsonTextParser.word(input, start + length + 1 - Long.BYTES) == literal.tail())) {
+                return ((long) length << Integer.SIZE) | entry.ordinal;
+            }
+        }
+        long second = available >= 2 * Long.BYTES ? JsonTextParser.word(input, start + Long.BYTES)
+                : partialSecond(input, limit, available);
+        return plainMiss(input, start, limit, first, second);
     }
 
     // An enclosing selector already examined this name. Use the buffered words to look up its exact spelling.
@@ -188,6 +159,96 @@ final class PackedAsciiStringLexer extends AsciiStringLexer {
             pos++;
         }
         return -1;
+    }
+
+    private long recognizeHashed(byte[] input, int start, int limit) {
+        int available = limit - start;
+        int shortLimit = start + Math.min(available, 2 * Long.BYTES);
+        int hash = FNV_OFFSET_BASIS;
+        int position = start;
+        scan: {
+            while (shortLimit - position >= Integer.BYTES) {
+                byte value = input[position++];
+                if (value == '"') {
+                    break scan;
+                }
+                if (value < 0x20 || value == '\\') {
+                    return -1;
+                }
+                hash = (hash ^ value) * FNV_PRIME;
+                value = input[position++];
+                if (value == '"') {
+                    break scan;
+                }
+                if (value < 0x20 || value == '\\') {
+                    return -1;
+                }
+                hash = (hash ^ value) * FNV_PRIME;
+                value = input[position++];
+                if (value == '"') {
+                    break scan;
+                }
+                if (value < 0x20 || value == '\\') {
+                    return -1;
+                }
+                hash = (hash ^ value) * FNV_PRIME;
+                value = input[position++];
+                if (value == '"') {
+                    break scan;
+                }
+                if (value < 0x20 || value == '\\') {
+                    return -1;
+                }
+                hash = (hash ^ value) * FNV_PRIME;
+            }
+            while (position < shortLimit) {
+                byte value = input[position++];
+                if (value == '"') {
+                    break scan;
+                }
+                if (value < 0x20 || value == '\\') {
+                    return -1;
+                }
+                hash = (hash ^ value) * FNV_PRIME;
+            }
+            return position < limit ? plainMiss(input, start, position, limit) : -1;
+        }
+        int length = position - start - 1;
+        int ordinal = dictionary.match(hash, input, start, available, length);
+        return ((long) length << Integer.SIZE) | Integer.toUnsignedLong(ordinal);
+    }
+
+    // Every registered name, including its closing quote, supplies all bytes used to select a bucket.
+    private record PrefixIndex(int mask, int shift, Entry[] entries, Entry[] next) {
+        private static final int MIX = 0x9e3779b9;
+
+        private static PrefixIndex create(Dictionary dictionary, int width, int nameCount) {
+            int slots = dictionary.hashBuckets.length * 2;
+            int mask = -1 >>> ((Integer.BYTES - width) * Byte.SIZE);
+            var index = new PrefixIndex(mask, Integer.SIZE - Integer.numberOfTrailingZeros(slots),
+                                        new Entry[slots], new Entry[nameCount]);
+            byte[] depths = new byte[slots];
+            int covered = 0;
+            for (Entry head : dictionary.hashBuckets) {
+                for (Entry entry = head; entry != null; entry = entry.nextHash) {
+                    int slot = index.slot(entry.literal.first());
+                    int depth = ++depths[slot];
+                    if (depth == 1) {
+                        covered++;
+                    } else if (depth > MAX_PREFIX_FAN_OUT) {
+                        return null;
+                    }
+                    index.next[entry.ordinal] = index.entries[slot];
+                    index.entries[slot] = entry;
+                }
+            }
+            // Use FNV for alphabets with too many shared or colliding prefixes.
+            return covered * 4 >= nameCount * 3 ? index : null;
+        }
+
+        private int slot(long first) {
+            return (((int) first & mask) * MIX) >>> shift;
+        }
     }
 
     private record Entry(Literal literal, int hash, int ordinal, int prefixState, Entry nextPrefix, Entry nextHash) {
