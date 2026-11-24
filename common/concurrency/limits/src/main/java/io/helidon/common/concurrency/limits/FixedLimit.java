@@ -124,34 +124,6 @@ public class FixedLimit extends SemaphoreLimitBase implements RuntimeType.Api<Fi
                 .build();
     }
 
-    @Override
-    public FixedLimitConfig prototype() {
-        return config;
-    }
-
-    @Override
-    public String name() {
-        return config.name();
-    }
-
-    @Override
-    public String type() {
-        return TYPE;
-    }
-
-    @Override
-    public Limit copy() {
-        if (config.semaphore().isPresent()) {
-            Semaphore semaphore = config.semaphore().get();
-
-            return FixedLimitConfig.builder()
-                    .from(config)
-                    .semaphore(new Semaphore(initialPermits(), semaphore.isFair()))
-                    .build();
-        }
-        return config.build();
-    }
-
     static Context context(FixedLimitConfig config) {
         AtomicInteger concurrentRequests = new AtomicInteger();
         AtomicInteger rejectedRequests = new AtomicInteger();
@@ -194,6 +166,34 @@ public class FixedLimit extends SemaphoreLimitBase implements RuntimeType.Api<Fi
                            concurrentRequests,
                            rejectedRequests,
                            metrics);
+    }
+
+    @Override
+    public FixedLimitConfig prototype() {
+        return config;
+    }
+
+    @Override
+    public String name() {
+        return config.name();
+    }
+
+    @Override
+    public String type() {
+        return TYPE;
+    }
+
+    @Override
+    public Limit copy() {
+        if (config.semaphore().isPresent()) {
+            Semaphore semaphore = config.semaphore().get();
+
+            return FixedLimitConfig.builder()
+                    .from(config)
+                    .semaphore(new Semaphore(initialPermits(), semaphore.isFair()))
+                    .build();
+        }
+        return config.build();
     }
 
     private static class FixedToken implements LimitAlgorithm.Token {
