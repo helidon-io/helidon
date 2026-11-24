@@ -602,6 +602,11 @@ class GeneratedSourceMetadataTest {
                     public record OneCharacter(int a, int aExtra, int beta) {
                     }
                 }
+
+                @SuppressWarnings("helidon:api:preview")
+                @Json.Entity
+                record Parsers(int id, int displayName, int active) {
+                }
                 """);
 
         assertCompilationSuccess(result);
@@ -611,10 +616,15 @@ class GeneratedSourceMetadataTest {
         String fourBytes = Files.readString(generatedSource(result, "Prefixes_FourBytes__GeneratedConverter.java"));
         String empty = Files.readString(generatedSource(result, "Prefixes_EmptyFirst__GeneratedConverter.java"));
         String one = Files.readString(generatedSource(result, "Prefixes_OneCharacter__GeneratedConverter.java"));
+        String parsers = Files.readString(generatedSource(result, "Parsers__GeneratedConverter.java"));
+        assertThat(parsers, containsString("asciiPrefixLexer("));
+        assertThat(different, containsString("Parsers.asciiPrefixLexer("));
+        assertThat(different, containsString("lexPropertyNameAscii(long first)"));
         assertThat(different, containsString("switch ((int) first & 16777215)"));
         assertThat(different, containsString("case 0x226469 -> 0;"));
         assertThat(singleByte, containsString("return PROPERTY_NAMES_TRANSITIONS["));
         assertThat(shared, not(containsString("switch ((int) first & 16777215)")));
+        assertThat(shared, containsString("lexPropertyNameAscii(long first, long second)"));
         assertThat(shared, containsString("int route = PROPERTY_NAMES_TRANSITIONS["));
         assertThat(shared, containsString("switch (route)"));
         assertThat(fourBytes, containsString("switch ((int) first)"));

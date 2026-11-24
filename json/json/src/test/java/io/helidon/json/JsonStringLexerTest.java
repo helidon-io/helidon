@@ -204,8 +204,11 @@ class JsonStringLexerTest {
         for (int length = 0; length < 3 * Long.BYTES; length++) {
             String name = "abcdefghijklmnopqrstuvw".substring(0, length);
             byte[] data = ("prefix\"" + name + "\",padding after the logical input").getBytes(StandardCharsets.UTF_8);
-            for (String[] names : List.of(new String[] {name}, new String[] {name, "other"})) {
-                JsonStringLexer lexer = JsonStringLexer.withAscii(JsonStringLexer.create(names), (_, _) -> 0, names);
+            JsonStringLexer decoded = JsonStringLexer.create(name, "other");
+            JsonStringLexer single = JsonStringLexer.withAscii(JsonStringLexer.create(name), (_, _) -> 0, name);
+            for (JsonStringLexer lexer : List.of(single,
+                                                 JsonStringLexer.withAscii(decoded, (_, _) -> 0, name, "other"),
+                                                 Parsers.asciiPrefixLexer(decoded, _ -> 0, name, "other"))) {
                 for (int limit = 1; limit < length + 2; limit++) {
                     JsonParser parser = JsonParser.create(data, 6, limit);
                     assertThrows(JsonException.class, () -> parser.readString(lexer));
@@ -215,6 +218,26 @@ class JsonStringLexerTest {
                 assertThat(padded.readString(lexer), is(0));
                 assertThat(padded.nextToken(), is((byte) ','));
             }
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    void prefixSelectionChecksEveryByteAndTheClosingQuote(ParserMethod method) {
+        String alphabet = "abcdefghijklmnopqrstuvw";
+        for (int length : List.of(1, 7, 8, 15, 16, 23)) {
+            String name = alphabet.substring(0, length);
+            JsonStringLexer decoded = JsonStringLexer.create(name, "other");
+            JsonStringLexer lexer = Parsers.asciiPrefixLexer(decoded, _ -> 0, name, "other");
+            for (int i = 0; i <= length; i++) {
+                String near = name.substring(0, i) + "~" + name.substring(Math.min(i + 1, length));
+                JsonParser parser = method.createParser("\"" + near + "\":12345678", 32);
+                assertThat(parser.readProperty(lexer), is(-1));
+                assertThat(parser.readInt(), is(12345678));
+            }
+            String escaped = "\"\\u0061" + name.substring(1) + "\":1";
+            assertThat(method.createParser(escaped, 7).readProperty(lexer), is(0));
+            assertThat(method.createParser("\"other\":12345678", 32).readProperty(lexer), is(1));
         }
     }
 

@@ -21,6 +21,7 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.function.LongToIntFunction;
 
 import io.helidon.common.Api;
 
@@ -47,6 +48,19 @@ public final class Parsers {
     }
 
     private Parsers() {
+    }
+
+    /**
+     * Build a generated ASCII lexer whose selector reads the first eight input bytes.
+     * The lexer checks the entire selected spelling and closing quote before accepting a match.
+     *
+     * @param decoded lexer for decoded input
+     * @param selector possible ordinal from the first little-endian word
+     * @param names registered names in ordinal order
+     * @return lexer with a raw ASCII fast path
+     */
+    public static JsonStringLexer asciiPrefixLexer(JsonStringLexer decoded, LongToIntFunction selector, String... names) {
+        return AsciiStringLexer.withAsciiPrefix(decoded, selector, names);
     }
 
     /**

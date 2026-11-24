@@ -19,6 +19,7 @@ package io.helidon.json;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.function.LongToIntFunction;
 
 abstract class AsciiStringLexer implements JsonStringLexer {
     private final JsonStringLexer decoded;
@@ -45,6 +46,14 @@ abstract class AsciiStringLexer implements JsonStringLexer {
             singleWord = singleWord && literal != null && literal.length < Long.BYTES;
         }
         return singleWord ? new SingleWord(decoded, selector, literals) : new Multiple(decoded, selector, literals);
+    }
+
+    static JsonStringLexer withAsciiPrefix(JsonStringLexer decoded, LongToIntFunction selector, String[] names) {
+        Literal[] literals = new Literal[names.length];
+        for (int i = 0; i < names.length; i++) {
+            literals[i] = Literal.create(Objects.requireNonNull(names[i]));
+        }
+        return new Prefix(Objects.requireNonNull(decoded), Objects.requireNonNull(selector), literals);
     }
 
     static JsonStringLexer withUtf8(JsonStringLexer decoded, Utf8Selector selector, int offset, String[] names) {
@@ -137,6 +146,35 @@ abstract class AsciiStringLexer implements JsonStringLexer {
             if (ordinal >= 0 && ordinal < literals.length) {
                 Literal literal = literals[ordinal];
                 if ((first & literal.firstMask) == literal.first) {
+                    return ((long) literal.length << Integer.SIZE) | ordinal;
+                }
+            }
+            return -1;
+        }
+    }
+
+    private static final class Prefix extends AsciiStringLexer {
+        private final LongToIntFunction selector;
+        private final Literal[] literals;
+
+        private Prefix(JsonStringLexer decoded, LongToIntFunction selector, Literal[] literals) {
+            super(decoded);
+            this.selector = selector;
+            this.literals = literals;
+        }
+
+        @Override
+        long recognize(byte[] input, int start, int limit) {
+            int available = limit - start;
+            if (available < Long.BYTES) {
+                return -1;
+            }
+            long first = JsonTextParser.word(input, start);
+            int ordinal = selector.applyAsInt(first);
+            if (ordinal >= 0 && ordinal < literals.length) {
+                Literal literal = literals[ordinal];
+                if (literal != null && (literal.length < Long.BYTES
+                        ? (first & literal.firstMask) == literal.first : literal.matchesSingle(input, start, available))) {
                     return ((long) literal.length << Integer.SIZE) | ordinal;
                 }
             }

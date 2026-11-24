@@ -92,6 +92,14 @@ final class StringLexerGenerator {
         // for alphabets that can dispatch directly on a single byte or need the second word to choose a name.
         boolean hashFirst = dispatch != null && dispatch.projection != null && dispatch.projection.secondMask == 0;
         boolean completeFallback = complete && !hashFirst;
+        boolean smallAscii = raw && !utf8 && ascii.size() >= 3 && ascii.size() < MIN_PACKED_NAMES;
+        AsciiDispatch selector = smallAscii && ascii.size() >= MIN_PROJECTED_NAMES
+                ? AsciiDispatch.create(ascii, true) : dispatch;
+        // Prefer a unique prefix to bit extraction, while retaining a direct byte lookup when available.
+        PrefixSwitch prefix = smallAscii && (selector == null || selector.projection != null)
+                ? PrefixSwitch.create(ascii) : null;
+        boolean prefixOnly = prefix != null && ascii.stream().anyMatch(edge -> edge.bytes.length >= Long.BYTES)
+                && ascii.stream().anyMatch(edge -> edge.bytes.length < Long.BYTES);
         owner.addField(field -> {
             field.name(fieldName).type(JsonTypes.JSON_STRING_LEXER).isStatic(true).isFinal(true)
                     .accessModifier(AccessModifier.PRIVATE);
@@ -101,6 +109,9 @@ final class StringLexerGenerator {
             }
             if (completeFallback) {
                 field.addContent("createPropertyNameLexer(new ").addContent(String.class).addContent("[] {");
+            } else if (prefixOnly) {
+                field.addContent(TypeName.create("io.helidon.json.Parsers")).addContent(".asciiPrefixLexer(")
+                        .addContent(type).addContent("::" + entry + ", ").addContent(type).addContent("::" + rawMethod + ", ");
             } else {
                 field.addContent(JsonTypes.JSON_STRING_LEXER);
                 if (raw && !hashFirst) {
@@ -128,19 +139,14 @@ final class StringLexerGenerator {
             owner.addMethod(method -> {
                 method.name(rawMethod).accessModifier(AccessModifier.PRIVATE).isStatic(true)
                         .returnType(TypeNames.PRIMITIVE_INT)
-                        .addParameter(TypeNames.PRIMITIVE_LONG, "first")
-                        .addParameter(TypeNames.PRIMITIVE_LONG, "second");
-                if (positional.isEmpty()) {
-                    boolean tryPrefix = !utf8 && ascii.size() >= 3 && ascii.size() < MIN_PACKED_NAMES;
-                    AsciiDispatch selector = dispatch;
-                    if (tryPrefix && ascii.size() >= MIN_PROJECTED_NAMES) {
-                        // A unique prefix can replace bit extraction. Keep a direct byte lookup when one is available.
-                        selector = AsciiDispatch.create(ascii, true);
-                        tryPrefix = selector.projection != null;
-                    }
-                    if (!tryPrefix || !emitPrefixSwitch(method, ascii)) {
-                        emitAscii(method, ascii, owner, fieldName + "_TRANSITIONS", selector);
-                    }
+                        .addParameter(TypeNames.PRIMITIVE_LONG, "first");
+                if (!prefixOnly) {
+                    method.addParameter(TypeNames.PRIMITIVE_LONG, "second");
+                }
+                if (prefix != null) {
+                    prefix.emit(method);
+                } else if (positional.isEmpty()) {
+                    emitAscii(method, ascii, owner, fieldName + "_TRANSITIONS", selector);
                 } else {
                     method.addContentLine("return " + positional + ";");
                 }
@@ -345,26 +351,6 @@ final class StringLexerGenerator {
         return true;
     }
 
-    // Every compared byte is part of the name or its closing quote for every registered spelling.
-    private static boolean emitPrefixSwitch(Method.Builder method, List<RawEdge> edges) {
-        int bytes = Math.min(Integer.BYTES, edges.stream().mapToInt(edge -> edge.bytes.length).min().orElseThrow() + 1);
-        Map<Integer, Integer> values = new TreeMap<>();
-        for (RawEdge edge : edges) {
-            int prefix = 0;
-            for (int i = 0; i < bytes; i++) {
-                prefix |= edge.at(i) << (i * Byte.SIZE);
-            }
-            if (values.putIfAbsent(prefix, edge.ordinal) != null) {
-                return false;
-            }
-        }
-        String prefix = bytes == Integer.BYTES ? "(int) first" : "(int) first & " + ((1 << (bytes * Byte.SIZE)) - 1);
-        method.addContentLine("return switch (" + prefix + ") {");
-        values.forEach((word, target) -> method.addContentLine("case 0x" + Integer.toHexString(word) + " -> " + target + ";"));
-        method.addContentLine("default -> -1;").addContent("}").addContentLine(";");
-        return true;
-    }
-
     private static void addTable(ClassBase.Builder<?, ?> owner, String name, int[] routes) {
         String constants = Arrays.toString(routes);
         owner.addField(field -> field.name(name).type(int[].class).accessModifier(AccessModifier.PRIVATE)
@@ -517,6 +503,32 @@ final class StringLexerGenerator {
 
     private static String literal(long word) {
         return "0x" + Long.toHexString(word) + "L";
+    }
+
+    // Every compared byte is part of the name or its closing quote for each registered spelling.
+    private record PrefixSwitch(int bytes, Map<Integer, Integer> values) {
+        static PrefixSwitch create(List<RawEdge> edges) {
+            int bytes = Math.min(Integer.BYTES, edges.stream().mapToInt(edge -> edge.bytes.length).min().orElseThrow() + 1);
+            Map<Integer, Integer> values = new TreeMap<>();
+            for (RawEdge edge : edges) {
+                int prefix = 0;
+                for (int i = 0; i < bytes; i++) {
+                    prefix |= edge.at(i) << (i * Byte.SIZE);
+                }
+                if (values.putIfAbsent(prefix, edge.ordinal) != null) {
+                    return null;
+                }
+            }
+            return new PrefixSwitch(bytes, values);
+        }
+
+        void emit(Method.Builder method) {
+            String prefix = bytes == Integer.BYTES ? "(int) first" : "(int) first & " + ((1 << (bytes * Byte.SIZE)) - 1);
+            method.addContentLine("return switch (" + prefix + ") {");
+            values.forEach((word, target) -> method.addContentLine("case 0x" + Integer.toHexString(word)
+                                                                           + " -> " + target + ";"));
+            method.addContentLine("default -> -1;").addContent("}").addContentLine(";");
+        }
     }
 
     // Several prefixes can finish with the same literal but different ordinals. Put the ordinal in
