@@ -119,12 +119,7 @@ class DeclarativeOpenApiTest {
 
     @Test
     void generatedDocumentIncludesEnumAndDateRecordComponents() {
-        Map<String, Object> document = document();
-        Map<String, Object> operation = operation(document, "/items", "get");
-        String itemRef = ref(content(response(operation, "200"), MediaTypes.APPLICATION_JSON_VALUE));
-        assertThat(itemRef, startsWith(SCHEMA_REF_PREFIX));
-        Map<String, Object> item = object(schemas(document), itemRef.substring(SCHEMA_REF_PREFIX.length()));
-        Map<String, Object> properties = object(item, "properties");
+        Map<String, Object> properties = itemResponseProperties(document());
 
         Map<String, Object> state = object(properties, "state");
         assertThat(state.get("type"), is("string"));
@@ -138,6 +133,13 @@ class DeclarativeOpenApiTest {
         assertThat(emptyState.get("type"), is("string"));
         assertThat(emptyState, hasKey("enum"));
         assertThat(list(emptyState, "enum"), is(List.of()));
+    }
+
+    @Test
+    void generatedDocumentDescribesMapRecordComponentAsObject() {
+        Map<String, Object> properties = itemResponseProperties(document());
+
+        assertThat("values schema type", object(properties, "values").get("type"), is("object"));
     }
 
     @Test
@@ -613,6 +615,14 @@ class DeclarativeOpenApiTest {
 
     private static Map<String, Object> schemas(Map<String, Object> document) {
         return object(object(document, "components"), "schemas");
+    }
+
+    private static Map<String, Object> itemResponseProperties(Map<String, Object> document) {
+        Map<String, Object> operation = operation(document, "/items", "get");
+        String itemRef = ref(content(response(operation, "200"), MediaTypes.APPLICATION_JSON_VALUE));
+        assertThat(itemRef, startsWith(SCHEMA_REF_PREFIX));
+        Map<String, Object> item = object(schemas(document), itemRef.substring(SCHEMA_REF_PREFIX.length()));
+        return object(item, "properties");
     }
 
     private static String messageSchema(Map<String, Object> document) {

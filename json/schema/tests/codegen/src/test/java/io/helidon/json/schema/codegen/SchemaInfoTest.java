@@ -19,8 +19,8 @@ package io.helidon.json.schema.codegen;
 import java.util.List;
 import java.util.Set;
 
-import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.CodegenException;
+import io.helidon.codegen.RoundContext;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
@@ -144,7 +144,7 @@ class SchemaInfoTest {
     }
 
     private static JsonObject schema(TypedElementInfo... elements) {
-        var context = mock(CodegenContext.class);
+        var context = mock(RoundContext.class);
         var type = TypeInfo.builder()
                 .typeName(MODEL)
                 .kind(ElementKind.CLASS)
