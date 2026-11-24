@@ -41,6 +41,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.collection.IsEmptyCollection.emptyCollectionOf;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Unit test for {@link MediaTypes}.
@@ -54,6 +55,16 @@ class MediaTypesTest {
             .filter(it -> it.getType().equals(MediaType.class))
             .map(Field::getName)
             .collect(Collectors.toSet());
+
+    @Test
+    void testCreateRejectsNullType() {
+        assertThrows(NullPointerException.class, () -> MediaTypes.create(null, "plain"));
+    }
+
+    @Test
+    void testCreateRejectsNullSubtype() {
+        assertThrows(NullPointerException.class, () -> MediaTypes.create("text", (String) null));
+    }
 
     @Test
     void testAllEnumValuesHaveConstants() {

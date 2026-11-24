@@ -126,8 +126,7 @@ class Http1ServerResponse extends ServerResponseBase<Http1ServerResponse> implem
         // date header
         if (!headers.contains(HeaderNames.DATE)) {
             buffer.write(DATE);
-            byte[] dateBytes = DateTime.http1Bytes();
-            buffer.write(dateBytes);
+            DateTime.writeHttp1Bytes(buffer);
         }
 
         // either content-length or chunked encoding
