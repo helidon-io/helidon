@@ -308,14 +308,23 @@ class GeneratedSourceMetadataTest {
                                         int prefix04ab) {
                 }
 
+                @SuppressWarnings("helidon:api:preview")
+                @Json.Entity
+                record Scattered(int aaaaa, int caaaa, int acaaa, int aacaa, int aaaca, int aaaac,
+                                 int ccaaa, int cacaa, int caaca, int caaac, int accaa, int acaca) {
+                }
+
                 class Long {
                 }
                 """);
 
         assertCompilationSuccess(result);
         String content = Files.readString(generatedSource(result, "Projected__GeneratedConverter.java"));
-        assertThat(content, containsString("import static java.lang.Long.compress;"));
-        assertThat(content, containsString("compress(second,"));
+        assertThat(content, containsString("(int) (second >>> 8) & 1"));
+        assertThat(content, not(containsString("import static java.lang.Long.compress;")));
+        String scattered = Files.readString(generatedSource(result, "Scattered__GeneratedConverter.java"));
+        assertThat(scattered, containsString("import static java.lang.Long.compress;"));
+        assertThat(scattered, containsString("compress(first,"));
     }
 
     @Test
@@ -357,8 +366,9 @@ class GeneratedSourceMetadataTest {
                                                  + " & 0x8080808080808080L) / 8;"));
         assertThat(content, containsString("case 0 -> 12;"));
         assertThat(content, containsString("case 7 -> 13;"));
-        assertThat(content, containsString("case 5 -> PROPERTY_NAMES_TRANSITIONS[4 + (int) compress(first,"));
-        assertThat(content, containsString("case 6 -> PROPERTY_NAMES_TRANSITIONS[12 + (int) compress(first,"));
+        assertThat(content, containsString("case 5 -> PROPERTY_NAMES_TRANSITIONS[4 + (((int) (first >>> 2) & 3)"
+                                                 + " | ((int) (first >>> 31) & 4))]"));
+        assertThat(content, containsString("case 6 -> PROPERTY_NAMES_TRANSITIONS[12 + ((int) (first >>> 8) & 1)]"));
         String fallback = Files.readString(generatedSource(result, "TooManyBits__GeneratedConverter.java"));
         assertThat(fallback, containsString("::lexPropertyNameAscii"));
         assertThat(fallback, not(containsString("numberOfTrailingZeros(")));

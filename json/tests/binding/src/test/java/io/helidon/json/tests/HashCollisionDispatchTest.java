@@ -262,6 +262,16 @@ class HashCollisionDispatchTest {
 
     @ParameterizedTest
     @EnumSource(BindingMethod.class)
+    void verifiesTheSharedFirstWordWhenOnlyTheSecondWordSelectsAField(BindingMethod method) {
+        String json = "{\"customer5\\u0062\":12,\"customer5a\":11,\"customer4b\":10,\"customer4a\":9,"
+                + "\"customer3b\":8,\"customer3a\":7,\"customer2b\":6,\"customer2a\":5,\"customer1b\":4,"
+                + "\"customer1a\":3,\"customer0b\":2,\"customer0a\":1,\"customeR0a\":99,\"customer5c\":99,\"customer0ax\":99}";
+        assertThat(method.deserialize(jsonBinding, json, SharedFirstWord.class),
+                   is(new SharedFirstWord(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
     void matchesAbbreviatedFieldsWithDifferentLengths(BindingMethod method) {
         String doc = "{\"minMs\":7,\"offPeak\":14,\"min\" \t:11,\"max\":1,\"inMs\":8,\"minId\":5,\"in\":4,\"\":13,"
                 + "\"countA\":6,\"cpu\\u004dax\":10,\"idMax\":2,\"valMs\":9,\"unitA\":12,\"count\":3,\"off\":15,"
@@ -422,6 +432,11 @@ class HashCollisionDispatchTest {
     @Json.Entity
     record ProjectedNames(int a, int ab, int prefix00aa, int prefix00ab, int prefix01aa, int prefix01ab,
                           int prefix02aa, int prefix02ab, int prefix03aa, int prefix03ab, int prefix04aa, int prefix04ab) {
+    }
+
+    @Json.Entity
+    record SharedFirstWord(int customer0a, int customer0b, int customer1a, int customer1b, int customer2a, int customer2b,
+                           int customer3a, int customer3b, int customer4a, int customer4b, int customer5a, int customer5b) {
     }
 
     @Json.Entity

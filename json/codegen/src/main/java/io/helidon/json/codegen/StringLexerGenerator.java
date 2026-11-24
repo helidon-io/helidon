@@ -309,6 +309,7 @@ final class StringLexerGenerator {
         int budget = MAX_ROUTES_PER_NAME * edges.size();
         List<Integer> routes = new ArrayList<>();
         List<String> cases = new ArrayList<>();
+        boolean usesCompress = false;
         for (var group : lengths.entrySet()) {
             List<RawEdge> sameLength = group.getValue();
             String value;
@@ -320,7 +321,8 @@ final class StringLexerGenerator {
                     return false;
                 }
                 String base = routes.isEmpty() ? "" : routes.size() + " + ";
-                value = tableName + "[" + base + "(int) compress(first, " + literal(projection.firstMask) + ")]";
+                value = tableName + "[" + base + projection.indexExpression() + "]";
+                usesCompress |= projection.requiresCompress();
                 for (int route : projection.routes) {
                     routes.add(route);
                 }
@@ -329,6 +331,8 @@ final class StringLexerGenerator {
         }
         if (!routes.isEmpty()) {
             addTable(owner, tableName, routes.stream().mapToInt(Integer::intValue).toArray());
+        }
+        if (usesCompress) {
             owner.addStaticImport("java.lang.Long.compress");
         }
         owner.addStaticImport("java.lang.Long.numberOfTrailingZeros");
@@ -630,6 +634,8 @@ final class StringLexerGenerator {
 
     // Select bits that distinguish every pair before either name ends. The parser verifies the entire candidate.
     private record Projection(long firstMask, long secondMask, int[] routes) {
+        private static final int MAX_SHIFT_RUNS = 4;
+
         private static Projection create(List<RawEdge> edges, int width) {
             return create(edges, width, MAX_ROUTES_PER_NAME * edges.size());
         }
@@ -713,20 +719,55 @@ final class StringLexerGenerator {
             return new Projection(masks[0], masks.length > 1 ? masks[1] : 0, routes);
         }
 
+        private static boolean requiresCompress(long mask) {
+            // Only the lowest bit of each consecutive run survives.
+            return Long.bitCount(mask & ~(mask << 1)) > MAX_SHIFT_RUNS;
+        }
+
+        private static String extract(String word, long mask) {
+            if (mask == 0) {
+                return "0";
+            }
+            if (requiresCompress(mask)) {
+                return "(int) compress(" + word + ", " + literal(mask) + ")";
+            }
+            List<String> terms = new ArrayList<>();
+            int destination = 0;
+            while (mask != 0) {
+                int start = Long.numberOfTrailingZeros(mask);
+                int width = Long.numberOfTrailingZeros(~(mask >>> start));
+                long run = -1L >>> (Long.SIZE - width);
+                // Pack this run immediately above all selected lower bits, as Long.compress does.
+                int shift = start - destination;
+                String value = shift == 0 ? "(int) " + word : "(int) (" + word + " >>> " + shift + ")";
+                terms.add("(" + value + " & " + (int) (run << destination) + ")");
+                mask &= ~(run << start);
+                destination += width;
+            }
+            return terms.size() == 1 ? terms.getFirst() : "(" + String.join(" | ", terms) + ")";
+        }
+
+        private boolean requiresCompress() {
+            return requiresCompress(firstMask) || requiresCompress(secondMask);
+        }
+
+        private String indexExpression() {
+            if (secondMask == 0) {
+                return extract("first", firstMask);
+            }
+            if (firstMask == 0) {
+                return extract("second", secondMask);
+            }
+            return "(" + extract("first", firstMask) + " | (" + extract("second", secondMask)
+                    + " << " + Long.bitCount(firstMask) + "))";
+        }
+
         private void emit(Method.Builder method, ClassBase.Builder<?, ?> owner, String name) {
             addTable(owner, name, routes);
-            owner.addStaticImport("java.lang.Long.compress");
-            method.addContent("return " + name + "[");
-            if (firstMask != 0) {
-                method.addContent("(int) compress(first, " + literal(firstMask) + ")");
+            if (requiresCompress()) {
+                owner.addStaticImport("java.lang.Long.compress");
             }
-            if (secondMask != 0) {
-                if (firstMask != 0) {
-                    method.addContent(" | ");
-                }
-                method.addContent("((int) compress(second, " + literal(secondMask) + ") << " + Long.bitCount(firstMask) + ")");
-            }
-            method.addContentLine("];");
+            method.addContentLine("return " + name + "[" + indexExpression() + "];");
         }
     }
 
