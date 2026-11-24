@@ -44,6 +44,7 @@ class DefaultErrorHandling implements RestClient.ErrorHandling {
                 if (maybeException.isPresent()) {
                     throw maybeException.get();
                 }
+                return;
             }
         }
     }
@@ -56,6 +57,7 @@ class DefaultErrorHandling implements RestClient.ErrorHandling {
                 if (maybeException.isPresent()) {
                     throw maybeException.get();
                 }
+                return;
             }
         }
     }

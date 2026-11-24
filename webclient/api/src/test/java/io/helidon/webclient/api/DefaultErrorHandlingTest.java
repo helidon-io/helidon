@@ -17,6 +17,7 @@
 package io.helidon.webclient.api;
 
 import java.util.List;
+import java.util.Optional;
 
 import io.helidon.common.GenericType;
 import io.helidon.http.ClientRequestHeaders;
@@ -31,6 +32,7 @@ import io.helidon.http.media.ReadableEntityBase;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -65,6 +67,60 @@ class DefaultErrorHandlingTest {
 
         assertThat(exception.status(), is(RESPONSE_STATUS));
         assertThat(exception.getMessage(), is(EXPECTED_MESSAGE));
+    }
+
+    @Test
+    void customHandlerAcceptsUntypedErrorResponse() {
+        var handling = new DefaultErrorHandling(List.of(new TestErrorHandler(RESPONSE_STATUS, Optional.empty())));
+
+        handling.handle(REQUEST_URI, REQUEST_HEADERS, response);
+    }
+
+    @Test
+    void customHandlerAcceptsTypedErrorResponse() {
+        var handling = new DefaultErrorHandling(List.of(new TestErrorHandler(RESPONSE_STATUS, Optional.empty())));
+
+        handling.handle(REQUEST_URI, REQUEST_HEADERS, response, GenericType.STRING);
+    }
+
+    @Test
+    void customHandlerExceptionIsPropagated() {
+        var failure = new IllegalStateException("Custom handler failure");
+        var notFoundHandler = new TestErrorHandler(Status.NOT_FOUND_404, Optional.empty());
+        var matchingHandler = new TestErrorHandler(RESPONSE_STATUS, Optional.of(failure));
+        var handling = new DefaultErrorHandling(List.of(notFoundHandler, matchingHandler));
+
+        assertThat(assertThrows(IllegalStateException.class,
+                                () -> handling.handle(REQUEST_URI, REQUEST_HEADERS, response)),
+                   sameInstance(failure));
+        assertThat(assertThrows(IllegalStateException.class,
+                                () -> handling.handle(REQUEST_URI, REQUEST_HEADERS, response, GenericType.STRING)),
+                   sameInstance(failure));
+    }
+
+    private record TestErrorHandler(Status handledStatus, Optional<RuntimeException> result) implements RestClient.ErrorHandler {
+        @Override
+        public boolean handles(String uri,
+                               ClientRequestHeaders requestHeaders,
+                               Status status,
+                               ClientResponseHeaders responseHeaders) {
+            return handledStatus.equals(status);
+        }
+
+        @Override
+        public Optional<RuntimeException> handleError(String uri,
+                                                      ClientRequestHeaders headers,
+                                                      HttpClientResponse response) {
+            return result;
+        }
+
+        @Override
+        public Optional<RuntimeException> handleError(String uri,
+                                                      ClientRequestHeaders headers,
+                                                      ClientResponseTyped<?> response,
+                                                      GenericType<?> type) {
+            return result;
+        }
     }
 
     private static final class TestResponse implements HttpClientResponse, ClientResponseTyped<ReadableEntity> {
