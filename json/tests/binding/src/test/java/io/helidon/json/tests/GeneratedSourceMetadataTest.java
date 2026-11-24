@@ -630,8 +630,10 @@ class GeneratedSourceMetadataTest {
         assertThat(fourBytes, containsString("switch ((int) first)"));
         assertThat(fourBytes, containsString("case 0x22636261 -> 0;"));
         assertThat(empty, containsString("switch ((int) first & 255)"));
+        assertThat(empty, containsString("Parsers.asciiPrefixLexer("));
         assertThat(empty, containsString("case 0x22 -> 0;"));
         assertThat(one, containsString("switch ((int) first & 65535)"));
+        assertThat(one, containsString("lexPropertyNameAscii(long first)"));
         assertThat(one, containsString("case 0x2261 -> 0;"));
     }
 

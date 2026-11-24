@@ -49,11 +49,16 @@ abstract class AsciiStringLexer implements JsonStringLexer {
     }
 
     static JsonStringLexer withAsciiPrefix(JsonStringLexer decoded, LongToIntFunction selector, String[] names) {
+        Objects.requireNonNull(decoded);
+        Objects.requireNonNull(selector);
         Literal[] literals = new Literal[names.length];
+        boolean singleWord = names.length > 0;
         for (int i = 0; i < names.length; i++) {
-            literals[i] = Literal.create(Objects.requireNonNull(names[i]));
+            Literal literal = Literal.create(Objects.requireNonNull(names[i]));
+            literals[i] = literal;
+            singleWord = singleWord && literal != null && literal.length < Long.BYTES;
         }
-        return new Prefix(Objects.requireNonNull(decoded), Objects.requireNonNull(selector), literals);
+        return singleWord ? new ShortPrefix(decoded, selector, literals) : new Prefix(decoded, selector, literals);
     }
 
     static JsonStringLexer withUtf8(JsonStringLexer decoded, Utf8Selector selector, int offset, String[] names) {
@@ -108,6 +113,16 @@ abstract class AsciiStringLexer implements JsonStringLexer {
     // A negative result delegates to the decoded lexer.
     abstract long recognize(byte[] input, int start, int limit);
 
+    private static long matchSingleWord(Literal[] literals, int ordinal, long first) {
+        if (ordinal >= 0 && ordinal < literals.length) {
+            Literal literal = literals[ordinal];
+            if ((first & literal.firstMask) == literal.first) {
+                return ((long) literal.length << Integer.SIZE) | ordinal;
+            }
+        }
+        return -1;
+    }
+
     private static final class Single extends AsciiStringLexer {
         private final Literal literal;
 
@@ -142,14 +157,27 @@ abstract class AsciiStringLexer implements JsonStringLexer {
             long first = JsonTextParser.word(input, start);
             long second = available >= 2 * Long.BYTES ? JsonTextParser.word(input, start + Long.BYTES)
                     : partialSecond(input, limit, available);
-            int ordinal = selector.select(first, second);
-            if (ordinal >= 0 && ordinal < literals.length) {
-                Literal literal = literals[ordinal];
-                if ((first & literal.firstMask) == literal.first) {
-                    return ((long) literal.length << Integer.SIZE) | ordinal;
-                }
+            return matchSingleWord(literals, selector.select(first, second), first);
+        }
+    }
+
+    private static final class ShortPrefix extends AsciiStringLexer {
+        private final LongToIntFunction selector;
+        private final Literal[] literals;
+
+        private ShortPrefix(JsonStringLexer decoded, LongToIntFunction selector, Literal[] literals) {
+            super(decoded);
+            this.selector = selector;
+            this.literals = literals;
+        }
+
+        @Override
+        long recognize(byte[] input, int start, int limit) {
+            if (limit - start < Long.BYTES) {
+                return -1;
             }
-            return -1;
+            long first = JsonTextParser.word(input, start);
+            return matchSingleWord(literals, selector.applyAsInt(first), first);
         }
     }
 

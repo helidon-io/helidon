@@ -83,8 +83,9 @@ final class StringLexerGenerator {
                 && (ascii.size() <= MAX_ASCII_BRANCHES || !positional.isEmpty());
         // The complete fallback can finish plain ASCII misses at the quote. Keep the generated decoder
         // when many registered names share the first eight bytes.
-        boolean complete = fieldName.equals("PROPERTY_NAMES") && raw && !utf8 && positional.isEmpty()
-                && names.size() >= MIN_PACKED_NAMES && names.size() <= MAX_PACKED_NAMES && ascii.size() == names.size()
+        boolean allProperties = fieldName.equals("PROPERTY_NAMES") && ascii.size() == names.size();
+        boolean complete = allProperties && raw && !utf8 && positional.isEmpty()
+                && names.size() >= MIN_PACKED_NAMES && names.size() <= MAX_PACKED_NAMES
                 && states.size() > 1 && ascii.stream().allMatch(edge -> edge.bytes.length < 2 * Long.BYTES)
                 && states.stream().skip(1).allMatch(state -> state.size() <= MAX_PREFIX_FAN_OUT);
         AsciiDispatch dispatch = complete ? AsciiDispatch.create(ascii, true) : null;
@@ -98,8 +99,8 @@ final class StringLexerGenerator {
         // Prefer a unique prefix to bit extraction, while retaining a direct byte lookup when available.
         PrefixSwitch prefix = smallAscii && (selector == null || selector.projection != null)
                 ? PrefixSwitch.create(ascii) : null;
-        boolean prefixOnly = prefix != null && ascii.stream().anyMatch(edge -> edge.bytes.length >= Long.BYTES)
-                && ascii.stream().anyMatch(edge -> edge.bytes.length < Long.BYTES);
+        boolean prefixOnly = prefix != null && ascii.stream().anyMatch(edge -> edge.bytes.length < Long.BYTES)
+                && (allProperties || ascii.stream().anyMatch(edge -> edge.bytes.length >= Long.BYTES));
         owner.addField(field -> {
             field.name(fieldName).type(JsonTypes.JSON_STRING_LEXER).isStatic(true).isFinal(true)
                     .accessModifier(AccessModifier.PRIVATE);
