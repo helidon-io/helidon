@@ -256,6 +256,27 @@ abstract class AsciiStringLexer implements JsonStringLexer {
             return create(name, null);
         }
 
+        boolean matchesSingle(byte[] input, int start, int available) {
+            if (length >= available) {
+                return false;
+            }
+            if (length < Long.BYTES) {
+                if (available >= Long.BYTES) {
+                    return (JsonTextParser.word(input, start) & firstMask) == first;
+                }
+                for (int i = 0; i <= length; i++) {
+                    if (input[start + i] != (byte) (first >>> (i * Byte.SIZE))) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            // The final word includes the closing quote and can overlap the first two.
+            return JsonTextParser.word(input, start) == first
+                    && (length < 2 * Long.BYTES || JsonTextParser.word(input, start + Long.BYTES) == second)
+                    && JsonTextParser.word(input, start + length - Long.BYTES + 1) == tail;
+        }
+
         private static Literal create(String name, byte[] bytes) {
             int length = bytes == null ? name.length() : bytes.length;
             if (length >= 3 * Long.BYTES) {
@@ -287,27 +308,6 @@ abstract class AsciiStringLexer implements JsonStringLexer {
 
         private static long mask(int bytes) {
             return bytes == 0 ? 0 : -1L >>> ((Long.BYTES - bytes) * Byte.SIZE);
-        }
-
-        private boolean matchesSingle(byte[] input, int start, int available) {
-            if (length >= available) {
-                return false;
-            }
-            if (length < Long.BYTES) {
-                if (available >= Long.BYTES) {
-                    return (JsonTextParser.word(input, start) & firstMask) == first;
-                }
-                for (int i = 0; i <= length; i++) {
-                    if (input[start + i] != (byte) (first >>> (i * Byte.SIZE))) {
-                        return false;
-                    }
-                }
-                return true;
-            }
-            // The final word includes the closing quote and can overlap the first two.
-            return JsonTextParser.word(input, start) == first
-                    && (length < 2 * Long.BYTES || JsonTextParser.word(input, start + Long.BYTES) == second)
-                    && JsonTextParser.word(input, start + length - Long.BYTES + 1) == tail;
         }
     }
 }

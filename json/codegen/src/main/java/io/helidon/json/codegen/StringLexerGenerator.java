@@ -87,6 +87,11 @@ final class StringLexerGenerator {
                 && names.size() >= MIN_PACKED_NAMES && names.size() <= MAX_PACKED_NAMES && ascii.size() == names.size()
                 && states.size() > 1 && ascii.stream().allMatch(edge -> edge.bytes.length < 2 * Long.BYTES)
                 && states.stream().skip(1).allMatch(state -> state.size() <= MAX_PREFIX_FAN_OUT);
+        AsciiDispatch dispatch = complete ? AsciiDispatch.create(ascii, true) : null;
+        // A complete hash scan can replace a first-word bit projection. Retain the generated selector
+        // for alphabets that can dispatch directly on a single byte or need the second word to choose a name.
+        boolean hashFirst = dispatch != null && dispatch.projection != null && dispatch.projection.secondMask == 0;
+        boolean completeFallback = complete && !hashFirst;
         owner.addField(field -> {
             field.name(fieldName).type(JsonTypes.JSON_STRING_LEXER).isStatic(true).isFinal(true)
                     .accessModifier(AccessModifier.PRIVATE);
@@ -94,11 +99,11 @@ final class StringLexerGenerator {
                 field.addContent(type).addContent("::" + entry);
                 return;
             }
-            if (complete) {
+            if (completeFallback) {
                 field.addContent("createPropertyNameLexer(new ").addContent(String.class).addContent("[] {");
             } else {
                 field.addContent(JsonTypes.JSON_STRING_LEXER);
-                if (raw) {
+                if (raw && !hashFirst) {
                     field.addContent(utf8 ? ".withUtf8(" : ".withAscii(").addContent(type).addContent("::" + entry + ", ")
                             .addContent(type).addContent("::" + rawMethod + ", ");
                     if (utf8) {
@@ -114,9 +119,9 @@ final class StringLexerGenerator {
                 }
                 field.addContentLiteral(names.get(i));
             }
-            field.addContent(complete ? "})" : ")");
+            field.addContent(completeFallback ? "})" : ")");
         });
-        if (!generate) {
+        if (!generate || hashFirst) {
             return;
         }
         if (raw) {
@@ -127,14 +132,14 @@ final class StringLexerGenerator {
                         .addParameter(TypeNames.PRIMITIVE_LONG, "second");
                 if (positional.isEmpty()) {
                     if (utf8 || ascii.size() < 3 || ascii.size() >= MIN_PROJECTED_NAMES || !emitPrefixSwitch(method, ascii)) {
-                        emitAscii(method, ascii, owner, fieldName + "_TRANSITIONS");
+                        emitAscii(method, ascii, owner, fieldName + "_TRANSITIONS", dispatch);
                     }
                 } else {
                     method.addContentLine("return " + positional + ";");
                 }
             });
         }
-        if (complete) {
+        if (completeFallback) {
             owner.addMethod(method -> method.name("createPropertyNameLexer").isStatic(true).accessModifier(AccessModifier.PRIVATE)
                     .returnType(JsonTypes.JSON_STRING_LEXER).addParameter(TypeName.create(String[].class), "names")
                     .addContent("return ").addContent(JsonTypes.JSON_STRING_LEXER).addContent(".withAscii(")
@@ -222,47 +227,23 @@ final class StringLexerGenerator {
     private static void emitAscii(Method.Builder method,
                                   List<RawEdge> edges,
                                   ClassBase.Builder<?, ?> owner,
-                                  String tableName) {
+                                  String tableName,
+                                  AsciiDispatch prepared) {
         if (edges.size() == 1) {
             method.addContentLine("return " + edges.getFirst().ordinal + ";");
             return;
         }
-        // Only positions defined for every remaining spelling can select a branch. The closing quote
-        // distinguishes a short name from a longer name that shares its complete prefix.
-        int shortest = edges.stream().mapToInt(edge -> edge.bytes.length).min().orElseThrow();
-        int position = 0;
-        long lowestCost = Long.MAX_VALUE;
-        for (int i = 0; i <= Math.min(shortest, 2 * Long.BYTES - 1); i++) {
-            int[] counts = new int[256];
-            long cost = 0;
-            for (RawEdge edge : edges) {
-                cost += 2L * ++counts[edge.at(i)] - 1;
-            }
-            if (cost < lowestCost) {
-                lowestCost = cost;
-                position = i;
-                if (cost == edges.size()) {
-                    break;
-                }
-            }
-        }
-        if (lowestCost == (long) edges.size() * edges.size()) {
+        AsciiDispatch dispatch = prepared == null ? AsciiDispatch.create(edges, !tableName.isEmpty()) : prepared;
+        if (dispatch.cost == (long) edges.size() * edges.size()) {
             // The first two words are identical. Continue in the decoded block automaton.
             method.addContentLine("return -1;");
             return;
         }
-        boolean singleWord = false;
-        if (!tableName.isEmpty() && edges.size() >= MIN_PROJECTED_NAMES && lowestCost > edges.size()) {
-            singleWord = edges.stream().allMatch(edge -> edge.bytes.length < Long.BYTES);
-            Projection projection = Projection.create(edges, Long.BYTES);
-            if (projection == null && !singleWord) {
-                projection = Projection.create(edges, 2 * Long.BYTES);
-            }
-            if (projection != null) {
-                projection.emit(method, owner, tableName);
-                return;
-            }
+        if (dispatch.projection != null) {
+            dispatch.projection.emit(method, owner, tableName);
+            return;
         }
+        int position = dispatch.position;
         String word = position < Long.BYTES ? "first" : "second";
         String digit = "((int) (" + word + " >>> " + ((position % Long.BYTES) * Byte.SIZE) + ") & 0xff)";
         if (edges.size() == 2) {
@@ -277,7 +258,7 @@ final class StringLexerGenerator {
         }
         boolean direct = !tableName.isEmpty() && groups.size() >= 4
                 && groups.values().stream().filter(group -> group.size() == 1).count() * 2 >= groups.size();
-        if (!direct && singleWord && emitLengthProjection(method, edges, owner, tableName)) {
+        if (!direct && dispatch.singleWord && emitLengthProjection(method, edges, owner, tableName)) {
             return;
         }
         if (direct) {
@@ -300,7 +281,7 @@ final class StringLexerGenerator {
         groups.forEach((value, group) -> {
             if (!direct || group.size() > 1) {
                 method.addContentLine("case " + (direct ? -2 - value : value) + " -> {");
-                emitAscii(method, group, owner, "");
+                emitAscii(method, group, owner, "", null);
                 method.addContentLine("}");
             }
         });
@@ -603,6 +584,40 @@ final class StringLexerGenerator {
                 method.addContentLine("default -> -1;").addContent("}").addContentLine(";");
             }
             method.addContentLine("}");
+        }
+    }
+
+    private record AsciiDispatch(int position, long cost, boolean singleWord, Projection projection) {
+        private static AsciiDispatch create(List<RawEdge> edges, boolean table) {
+            // Only positions defined for every remaining spelling can select a branch. The closing quote
+            // distinguishes a short name from a longer name that shares its complete prefix.
+            int shortest = edges.stream().mapToInt(edge -> edge.bytes.length).min().orElseThrow();
+            int position = 0;
+            long lowestCost = Long.MAX_VALUE;
+            for (int i = 0; i <= Math.min(shortest, 2 * Long.BYTES - 1); i++) {
+                int[] counts = new int[256];
+                long cost = 0;
+                for (RawEdge edge : edges) {
+                    cost += 2L * ++counts[edge.at(i)] - 1;
+                }
+                if (cost < lowestCost) {
+                    lowestCost = cost;
+                    position = i;
+                    if (cost == edges.size()) {
+                        break;
+                    }
+                }
+            }
+            if (table && edges.size() >= MIN_PROJECTED_NAMES && lowestCost > edges.size()
+                    && lowestCost < (long) edges.size() * edges.size()) {
+                boolean singleWord = edges.stream().allMatch(edge -> edge.bytes.length < Long.BYTES);
+                Projection projection = Projection.create(edges, Long.BYTES);
+                if (projection == null && !singleWord) {
+                    projection = Projection.create(edges, 2 * Long.BYTES);
+                }
+                return new AsciiDispatch(position, lowestCost, singleWord, projection);
+            }
+            return new AsciiDispatch(position, lowestCost, false, null);
         }
     }
 

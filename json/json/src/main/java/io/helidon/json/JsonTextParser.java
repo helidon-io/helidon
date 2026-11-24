@@ -58,7 +58,7 @@ abstract class JsonTextParser extends JsonParserBase {
         // A public selector may decline a known name. Only an owned dictionary can establish a definitive miss.
         if (lexer instanceof PackedAsciiStringLexer complete) {
             int start = quote + 1;
-            long hit = complete.recognize(input, start, limit);
+            long hit = complete.recognizeAfterSelection(input, start, limit);
             if (hit >= 0) {
                 stringPosition(start + (int) (hit >>> Integer.SIZE));
                 return (int) hit;

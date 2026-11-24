@@ -271,6 +271,13 @@ class GeneratedSourceMetadataTest {
 
                 @SuppressWarnings("helidon:api:preview")
                 @Json.Entity
+                record ByteCodes(int addressCode, int billingRate, int customerRef, int deliveryZone, int eventTime,
+                                 int feeAmount, int grossTotal, int hotelCode, int itemCount, int jobNumber,
+                                 int ledgerRef, int marketCode, int netAmount, int orderDate, int partNumber, int quoteTotal) {
+                }
+
+                @SuppressWarnings("helidon:api:preview")
+                @Json.Entity
                 record Shared(int shipmentId, int shipmentDate, int shipmentTotal, int shipmentTax, int shipmentRate,
                               int shipmentCode, int lineCount, int amount, int currency, int region, int createdAt,
                               int updatedAt, int status, int postalCode, int accountNumber, int unitPrice) {
@@ -279,8 +286,10 @@ class GeneratedSourceMetadataTest {
 
         assertCompilationSuccess(result);
         String ordinary = Files.readString(generatedSource(result, "Order__GeneratedConverter.java"));
-        assertThat(ordinary, containsString("JsonStringLexer PROPERTY_NAMES = createPropertyNameLexer("));
-        assertThat(ordinary, containsString("JsonStringLexer.withAscii(JsonStringLexer.create(names),"));
+        assertThat(ordinary, containsString("JsonStringLexer PROPERTY_NAMES = JsonStringLexer.create("));
+        String byByte = Files.readString(generatedSource(result, "ByteCodes__GeneratedConverter.java"));
+        assertThat(byByte, containsString("JsonStringLexer PROPERTY_NAMES = createPropertyNameLexer("));
+        assertThat(byByte, containsString("JsonStringLexer.withAscii(JsonStringLexer.create(names),"));
         String shared = Files.readString(generatedSource(result, "Shared__GeneratedConverter.java"));
         assertThat(shared, containsString("JsonStringLexer PROPERTY_NAMES = JsonStringLexer.withAscii("));
     }

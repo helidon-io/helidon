@@ -34,6 +34,31 @@ class JsonStringLexerTest {
 
     @ParameterizedTest
     @EnumSource(ParserMethod.class)
+    void distinguishesEqualLengthNamesWithTheSameFnvHash(ParserMethod method) {
+        String[] names = {"declinate", "macallums", "id", "name", "age", "status", "startedAt", "traceId",
+                          "durationNanos", "serviceName", "region", "sequence", "elapsedMillis", "bytes", "host", "zone"};
+        JsonStringLexer both = JsonStringLexer.create(names);
+        names[1] = "other";
+        JsonStringLexer one = JsonStringLexer.create(names);
+        for (int buffer : List.of(7, 16, 64)) {
+            for (String spelling : List.of("macallums", "macallum\\u0073")) {
+                String document = "\"" + spelling + "\":1,\"declinate\":2}";
+                JsonParser registered = method.createParser(document, buffer);
+                assertThat(registered.readProperty(both), is(1));
+                assertThat(registered.readInt(), is(1));
+                assertThat(registered.nextProperty(both), is(0));
+                assertThat(registered.readInt(), is(2));
+                assertThat(registered.nextProperty(both), is(JsonParser.END_OBJECT));
+                JsonParser unregistered = method.createParser(document, buffer);
+                assertThat(unregistered.readProperty(one), is(-1));
+                assertThat(unregistered.readInt(), is(1));
+                assertThat(unregistered.nextProperty(one), is(0));
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
     void validatesAndConsumesUnknownPropertiesInACompleteAsciiDictionary(ParserMethod method) {
         String[] names = {"ts", "kind", "traceId", "durationNanos", "host", "severity", "operationName",
                           "eventTimestamp", "bytes", "parentSpanId", "resourceId", "sequence", "elapsedMillis",
