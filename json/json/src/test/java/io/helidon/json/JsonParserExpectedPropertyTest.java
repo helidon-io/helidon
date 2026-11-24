@@ -36,19 +36,19 @@ class JsonParserExpectedPropertyTest {
         readFirstProperty(parser);
         parser.mark();
 
-        assertThat(parser.tryNextProperty(JsonKey.create("liquid")), is(false));
+        assertThat(Parsers.tryNextProperty(parser, JsonKey.create("liquid")), is(false));
         assertThat(parser.currentByte(), is((byte) '0'));
-        assertThat(parser.tryNextProperty(JsonKey.create("costarring")), is(true));
+        assertThat(Parsers.tryNextProperty(parser, JsonKey.create("costarring")), is(true));
         assertThat(parser.currentByte(), is((byte) 't'));
         assertThat(parser.readBoolean(), is(true));
-        assertThat(parser.tryNextProperty(JsonKey.create("a.property.longer.than.two.words")), is(true));
+        assertThat(Parsers.tryNextProperty(parser, JsonKey.create("a.property.longer.than.two.words")), is(true));
         assertThat(parser.currentByte(), is((byte) '['));
         parser.skip();
         assertThat(parser.nextToken(), is((byte) '}'));
 
         parser.resetToMark();
         assertThat(parser.currentByte(), is((byte) '0'));
-        assertThat(parser.tryNextProperty(JsonKey.create("costarring")), is(true));
+        assertThat(Parsers.tryNextProperty(parser, JsonKey.create("costarring")), is(true));
         assertThat(parser.readBoolean(), is(true));
     }
 
@@ -60,7 +60,7 @@ class JsonParserExpectedPropertyTest {
         JsonParser parser = JsonParser.create(padded, start, length);
         readFirstProperty(parser);
 
-        assertThat(parser.tryNextProperty(JsonKey.create("amount")), is(false));
+        assertThat(Parsers.tryNextProperty(parser, JsonKey.create("amount")), is(false));
         assertThat(parser.currentByte(), is((byte) '0'));
     }
 
@@ -70,7 +70,7 @@ class JsonParserExpectedPropertyTest {
         JsonParser parser = method.createParser("{\"first\":0,\"\\uD800\":1}", 64);
         readFirstProperty(parser);
 
-        assertThat(parser.tryNextProperty(JsonKey.create("\uD800")), is(false));
+        assertThat(Parsers.tryNextProperty(parser, JsonKey.create("\uD800")), is(false));
         assertThat(parser.nextToken(), is((byte) ','));
         assertThat(parser.nextToken(), is((byte) '"'));
         assertThrows(JsonException.class, () -> parser.readString(JsonStringLexer.create("other")));
@@ -88,19 +88,19 @@ class JsonParserExpectedPropertyTest {
             for (int size = prefix.length(); size <= value; size++) {
                 JsonParser p = JsonParser.create(bytes, 2, size);
                 readFirstProperty(p);
-                assertThat(p.tryNextProperty(key), is(false));
+                assertThat(Parsers.tryNextProperty(p, key), is(false));
                 assertThat(p.currentByte(), is((byte) '0'));
             }
             JsonParser present = JsonParser.create(bytes, 2, value + 1);
             readFirstProperty(present);
-            assertThat(present.tryNextProperty(key), is(true));
+            assertThat(Parsers.tryNextProperty(present, key), is(true));
             assertThat(present.readInt(), is(1));
             for (int i = 0; i < header.length(); i++) {
                 byte[] changed = bytes.clone();
                 changed[2 + prefix.length() + i] ^= 1;
                 JsonParser p = JsonParser.create(changed, 2, value + 2);
                 readFirstProperty(p);
-                assertThat(p.tryNextProperty(key), is(false));
+                assertThat(Parsers.tryNextProperty(p, key), is(false));
                 assertThat(p.currentByte(), is((byte) '0'));
             }
         }
@@ -110,7 +110,7 @@ class JsonParserExpectedPropertyTest {
     void declinesAProbeWithoutRefillingAndAllowsTheNormalReaderToContinue() {
         JsonParser parser = ParserMethod.STREAM.createParser("{\"first\":0,\"next\":1}", 6);
         readFirstProperty(parser);
-        assertThat(parser.tryNextProperty(JsonKey.create("next")), is(false));
+        assertThat(Parsers.tryNextProperty(parser, JsonKey.create("next")), is(false));
         assertThat(parser.currentByte(), is((byte) '0'));
         assertThat(parser.nextProperty(JsonStringLexer.create("next")), is(0));
         assertThat(parser.readInt(), is(1));
@@ -125,18 +125,18 @@ class JsonParserExpectedPropertyTest {
             byte[] bytes = ("xx" + header + "7,0123456789").getBytes(StandardCharsets.UTF_8);
             for (int size = 1; size <= header.length(); size++) {
                 JsonParser parser = JsonParser.create(bytes, 2, size);
-                assertThat(parser.tryReadProperty(key), is(false));
+                assertThat(Parsers.tryReadProperty(parser, key), is(false));
                 assertThat(parser.currentByte(), is((byte) '"'));
             }
             JsonParser parser = JsonParser.create(bytes, 2, header.length() + 1);
-            assertThat(parser.tryReadProperty(key), is(true));
+            assertThat(Parsers.tryReadProperty(parser, key), is(true));
             assertThat(parser.readInt(), is(7));
             for (int i = 0; i < header.length(); i++) {
                 byte[] changed = bytes.clone();
                 changed[2 + i] ^= 1;
                 JsonParser mismatch = JsonParser.create(changed, 2, header.length() + 1);
                 byte before = mismatch.currentByte();
-                assertThat(mismatch.tryReadProperty(key), is(false));
+                assertThat(Parsers.tryReadProperty(mismatch, key), is(false));
                 assertThat(mismatch.currentByte(), is(before));
             }
         }
@@ -147,21 +147,35 @@ class JsonParserExpectedPropertyTest {
     void firstProbeDeclinesEquivalentEscapesAndMalformedValuesWithoutAdvancing(ParserMethod method) {
         JsonKey key = JsonKey.create("id");
         JsonParser alternate = method.createParser("\"i\\u0064\":0", 32);
-        assertThat(alternate.tryReadProperty(key), is(false));
+        assertThat(Parsers.tryReadProperty(alternate, key), is(false));
         assertThat(alternate.readProperty(JsonStringLexer.create("id")), is(0));
         assertThat(alternate.readInt(), is(0));
         JsonParser invalid = method.createParser("\"id\":}", 32);
-        assertThat(invalid.tryReadProperty(key), is(false));
+        assertThat(Parsers.tryReadProperty(invalid, key), is(false));
         assertThat(invalid.currentByte(), is((byte) '"'));
-        assertThrows(NullPointerException.class, () -> invalid.tryReadProperty(null));
+        assertThrows(NullPointerException.class, () -> Parsers.tryReadProperty(invalid, null));
         JsonParser following = method.createParser("{\"first\":0,\"id\":}", 32);
         readFirstProperty(following);
-        assertThat(following.tryNextProperty(key), is(false));
-        assertThrows(NullPointerException.class, () -> following.tryNextProperty(null));
+        assertThat(Parsers.tryNextProperty(following, key), is(false));
+        assertThrows(NullPointerException.class, () -> Parsers.tryNextProperty(following, null));
         assertThat(following.currentByte(), is((byte) '0'));
         JsonParser surrogate = method.createParser("\"\\uD800\":7", 32);
-        assertThat(surrogate.tryReadProperty(JsonKey.create("\uD800")), is(false));
+        assertThat(Parsers.tryReadProperty(surrogate, JsonKey.create("\uD800")), is(false));
         assertThrows(JsonException.class, () -> surrogate.readString(JsonStringLexer.create("id")));
+    }
+
+    @Test
+    void treeParserDeclinesBothProbesAndContinuesAtTheSameProperty() {
+        JsonParser parser = JsonParser.create(JsonParser.create("{\"id\":1,\"next\":2}").readJsonObject());
+        JsonStringLexer names = JsonStringLexer.create("id", "next");
+        assertThat(parser.nextToken(), is((byte) '"'));
+        assertThat(Parsers.tryReadProperty(parser, JsonKey.create("id")), is(false));
+        assertThat(parser.readProperty(names), is(0));
+        assertThat(parser.readInt(), is(1));
+        assertThat(Parsers.tryNextProperty(parser, JsonKey.create("next")), is(false));
+        assertThat(parser.nextProperty(names), is(1));
+        assertThat(parser.readInt(), is(2));
+        assertThat(parser.nextProperty(names), is(JsonParser.END_OBJECT));
     }
 
     private static void readFirstProperty(JsonParser parser) {

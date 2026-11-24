@@ -130,6 +130,10 @@ abstract class JsonTextParser extends JsonParserBase {
         return Math.max(-1, ordinal);
     }
 
+    abstract boolean tryReadProperty(JsonKey key);
+
+    abstract boolean tryNextProperty(JsonKey key);
+
     abstract void stringPosition(int position);
 
     abstract byte readNextByte();

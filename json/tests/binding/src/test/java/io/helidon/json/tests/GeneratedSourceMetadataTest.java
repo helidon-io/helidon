@@ -505,10 +505,12 @@ class GeneratedSourceMetadataTest {
 
         assertCompilationSuccess(result);
         String content = Files.readString(generatedSource(result, "OrderedBean__GeneratedConverter.java"));
-        assertThat(content, containsString("parser.tryReadProperty(ID_KEY)"));
+        assertThat(content, containsString("import static io.helidon.json.Parsers.tryReadProperty;"));
+        assertThat(content, containsString("tryReadProperty(parser, ID_KEY)"));
         assertThat(content, containsString("return readDeclaredFields(parser, instance)"));
         assertThat(content, containsString("private OrderedBean readDeclaredFields(JsonParser parser, OrderedBean instance)"));
-        assertThat(content, containsString("parser.tryNextProperty(LABEL_KEY)"));
+        assertThat(content, containsString("import static io.helidon.json.Parsers.tryNextProperty;"));
+        assertThat(content, containsString("tryNextProperty(parser, LABEL_KEY)"));
         assertThat(content, containsString("new OrderedBean()"));
         assertThat(content.indexOf("new OrderedBean()"), is(content.lastIndexOf("new OrderedBean()")));
     }
