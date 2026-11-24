@@ -94,6 +94,7 @@ final class JdbcRunner {
             return evidence.result();
         }
         try {
+            // Assemble outcomes after cleanup to avoid rebuilding them when cleanup fails.
             return run(operation, BATCH, scope -> {
                 for (int offset = 0; offset < items.size();) {
                     int size = Math.min(batchSize, items.size() - offset);
@@ -117,8 +118,8 @@ final class JdbcRunner {
                         JdbcExceptionTranslator.invokeVoid("clearing a JDBC batch", scope.statement()::clearBatch);
                     }
                 }
-                return evidence.result();
-            });
+                return evidence;
+            }).result();
         } catch (RuntimeException failure) {
             throw new JdbcBatchException(evidence.result(), JdbcExceptionTranslator.sanitize("executing a JDBC batch", failure));
         }

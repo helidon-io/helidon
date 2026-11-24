@@ -44,7 +44,6 @@ import org.openjdk.jmh.annotations.Warmup;
 @Warmup(iterations = 3, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(1)
-@SuppressWarnings("helidon:api:internal")
 public class JdbcBatchCaptureJmhBenchmark {
 
     /**

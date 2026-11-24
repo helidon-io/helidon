@@ -598,17 +598,30 @@ class JdbcBatchTest {
         }
     }
 
+    /**
+     * Cleanup overwrites the driver count buffer and fails without changing the captured outcomes.
+     */
     @Test
     void successfulEvidenceSurvivesCleanupFailure() throws Exception {
         for (boolean reusable : new boolean[] {false, true}) {
             setup();
-            when(prepared.executeBatch()).thenReturn(new int[] {1, 2});
-            doThrow(new SQLException("CLEANUP_SECRET")).when(prepared).close();
+            int[] counts = {1, 2};
+            when(prepared.executeBatch()).thenReturn(counts);
+            doAnswer(_ -> {
+                Arrays.fill(counts, Statement.EXECUTE_FAILED);
+                throw new SQLException("The cleanup failed with CLEANUP_SECRET details.");
+            }).when(prepared).close();
             JdbcBatchException failure = assertThrows(JdbcBatchException.class,
                     () -> stage(reusable, "INSERT INTO T VALUES (?)").executeBatch(List.of(1, 2), (b, v) -> b.bind(1, v)));
-            assertThat(failure.result().totalUpdateCount(), is(OptionalLong.of(3)));
+            String scenario = reusable ? "The batch uses a prepared definition." : "The batch uses literal SQL.";
+            assertThat(scenario, failure.result().totalUpdateCount(), is(OptionalLong.of(3)));
+            assertThat(scenario, failure.result().entries().stream().map(JdbcClient.BatchResult.Entry::updateCount).toList(),
+                       is(List.of(OptionalLong.of(1), OptionalLong.of(2))));
+            assertThrows(UnsupportedOperationException.class, () -> failure.result().entries().clear());
             assertSanitized(failure);
             verify(connection).close();
+            verify(connection, never()).commit();
+            verify(connection, never()).rollback();
         }
     }
 
@@ -984,26 +997,41 @@ class JdbcBatchTest {
         }
     }
 
+    /**
+     * Successful and failing cleanup can overwrite driver buffers after all submission evidence is captured.
+     */
     @Test
     void sizedSuccessCountsAndCleanupFailureRetainAllGlobalEvidence() throws Exception {
         for (boolean cleanupFailure : List.of(false, true)) {
             setup();
-            when(prepared.executeBatch()).thenReturn(new int[] {Integer.MAX_VALUE, Integer.MAX_VALUE})
-                    .thenReturn(new int[] {0});
-            if (cleanupFailure) {
-                doThrow(new SQLException("SECRET")).when(prepared).close();
-            }
+            int[] first = {Integer.MAX_VALUE, Integer.MAX_VALUE};
+            int[] last = {0};
+            when(prepared.executeBatch()).thenReturn(first).thenReturn(last);
+            doAnswer(_ -> {
+                Arrays.fill(first, Statement.EXECUTE_FAILED);
+                Arrays.fill(last, Statement.EXECUTE_FAILED);
+                if (cleanupFailure) {
+                    throw new SQLException("The cleanup failed with SECRET details.");
+                }
+                return null;
+            }).when(prepared).close();
             Supplier<JdbcClient.BatchResult> execution = () -> client.create("INSERT INTO T VALUES (?)")
                     .executeBatch(List.of(1, 2, 3), 2, (b, v) -> b.bind(1, v));
             JdbcClient.BatchResult result = cleanupFailure
                     ? assertThrows(JdbcBatchException.class, execution::get).result() : execution.get();
-            assertThat(result.totalUpdateCount(), is(OptionalLong.of(2L * Integer.MAX_VALUE)));
+            String scenario = cleanupFailure ? "Cleanup fails after both submissions."
+                    : "Cleanup succeeds after both submissions.";
+            assertThat(scenario, result.totalUpdateCount(), is(OptionalLong.of(2L * Integer.MAX_VALUE)));
+            assertThat(scenario, result.entries().getLast().updateCount(), is(OptionalLong.of(0)));
             assertThrows(UnsupportedOperationException.class, () -> result.entries().clear());
-            var order = inOrder(prepared);
+            var order = inOrder(prepared, connection);
             order.verify(prepared).executeBatch();
             order.verify(prepared).clearBatch();
             order.verify(prepared).executeBatch();
             order.verify(prepared).close();
+            order.verify(connection).close();
+            verify(connection, never()).commit();
+            verify(connection, never()).rollback();
         }
         setup();
         when(prepared.executeBatch()).thenReturn(new int[] {0, Statement.SUCCESS_NO_INFO}).thenReturn(new int[] {1});

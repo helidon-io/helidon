@@ -435,7 +435,6 @@ class GeneratedBatchTest {
      * The generated callback validates both references before reading an item or assigning a binding.
      */
     @Test
-    @SuppressWarnings("unchecked")
     void generatedBinderValidatesBothArgumentsBeforeReadingOrBinding() {
         JdbcClient client = mock(JdbcClient.class);
         JdbcClient.Statement statement = mock(JdbcClient.Statement.class);
@@ -465,7 +464,6 @@ class GeneratedBatchTest {
      * Repeated markers do not repeat record accessor calls.
      */
     @Test
-    @SuppressWarnings("unchecked")
     void executesCapturedNamesRepeatedAndNullableValues() {
         JdbcClient client = mock(JdbcClient.class);
         JdbcClient.Statement statement = mock(JdbcClient.Statement.class);

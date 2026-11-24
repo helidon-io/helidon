@@ -76,8 +76,8 @@ final class JdbcBatchGenerator {
                 method.addContent(parameter + (source.iterable() ? ".iterator()" : ""));
             }
             method.addContentLine(";");
-            // Direct Iterator sources were already checked at the method boundary.
-            if (source.array() || source.iterable()) {
+            // An application supplied Iterable can return a null iterator.
+            if (source.iterable()) {
                 method.addContent(Objects.class).addContent(".requireNonNull(" + iterators.get(i))
                         .addContentLine(", \"The batch iterator must not be null.\");");
             }
