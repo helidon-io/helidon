@@ -509,6 +509,8 @@ class GeneratedSourceMetadataTest {
         assertThat(content, containsString("return readDeclaredFields(parser, instance)"));
         assertThat(content, containsString("private OrderedBean readDeclaredFields(JsonParser parser, OrderedBean instance)"));
         assertThat(content, containsString("parser.tryNextProperty(LABEL_KEY)"));
+        assertThat(content, containsString("nextPropertyOrSkipUnknown(parser)) != -1 || !parser.tryNextProperty(LABEL_KEY)"));
+        assertThat(content, containsString("pendingProperty == -1 ? parser.nextProperty(PROPERTY_NAMES) : pendingProperty"));
         assertThat(content, containsString("new OrderedBean()"));
         assertThat(content.indexOf("new OrderedBean()"), is(content.lastIndexOf("new OrderedBean()")));
     }

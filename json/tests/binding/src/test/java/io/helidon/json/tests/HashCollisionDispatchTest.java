@@ -330,6 +330,26 @@ class HashCollisionDispatchTest {
     }
 
     @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    void dispatchesEachMemberOnceWhenAnOrderedRetryMisses(BindingMethod method) {
+        String duplicate = "{\"id\":1,\"extra\":[{\"label\":0}],\"id\":2,\"label\":\"done\",\"count\":3}";
+        SetterSequence result = method.deserialize(jsonBinding, duplicate, SetterSequence.class);
+        assertThat(result.writes(), is("iilc"));
+        assertThat(result.id(), is(2));
+        String twoUnknown = "{\"id\":1,\"extra\":2,\"other\":{\"count\":0},\"count\":3,\"label\":\"done\"}";
+        assertThat(method.deserialize(jsonBinding, twoUnknown, SetterSequence.class).writes(), is("icl"));
+        assertThat(method.deserialize(jsonBinding, "{\"id\":1,\"extra\":null}", SetterSequence.class).writes(), is("i"));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
+    void rejectsAnUnknownFieldInsideTheDeclaredSequence(BindingMethod method) {
+        String doc = "{\"project\":\"payments\",\"extra\":{},\"first\":1}";
+        JsonException e = assertThrows(JsonException.class, () -> method.deserialize(jsonBinding, doc, ManyProperties.class));
+        assertThat(e.getMessage(), containsString("Unknown properties"));
+    }
+
+    @ParameterizedTest
     @EnumSource(ParserInput.class)
     void keepsRequiredFieldsAcrossPartialOrderAndAlternateParsers(ParserInput input) {
         String doc = "{\"id\":8,\"label\":\"first\",\"extra\":[1,2],\"count\":3,\"la\\u0062el\":\"last\"}";

@@ -961,6 +961,17 @@ class JsonConverterGenerator {
                                                boolean hasBuilder,
                                                GeneratedNames fieldNames) {
         CreatorInfo creator = converterInfo.creatorInfo();
+        boolean skipUnknown = !converterInfo.failOnUnknown();
+        if (skipUnknown) {
+            classBuilder.addMethod(method -> method.name("nextPropertyOrSkipUnknown").isStatic(true)
+                    .accessModifier(AccessModifier.PRIVATE).returnType(TypeNames.PRIMITIVE_INT)
+                    .addParameter(JsonTypes.JSON_PARSER, "parser")
+                    .addContentLine("int property = parser.nextProperty(PROPERTY_NAMES);")
+                    .addContentLine("if (property == -1) {")
+                    .addContentLine("parser.skip();")
+                    .addContentLine("}")
+                    .addContentLine("return property;"));
+        }
         classBuilder.addMethod(method -> {
             method.name("readDeclaredFields").accessModifier(AccessModifier.PRIVATE)
                     .returnType(converterInfo.wildcardsGenerics()).addParameter(JsonTypes.JSON_PARSER, "parser");
@@ -980,9 +991,10 @@ class JsonConverterGenerator {
             }
             PropertyReader first = readers.getFirst();
             valueWritingMethod(first.property(), method, hasCreator, hasBuilder, first.deserializer());
-            readConsecutiveProperties(method, readers, hasCreator, hasBuilder, fieldNames);
+            readConsecutiveProperties(method, readers, hasCreator, hasBuilder, fieldNames, skipUnknown);
             propertyLoop(method, converterInfo, readers, Map.of(), hasCreator, hasBuilder,
-                         "parser.nextProperty(PROPERTY_NAMES)");
+                         skipUnknown ? "pendingProperty == -1 ? parser.nextProperty(PROPERTY_NAMES) : pendingProperty"
+                                 : "parser.nextProperty(PROPERTY_NAMES)");
             createFinalInstanceCreation(method, converterInfo, properties, hasCreator, creator.creatorKind(),
                                         creator, hasBuilder);
         });
@@ -1067,15 +1079,24 @@ class JsonConverterGenerator {
                                                   List<PropertyReader> readers,
                                                   boolean hasCreator,
                                                   boolean hasBuilder,
-                                                  GeneratedNames fieldNames) {
+                                                  GeneratedNames fieldNames,
+                                                  boolean skipUnknown) {
+        if (skipUnknown) {
+            // A known ordinal or END_OBJECT is ready for the general loop. After an unknown is skipped,
+            // a failed retry leaves the parser on the skipped value, ready to read the next header.
+            method.addContentLine("int pendingProperty = -1;");
+        }
         method.addContentLine("orderedProperties: {");
         for (int j = 1; j < readers.size(); j++) {
             PropertyReader reader = readers.get(j);
             JsonProperty next = reader.property();
             String key = fieldNames.jsonKey(next.deserializationName().orElseThrow());
-            method.addContentLine("if (!parser.tryNextProperty(" + key + ")) {")
-                    .addContentLine("break orderedProperties;")
-                    .addContentLine("}");
+            method.addContent("if (!parser.tryNextProperty(" + key + ")");
+            if (skipUnknown) {
+                method.addContent(" && ((pendingProperty = nextPropertyOrSkipUnknown(parser)) != -1"
+                                          + " || !parser.tryNextProperty(" + key + "))");
+            }
+            method.addContentLine(") {").addContentLine("break orderedProperties;").addContentLine("}");
             valueWritingMethod(next, method, hasCreator, hasBuilder, reader.deserializer());
         }
         method.addContentLine("}");
