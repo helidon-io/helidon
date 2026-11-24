@@ -21,12 +21,11 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Objects;
 
 import io.helidon.common.Api;
 
 /**
- * Utility methods for JSON parser implementations and generated converters.
+ * Utility methods shared by JSON parser implementations.
  */
 @Api.Internal
 public final class Parsers {
@@ -48,34 +47,6 @@ public final class Parsers {
     }
 
     private Parsers() {
-    }
-
-    /**
-     * Try to consume an expected property header from its opening quote. Generated converters use this
-     * to read fields in declaration order when the full header is buffered.
-     *
-     * @param parser parser positioned on the opening quote
-     * @param key expected property name
-     * @return {@code true} with the parser on the first token of the value, or {@code false} with its position preserved
-     */
-    public static boolean tryReadProperty(JsonParser parser, JsonKey key) {
-        Objects.requireNonNull(parser);
-        Objects.requireNonNull(key);
-        return parser instanceof JsonTextParser textParser && textParser.tryReadProperty(key);
-    }
-
-    /**
-     * Try to consume the comma and expected property header following a completed value.
-     * Generated converters continue with the general property reader if the probe declines.
-     *
-     * @param parser parser positioned at the end of the previous value
-     * @param key expected next property name
-     * @return {@code true} with the parser on the first token of the value, or {@code false} with its position preserved
-     */
-    public static boolean tryNextProperty(JsonParser parser, JsonKey key) {
-        Objects.requireNonNull(parser);
-        Objects.requireNonNull(key);
-        return parser instanceof JsonTextParser textParser && textParser.tryNextProperty(key);
     }
 
     /**

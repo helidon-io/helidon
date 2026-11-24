@@ -348,6 +348,33 @@ public interface JsonParser {
     }
 
     /**
+     * Try to consume the expected property from its opening quote through its colon.
+     * On success the parser is positioned on the first token of the value. A parser may decline
+     * the probe without changing its position, including when the header crosses an input refill.
+     *
+     * @param key expected property name
+     * @return whether the complete header was consumed
+     */
+    default boolean tryReadProperty(JsonKey key) {
+        Objects.requireNonNull(key);
+        return false;
+    }
+
+    /**
+     * Try to advance from the end of an object member's value to the value of the expected next property.
+     * A successful probe consumes the comma, the complete property name and its colon, and positions the
+     * parser on the first token of the value. A parser can decline the probe, including when it needs
+     * to refill its input. On a failed probe the current position is preserved.
+     *
+     * @param key expected property name
+     * @return whether the parser advanced to the value
+     */
+    default boolean tryNextProperty(JsonKey key) {
+        Objects.requireNonNull(key);
+        return false;
+    }
+
+    /**
      * Reads a string value and returns its FNV-1a hash.
      * <p>
      * This method avoids string object allocation. Hashes are not unique and must not be used alone

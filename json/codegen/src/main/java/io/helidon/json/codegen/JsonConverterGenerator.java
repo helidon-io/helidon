@@ -910,9 +910,7 @@ class JsonConverterGenerator {
         boolean ordered = readers.size() >= 2 && readers.size() <= MAX_ORDERED_PROPERTIES && discriminatorNames.isEmpty()
                 && propertyNames.stream().allMatch(name -> fieldNames.jsonKey(name) != null);
         if (ordered) {
-            classBuilder.addStaticImport("io.helidon.json.Parsers.tryReadProperty");
-            classBuilder.addStaticImport("io.helidon.json.Parsers.tryNextProperty");
-            method.addContentLine("if (tryReadProperty(parser, " + fieldNames.jsonKey(propertyNames.getFirst()) + ")) {");
+            method.addContentLine("if (parser.tryReadProperty(" + fieldNames.jsonKey(propertyNames.getFirst()) + ")) {");
             String target = "";
             if (!hasCreator) {
                 boolean takesBuilder = hasBuilder && converterInfo.creatorInfo().creatorKind() != ElementKind.METHOD;
@@ -1075,7 +1073,7 @@ class JsonConverterGenerator {
             PropertyReader reader = readers.get(j);
             JsonProperty next = reader.property();
             String key = fieldNames.jsonKey(next.deserializationName().orElseThrow());
-            method.addContentLine("if (!tryNextProperty(parser, " + key + ")) {")
+            method.addContentLine("if (!parser.tryNextProperty(" + key + ")) {")
                     .addContentLine("break orderedProperties;")
                     .addContentLine("}");
             valueWritingMethod(next, method, hasCreator, hasBuilder, reader.deserializer());
