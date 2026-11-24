@@ -788,8 +788,10 @@ class JdbcCallTest {
                     .bind(1, 7).call().out("value", 1, JDBCType.INTEGER).outputs());
             StringWriter text = new StringWriter();
             failure.printStackTrace(new PrintWriter(text));
-            assertThat(text.toString().contains("confidential-driver-canary"), is(false));
-            assertThat(text.toString().contains("confidential_sql"), is(false));
+            String diagnostic = text.toString();
+            String reason = "The callable diagnostic must be sanitized during the " + phase + " phase.";
+            assertThat(reason, diagnostic, not(containsString("confidential-driver-canary")));
+            assertThat(reason, diagnostic, not(containsString("confidential_sql")));
             if (!phase.equals("acquire")) {
                 verify(connection).close();
             }
