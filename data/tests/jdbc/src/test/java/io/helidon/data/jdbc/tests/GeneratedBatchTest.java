@@ -64,6 +64,65 @@ import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 class GeneratedBatchTest {
+    @Test
+    void adapterTypeNamesPreserveOriginalBindingsAndInheritedAliases() throws SQLException {
+        for (String variant : List.of("literal-original", "configured-original", "literal-alias", "configured-alias")) {
+            boolean configured = variant.startsWith("configured");
+            boolean original = variant.endsWith("original");
+            DataSource source = mock(DataSource.class);
+            Connection connection = mock(Connection.class);
+            PreparedStatement statement = mock(PreparedStatement.class);
+            when(source.getConnection()).thenReturn(connection);
+            when(connection.getAutoCommit()).thenReturn(true);
+            when(connection.prepareStatement(anyString())).thenReturn(statement);
+            when(statement.executeBatch()).thenReturn(new int[] {1, 1});
+            JdbcClient client = JdbcClient.builder().dataSource(source).build();
+            List<String> values = Arrays.asList("payload", null);
+            JdbcClient.BatchResult result;
+            if (configured) {
+                ConfiguredBatchRepository repository = new ConfiguredBatchRepository__Jdbc(client, Config.empty());
+                result = original ? repository.originalAdapterNames(values, null)
+                        : repository.adapterTypes(values, new int[] {7, 8}, null, "bridge", "prefix");
+            } else {
+                BatchCollisionRepository repository = new BatchCollisionRepository__Jdbc(client);
+                result = original ? repository.originalAdapterNames(values, null)
+                        : repository.adapterTypes(values, new int[] {7, 8}, null, "bridge", "prefix");
+            }
+
+            assertThat("The " + variant + " batch must report both items.", result.totalUpdateCount().orElseThrow(), is(2L));
+            verify(connection).prepareStatement(original
+                    ? "INSERT INTO T VALUES (?, ?)" : "INSERT INTO T VALUES (?, ?, ?, ?, ?, ?)");
+            InOrder order = inOrder(statement);
+            order.verify(statement).setString(1, "payload");
+            if (original) {
+                order.verify(statement).setNull(2, Types.VARCHAR);
+            } else {
+                order.verify(statement).setInt(2, 7);
+                order.verify(statement).setNull(3, Types.VARCHAR);
+                order.verify(statement).setString(4, "bridge");
+                order.verify(statement).setString(5, "prefix");
+                order.verify(statement).setString(6, "payload");
+            }
+            order.verify(statement).addBatch();
+            order.verify(statement).setNull(1, Types.VARCHAR);
+            if (original) {
+                order.verify(statement).setNull(2, Types.VARCHAR);
+            } else {
+                order.verify(statement).setInt(2, 8);
+                order.verify(statement).setNull(3, Types.VARCHAR);
+                order.verify(statement).setString(4, "bridge");
+                order.verify(statement).setString(5, "prefix");
+                order.verify(statement).setNull(6, Types.VARCHAR);
+            }
+            order.verify(statement).addBatch();
+            order.verify(statement).executeBatch();
+            order.verify(statement).close();
+            verify(connection).close();
+            verify(connection, never()).commit();
+            verify(connection, never()).rollback();
+        }
+    }
+
     /**
      * Recreating a repository adopts replacement SQL while existing definitions keep their original SQL.
      */

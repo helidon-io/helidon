@@ -29,6 +29,11 @@ import io.helidon.data.jdbc.JdbcClient;
 @Data.Repository
 @Data.Provider("jdbc")
 public interface BatchCollisionRepository extends BatchAliasContract<String> {
+    // These parameter names exercise collisions with generated Java names.
+    @SuppressWarnings("checkstyle:ParameterName")
+    @Jdbc.Statement("INSERT INTO T VALUES (:Objects, :JDBCType)")
+    JdbcClient.BatchResult originalAdapterNames(Iterable<String> Objects, String JDBCType);
+
     @Jdbc.Statement("INSERT INTO T VALUES (:values, :values)")
     JdbcClient.BatchResult binary(Iterator<byte[]> values);
 
@@ -86,6 +91,12 @@ public interface BatchCollisionRepository extends BatchAliasContract<String> {
  * @param <T> The repository supplies the concrete scalar type.
  */
 interface BatchAliasContract<T> {
+    // These parameter names exercise collisions with generated Java names.
+    @SuppressWarnings("checkstyle:ParameterName")
+    @Jdbc.Statement("INSERT INTO T VALUES (:payload, :IntStream, :JDBCType, :GeneratedJdbcData, :data__Objects, :payload)")
+    JdbcClient.BatchResult adapterTypes(@Data.Param("payload") Iterable<T> Objects, int[] IntStream,
+                                       String JDBCType, String GeneratedJdbcData, String data__Objects);
+
     @Jdbc.Statement("UPDATE T SET NAME = :name, LABEL = :name, EMAIL = :email WHERE ID = :id")
     @Jdbc.Execution(Jdbc.ExecutionType.BATCH)
     JdbcClient.BatchResult aliases(@Data.Param("id") long[] original,
@@ -99,6 +110,11 @@ interface BatchAliasContract<T> {
 @Data.Repository
 @Data.Provider("jdbc")
 interface ConfiguredBatchRepository extends ConfiguredBatchParent<String> {
+    // These parameter names exercise collisions with generated Java names.
+    @SuppressWarnings("checkstyle:ParameterName")
+    @Jdbc.Statement("${app.original-adapter-names:INSERT INTO T VALUES (:Objects, :JDBCType)}")
+    JdbcClient.BatchResult originalAdapterNames(Iterable<String> Objects, String JDBCType);
+
     @Jdbc.Statement("${app.sized:INSERT INTO T VALUES (:name, :email)}")
     @Jdbc.BatchSize(2)
     JdbcClient.BatchResult sized(Iterable<String> name, String email);
@@ -156,6 +172,13 @@ interface ConfiguredBatchRepository extends ConfiguredBatchParent<String> {
  * @param <T> The concrete repository supplies the scalar type.
  */
 interface ConfiguredBatchParent<T> {
+    // These parameter names exercise collisions with generated Java names.
+    @SuppressWarnings("checkstyle:ParameterName")
+    @Jdbc.Statement("${app.adapter-types:INSERT INTO T VALUES (:payload, :IntStream, :JDBCType, "
+            + ":GeneratedJdbcData, :data__Objects, :payload)}")
+    JdbcClient.BatchResult adapterTypes(@Data.Param("payload") Iterable<T> Objects, int[] IntStream,
+                                       String JDBCType, String GeneratedJdbcData, String data__Objects);
+
     @Jdbc.Statement("${app.inherited:INSERT INTO T VALUES (:value, :value)}")
     JdbcClient.BatchResult inherited(@Data.Param("value") Iterable<T> original);
 }

@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -32,6 +33,7 @@ import io.helidon.config.ConfigSources;
 import io.helidon.data.DataException;
 import io.helidon.data.jdbc.JdbcBatchException;
 import io.helidon.data.jdbc.JdbcClient;
+import io.helidon.tests.integration.data.jdbc.application.ContactView;
 import io.helidon.tests.integration.data.jdbc.declarative.repository.BatchRepository;
 import io.helidon.tests.integration.data.jdbc.declarative.repository.BatchRepository.ScalarChange;
 import io.helidon.tests.integration.data.jdbc.support.DatabaseFixture;
@@ -49,6 +51,55 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Executes generated source adapters through the same real-driver batch contract.
  */
 public abstract class AbstractDeclarativeBatchContract extends AbstractJdbcBatchContract {
+    @Test
+    protected final void adapterTypeNamesPreserveBindingsAndTransactionOwnership() {
+        BatchRepository repository = service(BatchRepository.class);
+        DatabaseFixture fixture = service(DatabaseFixture.class);
+        for (String mode : List.of("literal", "configured")) {
+            BiFunction<Iterable<String>, long[], JdbcClient.BatchResult> execute = (names, ids) -> {
+                Objects.requireNonNull(names, "The batch names must not be null.");
+                Objects.requireNonNull(ids, "The batch identifiers must not be null.");
+                return mode.equals("configured")
+                        ? repository.configuredAdapterTypeNames(names, ids, null, "bridge", "prefix")
+                        : repository.adapterTypeNames(names, ids, null, "bridge", "prefix");
+            };
+            assertThat("The " + mode + " batch must accept empty input.",
+                       execute.apply(List.of(), new long[0]).totalUpdateCount().orElseThrow(), is(0L));
+            List<String> names = List.of("adapter-" + mode + "-one", "adapter-" + mode + "-two");
+            assertThrows(IllegalArgumentException.class, () -> execute.apply(names, new long[] {1}));
+            assertThat("The " + mode + " batch must reject unequal sources before writing.",
+                       fixture.committedByName(names.getFirst()), is(Optional.empty()));
+            assertThat("The " + mode + " batch must update both aligned items.",
+                       execute.apply(names, new long[] {1, 2}).totalUpdateCount().orElseThrow(), is(2L));
+            ContactView first = new ContactView(1, names.getFirst(), Optional.empty());
+            ContactView second = new ContactView(2, names.getLast(), Optional.empty());
+            assertThat("The " + mode + " batch must retain the first name and SQL NULL email.",
+                       fixture.committedByName(first.name()), is(Optional.of(first)));
+            assertThat("The " + mode + " batch must retain the second name and SQL NULL email.",
+                       fixture.committedByName(second.name()), is(Optional.of(second)));
+
+            IllegalStateException expected =
+                    new IllegalStateException("The application rejected the batch with adapter type names.");
+            TxException failure = assertThrows(TxException.class, () -> transactions().transaction(Tx.Type.REQUIRED, () -> {
+                assertThat("The " + mode + " batch must execute within the caller transaction.",
+                           execute.apply(List.of("adapter-rollback-one", "adapter-rollback-two"), new long[] {1, 2})
+                                   .totalUpdateCount().orElseThrow(), is(2L));
+                throw expected;
+            }));
+            assertThat("The " + mode + " batch must preserve the application failure.",
+                       failure.getCause(), sameInstance(expected));
+            assertThat("The " + mode + " batch must leave the first committed row unchanged after rollback.",
+                       fixture.committedByName(first.name()), is(Optional.of(first)));
+            assertThat("The " + mode + " batch must leave the second committed row unchanged after rollback.",
+                       fixture.committedByName(second.name()), is(Optional.of(second)));
+            String reused = "adapter-" + mode + "-reused";
+            assertThat("The " + mode + " batch must remain usable after rollback.",
+                       execute.apply(List.of(reused), new long[] {1}).totalUpdateCount().orElseThrow(), is(1L));
+            assertThat("The " + mode + " batch must commit the later invocation.",
+                       fixture.committedByName(reused), is(Optional.of(new ContactView(1, reused, Optional.empty()))));
+        }
+    }
+
     @Override
     protected final JdbcClient.BatchResult insert(List<String> rows, String email) {
         return service(BatchRepository.class).insert(rows, email);

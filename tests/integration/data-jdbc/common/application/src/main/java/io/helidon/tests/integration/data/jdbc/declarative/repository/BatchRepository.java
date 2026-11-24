@@ -37,6 +37,22 @@ import io.helidon.tests.integration.data.jdbc.parameters.BatchAliasStatements;
 @Data.Repository
 @Data.Provider("jdbc")
 public interface BatchRepository extends BatchAliasStatements<String> {
+    // These parameter names exercise collisions with generated Java names.
+    @SuppressWarnings("checkstyle:ParameterName")
+    @Jdbc.Statement("UPDATE CONTACT SET NAME = :name, EMAIL = :JDBCType WHERE ID = :IntStream "
+            + "AND :GeneratedJdbcData = :GeneratedJdbcData AND :data__Objects = :data__Objects")
+    @Jdbc.BatchSize(1)
+    JdbcClient.BatchResult adapterTypeNames(@Data.Param("name") Iterable<String> Objects, long[] IntStream,
+                                           String JDBCType, String GeneratedJdbcData, String data__Objects);
+
+    // These parameter names exercise collisions with generated Java names.
+    @SuppressWarnings("checkstyle:ParameterName")
+    @Jdbc.Statement("${application.batches.adapter-type-names:UPDATE CONTACT SET NAME = :name, EMAIL = :JDBCType "
+            + "WHERE ID = :IntStream AND :GeneratedJdbcData = :GeneratedJdbcData AND :data__Objects = :data__Objects}")
+    @Jdbc.BatchSize(1)
+    JdbcClient.BatchResult configuredAdapterTypeNames(@Data.Param("name") Iterable<String> Objects, long[] IntStream,
+                                                     String JDBCType, String GeneratedJdbcData, String data__Objects);
+
     @Jdbc.Statement("INSERT INTO CONTACT (NAME, EMAIL) VALUES (:arg0, :arg1)")
     @Jdbc.BatchSize(2)
     JdbcClient.BatchResult declaredNames(Iterable<String> arg1, Iterable<String> arg0);

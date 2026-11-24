@@ -872,6 +872,20 @@ class JdbcBatchGenerationTest {
     }
 
     @Test
+    void compilesLiteralBatchParametersNamedLikeAdapterTypes() {
+        TestCompiler.Result result = compile("BatchRepository.java", batchTypeNameCollisions(false));
+        assertThat("Literal batch compilation failed.\n" + String.join("\n", result.diagnostics()),
+                   result.success(), is(true));
+    }
+
+    @Test
+    void compilesConfiguredBatchParametersNamedLikeAdapterTypes() {
+        TestCompiler.Result result = compile("BatchRepository.java", batchTypeNameCollisions(true));
+        assertThat("Configured batch compilation failed.\n" + String.join("\n", result.diagnostics()),
+                   result.success(), is(true));
+    }
+
+    @Test
     void compilesAliasedBatchDiamondsAndSourceShapes() {
         TestCompiler.Result result = compile("BatchRepository.java", """
                 package example;
@@ -1538,6 +1552,51 @@ class JdbcBatchGenerationTest {
                         }
                         """).build().compile();
         assertThat(String.join("\n", result.diagnostics()), result.success(), is(true));
+    }
+
+    private static String batchTypeNameCollisions(boolean configured) {
+        String single = "INSERT INTO T VALUES (?)";
+        String pair = "INSERT INTO T VALUES (?, ?)";
+        String record = "INSERT INTO T VALUES (:JDBCType)";
+        String aliases = "INSERT INTO T VALUES (:payload, :tenant, :suffix)";
+        if (configured) {
+            single = "${app.single:" + single + "}";
+            pair = "${app.pair:" + pair + "}";
+            record = "${app.record:" + record + "}";
+            aliases = "${app.aliases:" + aliases + "}";
+        }
+        return """
+                package example;
+                import java.util.Iterator;
+                import io.helidon.data.Data;
+                import io.helidon.data.jdbc.Jdbc;
+                import io.helidon.data.jdbc.JdbcClient;
+                record Payload(String JDBCType) { }
+                interface Parent<T> {
+                    @Jdbc.Statement("%4$s")
+                    JdbcClient.BatchResult inherited(@Data.Param("payload") Iterable<T> Objects,
+                                                      @Data.Param("tenant") T data__Objects,
+                                                      @Data.Param("suffix") T data__data__Objects);
+                }
+                @Data.Repository @Data.Provider("jdbc")
+                interface BatchRepository extends Parent<String> {
+                    @Jdbc.Statement("%1$s")
+                    JdbcClient.BatchResult iterable(Iterable<String> Objects);
+                    @Jdbc.Statement("%1$s")
+                    JdbcClient.BatchResult iterator(Iterator<String> JDBCType);
+                    @Jdbc.Statement("%1$s")
+                    @Jdbc.BatchSize(2)
+                    JdbcClient.BatchResult array(String[] IntStream);
+                    @Jdbc.Statement("%1$s")
+                    JdbcClient.BatchResult varargs(String... IntStream);
+                    @Jdbc.Statement("%1$s")
+                    JdbcClient.BatchResult bridge(Iterable<String> GeneratedJdbcData);
+                    @Jdbc.Statement("%2$s")
+                    JdbcClient.BatchResult constant(String[] values, String Objects);
+                    @Jdbc.Statement("%3$s")
+                    JdbcClient.BatchResult records(Iterable<Payload> Objects);
+                }
+                """.formatted(single, pair, record, aliases);
     }
 
     private static TestCompiler.Result compile(String fileName, String source) {

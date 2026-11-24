@@ -227,22 +227,28 @@ final class JdbcMethodGenerator {
                 .addAnnotation(Annotation.create(Override.class));
         plan.method().typeParameters()
                 .forEach(typeParameter -> method.addGenericArgument(TypeArgument.create(typeParameter)));
-        // Repository parameters can shadow unqualified generated fields. Override parameter names are not part of
+        // Repository parameters can obscure generated fields and type qualifiers. Override parameter names are not part of
         // the Java method signature, so rename only colliding implementation parameters and retain their bind mapping.
-        Set<String> generatedFieldNames = new HashSet<>();
-        generatedFieldNames.add(JdbcCodegenConstants.JDBC_CLIENT_NAME);
-        generatedFieldNames.add(plan.sqlFieldName());
-        generatedFieldNames.add(JdbcCodegenConstants.OPTIONAL_VALUE_PARAMETER_NAME);
-        generatedFieldNames.add(JdbcCodegenConstants.ROW_PARAMETER_NAME);
+        Set<String> reservedParameterNames = new HashSet<>();
+        reservedParameterNames.add(JdbcCodegenConstants.JDBC_CLIENT_NAME);
+        reservedParameterNames.add(plan.sqlFieldName());
+        reservedParameterNames.add(JdbcCodegenConstants.OPTIONAL_VALUE_PARAMETER_NAME);
+        reservedParameterNames.add(JdbcCodegenConstants.ROW_PARAMETER_NAME);
         if (plan.mappingKind() != JdbcMethodPlan.MappingKind.SCALAR) {
-            generatedFieldNames.add(plan.mapperFieldName());
+            reservedParameterNames.add(plan.mapperFieldName());
+        }
+        if (plan.operation() == JdbcMethodPlan.Operation.BATCH) {
+            reservedParameterNames.add("Objects");
+            reservedParameterNames.add("IntStream");
+            reservedParameterNames.add(JdbcCodegenTypes.JDBC_TYPE.className());
+            reservedParameterNames.add(JdbcCodegenTypes.GENERATED_JDBC_DATA.className());
         }
         Map<String, String> parameterNames = new LinkedHashMap<>();
         Set<String> generatedParameterNames = new HashSet<>();
         for (TypedElementInfo parameter : plan.method().parameterArguments()) {
             String parameterName = parameter.elementName();
             // Repeat the prefix when an application parameter already occupies the first generated name.
-            while (generatedFieldNames.contains(parameterName) || generatedParameterNames.contains(parameterName)) {
+            while (reservedParameterNames.contains(parameterName) || generatedParameterNames.contains(parameterName)) {
                 parameterName = JdbcCodegenConstants.GENERATED_VARIABLE_PREFIX + parameterName;
             }
             generatedParameterNames.add(parameterName);
