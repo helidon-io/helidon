@@ -568,7 +568,12 @@ class GeneratedSourceMetadataTest {
                 public class Prefixes {
                     @Json.Entity
                     public record Different(int id, int idExtra, int name, int status, int userId, int revision, int requestId,
-                                            int displayName) {
+                                            int displayName, int age, int active, int verified, int priority) {
+                    }
+
+                    @Json.Entity
+                    public record SingleByte(int account, int balance, int city, int date, int email, int fee, int groupId,
+                                             int host, int id, int job, int kind, int label, int mode, int note, int owner) {
                     }
 
                     @Json.Entity
@@ -591,12 +596,14 @@ class GeneratedSourceMetadataTest {
 
         assertCompilationSuccess(result);
         String different = Files.readString(generatedSource(result, "Prefixes_Different__GeneratedConverter.java"));
+        String singleByte = Files.readString(generatedSource(result, "Prefixes_SingleByte__GeneratedConverter.java"));
         String shared = Files.readString(generatedSource(result, "Prefixes_Shared__GeneratedConverter.java"));
         String fourBytes = Files.readString(generatedSource(result, "Prefixes_FourBytes__GeneratedConverter.java"));
         String empty = Files.readString(generatedSource(result, "Prefixes_EmptyFirst__GeneratedConverter.java"));
         String one = Files.readString(generatedSource(result, "Prefixes_OneCharacter__GeneratedConverter.java"));
         assertThat(different, containsString("switch ((int) first & 16777215)"));
         assertThat(different, containsString("case 0x226469 -> 0;"));
+        assertThat(singleByte, containsString("return PROPERTY_NAMES_TRANSITIONS["));
         assertThat(shared, not(containsString("switch ((int) first & 16777215)")));
         assertThat(shared, containsString("int route = PROPERTY_NAMES_TRANSITIONS["));
         assertThat(shared, containsString("switch (route)"));

@@ -131,8 +131,15 @@ final class StringLexerGenerator {
                         .addParameter(TypeNames.PRIMITIVE_LONG, "first")
                         .addParameter(TypeNames.PRIMITIVE_LONG, "second");
                 if (positional.isEmpty()) {
-                    if (utf8 || ascii.size() < 3 || ascii.size() >= MIN_PROJECTED_NAMES || !emitPrefixSwitch(method, ascii)) {
-                        emitAscii(method, ascii, owner, fieldName + "_TRANSITIONS", dispatch);
+                    boolean tryPrefix = !utf8 && ascii.size() >= 3 && ascii.size() < MIN_PACKED_NAMES;
+                    AsciiDispatch selector = dispatch;
+                    if (tryPrefix && ascii.size() >= MIN_PROJECTED_NAMES) {
+                        // A unique prefix can replace bit extraction. Keep a direct byte lookup when one is available.
+                        selector = AsciiDispatch.create(ascii, true);
+                        tryPrefix = selector.projection != null;
+                    }
+                    if (!tryPrefix || !emitPrefixSwitch(method, ascii)) {
+                        emitAscii(method, ascii, owner, fieldName + "_TRANSITIONS", selector);
                     }
                 } else {
                     method.addContentLine("return " + positional + ";");

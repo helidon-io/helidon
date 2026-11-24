@@ -243,6 +243,15 @@ class HashCollisionDispatchTest {
 
     @ParameterizedTest
     @EnumSource(BindingMethod.class)
+    void verifiesTheWholeNameAfterSelectingASmallAsciiPrefix(BindingMethod method) {
+        String json = "{\"priority\":12,\"verified\":11,\"priorities\":90,\"created\\u0041t\":9,"
+                + "\"priorityExtra\":91,\"name\":2,\"id\":1,\"verifiedX\":92}";
+        assertThat(method.deserialize(jsonBinding, json, ContactFields.class),
+                   is(new ContactFields(1, 2, 0, 0, 0, 0, 0, 0, 9, 0, 11, 12)));
+    }
+
+    @ParameterizedTest
+    @EnumSource(BindingMethod.class)
     void matchesShortAndLongNamesUsingBothInputWords(BindingMethod method) {
         String json = "{\"prefix04ab\":12,\"prefix04abx\":98,\"ab\"      :2,\"prefix01aa\":5,"
                 + "\"prefix03aa\":9,\"prefix00ab\":4,\"prefix02ab\":8,\"a\" :1,\"prefix03ab\":10,"
@@ -403,6 +412,11 @@ class HashCollisionDispatchTest {
                               @Json.Property("cafe\u0301") int decomposed,
                               @Json.Property("設定前置甲") int first,
                               @Json.Property("設定前置乙") int second) {
+    }
+
+    @Json.Entity
+    record ContactFields(int id, int name, int age, int active, int userId, int items, int status, int region,
+                         int createdAt, int email, int verified, int priority) {
     }
 
     @Json.Entity
