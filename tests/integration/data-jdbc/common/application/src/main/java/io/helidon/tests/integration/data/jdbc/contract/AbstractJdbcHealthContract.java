@@ -80,7 +80,10 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.AdditionalAnswers.delegatesTo;
 import static org.mockito.Matchers.any;
@@ -288,8 +291,9 @@ public abstract class AbstractJdbcHealthContract {
                 Future<HealthCheckResponse> worker = executor.submit(check::call);
                 workers.add(worker);
                 HealthCheckResponse response = worker.get(20, TimeUnit.SECONDS);
-                assertThat(response.status(), is(HealthCheckResponse.Status.DOWN));
-                assertThat(response.details().isEmpty(), is(true));
+                assertThat("The timeout check is " + check.name() + ".", response.status(),
+                           is(HealthCheckResponse.Status.DOWN));
+                assertThat("The timeout check is " + check.name() + ".", response.details(), anEmptyMap());
                 assertThat(executionFailure.get(), notNullValue());
                 assertQueryCancellation(executionFailure.get());
             }
@@ -320,11 +324,12 @@ public abstract class AbstractJdbcHealthContract {
         var sourceFailure = DataSourceHealthCheck.builder().dataSource(source)
                 .query("SELECT * FROM JDBC_HEALTH_TABLE_MISSING").build().call();
         assertThat(sourceFailure.status(), is(HealthCheckResponse.Status.DOWN));
-        assertThat(sourceFailure.details().isEmpty(), is(true));
+        assertThat(sourceFailure.details(), anEmptyMap());
         JdbcClientHealthCheck failed = JdbcClientHealthCheck.builder().client(client)
                 .query("SELECT * FROM JDBC_HEALTH_TABLE_MISSING").build();
-        assertThat(failed.call().status(), is(HealthCheckResponse.Status.DOWN));
-        assertThat(failed.call().details().isEmpty(), is(true));
+        HealthCheckResponse clientFailure = failed.call();
+        assertThat(clientFailure.status(), is(HealthCheckResponse.Status.DOWN));
+        assertThat(clientFailure.details(), anEmptyMap());
         assertThat(probe(client, query(), Duration.ofSeconds(2)).getAsBoolean(), is(true));
         assertThat(probe(source, query(), Duration.ofSeconds(2)).getAsBoolean(), is(true));
         assertThat(client.create(query()).map(row -> row.get(1, Integer.class)).one(), is(1));
@@ -546,7 +551,7 @@ public abstract class AbstractJdbcHealthContract {
             assertThat(application.check("health-client-1").status(), is(HealthCheckResponse.Status.UP));
             HealthCheckResponse failed = application.check("health-client-2");
             assertThat(failed.status(), is(HealthCheckResponse.Status.DOWN));
-            assertThat(failed.details().isEmpty(), is(true));
+            assertThat(failed.details(), anEmptyMap());
             assertThat(acquisitionCount.get(), is(3));
             WebServer server = WebServer.builder().host("127.0.0.1").port(0).featuresDiscoverServices(false)
                     .addFeature(feature).build().start();
@@ -605,7 +610,7 @@ public abstract class AbstractJdbcHealthContract {
         try {
             Services.set(Config.class, Config.just(ConfigSources.create(values)));
             List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
-            assertThat(checks.size(), is(1));
+            assertThat(checks, hasSize(1));
             var check = (JdbcClientHealthCheck) checks.getFirst();
             assertThat(check.name(), is("direct"));
             assertThat(check.prototype().query(), is("SELECT 1"));
@@ -650,8 +655,8 @@ public abstract class AbstractJdbcHealthContract {
             Services.set(Config.class, Config.just(ConfigSources.create(values)));
             Services.setNamed(DataSource.class, source, "shared");
             List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
-            assertThat(checks.size(), is(3));
-            assertThat(checks.stream().filter(check -> check instanceof DataSourceHealthCheck).count(), is(1L));
+            assertThat(checks, hasSize(3));
+            assertThat(checks.stream().filter(check -> check instanceof DataSourceHealthCheck).toList(), hasSize(1));
             var sourceCheck = (DataSourceHealthCheck) checks.stream().filter(check -> check.name().equals("shared"))
                     .findFirst().orElseThrow();
             var clientCheck = (JdbcClientHealthCheck) checks.stream().filter(check -> check.name().equals("client-0"))
@@ -720,7 +725,7 @@ public abstract class AbstractJdbcHealthContract {
                 Services.setQualified(JdbcClient.class, replacement, name, provider);
                 int before = acquisitionCount.get();
                 List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
-                assertThat(checks.size(), is(enabled ? 2 : 1));
+                assertThat("The replacement health enabled setting is " + enabled + ".", checks, hasSize(enabled ? 2 : 1));
                 assertThat(manager.registry().get(JdbcClient.class, name, provider), sameInstance(replacement));
                 assertThat(acquisitionCount.get(), is(before));
                 if (enabled) {
@@ -779,14 +784,15 @@ public abstract class AbstractJdbcHealthContract {
                 Services.set(Config.class, Config.just(ConfigSources.create(values)));
                 Services.setNamed(DataSource.class, source, "shared");
                 List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
-                assertThat(checks.size(), is(1));
+                assertThat("The explicit client disablement flag is " + explicitlyDisabled + ".", checks, hasSize(1));
                 assertThat(checks.getFirst().name(), is("shared"));
                 assertThat(((DataSourceHealthCheck) checks.getFirst()).prototype().dataSource(), sameInstance(source));
                 JdbcClient managed = manager.registry().getNamed(JdbcClient.class, "pokemon");
                 assertThat(managed.prototype().health().enabled(), is(false));
                 JdbcClient.builder().name("unregistered").dataSource(source)
                         .health(health -> health.enabled(true)).build();
-                assertThat(manager.registry().all(HealthCheck.class).size(), is(1));
+                assertThat("The explicit client disablement flag is " + explicitlyDisabled + ".",
+                           manager.registry().all(HealthCheck.class), hasSize(1));
                 var provider = manager.registry().get(ObserveFeatureProvider.class);
                 List<ObserveFeature> features = List.of(provider.create(Config.empty(), "observe", manager.registry()),
                         ObserveFeature.just(HealthObserver.builder().useSystemServices(true).build()));
@@ -870,7 +876,7 @@ public abstract class AbstractJdbcHealthContract {
             List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
             assertThat(checks.stream().map(check -> ((JdbcClientHealthCheck) check).prototype().client()).toList(),
                        containsInAnyOrder(expected.toArray(JdbcClient[]::new)));
-            assertThat(checks.stream().allMatch(check -> check.name().equals("orders")), is(true));
+            assertThat(checks.stream().map(HealthCheck::name).toList(), everyItem(is("orders")));
             assertThat(acquisitionCount.get(), is(0));
             var providerFeature = manager.registry().get(ObserveFeatureProvider.class);
             for (ObserveFeature feature : List.of(providerFeature.create(Config.empty(), "observe", manager.registry()),
@@ -953,8 +959,8 @@ public abstract class AbstractJdbcHealthContract {
             Services.set(Config.class, Config.just(ConfigSources.create(values)));
             Services.setNamed(DataSource.class, source, "shared");
             List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
-            assertThat(checks.size(), is(2));
-            assertThat(checks.stream().allMatch(check -> check.name().equals("shared")), is(true));
+            assertThat(checks, hasSize(2));
+            assertThat(checks.stream().map(HealthCheck::name).toList(), everyItem(is("shared")));
             HealthCheck sourceCheck = checks.stream().filter(check -> check instanceof DataSourceHealthCheck)
                     .findFirst().orElseThrow();
             HealthCheck ready = checks.stream().filter(check -> check instanceof JdbcClientHealthCheck

@@ -58,7 +58,10 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
@@ -133,7 +136,7 @@ class JdbcClientHealthCheckTest {
             var manager = clientRegistry(() -> List.of(registered(client, "orders")), List.of());
             try {
                 List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
-                assertThat(checks.size(), is(1));
+                assertThat("The obsolete naming configuration is " + obsolete + ".", checks, hasSize(1));
                 var check = (JdbcClientHealthCheck) checks.getFirst();
                 assertThat(check.name(), is("orders"));
                 assertThat(check.prototype().query(), is(policy.query()));
@@ -208,8 +211,9 @@ class JdbcClientHealthCheckTest {
         JdbcClientHealthCheck check = JdbcClientHealthCheck.builder()
                 .client(JdbcClient.builder().dataSource(source).build()).build();
         when(source.getConnection()).thenThrow(new SQLException("Secret password and SQL"));
-        assertThat(check.call().status(), is(HealthCheckResponse.Status.DOWN));
-        assertThat(check.call().details().isEmpty(), is(true));
+        HealthCheckResponse response = check.call();
+        assertThat(response.status(), is(HealthCheckResponse.Status.DOWN));
+        assertThat(response.details(), anEmptyMap());
         Error fatal = new OutOfMemoryError("fatal");
         doThrow(fatal).when(source).getConnection();
         assertThat(assertThrows(OutOfMemoryError.class, check::call), sameInstance(fatal));
@@ -232,7 +236,8 @@ class JdbcClientHealthCheckTest {
                 return List.of(Service.QualifiedInstance.create(client));
             }, List.of());
             try {
-                assertThat(manager.registry().all(HealthCheck.class), empty());
+                assertThat("Discovery must remain disabled for configuration " + values + ".",
+                           manager.registry().all(HealthCheck.class), empty());
                 assertThat(activations.get(), is(1));
                 verifyZeroInteractions(source);
             } finally {
@@ -270,7 +275,7 @@ class JdbcClientHealthCheckTest {
                 GlobalServiceRegistry.registry(manager.registry());
                 Services.set(JdbcClientConfig.class, original.prototype());
                 List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
-                assertThat(checks.size(), is(enabled ? 1 : 0));
+                assertThat("The replacement health enabled setting is " + enabled + ".", checks, hasSize(enabled ? 1 : 0));
                 if (enabled) {
                     var check = (JdbcClientHealthCheck) checks.getFirst();
                     assertThat(check.prototype().client(), sameInstance(replacement));
@@ -288,7 +293,7 @@ class JdbcClientHealthCheckTest {
         var manager = clientRegistry(() -> List.of(registered(original, "orders")),
                 List.of(registered(disabled, "orders")));
         try {
-            assertThat(manager.registry().all(HealthCheck.class).size(), is(1));
+            assertThat(manager.registry().all(HealthCheck.class), hasSize(1));
         } finally {
             manager.shutdown();
         }
@@ -331,7 +336,7 @@ class JdbcClientHealthCheckTest {
                         .health(health -> health.enabled(enabled).query("SELECT 3")).build();
                 Services.setQualified(JdbcClient.class, replacement, Qualifier.createNamed("orders"), PROVIDER);
                 List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
-                assertThat(checks.size(), is(enabled ? 1 : 0));
+                assertThat("The replacement health enabled setting is " + enabled + ".", checks, hasSize(enabled ? 1 : 0));
                 if (enabled) {
                     var check = (JdbcClientHealthCheck) checks.getFirst();
                     assertThat(check.name(), is("orders"));
@@ -475,7 +480,7 @@ class JdbcClientHealthCheckTest {
                 List.of(Service.QualifiedInstance.create(unqualified), registered(shadowed, "orders")));
         try {
             List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
-            assertThat(checks.size(), is(4));
+            assertThat(checks, hasSize(4));
             assertThat(checks.stream().map(HealthCheck::name).toList(),
                        is(List.of("orders", "orders", "other", "replacement")));
             assertThat(((JdbcClientHealthCheck) checks.getFirst()).prototype().client(), sameInstance(unqualified));
@@ -486,7 +491,7 @@ class JdbcClientHealthCheckTest {
             assertThat(manager.registry().get(JdbcClient.class, Qualifier.createNamed("orders"), PROVIDER),
                        sameInstance(preferred));
             assertThat(new JdbcHealthCheckFactory(manager.registry()).services().stream()
-                    .allMatch(check -> check.qualifiers().isEmpty()), is(true));
+                    .map(check -> check.qualifiers()).toList(), everyItem(empty()));
             verifyZeroInteractions(source);
         } finally {
             manager.shutdown();
@@ -517,7 +522,9 @@ class JdbcClientHealthCheckTest {
                     assertThat(manager.registry().get(JdbcClient.class, Qualifier.createNamed("orders"), PROVIDER),
                                sameInstance(providerClient));
                     List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
-                    assertThat(checks.size(), is(providerPreferred ? 1 : 2));
+                    assertThat("The provider preference flag is " + providerPreferred
+                                       + " and the equal weights flag is " + equalWeights + ".",
+                               checks, hasSize(providerPreferred ? 1 : 2));
                     assertThat(checks.stream().map(check -> ((JdbcClientHealthCheck) check).prototype().client()).toList(),
                                is(providerPreferred ? List.of(providerClient) : List.of(namedClient, providerClient)));
                     assertThat(checks.stream().map(HealthCheck::name).toList(),
@@ -547,7 +554,7 @@ class JdbcClientHealthCheckTest {
                 registered(live, "three")), List.of());
         try {
             List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
-            assertThat(checks.size(), is(3));
+            assertThat(checks, hasSize(3));
             assertThat(checks.stream().map(HealthCheck::name).toList(), is(List.of("one", "two", "three")));
             assertThat(checks.stream().map(HealthCheck::type).toList(),
                        is(List.of(HealthCheckType.READINESS, HealthCheckType.READINESS, HealthCheckType.LIVENESS)));

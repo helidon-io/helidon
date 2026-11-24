@@ -62,6 +62,8 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
@@ -140,7 +142,7 @@ class DataSourceHealthCheckTest {
             assertThat(definition.toString(), not(containsString("SQL_CANARY")));
             List<HealthCheck> checks = new DataSourceHealthCheckFactory(() -> List.of(definition), sourceRegistry(source, "orders"))
                     .services().stream().map(service -> service.get()).toList();
-            assertThat(checks.size(), is(1));
+            assertThat("The obsolete naming configuration is " + obsolete + ".", checks, hasSize(1));
             var check = (DataSourceHealthCheck) checks.getFirst();
             assertThat(check.name(), is("orders"));
             assertThat(check.prototype().query(), is(policy.query()));
@@ -486,7 +488,7 @@ class DataSourceHealthCheckTest {
                 Map.of("data.sources.sql.provider.hikari.url", "unused", "data.sources.sql.health.enabled", "false"))) {
             var factory = new DataSourceHealthCheckFactory(() -> configurations(Config.just(ConfigSources.create(values))),
                     registry);
-            assertThat(factory.services().isEmpty(), is(true));
+            assertThat("Discovery must remain disabled for configuration " + values + ".", factory.services(), empty());
         }
         Config invalid = mock(Config.class);
         when(invalid.get("data.sources.sql")).thenThrow(new ConfigException("CONFIG_CANARY"));
@@ -520,8 +522,8 @@ class DataSourceHealthCheckTest {
             assertThrows(IllegalStateException.class,
                          () -> new DataSourceHealthCheckFactory(() -> configurations(config), missing).services());
             var services = new DataSourceHealthCheckFactory(() -> configurations(config), registry).services();
-            assertThat(services.size(), is(1));
-            assertThat(services.getFirst().qualifiers().isEmpty(), is(true));
+            assertThat("The source configuration path is " + prefix + ".", services, hasSize(1));
+            assertThat("The source configuration path is " + prefix + ".", services.getFirst().qualifiers(), empty());
             var check = (DataSourceHealthCheck) services.getFirst().get();
             assertThat(check.name(), is("orders"));
             assertThat(check.type(), is(HealthCheckType.LIVENESS));
@@ -555,14 +557,14 @@ class DataSourceHealthCheckTest {
         ServiceRegistry registry = sourceRegistry(source, "orders", "other");
         var checks = new DataSourceHealthCheckFactory(() -> List.of(preferred, shadowed, other), registry)
                 .services();
-        assertThat(checks.size(), is(2));
+        assertThat(checks, hasSize(2));
         assertThat(checks.get(0).get().name(), is("orders"));
         assertThat(checks.get(1).get().name(), is("other"));
         assertThat(((DataSourceHealthCheck) checks.get(0).get()).prototype().query(), is("SELECT 2"));
         assertThat(((DataSourceHealthCheck) checks.get(1).get()).prototype().query(), is("SELECT 1"));
         DataSourceConfig disabled = DataSourceConfig.builder(preferred).health(DataSourceHealthConfig.create()).build();
         ServiceRegistry unresolved = mock(ServiceRegistry.class);
-        assertThat(new DataSourceHealthCheckFactory(() -> List.of(disabled, shadowed), unresolved).services().isEmpty(), is(true));
+        assertThat(new DataSourceHealthCheckFactory(() -> List.of(disabled, shadowed), unresolved).services(), empty());
         verifyZeroInteractions(unresolved);
         for (DataSourceHealthConfig invalid : List.of(
                 DataSourceHealthConfig.builder().enabled(true).query("UPDATE invalid").build(),
@@ -587,7 +589,7 @@ class DataSourceHealthCheckTest {
         DataSource source = mock(DataSource.class);
         ServiceRegistry registry = sourceRegistry(source, "orders");
         var factory = new DataSourceHealthCheckFactory(() -> List.of(disabled, enabled), registry);
-        assertThat(factory.services().size(), is(1));
+        assertThat(factory.services(), hasSize(1));
         verify(registry).first(DataSource.class, Qualifier.createNamed("orders"));
         verifyNoMoreInteractions(registry);
         when(registry.first(DataSource.class, Qualifier.createNamed("orders")))
@@ -657,7 +659,7 @@ class DataSourceHealthCheckTest {
                     Services.setNamed(DataSource.class, source, "orders");
                 }
                 List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
-                assertThat(checks.size(), is(enabled ? 1 : 0));
+                assertThat("The data source health enabled setting is " + enabled + ".", checks, hasSize(enabled ? 1 : 0));
                 if (enabled) {
                     var check = (DataSourceHealthCheck) checks.getFirst();
                     assertThat(check.name(), is("orders"));
