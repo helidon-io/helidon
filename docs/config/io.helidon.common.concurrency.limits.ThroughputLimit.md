@@ -27,7 +27,7 @@ Configuration of <code>Throughput<wbr>Limit</code>
 <td>
 <code>PT1S</code>
 </td>
-<td>Duration of the time window over which operations will be counted</td>
+<td>Duration of the time window, which must be positive when the amount is positive</td>
 </tr>
 <tr>
 <td>
@@ -51,7 +51,7 @@ Configuration of <code>Throughput<wbr>Limit</code>
 <td>
 <code>0</code>
 </td>
-<td>Number of operations to allow during the relevant time window</td>
+<td>Nonnegative number of operations to allow during the time window</td>
 </tr>
 <tr>
 <td>

@@ -152,7 +152,7 @@ public class FixedLimit extends SemaphoreLimitBase implements RuntimeType.Api<Fi
         return config.build();
     }
 
-    private static Context context(FixedLimitConfig config) {
+    static Context context(FixedLimitConfig config) {
         AtomicInteger concurrentRequests = new AtomicInteger();
         AtomicInteger rejectedRequests = new AtomicInteger();
 
