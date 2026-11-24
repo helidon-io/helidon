@@ -64,6 +64,9 @@ final class DataSourceHealthQuery implements JdbcSqlScanHandler {
     @Override
     public void protectedRegion(RegionKind kind, int start, int end) {
         Objects.requireNonNull(kind, "The protected region kind must not be null.");
+        if (kind == RegionKind.BLOCK_COMMENT && query.startsWith("/*!", start)) {
+            throw new IllegalArgumentException("Health check queries must not contain executable comments.");
+        }
         visible.append(kind == RegionKind.LINE_COMMENT || kind == RegionKind.BLOCK_COMMENT ? ' ' : '#');
     }
 

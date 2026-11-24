@@ -3,28 +3,28 @@ description: "Check data source and JDBC client readiness through Helidon Health
 -->
 # Data Source and JDBC Client Health Checks
 
-Use `DataSourceHealthCheck` to check an existing SQL data source, or
-`JdbcClientHealthCheck` to check the connection source used by an existing Helidon
-`JdbcClient`. Each invocation obtains an independent connection, executes a SELECT,
-drains its results, and releases its resources before returning UP or DOWN.
+Use `DataSourceHealthCheck` to check an existing SQL data source. Use
+`JdbcClientHealthCheck` to check the actual connection source of an existing Helidon
+`JdbcClient`. Each call acquires an independent connection, executes a validation
+SELECT, drains its results, and releases its JDBC resources.
 
 Client checks support direct connection settings, registered named data sources, and
 application-supplied `DataSource` instances. A data source check needs no JDBC client.
-Both checks default to readiness because a database outage can prevent the application
-from serving requests while the application process continues to run.
+Both checks default to readiness. A database outage can prevent the application from
+serving requests while its process continues to run.
 
 > [!NOTE]
 > Data JDBC is incubating and is not production ready. Its APIs and behavior may change
-> incompatibly or be removed in any release. Review the [pool recovery limitation](#pool-recovery-limitation)
-> before relying on unsafe-connection recovery with HikariCP and MySQL.
+> incompatibly or be removed in any release. Before relying on connection recovery with
+> HikariCP and MySQL, read the [pool recovery limitation](#pool-recovery-limitation).
 
 ## Dependencies
 
-`JdbcClientHealthCheck` is in `io.helidon.data.jdbc` and is included in the existing
+`JdbcClientHealthCheck` is in `io.helidon.data.jdbc` and is included in the
 `helidon-data-jdbc` dependency. See [Maven Coordinates](data-jdbc.md#maven-coordinates)
 for the runtime and JDBC driver dependencies.
 
-For data source checks without a JDBC client, use the existing data source support
+For data source checks without a JDBC client, use the data source support
 artifact. `DataSourceHealthCheck` is in `io.helidon.data.sql.datasource`:
 
 ```xml [pom.xml]
@@ -34,7 +34,7 @@ artifact. `DataSourceHealthCheck` is in `io.helidon.data.sql.datasource`:
 </dependency>
 ```
 
-Add the existing Health observer dependency to expose either check over HTTP:
+Add the Health observer dependency to expose either check over HTTP:
 
 ```xml [pom.xml]
 <dependency>
@@ -51,15 +51,15 @@ not require a webserver.
 
 ## Enable Checks Through Configuration
 
-Discovery is disabled by default at both data source and client scope. Enable the
-definitions that the application needs. With the existing Observe and Health service
-discovery enabled, the Health observer includes the resulting checks automatically.
+Discovery is disabled by default for both data sources and clients. Enable checks for
+the resources the application needs to monitor. When Observe and Health service
+discovery are enabled, the Health observer includes those checks automatically.
 See [Enabling Health Support](../health.md#enabling-health-support-and-built-in-health-checks-in-your-application)
 for server setup.
 
 ### Directly Configured Client
 
-This creates the `contacts` client and enables its readiness check as `contacts`:
+This configuration creates the `contacts` client and a readiness check named `contacts`:
 
 ```yaml [application.yaml]
 data:
@@ -80,7 +80,8 @@ The check uses the client's resolved connection source. Direct settings require 
 
 ### Data Source Without a Client
 
-This enables `contacts-source` over a Hikari data source without defining a JDBC client:
+This configuration enables a readiness check named `contacts-source` for a Hikari data
+source, without a JDBC client:
 
 ```yaml [application.yaml]
 data:
@@ -95,7 +96,7 @@ data:
           enabled: true
 ```
 
-The existing single-object data source configuration form also supports `health`.
+The single-object data source configuration form also supports `health`.
 Pool validation settings, including Hikari's `connection-test-query` and
 `health-check-properties`, do not enable or configure these observer checks.
 
@@ -117,24 +118,23 @@ data:
 ```
 
 Merge the two examples under one `data` key. They enable two readiness checks:
-`contacts-source` and `contacts`. An aggregate request executes both independently.
-Client checks inherit no enablement, SQL, timeout, membership, or name from a data source
-check. Several clients sharing a source can each have their own check. Enable only the
-definitions that should contribute to application health.
+`contacts-source` and `contacts`. Each readiness aggregate request executes both
+independently. Clients inherit no health enablement, SQL, timeout, membership, or name
+from a data source check. Several clients sharing a source can each have their own
+check. Enable only the checks that should contribute to application health.
 
-Discovered check names come from resource registration names: `contacts` and
-`contacts-source` here. An unqualified client registration uses its logical client name.
-There is no separate discovery naming override. A `health.name` entry is ignored;
-use the resource name in readiness probes and dashboards. For a custom health name,
-construct and register the check explicitly as shown below.
+If only data source health is enabled and client health is omitted or disabled, only
+the source's health routes are registered. No client check or alias is created, and
+requests do not trigger an additional client probe.
 
-Names need not be unique. An aggregate executes every applicable check, while each
-named handler selects the first matching check from its own membership list. Choose
-distinct resource names or explicitly named checks for individually addressable routes.
+Discovered checks use resource registration names: `contacts` and `contacts-source`
+in these examples. An unqualified client registration uses its logical client name.
+A `health.name` entry is ignored. To use a custom health name, construct and register
+the check explicitly as shown below.
 
-Enabling only the data source check creates no client check or alias. For example,
-with source health enabled and the client `health` node omitted, only the source's
-health routes are registered. Requests do not cause an additional client probe.
+Duplicate names are allowed. Aggregates execute every applicable check. Named routes
+select the first matching check from their own membership list. Choose distinct
+resource names or explicitly named checks when you need separate routes.
 
 ### Health Settings
 
@@ -148,10 +148,10 @@ These settings belong under either definition's `health` node:
 | `type` | `readiness` | Health membership. Select `liveness` explicitly when required. |
 
 `DataSourceConfig.health()` and `JdbcClientConfig.health()` return non-null policies,
-including when `health` is omitted. Their builders accept a typed policy or a builder
-consumer. These policies hold health settings without capturing a source, client, or
-connection configuration. Given an existing `DataSource contactsDataSource`, either
-builder form can configure a client:
+using the defaults above when `health` is omitted. Their builders accept a typed policy
+or a builder consumer. Policies hold health settings without capturing a source,
+client, or connection configuration. Given an existing `DataSource contactsDataSource`,
+either builder form can configure a client:
 
 ```java
 import io.helidon.data.jdbc.JdbcClient;
@@ -175,24 +175,28 @@ JdbcClient anotherClient = JdbcClient.builder()
         .build();
 ```
 
-Standalone client construction publishes no global services. A registered supported
-client supplies its own health policy through `prototype().health()`; replacing that
-client replaces enablement, SQL, timeout, and membership. A named registration still
-supplies the health name when the replacement's logical name differs. Datasource policy
-remains on its selected `DataSourceConfig` when only the source instance is replaced.
-Each enabled registration publishes one unqualified `HealthCheck` in its owning registry.
-Discovery may activate clients and pools before reading disabled client policies;
-disabled health publishes no client check and executes no health SQL.
+Building a standalone client publishes no global services. For supported clients,
+registry discovery reads the selected client's policy through `prototype().health()`.
+If a replacement client is selected, its enablement, SQL, timeout, and membership
+apply. A named registration still determines the health name when the replacement's
+logical name differs. Data source health policy comes from the selected
+`DataSourceConfig`, even when the source instance is replaced.
 
-Executable check builders separately expose `name`, `query`, `queryTimeout`, and
-`type`; `config` applies configuration to a builder. `enabled` controls discovery
-and is not an executable check builder property. A constructed check runs whenever
-its `call()` method is invoked. The experimental `health-check` node is replaced by
-`health`; provider-specific `health-check-properties` keep their existing meaning.
+Each enabled registration publishes one unqualified `HealthCheck` in its owning registry.
+Data source discovery requests only enabled source names. A source remains available
+for ordinary use when its health check is disabled. Client discovery may activate
+clients and pools before reading their health policies. A disabled client policy
+publishes no check and executes no health SQL.
+
+Explicit check builders expose `name`, `query`, `queryTimeout`, and `type`. Their
+`config` method applies configuration to the builder. The `enabled` setting controls
+discovery and is not a property of these builders. A constructed check runs whenever
+its `call()` method is invoked. The `health` node replaces the experimental `health-check`
+node. Provider-specific `health-check-properties` remain pool settings.
 
 ## Register Checks Programmatically
 
-Given an existing client, construct its check and add it to a Health observer:
+Create a check for an existing client and add it to a Health observer:
 
 ```java
 import io.helidon.data.jdbc.JdbcClientHealthCheck;
@@ -257,18 +261,18 @@ var observer = HealthObserver.builder()
         .build();
 ```
 
-Attach this observer as in the server example above. The ready and generic routes
-end in `/orders-db` and `/billing-db`. The application retains lifecycle ownership
-of both sources.
+Attach this observer as in the server example above. Its named readiness and generic
+routes end in `/orders-db` and `/billing-db`. The application remains responsible for
+the lifecycle of both sources.
 
-Without an explicit name, an imperative client check uses the supported client's
-logical name. A standalone data source check has no registration metadata and retains
-`DataSourceHealthCheck` as its fallback name. Names supplied through either builder
-must be nonblank. Explicit check builders use their own SQL, timeout, and membership
-settings. They do not apply a registration policy automatically.
+An explicitly constructed client check defaults to the supported client's logical
+name. An explicitly constructed data source check defaults to `DataSourceHealthCheck`.
+Names supplied through either builder must be nonblank. These checks use their own
+SQL, timeout, and membership settings. They do not apply a registration policy
+automatically.
 
-Construction validates SQL, timeout, and naming without acquiring a connection. The
-client check retains the client's actual source; it does not construct another client
+Construction validates SQL, timeout, and naming without acquiring a connection. A
+client check retains the client's actual source. It does not construct another client
 or data source. Custom implementations of `JdbcClient` are rejected at construction.
 Provider activation can still initialize a pool under its existing lifecycle; this is
 separate from constructing or invoking a health check.
@@ -310,10 +314,10 @@ final class ContactHealth {
 }
 ```
 
-The check runs on each `databaseStatus()` call. Its health name does not create a
-`@Service.Named` qualifier. The observer consumes the same registered check services.
-Resolution stays within the owning registry; each check retains the source or client
-selected when it was constructed, with no automatic rebinding.
+Each `databaseStatus()` call runs the check. The observer uses the same registered
+check services. A health name does not create a `@Service.Named` qualifier. Resolution
+stays within the owning registry, and each check retains the source or client selected
+at construction. Checks do not automatically rebind when resources are replaced.
 
 Both check classes also support direct invocation:
 
@@ -323,8 +327,8 @@ import io.helidon.health.HealthCheckResponse;
 HealthCheckResponse response = check.call();
 ```
 
-This returns the current response without an HTTP request. It does not poll, cache a
-previous result, or retry a failed probe.
+The call returns the current response without an HTTP request. Checks do not poll,
+cache results, or retry failures.
 
 ## Validation SQL and Timeout
 
@@ -332,32 +336,45 @@ An explicit query replaces `SELECT 1`. Invalid or failing explicit SQL never fal
 back to the default. Supply SQL supported by the database, such as `SELECT 1 FROM DUAL`
 where Oracle requires it.
 
-The first token after whitespace and comments must be SELECT. Bind markers, multiple
-statements, and leading WITH, CALL, or EXPLAIN are rejected. A single trailing semicolon
-is allowed and removed before preparation. Quoted text and comments use the existing
-JDBC lexical rules. This validation does not establish that SQL is free of side effects;
-use trusted SQL and appropriate database permissions.
+Validation uses these portable lexical rules:
 
-The probe applies `Statement.setQueryTimeout` before execution and fails if the timeout
-cannot be applied. It accepts zero or more rows, drains them without reading column
-values, and rejects update counts, missing result sets, and additional result sets.
+- The first token after whitespace and recognized comments must be `SELECT`.
+  Bind markers and leading `WITH`, `CALL`, or `EXPLAIN` are rejected.
+- The scanner recognizes `--` line comments when the second dash is followed by
+  whitespace, a control character, or the end of the query.
+- It recognizes `/* ... */` block comments, including optimizer hints. Nested block
+  comments are rejected.
+- MySQL executable comments (`/*! ... */`), including versioned forms, are rejected.
+  MySQL `#` line comments are not recognized.
+- The scanner treats semicolons as statement separators only outside the quoted
+  regions and comments it recognizes. Only one trailing separator is allowed,
+  followed only by whitespace or recognized comments. It is removed before preparation.
+
+Validation does not guarantee that SQL is free of side effects. Use trusted
+SQL and appropriate database permissions.
+
+Each check applies `Statement.setQueryTimeout` before execution and fails if the
+timeout cannot be applied. It accepts zero or more rows and drains them without
+reading column values. Update counts, missing result sets, and additional result sets
+are rejected.
+
 The query timeout does not bound connection acquisition, network operations, or the
 whole HTTP request. Configure pool acquisition and driver timeouts separately.
 
-Generated builders and immutable configurations conceal SQL when rendered as text,
-including policies nested in their owning source or client configurations.
-The query accessor retains the real SQL. Source-check configuration also conceals the
-captured data source, whose own `toString()` could contain connection information.
+Builders and immutable configurations hide SQL in their text representations, including
+policies nested in source or client configurations. The `query()` accessor still returns
+the SQL. Configuration for a data source check also hides the captured source, whose
+own `toString()` could contain connection information.
 
 ## Readiness, Liveness, and HTTP Responses
 
-The default `readiness` membership answers whether the database dependency is usable
-for serving requests. Explicit `liveness` membership assigns the result to the
-application's liveness policy. Both memberships execute the same probe; the choice
-changes which aggregate and named routes include it. See [Kubernetes
+The default `readiness` membership checks whether the database dependency is usable
+for serving requests. Selecting `liveness` explicitly assigns the result to the
+application's liveness policy. Both memberships execute the same probe. The choice
+determines which aggregate and named routes include it. See [Kubernetes
 Probes](../health.md#kubernetes-probes) for the general distinction.
 
-For the readiness check named `contacts`, the default observer exposes:
+For a uniquely named readiness check `contacts`, the default observer exposes:
 
 | Route | What it evaluates |
 | --- | --- |
@@ -370,8 +387,9 @@ Aggregate readiness can be DOWN while the named database check is UP because ano
 readiness check failed. For a uniquely named check with `type: liveness`, the named
 readiness route returns 404, while `/observe/health/live/contacts` and the generic
 named route are available.
+
 There is no bare `/observe/health/check` route. These paths use the default Observe
-prefix and Health endpoint; the application name is not automatically prepended.
+prefix and Health endpoint. The application name is not automatically prepended.
 
 Inspect the response status and headers with:
 
@@ -393,27 +411,30 @@ server:
 
 For an explicitly constructed observer, apply this configuration to its builder or
 call `details(true)`. Expected database, timeout, traversal, and cleanup failures return
-status-only DOWN and HTTP 503. They expose no SQL, values, credentials, driver messages,
-SQLSTATE, or vendor codes. Enabling observer details does not add those diagnostics.
+status-only DOWN and HTTP 503. These responses expose no SQL, values, credentials,
+driver messages, SQLSTATE, or vendor codes. Enabling observer details does not add
+those diagnostics.
+
 Unexpected observer exceptions retain the existing ERROR/500 behavior. Fatal errors
 propagate. See [Health](../health.md) for observer configuration and response handling.
 
 ## Connections, Transactions, and Pools
 
-Checks acquire their own connections and release their statements, results, and leases.
-They never close the data source. Client probes preserve supported caller transactions,
+Each check acquires its own connection and releases its statements, results, and lease.
+It never closes the data source. Client checks preserve supported caller transactions,
 including pending work, rollback state, connection association, and completion ownership.
 They do not join, start, suspend, or complete the caller's transaction. Managed client
 checks reject failed or foreign transaction contexts before acquisition.
 
-The acquired connection must already have auto-commit enabled. The probe never calls
-`setAutoCommit`, `commit`, or `rollback`, including during failure cleanup. A data source
-check has no client transaction manager; external transaction-aware sources must supply
-independent connections themselves. A second `getConnection()` call alone does not
-establish independence if the source returns a caller's associated connection.
+The acquired connection must already have auto-commit enabled. A check never calls
+`setAutoCommit`, `commit`, or `rollback`, including during failure cleanup.
 
-The data source must discard unsafe physical pool entries when their connections
-are aborted.
+A data source check has no client transaction manager. Sources that associate
+connections with external transactions must supply independent connections themselves.
+Calling `getConnection()` twice does not establish independence if the source returns
+a caller's associated connection.
+
+Pools must discard entries for unsafe physical connections that have been aborted.
 
 Each invocation needs pool capacity in addition to any caller-held connection. Pool
 exhaustion returns DOWN without borrowing that connection or changing caller work.

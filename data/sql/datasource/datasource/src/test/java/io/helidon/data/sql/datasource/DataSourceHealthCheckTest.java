@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
@@ -33,6 +33,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.sql.DataSource;
 
@@ -45,8 +46,10 @@ import io.helidon.health.HealthCheckResponse;
 import io.helidon.health.HealthCheckType;
 import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.service.registry.Qualifier;
-import io.helidon.service.registry.ServiceInstance;
+import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryConfig;
+import io.helidon.service.registry.ServiceRegistryException;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
 
@@ -135,11 +138,7 @@ class DataSourceHealthCheckTest {
                     .provider(mock(ProviderConfig.class)).build();
             assertThat(definition.health(), is(policy));
             assertThat(definition.toString(), not(containsString("SQL_CANARY")));
-            @SuppressWarnings("unchecked")
-            ServiceInstance<DataSource> instance = mock(ServiceInstance.class);
-            when(instance.qualifiers()).thenReturn(Set.of(Qualifier.createNamed("orders")));
-            when(instance.get()).thenReturn(source);
-            List<HealthCheck> checks = new DataSourceHealthCheckFactory(() -> List.of(definition), () -> List.of(instance))
+            List<HealthCheck> checks = new DataSourceHealthCheckFactory(() -> List.of(definition), sourceRegistry(source, "orders"))
                     .services().stream().map(service -> service.get()).toList();
             assertThat(checks.size(), is(1));
             var check = (DataSourceHealthCheck) checks.getFirst();
@@ -161,7 +160,9 @@ class DataSourceHealthCheckTest {
         DataSource source = mock(DataSource.class);
         for (String sql : List.of("", "WITH x AS (SELECT 1) SELECT * FROM x", "CALL x()", "EXPLAIN SELECT 1",
                                   "SELECTED 1", "SELECTé 1", "'SELECT'", "SELECT ?", "SELECT :value", "SELECT 1;;",
-                                  "SELECT 1; SELECT 2", "SELECT 1; 'x'", "SELECT /* unfinished")) {
+                                  "SELECT 1; SELECT 2", "SELECT 1; 'x'", "SELECT /* unfinished",
+                                  "# MySQL comment\nSELECT 1", "SELECT 1; # MySQL comment",
+                                  "SELECT 1; /* outer /* nested */ */", "--comment\nSELECT 1")) {
             assertThrows(IllegalArgumentException.class, () -> probe(source, sql, Duration.ofSeconds(2)));
         }
         for (Duration timeout : List.of(Duration.ZERO, Duration.ofSeconds(-1), Duration.ofMillis(1500),
@@ -169,7 +170,9 @@ class DataSourceHealthCheckTest {
             assertThrows(IllegalArgumentException.class, () -> probe(source, "SELECT 1", timeout));
         }
         for (String sql : List.of("SELECT 1", " /* comment */ select 1; -- end\n", "SELECT '?;:x'", "SELECT $$?;:x$$",
-                                  "SELECT q'[?;:x]'", "SELECT nq'[?;:x]'", "SELECT `?`, \":x\"", "SELECT 1 /* ? */")) {
+                                  "SELECT q'[?;:x]'", "SELECT nq'[?;:x]'", "SELECT `?`, \":x\"", "SELECT 1 /* ? */",
+                                  "-- comment; ?\nSELECT 1; /* comment; ? */", "SELECT 1; --",
+                                  "SELECT '#;?'; -- comment", "SELECT 1; --\tcomment; ?")) {
             try {
                 probe(source, sql, Duration.ofSeconds(Integer.MAX_VALUE));
             } catch (IllegalArgumentException failure) {
@@ -178,6 +181,28 @@ class DataSourceHealthCheckTest {
         }
         assertThrows(NullPointerException.class, () -> probe(source, "", null));
         assertThrows(NullPointerException.class, () -> probe(null, "", Duration.ZERO));
+        verifyZeroInteractions(source);
+    }
+
+    /**
+     * Rejects executable comments before acquisition while keeping ordinary comments and quoted text valid.
+     */
+    @Test
+    void rejectsExecutableCommentsWithoutAcquisition() {
+        DataSource source = mock(DataSource.class);
+        for (String sql : List.of("/*! EXPLAIN */ SELECT 1", "/*!50700 EXPLAIN */ SELECT 1",
+                "SELECT /*! SQL_CANARY */ 1", "SELECT 1 /*!99999 SQL_CANARY */",
+                "SELECT 1; /*! SELECT 2 */", "SELECT /*! ? :secret ; */ 1")) {
+            IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                    () -> DataSourceHealthCheck.builder().dataSource(source).query(sql).build());
+            assertThat(failure.getMessage(), not(containsString("SQL_CANARY")));
+        }
+        for (String sql : List.of("/* ordinary */ SELECT 1 /* ordinary */; -- ordinary\n",
+                "SELECT /*+ ordinary_hint */ 1", "SELECT '/*! EXPLAIN */'", "SELECT $$/*! EXPLAIN */$$",
+                "SELECT q'[/*! EXPLAIN */]'", "SELECT `/*!`, \"/*!\"")) {
+            var check = DataSourceHealthCheck.builder().dataSource(source).query(sql).build();
+            assertThat(check.prototype().query(), is(sql));
+        }
         verifyZeroInteractions(source);
     }
 
@@ -454,22 +479,22 @@ class DataSourceHealthCheckTest {
      */
     @Test
     void disabledDiscoveryDoesNotResolveSources() {
+        ServiceRegistry registry = mock(ServiceRegistry.class);
         for (Map<String, String> values : List.of(Map.<String, String>of(),
                 Map.of("data.sources.sql.0.health.enabled", "false"),
                 Map.of("data.sources.sql.0.health-check.enabled", "true"),
                 Map.of("data.sources.sql.provider.hikari.url", "unused", "data.sources.sql.health.enabled", "false"))) {
             var factory = new DataSourceHealthCheckFactory(() -> configurations(Config.just(ConfigSources.create(values))),
-                    () -> { throw new AssertionError("Disabled discovery must not resolve sources."); });
+                    registry);
             assertThat(factory.services().isEmpty(), is(true));
         }
         Config invalid = mock(Config.class);
         when(invalid.get("data.sources.sql")).thenThrow(new ConfigException("CONFIG_CANARY"));
         IllegalStateException failure = assertThrows(IllegalStateException.class,
-                () -> new DataSourceHealthCheckFactory(() -> configurations(invalid), () -> {
-                    throw new AssertionError("Invalid discovery must not resolve its target.");
-                }).services());
+                () -> new DataSourceHealthCheckFactory(() -> configurations(invalid), registry).services());
         assertThat(failure.getMessage(), not(containsString("CONFIG_CANARY")));
         assertThat(failure.getCause(), is((Throwable) null));
+        verifyZeroInteractions(registry);
     }
 
     /**
@@ -478,10 +503,9 @@ class DataSourceHealthCheckTest {
     @Test
     void listAndSingleSourceDefinitionsBindEffectiveServices() {
         DataSource source = mock(DataSource.class);
-        @SuppressWarnings("unchecked")
-        ServiceInstance<DataSource> instance = mock(ServiceInstance.class);
-        when(instance.qualifiers()).thenReturn(Set.of(Qualifier.createNamed("orders")));
-        when(instance.get()).thenReturn(source);
+        ServiceRegistry registry = sourceRegistry(source, "orders");
+        ServiceRegistry missing = mock(ServiceRegistry.class);
+        when(missing.first(DataSource.class, Qualifier.createNamed("orders"))).thenReturn(Optional.empty());
         for (boolean single : List.of(false, true)) {
             String prefix = single ? "data.sources.sql" : "data.sources.sql.0";
             Map<String, String> values = new HashMap<>();
@@ -494,8 +518,8 @@ class DataSourceHealthCheckTest {
             values.put(prefix + ".provider.hikari.connection-test-query", "SELECT 3");
             Config config = Config.just(ConfigSources.create(values));
             assertThrows(IllegalStateException.class,
-                         () -> new DataSourceHealthCheckFactory(() -> configurations(config), List::of).services());
-            var services = new DataSourceHealthCheckFactory(() -> configurations(config), () -> List.of(instance)).services();
+                         () -> new DataSourceHealthCheckFactory(() -> configurations(config), missing).services());
+            var services = new DataSourceHealthCheckFactory(() -> configurations(config), registry).services();
             assertThat(services.size(), is(1));
             assertThat(services.getFirst().qualifiers().isEmpty(), is(true));
             var check = (DataSourceHealthCheck) services.getFirst().get();
@@ -509,7 +533,7 @@ class DataSourceHealthCheckTest {
                 "data.sources.sql.0.health.enabled", "true",
                 "data.sources.sql.0.health.query-timeout", "CONFIG_CANARY")));
         IllegalStateException failure = assertThrows(IllegalStateException.class,
-                () -> new DataSourceHealthCheckFactory(() -> configurations(invalid), () -> List.of(instance)).services());
+                () -> new DataSourceHealthCheckFactory(() -> configurations(invalid), registry).services());
         assertThat(failure.getMessage(), not(containsString("CONFIG_CANARY")));
         assertThat(failure.getCause(), is((Throwable) null));
         verifyZeroInteractions(source);
@@ -528,11 +552,8 @@ class DataSourceHealthCheckTest {
         DataSourceConfig other = DataSourceConfig.builder().name("other").provider(provider)
                 .health(health -> health.enabled(true)).build();
         DataSource source = mock(DataSource.class);
-        @SuppressWarnings("unchecked")
-        ServiceInstance<DataSource> instance = mock(ServiceInstance.class);
-        when(instance.qualifiers()).thenReturn(Set.of(Qualifier.createNamed("orders"), Qualifier.createNamed("other")));
-        when(instance.get()).thenReturn(source);
-        var checks = new DataSourceHealthCheckFactory(() -> List.of(preferred, shadowed, other), () -> List.of(instance))
+        ServiceRegistry registry = sourceRegistry(source, "orders", "other");
+        var checks = new DataSourceHealthCheckFactory(() -> List.of(preferred, shadowed, other), registry)
                 .services();
         assertThat(checks.size(), is(2));
         assertThat(checks.get(0).get().name(), is("orders"));
@@ -540,16 +561,43 @@ class DataSourceHealthCheckTest {
         assertThat(((DataSourceHealthCheck) checks.get(0).get()).prototype().query(), is("SELECT 2"));
         assertThat(((DataSourceHealthCheck) checks.get(1).get()).prototype().query(), is("SELECT 1"));
         DataSourceConfig disabled = DataSourceConfig.builder(preferred).health(DataSourceHealthConfig.create()).build();
-        assertThat(new DataSourceHealthCheckFactory(() -> List.of(disabled, shadowed), () -> {
-            throw new AssertionError("The disabled preferred definition must not resolve a source.");
-        }).services().isEmpty(), is(true));
+        ServiceRegistry unresolved = mock(ServiceRegistry.class);
+        assertThat(new DataSourceHealthCheckFactory(() -> List.of(disabled, shadowed), unresolved).services().isEmpty(), is(true));
+        verifyZeroInteractions(unresolved);
         for (DataSourceHealthConfig invalid : List.of(
                 DataSourceHealthConfig.builder().enabled(true).query("UPDATE invalid").build(),
+                DataSourceHealthConfig.builder().enabled(true).query("/*!50700 EXPLAIN */ SELECT 1").build(),
                 DataSourceHealthConfig.builder().enabled(true).queryTimeout(Duration.ZERO).build())) {
             DataSourceConfig definition = DataSourceConfig.builder(preferred).health(invalid).build();
             assertThrows(IllegalArgumentException.class,
-                         () -> new DataSourceHealthCheckFactory(() -> List.of(definition), () -> List.of(instance)).services());
+                         () -> new DataSourceHealthCheckFactory(() -> List.of(definition), registry).services());
         }
+        verifyZeroInteractions(source);
+    }
+
+    /**
+     * Resolves only enabled names and conceals provider initialization failures without intercepting fatal errors.
+     */
+    @Test
+    void namedDiscoveryIsGatedAndSanitizesInitializationFailures() {
+        ProviderConfig provider = mock(ProviderConfig.class);
+        DataSourceConfig disabled = DataSourceConfig.builder().name("unused").provider(provider).build();
+        DataSourceConfig enabled = DataSourceConfig.builder().name("orders").provider(provider)
+                .health(health -> health.enabled(true)).build();
+        DataSource source = mock(DataSource.class);
+        ServiceRegistry registry = sourceRegistry(source, "orders");
+        var factory = new DataSourceHealthCheckFactory(() -> List.of(disabled, enabled), registry);
+        assertThat(factory.services().size(), is(1));
+        verify(registry).first(DataSource.class, Qualifier.createNamed("orders"));
+        verifyNoMoreInteractions(registry);
+        when(registry.first(DataSource.class, Qualifier.createNamed("orders")))
+                .thenThrow(new IllegalArgumentException("PROVIDER_SECRET_CANARY"));
+        IllegalStateException failure = assertThrows(IllegalStateException.class, factory::services);
+        assertThat(failure.getMessage(), is("The data source for the health check could not be resolved."));
+        assertThat(failure.getCause(), is((Throwable) null));
+        LinkageError fatal = new LinkageError("FATAL_CANARY");
+        doThrow(fatal).when(registry).first(DataSource.class, Qualifier.createNamed("orders"));
+        assertThat(assertThrows(LinkageError.class, factory::services), sameInstance(fatal));
         verifyZeroInteractions(source);
     }
 
@@ -572,7 +620,7 @@ class DataSourceHealthCheckTest {
             assertThat(a.call().status(), is(HealthCheckResponse.Status.UP));
             assertThat(b.call().status(), is(HealthCheckResponse.Status.DOWN));
             GlobalServiceRegistry.registry(first.registry());
-            Services.setNamed(DataSource.class, broken, "orders");
+            assertThrows(ServiceRegistryException.class, () -> Services.setNamed(DataSource.class, broken, "orders"));
             assertThat(a.call().status(), is(HealthCheckResponse.Status.UP));
             noTransactionControl(healthy.connection());
         } finally {
@@ -594,6 +642,7 @@ class DataSourceHealthCheckTest {
             var manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
                     .discoverServices(false).discoverServicesFromServiceLoader(false)
                     .addServiceDescriptor(DataSourceHealthCheckFactory__ServiceDescriptor.INSTANCE)
+                    .addServiceDescriptor(DataSourceHealthCheckTest_Sources__ServiceDescriptor.INSTANCE)
                     .addServiceDescriptor(DataSourceConfigFactory__ServiceDescriptor.INSTANCE).build());
             GlobalServiceRegistry.registry(manager.registry());
             try {
@@ -644,6 +693,14 @@ class DataSourceHealthCheckTest {
         }
     }
 
+    private static ServiceRegistry sourceRegistry(DataSource source, String... names) {
+        ServiceRegistry registry = mock(ServiceRegistry.class);
+        for (String name : names) {
+            when(registry.first(DataSource.class, Qualifier.createNamed(name))).thenReturn(Optional.of(source));
+        }
+        return registry;
+    }
+
     private static List<DataSourceConfig> configurations(Config config) {
         Config sources = config.get("data.sources.sql");
         List<Config> definitions = sources.get("provider").exists() ? List.of(sources) : sources.asNodeList().orElse(List.of());
@@ -657,6 +714,7 @@ class DataSourceHealthCheckTest {
                 .discoverServices(false)
                 .discoverServicesFromServiceLoader(false)
                 .addServiceDescriptor(DataSourceHealthCheckFactory__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(DataSourceHealthCheckTest_Sources__ServiceDescriptor.INSTANCE)
                 .build());
         GlobalServiceRegistry.registry(manager.registry());
         Services.set(DataSourceConfig.class, configurations(config).getFirst());
@@ -692,6 +750,15 @@ class DataSourceHealthCheckTest {
         when(statement.getResultSet()).thenReturn(rows);
         when(statement.getUpdateCount()).thenReturn(-1);
         return new Fixture(source, connection, statement, rows);
+    }
+
+    @Service.Singleton
+    @Service.Named("orders")
+    static class Sources implements Supplier<DataSource> {
+        @Override
+        public DataSource get() {
+            throw new AssertionError("The test must supply its application data source.");
+        }
     }
 
     private record Fixture(DataSource source, Connection connection, PreparedStatement statement, ResultSet rows) {

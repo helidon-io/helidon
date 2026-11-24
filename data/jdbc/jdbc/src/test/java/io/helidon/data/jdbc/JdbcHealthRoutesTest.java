@@ -19,6 +19,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -26,11 +27,14 @@ import javax.sql.DataSource;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.data.Data;
 import io.helidon.data.sql.datasource.DataSourceHealthCheck;
 import io.helidon.health.HealthCheck;
 import io.helidon.health.HealthCheckResponse;
 import io.helidon.health.HealthCheckType;
 import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.Qualifier;
+import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
@@ -38,6 +42,8 @@ import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.observe.ObserveFeature;
+import io.helidon.webserver.observe.ObserveFeatureProvider;
+import io.helidon.webserver.observe.health.HealthObserveProvider__ServiceDescriptor;
 import io.helidon.webserver.observe.health.HealthObserver;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -189,6 +195,57 @@ class JdbcHealthRoutesTest {
             assertThat(acquisitionCount.get(), is(3));
         } finally {
             server.stop();
+        }
+    }
+
+    /**
+     * Runs the selected registration once per request through both observer construction paths.
+     */
+    @Test
+    void overlappingQualifiersDoNotDuplicateAggregateProbes() {
+        JdbcClient preferred = JdbcClient.builder().name("preferred").dataSource(source)
+                .health(health -> health.enabled(true)).build();
+        JdbcClient shadowed = JdbcClient.builder().name("shadowed").dataSource(source)
+                .health(health -> health.enabled(true).query("UPDATE invalid")).build();
+        var named = Qualifier.createNamed("orders");
+        var provider = Qualifier.create(Data.ProviderType.TYPE, Jdbc.PROVIDER);
+        var manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                .discoverServices(false).discoverServicesFromServiceLoader(false)
+                .addServiceDescriptor(JdbcHealthCheckFactory__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(HealthObserveProvider__ServiceDescriptor.INSTANCE)
+                .addServiceDescriptor(JdbcClientConfigFactory__ServiceDescriptor.INSTANCE)
+                .putServiceInstance(JdbcClientHealthCheckTest_PreferredClients__ServiceDescriptor.INSTANCE,
+                        new JdbcClientHealthCheckTest.PreferredClients(
+                                () -> List.of(Service.QualifiedInstance.create(preferred, named, provider))))
+                .putServiceInstance(JdbcClientHealthCheckTest_FallbackClients__ServiceDescriptor.INSTANCE,
+                        new JdbcClientHealthCheckTest.FallbackClients(
+                                List.of(Service.QualifiedInstance.create(shadowed, named)))).build());
+        GlobalServiceRegistry.registry(manager.registry());
+        try {
+            Services.set(Config.class, Config.empty());
+            assertThat(manager.registry().all(HealthCheck.class).size(), is(1));
+            assertThat(acquisitionCount.get(), is(0));
+            var configured = new ObserveFeatureProvider().create(Config.empty(), "observe", manager.registry());
+            var explicit = ObserveFeature.just(HealthObserver.builder().useSystemServices(true).build());
+            for (ObserveFeature feature : List.of(configured, explicit)) {
+                int before = acquisitionCount.get();
+                WebServer server = WebServer.builder().host("127.0.0.1").port(0).featuresDiscoverServices(false)
+                        .addFeature(feature).build().start();
+                try {
+                    Http1Client http = Http1Client.builder().baseUri("http://127.0.0.1:" + server.port()).build();
+                    assertStatus(http, "/observe/health/ready/orders", 204);
+                    assertStatus(http, "/observe/health/check/orders", 204);
+                    assertStatus(http, "/observe/health/ready", 204);
+                    assertStatus(http, "/observe/health/", 204);
+                    assertStatus(http, "/observe/health/live/orders", 404);
+                    assertStatus(http, "/observe/health/check", 404);
+                    assertThat(acquisitionCount.get(), is(before + 4));
+                } finally {
+                    server.stop();
+                }
+            }
+        } finally {
+            manager.shutdown();
         }
     }
 

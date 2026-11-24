@@ -23,7 +23,6 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -265,7 +264,8 @@ class JdbcClientHealthCheckTest {
                     .health(health -> health.enabled(enabled).query("SELECT 3")
                             .queryTimeout(Duration.ofSeconds(4)).type(HealthCheckType.LIVENESS)).build();
             var manager = clientRegistry(() -> List.of(registered(replacement, "orders")),
-                    List.of(registered(original, "orders")));
+                    List.of(registered(original, "orders"),
+                            Service.QualifiedInstance.create(original, Qualifier.createNamed("orders"))));
             try {
                 GlobalServiceRegistry.registry(manager.registry());
                 Services.set(JdbcClientConfig.class, original.prototype());
@@ -304,7 +304,8 @@ class JdbcClientHealthCheckTest {
         DataSource source = mock(DataSource.class);
         JdbcClient shadowed = JdbcClient.builder().dataSource(source).health(health -> health.enabled(true)).build();
         var manager = clientRegistry(() -> List.of(registered(custom, "orders")),
-                List.of(registered(shadowed, "orders")));
+                List.of(registered(shadowed, "orders"),
+                        Service.QualifiedInstance.create(shadowed, Qualifier.createNamed("orders"))));
         try {
             assertThat(manager.registry().all(HealthCheck.class), empty());
             assertThrows(IllegalArgumentException.class, () -> JdbcClientHealthCheck.builder().client(custom).build());
@@ -378,16 +379,23 @@ class JdbcClientHealthCheckTest {
         when(candidate.qualifiers()).thenReturn(qualifiers);
         when(registry.<JdbcClient>lookupInstances(Lookup.create(JdbcClient.class))).thenReturn(List.of(candidate));
         Lookup lookup = Lookup.builder().addContract(JdbcClient.class).qualifiers(qualifiers).build();
-        doThrow(new ServiceRegistryException("SECRET_RESOLUTION")).when(registry).first(lookup);
+        doThrow(new ServiceRegistryException("SECRET_RESOLUTION")).when(registry).lookupInstances(lookup);
         var factory = new JdbcHealthCheckFactory(registry);
         DataException failure = assertThrows(DataException.class, factory::services);
         assertThat(failure.getMessage(), not(containsString("SECRET")));
         assertThat(failure.getCause(), is((Throwable) null));
         Error fatal = new OutOfMemoryError("Fatal client resolution failure.");
-        doThrow(fatal).when(registry).first(lookup);
+        doThrow(fatal).when(registry).lookupInstances(lookup);
         assertThat(assertThrows(OutOfMemoryError.class, factory::services), sameInstance(fatal));
-        doReturn(Optional.empty()).when(registry).first(lookup);
+        doReturn(List.of()).when(registry).lookupInstances(lookup);
         assertThat(factory.services(), empty());
+        when(registry.<JdbcClient>lookupInstances(lookup)).thenReturn(List.of(candidate));
+        when(candidate.get()).thenThrow(new ServiceRegistryException("SECRET_INSTANCE"));
+        failure = assertThrows(DataException.class, factory::services);
+        assertThat(failure.getMessage(), not(containsString("SECRET")));
+        assertThat(failure.getCause(), is((Throwable) null));
+        doThrow(fatal).when(candidate).get();
+        assertThat(assertThrows(OutOfMemoryError.class, factory::services), sameInstance(fatal));
     }
 
     /**
@@ -486,6 +494,46 @@ class JdbcClientHealthCheckTest {
     }
 
     /**
+     * Publishes an effective registration once even when overlapping lookups select it more than once.
+     */
+    @Test
+    void overlappingQualifiersPublishEachSelectedRegistrationOnce() {
+        DataSource source = mock(DataSource.class);
+        JdbcClient providerClient = JdbcClient.builder().name("provider-client").dataSource(source)
+                .health(health -> health.enabled(true).query("SELECT 2")).build();
+        JdbcClient namedClient = JdbcClient.builder().name("named-client").dataSource(source)
+                .health(health -> health.enabled(true).query("SELECT 3").type(HealthCheckType.LIVENESS)).build();
+        var qualified = registered(providerClient, "orders");
+        var named = Service.QualifiedInstance.create(namedClient, Qualifier.createNamed("orders"));
+        for (boolean providerPreferred : List.of(false, true)) {
+            for (boolean equalWeights : List.of(false, true)) {
+                var first = providerPreferred ? qualified : named;
+                var second = providerPreferred ? named : qualified;
+                var manager = equalWeights ? clientRegistry(() -> List.of(first, second), List.of())
+                        : clientRegistry(() -> List.of(first), List.of(second));
+                try {
+                    assertThat(manager.registry().get(JdbcClient.class, Qualifier.createNamed("orders")),
+                               sameInstance(providerPreferred ? providerClient : namedClient));
+                    assertThat(manager.registry().get(JdbcClient.class, Qualifier.createNamed("orders"), PROVIDER),
+                               sameInstance(providerClient));
+                    List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
+                    assertThat(checks.size(), is(providerPreferred ? 1 : 2));
+                    assertThat(checks.stream().map(check -> ((JdbcClientHealthCheck) check).prototype().client()).toList(),
+                               is(providerPreferred ? List.of(providerClient) : List.of(namedClient, providerClient)));
+                    assertThat(checks.stream().map(HealthCheck::name).toList(),
+                               is(providerPreferred ? List.of("orders") : List.of("orders", "orders")));
+                    assertThat(checks.stream().map(HealthCheck::type).toList(),
+                               is(providerPreferred ? List.of(HealthCheckType.READINESS)
+                                          : List.of(HealthCheckType.LIVENESS, HealthCheckType.READINESS)));
+                    verifyZeroInteractions(source);
+                } finally {
+                    manager.shutdown();
+                }
+            }
+        }
+    }
+
+    /**
      * Preserves independent registration names and policies and rejects invalid enabled SQL without fallback.
      */
     @Test
@@ -508,6 +556,7 @@ class JdbcClientHealthCheckTest {
         }
         for (JdbcClientHealthConfig invalid : List.of(
                 JdbcClientHealthConfig.builder().enabled(true).query("UPDATE invalid").build(),
+                JdbcClientHealthConfig.builder().enabled(true).query("/*!50700 EXPLAIN */ SELECT 1").build(),
                 JdbcClientHealthConfig.builder().enabled(true).queryTimeout(Duration.ZERO).build())) {
             JdbcClient client = JdbcClient.builder().dataSource(source).health(invalid).build();
             manager = clientRegistry(() -> List.of(registered(client, "orders")), List.of());
@@ -537,13 +586,6 @@ class JdbcClientHealthCheckTest {
                         new FallbackClients(fallback)).build());
     }
 
-    private static List<JdbcClientConfig> configurations(Config root) {
-        return root.get("data.clients.jdbc").asNodeList().orElse(List.of()).stream()
-                .map(definition -> JdbcClientConfig.builder().config(definition)
-                        .dataSource(mock(DataSource.class)).buildPrototype())
-                .toList();
-    }
-
     private static ServiceRegistryManager registry(Config root, DataSource source) {
         ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
                 .discoverServices(false)
@@ -555,8 +597,11 @@ class JdbcClientHealthCheckTest {
                 .build());
         GlobalServiceRegistry.registry(manager.registry());
         Services.set(Config.class, root);
+        JdbcClientConfig configuration = JdbcClientConfig.builder()
+                .config(root.get("data.clients.jdbc").asNodeList().orElseThrow().getFirst())
+                .dataSource(source).buildPrototype();
         Services.set(JdbcClientConfig.class, JdbcClientConfig.builder().name("orders").dataSource(source)
-                .health(configurations(root).getFirst().health()).buildPrototype());
+                .health(configuration.health()).buildPrototype());
         return manager;
     }
 

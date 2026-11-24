@@ -18,6 +18,7 @@ package io.helidon.data.sql.datasource;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -27,7 +28,7 @@ import io.helidon.config.ConfigException;
 import io.helidon.health.HealthCheck;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
-import io.helidon.service.registry.ServiceInstance;
+import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.service.registry.ServiceRegistryException;
 
 /**
@@ -36,13 +37,13 @@ import io.helidon.service.registry.ServiceRegistryException;
 @Service.Singleton
 final class DataSourceHealthCheckFactory implements Service.ServicesFactory<HealthCheck> {
     private final Supplier<List<DataSourceConfig>> configurations;
-    private final Supplier<List<ServiceInstance<DataSource>>> sources;
+    private final ServiceRegistry registry;
 
     @Service.Inject
     DataSourceHealthCheckFactory(Supplier<List<DataSourceConfig>> configurations,
-                                Supplier<List<ServiceInstance<DataSource>>> sources) {
+                                ServiceRegistry registry) {
         this.configurations = configurations;
-        this.sources = sources;
+        this.registry = registry;
     }
 
     @Override
@@ -64,18 +65,15 @@ final class DataSourceHealthCheckFactory implements Service.ServicesFactory<Heal
             if (!health.enabled()) {
                 continue;
             }
-            DataSource source;
+            Optional<DataSource> selected;
             try {
-                Qualifier qualifier = Qualifier.createNamed(definition.name());
-                source = sources.get().stream()
-                        .filter(instance -> instance.qualifiers().contains(qualifier))
-                        .findFirst()
-                        .orElseThrow(() -> new IllegalStateException(
-                                "An enabled datasource health definition has no matching source."))
-                        .get();
-            } catch (ServiceRegistryException _) {
+                // Only enabled definitions trigger a named source lookup.
+                selected = registry.first(DataSource.class, Qualifier.createNamed(definition.name()));
+            } catch (RuntimeException _) {
                 throw new IllegalStateException("The data source for the health check could not be resolved.");
             }
+            DataSource source = selected.orElseThrow(() -> new IllegalStateException(
+                    "An enabled datasource health definition has no matching source."));
             DataSourceHealthCheck check = DataSourceHealthCheck.builder().dataSource(source)
                     .query(health.query()).queryTimeout(health.queryTimeout()).type(health.type())
                     .name(definition.name()).build();

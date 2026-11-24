@@ -50,19 +50,31 @@ final class JdbcHealthCheckFactory implements Service.ServicesFactory<HealthChec
             throw new DataException("The registered JDBC clients could not be inspected for health checks.");
         }
         List<Service.QualifiedInstance<HealthCheck>> checks = new ArrayList<>();
+        Set<Set<Qualifier>> lookups = new HashSet<>();
         Set<Set<Qualifier>> registrations = new HashSet<>();
         for (ServiceInstance<JdbcClient> candidate : candidates) {
             Set<Qualifier> qualifiers = candidate.qualifiers();
-            if (!registrations.add(qualifiers)) {
+            if (!lookups.add(qualifiers)) {
                 continue;
             }
+            ServiceInstance<JdbcClient> selected = candidate;
             JdbcClient client;
             try {
                 // An empty lookup also matches qualified services. Keep the first unqualified registration separate.
                 // Qualified lookup order can differ from the unrestricted candidate list order.
-                client = qualifiers.isEmpty() ? candidate.get()
-                        : registry.<JdbcClient>first(Lookup.builder().addContract(JdbcClient.class)
-                                .qualifiers(qualifiers).build()).orElse(null);
+                if (!qualifiers.isEmpty()) {
+                    List<ServiceInstance<JdbcClient>> matches = registry.lookupInstances(
+                            Lookup.builder().addContract(JdbcClient.class).qualifiers(qualifiers).build());
+                    if (matches.isEmpty()) {
+                        continue;
+                    }
+                    selected = matches.getFirst();
+                }
+                // Different lookup criteria can select the same registration when qualifiers overlap.
+                if (!registrations.add(selected.qualifiers())) {
+                    continue;
+                }
+                client = selected.get();
             } catch (RuntimeException _) {
                 throw new DataException("The JDBC client for the health check could not be resolved.");
             }
@@ -75,7 +87,7 @@ final class JdbcHealthCheckFactory implements Service.ServicesFactory<HealthChec
             if (!health.enabled()) {
                 continue;
             }
-            String registrationName = qualifiers.stream()
+            String registrationName = selected.qualifiers().stream()
                     .filter(qualifier -> qualifier.typeName().equals(Service.Named.TYPE))
                     .map(qualifier -> qualifier.value().orElse(Service.Named.DEFAULT_NAME))
                     .findFirst().orElse(configuration.name());

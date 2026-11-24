@@ -44,9 +44,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -64,23 +64,9 @@ class JdbcClientProbeTest {
     void validatesBeforeAcquisitionAndRejectsCustomClients() {
         DataSource source = mock(DataSource.class);
         JdbcClient client = JdbcTestClients.create(source);
-        for (String sql : List.of("", "WITH x AS (SELECT 1) SELECT * FROM x", "CALL x()", "EXPLAIN SELECT 1",
-                                  "SELECTED 1", "SELECTé 1", "'SELECT'", "SELECT ?", "SELECT :value", "SELECT 1;;",
-                                  "SELECT 1; SELECT 2", "SELECT 1; 'x'", "SELECT /* unfinished")) {
-            assertThrows(IllegalArgumentException.class, () -> probe(client, sql, Duration.ofSeconds(2)));
-        }
-        for (Duration timeout : List.of(Duration.ZERO, Duration.ofSeconds(-1), Duration.ofMillis(1500),
-                                        Duration.ofSeconds((long) Integer.MAX_VALUE + 1))) {
-            assertThrows(IllegalArgumentException.class, () -> probe(client, "SELECT 1", timeout));
-        }
-        for (String sql : List.of("SELECT 1", " /* comment */ select 1; -- end\n", "SELECT '?;:x'", "SELECT $$?;:x$$",
-                                  "SELECT q'[?;:x]'", "SELECT nq'[?;:x]'", "SELECT `?`, \":x\"", "SELECT 1 /* ? */")) {
-            try {
-                probe(client, sql, Duration.ofSeconds(Integer.MAX_VALUE));
-            } catch (IllegalArgumentException failure) {
-                throw new AssertionError(sql, failure);
-            }
-        }
+        assertThrows(IllegalArgumentException.class,
+                     () -> probe(client, "/*! EXPLAIN */ SELECT 1", Duration.ofSeconds(2)));
+        assertThrows(IllegalArgumentException.class, () -> probe(client, "SELECT 1", Duration.ZERO));
         JdbcClient custom = mock(JdbcClient.class);
         assertThrows(IllegalArgumentException.class,
                      () -> probe(custom, "SELECT 1", Duration.ofSeconds(1)));
@@ -112,94 +98,36 @@ class JdbcClientProbeTest {
     }
 
     /**
-     * Returns DOWN for driver failures and releases every resource already acquired by the probe.
+     * Delegates a SQL failure to a sanitized response and permits a later invocation to succeed.
      */
     @Test
-    void containsEveryInfrastructureFailureAndAttemptsCleanup() throws Exception {
-        for (String fault : List.of("acquire", "mode", "prepare", "timeout", "execute", "rows", "next", "rowClose",
-                                    "more", "count", "statementClose", "connectionClose", "runtime")) {
-            Fixture fixture = fixture();
-            SQLException failure = new SQLException("Secret SQL and credentials", "08001", 123);
-            switch (fault) {
-                case "acquire" -> when(fixture.source().getConnection()).thenThrow(failure);
-                case "mode" -> when(fixture.connection().getAutoCommit()).thenThrow(failure);
-                case "prepare" -> when(fixture.connection().prepareStatement(anyString())).thenThrow(failure);
-                case "timeout" -> doThrow(failure).when(fixture.statement()).setQueryTimeout(anyInt());
-                case "execute" -> when(fixture.statement().execute()).thenThrow(failure);
-                case "rows" -> when(fixture.statement().getResultSet()).thenThrow(failure);
-                case "next" -> when(fixture.rows().next()).thenThrow(failure);
-                case "rowClose" -> doThrow(failure).when(fixture.rows()).close();
-                case "more" -> when(fixture.statement().getMoreResults(anyInt())).thenThrow(failure);
-                case "count" -> when(fixture.statement().getUpdateCount()).thenThrow(failure);
-                case "statementClose" -> doThrow(failure).when(fixture.statement()).close();
-                case "connectionClose" -> doThrow(failure).when(fixture.connection()).close();
-                case "runtime" -> when(fixture.rows().next()).thenThrow(new IllegalStateException("Secret driver state."));
-                default -> throw new AssertionError(fault);
-            }
-            assertThat(fault, probe(fixture).getAsBoolean(), is(false));
-            noTransactionControl(fixture.connection());
-            if (List.of("mode", "rowClose", "statementClose", "connectionClose").contains(fault)) {
-                verify(fixture.connection()).abort(any());
-            }
-            if (List.of("timeout", "execute", "rows", "next", "rowClose", "more", "count", "statementClose", "connectionClose")
-                    .contains(fault)) {
-                verify(fixture.statement()).close();
-            }
-        }
-    }
-
-    /**
-     * Rejects unsafe connection modes and drains unexpected channels without changing transaction mode.
-     */
-    @Test
-    void rejectsUnsafeModesAndWrongChannels() throws Exception {
-        for (String fault : List.of("initialMode", "finalMode", "unreadableFinalMode", "noRows",
-                                    "missingRows", "extraRows", "extraCount")) {
-            Fixture fixture = fixture();
-            switch (fault) {
-                case "initialMode" -> when(fixture.connection().getAutoCommit()).thenReturn(false);
-                case "finalMode" -> when(fixture.connection().getAutoCommit()).thenReturn(true, false);
-                case "unreadableFinalMode" -> when(fixture.connection().getAutoCommit()).thenReturn(true)
-                        .thenThrow(new SQLException("Secret mode diagnostic."));
-                case "noRows" -> when(fixture.statement().execute()).thenReturn(false);
-                case "missingRows" -> when(fixture.statement().getResultSet()).thenReturn(null);
-                case "extraRows" -> when(fixture.statement().getMoreResults(anyInt())).thenReturn(true, false);
-                case "extraCount" -> when(fixture.statement().getUpdateCount()).thenReturn(0, -1);
-                default -> throw new AssertionError(fault);
-            }
-            assertThat(fault, probe(fixture).getAsBoolean(), is(false));
-            if (fault.equals("initialMode") || fault.equals("finalMode") || fault.equals("unreadableFinalMode")) {
-                verify(fixture.connection()).abort(any());
-            }
-            noTransactionControl(fixture.connection());
-        }
-    }
-
-    /**
-     * Preserves a fatal cleanup error over an earlier SQL failure and still releases the connection.
-     */
-    @Test
-    void cleanupFatalErrorTakesPrecedenceOverSqlFailure() throws Exception {
+    void delegatedSqlFailureIsSanitizedAndAllowsLaterReuse() throws Exception {
         Fixture fixture = fixture();
-        when(fixture.rows().next()).thenThrow(new SQLException("Secret"));
-        Error fatal = new OutOfMemoryError("fatal");
-        doThrow(fatal).when(fixture.statement()).close();
-        assertThat(assertThrows(OutOfMemoryError.class, () -> probe(fixture).getAsBoolean()), sameInstance(fatal));
-        verify(fixture.connection()).close();
+        when(fixture.statement().execute()).thenThrow(new SQLException("Secret SQL and credentials."));
+        var check = JdbcClientHealthCheck.builder().client(JdbcTestClients.create(fixture.source())).build();
+
+        HealthCheckResponse response = check.call();
+        assertThat(response.status(), is(HealthCheckResponse.Status.DOWN));
+        assertThat(response.details(), is(Map.of()));
+        doReturn(true).when(fixture.statement()).execute();
+        assertThat(check.call().status(), is(HealthCheckResponse.Status.UP));
+        verify(fixture.source(), times(2)).getConnection();
+        verify(fixture.statement(), times(2)).execute();
+        verify(fixture.statement(), times(2)).close();
+        verify(fixture.connection(), times(2)).close();
         noTransactionControl(fixture.connection());
     }
 
     /**
-     * Preserves a fatal abort error while attempting the close fallback without transaction recovery.
+     * Preserves a fatal failure from the delegated probe and releases its connection.
      */
     @Test
-    void invalidationPreservesFatalErrorsAndStillAttemptsClose() throws Exception {
+    void delegatedFatalErrorPropagatesUnchanged() throws Exception {
         Fixture fixture = fixture();
-        when(fixture.connection().getAutoCommit()).thenReturn(false);
-        Error fatal = new OutOfMemoryError("fatal");
-        doThrow(fatal).when(fixture.connection()).abort(any());
-        doThrow(new SQLException("Secret close diagnostic.")).when(fixture.connection()).close();
+        Error fatal = new OutOfMemoryError("The delegated execution failed.");
+        when(fixture.statement().execute()).thenThrow(fatal);
         assertThat(assertThrows(OutOfMemoryError.class, () -> probe(fixture).getAsBoolean()), sameInstance(fatal));
+        verify(fixture.statement()).close();
         verify(fixture.connection()).close();
         noTransactionControl(fixture.connection());
     }

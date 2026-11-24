@@ -80,6 +80,7 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.AdditionalAnswers.delegatesTo;
 import static org.mockito.Matchers.any;
@@ -818,6 +819,87 @@ public abstract class AbstractJdbcHealthContract {
         assertThat(client.create(query()).map(row -> row.get(1, Integer.class)).one(), is(1));
         assertThat(pool.isClosed(), is(false));
         assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
+    }
+
+    /**
+     * Rejects executable comments before acquisition and executes ordinary comments through both check types.
+     */
+    @Test
+    protected void executableCommentsFailBeforeAcquisitionAndOrdinaryCommentsRemainUsable() throws Exception {
+        String executable = "/*!50700 EXPLAIN */ " + query();
+        assertThrows(IllegalArgumentException.class,
+                     () -> DataSourceHealthCheck.builder().dataSource(source).query(executable).build());
+        assertThrows(IllegalArgumentException.class,
+                     () -> JdbcClientHealthCheck.builder().client(client).query(executable).build());
+        assertThat(acquisitionCount.get(), is(0));
+        String ordinary = "/* ordinary */ " + query() + " /* ordinary */";
+        assertThat(probe(source, ordinary, Duration.ofSeconds(2)).getAsBoolean(), is(true));
+        assertThat(probe(client, ordinary, Duration.ofSeconds(2)).getAsBoolean(), is(true));
+        assertThat(acquisitionCount.get(), is(2));
+        for (Connection acquisition : acquisitions) {
+            verify(acquisition).prepareStatement(ordinary);
+            verify(acquisition, never()).setAutoCommit(anyBoolean());
+            verify(acquisition, never()).commit();
+            verify(acquisition, never()).rollback();
+        }
+        assertThat(client.create(query()).map(row -> row.get(1, Integer.class)).one(), is(1));
+        assertThat(pool.isClosed(), is(false));
+        assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
+    }
+
+    /**
+     * Publishes the winners of overlapping client lookups once each without merging independent registrations.
+     */
+    @Test
+    protected void overlappingClientQualifiersPreserveSelectionAndAggregateCounts() throws Exception {
+        var manager = ServiceRegistryManager.create();
+        GlobalServiceRegistry.registry(manager.registry());
+        try {
+            Services.set(Config.class, Config.empty());
+            JdbcClient named = JdbcClient.builder().name("named").dataSource(source)
+                    .health(health -> health.enabled(true).query(query())).build();
+            JdbcClient qualified = JdbcClient.builder().name("qualified").dataSource(source)
+                    .health(health -> health.enabled(true).query(query())).build();
+            Qualifier name = Qualifier.createNamed("orders");
+            Qualifier provider = Qualifier.create(Data.ProviderType.TYPE, "jdbc");
+            Services.setNamed(JdbcClient.class, named, "orders");
+            Services.setQualified(JdbcClient.class, qualified, name, provider);
+            JdbcClient selected = manager.registry().get(JdbcClient.class, name);
+            assertThat(manager.registry().get(JdbcClient.class, name, provider), sameInstance(qualified));
+            List<JdbcClient> expected = selected == qualified ? List.of(qualified) : List.of(named, qualified);
+            List<HealthCheck> checks = manager.registry().all(HealthCheck.class);
+            assertThat(checks.stream().map(check -> ((JdbcClientHealthCheck) check).prototype().client()).toList(),
+                       containsInAnyOrder(expected.toArray(JdbcClient[]::new)));
+            assertThat(checks.stream().allMatch(check -> check.name().equals("orders")), is(true));
+            assertThat(acquisitionCount.get(), is(0));
+            var providerFeature = manager.registry().get(ObserveFeatureProvider.class);
+            for (ObserveFeature feature : List.of(providerFeature.create(Config.empty(), "observe", manager.registry()),
+                    ObserveFeature.just(HealthObserver.builder().useSystemServices(true).build()))) {
+                int before = acquisitionCount.get();
+                WebServer server = WebServer.builder().host("127.0.0.1").port(0).featuresDiscoverServices(false)
+                        .addFeature(feature).build().start();
+                try {
+                    Http1Client http = Http1Client.builder().baseUri("http://127.0.0.1:" + server.port()).build();
+                    assertStatus(http, "/observe/health/ready/orders", 204);
+                    assertStatus(http, "/observe/health/check/orders", 204);
+                    assertStatus(http, "/observe/health/ready", 204);
+                    assertStatus(http, "/observe/health/check", 404);
+                    assertThat(acquisitionCount.get(), is(before + 2 + expected.size()));
+                } finally {
+                    server.stop();
+                }
+            }
+            for (Connection acquisition : acquisitions) {
+                verify(acquisition, never()).setAutoCommit(anyBoolean());
+                verify(acquisition, never()).commit();
+                verify(acquisition, never()).rollback();
+            }
+            assertThat(qualified.create(query()).map(row -> row.get(1, Integer.class)).one(), is(1));
+            assertThat(pool.isClosed(), is(false));
+            assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
+        } finally {
+            manager.shutdown();
+        }
     }
 
     /**
