@@ -222,7 +222,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
 
         private String errorType(RoutingResponse resp, Exception exception) {
             return (exception != null)
-                    ? exception.getClass().getSimpleName()
+                    ? exception.getClass().getName()
                     : resp.status().equals(Status.OK_200)
                             ? ""
                             : resp.status().codeText();
