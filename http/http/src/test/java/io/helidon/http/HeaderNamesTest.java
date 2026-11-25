@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -33,6 +34,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsEmptyCollection.emptyCollectionOf;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -86,11 +88,14 @@ class HeaderNamesTest {
             assertAll(
                     () -> assertThat(value, notNullValue()),
                     () -> assertThat(value.defaultCase(), notNullValue()),
-                    () -> assertThat(value.lowerCase(), notNullValue())
+                    () -> assertThat(value.lowerCase(), notNullValue()),
+                    () -> assertThat(value.lowerCase(), is(value.defaultCase().toLowerCase(Locale.ROOT)))
             );
 
             if (value instanceof HeaderNameEnum) {
                 assertThat(value.index(), not(-1));
+                assertThat(HeaderNames.create(value.lowerCase()), sameInstance(value));
+                assertThat(HeaderNames.createFromLowercase(value.lowerCase()), sameInstance(value));
             }
 
         }
