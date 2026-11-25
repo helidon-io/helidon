@@ -1156,21 +1156,42 @@ final class Activators {
         @SuppressWarnings("unchecked")
         @Override
         public void construct() {
-            instance = (T) source.instantiate(ctx, interceptionMetadata);
+            var event = ServiceLifecycleEvent.start(ActivationPhase.CONSTRUCTING);
+            boolean success = false;
+            try {
+                instance = (T) source.instantiate(ctx, interceptionMetadata);
+                success = true;
+            } finally {
+                ServiceLifecycleEvent.complete(event, source, success);
+            }
         }
 
         @Override
         public void inject() {
             // using linked set, so we can see in debugging what was injected first
             Set<String> injected = new LinkedHashSet<>();
-            source.inject(ctx, interceptionMetadata, injected, instance);
+            var event = ServiceLifecycleEvent.start(ActivationPhase.INJECTING);
+            boolean success = false;
+            try {
+                source.inject(ctx, interceptionMetadata, injected, instance);
+                success = true;
+            } finally {
+                ServiceLifecycleEvent.complete(event, source, success);
+            }
         }
 
         @Override
         public void postConstruct() {
             // there is a chance the registry starts activation and then it is shutdown, make sure we do not throw a NPE
             if (instance != null) {
-                source.postConstruct(instance);
+                var event = ServiceLifecycleEvent.start(ActivationPhase.POST_CONSTRUCTING);
+                boolean success = false;
+                try {
+                    source.postConstruct(instance);
+                    success = true;
+                } finally {
+                    ServiceLifecycleEvent.complete(event, source, success);
+                }
             }
         }
 
@@ -1178,7 +1199,14 @@ final class Activators {
         public void preDestroy() {
             // there is a chance the registry starts activation and then it is shutdown, make sure we do not throw a NPE
             if (instance != null) {
-                source.preDestroy(instance);
+                var event = ServiceLifecycleEvent.start(ActivationPhase.PRE_DESTROYING);
+                boolean success = false;
+                try {
+                    source.preDestroy(instance);
+                    success = true;
+                } finally {
+                    ServiceLifecycleEvent.complete(event, source, success);
+                }
             }
         }
     }

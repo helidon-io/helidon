@@ -26,6 +26,8 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Path("Scheduling")
 module io.helidon.scheduling {
 
+    requires jdk.jfr;
+
     requires com.cronutils;
     requires io.helidon.common;
     requires io.helidon.common.configurable;
