@@ -40,6 +40,38 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class JsonValueParserTest {
 
     @Test
+    void discardedTreeValidatesLazyStrings() {
+        JsonString lazy = JsonString.create(new byte[] {'\\', 'x'});
+        JsonArray nested = JsonArray.create(List.of(JsonObject.create(Map.of("name", lazy))));
+        assertThrows(JsonException.class, () -> JsonParser.create(lazy).skip());
+        assertThrows(JsonException.class, () -> JsonParser.create(nested).skip());
+    }
+
+    @Test
+    void advancingPastAReturnedContainerKeepsItsStringsLazy() {
+        JsonString lazy = JsonString.create(new byte[] {'\\', 'x'});
+        JsonArray child = JsonArray.create(List.of(lazy));
+        JsonParser parser = JsonParser.create(JsonObject.create(Map.of("child", child)));
+        JsonStringMatcher keys = JsonStringMatcher.create("child");
+        parser.nextToken();
+        assertThat(parser.readProperty(keys), is(0));
+        assertThat(parser.readJsonArray(), sameInstance(child));
+        assertThat(parser.nextProperty(keys), is(JsonParser.END_OBJECT));
+        assertThrows(JsonException.class, lazy::value);
+    }
+
+    @Test
+    void discardsDeepProgrammaticTrees() {
+        JsonValue child = JsonString.create("leaf");
+        for (int i = 0; i < JsonParser.MAX_NESTING_DEPTH + 1; i++) {
+            child = JsonArray.create(List.of(child));
+        }
+        JsonParser parser = JsonParser.create(JsonArray.create(List.of(child, child)));
+        parser.skip();
+        assertThat(parser.currentByte(), is((byte) ']'));
+    }
+
+    @Test
     public void testJsonValueParserWithString() {
         JsonValue original = JsonString.create("test string");
         JsonParser parser = JsonParser.create(original);

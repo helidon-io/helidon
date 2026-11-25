@@ -244,9 +244,7 @@ final class ObjectPropertyParser extends JsonParserBase {
 
     private void finishStructure(byte start) {
         // Value-backed parsers can return the existing value without advancing their cursor.
-        if (parser.currentByte() == start) {
-            parser.skip();
-        }
+        JsonValueParser.finishReadContainer(parser, start);
         if (remaining >= 0) {
             depth--;
         }

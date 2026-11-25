@@ -26,6 +26,7 @@ import java.util.Objects;
  */
 abstract class JsonTextParser extends JsonParserBase {
     private static final VarHandle WORD = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.LITTLE_ENDIAN);
+    private static final VarHandle UTF8_WORD = MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.LITTLE_ENDIAN);
     private static final long ONES = 0x0101010101010101L;
     private static final long HIGH_BITS = 0x8080808080808080L;
 
@@ -40,6 +41,34 @@ abstract class JsonTextParser extends JsonParserBase {
         return (word | (word - 0x2020202020202020L)
                 | ((word ^ 0x2222222222222222L) - ONES)
                 | ((word ^ 0x5c5c5c5c5c5c5c5cL) - ONES)) & HIGH_BITS;
+    }
+
+    static int nextStringEvent(byte[] input, int position, int limit) {
+        position = nextPlainStringEvent(input, position, limit);
+        while (position < limit) {
+            byte b = input[position];
+            int remaining = limit - position;
+            if (b == '\\') {
+                int width = validEscapeLength(input, position, remaining);
+                if (width == 0) {
+                    break;
+                }
+                position += width;
+            } else if (b < 0) {
+                int bytes = remaining >= Integer.BYTES ? (int) UTF8_WORD.get(input, position)
+                        : partialUtf8Word(input, position, remaining);
+                int width = validUtf8Length(bytes);
+                if (width == 0) {
+                    break;
+                }
+                position += width;
+            } else if (b >= 0x20 && b != '"' && b != '\\') {
+                position = nextPlainStringEvent(input, position, limit);
+            } else {
+                break;
+            }
+        }
+        return position;
     }
 
     final boolean expectsLowSurrogate() {
@@ -137,6 +166,107 @@ abstract class JsonTextParser extends JsonParserBase {
     abstract char processEscapedSequence();
 
     abstract int readUtf8CodePoint(byte first);
+
+    abstract byte nextStringEvent();
+
+    final void skipStringValue() {
+        expectLowSurrogate = false;
+        byte b = nextStringEvent();
+        while (b != '"') {
+            if (b == '\\') {
+                processEscapedSequence();
+                if (expectLowSurrogate) {
+                    if (!hasNext() || readNextByte() != '\\') {
+                        throw createException("Low surrogate must follow the high surrogate.");
+                    }
+                    processEscapedSequence();
+                }
+            } else if (b < 0) {
+                readUtf8CodePoint(b);
+            } else {
+                throw createException("Unescaped control character not allowed in string", b);
+            }
+            b = nextStringEvent();
+        }
+    }
+
+    private static int validEscapeLength(byte[] input, int position, int remaining) {
+        if (remaining < 2) {
+            return 0;
+        }
+        return switch (input[position + 1]) {
+            case '"', '\\', '/', 'b', 'f', 'n', 'r', 't' -> 2;
+            case 'u' -> unicodeEscapeLength(input, position, remaining);
+            default -> 0;
+        };
+    }
+
+    private static int unicodeEscapeLength(byte[] input, int position, int remaining) {
+        if (remaining < 6) {
+            return 0;
+        }
+        int first = escapedCodeUnit(input, position + 2);
+        if (first < 0) {
+            return 0;
+        }
+        if (!Character.isSurrogate((char) first)) {
+            return 6;
+        }
+        if (!Character.isHighSurrogate((char) first) || remaining < 12
+                || input[position + 6] != '\\' || input[position + 7] != 'u') {
+            return 0;
+        }
+        int second = escapedCodeUnit(input, position + 8);
+        return second >= 0 && Character.isLowSurrogate((char) second) ? 12 : 0;
+    }
+
+    private static int escapedCodeUnit(byte[] input, int position) {
+        return (Parsers.hexPair(input[position], input[position + 1]) << Byte.SIZE)
+                | Parsers.hexPair(input[position + 2], input[position + 3]);
+    }
+
+    private static int partialUtf8Word(byte[] input, int position, int remaining) {
+        // Zero padding cannot satisfy a missing UTF-8 continuation byte.
+        int bytes = input[position] & 0xff;
+        for (int i = 1; i < remaining; i++) {
+            bytes |= (input[position + i] & 0xff) << (i * Byte.SIZE);
+        }
+        return bytes;
+    }
+
+    private static int nextPlainStringEvent(byte[] input, int position, int limit) {
+        while (limit - position >= Long.BYTES) {
+            long special = events(word(input, position));
+            if (special != 0) {
+                return position + Long.numberOfTrailingZeros(special) / Byte.SIZE;
+            }
+            position += Long.BYTES;
+        }
+        while (position < limit) {
+            byte b = input[position];
+            if (b < 0x20 || b == '"' || b == '\\') {
+                break;
+            }
+            position++;
+        }
+        return position;
+    }
+
+    // The high two bits of each continuation byte must be 10. The second-byte bounds rule out
+    // overlong encodings, surrogate code points and values beyond U+10FFFF. Invalid input goes to the normal decoder.
+    private static int validUtf8Length(int bytes) {
+        int first = bytes & 0xff;
+        int second = (bytes >>> Byte.SIZE) & 0xff;
+        if (first < 0xe0) {
+            return first >= 0xc2 && (second & 0xc0) == 0x80 ? 2 : 0;
+        }
+        if (first < 0xf0) {
+            return (bytes & 0x00c0c000) == 0x00808000
+                    && (first != 0xe0 || second >= 0xa0) && (first != 0xed || second < 0xa0) ? 3 : 0;
+        }
+        return first <= 0xf4 && (bytes & 0xc0c0c000) == 0x80808000
+                && (first != 0xf0 || second >= 0x90) && (first != 0xf4 || second < 0x90) ? 4 : 0;
+    }
 
     // Each successive group of three little-endian bytes must contain a UTF-8 lead and two continuations.
     // E0 and ED have additional second-byte bounds and stay with the single-code-point decoder.

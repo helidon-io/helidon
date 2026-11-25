@@ -95,11 +95,13 @@ class PolymorphicMetadataTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = Input.class, names = {"ARRAY", "STREAM", "SHORT_READ_STREAM"})
+    @EnumSource(value = Input.class, names = {"ARRAY", "STREAM", "SHORT_READ_STREAM", "VALUE"})
     void ignoredMetadataStillRequiresValidJson(Input input) {
         for (String json : List.of("{\"kind\":{\"broken\":},\"name\":\"example\"}",
                                    "{\"kind\":[1,],\"name\":\"example\"}",
-                                   "{\"name\":\"example\",\"kind\":\"unterminated}")) {
+                                   "{\"name\":\"example\",\"kind\":\"unterminated}",
+                                   "{\"kind\":[\"line\nbreak\"]}",
+                                   "{\"kind\":\"\\u12G4\"}")) {
             assertThrows(JsonException.class,
                          () -> binding.deserialize(input.parser(json), PolymorphicOrderTest.Sample.class));
         }

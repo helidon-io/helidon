@@ -112,18 +112,14 @@ public final class ObjectStartParser extends JsonParserBase {
             return super.readJsonObject();
         }
         JsonObject value = parser.readJsonObject();
-        if (parser.currentByte() == '{') {
-            parser.skip();
-        }
+        JsonValueParser.finishReadContainer(parser, (byte) '{');
         return value;
     }
 
     @Override
     public JsonArray readJsonArray() {
         JsonArray value = parser.readJsonArray();
-        if (parser.currentByte() == '[') {
-            parser.skip();
-        }
+        JsonValueParser.finishReadContainer(parser, (byte) '[');
         return value;
     }
 

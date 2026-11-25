@@ -18,7 +18,10 @@ package io.helidon.json;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -89,17 +92,9 @@ public final class JsonObject extends JsonValue {
     }
 
     static void validateDiscardedValue(JsonValue value) {
-        Iterable<JsonValue> children = switch (value.type()) {
-            case STRING -> {
-                value.asString().value();
-                yield List.of();
-            }
-            case OBJECT -> value.asObject().content.values();
-            case ARRAY -> value.asArray().values();
-            case NUMBER, BOOLEAN, NULL, UNKNOWN -> List.of();
-        };
-        for (JsonValue child : children) {
-            validateDiscardedValue(child);
+        Collection<JsonValue> children = childrenToValidate(value);
+        if (!children.isEmpty()) {
+            validateDiscardedChildren(children.iterator());
         }
     }
 
@@ -572,13 +567,56 @@ public final class JsonObject extends JsonValue {
         return content.equals(that.content);
     }
 
+    Iterator<Map.Entry<String, JsonValue>> entryIterator() {
+        return content.entrySet().iterator();
+    }
+
+    private static Collection<JsonValue> childrenToValidate(JsonValue value) {
+        return switch (value.type()) {
+            case STRING -> {
+                value.asString().validateContents();
+                yield List.of();
+            }
+            case OBJECT -> value.asObject().content.values();
+            case ARRAY -> value.asArray().values();
+            case NUMBER, BOOLEAN, NULL, UNKNOWN -> List.of();
+        };
+    }
+
+    private static void validateDiscardedChildren(Iterator<JsonValue> siblings) {
+        ArrayDeque<Iterator<JsonValue>> parents = null;
+        Set<JsonValue> visited = null;
+        while (true) {
+            while (siblings.hasNext()) {
+                JsonValue child = siblings.next();
+                Collection<JsonValue> nested = childrenToValidate(child);
+                if (nested.isEmpty()) {
+                    continue;
+                }
+                // Descend directly while there are no pending siblings. A branching programmatic tree can share containers.
+                if (parents == null && !siblings.hasNext()) {
+                    siblings = nested.iterator();
+                } else {
+                    if (parents == null) {
+                        parents = new ArrayDeque<>();
+                        visited = Collections.newSetFromMap(new IdentityHashMap<>());
+                    }
+                    if (visited.add(child)) {
+                        parents.push(siblings);
+                        siblings = nested.iterator();
+                    }
+                }
+            }
+            if (parents == null || parents.isEmpty()) {
+                return;
+            }
+            siblings = parents.pop();
+        }
+    }
+
     private JsonValue valueForKey(String key) {
         Objects.requireNonNull(key, "key cannot be null");
         return content.get(key);
-    }
-
-    Iterator<Map.Entry<String, JsonValue>> entryIterator() {
-        return content.entrySet().iterator();
     }
 
     /**

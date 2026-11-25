@@ -44,6 +44,16 @@ class JsonValueParser extends JsonParserBase {
         this.current = jsonValue;
     }
 
+    static void finishReadContainer(JsonParser parser, byte opening) {
+        if (parser.currentByte() == opening) {
+            if (parser instanceof JsonValueParser values) {
+                values.advancePastValue();
+            } else {
+                parser.skip();
+            }
+        }
+    }
+
     @Override
     public boolean hasNext() {
         JsonValueType type = current.type();
@@ -106,7 +116,7 @@ class JsonValueParser extends JsonParserBase {
         Objects.requireNonNull(matcher);
         // Tree-valued readers return the complete node while the cursor still points at its start.
         if (current instanceof JsonObject || current instanceof JsonArray) {
-            skip();
+            advancePastValue();
         }
         return Parsers.nextProperty(this, matcher);
     }
@@ -238,14 +248,8 @@ class JsonValueParser extends JsonParserBase {
 
     @Override
     public void skip() {
-        JsonValueType type = current.type();
-        if (type == JsonValueType.OBJECT) {
-            current = JsonControlValue.OBJECT_END;
-        } else if (type == JsonValueType.ARRAY) {
-            current = JsonControlValue.ARRAY_END;
-        } else if (depth == 0) {
-            current = JsonNoopValue.INSTANCE;
-        }
+        JsonObject.validateDiscardedValue(current);
+        advancePastValue();
     }
 
     @Override
@@ -315,6 +319,17 @@ class JsonValueParser extends JsonParserBase {
         }
         current = markedCurrent;
         clearMarkedState();
+    }
+
+    private void advancePastValue() {
+        JsonValueType type = current.type();
+        if (type == JsonValueType.OBJECT) {
+            current = JsonControlValue.OBJECT_END;
+        } else if (type == JsonValueType.ARRAY) {
+            current = JsonControlValue.ARRAY_END;
+        } else if (depth == 0) {
+            current = JsonNoopValue.INSTANCE;
+        }
     }
 
     private void ensureMarkedFrameCapacity() {

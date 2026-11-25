@@ -16,6 +16,8 @@
 
 package io.helidon.json;
 
+import java.util.Objects;
+
 import io.helidon.common.Api;
 
 /**
@@ -89,6 +91,17 @@ public final class JsonString extends JsonValue {
             resolveValue();
         }
         return resolvedValue;
+    }
+
+    void validateContents() {
+        if (resolvedValue == null) {
+            Objects.checkFromIndexSize(start, length, buffer.length);
+            int end = start + length;
+            if (JsonTextParser.nextStringEvent(buffer, start, end) != end) {
+                // Let the regular decoder diagnose the unrecognized byte or escape.
+                resolveValue();
+            }
+        }
     }
 
     private void resolveValue() {

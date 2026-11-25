@@ -142,6 +142,19 @@ final class JsonParserStream extends JsonTextParser {
     }
 
     @Override
+    byte nextStringEvent() {
+        do {
+            int position = nextStringEvent(buffer, currentIndex + 1, bufferLength);
+            if (position < bufferLength) {
+                currentIndex = position;
+                return buffer[position];
+            }
+            currentIndex = bufferLength - 1;
+        } while (hasNext());
+        throw createException("Unexpected end of string. Incomplete JSON or incorrect use of the skip method");
+    }
+
+    @Override
     int readUtf8CodePoint(byte currentByte) {
         int value = currentByte & 0xFF;
         if ((value & 0xE0) == 0xC0) {
@@ -412,7 +425,7 @@ final class JsonParserStream extends JsonTextParser {
     public void skip() {
         switch (currentByte()) {
         case '"':
-            skipString();
+            skipStringValue();
             break;
         case '{':
             skipObject();
@@ -2448,7 +2461,7 @@ final class JsonParserStream extends JsonTextParser {
                 return;
             }
             if (b == '"') {
-                skipString();
+                skipStringValue();
                 b = nextToken();
             } else {
                 throw createException("Key name start expected", b);
@@ -2462,7 +2475,7 @@ final class JsonParserStream extends JsonTextParser {
             while (b == ',') {
                 b = nextToken();
                 if (b == '"') {
-                    skipString();
+                    skipStringValue();
                     b = nextToken();
                 } else {
                     throw createException("Key name start expected", b);

@@ -16,6 +16,8 @@
 
 package io.helidon.json;
 
+import java.util.List;
+
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
@@ -28,6 +30,43 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * Covers skipping all JSON value types: objects, arrays, strings, numbers, booleans, and null.
  */
 class ValueSkipTest {
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    void skippedStringsAndObjectNamesValidateEscapes(ParserMethod method) {
+        for (String invalid : List.of("\\x", "\\u123G", "\n", "\\uD800", "\\uDC00", "\\uD800\\n",
+                                      "\\uD800\\u0041", "\\uD800\\uD800", "\\uD800\\uDC0G")) {
+            String string = "\"abcdefgh" + invalid + "\"";
+            assertThrows(JsonException.class, () -> method.createParser(string).skip());
+            assertThrows(JsonException.class, () -> method.createParser("{" + string + ":0}").skip());
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(Utf8InputMethod.class)
+    void skippedStringsValidateUtf8(Utf8InputMethod method) {
+        for (byte[] sequence : new byte[][] {
+                {(byte) 0xc2, 'x'},
+                {(byte) 0xe0, (byte) 0x9f, (byte) 0xbf},
+                {(byte) 0xed, (byte) 0xa0, (byte) 0x80},
+                {(byte) 0xf0, (byte) 0x8f, (byte) 0xbf, (byte) 0xbf},
+                {(byte) 0xf4, (byte) 0x90, (byte) 0x80, (byte) 0x80},
+                {(byte) 0xf5, (byte) 0x80, (byte) 0x80, (byte) 0x80}}) {
+            byte[] data = {'"', 'a', 'b', 'c', 'd', 'a', 'b', 'c', 'd', '"'};
+            System.arraycopy(sequence, 0, data, 5, sequence.length);
+            assertThrows(JsonException.class, () -> method.createParser(data).skip());
+        }
+    }
+
+    @ParameterizedTest
+    @EnumSource(ParserMethod.class)
+    void skipsValidUtf8AndEscapesAcrossInputBoundaries(ParserMethod method) {
+        String value = "abcdefgh\\\"\\\\\\n\\u1234\\uD83D\\uDE00€😀";
+        JsonParser parser = method.createParser("{\"" + value + "\":[\"" + value + "\"]} 42");
+        parser.skip();
+        assertThat(parser.nextToken(), is((byte) '4'));
+        assertThat(parser.readInt(), is(42));
+    }
 
     // Basic value skipping tests
     @ParameterizedTest
