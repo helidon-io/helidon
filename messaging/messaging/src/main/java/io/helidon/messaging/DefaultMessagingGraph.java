@@ -476,9 +476,9 @@ final class DefaultMessagingGraph implements MessagingGraph {
             return;
         }
 
-        RuntimeException closeFailure = finishShutdown(graceful);
+        Throwable closeFailure = finishShutdown(graceful);
         if (closeFailure != null) {
-            throw closeFailure;
+            rethrow(closeFailure);
         }
     }
 
@@ -601,29 +601,16 @@ final class DefaultMessagingGraph implements MessagingGraph {
         }
     }
 
-    private RuntimeException finishShutdown(boolean graceful) {
-        RuntimeException closeFailure = null;
+    private Throwable finishShutdown(boolean graceful) {
+        RuntimeException closeFailure;
         try {
             closeFailure = graceful ? closeGracefully() : closeForced(null, "Messaging graph shutdown");
         } catch (RuntimeException e) {
-            closeFailure = append(closeFailure, e);
+            closeFailure = e;
         } catch (Error e) {
-            closeFailure = append(closeFailure, new MessagingException("Messaging graph shutdown failed", e));
-        } finally {
-            lifecycleLock.lock();
-            try {
-                if (closeFailure == null) {
-                    changeState(State.CLOSED);
-                } else {
-                    failure = closeFailure;
-                    changeState(State.FAILED);
-                }
-            } finally {
-                lifecycleLock.unlock();
-            }
-            publishShutdownCompletion(closeFailure);
+            closeFailure = new MessagingException("Messaging graph shutdown failed", e);
         }
-        return closeFailure;
+        return completeShutdown(closeFailure);
     }
 
     private void handOffShutdown(boolean graceful) {
@@ -633,7 +620,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
                     .name("helidon-messaging-lifecycle-" + LIFECYCLE_SEQUENCE.incrementAndGet())
                     .inheritInheritableThreadLocals(false)
                     .start(() -> {
-                        RuntimeException closeFailure = finishShutdown(graceful);
+                        Throwable closeFailure = finishShutdown(graceful);
                         if (closeFailure != null) {
                             LOGGER.log(System.Logger.Level.ERROR,
                                        "Messaging graph shutdown failed after handoff",
@@ -654,15 +641,17 @@ final class DefaultMessagingGraph implements MessagingGraph {
         return lifecycleCallback.get() != null || deliveryEngine.isCurrentDeliveryOrSourceThread();
     }
 
-    private void completeShutdown(RuntimeException closeFailure) {
+    private Throwable completeShutdown(Throwable closeFailure) {
+        closeFailure = closeServices(closeFailure);
         lifecycleLock.lock();
         try {
             failure = closeFailure;
-            changeState(State.FAILED);
+            changeState(closeFailure == null ? State.CLOSED : State.FAILED);
         } finally {
             lifecycleLock.unlock();
         }
         publishShutdownCompletion(closeFailure);
+        return closeFailure;
     }
 
     private CleanupResult drainSources(RuntimeException current, long deadline) {
@@ -782,6 +771,7 @@ final class DefaultMessagingGraph implements MessagingGraph {
         if (cleanupFailure != null && cleanupFailure != primary) {
             primary.addSuppressed(cleanupFailure);
         }
+        closeServices(primary);
         publishShutdownCompletion(reportFailureOnClose ? primary : null);
     }
 
@@ -1192,33 +1182,24 @@ final class DefaultMessagingGraph implements MessagingGraph {
         }
     }
 
-    private void closeServices() {
-        Error failure = null;
+    private Throwable closeServices(Throwable primary) {
         for (MessagingService.Instance service : services.reversed()) {
             try {
                 invokeLifecycleCallback(service::close);
             } catch (RuntimeException e) {
                 LOGGER.log(System.Logger.Level.WARNING, "Cannot close messaging service", e);
             } catch (Error e) {
-                if (failure == null) {
-                    failure = e;
-                } else if (failure != e) {
-                    failure.addSuppressed(e);
+                if (primary == null) {
+                    primary = e;
+                } else if (primary != e) {
+                    primary.addSuppressed(e);
                 }
             }
         }
-        if (failure != null) {
-            throw failure;
-        }
+        return primary;
     }
 
     private void publishShutdownCompletion(Throwable shutdownFailure) {
-        try {
-            closeServices();
-        } catch (Error e) {
-            shutdownCompletion.completeExceptionally(e);
-            throw e;
-        }
         if (closeRequested.get()) {
             health.close();
         }

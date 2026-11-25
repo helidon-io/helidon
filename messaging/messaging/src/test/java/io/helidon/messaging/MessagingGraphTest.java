@@ -37,6 +37,9 @@ import io.helidon.common.GenericType;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.config.ConfigSources;
+import io.helidon.health.HealthCheck;
+import io.helidon.health.HealthCheckResponse;
+import io.helidon.health.HealthCheckType;
 import io.helidon.messaging.spi.ChannelConnection;
 import io.helidon.messaging.spi.IncomingChannel;
 import io.helidon.messaging.spi.MessagingService;
@@ -68,27 +71,6 @@ class MessagingGraphTest {
 
     @Test
     void failingServiceCloseStillClosesOtherServicesAndPropagatesToLaterCallers() {
-        record CloseService(String name, Runnable onClose) implements MessagingService, MessagingService.Instance {
-            @Override
-            public String type() {
-                return name;
-            }
-
-            @Override
-            public Instance create(ServiceRegistry registry) {
-                return this;
-            }
-
-            @Override
-            public Consumer<MessageBatch<?>> observe(String channel, Consumer<MessageBatch<?>> dispatch) {
-                return dispatch;
-            }
-
-            @Override
-            public void close() {
-                onClose.run();
-            }
-        }
         AtomicInteger closes = new AtomicInteger();
         AssertionError failure = new AssertionError("Service close failed");
         AtomicReference<MessagingGraph> owner = new AtomicReference<>();
@@ -101,9 +83,34 @@ class MessagingGraphTest {
                 .build()
                 .start();
         owner.set(graph);
+        HealthCheck liveness = graph.healthChecks().stream()
+                .filter(check -> check.type() == HealthCheckType.LIVENESS)
+                .findFirst()
+                .orElseThrow();
         assertThat(assertThrows(AssertionError.class, graph::close), sameInstance(failure));
         assertThat(assertThrows(AssertionError.class, graph::close), sameInstance(failure));
         assertThat(closes.get(), is(1));
+        assertThat(liveness.call().status(), is(HealthCheckResponse.Status.DOWN));
+    }
+
+    @Test
+    void startupFailureRetainsFatalServiceCleanupError() {
+        IllegalStateException startupFailure = new IllegalStateException("Connector startup failed");
+        AssertionError cleanupFailure = new AssertionError("Service close failed");
+        StartupBlockingOutgoing outgoing = new StartupBlockingOutgoing(startupFailure);
+        outgoing.releaseStartup();
+        MessagingChannel<String> channel = MessagingChannel.create("orders", String.class);
+        try (MessagingGraph graph = MessagingGraph.builder()
+                .channel(channel)
+                .outgoingChannel(channel, outgoing)
+                .addService(new CloseService("failing", () -> {
+                    throw cleanupFailure;
+                }))
+                .build()) {
+            assertThat(assertThrows(IllegalStateException.class, graph::start), sameInstance(startupFailure));
+            assertThat(startupFailure.getSuppressed().length, is(1));
+            assertThat(startupFailure.getSuppressed()[0], sameInstance(cleanupFailure));
+        }
     }
 
     @Test
@@ -1541,6 +1548,28 @@ class MessagingGraphTest {
                 ExecutionException.class,
                 () -> task.completion().get(WAIT.toNanos(), TimeUnit.NANOSECONDS));
         return exception.getCause();
+    }
+
+    private record CloseService(String name, Runnable onClose) implements MessagingService, MessagingService.Instance {
+        @Override
+        public String type() {
+            return name;
+        }
+
+        @Override
+        public Instance create(ServiceRegistry registry) {
+            return this;
+        }
+
+        @Override
+        public Consumer<MessageBatch<?>> observe(String channel, Consumer<MessageBatch<?>> dispatch) {
+            return dispatch;
+        }
+
+        @Override
+        public void close() {
+            onClose.run();
+        }
     }
 
     private record AsyncTask(Thread thread, CompletableFuture<Void> completion) {
