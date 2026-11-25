@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -43,6 +44,11 @@ class LogConfigInitializationTest {
     @Test
     void initClassInitializesLoggingOnce() throws Exception {
         verifyInitialization("initClass");
+    }
+
+    @Test
+    void providerInitializesLoggingOnce() throws Exception {
+        verifyInitialization("provider");
     }
 
     @Test
@@ -110,6 +116,8 @@ class LogConfigInitializationTest {
             root.setLevel(Level.OFF);
             if (args[0].equals("configureRuntime")) {
                 LogConfig.configureRuntime();
+            } else if (args[0].equals("provider")) {
+                assertThat(LogConfig.provider(), instanceOf(JulProvider.class));
             } else {
                 LogConfig.initClass();
             }

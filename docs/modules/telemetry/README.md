@@ -7,3 +7,4 @@ navigation:
 
 - [OpenTelemetry](opentelemetry.md)
 - [OpenTelemetry API](opentelemetry-api.md)
+- [OpenTelemetry Logging Adapters](logging.md)
