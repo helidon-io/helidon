@@ -1716,8 +1716,8 @@ public abstract class AbstractJdbcCallableContract {
             assertThat(failure.getMessage(), containsString("SQLSTATE '" + state + "' and vendor code 0"));
             StringWriter diagnostic = new StringWriter();
             failure.printStackTrace(new PrintWriter(diagnostic));
-            assertThat(description, diagnostic.toString().contains(nativeFailure.getMessage()), is(false));
-            assertThat(description, diagnostic.toString().contains(routine), is(false));
+            assertThat(description, diagnostic.toString(), not(containsString(nativeFailure.getMessage())));
+            assertThat(description, diagnostic.toString(), not(containsString(routine)));
             assertThat(client.create("{? = call sp_add(?)}").bind(2, 41).call().out("return", 1, JDBCType.INTEGER)
                                .outputs().get("return", Integer.class), is(42));
             System.out.println("Callable snapshot unsupported: " + description + ", native type=" + sqlType
