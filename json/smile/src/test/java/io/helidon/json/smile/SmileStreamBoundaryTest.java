@@ -42,6 +42,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
@@ -143,25 +144,31 @@ class SmileStreamBoundaryTest {
 
     @ParameterizedTest(name = "raw={0}, buffer={1} (0 means byte array), size={2}")
     @MethodSource("binarySkips")
-    void skipsBinaryPayloadAndPreservesFollowingValue(boolean rawBinary, int bufferSize, int size) {
+    void readsAndSkipsBinaryPayloadAndPreservesFollowingValue(boolean rawBinary, int bufferSize, int size) {
         byte[] payload = new byte[size];
         for (int i = 0; i < size; i++) {
             payload[i] = (byte) (i * 37);
         }
         byte[] encoded = encode(gen -> gen.writeBinary(payload), rawBinary);
         byte[] bytes = document(encoded, 11, true);
-        JsonParser parser = bufferSize == 0
-                ? SmileParser.create(bytes)
-                : SmileParser.create(new ShortReadInputStream(bytes, 1), bufferSize);
+        for (boolean skip : new boolean[] {false, true}) {
+            JsonParser parser = bufferSize == 0
+                    ? SmileParser.create(bytes)
+                    : SmileParser.create(new ShortReadInputStream(bytes, 1), bufferSize);
 
-        assertPrefix(parser, 11);
-        assertThat(parser.nextToken(), is((byte) 'B'));
-        parser.skip();
-        assertThat(parser.nextToken(), is((byte) ','));
-        assertThat(parser.nextToken(), is((byte) 't'));
-        assertThat(parser.readBoolean(), is(true));
-        assertThat(parser.nextToken(), is((byte) ']'));
-        assertThat(parser.hasNext(), is(false));
+            assertPrefix(parser, 11);
+            assertThat(parser.nextToken(), is((byte) 'B'));
+            if (skip) {
+                parser.skip();
+            } else {
+                assertThat(parser.readBinary(), is(payload));
+            }
+            assertThat(parser.nextToken(), is((byte) ','));
+            assertThat(parser.nextToken(), is((byte) 't'));
+            assertThat(parser.readBoolean(), is(true));
+            assertThat(parser.nextToken(), is((byte) ']'));
+            assertThat(parser.hasNext(), is(false));
+        }
     }
 
     @ParameterizedTest
@@ -212,6 +219,73 @@ class SmileStreamBoundaryTest {
         assertPrefix(parser, 11);
         assertThat(parser.nextToken(), is((byte) 'B'));
         assertThrows(JsonException.class, parser::skip, name);
+    }
+
+    @ParameterizedTest(name = "{0}, buffer={2} (0 means byte array), raw={3}")
+    @MethodSource("invalidBinaryLengths")
+    void rejectsInvalidBinaryLengthWhenReading(String name, byte[] length, int bufferSize, boolean rawBinary) {
+        byte[] encoded = new byte[length.length + 1];
+        encoded[0] = rawBinary ? SmileConstants.TOKEN_BINARY_RAW : SmileConstants.TOKEN_BINARY_7BIT;
+        System.arraycopy(length, 0, encoded, 1, length.length);
+        for (boolean followingValue : new boolean[] {false, true}) {
+            byte[] bytes = document(encoded, 11, followingValue);
+            JsonParser parser = bufferSize == 0
+                    ? SmileParser.create(bytes)
+                    : SmileParser.create(new ShortReadInputStream(bytes, 1), bufferSize);
+
+            assertPrefix(parser, 11);
+            assertThat(parser.nextToken(), is((byte) 'B'));
+            assertThrows(JsonException.class, parser::readBinary, name + ", following value=" + followingValue);
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 5, 16, 512})
+    void rejectsBinaryReadWithUnrepresentableEncodedLength(int bufferSize) {
+        // Integer.MAX_VALUE raw bytes would require more than Integer.MAX_VALUE 7-bit-encoded bytes.
+        byte[] encoded = {SmileConstants.TOKEN_BINARY_7BIT, 0x0F, 0x7F, 0x7F, 0x7F, (byte) 0xBF};
+        byte[] bytes = document(encoded, 11, true);
+        JsonParser parser = bufferSize == 0
+                ? SmileParser.create(bytes)
+                : SmileParser.create(new ShortReadInputStream(bytes, 1), bufferSize);
+
+        assertPrefix(parser, 11);
+        assertThat(parser.nextToken(), is((byte) 'B'));
+        JsonException exception = assertThrows(JsonException.class, parser::readBinary);
+        assertThat(exception.getMessage(), containsString("Binary length is too large"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void preservesMarkedArrayWithLinearBufferAllocation(boolean skip) {
+        List<String> values = IntStream.range(0, 4096).mapToObj(i -> "item" + i).toList();
+        JsonArray expected = JsonArray.createStrings(values);
+        byte[] encoded = encode(expected::toJson, false);
+        byte[] bytes = document(encoded, 11, true);
+        ShortReadInputStream stream = new ShortReadInputStream(bytes, 7);
+        JsonParser parser = SmileParser.create(stream, 16);
+        ValueCase value = new ValueCase("marked array", encoded, expected, ValueKind.ARRAY, 0);
+
+        assertValueAndTail(parser, value, 11, skip, true);
+
+        assertThat("Retained-buffer allocation must stay linear in the marked input size",
+                   stream.allocatedBufferCapacity, lessThanOrEqualTo(4L * bytes.length));
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void preservesMarkedLongStringWithLinearBufferAllocation(boolean skip) {
+        String expected = "a".repeat(16_384);
+        byte[] encoded = encode(gen -> gen.write(expected), false);
+        byte[] bytes = document(encoded, 11, true);
+        ShortReadInputStream stream = new ShortReadInputStream(bytes, 7);
+        JsonParser parser = SmileParser.create(stream, 16);
+        ValueCase value = new ValueCase("marked long string", encoded, expected, ValueKind.STRING, 0);
+
+        assertValueAndTail(parser, value, 11, skip, true);
+
+        assertThat("Retained-buffer allocation must stay linear in the marked input size",
+                   stream.allocatedBufferCapacity, lessThanOrEqualTo(4L * bytes.length));
     }
 
     private static Stream<Arguments> binarySkips() {
@@ -446,7 +520,9 @@ class SmileStreamBoundaryTest {
 
     private static final class ShortReadInputStream extends ByteArrayInputStream {
         private final int maxRead;
+        private byte[] previousBuffer;
         private int largestBuffer;
+        private long allocatedBufferCapacity;
 
         private ShortReadInputStream(byte[] bytes, int maxRead) {
             super(bytes);
@@ -455,6 +531,10 @@ class SmileStreamBoundaryTest {
 
         @Override
         public int read(byte[] bytes, int offset, int length) {
+            if (bytes != previousBuffer) {
+                allocatedBufferCapacity += bytes.length;
+                previousBuffer = bytes;
+            }
             largestBuffer = Math.max(largestBuffer, bytes.length);
             return super.read(bytes, offset, Math.min(length, maxRead));
         }

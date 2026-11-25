@@ -847,7 +847,7 @@ public final class SmileParser extends JsonParserBase {
     @Override
     public byte[] readBinary() {
         if (currentByte == (SmileConstants.TOKEN_BINARY_7BIT & 0xFF)) {
-            int rawLen = (int) readUnsignedVInt();
+            int rawLen = readBinaryArrayLength();
             byte[] data = decode7Bit(rawLen, encodedLength7Bit(rawLen));
             checkNextAfterValue();
             return data;
@@ -855,8 +855,8 @@ public final class SmileParser extends JsonParserBase {
             if (!rawBinaryEnabled) {
                 throw createException("Raw binary not enabled in header");
             }
-            int rawLen = (int) readUnsignedVInt();
-            if (currentIndex + rawLen >= bufferLength) {
+            int rawLen = readBinaryArrayLength();
+            if (rawLen > bufferLength - currentIndex - 1) {
                 throw createException("Unexpected end of the JSON");
             }
             byte[] bytes = new byte[rawLen];
@@ -1755,7 +1755,7 @@ public final class SmileParser extends JsonParserBase {
      * {@code rawLen} raw bytes: ceil(rawLen * 8 / 7).
      */
     private static int encodedLength7Bit(int rawLen) {
-        return (rawLen * 8 + 6) / 7;
+        return (int) ((rawLen * 8L + 6) / 7);
     }
 
     /**
@@ -1863,6 +1863,16 @@ public final class SmileParser extends JsonParserBase {
         }
         currentIndex += (int) length;
         checkNextAfterValue();
+    }
+
+    private int readBinaryArrayLength() {
+        long length = readBinaryLength();
+        if (length > Integer.MAX_VALUE
+                || (currentByte == (SmileConstants.TOKEN_BINARY_7BIT & 0xFF)
+                && (length * 8 + 6) / 7 > Integer.MAX_VALUE)) {
+            throw createException("Binary length is too large");
+        }
+        return (int) length;
     }
 
     private long readBinaryLength() {
