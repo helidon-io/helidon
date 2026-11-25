@@ -131,6 +131,7 @@ interface ThroughputLimitConfigBlueprint extends Prototype.Factory<ThroughputLim
 
     /**
      * A clock that supplies nanosecond time.
+     * The supplier must return a value on every invocation without throwing an exception.
      *
      * @return supplier of current nanoseconds, defaults to {@link java.lang.System#nanoTime()}
      */
