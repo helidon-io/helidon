@@ -21,54 +21,54 @@ import java.util.Objects;
 import io.helidon.common.Api;
 
 /**
- * Recognizes complete decoded JSON strings using a deterministic state machine. Generated converters
- * can implement the transitions directly. The initial state is zero and a negative result denotes an
- * unknown string. A lexer can be shared across parser instances.
+ * Matches complete decoded JSON strings against registered names. The result is the matching ordinal,
+ * or a negative value for an unknown string. Generated converters can implement the state transitions
+ * directly, starting at state zero. A matcher can be shared across parser instances.
  *
- * @see JsonParser#readString(JsonStringLexer)
+ * @see JsonParser#readString(JsonStringMatcher)
  */
 @Api.Preview
 @FunctionalInterface
-public interface JsonStringLexer {
+public interface JsonStringMatcher {
 
     /**
-     * Build a lexer for names supplied at runtime.
+     * Build a matcher for names supplied at runtime.
      *
      * @param names distinct decoded names in ordinal order
-     * @return immutable lexer
+     * @return immutable matcher
      * @throws IllegalArgumentException if a name is repeated
      */
-    static JsonStringLexer create(String... names) {
-        return PackedAsciiStringLexer.create(names);
+    static JsonStringMatcher create(String... names) {
+        return PackedAsciiStringMatcher.create(names);
     }
 
     /**
-     * Add a generated ASCII decision tree to a lexer. A selected name is verified against its complete
+     * Add a generated ASCII decision tree to a matcher. A selected name is verified against its complete
      * literal and its closing quote before the parser advances. Other input is recognized by the supplied
      * decoded transitions. The order of the names must agree with their decoded ordinals.
      *
-     * @param decoded lexer for decoded input
+     * @param decoded matcher for decoded input
      * @param selector generated selector for short unescaped ASCII names
      * @param names registered names in ordinal order
-     * @return lexer with an ASCII fast path
+     * @return matcher with an ASCII fast path
      */
-    static JsonStringLexer withAscii(JsonStringLexer decoded, AsciiSelector selector, String... names) {
-        return AsciiStringLexer.create(decoded, selector, names);
+    static JsonStringMatcher withAscii(JsonStringMatcher decoded, AsciiSelector selector, String... names) {
+        return AsciiStringMatcher.create(decoded, selector, names);
     }
 
     /**
      * Add a decision tree for unescaped UTF-8 spellings. The parser verifies the entire encoded
      * name and its closing quote before accepting the selection. Other spellings use the decoded transitions.
      *
-     * @param decoded lexer for decoded input
+     * @param decoded matcher for decoded input
      * @param selector possible ordinal for a bounded two-word window
      * @param offset non-negative byte offset of the selector window relative to the beginning of the name
      * @param names registered names in ordinal order
-     * @return lexer with a raw UTF-8 fast path
+     * @return matcher with a raw UTF-8 fast path
      * @throws IllegalArgumentException if the offset is negative
      */
-    static JsonStringLexer withUtf8(JsonStringLexer decoded, Utf8Selector selector, int offset, String... names) {
-        return AsciiStringLexer.withUtf8(decoded, selector, offset, names);
+    static JsonStringMatcher withUtf8(JsonStringMatcher decoded, Utf8Selector selector, int offset, String... names) {
+        return AsciiStringMatcher.withUtf8(decoded, selector, offset, names);
     }
 
     /**

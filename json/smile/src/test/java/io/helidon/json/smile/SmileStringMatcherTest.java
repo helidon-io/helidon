@@ -22,7 +22,7 @@ import java.io.ByteArrayOutputStream;
 import io.helidon.json.JsonException;
 import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
-import io.helidon.json.JsonStringLexer;
+import io.helidon.json.JsonStringMatcher;
 
 import org.junit.jupiter.api.Test;
 
@@ -30,19 +30,19 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class SmileStringLexerTest {
+class SmileStringMatcherTest {
     @Test
     void matchesDecodedNamesAcrossStringEncodings() {
         for (Input input : Input.values()) {
             String[] values = {"", "RED", "costarring", "liquid", "CAFÉ", "变量", "𐐀", "a\"b", "a\\b", "\n", "\u0000",
                     "a".repeat(32), "b".repeat(33), "c".repeat(64), "d".repeat(65), "é".repeat(32),
                     "é".repeat(32) + "x", "é".repeat(33)};
-            JsonStringLexer lexer = JsonStringLexer.create(values);
+            JsonStringMatcher matcher = JsonStringMatcher.create(values);
             for (boolean shared : new boolean[] {false, true}) {
                 JsonParser parser = input.parser(strings(shared, values));
                 for (int index = 0; index < values.length; index++) {
                     assertThat(parser.nextToken(), is((byte) '"'));
-                    assertThat(values[index], parser.readString(lexer), is(index));
+                    assertThat(values[index], parser.readString(matcher), is(index));
                     assertThat(parser.nextToken(), is(index + 1 == values.length ? (byte) ']' : (byte) ','));
                 }
             }
@@ -52,22 +52,22 @@ class SmileStringLexerTest {
     @Test
     void rejectsUnknownCollisionsAndContinues() {
         for (Input input : Input.values()) {
-            JsonStringLexer lexer = JsonStringLexer.create("project", "RED");
+            JsonStringMatcher matcher = JsonStringMatcher.create("project", "RED");
             JsonParser parser = input.parser(strings(false, "unknown-IpUce6", "RED"));
             parser.nextToken();
-            assertThat(parser.readString(lexer), is(-1));
+            assertThat(parser.readString(matcher), is(-1));
             assertThat(parser.nextToken(), is((byte) ','));
             parser.nextToken();
-            assertThat(parser.readString(lexer), is(1));
+            assertThat(parser.readString(matcher), is(1));
             assertThat(parser.nextToken(), is((byte) ']'));
         }
     }
 
     @Test
-    void preservesSharedValuesAcrossLexersAndReadMethods() {
+    void preservesSharedValuesAcrossMatchersAndReadMethods() {
         for (Input input : Input.values()) {
-            JsonStringLexer red = JsonStringLexer.create("RED");
-            JsonStringLexer blue = JsonStringLexer.create("BLUE");
+            JsonStringMatcher red = JsonStringMatcher.create("RED");
+            JsonStringMatcher blue = JsonStringMatcher.create("BLUE");
             JsonParser parser = input.parser(strings(true, "RED", "BLUE", "RED", "BLUE", "RED", "BLUE"));
             parser.nextToken();
             assertThat(parser.readString(red), is(0));
@@ -93,8 +93,8 @@ class SmileStringLexerTest {
     @Test
     void preservesObjectKeysAndValueState() {
         for (Input input : Input.values()) {
-            JsonStringLexer key = JsonStringLexer.create("key\"");
-            JsonStringLexer value = JsonStringLexer.create("RED");
+            JsonStringMatcher key = JsonStringMatcher.create("key\"");
+            JsonStringMatcher value = JsonStringMatcher.create("RED");
             for (boolean sharedKeys : new boolean[] {false, true}) {
                 for (boolean sharedValues : new boolean[] {false, true}) {
                     ByteArrayOutputStream bytes = new ByteArrayOutputStream();
@@ -131,48 +131,48 @@ class SmileStringLexerTest {
     @Test
     void validatesEncodingEvenForUnknownOrMatchingBytes() {
         for (Input input : Input.values()) {
-            JsonStringLexer lexer = JsonStringLexer.create("é", "?", "\uFFFD", "\uD800");
+            JsonStringMatcher matcher = JsonStringMatcher.create("é", "?", "\uFFFD", "\uD800");
             for (byte[] malformed : new byte[][] {
                     {0x3a, 0x29, 0x0a, 0, 0x41, (byte) 0xc3, (byte) 0xa9},
                     {0x3a, 0x29, 0x0a, 0, (byte) 0x80, (byte) 0xc0, (byte) 0xaf},
                     {0x3a, 0x29, 0x0a, 0, (byte) 0x81, (byte) 0xed, (byte) 0xa0, (byte) 0x80}}) {
                 JsonParser parser = input.parser(malformed);
-                assertThrows(JsonException.class, () -> parser.readString(lexer));
+                assertThrows(JsonException.class, () -> parser.readString(matcher));
             }
             JsonParser truncated = input.parser(new byte[] {0x3a, 0x29, 0x0a, 0, 0x43, 'R', 'E'});
-            assertThrows(JsonException.class, () -> truncated.readString(lexer));
+            assertThrows(JsonException.class, () -> truncated.readString(matcher));
         }
     }
 
     @Test
-    void validatesLexerAndStringTokenWithoutConsumingInput() {
+    void validatesMatcherAndStringTokenWithoutConsumingInput() {
         for (Input input : Input.values()) {
-            JsonStringLexer lexer = JsonStringLexer.create("RED");
+            JsonStringMatcher matcher = JsonStringMatcher.create("RED");
             JsonParser parser = input.parser(strings(false, "RED"));
-            assertThrows(JsonException.class, () -> parser.readString(lexer));
+            assertThrows(JsonException.class, () -> parser.readString(matcher));
             assertThat(parser.currentByte(), is((byte) '['));
             parser.nextToken();
             assertThrows(NullPointerException.class, () -> parser.readString(null));
-            assertThat(parser.readString(lexer), is(0));
+            assertThat(parser.readString(matcher), is(0));
         }
     }
 
     @Test
-    void preservesMarksAcrossLexerReadsAndSharedReferences() {
+    void preservesMarksAcrossMatcherReadsAndSharedReferences() {
         for (Input input : Input.values()) {
             for (boolean shared : new boolean[] {false, true}) {
                 for (String value : new String[] {"RED", "é".repeat(32) + "x"}) {
-                    JsonStringLexer lexer = JsonStringLexer.create(value);
+                    JsonStringMatcher matcher = JsonStringMatcher.create(value);
                     JsonParser parser = input.parser(strings(shared, value, value));
                     parser.nextToken();
                     parser.mark();
-                    assertThat(parser.readString(lexer), is(0));
+                    assertThat(parser.readString(matcher), is(0));
                     parser.resetToMark();
                     assertThat(parser.currentByte(), is((byte) '"'));
-                    assertThat(parser.readString(lexer), is(0));
+                    assertThat(parser.readString(matcher), is(0));
                     assertThat(parser.nextToken(), is((byte) ','));
                     parser.nextToken();
-                    assertThat(parser.readString(lexer), is(0));
+                    assertThat(parser.readString(matcher), is(0));
                     assertThat(parser.nextToken(), is((byte) ']'));
                 }
             }

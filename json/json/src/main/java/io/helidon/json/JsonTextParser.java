@@ -22,7 +22,7 @@ import java.nio.ByteOrder;
 import java.util.Objects;
 
 /**
- * Native text parsers share the string lexer while retaining ownership of their input cursors.
+ * Native text parsers share the string matcher while retaining ownership of their input cursors.
  */
 abstract class JsonTextParser extends JsonParserBase {
     private static final VarHandle WORD = MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.LITTLE_ENDIAN);
@@ -50,20 +50,20 @@ abstract class JsonTextParser extends JsonParserBase {
         expectLowSurrogate = value;
     }
 
-    final int readString(JsonStringLexer lexer, byte[] input, int quote, int limit) {
-        Objects.requireNonNull(lexer);
+    final int readString(JsonStringMatcher matcher, byte[] input, int quote, int limit) {
+        Objects.requireNonNull(matcher);
         if (input[quote] != '"') {
             throw createException("Start of a string expected", input[quote]);
         }
         // A public selector may decline a known name. Only an owned dictionary can establish a definitive miss.
-        if (lexer instanceof PackedAsciiStringLexer complete) {
+        if (matcher instanceof PackedAsciiStringMatcher complete) {
             int start = quote + 1;
             long hit = complete.recognizeAfterSelection(input, start, limit);
             if (hit >= 0) {
                 stringPosition(start + (int) (hit >>> Integer.SIZE));
                 return (int) hit;
             }
-            lexer = complete.decoded();
+            matcher = complete.decoded();
         }
         int position = quote + 1;
         int state = 0;
@@ -76,41 +76,41 @@ abstract class JsonTextParser extends JsonParserBase {
                 byte event = input[end];
                 if (event == '"') {
                     stringPosition(end);
-                    return state < 0 ? -1 : lexer.advance(state, word & ((1L << shift) - 1), 0, shift / Byte.SIZE);
+                    return state < 0 ? -1 : matcher.advance(state, word & ((1L << shift) - 1), 0, shift / Byte.SIZE);
                 }
                 if (event == '\\' || event < 0) {
-                    return readBuffered(lexer, input, end, limit, state, word & ((1L << shift) - 1), shift);
+                    return readBuffered(matcher, input, end, limit, state, word & ((1L << shift) - 1), shift);
                 }
                 break;
             }
             if (state >= 0) {
-                state = lexer.advance(state, word, 0, Long.BYTES);
+                state = matcher.advance(state, word, 0, Long.BYTES);
             }
             position += Long.BYTES;
         }
         stringPosition(position - 1);
-        return readDecoded(lexer, state, 0, 0, 0);
+        return readDecoded(matcher, state, 0, 0, 0);
     }
 
-    final int nextProperty(JsonStringLexer lexer, byte[] input, int position, int limit) {
-        Objects.requireNonNull(lexer);
+    final int nextProperty(JsonStringMatcher matcher, byte[] input, int position, int limit) {
+        Objects.requireNonNull(matcher);
         int remaining = limit - position;
         if (remaining > 1 && input[position + 1] == '}') {
             stringPosition(position + 1);
             return END_OBJECT;
         }
         if (remaining > 2 && input[position + 1] == ',' && input[position + 2] == '"') {
-            return readProperty(lexer, input, position + 2, limit);
+            return readProperty(matcher, input, position + 2, limit);
         }
-        return Parsers.nextProperty(this, lexer);
+        return Parsers.nextProperty(this, matcher);
     }
 
-    final int readProperty(JsonStringLexer lexer, byte[] input, int quote, int limit) {
-        Objects.requireNonNull(lexer);
+    final int readProperty(JsonStringMatcher matcher, byte[] input, int quote, int limit) {
+        Objects.requireNonNull(matcher);
         if (input[quote] != '"') {
             throw createException("Expected a quoted property name", input[quote]);
         }
-        if (lexer instanceof AsciiStringLexer raw) {
+        if (matcher instanceof AsciiStringMatcher raw) {
             int start = quote + 1;
             long hit = raw.recognize(input, start, limit);
             if (hit >= 0) {
@@ -123,9 +123,9 @@ abstract class JsonTextParser extends JsonParserBase {
                 }
                 return (int) hit;
             }
-            lexer = raw.decoded();
+            matcher = raw.decoded();
         }
-        int ordinal = readString(lexer, input, quote, limit);
+        int ordinal = readString(matcher, input, quote, limit);
         Parsers.propertyValue(this);
         return Math.max(-1, ordinal);
     }
@@ -153,13 +153,13 @@ abstract class JsonTextParser extends JsonParserBase {
         return ((word & 0x0f00000fL) << 12) | (((word >>> 8) & 0x3f00003fL) << 6) | ((word >>> 16) & 0x3f00003fL);
     }
 
-    private int readBuffered(JsonStringLexer lexer, byte[] input, int position, int limit, int state, long low, int shift) {
+    private int readBuffered(JsonStringMatcher matcher, byte[] input, int position, int limit, int state, long low, int shift) {
         long high = 0;
         while (position < limit) {
             byte b = input[position];
             if (b == '"') {
                 stringPosition(position);
-                return state < 0 ? -1 : lexer.advance(state, low, high, shift / Byte.SIZE);
+                return state < 0 ? -1 : matcher.advance(state, low, high, shift / Byte.SIZE);
             }
             if (b == '\\') {
                 if (limit - position < 6 || input[position + 1] != 'u') {
@@ -180,7 +180,7 @@ abstract class JsonTextParser extends JsonParserBase {
                 long pair = shift <= Long.SIZE - 2 * Byte.SIZE && (b & 0xf0) == 0xe0 && limit - position >= Long.BYTES
                         ? threeBytePair(word(input, position)) : -1;
                 if (pair >= 0) {
-                    // Append the low and high bytes of both UTF-16 units to their respective lexer words.
+                    // Append the low and high bytes of both UTF-16 units to their respective matcher words.
                     low |= ((pair & 0xff) | ((pair >>> 16) & 0xff00)) << shift;
                     high |= (((pair >>> 8) & 0xff) | ((pair >>> 24) & 0xff00)) << shift;
                     shift += 2 * Byte.SIZE;
@@ -219,7 +219,7 @@ abstract class JsonTextParser extends JsonParserBase {
             }
             if (shift == Long.SIZE) {
                 if (state >= 0) {
-                    state = lexer.advance(state, low, high, Long.BYTES);
+                    state = matcher.advance(state, low, high, Long.BYTES);
                 }
                 low = 0;
                 high = 0;
@@ -227,10 +227,10 @@ abstract class JsonTextParser extends JsonParserBase {
             }
         }
         stringPosition(position - 1);
-        return readDecoded(lexer, state, low, high, shift);
+        return readDecoded(matcher, state, low, high, shift);
     }
 
-    private int readDecoded(JsonStringLexer lexer, int state, long low, long high, int shift) {
+    private int readDecoded(JsonStringMatcher matcher, int state, long low, long high, int shift) {
         expectLowSurrogate = false;
         int remainingUnit = -1;
         while (true) {
@@ -248,7 +248,7 @@ abstract class JsonTextParser extends JsonParserBase {
                 } else if (expectLowSurrogate) {
                     throw createException("Low surrogate must follow the high surrogate.", b);
                 } else if (b == '"') {
-                    return state < 0 ? -1 : lexer.advance(state, low, high, shift / Byte.SIZE);
+                    return state < 0 ? -1 : matcher.advance(state, low, high, shift / Byte.SIZE);
                 } else if (b < 0) {
                     unit = readUtf8CodePoint(b);
                     if (Character.isSupplementaryCodePoint(unit)) {
@@ -266,7 +266,7 @@ abstract class JsonTextParser extends JsonParserBase {
                 high |= (long) (unit >>> Byte.SIZE) << shift;
                 shift += Byte.SIZE;
                 if (shift == Long.SIZE) {
-                    state = lexer.advance(state, low, high, Long.BYTES);
+                    state = matcher.advance(state, low, high, Long.BYTES);
                     low = 0;
                     high = 0;
                     shift = 0;

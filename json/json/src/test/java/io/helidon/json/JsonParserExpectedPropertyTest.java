@@ -73,7 +73,7 @@ class JsonParserExpectedPropertyTest {
         assertThat(parser.tryNextProperty(JsonKey.create("\uD800")), is(false));
         assertThat(parser.nextToken(), is((byte) ','));
         assertThat(parser.nextToken(), is((byte) '"'));
-        assertThrows(JsonException.class, () -> parser.readString(JsonStringLexer.create("other")));
+        assertThrows(JsonException.class, () -> parser.readString(JsonStringMatcher.create("other")));
     }
 
     @Test
@@ -112,7 +112,7 @@ class JsonParserExpectedPropertyTest {
         readFirstProperty(parser);
         assertThat(parser.tryNextProperty(JsonKey.create("next")), is(false));
         assertThat(parser.currentByte(), is((byte) '0'));
-        assertThat(parser.nextProperty(JsonStringLexer.create("next")), is(0));
+        assertThat(parser.nextProperty(JsonStringMatcher.create("next")), is(0));
         assertThat(parser.readInt(), is(1));
     }
 
@@ -148,7 +148,7 @@ class JsonParserExpectedPropertyTest {
         JsonKey key = JsonKey.create("id");
         JsonParser alternate = method.createParser("\"i\\u0064\":0", 32);
         assertThat(alternate.tryReadProperty(key), is(false));
-        assertThat(alternate.readProperty(JsonStringLexer.create("id")), is(0));
+        assertThat(alternate.readProperty(JsonStringMatcher.create("id")), is(0));
         assertThat(alternate.readInt(), is(0));
         JsonParser invalid = method.createParser("\"id\":}", 32);
         assertThat(invalid.tryReadProperty(key), is(false));
@@ -161,7 +161,7 @@ class JsonParserExpectedPropertyTest {
         assertThat(following.currentByte(), is((byte) '0'));
         JsonParser surrogate = method.createParser("\"\\uD800\":7", 32);
         assertThat(surrogate.tryReadProperty(JsonKey.create("\uD800")), is(false));
-        assertThrows(JsonException.class, () -> surrogate.readString(JsonStringLexer.create("id")));
+        assertThrows(JsonException.class, () -> surrogate.readString(JsonStringMatcher.create("id")));
     }
 
     private static void readFirstProperty(JsonParser parser) {

@@ -102,13 +102,13 @@ class JsonValueParser extends JsonParserBase {
     }
 
     @Override
-    public int nextProperty(JsonStringLexer lexer) {
-        Objects.requireNonNull(lexer);
+    public int nextProperty(JsonStringMatcher matcher) {
+        Objects.requireNonNull(matcher);
         // Tree-valued readers return the complete node while the cursor still points at its start.
         if (current instanceof JsonObject || current instanceof JsonArray) {
             skip();
         }
-        return Parsers.nextProperty(this, lexer);
+        return Parsers.nextProperty(this, matcher);
     }
 
     @Override

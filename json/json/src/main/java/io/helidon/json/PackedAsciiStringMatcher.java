@@ -27,7 +27,7 @@ import static io.helidon.json.JsonParserArray.FNV_PRIME;
  * Both paths verify the complete spelling through its closing quote.
  * An enclosing selector can also use the dictionary indexed by the first input word.
  */
-final class PackedAsciiStringLexer extends AsciiStringLexer {
+final class PackedAsciiStringMatcher extends AsciiStringMatcher {
     private static final long QUOTES = 0x2222222222222222L;
     private static final long ONES = 0x0101010101010101L;
     private static final long HIGH_BITS = 0x8080808080808080L;
@@ -39,16 +39,16 @@ final class PackedAsciiStringLexer extends AsciiStringLexer {
     private final Dictionary dictionary;
     private final PrefixIndex prefixIndex;
 
-    private PackedAsciiStringLexer(Dictionary dictionary, PrefixIndex prefixIndex) {
+    private PackedAsciiStringMatcher(Dictionary dictionary, PrefixIndex prefixIndex) {
         super(dictionary);
         this.dictionary = dictionary;
         this.prefixIndex = prefixIndex;
     }
 
-    static JsonStringLexer create(String[] names) {
+    static JsonStringMatcher create(String[] names) {
         Objects.requireNonNull(names);
         if (names.length < MIN_NAMES || names.length > MAX_NAMES) {
-            return new RuntimeStringLexer(names);
+            return new RuntimeStringMatcher(names);
         }
         String[] registered = names.clone();
         Literal[] literals = new Literal[registered.length];
@@ -57,22 +57,22 @@ final class PackedAsciiStringLexer extends AsciiStringLexer {
         for (int i = 0; i < literals.length; i++) {
             String name = registered[i];
             if (name == null || name.length() >= 2 * Long.BYTES) {
-                return new RuntimeStringLexer(registered);
+                return new RuntimeStringMatcher(registered);
             }
             Literal literal = Literal.create(name);
             if (literal == null) {
-                return new RuntimeStringLexer(registered);
+                return new RuntimeStringMatcher(registered);
             }
             literals[i] = literal;
             prefixWidth = Math.min(prefixWidth, literal.length() + 1);
             secondWord |= literal.length() >= Long.BYTES;
         }
         if (!secondWord) {
-            return new RuntimeStringLexer(registered);
+            return new RuntimeStringMatcher(registered);
         }
         Dictionary dictionary = Dictionary.create(registered, literals);
-        return dictionary == null ? new RuntimeStringLexer(registered)
-                : new PackedAsciiStringLexer(dictionary, PrefixIndex.create(dictionary, prefixWidth, literals.length));
+        return dictionary == null ? new RuntimeStringMatcher(registered)
+                : new PackedAsciiStringMatcher(dictionary, PrefixIndex.create(dictionary, prefixWidth, literals.length));
     }
 
     @Override
@@ -254,7 +254,7 @@ final class PackedAsciiStringLexer extends AsciiStringLexer {
     private record Entry(Literal literal, int hash, int ordinal, int prefixState, Entry nextPrefix, Entry nextHash) {
     }
 
-    private static final class Dictionary implements JsonStringLexer {
+    private static final class Dictionary implements JsonStringMatcher {
         private static final long MIX = 0x9e3779b97f4a7c15L;
         private final int shift;
         private final Entry[] entries;
@@ -315,7 +315,7 @@ final class PackedAsciiStringLexer extends AsciiStringLexer {
                 for (Entry entry = head; entry != null; entry = entry.nextPrefix) {
                     if (entry.literal.first() == literal.first()) {
                         if (entry.literal.second() == literal.second()) {
-                            throw new IllegalArgumentException("Duplicate string in lexer: " + names[ordinal]);
+                            throw new IllegalArgumentException("Duplicate string in matcher: " + names[ordinal]);
                         }
                         if (++shared > MAX_PREFIX_FAN_OUT) {
                             return null;

@@ -21,7 +21,7 @@ import java.nio.charset.StandardCharsets;
 
 import io.helidon.json.JsonException;
 import io.helidon.json.JsonParser;
-import io.helidon.json.JsonStringLexer;
+import io.helidon.json.JsonStringMatcher;
 import io.helidon.json.JsonValue;
 import io.helidon.json.binding.Json;
 import io.helidon.json.binding.JsonBinding;
@@ -193,7 +193,7 @@ class HashCollisionDispatchTest {
     @EnumSource(ParserInput.class)
     void readsNestedPropertyHeadersWithAlternateParsers(ParserInput input) {
         JsonParser parser = input.parser("{\"child\":{\"value\":1},\"extra\":[1],\"value\":2}", jsonBinding);
-        JsonStringLexer names = JsonStringLexer.create("child", "value");
+        JsonStringMatcher names = JsonStringMatcher.create("child", "value");
         assertThat(parser.nextToken(), is((byte) '"'));
         assertThat(parser.readProperty(names), is(0));
         assertThat(parser.nextToken(), is((byte) '"'));
@@ -212,7 +212,7 @@ class HashCollisionDispatchTest {
     void advancesAfterReadingACompleteContainer(ParserInput input) {
         String document = "{\"child\":{\"value\":7},\"list\":[3],\"node\":{\"value\":9},\"value\":2}";
         JsonParser parser = input.parser(document, jsonBinding);
-        JsonStringLexer names = JsonStringLexer.create("child", "list", "node", "value");
+        JsonStringMatcher names = JsonStringMatcher.create("child", "list", "node", "value");
         assertThat(parser.nextToken(), is((byte) '"'));
         assertThat(parser.readProperty(names), is(0));
         assertThat(parser.readJsonObject(), is(JsonParser.create("{\"value\":7}").readJsonObject()));

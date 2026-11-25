@@ -22,12 +22,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 
-final class RuntimeStringLexer implements JsonStringLexer {
+final class RuntimeStringMatcher implements JsonStringMatcher {
     private final int[] offsets;
     private final Word[] edges;
     private final int[] targets;
 
-    RuntimeStringLexer(String[] names) {
+    RuntimeStringMatcher(String[] names) {
         Objects.requireNonNull(names);
         List<Map<Word, Integer>> states = new ArrayList<>();
         states.add(new TreeMap<>());
@@ -40,7 +40,7 @@ final class RuntimeStringLexer implements JsonStringLexer {
                 Word word = Word.at(name, position);
                 if (word.length < Long.BYTES) {
                     if (state.putIfAbsent(word, ordinal) != null) {
-                        throw new IllegalArgumentException("Duplicate string in lexer: " + name);
+                        throw new IllegalArgumentException("Duplicate string in matcher: " + name);
                     }
                     edgeCount++;
                     break;

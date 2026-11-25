@@ -269,10 +269,10 @@ class JsonConverterGenerator {
                 .addContentLine("throw parser.createException(\"Expected '\\\"' as a key start\", lastByte);")
                 .addContentLine("}");
 
-        StringLexerGenerator.generate(classBuilder,
-                                      converterInfo.converterType(),
-                                      "POLYMORPHIC_PROPERTY",
-                                      List.of(polymorphicInfo.property()));
+        StringMatcherGenerator.generate(classBuilder,
+                                        converterInfo.converterType(),
+                                        "POLYMORPHIC_PROPERTY",
+                                        List.of(polymorphicInfo.property()));
         method.addContentLine("if (parser.readString(POLYMORPHIC_PROPERTY) != 0) {")
                 .addContentLine("return deserializeUnordered(parser);")
                 .addContentLine("}");
@@ -290,10 +290,10 @@ class JsonConverterGenerator {
                 .addContentLine("}")
                 .addContentLine("parser.clearMark();");
         List<Map.Entry<String, TypeName>> aliases = new ArrayList<>(polymorphicInfo.aliases().entrySet());
-        StringLexerGenerator.generate(classBuilder,
-                                      converterInfo.converterType(),
-                                      "POLYMORPHIC_ALIASES",
-                                      aliases.stream().map(Map.Entry::getKey).toList());
+        StringMatcherGenerator.generate(classBuilder,
+                                        converterInfo.converterType(),
+                                        "POLYMORPHIC_ALIASES",
+                                        aliases.stream().map(Map.Entry::getKey).toList());
         method.addContentLine("int alias = parser.readString(POLYMORPHIC_ALIASES);")
                 .addContentLine("lastByte = parser.nextToken();")
                 .addContent("if (lastByte == ")
@@ -893,10 +893,10 @@ class JsonConverterGenerator {
             readUnknownProperties(method, converterInfo);
             return;
         }
-        StringLexerGenerator.generate(classBuilder, converterInfo.converterType(), "PROPERTY_NAMES", propertyNames);
-        List<PropertyReader> readers = new ArrayList<>(jsonProperties.size());
-        Set<String> processedTypes = new HashSet<>();
-        for (int i = 0; i < jsonProperties.size(); i++) {
+        StringMatcherGenerator.generate(classBuilder, converterInfo.converterType(), "PROPERTY_NAMES", propertyNames);
+                                        List<PropertyReader> readers = new ArrayList<>(jsonProperties.size());
+                                        Set<String> processedTypes = new HashSet<>();
+                                        for (int i = 0; i < jsonProperties.size(); i++) {
             JsonProperty property = jsonProperties.get(i);
             String constant = addOrdinalConstant(classBuilder, fieldNames, propertyNames.get(i), i);
             String deserializer = deserializerField(property, classBuilder, processedTypes, toConfigure, fieldNames);

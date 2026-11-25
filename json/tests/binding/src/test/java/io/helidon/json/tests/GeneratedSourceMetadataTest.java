@@ -246,7 +246,7 @@ class GeneratedSourceMetadataTest {
                                   "case FIRST_DESERIALIZER -> {",
                                   "case FIRST -> {",
                                   "case FIRST_KEY_1 -> { // \"firstKey\""));
-        assertThat(content, containsString("JsonStringLexer PROPERTY_NAMES ="));
+        assertThat(content, containsString("JsonStringMatcher PROPERTY_NAMES ="));
         assertThat(content, containsString("JsonKey FIRST_KEY = JsonKey.create(\"first\")"));
         assertThat(content, containsString("CustomDeserializer FIRST_DESERIALIZER_1 ="));
         assertThat(content, containsString("FIRST_DESERIALIZER_1.deserialize(parser)"));
@@ -286,12 +286,12 @@ class GeneratedSourceMetadataTest {
 
         assertCompilationSuccess(result);
         String ordinary = Files.readString(generatedSource(result, "Order__GeneratedConverter.java"));
-        assertThat(ordinary, containsString("JsonStringLexer PROPERTY_NAMES = JsonStringLexer.create("));
+        assertThat(ordinary, containsString("JsonStringMatcher PROPERTY_NAMES = JsonStringMatcher.create("));
         String byByte = Files.readString(generatedSource(result, "ByteCodes__GeneratedConverter.java"));
-        assertThat(byByte, containsString("JsonStringLexer PROPERTY_NAMES = createPropertyNameLexer("));
-        assertThat(byByte, containsString("JsonStringLexer.withAscii(JsonStringLexer.create(names),"));
+        assertThat(byByte, containsString("JsonStringMatcher PROPERTY_NAMES = createPropertyNameMatcher("));
+        assertThat(byByte, containsString("JsonStringMatcher.withAscii(JsonStringMatcher.create(names),"));
         String shared = Files.readString(generatedSource(result, "Shared__GeneratedConverter.java"));
-        assertThat(shared, containsString("JsonStringLexer PROPERTY_NAMES = JsonStringLexer.withAscii("));
+        assertThat(shared, containsString("JsonStringMatcher PROPERTY_NAMES = JsonStringMatcher.withAscii("));
     }
 
     @Test
@@ -370,7 +370,7 @@ class GeneratedSourceMetadataTest {
                                                  + " | ((int) (first >>> 31) & 4))]"));
         assertThat(content, containsString("case 6 -> PROPERTY_NAMES_TRANSITIONS[12 + ((int) (first >>> 8) & 1)]"));
         String fallback = Files.readString(generatedSource(result, "TooManyBits__GeneratedConverter.java"));
-        assertThat(fallback, containsString("::lexPropertyNameAscii"));
+        assertThat(fallback, containsString("::matchPropertyNameAscii"));
         assertThat(fallback, not(containsString("numberOfTrailingZeros(")));
         String direct = Files.readString(generatedSource(result, "Direct__GeneratedConverter.java"));
         assertThat(direct, containsString("int route = PROPERTY_NAMES_TRANSITIONS["));
@@ -447,7 +447,7 @@ class GeneratedSourceMetadataTest {
 
         assertCompilationSuccess(result);
         String content = Files.readString(generatedSource(result, "LongFields__GeneratedConverter.java"));
-        assertThat(content, containsString("::lexPropertyNameUtf8, 29,"));
+        assertThat(content, containsString("::matchPropertyNameUtf8, 29,"));
     }
 
     @Test
@@ -619,23 +619,23 @@ class GeneratedSourceMetadataTest {
         String empty = Files.readString(generatedSource(result, "Prefixes_EmptyFirst__GeneratedConverter.java"));
         String one = Files.readString(generatedSource(result, "Prefixes_OneCharacter__GeneratedConverter.java"));
         String parsers = Files.readString(generatedSource(result, "Parsers__GeneratedConverter.java"));
-        assertThat(parsers, containsString("asciiPrefixLexer("));
-        assertThat(different, containsString("Parsers.asciiPrefixLexer("));
-        assertThat(different, containsString("lexPropertyNameAscii(long first)"));
+        assertThat(parsers, containsString("asciiPrefixMatcher("));
+        assertThat(different, containsString("Parsers.asciiPrefixMatcher("));
+        assertThat(different, containsString("matchPropertyNameAscii(long first)"));
         assertThat(different, containsString("switch ((int) first & 16777215)"));
         assertThat(different, containsString("case 0x226469 -> 0;"));
         assertThat(singleByte, containsString("return PROPERTY_NAMES_TRANSITIONS["));
         assertThat(shared, not(containsString("switch ((int) first & 16777215)")));
-        assertThat(shared, containsString("lexPropertyNameAscii(long first, long second)"));
+        assertThat(shared, containsString("matchPropertyNameAscii(long first, long second)"));
         assertThat(shared, containsString("int route = PROPERTY_NAMES_TRANSITIONS["));
         assertThat(shared, containsString("switch (route)"));
         assertThat(fourBytes, containsString("switch ((int) first)"));
         assertThat(fourBytes, containsString("case 0x22636261 -> 0;"));
         assertThat(empty, containsString("switch ((int) first & 255)"));
-        assertThat(empty, containsString("Parsers.asciiPrefixLexer("));
+        assertThat(empty, containsString("Parsers.asciiPrefixMatcher("));
         assertThat(empty, containsString("case 0x22 -> 0;"));
         assertThat(one, containsString("switch ((int) first & 65535)"));
-        assertThat(one, containsString("lexPropertyNameAscii(long first)"));
+        assertThat(one, containsString("matchPropertyNameAscii(long first)"));
         assertThat(one, containsString("case 0x2261 -> 0;"));
     }
 
@@ -761,7 +761,7 @@ class GeneratedSourceMetadataTest {
                                   "case MY_KEY_1 -> { // \"my_key\"",
                                   "case POLYMORPHIC_ALIASES_1 -> { // \"polymorphicAliases\"",
                                   "case COMMENT__TAIL__SUFFIX -> { // \"comment*/tail//suffix\""));
-        assertThat(content, containsString("JsonStringLexer POLYMORPHIC_ALIASES ="));
+        assertThat(content, containsString("JsonStringMatcher POLYMORPHIC_ALIASES ="));
     }
 
     @Test

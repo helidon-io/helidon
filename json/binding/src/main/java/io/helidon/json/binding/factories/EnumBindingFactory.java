@@ -25,7 +25,7 @@ import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonParser;
-import io.helidon.json.JsonStringLexer;
+import io.helidon.json.JsonStringMatcher;
 import io.helidon.json.binding.JsonBindingFactory;
 import io.helidon.json.binding.JsonConverter;
 import io.helidon.json.binding.JsonDeserializer;
@@ -66,7 +66,7 @@ class EnumBindingFactory implements JsonBindingFactory<Enum<?>> {
         private final Type type;
         private final Enum<?>[] enumConstants;
         private final String[] names;
-        private final JsonStringLexer lexer;
+        private final JsonStringMatcher matcher;
 
         private EnumConverter(Class<?> type) {
             this.type = type;
@@ -78,12 +78,12 @@ class EnumBindingFactory implements JsonBindingFactory<Enum<?>> {
             for (int i = 0; i < enumConstants.length; i++) {
                 names[i] = enumConstants[i].name();
             }
-            this.lexer = JsonStringLexer.create(names);
+            this.matcher = JsonStringMatcher.create(names);
         }
 
         @Override
         public Enum<?> deserialize(JsonParser parser) {
-            int index = parser.readString(lexer);
+            int index = parser.readString(matcher);
             if (index < 0) {
                 throw parser.createException("Invalid enum name. Valid names are: " + Arrays.toString(names));
             }

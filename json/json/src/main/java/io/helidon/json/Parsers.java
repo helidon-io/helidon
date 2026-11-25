@@ -51,16 +51,16 @@ public final class Parsers {
     }
 
     /**
-     * Build a generated ASCII lexer whose selector reads the first eight input bytes.
-     * The lexer checks the entire selected spelling and closing quote before accepting a match.
+     * Build a generated ASCII matcher whose selector reads the first eight input bytes.
+     * The matcher checks the entire selected spelling and closing quote before accepting a match.
      *
-     * @param decoded lexer for decoded input
+     * @param decoded matcher for decoded input
      * @param selector possible ordinal from the first little-endian word
      * @param names registered names in ordinal order
-     * @return lexer with a raw ASCII fast path
+     * @return matcher with a raw ASCII fast path
      */
-    public static JsonStringLexer asciiPrefixLexer(JsonStringLexer decoded, LongToIntFunction selector, String... names) {
-        return AsciiStringLexer.withAsciiPrefix(decoded, selector, names);
+    public static JsonStringMatcher asciiPrefixMatcher(JsonStringMatcher decoded, LongToIntFunction selector, String... names) {
+        return AsciiStringMatcher.withAsciiPrefix(decoded, selector, names);
     }
 
     /**
@@ -117,7 +117,7 @@ public final class Parsers {
         return val;
     }
 
-    static int nextProperty(JsonParser parser, JsonStringLexer lexer) {
+    static int nextProperty(JsonParser parser, JsonStringMatcher matcher) {
         byte token = parser.nextToken();
         if (token == '}') {
             return JsonParser.END_OBJECT;
@@ -126,7 +126,7 @@ public final class Parsers {
             throw parser.createException("Expected ',' or '}'", token);
         }
         parser.nextToken();
-        return parser.readProperty(lexer);
+        return parser.readProperty(matcher);
     }
 
     static void propertyValue(JsonParser parser) {

@@ -93,17 +93,17 @@ final class JsonParserStream extends JsonTextParser {
     }
 
     @Override
-    public int readString(JsonStringLexer lexer) {
-        if (lexer instanceof AsciiStringLexer ascii && buffer[currentIndex] == '"') {
+    public int readString(JsonStringMatcher matcher) {
+        if (matcher instanceof AsciiStringMatcher ascii && buffer[currentIndex] == '"') {
             int start = currentIndex + 1;
             long hit = ascii.recognize(buffer, start, bufferLength);
             if (hit >= 0) {
                 currentIndex = start + (int) (hit >>> Integer.SIZE);
                 return (int) hit;
             }
-            lexer = ascii.decoded();
+            matcher = ascii.decoded();
         }
-        return readString(lexer, buffer, currentIndex, bufferLength);
+        return readString(matcher, buffer, currentIndex, bufferLength);
     }
 
     @Override
@@ -127,13 +127,13 @@ final class JsonParserStream extends JsonTextParser {
     }
 
     @Override
-    public int readProperty(JsonStringLexer lexer) {
-        return readProperty(lexer, buffer, currentIndex, bufferLength);
+    public int readProperty(JsonStringMatcher matcher) {
+        return readProperty(matcher, buffer, currentIndex, bufferLength);
     }
 
     @Override
-    public int nextProperty(JsonStringLexer lexer) {
-        return nextProperty(lexer, buffer, currentIndex, bufferLength);
+    public int nextProperty(JsonStringMatcher matcher) {
+        return nextProperty(matcher, buffer, currentIndex, bufferLength);
     }
 
     @Override

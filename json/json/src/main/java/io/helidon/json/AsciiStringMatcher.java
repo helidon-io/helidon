@@ -21,14 +21,14 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.LongToIntFunction;
 
-abstract class AsciiStringLexer implements JsonStringLexer {
-    private final JsonStringLexer decoded;
+abstract class AsciiStringMatcher implements JsonStringMatcher {
+    private final JsonStringMatcher decoded;
 
-    AsciiStringLexer(JsonStringLexer decoded) {
+    AsciiStringMatcher(JsonStringMatcher decoded) {
         this.decoded = decoded;
     }
 
-    static AsciiStringLexer create(JsonStringLexer decoded, AsciiSelector selector, String[] names) {
+    static AsciiStringMatcher create(JsonStringMatcher decoded, AsciiSelector selector, String[] names) {
         Objects.requireNonNull(decoded);
         Objects.requireNonNull(selector);
         Objects.requireNonNull(names);
@@ -48,7 +48,7 @@ abstract class AsciiStringLexer implements JsonStringLexer {
         return singleWord ? new SingleWord(decoded, selector, literals) : new Multiple(decoded, selector, literals);
     }
 
-    static JsonStringLexer withAsciiPrefix(JsonStringLexer decoded, LongToIntFunction selector, String[] names) {
+    static JsonStringMatcher withAsciiPrefix(JsonStringMatcher decoded, LongToIntFunction selector, String[] names) {
         Objects.requireNonNull(decoded);
         Objects.requireNonNull(selector);
         Literal[] literals = new Literal[names.length];
@@ -61,7 +61,7 @@ abstract class AsciiStringLexer implements JsonStringLexer {
         return singleWord ? new ShortPrefix(decoded, selector, literals) : new Prefix(decoded, selector, literals);
     }
 
-    static JsonStringLexer withUtf8(JsonStringLexer decoded, Utf8Selector selector, int offset, String[] names) {
+    static JsonStringMatcher withUtf8(JsonStringMatcher decoded, Utf8Selector selector, int offset, String[] names) {
         Objects.requireNonNull(decoded);
         Objects.requireNonNull(selector);
         Objects.requireNonNull(names);
@@ -105,12 +105,12 @@ abstract class AsciiStringLexer implements JsonStringLexer {
         return decoded.advance(state, low, high, length);
     }
 
-    final JsonStringLexer decoded() {
+    final JsonStringMatcher decoded() {
         return decoded;
     }
 
     // A nonnegative result packs the byte length above the ordinal, which can be -1 for a validated miss.
-    // A negative result delegates to the decoded lexer.
+    // A negative result delegates to the decoded matcher.
     abstract long recognize(byte[] input, int start, int limit);
 
     private static long matchSingleWord(Literal[] literals, int ordinal, long first) {
@@ -123,10 +123,10 @@ abstract class AsciiStringLexer implements JsonStringLexer {
         return -1;
     }
 
-    private static final class Single extends AsciiStringLexer {
+    private static final class Single extends AsciiStringMatcher {
         private final Literal literal;
 
-        private Single(JsonStringLexer decoded, Literal literal) {
+        private Single(JsonStringMatcher decoded, Literal literal) {
             super(decoded);
             this.literal = literal;
         }
@@ -138,11 +138,11 @@ abstract class AsciiStringLexer implements JsonStringLexer {
     }
 
     // The first word includes the entire literal and its closing quote. The selector can inspect both input words.
-    private static final class SingleWord extends AsciiStringLexer {
+    private static final class SingleWord extends AsciiStringMatcher {
         private final AsciiSelector selector;
         private final Literal[] literals;
 
-        private SingleWord(JsonStringLexer decoded, AsciiSelector selector, Literal[] literals) {
+        private SingleWord(JsonStringMatcher decoded, AsciiSelector selector, Literal[] literals) {
             super(decoded);
             this.selector = selector;
             this.literals = literals;
@@ -161,11 +161,11 @@ abstract class AsciiStringLexer implements JsonStringLexer {
         }
     }
 
-    private static final class ShortPrefix extends AsciiStringLexer {
+    private static final class ShortPrefix extends AsciiStringMatcher {
         private final LongToIntFunction selector;
         private final Literal[] literals;
 
-        private ShortPrefix(JsonStringLexer decoded, LongToIntFunction selector, Literal[] literals) {
+        private ShortPrefix(JsonStringMatcher decoded, LongToIntFunction selector, Literal[] literals) {
             super(decoded);
             this.selector = selector;
             this.literals = literals;
@@ -181,11 +181,11 @@ abstract class AsciiStringLexer implements JsonStringLexer {
         }
     }
 
-    private static final class Prefix extends AsciiStringLexer {
+    private static final class Prefix extends AsciiStringMatcher {
         private final LongToIntFunction selector;
         private final Literal[] literals;
 
-        private Prefix(JsonStringLexer decoded, LongToIntFunction selector, Literal[] literals) {
+        private Prefix(JsonStringMatcher decoded, LongToIntFunction selector, Literal[] literals) {
             super(decoded);
             this.selector = selector;
             this.literals = literals;
@@ -210,11 +210,11 @@ abstract class AsciiStringLexer implements JsonStringLexer {
         }
     }
 
-    private static final class Multiple extends AsciiStringLexer {
+    private static final class Multiple extends AsciiStringMatcher {
         private final AsciiSelector selector;
         private final Literal[] literals;
 
-        private Multiple(JsonStringLexer decoded, AsciiSelector selector, Literal[] literals) {
+        private Multiple(JsonStringMatcher decoded, AsciiSelector selector, Literal[] literals) {
             super(decoded);
             this.selector = selector;
             this.literals = literals;
@@ -244,11 +244,11 @@ abstract class AsciiStringLexer implements JsonStringLexer {
     }
 
     // The selector starts at the name, and every eligible spelling fits the packed literal representation.
-    private static final class UnshiftedUtf8 extends AsciiStringLexer {
+    private static final class UnshiftedUtf8 extends AsciiStringMatcher {
         private final Utf8Selector selector;
         private final Literal[] literals;
 
-        private UnshiftedUtf8(JsonStringLexer decoded, Utf8Selector selector, Literal[] literals) {
+        private UnshiftedUtf8(JsonStringMatcher decoded, Utf8Selector selector, Literal[] literals) {
             super(decoded);
             this.selector = selector;
             this.literals = literals;
@@ -274,13 +274,13 @@ abstract class AsciiStringLexer implements JsonStringLexer {
         }
     }
 
-    private static final class Utf8 extends AsciiStringLexer {
+    private static final class Utf8 extends AsciiStringMatcher {
         private final Utf8Selector selector;
         private final int offset;
         private final Literal[] literals;
         private final byte[][] longNames;
 
-        private Utf8(JsonStringLexer decoded, Utf8Selector selector, int offset, Literal[] literals, byte[][] longNames) {
+        private Utf8(JsonStringMatcher decoded, Utf8Selector selector, int offset, Literal[] literals, byte[][] longNames) {
             super(decoded);
             this.selector = selector;
             this.offset = offset;

@@ -31,7 +31,7 @@ import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 
-final class StringLexerGenerator {
+final class StringMatcherGenerator {
     private static final int MAX_GENERATED_UNITS = 32768;
     private static final int MAX_GENERATED_STATES = 512;
     private static final int MAX_STATE_EDGES = 128;
@@ -44,7 +44,7 @@ final class StringLexerGenerator {
     private static final int MAX_PACKED_NAMES = 64;
     private static final int MAX_PREFIX_FAN_OUT = 4;
 
-    private StringLexerGenerator() {
+    private StringMatcherGenerator() {
     }
 
     static void generate(ClassBase.Builder<?, ?> owner, TypeName type, String fieldName, List<String> names) {
@@ -53,10 +53,10 @@ final class StringLexerGenerator {
         boolean generate = !states.isEmpty() && states.size() <= MAX_GENERATED_STATES
                 && states.stream().allMatch(state -> state.size() <= MAX_STATE_EDGES);
         String entry = switch (fieldName) {
-        case "PROPERTY_NAMES" -> "lexPropertyName";
-        case "POLYMORPHIC_PROPERTY" -> "lexDiscriminator";
-        case "POLYMORPHIC_ALIASES" -> "lexAlias";
-        default -> throw new IllegalArgumentException("Unknown lexer field: " + fieldName);
+        case "PROPERTY_NAMES" -> "matchPropertyName";
+        case "POLYMORPHIC_PROPERTY" -> "matchDiscriminator";
+        case "POLYMORPHIC_ALIASES" -> "matchAlias";
+        default -> throw new IllegalArgumentException("Unknown matcher field: " + fieldName);
         };
         List<RawEdge> encoded = new ArrayList<>();
         boolean nonAscii = false;
@@ -102,19 +102,19 @@ final class StringLexerGenerator {
         boolean prefixOnly = prefix != null && ascii.stream().anyMatch(edge -> edge.bytes.length < Long.BYTES)
                 && (allProperties || ascii.stream().anyMatch(edge -> edge.bytes.length >= Long.BYTES));
         owner.addField(field -> {
-            field.name(fieldName).type(JsonTypes.JSON_STRING_LEXER).isStatic(true).isFinal(true)
+            field.name(fieldName).type(JsonTypes.JSON_STRING_MATCHER).isStatic(true).isFinal(true)
                     .accessModifier(AccessModifier.PRIVATE);
             if (generate && !raw) {
                 field.addContent(type).addContent("::" + entry);
                 return;
             }
             if (completeFallback) {
-                field.addContent("createPropertyNameLexer(new ").addContent(String.class).addContent("[] {");
+                field.addContent("createPropertyNameMatcher(new ").addContent(String.class).addContent("[] {");
             } else if (prefixOnly) {
-                field.addContent(TypeName.create("io.helidon.json.Parsers")).addContent(".asciiPrefixLexer(")
+                field.addContent(TypeName.create("io.helidon.json.Parsers")).addContent(".asciiPrefixMatcher(")
                         .addContent(type).addContent("::" + entry + ", ").addContent(type).addContent("::" + rawMethod + ", ");
             } else {
-                field.addContent(JsonTypes.JSON_STRING_LEXER);
+                field.addContent(JsonTypes.JSON_STRING_MATCHER);
                 if (raw && !hashFirst) {
                     field.addContent(utf8 ? ".withUtf8(" : ".withAscii(").addContent(type).addContent("::" + entry + ", ")
                             .addContent(type).addContent("::" + rawMethod + ", ");
@@ -154,10 +154,11 @@ final class StringLexerGenerator {
             });
         }
         if (completeFallback) {
-            owner.addMethod(method -> method.name("createPropertyNameLexer").isStatic(true).accessModifier(AccessModifier.PRIVATE)
-                    .returnType(JsonTypes.JSON_STRING_LEXER).addParameter(TypeName.create(String[].class), "names")
-                    .addContent("return ").addContent(JsonTypes.JSON_STRING_LEXER).addContent(".withAscii(")
-                    .addContent(JsonTypes.JSON_STRING_LEXER).addContent(".create(names), ").addContent(type)
+            owner.addMethod(method -> method.name("createPropertyNameMatcher").isStatic(true)
+                    .accessModifier(AccessModifier.PRIVATE)
+                    .returnType(JsonTypes.JSON_STRING_MATCHER).addParameter(TypeName.create(String[].class), "names")
+                    .addContent("return ").addContent(JsonTypes.JSON_STRING_MATCHER).addContent(".withAscii(")
+                    .addContent(JsonTypes.JSON_STRING_MATCHER).addContent(".create(names), ").addContent(type)
                     .addContentLine("::" + rawMethod + ", names);"));
             return;
         }
@@ -426,7 +427,7 @@ final class StringLexerGenerator {
                 position += Long.BYTES;
             }
             if (states.get(state).putIfAbsent(name.substring(position), ordinal) != null) {
-                throw new IllegalArgumentException("Duplicate string in generated lexer: " + name);
+                throw new IllegalArgumentException("Duplicate string in generated matcher: " + name);
             }
         }
         return states;
