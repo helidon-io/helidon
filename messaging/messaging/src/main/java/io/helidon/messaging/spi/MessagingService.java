@@ -53,6 +53,9 @@ public interface MessagingService extends NamedService {
 
         /**
          * Release this graph's observations. Completion of forced shutdown may race in-flight dispatch.
+         * This callback runs synchronously during shutdown or rollback and must return promptly.
+         * It runs outside the graph's shutdown timeout. Do not wait for in-flight dispatch, perform blocking I/O,
+         * or flush an exporter here. A stalled callback delays completion for all callers waiting for graph shutdown.
          */
         @Override
         void close();

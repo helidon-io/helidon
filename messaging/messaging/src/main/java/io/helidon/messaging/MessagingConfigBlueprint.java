@@ -110,7 +110,7 @@ interface MessagingConfigBlueprint extends Prototype.Factory<MessagingGraph> {
     Optional<Duration> admissionTimeout();
 
     /**
-     * Positive global maximum shutdown and failed-startup rollback time, representable in nanoseconds.
+     * Positive timeout for graph shutdown and failed-startup rollback, excluding messaging service close callbacks.
      * This does not bound startup or readiness and cannot be overridden by a channel.
      *
      * @return shutdown timeout

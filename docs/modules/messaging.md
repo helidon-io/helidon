@@ -657,6 +657,10 @@ Closing a running graph stops new external admission, drains admitted work, and 
 connections. A failed build also closes registered resources. Failures from asynchronous stream sources are reported
 when the graph closes.
 
+During shutdown or rollback, the graph calls each configured messaging service's `Instance.close()` synchronously,
+outside the shutdown timeout. Service implementations must return promptly. A service that blocks here also blocks
+callers waiting for the graph to close. The messaging metrics service only detaches its local recorders.
+
 An imperative emission has the same at-least-once behavior as a declarative emission: for each delivery, outputs run
 sequentially, the first failure prevents later outputs from running, and earlier outputs are not rolled back. Retrying
 an unsuccessful or indeterminate delivery can therefore produce duplicates.

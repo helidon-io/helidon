@@ -105,7 +105,7 @@ Messaging configuration
 <td>
 <code>PT10S</code>
 </td>
-<td>Positive global maximum shutdown and failed-startup rollback time, representable in nanoseconds</td>
+<td>Positive timeout for graph shutdown and failed-startup rollback, excluding messaging service close callbacks</td>
 </tr>
 <tr>
 <td>
