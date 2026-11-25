@@ -76,12 +76,47 @@ public class ThroughputLimitTest {
         var builder = ThroughputLimit.builder().amount(0).duration(Duration.ZERO);
         assertAccepted(builder.build(), 2);
 
-        var semaphore = new Semaphore(0);
+        var semaphore = new Semaphore(1);
         var limit = builder.semaphore(semaphore).build();
+        semaphore.drainPermits();
         assertThat(limit.tryAcquireOutcome(false).disposition(), is(LimitAlgorithm.Outcome.Disposition.REJECTED));
         semaphore.release();
         assertAccepted(limit, 1);
         assertThat(semaphore.availablePermits(), is(1));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1})
+    void suppliedSemaphoreFactoryRejectsNonPositivePermits(int permits) {
+        var semaphore = new Semaphore(permits);
+        assertThrows(ConfigException.class, () -> ThroughputLimit.create(semaphore));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "TOKEN_BUCKET, 0, 0",
+            "TOKEN_BUCKET, 0, -1",
+            "TOKEN_BUCKET, 1, 0",
+            "TOKEN_BUCKET, 1, -1",
+            "FIXED_RATE, 0, 0",
+            "FIXED_RATE, 0, -1",
+            "FIXED_RATE, 1, 0",
+            "FIXED_RATE, 1, -1"
+    })
+    void suppliedSemaphoreBuilderRejectsNonPositivePermits(RateLimitingAlgorithmType algorithm, int amount, int permits) {
+        var builder = ThroughputLimit.builder()
+                .amount(amount)
+                .duration(Duration.ofSeconds(1))
+                .rateLimitingAlgorithm(algorithm)
+                .semaphore(new Semaphore(permits));
+        assertThrows(ConfigException.class, builder::build);
+    }
+
+    @Test
+    void suppliedSemaphoreFactoryRejectsExhaustedSemaphore() {
+        var semaphore = new Semaphore(1);
+        semaphore.drainPermits();
+        assertThrows(ConfigException.class, () -> ThroughputLimit.create(semaphore));
     }
 
     @Test
@@ -107,15 +142,16 @@ public class ThroughputLimitTest {
 
     @ParameterizedTest
     @EnumSource(RateLimitingAlgorithmType.class)
-    void suppliedEmptySemaphoreRequiresExternalRelease(RateLimitingAlgorithmType algorithm) {
+    void suppliedSemaphoreExhaustedAfterConstructionRequiresExternalRelease(RateLimitingAlgorithmType algorithm) {
         TestNanoClock clock = new TestNanoClock();
-        Semaphore semaphore = new Semaphore(0);
+        Semaphore semaphore = new Semaphore(1);
         ThroughputLimit limiter = ThroughputLimit.builder()
                 .semaphore(semaphore)
                 .rateLimitingAlgorithm(algorithm)
                 .clock(clock::getNanos)
                 .build();
 
+        semaphore.drainPermits();
         clock.advance(Duration.ofSeconds(60));
         assertThat(limiter.tryAcquireOutcome(false).disposition(), is(LimitAlgorithm.Outcome.Disposition.REJECTED));
         assertThat(semaphore.availablePermits(), is(0));
@@ -144,7 +180,7 @@ public class ThroughputLimitTest {
         TestNanoClock clock = new TestNanoClock();
         Duration queueTimeout = Duration.ofNanos(500_000);
         List<Duration> waits = new ArrayList<>();
-        Semaphore semaphore = new Semaphore(0) {
+        Semaphore semaphore = new Semaphore(1) {
             @Override
             public boolean tryAcquire(long timeout, TimeUnit unit) {
                 waits.add(Duration.of(timeout, unit.toChronoUnit()));
@@ -159,6 +195,7 @@ public class ThroughputLimitTest {
                 .name("supplied")
                 .build();
 
+        semaphore.drainPermits();
         var outcome = limiter.tryAcquireOutcome(true);
         assertThat(waits, is(List.of(queueTimeout)));
         assertThat(outcome.disposition(), is(LimitAlgorithm.Outcome.Disposition.REJECTED));
@@ -400,6 +437,7 @@ public class ThroughputLimitTest {
                 .clock(clock::getNanos)
                 .build();
 
+        semaphore.drainPermits();
         clock.advance(Duration.ofSeconds(1));
         semaphore.blockNextRelease();
 
@@ -443,6 +481,7 @@ public class ThroughputLimitTest {
                 .clock(clock::getNanos)
                 .build();
 
+        semaphore.drainPermits();
         clock.advance(Duration.ofSeconds(1));
         semaphore.blockNextRelease();
 
@@ -493,6 +532,7 @@ public class ThroughputLimitTest {
                 .clock(clock::getNanos)
                 .build();
 
+        semaphore.drainPermits();
         clock.advance(Duration.ofSeconds(1));
 
         IllegalStateException failure = assertThrows(IllegalStateException.class,
@@ -688,14 +728,16 @@ public class ThroughputLimitTest {
     @EnumSource(RateLimitingAlgorithmType.class)
     void fractionalIntervalPreservesConfiguredRate(RateLimitingAlgorithmType algorithm) {
         var clock = new AtomicLong();
+        var semaphore = new Semaphore(1);
         var limit = ThroughputLimit.builder()
                 .amount(2)
                 .duration(Duration.ofNanos(3))
-                .semaphore(new Semaphore(0))
+                .semaphore(semaphore)
                 .rateLimitingAlgorithm(algorithm)
                 .clock(clock::get)
                 .build();
 
+        semaphore.drainPermits();
         int accepted = 0;
         for (int nanos = 1; nanos <= 30; nanos++) {
             clock.set(nanos);
@@ -714,14 +756,16 @@ public class ThroughputLimitTest {
     @EnumSource(RateLimitingAlgorithmType.class)
     void fractionalIntervalHandlesLargeWindow(RateLimitingAlgorithmType algorithm) {
         var clock = new AtomicLong();
+        var semaphore = new Semaphore(1);
         var limit = ThroughputLimit.builder()
                 .amount(2)
                 .duration(Duration.ofNanos(Long.MAX_VALUE))
-                .semaphore(new Semaphore(0))
+                .semaphore(semaphore)
                 .rateLimitingAlgorithm(algorithm)
                 .clock(clock::get)
                 .build();
 
+        semaphore.drainPermits();
         clock.set(Long.MAX_VALUE / 2);
         assertThat(acceptedBeforeRejection(limit, 2), is(0));
         clock.incrementAndGet();
@@ -736,7 +780,7 @@ public class ThroughputLimitTest {
         var firstCaller = new AtomicBoolean(true);
         var permitPublished = new CountDownLatch(1);
         var resumePublisher = new CountDownLatch(1);
-        var semaphore = new Semaphore(0) {
+        var semaphore = new Semaphore(1) {
             @Override
             public boolean tryAcquire() {
                 if (firstCaller.compareAndSet(true, false)) {
@@ -760,6 +804,7 @@ public class ThroughputLimitTest {
                 .semaphore(semaphore)
                 .build();
 
+        semaphore.drainPermits();
         clock.set(2);
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             var publisher = executor.submit(() -> acceptedBeforeRejection(limit, 1));
@@ -917,7 +962,7 @@ public class ThroughputLimitTest {
     @Test
     void testHighRateDoesNotReplayCreditFromPermitPublicationDelay() {
         var clock = new AtomicLong();
-        var semaphore = new Semaphore(0) {
+        var semaphore = new Semaphore(1) {
             @Override
             public void release(int permits) {
                 clock.addAndGet(300);
@@ -931,6 +976,7 @@ public class ThroughputLimitTest {
                 .clock(clock::get)
                 .build();
 
+        semaphore.drainPermits();
         clock.set(3);
         assertThat(acceptedBeforeRejection(limiter, 6), is(5));
         assertThat(clock.get(), is(303L));
@@ -950,6 +996,7 @@ public class ThroughputLimitTest {
                 .clock(clock::get)
                 .build();
 
+        semaphore.drainPermits();
         clock.set(3);
         assertThrows(IllegalStateException.class, () -> limiter.tryAcquireOutcome(false));
         assertThat(acceptedBeforeRejection(limiter, 6), is(5));
@@ -980,7 +1027,7 @@ public class ThroughputLimitTest {
     @Test
     void testConcurrentHighRateRefillPreservesCapacity() throws Exception {
         var clock = new AtomicLong();
-        var semaphore = new Semaphore(0);
+        var semaphore = new Semaphore(1);
         int capacity = 5;
         var limiter = ThroughputLimit.builder()
                 .amount(capacity)
@@ -988,6 +1035,8 @@ public class ThroughputLimitTest {
                 .semaphore(semaphore)
                 .clock(clock::get)
                 .build();
+
+        semaphore.drainPermits();
         clock.set(Long.MAX_VALUE);
         var start = new CountDownLatch(1);
         var executor = Executors.newFixedThreadPool(8);
@@ -1026,7 +1075,7 @@ public class ThroughputLimitTest {
                                     Duration interval,
                                     long expectedElapsedNanos) {
         TestNanoClock clock = new TestNanoClock();
-        Semaphore semaphore = new Semaphore(0) {
+        Semaphore semaphore = new Semaphore(1) {
             @Override
             public boolean tryAcquire(long timeout, TimeUnit unit) {
                 if (super.tryAcquire()) {
@@ -1046,6 +1095,7 @@ public class ThroughputLimitTest {
                 .queueTimeout(Duration.ofSeconds(1))
                 .build();
 
+        semaphore.drainPermits();
         long start = clock.getNanos();
         LimitAlgorithm.Outcome outcome = limiter.tryAcquireOutcome(true);
 
@@ -1083,7 +1133,7 @@ public class ThroughputLimitTest {
         private volatile boolean blockNextRelease;
 
         private BlockingReleaseSemaphore() {
-            super(0);
+            super(1);
         }
 
         @Override
@@ -1137,7 +1187,7 @@ public class ThroughputLimitTest {
         private boolean fail = true;
 
         private FailOnceBeforeReleaseSemaphore() {
-            super(0);
+            super(1);
         }
 
         @Override

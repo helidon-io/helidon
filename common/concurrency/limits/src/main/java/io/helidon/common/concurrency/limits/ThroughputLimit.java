@@ -67,6 +67,9 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
     private ThroughputLimit(ThroughputLimitConfig config) {
         super(context(config));
 
+        if (config.semaphore().isPresent() && initialPermits() <= 0) {
+            throw new ConfigException("A supplied throughput semaphore must have at least one available permit");
+        }
         this.config = config;
     }
 
@@ -93,8 +96,9 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
      * Create an instance from the provided semaphore. Permits are returned when work completes,
      * and no time-based replenishment is performed.
      *
-     * @param semaphore semaphore to use
+     * @param semaphore semaphore with at least one available permit at construction
      * @return a new throughput limit backed by the provided semaphore
+     * @throws ConfigException if the semaphore has no available permits or a negative permit count
      */
     public static ThroughputLimit create(Semaphore semaphore) {
         return builder()

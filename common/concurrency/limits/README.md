@@ -58,6 +58,7 @@ permits over time.
 
 With `amount` set to zero and no semaphore supplied, requests are unlimited. If you supply a semaphore, for example
 with `ThroughputLimit.create(semaphore)`, each accepted request holds one of its permits until the work completes.
+For any amount, a supplied semaphore must have at least one available permit when the limit is constructed.
 
 See the [concurrency limits guide](../../../docs/modules/webserver/concurrency-limits.md)
 for configuration examples and the behavior of rates above one operation per nanosecond.

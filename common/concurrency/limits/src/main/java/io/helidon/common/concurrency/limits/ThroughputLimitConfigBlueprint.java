@@ -121,6 +121,7 @@ interface ThroughputLimitConfigBlueprint extends Prototype.Factory<ThroughputLim
 
     /**
      * Explicitly configured semaphore.
+     * The semaphore must have at least one available permit when the limit is constructed.
      * With {@code 0} amount, limits concurrent work using this semaphore.
      * With a positive amount, uses this semaphore for the configured rate limiting algorithm.
      * Queue, clock, name, and metrics configuration also apply.
