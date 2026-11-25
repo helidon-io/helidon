@@ -81,13 +81,13 @@ class LimitHandlers {
                                int queueLength,
                                Duration queueTimeout,
                                Supplier<Token> tokenSupplier,
-                               long maxWaitMillis,
+                               long maxWaitNanos,
                                Runnable beforeAcquire) {
             this.semaphore = semaphore;
             this.queueLength = queueLength;
             this.timeoutNanos = TimeUnit.NANOSECONDS.convert(queueTimeout);
             this.tokenSupplier = tokenSupplier;
-            this.maxWaitNanos = maxWaitMillis > 0 ? TimeUnit.MILLISECONDS.toNanos(maxWaitMillis) : timeoutNanos;
+            this.maxWaitNanos = maxWaitNanos > 0 ? maxWaitNanos : timeoutNanos;
             this.beforeAcquire = Optional.ofNullable(beforeAcquire);
         }
 

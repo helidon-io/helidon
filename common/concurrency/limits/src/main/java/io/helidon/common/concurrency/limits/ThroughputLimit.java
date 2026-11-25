@@ -19,6 +19,7 @@ package io.helidon.common.concurrency.limits;
 import java.math.BigInteger;
 import java.util.Optional;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -222,11 +223,13 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
         int queueLength = Math.max(0, config.queueLength());
 
         Supplier<Token> tokenSupplier = () -> new ThroughputToken(concurrentRequests, clock, metrics);
+        // Limit refill polling to once per millisecond for very high rates.
+        long maxWaitNanos = Math.max(TimeUnit.MILLISECONDS.toNanos(1), permitStrategy.refillIntervalNanos());
         limiterHandler = new LimitHandlers.QueuedSemaphoreHandler(semaphore,
                                                                   queueLength,
                                                                   config.queueTimeout(),
                                                                   tokenSupplier,
-                                                                  permitStrategy.maxWaitMillis(),
+                                                                  maxWaitNanos,
                                                                   permitStrategy::refillPermits);
 
         return new Context(initialPermits,
@@ -239,7 +242,7 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
     }
 
     private interface PermitStrategy {
-        long maxWaitMillis();
+        long refillIntervalNanos();
 
         void refillPermits();
 
@@ -268,8 +271,8 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
         }
 
         @Override
-        public long maxWaitMillis() {
-            return Math.ceilDiv(nanosPerToken, 1_000_000L);
+        public long refillIntervalNanos() {
+            return nanosPerToken;
         }
 
         @Override
@@ -327,8 +330,8 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
         }
 
         @Override
-        public long maxWaitMillis() {
-            return Math.ceilDiv(nanosPerRequest, 1_000_000L);
+        public long refillIntervalNanos() {
+            return nanosPerRequest;
         }
 
         @Override
@@ -382,8 +385,8 @@ public class ThroughputLimit extends SemaphoreLimitBase implements RuntimeType.A
         }
 
         @Override
-        public long maxWaitMillis() {
-            return Math.ceilDiv(wholeNanosPerPermit + 1, 1_000_000L);
+        public long refillIntervalNanos() {
+            return wholeNanosPerPermit + 1;
         }
 
         @Override

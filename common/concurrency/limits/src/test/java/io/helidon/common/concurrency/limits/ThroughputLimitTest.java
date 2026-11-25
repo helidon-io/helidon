@@ -550,15 +550,21 @@ public class ThroughputLimitTest {
     @Test
     public void testQueuedSubMillisecondRefill() {
         for (RateLimitingAlgorithmType algorithm : RateLimitingAlgorithmType.values()) {
-            assertQueuedRefill(algorithm, 1, Duration.ofNanos(500_000), 1);
+            assertQueuedRefill(algorithm, 1, Duration.ofNanos(500_000), 1_000_000);
         }
     }
 
     @Test
     public void testQueuedFractionalMillisecondRefill() {
         for (RateLimitingAlgorithmType algorithm : RateLimitingAlgorithmType.values()) {
-            assertQueuedRefill(algorithm, 1, Duration.ofNanos(1_500_000), 2);
+            assertQueuedRefill(algorithm, 1, Duration.ofNanos(1_500_000), 1_500_000);
         }
+    }
+
+    @ParameterizedTest
+    @EnumSource(RateLimitingAlgorithmType.class)
+    void queuedRefillRoundsFractionalPermitIntervalToNextNanosecond(RateLimitingAlgorithmType algorithm) {
+        assertQueuedRefill(algorithm, 3, Duration.ofNanos(3_000_001), 1_000_001);
     }
 
     @ParameterizedTest
@@ -640,7 +646,7 @@ public class ThroughputLimitTest {
                 .semaphore(semaphore)
                 .clock(clock::getNanos)
                 .queueLength(1)
-                .queueTimeout(Duration.ofMillis(101))
+                .queueTimeout(Duration.ofNanos(100_500_000))
                 .build();
         assertAccepted(limiter, 1);
         clock.advance(Duration.ofMillis(10));
@@ -968,7 +974,7 @@ public class ThroughputLimitTest {
     @ParameterizedTest
     @EnumSource(RateLimitingAlgorithmType.class)
     void testQueuedHighRateRefill(RateLimitingAlgorithmType algorithm) {
-        assertQueuedRefill(algorithm, 200, Duration.ofNanos(100), 1);
+        assertQueuedRefill(algorithm, 200, Duration.ofNanos(100), 1_000_000);
     }
 
     @Test
@@ -1018,7 +1024,7 @@ public class ThroughputLimitTest {
     private void assertQueuedRefill(RateLimitingAlgorithmType algorithm,
                                     int amount,
                                     Duration interval,
-                                    long maxElapsedMillis) {
+                                    long expectedElapsedNanos) {
         TestNanoClock clock = new TestNanoClock();
         Semaphore semaphore = new Semaphore(0) {
             @Override
@@ -1043,8 +1049,7 @@ public class ThroughputLimitTest {
         long start = clock.getNanos();
         LimitAlgorithm.Outcome outcome = limiter.tryAcquireOutcome(true);
 
-        assertThat(algorithm + " queued wait", clock.getNanos() - start,
-                   lessThanOrEqualTo(Duration.ofMillis(maxElapsedMillis).toNanos()));
+        assertThat(algorithm + " queued wait in nanoseconds", clock.getNanos() - start, is(expectedElapsedNanos));
         assertThat(algorithm + " queued request", outcome.disposition(), is(LimitAlgorithm.Outcome.Disposition.ACCEPTED));
         assertThat(outcome.timing(), is(LimitAlgorithm.Outcome.Timing.DEFERRED));
         ((LimitAlgorithm.Outcome.Accepted) outcome).token().success();
