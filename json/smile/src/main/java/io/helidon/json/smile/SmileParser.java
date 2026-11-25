@@ -38,6 +38,7 @@ import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
 import io.helidon.json.JsonParserBase;
 import io.helidon.json.JsonString;
+import io.helidon.json.JsonStringMatcher;
 import io.helidon.json.JsonValue;
 import io.helidon.json.Parsers;
 
@@ -222,6 +223,32 @@ public final class SmileParser extends JsonParserBase {
         SmileInputStreamParser parser = new SmileInputStreamParser(inputStream, bufferSize);
         parser.initializeFromHeaderOrDefaults();
         return parser;
+    }
+
+    static int matchAsciiKey(JsonParser parser, JsonStringMatcher matcher, byte[] input, int start, int length) {
+        int end = start + length;
+        int state = 0;
+        while (end - start >= Long.BYTES) {
+            long word = Bytes.toWord(input, start);
+            long highBits = word & 0x8080808080808080L;
+            if (highBits != 0) {
+                int offset = Long.numberOfTrailingZeros(highBits) / Byte.SIZE;
+                throw parser.createException("Invalid non-ASCII byte in Smile ASCII string", input[start + offset]);
+            }
+            if (state >= 0) {
+                state = matcher.advance(state, word, 0, Long.BYTES);
+            }
+            start += Long.BYTES;
+        }
+        long tail = 0;
+        for (int i = start; i < end; i++) {
+            byte b = input[i];
+            if (b < 0) {
+                throw parser.createException("Invalid non-ASCII byte in Smile ASCII string", b);
+            }
+            tail |= (long) b << ((i - start) * Byte.SIZE);
+        }
+        return state < 0 ? -1 : matcher.advance(state, tail, 0, end - start);
     }
 
     @Override
@@ -436,6 +463,49 @@ public final class SmileParser extends JsonParserBase {
             checkNextAfterValue();
         }
         return result;
+    }
+
+    @Override
+    public int readString(JsonStringMatcher matcher) {
+        Objects.requireNonNull(matcher);
+        if (currentToken == '"' && keyExpected && !sharedKeysEnabled
+                && currentByte >= SmileConstants.KEY_SHORT_ASCII_MIN && currentByte <= SmileConstants.KEY_SHORT_ASCII_MAX) {
+            int length = (currentByte & SmileConstants.KEY_STRING_LENGTH_MASK) + SmileConstants.KEY_SHORT_ASCII_LENGTH_ADD;
+            if (length >= bufferLength - currentIndex) {
+                throw createException("Unexpected end of the binary JSON found");
+            }
+            int ordinal = matchAsciiKey(this, matcher, buffer, currentIndex + 1, length);
+            currentIndex += length;
+            keyExpected = false;
+            forcedEvent = Bytes.COLON_BYTE;
+            return ordinal;
+        }
+        return super.readString(matcher);
+    }
+
+    @Override
+    public int readProperty(JsonStringMatcher matcher) {
+        if (currentToken != '"' || !keyExpected) {
+            return super.readProperty(matcher);
+        }
+        Objects.requireNonNull(matcher);
+        int ordinal;
+        if (sharedKeysEnabled
+                && currentByte >= SmileConstants.KEY_SHARED_SHORT_MIN && currentByte <= SmileConstants.KEY_SHARED_SHORT_MAX) {
+            int reference = currentByte - SmileConstants.KEY_SHARED_SHORT_MIN;
+            String key = resolveSharedReference(sharedKeyStrings, reference, nextSharedKeyIndex - 1, "key");
+            keyExpected = false;
+            forcedEvent = Bytes.COLON_BYTE;
+            ordinal = matcher.match(key);
+        } else {
+            ordinal = readString(matcher);
+        }
+        // Smile keys imply a colon. Advance directly to the value in the same state as after that synthetic token.
+        forcedEvent = -1;
+        currentToken = Bytes.COLON_BYTE;
+        currentByte = Bytes.COLON_BYTE;
+        nextToken();
+        return Math.max(-1, ordinal);
     }
 
     @Override

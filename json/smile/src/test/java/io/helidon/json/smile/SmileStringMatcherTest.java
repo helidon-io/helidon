@@ -18,6 +18,7 @@ package io.helidon.json.smile;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.util.Arrays;
 
 import io.helidon.json.JsonException;
 import io.helidon.json.JsonGenerator;
@@ -26,6 +27,7 @@ import io.helidon.json.JsonStringMatcher;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -94,6 +96,7 @@ class SmileStringMatcherTest {
     void preservesObjectKeysAndValueState() {
         for (Input input : Input.values()) {
             JsonStringMatcher key = JsonStringMatcher.create("key\"");
+            JsonStringMatcher otherOrder = JsonStringMatcher.create("other", "key\"");
             JsonStringMatcher value = JsonStringMatcher.create("RED");
             for (boolean sharedKeys : new boolean[] {false, true}) {
                 for (boolean sharedValues : new boolean[] {false, true}) {
@@ -116,6 +119,10 @@ class SmileStringMatcherTest {
                     for (int i = 0; i < 2; i++) {
                         assertThat(parser.nextToken(), is((byte) '{'));
                         parser.nextToken();
+                        parser.mark();
+                        assertThat(parser.readProperty(otherOrder), is(1));
+                        assertThat(parser.readString(value), is(0));
+                        parser.resetToMark();
                         assertThat(parser.readString(key), is(0));
                         assertThat(parser.nextToken(), is((byte) ':'));
                         parser.nextToken();
@@ -141,6 +148,66 @@ class SmileStringMatcherTest {
             }
             JsonParser truncated = input.parser(new byte[] {0x3a, 0x29, 0x0a, 0, 0x43, 'R', 'E'});
             assertThrows(JsonException.class, () -> truncated.readString(matcher));
+        }
+    }
+
+    @Test
+    void matchesCompleteUnsharedLiteralKeysAtWordBoundaries() {
+        String[] keys = {"x", "quoted\"", "12345678", "12345678x", "a".repeat(15), "a".repeat(16),
+                "b".repeat(63), "b".repeat(64), "c".repeat(65), "€"};
+        JsonStringMatcher matcher = JsonStringMatcher.create(keys);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try (JsonGenerator generator = SmileGenerator.create(output, SmileConfig.builder().sharedKeyStrings(false).build())) {
+            generator.writeObjectStart();
+            for (int i = 0; i < keys.length; i++) {
+                generator.write(keys[i], i);
+            }
+            generator.write("b".repeat(62) + "x", -1);
+            generator.writeObjectEnd();
+        }
+        for (Input input : Input.values()) {
+            JsonParser parser = input.parser(output.toByteArray());
+            parser.nextToken();
+            for (int i = 0; i < keys.length; i++) {
+                assertThat(keys[i], i == 0 ? parser.readProperty(matcher) : parser.nextProperty(matcher), is(i));
+                assertThat(parser.readInt(), is(i));
+            }
+            assertThat(parser.nextProperty(matcher), is(-1));
+            assertThat(parser.readInt(), is(-1));
+            assertThat(parser.nextProperty(matcher), is(JsonParser.END_OBJECT));
+        }
+    }
+
+    @Test
+    void validatesEveryByteOfUnknownUnsharedAsciiKeys() {
+        JsonStringMatcher matcher = JsonStringMatcher.create("known");
+        byte[] header = {0x3a, 0x29, 0x0a, 0, SmileConstants.TOKEN_START_OBJECT,
+                (byte) (SmileConstants.KEY_SHORT_ASCII_PREFIX + 16)};
+        for (int badIndex : new int[] {0, 9, 16}) {
+            int end = header.length + 17;
+            byte[] bytes = Arrays.copyOf(header, end + 2);
+            Arrays.fill(bytes, header.length, end, (byte) 'a');
+            bytes[header.length + badIndex] = (byte) 0x80;
+            bytes[end] = SmileConstants.TOKEN_NULL;
+            bytes[end + 1] = SmileConstants.TOKEN_END_OBJECT;
+            for (Input input : Input.values()) {
+                JsonParser parser = input.parser(bytes);
+                parser.nextToken();
+                JsonException exception = assertThrows(JsonException.class, () -> parser.readString(matcher));
+                assertThat(exception.getMessage(), containsString("non-ASCII"));
+            }
+        }
+    }
+
+    @Test
+    void rejectsTruncatedUnsharedAsciiKey() {
+        byte[] bytes = {0x3a, 0x29, 0x0a, 0, SmileConstants.TOKEN_START_OBJECT,
+                (byte) (SmileConstants.KEY_SHORT_ASCII_PREFIX + 7), 'a', 'b', 'c'};
+        JsonStringMatcher matcher = JsonStringMatcher.create("abcdefgh");
+        for (Input input : Input.values()) {
+            JsonParser parser = input.parser(bytes);
+            parser.nextToken();
+            assertThrows(JsonException.class, () -> parser.readString(matcher));
         }
     }
 

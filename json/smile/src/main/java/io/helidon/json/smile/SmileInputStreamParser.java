@@ -26,6 +26,7 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Objects;
 
 import io.helidon.common.buffers.Bytes;
 import io.helidon.json.JsonArray;
@@ -38,6 +39,7 @@ import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
 import io.helidon.json.JsonParserBase;
 import io.helidon.json.JsonString;
+import io.helidon.json.JsonStringMatcher;
 import io.helidon.json.JsonValue;
 import io.helidon.json.Parsers;
 
@@ -338,7 +340,7 @@ final class SmileInputStreamParser extends JsonParserBase {
      * @param count number of bytes required after the current position
      */
     private void ensureBytes(int count) {
-        if (currentIndex + count < bufferLength) {
+        if (currentIndex < bufferLength - count) {
             return; // already satisfied
         } else if (finished) {
             throw createException("Unexpected end of the binary JSON found");
@@ -365,17 +367,20 @@ final class SmileInputStreamParser extends JsonParserBase {
             }
 
             // 2. Grow the backing array if it still cannot hold currentIndex + count + 1 bytes.
-            int required = currentIndex + count + 1;
+            long required = (long) currentIndex + count + 1;
+            if (required > Integer.MAX_VALUE) {
+                throw createException("Smile input region exceeds the maximum array length");
+            }
             if (required > buffer.length) {
                 int newSize = (int) Math.min(Integer.MAX_VALUE,
-                                            Math.max((long) required, (long) buffer.length * 2));
+                                            Math.max(required, (long) buffer.length * 2));
                 byte[] newBuffer = new byte[newSize];
                 System.arraycopy(buffer, 0, newBuffer, 0, kept);
                 buffer = newBuffer;
             }
 
             // 3. Read from the stream until we have enough bytes or EOF.
-            while (currentIndex + count >= bufferLength) {
+            while (bufferLength < required) {
                 int lastRead = inputStream.read(buffer, bufferLength, buffer.length - bufferLength);
                 if (lastRead == -1) {
                     finished = true;
@@ -670,6 +675,47 @@ final class SmileInputStreamParser extends JsonParserBase {
             checkNextAfterValue();
         }
         return result;
+    }
+
+    @Override
+    public int readString(JsonStringMatcher matcher) {
+        Objects.requireNonNull(matcher);
+        if (currentToken == '"' && keyExpected && !sharedKeysEnabled
+                && currentByte >= SmileConstants.KEY_SHORT_ASCII_MIN && currentByte <= SmileConstants.KEY_SHORT_ASCII_MAX) {
+            int length = (currentByte & SmileConstants.KEY_STRING_LENGTH_MASK) + SmileConstants.KEY_SHORT_ASCII_LENGTH_ADD;
+            ensureBytes(length);
+            int ordinal = SmileParser.matchAsciiKey(this, matcher, buffer, currentIndex + 1, length);
+            currentIndex += length;
+            keyExpected = false;
+            forcedEvent = Bytes.COLON_BYTE;
+            return ordinal;
+        }
+        return super.readString(matcher);
+    }
+
+    @Override
+    public int readProperty(JsonStringMatcher matcher) {
+        if (currentToken != '"' || !keyExpected) {
+            return super.readProperty(matcher);
+        }
+        Objects.requireNonNull(matcher);
+        int ordinal;
+        if (sharedKeysEnabled
+                && currentByte >= SmileConstants.KEY_SHARED_SHORT_MIN && currentByte <= SmileConstants.KEY_SHARED_SHORT_MAX) {
+            int reference = currentByte - SmileConstants.KEY_SHARED_SHORT_MIN;
+            String key = resolveSharedReference(sharedKeyStrings, reference, nextSharedKeyIndex - 1, "key");
+            keyExpected = false;
+            forcedEvent = Bytes.COLON_BYTE;
+            ordinal = matcher.match(key);
+        } else {
+            ordinal = readString(matcher);
+        }
+        // Smile keys imply a colon. Advance directly to the value in the same state as after that synthetic token.
+        forcedEvent = -1;
+        currentToken = Bytes.COLON_BYTE;
+        currentByte = Bytes.COLON_BYTE;
+        nextToken();
+        return Math.max(-1, ordinal);
     }
 
     @Override
