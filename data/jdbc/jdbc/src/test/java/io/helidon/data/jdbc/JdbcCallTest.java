@@ -15,32 +15,32 @@
  */
 package io.helidon.data.jdbc;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.math.BigDecimal;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.Date;
-import java.sql.Timestamp;
 import java.sql.JDBCType;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Statement;
-import java.math.BigDecimal;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Calendar;
-import java.util.Optional;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -50,27 +50,27 @@ import io.helidon.data.DataException;
 import io.helidon.data.NonUniqueResultException;
 import io.helidon.transaction.TxException;
 
-import org.mockito.InOrder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -378,7 +378,9 @@ class JdbcCallTest {
         IllegalArgumentException expected = new IllegalArgumentException("application failure");
         Throwable actual = assertThrows(IllegalArgumentException.class, () -> client.create("{call routine()}")
                 .call().consume(result -> {
-                    assertThrows(IllegalArgumentException.class, () -> result.rows(_ -> { throw expected; }).list());
+                    assertThrows(IllegalArgumentException.class, () -> result.rows(_ -> {
+                        throw expected;
+                    }).list());
                     assertThrows(IllegalStateException.class, result::next);
                 }));
         assertThat(actual, sameInstance(expected));
@@ -479,7 +481,9 @@ class JdbcCallTest {
         IllegalArgumentException expected = new IllegalArgumentException("application");
         doThrow(new SQLException("driver secret")).when(statement).close();
         assertThat(assertThrows(IllegalArgumentException.class, () -> client.create("{call routine()}")
-                .call().consume(_ -> { throw expected; })), sameInstance(expected));
+                .call().consume(_ -> {
+                    throw expected;
+                })), sameInstance(expected));
         verify(connection).close();
         assertThat(expected.getSuppressed().length, is(1));
     }
@@ -585,7 +589,9 @@ class JdbcCallTest {
         doThrow(fatal).when(statement).close();
         IllegalArgumentException application = new IllegalArgumentException("application");
         assertThat(assertThrows(OutOfMemoryError.class, () -> client.create("{call routine()}").call()
-                .consume(_ -> { throw application; })), sameInstance(fatal));
+                .consume(_ -> {
+                    throw application;
+                })), sameInstance(fatal));
         verify(connection).close();
     }
 
@@ -600,7 +606,9 @@ class JdbcCallTest {
         Error later = new AssertionError("The callback failed later.");
 
         Error observed = assertThrows(Error.class, () -> client.create("{call routine()}").call().consume(result -> {
-            assertThat(assertThrows(Error.class, () -> result.rows(_ -> { throw first; }).list()), sameInstance(first));
+            assertThat(assertThrows(Error.class, () -> result.rows(_ -> {
+                throw first;
+            }).list()), sameInstance(first));
             throw later;
         }));
 
@@ -647,7 +655,9 @@ class JdbcCallTest {
         Error later = new AssertionError("The callback failed later.");
 
         Error observed = assertThrows(Error.class, () -> client.create("{call routine()}").call().consume(result -> {
-            assertThat(assertThrows(IllegalArgumentException.class, () -> result.rows(_ -> { throw first; }).list()),
+            assertThat(assertThrows(IllegalArgumentException.class, () -> result.rows(_ -> {
+                throw first;
+            }).list()),
                        sameInstance(first));
             throw later;
         }));

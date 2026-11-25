@@ -378,10 +378,6 @@ final class JdbcRunner {
         if (previousFailure == null) {
             return failure;
         }
-        if (failure instanceof Error && !(previousFailure instanceof Error)) {
-            failure.addSuppressed(previousFailure);
-            return failure;
-        }
         if (failure != null) {
             previousFailure.addSuppressed(cleanupException(operation, failure));
         }
@@ -403,18 +399,8 @@ final class JdbcRunner {
         try {
             resource.close();
         } catch (Throwable closeFailure) {
-            if (closeFailure instanceof Error) {
-                if (previousFailure == null) {
-                    return closeFailure;
-                }
-                if (previousFailure instanceof Error) {
-                    if (previousFailure != closeFailure) {
-                        previousFailure.addSuppressed(closeFailure);
-                    }
-                    return previousFailure;
-                }
-                closeFailure.addSuppressed(JdbcExceptionTranslator.sanitize("retaining an earlier cleanup failure",
-                                                                            previousFailure));
+            // Preserve a primary fatal error. An error attached below another failure is sanitized.
+            if (previousFailure == null && closeFailure instanceof Error) {
                 return closeFailure;
             }
             if (previousFailure == null) {

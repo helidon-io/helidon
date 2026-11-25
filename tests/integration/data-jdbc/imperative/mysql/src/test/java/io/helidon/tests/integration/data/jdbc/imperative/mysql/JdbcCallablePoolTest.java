@@ -53,7 +53,8 @@ class JdbcCallablePoolTest {
             JdbcClient setup = JdbcClient.builder().dataSource(pool).build();
             setup.create("CREATE TABLE ITEMS (ID INTEGER)").execute();
             setup.create("CREATE PROCEDURE sp_write(IN p_value INTEGER, OUT p_result INTEGER) "
-                                 + "BEGIN INSERT INTO ITEMS VALUES (p_value); SET p_result = NULL; SELECT p_value; END").execute();
+                                 + "BEGIN INSERT INTO ITEMS VALUES (p_value); SET p_result = NULL; SELECT p_value; END")
+                    .execute();
             setup.create("{call sp_write(?, ?)}").bind(1, 1).call().out("result", 2, JDBCType.INTEGER)
                     .consume(_ -> { });
             assertThat(pool.getHikariPoolMXBean().getActiveConnections(), is(0));
@@ -63,7 +64,8 @@ class JdbcCallablePoolTest {
                     assertThrows(IllegalArgumentException.class, () -> client.create("{call sp_write(?, ?)}").bind(1, 2)
                             .call().out("result", 2, JDBCType.INTEGER).consume(result -> {
                                 assertThat(result.rows(row -> row.get(1, Integer.class)).one(), is(2));
-                                assertThrows(IllegalStateException.class, () -> client.create("SELECT 1").map(Integer.class).one());
+                                assertThrows(IllegalStateException.class,
+                                             () -> client.create("SELECT 1").map(Integer.class).one());
                                 result.skipRemainingResults();
                                 assertThrows(IllegalArgumentException.class, () -> result.get("result", Integer.class));
                             }));

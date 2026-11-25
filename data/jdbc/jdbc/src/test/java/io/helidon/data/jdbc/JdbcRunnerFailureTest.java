@@ -47,7 +47,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -615,6 +614,77 @@ class JdbcRunnerFailureTest {
         order.verify(resultSet).close();
         order.verify(statement).close();
         order.verify(connection).close();
+    }
+
+    /**
+     * Materialized queries and generated keys retain mapper identity when any owned resource fails fatally during cleanup.
+     */
+    @Test
+    void retainsMapperFailure() throws Exception {
+        for (boolean generatedKeys : new boolean[] {false, true}) {
+            for (String resource : List.of("rows", "statement", "connection")) {
+                setUp();
+                ResultSet resultSet = generatedKeys ? prepareSuccessfulGeneratedKeys() : prepareSuccessfulQuery();
+                Error cleanupFailure = new AssertionError("The JDBC_CANARY cleanup failed.");
+                cleanupFailure.initCause(new IllegalArgumentException("The JDBC_CANARY cause was reported."));
+                switch (resource) {
+                case "rows" -> doThrow(cleanupFailure).when(resultSet).close();
+                case "statement" -> doThrow(cleanupFailure).when(statement).close();
+                case "connection" -> doThrow(cleanupFailure).doNothing().when(connection).close();
+                default -> throw new AssertionError("The cleanup resource is unknown.");
+                }
+                RuntimeException application = new IllegalArgumentException("The application mapper failed.");
+                JdbcClient.RowMapper<Integer> mapper = _ -> {
+                    throw application;
+                };
+                JdbcClient.Rows<Integer> rows = generatedKeys
+                        ? client.create("INSERT INTO TEST_VALUE DEFAULT VALUES").generatedKeys().map(mapper)
+                        : client.create("SELECT VALUE FROM TEST_VALUE").map(mapper);
+
+                RuntimeException observed = assertThrows(RuntimeException.class, rows::one);
+
+                assertThat(resource, observed, sameInstance(application));
+                assertThat(resource, observed.getSuppressed().length, is(1));
+                assertThat(resource, observed.getSuppressed()[0], not(sameInstance(cleanupFailure)));
+                assertThat(resource, observed.getSuppressed()[0].getMessage(), not(containsString("JDBC_CANARY")));
+                assertThat(resource, observed.getSuppressed()[0].getCause(), nullValue());
+                InOrder cleanup = inOrder(resultSet, statement, connection);
+                cleanup.verify(resultSet).close();
+                cleanup.verify(statement).close();
+                cleanup.verify(connection).close();
+            }
+        }
+    }
+
+    /**
+     * A later cleanup error does not replace an earlier materialized JDBC cleanup failure.
+     */
+    @Test
+    void retainsCleanupFailure() throws Exception {
+        for (boolean generatedKeys : new boolean[] {false, true}) {
+            setUp();
+            if (generatedKeys) {
+                prepareSuccessfulGeneratedKeys();
+            } else {
+                prepareSuccessfulQuery();
+            }
+            SQLException first = new SQLException("The first JDBC_CANARY cleanup failed.", "HY000", 42);
+            Error later = new AssertionError("The later JDBC_CANARY cleanup failed.");
+            doThrow(first).when(statement).close();
+            doThrow(later).doNothing().when(connection).close();
+            JdbcClient.Rows<String> rows = generatedKeys
+                    ? client.create("INSERT INTO TEST_VALUE DEFAULT VALUES").generatedKeys().map(_ -> "value")
+                    : client.create("SELECT VALUE FROM TEST_VALUE").map(_ -> "value");
+
+            DataException observed = assertThrows(DataException.class, rows::one);
+
+            assertSafeSqlCause(observed.getCause(), first);
+            assertThat(observed.getCause().getSuppressed().length, is(1));
+            assertThat(observed.getCause().getSuppressed()[0], not(sameInstance(later)));
+            assertThat(observed.getCause().getSuppressed()[0].getMessage(), not(containsString("JDBC_CANARY")));
+            verify(statement).close();
+            verify(connection, times(2)).close();
+        }
     }
 
     @Test

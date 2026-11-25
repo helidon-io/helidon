@@ -211,9 +211,9 @@ public class JdbcClientCreationJmhBenchmark {
     @State(Scope.Benchmark)
     public static class BindingState {
         @Param({"1", "2", "8", "32"})
-        public int parameterCount;
+        private int parameterCount;
         @Param({"SELECT", "UPDATE"})
-        public String operation;
+        private String operation;
 
         private JdbcClient client;
         private String sql;

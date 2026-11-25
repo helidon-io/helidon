@@ -23,6 +23,8 @@ import io.helidon.data.jdbc.Jdbc;
 
 @Data.Repository
 @Data.Provider("jdbc")
+// These identifiers reproduce collisions with generated mapper fields.
+@SuppressWarnings({"checkstyle:MethodName", "checkstyle:ParameterName"})
 interface CallableMapperCollisionRepository {
     @Jdbc.Statement("SELECT :input")
     Other aggregate_OUTPUT_0(String input);

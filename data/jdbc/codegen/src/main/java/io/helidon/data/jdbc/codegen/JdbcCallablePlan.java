@@ -219,7 +219,8 @@ record JdbcCallablePlan(List<Output> outputs, List<Output> components, TypedElem
         Parameters callParameters = parameters(method, context, reference == null ? sql : null, inputs, outputs);
         List<Output> positioned = callParameters.outputs();
         JdbcSqlParameterPlan parameters = callParameters.plan();
-        boolean snapshot = method.typeName().equals(JdbcCodegenTypes.OUT_PARAMETERS);
+        // Snapshot restrictions belong to the outputs terminal. Callbacks select their own detached result.
+        boolean snapshot = control == null && method.typeName().equals(JdbcCodegenTypes.OUT_PARAMETERS);
         JdbcMethodPlan plan = JdbcMethodPlan.callableUnmapped(method, parameters);
         List<Output> mappedOutputs = new ArrayList<>();
         boolean discarded = method.typeName().equals(TypeNames.PRIMITIVE_VOID) || control != null;
@@ -246,8 +247,8 @@ record JdbcCallablePlan(List<Output> outputs, List<Output> components, TypedElem
                 throw JdbcMethodPlan.failure(method, "Multiple outputs require a snapshot, callback, or output record.");
             }
         }
-        if (snapshot && (outputs.isEmpty() || method.hasAnnotation(JdbcCodegenTypes.JDBC_ROW_MAPPER))) {
-            throw JdbcMethodPlan.failure(method, "A snapshot requires scalar outputs and cannot select a row mapper.");
+        if (snapshot && method.hasAnnotation(JdbcCodegenTypes.JDBC_ROW_MAPPER)) {
+            throw JdbcMethodPlan.failure(method, "A snapshot cannot select a row mapper.");
         }
         List<Output> componentOutputs = aggregate ? recordComponents.stream()
                 .map(component -> mappedOutputs.stream().filter(output -> output.name().equals(component.elementName()))

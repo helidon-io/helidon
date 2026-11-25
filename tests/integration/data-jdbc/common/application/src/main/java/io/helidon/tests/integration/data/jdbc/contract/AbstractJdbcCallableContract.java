@@ -17,28 +17,27 @@ package io.helidon.tests.integration.data.jdbc.contract;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.sql.CallableStatement;
-import java.sql.JDBCType;
 import java.math.BigDecimal;
-import java.sql.DriverManager;
+import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
+import java.sql.JDBCType;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.time.LocalDateTime;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Objects;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -47,15 +46,17 @@ import javax.sql.DataSource;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.data.Data;
 import io.helidon.data.DataException;
 import io.helidon.data.NoResultException;
 import io.helidon.data.NonUniqueResultException;
-import io.helidon.data.jdbc.JdbcClient;
 import io.helidon.data.jdbc.GeneratedJdbcData;
+import io.helidon.data.jdbc.Jdbc;
+import io.helidon.data.jdbc.JdbcClient;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.tests.integration.data.jdbc.declarative.repository.CallableRoutineRepository;
-import io.helidon.tests.integration.data.jdbc.support.TestConfigFactory;
 import io.helidon.tests.integration.data.jdbc.support.CallableFailureFixture;
+import io.helidon.tests.integration.data.jdbc.support.TestConfigFactory;
 import io.helidon.tests.integration.data.jdbc.support.TestDataSourceFactory;
 import io.helidon.transaction.Tx;
 import io.helidon.transaction.TxException;
@@ -65,13 +66,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -89,8 +90,7 @@ public abstract class AbstractJdbcCallableContract {
 
     @BeforeEach
     protected void start() throws Exception {
-        Config config = configuration();
-        Map<String, String> values = new HashMap<>(config.asMap().get());
+        Map<String, String> values = new HashMap<>(configuration().asMap().get());
         if (vendor().equals("pgsql")) {
             values.compute("data.clients.jdbc.0.connection.url", (_, url) -> url + "?escapeSyntaxCallMode=callIfNoReturn");
         }
@@ -249,7 +249,7 @@ public abstract class AbstractJdbcCallableContract {
     }
 
     @Test
-    protected void validatesRoutineKindsWithBothEscapeForms() throws Exception {
+    protected void checksEscapeForms() throws Exception {
         String procedure = switch (vendor()) {
         case "oracle" -> "CREATE OR REPLACE PROCEDURE sp_form_procedure(p_input IN INTEGER) AS BEGIN "
                 + "INSERT INTO TX_MATRIX(DATA_VALUE) VALUES ('probe'); END;";
@@ -284,8 +284,6 @@ public abstract class AbstractJdbcCallableContract {
                 manager = ServiceRegistryManager.start();
                 client = manager.registry().get(JdbcClient.class);
                 connectionConfig = configured.get("data.clients.jdbc.0.connection");
-                CallableRoutineRepository repository = generated()
-                        ? manager.registry().get(CallableRoutineRepository.class) : null;
                 for (boolean function : List.of(false, true)) {
                     for (boolean leading : List.of(false, true)) {
                         String routine = function ? "sp_add" : "sp_form_procedure";
@@ -332,70 +330,11 @@ public abstract class AbstractJdbcCallableContract {
                                 assertThat(description, failure.getErrorCode(), is(code));
                             }
                         }
-                        Callable<Integer> action;
-                        if (generated()) {
-                            boolean literal = source.equals("literal");
-                            if (function) {
-                                action = leading
-                                        ? () -> literal ? repository.formFunctionReturn(41)
-                                                : repository.configuredFormFunctionReturn(41)
-                                        : () -> literal ? repository.formFunction(41) : repository.configuredFormFunction(41);
-                            } else if (leading) {
-                                action = () -> literal ? repository.formProcedureReturn(41)
-                                        : repository.configuredFormProcedureReturn(41);
-                            } else {
-                                action = () -> {
-                                    if (literal) {
-                                        repository.formProcedure(41);
-                                    } else {
-                                        repository.configuredFormProcedure(41);
-                                    }
-                                    return 0;
-                                };
-                            }
-                        } else {
-                            action = () -> {
-                                JdbcClient.Statement stage;
-                                if (source.equals("literal")) {
-                                    stage = client.create(sql).bind(leading ? 2 : 1, 41);
-                                } else {
-                                    String key = "form-" + (function ? "function" : "procedure") + (leading ? "-return" : "");
-                                    String supplied = source.equals("configured")
-                                            ? configured.get("application.calls." + key).asString().get() : sql;
-                                    stage = client.prepare(supplied, leading ? List.of("return", "input") : List.of("input"))
-                                            .get().bind("input", 41);
-                                }
-                                JdbcClient.Call call = stage.call();
-                                if (leading) {
-                                    return call.returns(JDBCType.INTEGER).outputs().get("return", Integer.class);
-                                }
-                                if (function) {
-                                    return call.map(result -> result.rows(row -> row.get(1, Integer.class)).one());
-                                }
-                                call.execute();
-                                return 0;
-                            };
-                        }
+                        Callable<Integer> action = () -> invokeEscapeForm(sql, source, configured, function, leading, false);
                         if (supported) {
                             assertThat(description, action.call(), is(function ? 42 : 0));
                             if (function && leading) {
-                                if (generated()) {
-                                    if (source.equals("literal")) {
-                                        repository.discardFormReturn(41);
-                                    } else {
-                                        repository.configuredDiscardFormReturn(41);
-                                    }
-                                } else {
-                                    JdbcClient.Statement discard;
-                                    if (source.equals("literal")) {
-                                        discard = client.create(sql).bind(2, 41);
-                                    } else {
-                                        String supplied = source.equals("configured")
-                                                ? configured.get("application.calls.form-discard").asString().get() : sql;
-                                        discard = client.prepare(supplied, List.of("return", "input")).get().bind("input", 41);
-                                    }
-                                    discard.call().returns(JDBCType.INTEGER).execute();
-                                }
+                                invokeEscapeForm(sql, source, configured, true, true, true);
                             } else if (!function) {
                                 int count = committedCount("probe");
                                 assertThrows(TxException.class, () -> Tx.transaction(() -> {
@@ -669,7 +608,8 @@ public abstract class AbstractJdbcCallableContract {
             DataException failure = assertThrows(DataException.class, () -> client.create(
                     "CREATE OR REPLACE FUNCTION sp_function_out(p_input INTEGER, OUT value INTEGER, "
                             + "OUT other VARCHAR) "
-                            + "RETURNS INTEGER LANGUAGE plpgsql AS $$ BEGIN value := p_input; other := 'done'; END $$").execute());
+                            + "RETURNS INTEGER LANGUAGE plpgsql AS $$ BEGIN value := p_input; other := 'done'; END $$")
+                    .execute());
             assertThat(failure.getMessage(), containsString("42P13"));
             return;
         }
@@ -772,7 +712,9 @@ public abstract class AbstractJdbcCallableContract {
                 if (vendor().equals("oracle")) {
                     keys.addColumn("ID");
                 }
-                keys.map(_ -> { throw failure; }).one();
+                keys.map(_ -> {
+                    throw failure;
+                }).one();
             };
             Callable<Boolean> task = () -> {
                 if (joined) {
@@ -1004,10 +946,46 @@ public abstract class AbstractJdbcCallableContract {
                 assertThat(result.get("other", String.class), is("done"));
             });
         } else {
-            JdbcClient.OutParameters result = client.create("{call sp_values(?, ?, ?)}").bind(1, 41).bind(2, 0).bind(3, "unused").call()
+            JdbcClient.OutParameters result = client.create("{call sp_values(?, ?, ?)}")
+                    .bind(1, 41).bind(2, 0).bind(3, "unused").call()
                     .out("value", 2, JDBCType.INTEGER).out("other", 3, JDBCType.VARCHAR).outputs();
             assertThat(result.get("value", Integer.class), is(42));
             assertThat(result.get("other", String.class), is("done"));
+        }
+    }
+
+    /**
+     * Empty snapshots and callback result types use the same terminals across drivers and programming models.
+     */
+    @Test
+    protected void mapsSnapshots() {
+        JdbcClient.OutParameters snapshot;
+        if (generated()) {
+            CallableRoutineRepository repository = manager.registry().get(CallableRoutineRepository.class);
+            snapshot = repository.emptySnapshot("empty-snapshot");
+            assertThat(repository.mapSnapshot("mapped-snapshot", _ -> snapshot), sameInstance(snapshot));
+        } else {
+            snapshot = client.create("{call sp_write(?)}").bind(1, "empty-snapshot").call().outputs();
+            assertThat(client.create("{call sp_write(?)}").bind(1, "mapped-snapshot").call().map(_ -> snapshot),
+                       sameInstance(snapshot));
+        }
+        assertThrows(IllegalArgumentException.class, () -> snapshot.get("missing", Integer.class));
+        assertThat(client.create("SELECT COUNT(*) FROM TX_MATRIX WHERE DATA_VALUE IN (?, ?)")
+                           .bind(1, "empty-snapshot").bind(2, "mapped-snapshot").map(Integer.class).one(), is(2));
+        if (!vendor().equals("mysql")) {
+            Tx.transaction(Tx.Type.REQUIRED, () -> {
+                JdbcClient.CallMapper<JdbcClient.OutParameters> mapper = result -> {
+                    result.skipRemainingResults();
+                    assertThat(result.cursor("return", row -> row.get(1, Integer.class)).list(), is(List.of(42)));
+                    return snapshot;
+                };
+                JdbcClient.OutParameters mapped = generated()
+                        ? manager.registry().get(CallableRoutineRepository.class).mapCursorSnapshot(1, mapper)
+                        : client.create("{? = call sp_cursor(?)}").bind(2, 1).call()
+                                .returns(JDBCType.REF_CURSOR).map(mapper);
+                assertThat(mapped, sameInstance(snapshot));
+                return null;
+            });
         }
     }
 
@@ -1409,7 +1387,9 @@ public abstract class AbstractJdbcCallableContract {
             fixture.failCleanup(fatal);
             assertThat(assertThrows(Error.class, () -> fixture.transactions().transaction(Tx.Type.REQUIRED, () -> {
                 fixture.client().create("INSERT INTO TX_MATRIX (DATA_VALUE) VALUES (?)").bind(1, "cleanup-error").execute();
-                fixture.consume(generated(), _ -> { throw application; });
+                fixture.consume(generated(), _ -> {
+                    throw application;
+                });
                 return null;
             })), sameInstance(fatal));
             assertThat(fatal.getSuppressed(), is(new Throwable[] {application}));
@@ -1486,17 +1466,72 @@ public abstract class AbstractJdbcCallableContract {
     @Test
     protected void detachedCanonicalValues() {
         assertAll(canonicalSamples().stream().map(sample -> (Executable) () -> assertAll(sample.type().name(), () -> {
-            verifyCanonicalSnapshot(sample, 0);
+            String sqlType = createCanonicalRoutine(sample);
+            verifyCanonicalSnapshot(sample, 0, sqlType);
             if (sample.type() == JDBCType.BOOLEAN || sample.type() == JDBCType.BIT) {
-                verifyCanonicalSnapshot(new CanonicalSample(sample.type(), false), 2);
+                verifyCanonicalSnapshot(new CanonicalSample(sample.type(), false), 2, sqlType);
             }
         })));
     }
 
     @Test
     protected void detachedCanonicalNulls() {
-        assertAll(canonicalSamples().stream().map(sample -> (Executable) () ->
-                assertAll(sample.type().name(), () -> verifyCanonicalSnapshot(sample, 1))));
+        assertAll(canonicalSamples().stream().map(sample -> (Executable) () -> assertAll(sample.type().name(), () -> {
+            String sqlType = createCanonicalRoutine(sample);
+            verifyCanonicalSnapshot(sample, 1, sqlType);
+        })));
+    }
+
+    private int invokeEscapeForm(String sql, String source, Config configured,
+                                 boolean function, boolean leading, boolean discard) {
+        if (generated()) {
+            CallableRoutineRepository repository = manager.registry().get(CallableRoutineRepository.class);
+            boolean literal = source.equals("literal");
+            if (discard) {
+                if (literal) {
+                    repository.discardFormReturn(41);
+                } else {
+                    repository.configuredDiscardFormReturn(41);
+                }
+                return 0;
+            }
+            if (function) {
+                if (leading) {
+                    return literal ? repository.formFunctionReturn(41) : repository.configuredFormFunctionReturn(41);
+                }
+                return literal ? repository.formFunction(41) : repository.configuredFormFunction(41);
+            }
+            if (leading) {
+                return literal ? repository.formProcedureReturn(41) : repository.configuredFormProcedureReturn(41);
+            }
+            if (literal) {
+                repository.formProcedure(41);
+            } else {
+                repository.configuredFormProcedure(41);
+            }
+            return 0;
+        }
+        JdbcClient.Statement stage;
+        if (source.equals("literal")) {
+            stage = client.create(sql).bind(leading ? 2 : 1, 41);
+        } else {
+            String key = discard ? "form-discard"
+                    : "form-" + (function ? "function" : "procedure") + (leading ? "-return" : "");
+            String supplied = source.equals("configured") ? configured.get("application.calls." + key).asString().get() : sql;
+            stage = client.prepare(supplied, leading ? List.of("return", "input") : List.of("input"))
+                    .get().bind("input", 41);
+        }
+        JdbcClient.Call call = stage.call();
+        if (leading) {
+            call.returns(JDBCType.INTEGER);
+            if (!discard) {
+                return call.outputs().get("return", Integer.class);
+            }
+        } else if (function) {
+            return call.map(result -> result.rows(row -> row.get(1, Integer.class)).one());
+        }
+        call.execute();
+        return 0;
     }
 
     private List<CanonicalSample> canonicalSamples() {
@@ -1526,7 +1561,7 @@ public abstract class AbstractJdbcCallableContract {
                        }).toList();
     }
 
-    private void verifyCanonicalSnapshot(CanonicalSample sample, int nullMode) throws Exception {
+    private String createCanonicalRoutine(CanonicalSample sample) {
         JDBCType type = sample.type();
         String routine = "sp_snap_" + type.name().toLowerCase(Locale.ROOT);
         String sqlType = switch (vendor()) {
@@ -1615,6 +1650,12 @@ public abstract class AbstractJdbcCallableContract {
         }
         default -> throw new IllegalArgumentException("The fixture requires a supported database.");
         }
+        return sqlType;
+    }
+
+    private void verifyCanonicalSnapshot(CanonicalSample sample, int nullMode, String sqlType) throws Exception {
+        JDBCType type = sample.type();
+        String routine = "sp_snap_" + type.name().toLowerCase(Locale.ROOT);
         Supplier<JdbcClient.OutParameters> capture = () -> {
             if (generated()) {
                 CallableRoutineRepository repository = manager.registry().get(CallableRoutineRepository.class);
@@ -1789,6 +1830,16 @@ public abstract class AbstractJdbcCallableContract {
 
     private int committedCount(String value) {
         return client.create("SELECT COUNT(*) FROM TX_MATRIX WHERE DATA_VALUE = ?").bind(1, value).map(Integer.class).one();
+    }
+
+    public interface InferredCallableParent<T> {
+        @Jdbc.Statement("{? = call sp_add(:input)}")
+        @Jdbc.OutParameter
+        T inferredScalar(T input);
+
+        @Jdbc.Statement("${application.calls.inherited-total:{? = call sp_add(:input)}}")
+        @Jdbc.OutParameter
+        T inheritedConfiguredTotal(@Data.Param("input") T value);
     }
 
     private record CanonicalSample(JDBCType type, Object value) {

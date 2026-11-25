@@ -15,21 +15,22 @@
  */
 package io.helidon.tests.integration.data.jdbc.declarative.repository;
 
-import java.sql.JDBCType;
 import java.math.BigDecimal;
+import java.sql.JDBCType;
 import java.util.List;
-import java.util.Optional;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import io.helidon.data.Data;
 import io.helidon.data.jdbc.Jdbc;
 import io.helidon.data.jdbc.JdbcClient;
 import io.helidon.service.registry.Service;
+import io.helidon.tests.integration.data.jdbc.contract.AbstractJdbcCallableContract;
 
 @Data.Repository
 @Data.Provider("jdbc")
-public interface CallableRoutineRepository extends InferredCallableParent<Integer> {
+public interface CallableRoutineRepository extends AbstractJdbcCallableContract.InferredCallableParent<Integer> {
     @Jdbc.Statement("{? = call sp_add(:jdbcClient)}")
     @Jdbc.OutParameter(type = JDBCType.INTEGER)
     int scalar(Integer jdbcClient);
@@ -47,6 +48,18 @@ public interface CallableRoutineRepository extends InferredCallableParent<Intege
     @Jdbc.OutParameter(value = "value", type = JDBCType.INTEGER)
     @Jdbc.OutParameter(value = "other", type = JDBCType.VARCHAR)
     JdbcClient.OutParameters snapshot(Integer input, Integer value, String other);
+
+    @Jdbc.Statement("{call sp_write(:value)}")
+    @Jdbc.Execution(Jdbc.ExecutionType.CALL)
+    JdbcClient.OutParameters emptySnapshot(String value);
+
+    @Jdbc.Statement("{call sp_write(:value)}")
+    @Jdbc.Execution(Jdbc.ExecutionType.CALL)
+    JdbcClient.OutParameters mapSnapshot(String value, JdbcClient.CallMapper<JdbcClient.OutParameters> mapper);
+
+    @Jdbc.Statement("{? = call sp_cursor(:input)}")
+    @Jdbc.OutParameter(type = JDBCType.REF_CURSOR)
+    JdbcClient.OutParameters mapCursorSnapshot(int input, JdbcClient.CallMapper<JdbcClient.OutParameters> mapper);
 
     @Jdbc.Statement("{call sp_values(:input, :value, :other)}")
     @Jdbc.OutParameter(value = "value", type = JDBCType.INTEGER)
@@ -122,9 +135,13 @@ public interface CallableRoutineRepository extends InferredCallableParent<Intege
     @Jdbc.Statement("{call sp_bundle(:MAPPER_RECORD_BUNDLE_OUTPUT_0_2, :value, :rows)}")
     @Jdbc.OutParameter(value = "rows", type = JDBCType.REF_CURSOR)
     @Jdbc.OutParameter(value = "value", type = JDBCType.INTEGER)
+    // This parameter name can shadow a generated cursor mapper field.
+    @SuppressWarnings("checkstyle:ParameterName")
     RecordBundle recordBundle(int MAPPER_RECORD_BUNDLE_OUTPUT_0_2);
 
     @Jdbc.Statement("SELECT DATA_VALUE AS label FROM TX_MATRIX WHERE DATA_VALUE = :input")
+    // This method name reproduces a generated mapper field collision.
+    @SuppressWarnings("checkstyle:MethodName")
     QueryProjection recordBundle_OUTPUT_0(String input);
 
     @Jdbc.Statement("{? = call sp_add(:input)}")
@@ -439,14 +456,4 @@ public interface CallableRoutineRepository extends InferredCallableParent<Intege
 
     record Values(int value, String other) {
     }
-}
-
-interface InferredCallableParent<T> {
-    @Jdbc.Statement("{? = call sp_add(:input)}")
-    @Jdbc.OutParameter
-    T inferredScalar(T input);
-
-    @Jdbc.Statement("${application.calls.inherited-total:{? = call sp_add(:input)}}")
-    @Jdbc.OutParameter
-    T inheritedConfiguredTotal(@Data.Param("input") T value);
 }

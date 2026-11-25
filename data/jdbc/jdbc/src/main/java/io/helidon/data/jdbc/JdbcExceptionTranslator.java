@@ -38,10 +38,9 @@ import io.helidon.data.DataException;
  * <p>
  * Runtime exceptions are sanitized only when the caller has established that
  * they came directly from a JDBC invocation. Application and row mapper
- * failures retain their original type and identity. Fatal {@link Error}
- * instances also propagate unchanged because translating them could conceal a
- * JVM failure or require allocation while the JVM is reporting resource
- * exhaustion.
+ * failures retain their original type and identity. A primary fatal {@link Error}
+ * propagates unchanged. Secondary JDBC failures are sanitized before attachment,
+ * including errors whose diagnostics could expose driver details.
  */
 final class JdbcExceptionTranslator {
 
@@ -237,11 +236,7 @@ final class JdbcExceptionTranslator {
         if (primary == failure) {
             return primary;
         }
-        if (failure instanceof Error error) {
-            if (primary instanceof Error) {
-                primary.addSuppressed(error);
-                return primary;
-            }
+        if (failure instanceof Error error && !(primary instanceof Error)) {
             error.addSuppressed(sanitize("retaining an earlier JDBC infrastructure failure", primary));
             return error;
         }
@@ -260,6 +255,10 @@ final class JdbcExceptionTranslator {
     static Throwable mergeOperationCleanup(Throwable primary, String operation, Throwable failure) {
         if (primary == failure) {
             return primary;
+        }
+        if (primary instanceof Error) {
+            // Cleanup is a JDBC boundary, so secondary errors require sanitized diagnostics too.
+            return suppress(primary, operation, failure);
         }
         Throwable cleanup = mergeInfrastructure(null, operation, failure);
         return mergeProcessingFailures(primary, cleanup);

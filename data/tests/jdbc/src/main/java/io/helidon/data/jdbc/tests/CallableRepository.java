@@ -37,6 +37,8 @@ interface CallableRepository extends CallableParent<Integer> {
 
     @Jdbc.Statement("{call routine(:SQL_SNAPSHOT, :value)}")
     @Jdbc.OutParameter(value = "value", type = JDBCType.INTEGER)
+    // This parameter name can shadow the generated SQL field.
+    @SuppressWarnings("checkstyle:ParameterName")
     JdbcClient.OutParameters snapshot(Integer SQL_SNAPSHOT);
 
     @Jdbc.Statement("{call routine(:statement, :value)}")
@@ -80,14 +82,4 @@ interface CallableRepository extends CallableParent<Integer> {
 
     record Projection(int id) {
     }
-}
-
-interface CallableParent<T> {
-    @Jdbc.Statement("{call routine(:value)}")
-    @Jdbc.OutParameter(value = "value", type = JDBCType.INTEGER)
-    T inherited(T value);
-
-    @Jdbc.Statement("{call routine(:value)}")
-    @Jdbc.OutParameter(value = "value", type = JDBCType.REF_CURSOR)
-    Optional<T> inheritedCursor();
 }

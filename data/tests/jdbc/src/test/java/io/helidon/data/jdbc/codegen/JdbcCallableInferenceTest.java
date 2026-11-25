@@ -50,6 +50,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.stringContainsInOrder;
 
 class JdbcCallableInferenceTest {
     @Test
@@ -116,7 +117,8 @@ class JdbcCallableInferenceTest {
                                 Optional<List<Integer>> checks,
                                 Optional<Row> optionalRow,
                                 Row oneRow) { }
-                @Jdbc.Statement("{call routine(:MAPPER_AGGREGATE_OUTPUT_0_2, :rows, :total, :status, :checks, :optionalRow, :oneRow)}")
+                @Jdbc.Statement("{call routine(:MAPPER_AGGREGATE_OUTPUT_0_2, :rows, :total, "
+                        + ":status, :checks, :optionalRow, :oneRow)}")
                 @Jdbc.OutParameter(value = "rows")
                 @Jdbc.OutParameter(value = "total", scale = 2)
                 @Jdbc.OutParameter(value = "status")
@@ -312,7 +314,8 @@ class JdbcCallableInferenceTest {
         String source = generated(result);
         assertThat(source, containsString(".out(\"rows\", 3, JDBCType.REF_CURSOR)"));
         assertThat(source, containsString(".out(\"checks\", 1, JDBCType.INTEGER)"));
-        assertThat(source.indexOf(".optional(\"status\"") < source.indexOf(".cursor(\"rows\""), is(true));
+        assertThat(source, stringContainsInOrder(".optional(\"status\"", ".cursor(\"rows\""));
+        assertThat(source, stringContainsInOrder(".get(\"checks\"", ".cursor(\"rows\""));
         assertThat(source, containsString("GeneratedJdbcData.bindNull(jdbcStatement, 1, JDBCType.INTEGER)"));
     }
 

@@ -40,6 +40,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -181,7 +182,9 @@ class JdbcCallableFailureTest {
                             if (selected == 0) {
                                 throw application;
                             }
-                            JdbcClient.Rows<Integer> rows = result.rows(_ -> { throw application; });
+                            JdbcClient.Rows<Integer> rows = result.rows(_ -> {
+                                throw application;
+                            });
                             rows.list();
                         }));
                         assertThat(observed, sameInstance(fatal));
@@ -194,19 +197,42 @@ class JdbcCallableFailureTest {
     }
 
     /**
-     * Later cleanup errors cannot replace an earlier application Error or add duplicate suppression.
+     * Secondary JDBC errors are sanitized while the first application error retains its identity and requires rollback.
      */
     @Test
-    void preservesFirstErrorThroughMultipleCleanupFailures() throws Exception {
-        try (Fixture fixture = new Fixture(false, false)) {
-            Error first = new AssertionError("The application failed first.");
-            Error row = new AssertionError("Row cleanup failed.");
-            Error statement = new AssertionError("Statement cleanup failed.");
-            doThrow(row).when(fixture.result).close();
-            doThrow(statement).when(fixture.callable).close();
-            assertThat(assertThrows(Error.class, () -> fixture.call().consume(_ -> { throw first; })), sameInstance(first));
-            assertThat(first.getSuppressed(), is(new Throwable[] {row, statement}));
-            fixture.verifyClosed(1);
+    void retainsFirstError() throws Exception {
+        for (boolean transactional : new boolean[] {false, true}) {
+            for (boolean cursor : new boolean[] {false, true}) {
+                String description = "The cleanup case uses transactional=" + transactional + " and cursor=" + cursor + ".";
+                assertAll(description, () -> {
+                    try (Fixture fixture = new Fixture(cursor, transactional)) {
+                        Error first = new AssertionError("The application failed first.");
+                        Error row = new AssertionError("The JDBC_CANARY row cleanup failed.");
+                        row.initCause(new IllegalArgumentException("The JDBC_CANARY cause was reported."));
+                        row.addSuppressed(new SQLException("The JDBC_CANARY failure was suppressed."));
+                        Error statement = new AssertionError("The JDBC_CANARY statement cleanup failed.");
+                        doThrow(row).when(fixture.result).close();
+                        doThrow(statement).when(fixture.callable).close();
+
+                        Error observed = assertThrows(Error.class, () -> fixture.call().consume(result -> {
+                            if (cursor) {
+                                fixture.rows(result, _ -> {
+                                    throw first;
+                                }).list();
+                            } else {
+                                throw first;
+                            }
+                        }), description);
+
+                        assertThat(description, observed, sameInstance(first));
+                        assertThat(description, first.getSuppressed().length, is(2));
+                        assertThat(description, first.getSuppressed()[0], not(sameInstance(row)));
+                        assertThat(description, first.getSuppressed()[1], not(sameInstance(statement)));
+                        assertThat(description, render(first), not(containsString("JDBC_CANARY")));
+                        fixture.complete(true);
+                    }
+                });
+            }
         }
     }
 
@@ -253,7 +279,9 @@ class JdbcCallableFailureTest {
             doThrow(new SQLException("Secret row cleanup.")).when(fixture.result).close();
             doThrow(new IllegalArgumentException("Secret statement cleanup.")).when(fixture.callable).close();
             doThrow(fatal).when(fixture.connection).close();
-            assertThat(assertThrows(Error.class, () -> fixture.call().consume(_ -> { throw application; })), sameInstance(fatal));
+            assertThat(assertThrows(Error.class, () -> fixture.call().consume(_ -> {
+                throw application;
+            })), sameInstance(fatal));
             assertThat(fatal.getSuppressed(), is(new Throwable[] {application}));
             assertThat(application.getSuppressed().length, is(2));
             assertThat(render(fatal), not(containsString("Secret")));
@@ -282,7 +310,10 @@ class JdbcCallableFailureTest {
             this.cursor = cursor;
             when(source.getConnection()).thenReturn(connection);
             when(connection.getAutoCommit()).thenAnswer(_ -> automatic.get());
-            doAnswer(invocation -> { automatic.set(invocation.getArgument(0)); return null; })
+            doAnswer(invocation -> {
+                automatic.set(invocation.getArgument(0));
+                return null;
+            })
                     .when(connection).setAutoCommit(anyBoolean());
             when(connection.prepareCall(anyString())).thenReturn(callable);
             when(connection.prepareStatement(anyString())).thenReturn(callable);

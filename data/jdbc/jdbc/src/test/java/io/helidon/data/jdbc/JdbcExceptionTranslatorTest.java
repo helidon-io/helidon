@@ -27,7 +27,6 @@ import io.helidon.data.DataException;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -35,6 +34,26 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class JdbcExceptionTranslatorTest {
+
+    /**
+     * Infrastructure merging retains the first fatal error and sanitizes every secondary JDBC diagnostic.
+     */
+    @Test
+    void sanitizesSecondaryErrors() {
+        Error first = new AssertionError("The first operation failed fatally.");
+        Error later = new AssertionError("The JDBC_CANARY operation failed.");
+        later.initCause(new SQLException("The JDBC_CANARY cause was reported.", "HY000", 42));
+        later.addSuppressed(new IllegalArgumentException("The JDBC_CANARY failure was suppressed."));
+
+        assertThat(JdbcExceptionTranslator.mergeInfrastructure(first, "closing a JDBC resource", later),
+                   sameInstance(first));
+        assertThat(first.getSuppressed().length, is(1));
+        assertThat(first.getSuppressed()[0], not(sameInstance(later)));
+        assertThat(messages(first), not(containsString("JDBC_CANARY")));
+        assertThat(JdbcExceptionTranslator.mergeInfrastructure(first, "closing a JDBC resource", first),
+                   sameInstance(first));
+        assertThat(first.getSuppressed().length, is(1));
+    }
 
     /**
      * Verifies that translated failures expose safe JDBC metadata without

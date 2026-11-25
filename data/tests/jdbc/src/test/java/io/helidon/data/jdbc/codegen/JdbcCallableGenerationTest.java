@@ -30,9 +30,9 @@ import io.helidon.builder.api.RuntimeType;
 import io.helidon.codegen.apt.AptProcessor;
 import io.helidon.codegen.testing.TestCompiler;
 import io.helidon.common.Generated;
+import io.helidon.common.mapper.OptionalValue;
 import io.helidon.common.types.TypeName;
 import io.helidon.config.Config;
-import io.helidon.common.mapper.OptionalValue;
 import io.helidon.data.Data;
 import io.helidon.data.codegen.DataGeneratorProvider;
 import io.helidon.data.codegen.common.RepositoryCodegenProvider;
@@ -128,6 +128,32 @@ class JdbcCallableGenerationTest {
                     """ + type + " execute();");
             assertThat(String.join("\n", result.diagnostics()), result.success(), is(false));
         }
+    }
+
+    @Test
+    void selectsSnapshotTerminal() throws IOException {
+        for (String sql : List.of("{call routine(:rows)}", "${application.cursor:{call routine(:rows)}}")) {
+            TestCompiler.Result result = compile("""
+                    @Jdbc.Statement("%s")
+                    @Jdbc.OutParameter(value = "rows", type = JDBCType.REF_CURSOR)
+                    JdbcClient.OutParameters execute(JdbcClient.CallMapper<JdbcClient.OutParameters> mapper);
+                    """.formatted(sql));
+            assertThat(result.diagnostics().toString(), result.success(), is(true));
+            String generated = Files.readString(result.sourceOutput().resolve("example/Repository__Jdbc.java"));
+            assertThat(generated, containsString(".map(mapper)"));
+        }
+        TestCompiler.Result empty = compile("""
+                @Jdbc.Statement("{call routine()}")
+                @Jdbc.Execution(Jdbc.ExecutionType.CALL)
+                JdbcClient.OutParameters snapshot();
+                @Jdbc.Statement("{call routine()}")
+                @Jdbc.Execution(Jdbc.ExecutionType.CALL)
+                JdbcClient.OutParameters mapped(JdbcClient.CallMapper<JdbcClient.OutParameters> mapper);
+                """);
+        assertThat(empty.diagnostics().toString(), empty.success(), is(true));
+        String generated = Files.readString(empty.sourceOutput().resolve("example/Repository__Jdbc.java"));
+        assertThat(generated, containsString(".outputs()"));
+        assertThat(generated, containsString(".map(mapper)"));
     }
 
     /**
