@@ -29,6 +29,7 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.uri.UriInfo;
 import io.helidon.config.Config;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
@@ -408,6 +409,45 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
                    is(201L));
     }
 
+    @Test
+    void recordsSchemeFromRequestedUri() throws Exception {
+        var schemeKey = AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.URL_SCHEME);
+
+        for (String scheme : List.of("http", "https")) {
+            AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
+            AtomicReference<Runnable> whenSent = new AtomicReference<>();
+            RoutingRequest request = request();
+            UriInfo uri = request.requestedUri();
+            when(uri.scheme()).thenReturn(scheme);
+
+            filter(recordedAttributes::set).filter(mock(FilterChain.class), request, response(whenSent));
+            whenSent.get().run();
+
+            assertThat(recordedAttributes.get().get(schemeKey), is(scheme));
+        }
+    }
+
+    @Test
+    void recordsStatusAsErrorTypeOnlyForNonSuccessfulResponses() throws Exception {
+        var errorTypeKey = AttributeKey.stringKey(OpenTelemetryMetricsHttpSemanticConventions.ERROR_TYPE);
+
+        for (Status status : List.of(Status.OK_200, Status.CREATED_201, Status.NO_CONTENT_204,
+                                     Status.INTERNAL_SERVER_ERROR_500)) {
+            AtomicReference<Attributes> recordedAttributes = new AtomicReference<>();
+            AtomicReference<Runnable> whenSent = new AtomicReference<>();
+            RoutingResponse response = response(whenSent);
+            when(response.status()).thenReturn(status);
+
+            filter(recordedAttributes::set).filter(mock(FilterChain.class), request(), response);
+            whenSent.get().run();
+
+            String expectedErrorType = status == Status.INTERNAL_SERVER_ERROR_500 ? "500" : null;
+            assertThat("error.type for HTTP " + status.code(),
+                       recordedAttributes.get().get(errorTypeKey),
+                       is(expectedErrorType));
+        }
+    }
+
     private static Filter filter(Throwable failure) {
         return filter(attributes -> {
             if (failure instanceof RuntimeException runtimeException) {
@@ -482,6 +522,7 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
 
     private static RoutingRequest request(Method method) {
         RoutingRequest request = mock(RoutingRequest.class);
+        UriInfo uri = mock(UriInfo.class);
         ListenerConfig listenerConfig = mock(ListenerConfig.class);
         ListenerContext listenerContext = mock(ListenerContext.class);
 
@@ -492,6 +533,8 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
                                                                 "/test",
                                                                 false));
         when(request.matchingPattern()).thenReturn(Optional.empty());
+        when(uri.scheme()).thenReturn("http");
+        when(request.requestedUri()).thenReturn(uri);
         when(request.listenerContext()).thenReturn(listenerContext);
         when(listenerContext.config()).thenReturn(listenerConfig);
         when(listenerConfig.name()).thenReturn("@default");
