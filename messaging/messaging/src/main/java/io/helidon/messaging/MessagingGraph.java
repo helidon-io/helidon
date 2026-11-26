@@ -91,10 +91,13 @@ public interface MessagingGraph extends RuntimeType.Api<MessagingConfig>, AutoCl
      * <p>
      * Applications can register these checks explicitly or use the aggregate messaging checks discovered through
      * the graph's service registry.
+     * The default implementation returns an empty list.
      *
      * @return immutable list of stable graph health checks
      */
-    List<HealthCheck> healthChecks();
+    default List<HealthCheck> healthChecks() {
+        return List.of();
+    }
 
     /**
      * Obtain an imperative emitter for a channel owned by this graph.
