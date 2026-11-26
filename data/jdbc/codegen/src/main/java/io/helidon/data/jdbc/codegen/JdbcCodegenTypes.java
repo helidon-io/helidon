@@ -28,12 +28,14 @@ final class JdbcCodegenTypes {
     static final TypeName CONFIG_EXCEPTION = TypeName.create("io.helidon.config.ConfigException");
     static final TypeName DATA_EXCEPTION = TypeName.create("io.helidon.data.DataException");
     static final TypeName JDBC_CLIENT = TypeName.create("io.helidon.data.jdbc.JdbcClient");
+    static final TypeName JDBC_BATCH_RESULT = TypeName.create("io.helidon.data.jdbc.JdbcClient.BatchResult");
     static final TypeName JDBC_CLIENT_STATEMENT = TypeName.create("io.helidon.data.jdbc.JdbcClient.Statement");
     static final TypeName GENERATED_JDBC_DATA = TypeName.create("io.helidon.data.jdbc.GeneratedJdbcData");
     static final TypeName ROW_MAPPER = TypeName.create("io.helidon.data.jdbc.JdbcClient.RowMapper");
     static final TypeName JDBC_CLIENT_ANNOTATION = TypeName.create("io.helidon.data.jdbc.Jdbc.Client");
     static final TypeName JDBC_STATEMENT = TypeName.create("io.helidon.data.jdbc.Jdbc.Statement");
     static final TypeName JDBC_EXECUTION = TypeName.create("io.helidon.data.jdbc.Jdbc.Execution");
+    static final TypeName JDBC_BATCH_SIZE = TypeName.create("io.helidon.data.jdbc.Jdbc.BatchSize");
     static final TypeName JDBC_GENERATED_KEYS = TypeName.create("io.helidon.data.jdbc.Jdbc.GeneratedKeys");
     static final TypeName JDBC_ROW_MAPPER = TypeName.create("io.helidon.data.jdbc.Jdbc.RowMapper");
     static final TypeName DATA_PARAM = TypeName.create("io.helidon.data.Data.Param");

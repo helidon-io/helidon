@@ -16,14 +16,17 @@
 package io.helidon.data.jdbc.codegen;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.RoundContext;
 import io.helidon.codegen.TypeHierarchy;
 import io.helidon.codegen.TypeHierarchyResolver;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.ElementSignature;
 import io.helidon.common.types.Modifier;
 import io.helidon.common.types.TypeInfo;
@@ -49,13 +52,14 @@ final class JdbcTypeHierarchy {
      * @return resolved abstract methods in declaration order
      */
     static List<TypedElementInfo> abstractMethods(TypeInfo repository, RoundContext context) {
+        validateBatchSizeTargets(repository, new HashSet<>());
         TypeHierarchyResolver resolver = context.typeHierarchyResolver();
         List<TypeHierarchyResolver.ResolvedMethod> methods = resolver.effectiveInterfaceMethods(repository);
         List<TypedElementInfo> result = new ArrayList<>();
         for (TypeHierarchyResolver.ResolvedMethod resolved : methods) {
             TypedElementInfo method = resolved.method();
             if (!method.elementModifiers().contains(Modifier.ABSTRACT)) {
-                validate(method, resolved.declarations());
+                validate(method, resolved.declarations(), context);
                 continue;
             }
             List<Annotation> parameterAliases = new ArrayList<>();
@@ -86,10 +90,26 @@ final class JdbcTypeHierarchy {
                     .map(declaration -> withAliases(declaration, parameterAliases))
                     .toList();
             method = withAliases(method, parameterAliases);
-            validate(method, declarations);
+            validate(method, declarations, context);
             result.add(method);
         }
         return List.copyOf(result);
+    }
+
+    private static void validateBatchSizeTargets(TypeInfo type, Set<TypeName> visited) {
+        if (!visited.add(type.typeName().genericTypeName())) {
+            return;
+        }
+        for (TypedElementInfo method : type.elementInfo()) {
+            if (method.kind() == ElementKind.METHOD && method.hasAnnotation(JdbcCodegenTypes.JDBC_BATCH_SIZE)
+                    && (!method.elementModifiers().contains(Modifier.ABSTRACT)
+                    || !method.hasAnnotation(JdbcCodegenTypes.JDBC_STATEMENT))) {
+                throw JdbcMethodPlan.failure(method, "@Jdbc.BatchSize can be used only with BATCH execution.");
+            }
+        }
+        for (TypeInfo parent : type.interfaceTypeInfo()) {
+            validateBatchSizeTargets(parent, visited);
+        }
     }
 
     private static TypedElementInfo withAliases(TypedElementInfo method, List<Annotation> aliases) {
@@ -111,7 +131,7 @@ final class JdbcTypeHierarchy {
         return TypedElementInfo.builder(method).parameterArguments(parameters).build();
     }
 
-    private static void validate(TypedElementInfo method, List<TypedElementInfo> declarations) {
+    private static void validate(TypedElementInfo method, List<TypedElementInfo> declarations, RoundContext context) {
         ElementSignature signature = TypeHierarchy.methodSignature(method);
         TypedElementInfo first = declarations.getFirst();
         for (int index = 1; index < declarations.size(); index++) {
@@ -126,20 +146,21 @@ final class JdbcTypeHierarchy {
             }
         }
         if (method.elementModifiers().contains(Modifier.ABSTRACT)) {
-            validateParameterBindings(signature, declarations);
+            validateParameterBindings(signature, declarations, context);
         }
     }
 
-    private static void validateParameterBindings(ElementSignature signature, List<TypedElementInfo> declarations) {
+    private static void validateParameterBindings(ElementSignature signature, List<TypedElementInfo> declarations,
+                                                  RoundContext context) {
         if (declarations.size() < 2) {
             return;
         }
         Optional<String> value = declarations.getFirst()
                 .findAnnotation(JdbcCodegenTypes.JDBC_STATEMENT).flatMap(Annotation::stringValue);
         if (value.isPresent() && JdbcSqlReference.parse(value.get(), declarations.getFirst()) != null) {
-            List<ConfiguredParameterBinding> bindings = configuredParameterBindings(declarations.getFirst());
+            List<ConfiguredParameterBinding> bindings = configuredParameterBindings(declarations.getFirst(), context);
             for (TypedElementInfo declaration : declarations) {
-                if (!bindings.equals(configuredParameterBindings(declaration))) {
+                if (!bindings.equals(configuredParameterBindings(declaration, context))) {
                     throw new CodegenException("Inherited configured statements have incompatible parameter names or types.",
                                                declaration.originatingElementValue());
                 }
@@ -154,35 +175,60 @@ final class JdbcTypeHierarchy {
         }
 
         TypedElementInfo first = declarations.getFirst();
-        ParameterBindingContract firstContract = parameterBindingContract(first, sql.get());
+        ParameterBindingContract firstContract = parameterBindingContract(first, sql.get(), context);
         for (int index = 1; index < declarations.size(); index++) {
             TypedElementInfo declaration = declarations.get(index);
-            ParameterBindingContract declarationContract = parameterBindingContract(declaration, sql.get());
+            ParameterBindingContract declarationContract = parameterBindingContract(declaration, sql.get(), context);
             // The same named SQL must bind the same logical parameter positions across inherited declarations.
             if (!firstContract.equals(declarationContract)) {
                 throw new CodegenException("Inherited repository method '" + signature.text()
-                                                   + "' has incompatible named SQL parameter bindings.",
+                                                   + "' has incompatible SQL parameter bindings.",
                                            first.originatingElementValue(),
                                            declaration.originatingElementValue());
             }
         }
     }
 
-    private static List<ConfiguredParameterBinding> configuredParameterBindings(TypedElementInfo method) {
+    private static List<ConfiguredParameterBinding> configuredParameterBindings(TypedElementInfo method, RoundContext context) {
+        if (JdbcExecutionSelection.create(method) == JdbcExecutionSelection.BATCH) {
+            String sql = method.findAnnotation(JdbcCodegenTypes.JDBC_STATEMENT).flatMap(Annotation::stringValue).orElseThrow();
+            JdbcBatchPlan batch = JdbcBatchPlan.configured(JdbcSqlReference.parse(sql, method), method, context);
+            List<ConfiguredParameterBinding> bindings = new ArrayList<>();
+            for (int index = 0; index < batch.values().size(); index++) {
+                JdbcBatchPlan.Value value = batch.values().get(index);
+                TypedElementInfo parameter = value.sourceIndex() < 0 ? value.parameter()
+                        : batch.sources().get(value.sourceIndex()).parameter();
+                bindings.add(new ConfiguredParameterBinding(batch.inputNames().isEmpty() ? "" : batch.inputNames().get(index),
+                        value.parameter().typeName(), parameterIndex(method.parameterArguments(), parameter), value.component()));
+            }
+            return List.copyOf(bindings);
+        }
         return method.parameterArguments().stream()
                 .map(parameter -> new ConfiguredParameterBinding(JdbcSqlParameterPlan.effectiveName(parameter),
-                                                                  parameter.typeName()))
+                        parameter.typeName(), parameterIndex(method.parameterArguments(), parameter), null))
                 .toList();
     }
 
-    private static ParameterBindingContract parameterBindingContract(TypedElementInfo method, String sql) {
+    private static ParameterBindingContract parameterBindingContract(TypedElementInfo method, String sql, RoundContext context) {
         List<TypedElementInfo> parameters = method.parameterArguments();
+        if (JdbcExecutionSelection.create(method) == JdbcExecutionSelection.BATCH) {
+            JdbcBatchPlan batch = JdbcBatchPlan.create(sql, method, context);
+            List<ParameterBinding> bindings = batch.parameters().binds().stream().map(bind -> {
+                JdbcBatchPlan.Value value = batch.values().stream()
+                        .filter(candidate -> candidate.parameter() == bind.parameter()).findFirst().orElseThrow();
+                TypedElementInfo parameter = value.sourceIndex() < 0 ? value.parameter()
+                        : batch.sources().get(value.sourceIndex()).parameter();
+                return new ParameterBinding(parameterIndex(parameters, parameter), bind.nullable(),
+                                            bind.nullJdbcTypeConstant(), value.component());
+            }).toList();
+            return new ParameterBindingContract(bindings);
+        }
         JdbcSqlParameterPlan plan = JdbcSqlParameterPlan.create(sql, parameters, method);
         List<ParameterBinding> bindings = plan.binds()
                 .stream()
                 .map(bind -> new ParameterBinding(parameterIndex(parameters, bind.parameter()),
                                                   bind.nullable(),
-                                                  bind.nullJdbcTypeConstant()))
+                                                  bind.nullJdbcTypeConstant(), null))
                 .toList();
         return new ParameterBindingContract(bindings);
     }
@@ -206,10 +252,11 @@ final class JdbcTypeHierarchy {
     }
 
     private static List<TypeName> exactMethodAnnotations() {
-        List<TypeName> annotations = new ArrayList<>(3 + JdbcCodegenTypes.TX_ANNOTATIONS.size());
+        List<TypeName> annotations = new ArrayList<>(4 + JdbcCodegenTypes.TX_ANNOTATIONS.size());
         annotations.add(JdbcCodegenTypes.JDBC_STATEMENT);
         annotations.add(JdbcCodegenTypes.JDBC_GENERATED_KEYS);
         annotations.add(JdbcCodegenTypes.JDBC_ROW_MAPPER);
+        annotations.add(JdbcCodegenTypes.JDBC_BATCH_SIZE);
         annotations.addAll(JdbcCodegenTypes.TX_ANNOTATIONS);
         return List.copyOf(annotations);
     }
@@ -217,9 +264,9 @@ final class JdbcTypeHierarchy {
     private record ParameterBindingContract(List<ParameterBinding> bindings) {
     }
 
-    private record ParameterBinding(int parameterIndex, boolean nullable, String nullJdbcTypeConstant) {
+    private record ParameterBinding(int parameterIndex, boolean nullable, String nullJdbcTypeConstant, String component) {
     }
 
-    private record ConfiguredParameterBinding(String name, TypeName type) {
+    private record ConfiguredParameterBinding(String name, TypeName type, int parameterIndex, String component) {
     }
 }

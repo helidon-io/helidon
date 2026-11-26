@@ -54,6 +54,63 @@ mvn test -Ptests,jmh -pl :helidon-data-jdbc,:helidon-tests-benchmark-jmh -am \
     -Djdbc.client.creation.jmh.measurementIterations=1 -Djdbc.client.creation.jmh.measurementMillis=100 -ntp
 ```
 
+## JDBC batch capture
+
+[`JdbcBatchCaptureJmhBenchmark`](src/main/java/io/helidon/data/jdbc/JdbcBatchCaptureJmhBenchmark.java)
+measures complete batch capture before connection acquisition. Each invocation constructs the bindings and retains all
+captured items until it returns. Application buffers and named SQL metadata are prepared in trial setup.
+
+| Method | Workload |
+| --- | --- |
+| `indexedBinary` | Repeats the same binary input at multiple indexed markers within each item. |
+| `namedBinary` | Binds one binary input to repeated named markers. |
+| `indexedScalar` | Repeats an immutable string as a scalar control. |
+| `indexedMutatingBinary` | Mutates the final byte of the same array before each indexed bind. |
+| `indexedIndependentBinary` | Uses a distinct array for each indexed binary marker. |
+
+Each item also binds a scalar identifier. The following parameters control the captured inputs:
+
+| Parameter | Default values | Meaning |
+| --- | --- | --- |
+| `rowCount` | `32` | The number of items captured per invocation. |
+| `repetitions` | `1,8` | The number of physical markers for the binary or string input in each item. |
+| `payloadBytes` | `64,65536` | The length of each application byte array. This parameter does not affect the string control. |
+
+The default Maven benchmark runners do not select this class. Run it through the JMH command line. From the repository
+root, install the prerequisites and build the benchmark:
+
+```shell
+mvn -ntp -DskipTests install
+mvn -ntp -f tests/benchmark/jmh/pom.xml -DskipTests package dependency:build-classpath \
+    -Dmdep.outputFile=target/jdbc-batch-classpath
+JDBC_BATCH_CLASSPATH="tests/benchmark/jmh/target/classes:$(cat tests/benchmark/jmh/target/jdbc-batch-classpath)"
+```
+
+Run all five methods with the default input parameters, one thread, two forks, a fixed 256 MiB heap, and the GC profiler:
+
+```shell
+java -cp "$JDBC_BATCH_CLASSPATH" org.openjdk.jmh.Main \
+    '^io\.helidon\.data\.jdbc\.JdbcBatchCaptureJmhBenchmark\..*$' \
+    -t 1 -f 2 -wi 3 -w 1s -i 5 -r 1s -jvmArgs '-Xms256m -Xmx256m' \
+    -prof gc -rf json -rff tests/benchmark/jmh/target/jdbc-batch-capture.json
+```
+
+Override inputs with options such as `-p rowCount=1,32,128`. For a quick smoke check, select only `indexedBinary` in the
+method filter and use `-p rowCount=1 -p repetitions=1 -p payloadBytes=64 -f 1 -wi 1 -w 100ms -i 1 -r 100ms`.
+Smoke results establish that the benchmark runs and are unsuitable for performance comparisons.
+
+For comparisons, use identical benchmark source, JDKs, JVM settings, parameters, forks, and iteration settings across
+revisions. Rebuild and install the JDBC runtime in each checkout before building its benchmark. Save each revision's JSON
+under a separate result name and compare matching configurations, including the scalar, mutation, and distinct array
+controls. The legacy baseline file, reset option, and automatic regression checks described elsewhere in this README do
+not apply to these direct JMH runs.
+
+Average time is reported in microseconds per complete capture invocation. The GC profiler's `gc.alloc.rate.norm` reports
+allocated bytes per invocation. Divide either value by `rowCount` for the corresponding per item value. Allocation does
+not establish retained or peak heap usage. These measurements exclude JDBC execution, driver buffering, transaction
+completion, and database throughput. They also do not measure the effect of `@Jdbc.BatchSize`, which limits submissions
+after complete capture.
+
 ## Messaging runtime
 
 The messaging benchmarks separate payload and batch construction, runtime dispatch, singleton-versus-batch

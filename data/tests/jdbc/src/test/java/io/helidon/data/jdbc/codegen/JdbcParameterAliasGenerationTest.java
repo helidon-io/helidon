@@ -219,7 +219,9 @@ class JdbcParameterAliasGenerationTest {
                         }
                         """).build().compile();
         assertThat(child.success(), is(false));
-        assertThat(child.diagnostics().toString(), containsString("Declare @Data.Param, use positional SQL"));
+        assertThat(child.diagnostics().toString(), containsString("SQL marker ':key' has no matching input."));
+        assertThat(child.diagnostics().toString(),
+                   containsString("use @Data.Param on scalar parameters, or use positional SQL where permitted."));
     }
 
     /**

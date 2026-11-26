@@ -15,6 +15,7 @@
  */
 package io.helidon.data.jdbc;
 
+import java.sql.BatchUpdateException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -43,10 +44,13 @@ import io.helidon.data.DataException;
 final class JdbcRunner {
 
     // A singular terminal needs the second row as evidence of non-unique cardinality.
-    private static final ExecutionOptions SINGULAR_QUERY = new ExecutionOptions(2);
+    private static final ExecutionOptions SINGULAR_QUERY = new ExecutionOptions(2, false);
 
     // Updates, list terminals, and generated-key operations must not impose a provider-selected JDBC row limit.
-    private static final ExecutionOptions UNBOUNDED = new ExecutionOptions(0);
+    private static final ExecutionOptions UNBOUNDED = new ExecutionOptions(0, false);
+
+    // Batch execution contains only infrastructure work after application bindings have been captured.
+    private static final ExecutionOptions BATCH = new ExecutionOptions(0, true);
 
     private final DataSource dataSource;
     private final JdbcConnectionLease.Provider leaseProvider;
@@ -74,6 +78,51 @@ final class JdbcRunner {
      */
     long execute(JdbcOperation operation) {
         return run(operation, UNBOUNDED, updateHandler::execute);
+    }
+
+    /**
+     * Executes captured bindings with the existing connection ownership and cleanup rules.
+     *
+     * @param operation The operation supplies literal SQL and preparation rules.
+     * @param items Each item contains a complete binding snapshot.
+     * @param batchSize The maximum number of parameter sets in one JDBC submission.
+     * @return The result contains detached execution evidence.
+     */
+    JdbcClient.BatchResult executeBatch(JdbcOperation operation, List<JdbcOperation.Bind[]> items, int batchSize) {
+        JdbcBatchResult.Accumulator evidence = new JdbcBatchResult.Accumulator(items.size());
+        if (items.isEmpty()) {
+            return evidence.result();
+        }
+        try {
+            // Assemble outcomes after cleanup to avoid rebuilding them when cleanup fails.
+            return run(operation, BATCH, scope -> {
+                for (int offset = 0; offset < items.size();) {
+                    int size = Math.min(batchSize, items.size() - offset);
+                    int end = offset + size;
+                    for (int index = offset; index < end; index++) {
+                        bind(scope.statement(), items.get(index));
+                        JdbcExceptionTranslator.invokeVoid("adding a JDBC batch item", scope.statement()::addBatch);
+                    }
+                    int[] counts;
+                    try {
+                        counts = JdbcExceptionTranslator.invoke("executing a JDBC batch", scope.statement()::executeBatch);
+                    } catch (BatchUpdateException failure) {
+                        evidence.record(offset, size, failure.getUpdateCounts());
+                        throw failure;
+                    }
+                    if (!evidence.record(offset, size, counts)) {
+                        throw JdbcExceptionTranslator.safeException("The JDBC driver returned invalid batch update counts.");
+                    }
+                    offset = end;
+                    if (offset < items.size()) {
+                        JdbcExceptionTranslator.invokeVoid("clearing a JDBC batch", scope.statement()::clearBatch);
+                    }
+                }
+                return evidence;
+            }).result();
+        } catch (RuntimeException failure) {
+            throw new JdbcBatchException(evidence.result(), JdbcExceptionTranslator.sanitize("executing a JDBC batch", failure));
+        }
     }
 
     /**
@@ -292,24 +341,30 @@ final class JdbcRunner {
      * @param statement statement to close second
      * @param lease connection lease to close last
      * @param previousFailure earlier operation or cleanup failure
+     * @param fatalCleanup A true value gives fatal cleanup errors precedence over earlier infrastructure failures.
      * @return first failure, or {@code null}
      */
     private static Throwable closeAll(JdbcOperation operation,
                                       ResultSet resultSet,
                                       PreparedStatement statement,
                                       JdbcConnectionLease lease,
-                                      Throwable previousFailure) {
+                                      Throwable previousFailure,
+                                      boolean fatalCleanup) {
         // SQL failures must enter the bounded sanitizer before cleanup is attached. Application and mapper failures
         // keep their original identity.
         if (previousFailure instanceof SQLException) {
-            Throwable failure = close(resultSet, "closing a result set", previousFailure);
-            failure = close(statement, "closing a statement", failure);
-            return close(lease, "closing a connection lease", failure);
+            Throwable failure = close(resultSet, "closing a result set", previousFailure, fatalCleanup);
+            failure = close(statement, "closing a statement", failure, fatalCleanup);
+            return close(lease, "closing a connection lease", failure, fatalCleanup);
         }
-        Throwable failure = close(resultSet, "closing a result set", null);
-        failure = close(statement, "closing a statement", failure);
-        failure = close(lease, "closing a connection lease", failure);
+        Throwable failure = close(resultSet, "closing a result set", null, fatalCleanup);
+        failure = close(statement, "closing a statement", failure, fatalCleanup);
+        failure = close(lease, "closing a connection lease", failure, fatalCleanup);
         if (previousFailure == null) {
+            return failure;
+        }
+        if (fatalCleanup && failure instanceof Error && !(previousFailure instanceof Error)) {
+            failure.addSuppressed(previousFailure);
             return failure;
         }
         if (failure != null) {
@@ -319,28 +374,28 @@ final class JdbcRunner {
     }
 
     /**
-     * Closes one resource and preserves failures in ownership order.
+     * Closes one resource and combines failures using the terminal cleanup policy.
      *
-     * @param resource resource to close
-     * @param operation stable cleanup operation label
-     * @param previousFailure earlier cleanup failure
-     * @return first cleanup failure, or {@code null}
+     * @param resource The resource is closed when it is present.
+     * @param operation The operation identifies the cleanup step.
+     * @param previousFailure The earlier failure may be null.
+     * @param fatalCleanup If true, a fatal cleanup error can replace an earlier nonfatal failure.
+     * @return The result is the combined failure, or {@code null} when there is no failure.
      */
-    private static Throwable close(AutoCloseable resource, String operation, Throwable previousFailure) {
+    private static Throwable close(AutoCloseable resource,
+                                   String operation,
+                                   Throwable previousFailure,
+                                   boolean fatalCleanup) {
         if (resource == null) {
             return previousFailure;
         }
         try {
             resource.close();
         } catch (Throwable closeFailure) {
-            // Preserve a primary fatal error. An error attached below another failure is sanitized.
-            if (previousFailure == null && closeFailure instanceof Error) {
-                return closeFailure;
+            if (fatalCleanup || previousFailure == null) {
+                return JdbcExceptionTranslator.mergeInfrastructure(previousFailure, operation, closeFailure);
             }
-            if (previousFailure == null) {
-                return JdbcExceptionTranslator.prepare(operation, closeFailure);
-            }
-            previousFailure = JdbcExceptionTranslator.suppress(previousFailure, operation, closeFailure);
+            return JdbcExceptionTranslator.suppress(previousFailure, operation, closeFailure);
         }
         return previousFailure;
     }
@@ -432,13 +487,30 @@ final class JdbcRunner {
         }
 
         ResultSet resultSet = scope == null ? null : scope.resultSet();
-        failure = closeAll(operation, resultSet, statement, lease, failure);
+        failure = closeAll(operation, resultSet, statement, lease, failure, options.fatalCleanup());
         if (failure != null) {
             rethrow(operation, failure);
         }
         return result;
     }
 
+    /**
+     * Performs terminal work while the runner owns the JDBC resources.
+     *
+     * @param <T> The type represents the terminal result.
+     */
+    @FunctionalInterface
+    private interface HandlerAction<T> {
+
+        /**
+         * Executes against a prepared and bound statement.
+         *
+         * @param scope The runner owns the execution scope.
+         * @return The terminal result is returned.
+         * @throws SQLException JDBC work fails.
+         */
+        T execute(ExecutionScope scope) throws SQLException;
+    }
     /**
      * Runner-owned view of one prepared operation.
      */
@@ -605,36 +677,19 @@ final class JdbcRunner {
     }
 
     /**
-     * Statement controls selected by a terminal before JDBC resources are
-     * acquired. A zero maximum leaves the driver's row limit unchanged.
+     * Execution and cleanup controls selected by a terminal before JDBC resources are acquired.
+     * A zero maximum leaves the driver row limit unchanged.
      *
-     * @param maxRows maximum rows exposed by the statement, or zero for no limit
+     * @param maxRows A positive value limits rows exposed by the statement. Zero leaves the row limit unchanged.
+     * @param fatalCleanup A true value gives fatal cleanup errors precedence over earlier infrastructure failures.
      */
-    private record ExecutionOptions(int maxRows) {
+    private record ExecutionOptions(int maxRows, boolean fatalCleanup) {
 
         ExecutionOptions {
             if (maxRows < 0) {
                 throw new IllegalArgumentException("The maximum row count must not be negative.");
             }
         }
-    }
-
-    /**
-     * Operation-specific work performed inside the resource boundary.
-     *
-     * @param <T> terminal result type
-     */
-    @FunctionalInterface
-    private interface HandlerAction<T> {
-
-        /**
-         * Executes against a prepared and bound statement.
-         *
-         * @param scope runner-owned execution scope
-         * @return terminal result
-         * @throws SQLException when JDBC work fails
-         */
-        T execute(ExecutionScope scope) throws SQLException;
     }
 
 }
