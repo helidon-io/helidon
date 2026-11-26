@@ -54,11 +54,11 @@ for all configuration options and defaults.
 # Throughput limit
 
 With a positive `amount`, each accepted request consumes a permit. The configured rate-limiting algorithm replenishes
-permits over time.
+permits over time, so a supplied semaphore can start empty. Its initial permit count must be nonnegative.
 
 With `amount` set to zero and no semaphore supplied, requests are unlimited. If you supply a semaphore, for example
 with `ThroughputLimit.create(semaphore)`, each accepted request holds one of its permits until the work completes.
-For any amount, a supplied semaphore must have at least one available permit when the limit is constructed.
+In this mode, a supplied semaphore must have at least one available permit when the limit is constructed.
 
 See the [concurrency limits guide](../../../docs/modules/webserver/concurrency-limits.md)
 for configuration examples and the behavior of rates above one operation per nanosecond.

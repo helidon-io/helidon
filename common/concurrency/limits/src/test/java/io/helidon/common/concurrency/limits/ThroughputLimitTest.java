@@ -78,10 +78,7 @@ public class ThroughputLimitTest {
 
         var semaphore = new Semaphore(1);
         var limit = builder.semaphore(semaphore).build();
-        semaphore.drainPermits();
-        assertThat(limit.tryAcquireOutcome(false).disposition(), is(LimitAlgorithm.Outcome.Disposition.REJECTED));
-        semaphore.release();
-        assertAccepted(limit, 1);
+        assertAccepted(limit, 2);
         assertThat(semaphore.availablePermits(), is(1));
     }
 
@@ -96,20 +93,38 @@ public class ThroughputLimitTest {
     @CsvSource({
             "TOKEN_BUCKET, 0, 0",
             "TOKEN_BUCKET, 0, -1",
-            "TOKEN_BUCKET, 1, 0",
             "TOKEN_BUCKET, 1, -1",
             "FIXED_RATE, 0, 0",
             "FIXED_RATE, 0, -1",
-            "FIXED_RATE, 1, 0",
             "FIXED_RATE, 1, -1"
     })
-    void suppliedSemaphoreBuilderRejectsNonPositivePermits(RateLimitingAlgorithmType algorithm, int amount, int permits) {
+    void suppliedSemaphoreBuilderRejectsInvalidInitialPermits(RateLimitingAlgorithmType algorithm, int amount, int permits) {
         var builder = ThroughputLimit.builder()
                 .amount(amount)
                 .duration(Duration.ofSeconds(1))
                 .rateLimitingAlgorithm(algorithm)
                 .semaphore(new Semaphore(permits));
         assertThrows(ConfigException.class, builder::build);
+    }
+
+    @ParameterizedTest
+    @EnumSource(RateLimitingAlgorithmType.class)
+    void positiveRateRefillsInitiallyEmptySemaphore(RateLimitingAlgorithmType algorithm) {
+        TestNanoClock clock = new TestNanoClock();
+        Duration interval = Duration.ofSeconds(1);
+        var limit = ThroughputLimit.builder()
+                .amount(1)
+                .duration(interval)
+                .rateLimitingAlgorithm(algorithm)
+                .semaphore(new Semaphore(0))
+                .clock(clock::getNanos)
+                .build();
+
+        assertThat("No permit at construction", acceptedBeforeRejection(limit, 1), is(0));
+        clock.advance(interval.minusNanos(1));
+        assertThat("No permit before the first interval elapses", acceptedBeforeRejection(limit, 1), is(0));
+        clock.advance(Duration.ofNanos(1));
+        assertThat("Exactly one permit at the first refill boundary", acceptedBeforeRejection(limit, 2), is(1));
     }
 
     @Test
@@ -142,7 +157,7 @@ public class ThroughputLimitTest {
 
     @ParameterizedTest
     @EnumSource(RateLimitingAlgorithmType.class)
-    void suppliedSemaphoreExhaustedAfterConstructionRequiresExternalRelease(RateLimitingAlgorithmType algorithm) {
+    void zeroRateReturnsPermitOnCompletion(RateLimitingAlgorithmType algorithm) {
         TestNanoClock clock = new TestNanoClock();
         Semaphore semaphore = new Semaphore(1);
         ThroughputLimit limiter = ThroughputLimit.builder()
@@ -151,11 +166,12 @@ public class ThroughputLimitTest {
                 .clock(clock::getNanos)
                 .build();
 
-        semaphore.drainPermits();
+        var outcome = limiter.tryAcquireOutcome(false);
+        assertThat(outcome.disposition(), is(LimitAlgorithm.Outcome.Disposition.ACCEPTED));
         clock.advance(Duration.ofSeconds(60));
         assertThat(limiter.tryAcquireOutcome(false).disposition(), is(LimitAlgorithm.Outcome.Disposition.REJECTED));
         assertThat(semaphore.availablePermits(), is(0));
-        semaphore.release();
+        ((LimitAlgorithm.Outcome.Accepted) outcome).token().success();
         assertAccepted(limiter, 1);
         assertThat(semaphore.availablePermits(), is(1));
     }
@@ -728,16 +744,14 @@ public class ThroughputLimitTest {
     @EnumSource(RateLimitingAlgorithmType.class)
     void fractionalIntervalPreservesConfiguredRate(RateLimitingAlgorithmType algorithm) {
         var clock = new AtomicLong();
-        var semaphore = new Semaphore(1);
         var limit = ThroughputLimit.builder()
                 .amount(2)
                 .duration(Duration.ofNanos(3))
-                .semaphore(semaphore)
+                .semaphore(new Semaphore(0))
                 .rateLimitingAlgorithm(algorithm)
                 .clock(clock::get)
                 .build();
 
-        semaphore.drainPermits();
         int accepted = 0;
         for (int nanos = 1; nanos <= 30; nanos++) {
             clock.set(nanos);
